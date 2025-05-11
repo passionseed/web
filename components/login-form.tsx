@@ -24,7 +24,11 @@ export function LoginForm() {
   const supabase = createClient();
 
   async function signInWithDiscord() {
-    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`;
+    const redirectTo = `${
+      process.env.NODE_ENV == "development"
+        ? "http://localhost:3000"
+        : process.env.NEXT_PUBLIC_SITE_URL
+    }/auth/callback`;
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "discord",
@@ -32,6 +36,7 @@ export function LoginForm() {
         redirectTo,
       },
     });
+    console.log(data);
 
     if (error) {
       console.error("Auth error:", error);
