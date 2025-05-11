@@ -2,14 +2,19 @@ import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
 import { LavaFooter } from "@/components/lava-footer";
 import { Button } from "@/components/ui/button";
-import { getSession } from "@/lib/auth";
+import { createClient } from "@/utils/supabase/server";
+import { CloudCog } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export async function Layout({ children }: LayoutProps) {
-  const session = await getSession();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  console.log(user);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -17,8 +22,8 @@ export async function Layout({ children }: LayoutProps) {
         <div className="container flex h-16 items-center">
           <MainNav />
           <div className="ml-auto flex items-center space-x-4">
-            {session ? (
-              <UserNav user={session.user} />
+            {user ? (
+              <UserNav user={user} />
             ) : (
               <>
                 <Button asChild variant="ghost">

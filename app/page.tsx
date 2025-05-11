@@ -4,13 +4,15 @@ import { WorkshopCategories } from "@/components/workshop-categories";
 import { CommunitySection } from "@/components/community-section";
 import { Layout } from "@/components/layout";
 import { DashboardHome } from "@/components/dashboard-home";
-import { getAuthenticatedUser } from "@/lib/auth";
+import { createClient } from "@/utils/supabase/server";
 
 export default async function Home() {
-  const user = await getAuthenticatedUser();
-
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return (
-    <Layout>
+    <>
       {user ? (
         <DashboardHome user={user} />
       ) : (
@@ -21,6 +23,6 @@ export default async function Home() {
           <CommunitySection />
         </>
       )}
-    </Layout>
+    </>
   );
 }

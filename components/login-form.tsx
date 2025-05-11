@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { DiscIcon as Discord } from "lucide-react";
 
 export function LoginForm() {
@@ -21,7 +21,7 @@ export function LoginForm() {
         : process.env.NEXT_PUBLIC_SITE_URL
     }/auth/callback`
   );
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   async function signInWithDiscord() {
     const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`;

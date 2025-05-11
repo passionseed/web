@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { UserPortal } from "@/components/user-portal";
 import { MainNav } from "@/components/main-nav";
 import { LavaFooter } from "@/components/lava-footer";
 import { UserNav } from "@/components/user-nav";
+import { createClient } from "@/utils/supabase/client";
 
 export default async function PortalPage() {
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+  const cookieStore = await cookies();
+  const supabase = createClient();
 
   const {
     data: { session },
