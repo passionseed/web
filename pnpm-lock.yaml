@@ -4,6 +4,9 @@ dependencies:
   '@hookform/resolvers':
     specifier: ^3.9.1
     version: 3.9.1(react-hook-form@7.54.1)
+  '@icons-pack/react-simple-icons':
+    specifier: ^12.7.0
+    version: 12.7.0(react@19.0.0)
   '@radix-ui/react-accordion':
     specifier: ^1.2.2
     version: 1.2.2(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0)(react@19.0.0)
@@ -230,6 +233,14 @@ packages:
       react-hook-form: ^7.0.0
     dependencies:
       react-hook-form: 7.54.1(react@19.0.0)
+    dev: false
+
+  /@icons-pack/react-simple-icons@12.7.0(react@19.0.0):
+    resolution: {integrity: sha512-XpG7e8buAco8AbvCar+4LX5do0L98d/NaeHoTuW4awyUH33id7HQiiMomK+cS1MRxfLNMmhW2W0223/fMC0unw==}
+    peerDependencies:
+      react: ^16.13 || ^17 || ^18 || ^19
+    dependencies:
+      react: 19.0.0
     dev: false
 
   /@img/sharp-darwin-arm64@0.33.5:
