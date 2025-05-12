@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/utils/supabase/client";
+import { SiDiscord } from "@icons-pack/react-simple-icons";
 import { DiscIcon as Discord } from "lucide-react";
 
 export function LoginForm() {
@@ -56,7 +57,7 @@ export function LoginForm() {
           className="w-full bg-[#5865F2] hover:bg-[#4752c4] text-white"
           onClick={signInWithDiscord}
         >
-          <Discord className="mr-2 h-4 w-4" />
+          <SiDiscord className="mr-2 h-4 w-4" />
           Sign in with Discord
         </Button>
       </CardContent>

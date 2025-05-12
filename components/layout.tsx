@@ -26,11 +26,8 @@ export async function Layout({ children }: LayoutProps) {
               <UserNav user={user} />
             ) : (
               <>
-                <Button asChild variant="ghost">
-                  <a href="/login">Login</a>
-                </Button>
                 <Button asChild>
-                  <a href="/signup">Sign Up</a>
+                  <a href="/signup">Sign In</a>
                 </Button>
               </>
             )}
