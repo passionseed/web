@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function HeroSection() {
   return (
@@ -11,19 +11,25 @@ export function HeroSection() {
               Discover Your Passion, Ignite Your Potential
             </h1>
             <p className="mx-auto max-w-[700px] text-white md:text-xl">
-              Join a community of like-minded individuals who are passionate about personal growth and helping others.
+              Join a community of like-minded individuals who are passionate
+              about personal growth and helping others.
             </p>
           </div>
           <div className="space-x-4">
             <Button asChild size="lg" className="bg-red-600 hover:bg-red-700">
-              <Link href="/signup">Get Started</Link>
+              <Link href="/login">Get Started</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="text-white border-white hover:bg-white/10"
+            >
               <Link href="/about">Learn More</Link>
             </Button>
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }
