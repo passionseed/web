@@ -27,7 +27,7 @@ export async function Layout({ children }: LayoutProps) {
             ) : (
               <>
                 <Button asChild>
-                  <a href="/signup">Sign In</a>
+                  <a href="/login">Sign In</a>
                 </Button>
               </>
             )}
