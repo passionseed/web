@@ -14,22 +14,10 @@ import { SiDiscord } from "@icons-pack/react-simple-icons";
 import { DiscIcon as Discord } from "lucide-react";
 
 export function LoginForm() {
-  // console.log(process.env.NODE_ENV == "development");
-  console.log(
-    `http://${
-      process.env.NODE_ENV == "development"
-        ? "localhost:3000"
-        : process.env.NEXT_PUBLIC_SITE_URL
-    }/auth/callback`
-  );
   const supabase = createClient();
 
   async function signInWithDiscord() {
-    const redirectTo = `${
-      process.env.NODE_ENV == "development"
-        ? "http://localhost:3000"
-        : process.env.NEXT_PUBLIC_SITE_URL
-    }/auth/callback`;
+    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "discord",
