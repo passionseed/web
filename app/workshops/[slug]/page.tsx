@@ -10,6 +10,84 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Metadata } from "next";
+
+type Props = {
+  params: { slug: string };
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const supabase = await createClient();
+  const { data: workshop } = await supabase
+    .from("workshops")
+    .select("title, description, theme")
+    .eq("slug", params.slug)
+    .single();
+
+  if (!workshop) {
+    return {
+      title: "Workshop Not Found | PassionSeed",
+      icons: {
+        icon: [
+          { url: "/favicon.ico" },
+          { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+          { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+        ],
+        apple: [
+          { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        ],
+        other: [
+          {
+            rel: "mask-icon",
+            url: "/passionseed-logo.svg",
+          },
+        ],
+      },
+      manifest: "/site.webmanifest",
+    };
+  }
+
+  return {
+    title: `${workshop.title} | PassionSeed Workshop`,
+    description: workshop.description || workshop.theme,
+    icons: {
+      icon: [
+        { url: "/favicon.ico" },
+        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      ],
+      apple: [
+        { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      ],
+      other: [
+        {
+          rel: "mask-icon",
+          url: "/passionseed-logo.svg",
+        },
+      ],
+    },
+    manifest: "/site.webmanifest",
+    openGraph: {
+      title: `${workshop.title} | PassionSeed Workshop`,
+      description: workshop.description || workshop.theme,
+      images: [
+        {
+          url: "/passionseed-logo.svg",
+          width: 1200,
+          height: 630,
+          alt: workshop.title,
+        },
+      ],
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${workshop.title} | PassionSeed Workshop`,
+      description: workshop.description || workshop.theme,
+      images: ["/passionseed-logo.svg"],
+    },
+  };
+}
 
 function getStatusColor(status: string) {
   switch (status) {
