@@ -23,8 +23,10 @@ import {
   ThumbsUp,
   MessageSquare,
   Share2,
+  Leaf,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import Link from "next/link";
 
 interface UserPortalProps {
   userId: string;
@@ -45,6 +47,22 @@ export function UserPortal({ userId }: UserPortalProps) {
     workshops_contributed: 0,
     average_rating: 0,
   });
+  const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      setProfileLoading(true);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, username, date_of_birth")
+        .eq("id", userId)
+        .single();
+      setProfile(data);
+      setProfileLoading(false);
+    }
+    if (userId) fetchProfile();
+  }, [userId, supabase]);
 
   useEffect(() => {
     async function fetchUserData() {
@@ -181,7 +199,7 @@ export function UserPortal({ userId }: UserPortalProps) {
     return "bg-red-500";
   };
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="container py-10 px-4 md:px-6 flex items-center justify-center min-h-[60vh]">
         <p className="text-xl">Loading your passion data...</p>
@@ -192,6 +210,25 @@ export function UserPortal({ userId }: UserPortalProps) {
   return (
     <div className="container py-10 px-4 md:px-6">
       <div className="flex flex-col space-y-8">
+        {/* Profile Incomplete Banner/Button */}
+        {profile &&
+          (!profile.full_name ||
+            !profile.username ||
+            !profile.date_of_birth) && (
+            <div className="mb-4">
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded flex items-center justify-between">
+                <span>
+                  Your profile is incomplete. Please finish your profile to
+                  unlock all features.
+                </span>
+                <Link href="/auth/finish-profile">
+                  <Button className="ml-4 bg-yellow-500 hover:bg-yellow-600 text-white">
+                    Finish Profile
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
         <div className="flex flex-col space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
             Your Passion Portal
@@ -201,6 +238,22 @@ export function UserPortal({ userId }: UserPortalProps) {
             place.
           </p>
         </div>
+
+        <Link href="/me/tree" className="block mb-8">
+          <Card className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-700 hover:to-emerald-600 transition-colors cursor-pointer">
+            <CardContent className="flex items-center justify-between p-6">
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Passion Tree Garden
+                </h3>
+                <p className="text-white/80">
+                  Cultivate your passions and watch them grow over time
+                </p>
+              </div>
+              <Leaf className="h-12 w-12 text-green-300" />
+            </CardContent>
+          </Card>
+        </Link>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="col-span-1 bg-gradient-to-br from-purple-950 to-violet-900 text-white">
@@ -261,33 +314,33 @@ export function UserPortal({ userId }: UserPortalProps) {
             </CardContent>
           </Card>
 
-          <Card className="col-span-1 md:col-span-2 lg:col-span-1 bg-gradient-to-br from-purple-800 to-violet-700 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center">
-                <Heart className="mr-2 h-5 w-5 text-red-400" />
-                Daily Reflection
-              </CardTitle>
-              <CardDescription className="text-white/70">
-                Take a moment to reflect on your journey
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="What are you grateful for today? What progress have you made on your passions?"
-                  className="min-h-[150px] bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                  value={reflection}
-                  onChange={(e) => setReflection(e.target.value)}
-                />
-                <Button
-                  className="w-full bg-red-600 hover:bg-red-700"
-                  onClick={handleSaveReflection}
-                >
-                  Save Reflection
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <Link
+            href="/me/reflection"
+            className="col-span-1 md:col-span-2 lg:col-span-1"
+          >
+            <Card className="bg-gradient-to-br from-purple-800 to-violet-700 text-white hover:from-purple-700 hover:to-violet-600 transition-colors cursor-pointer">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center">
+                  <Heart className="mr-2 h-5 w-5 text-red-400" />
+                  Daily Reflection
+                </CardTitle>
+                <CardDescription className="text-white/70">
+                  Take a moment to reflect on your journey
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-white/80">
+                    Click here to write your daily reflection and track your
+                    personal growth
+                  </p>
+                  <Button className="w-full bg-red-600 hover:bg-red-700">
+                    Start Reflecting
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         <Tabs defaultValue="workshops" className="w-full">

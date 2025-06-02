@@ -25,7 +25,7 @@ export function LoginForm() {
         redirectTo,
       },
     });
-    console.log(data);
+    console.log(data, "heyhey");
 
     if (error) {
       console.error("Auth error:", error);
