@@ -151,8 +151,8 @@ export function LavaFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/portal" className="hover:underline">
-                  My Portal
+                <Link href="/me" className="hover:underline">
+                  My Journey
                 </Link>
               </li>
             </ul>

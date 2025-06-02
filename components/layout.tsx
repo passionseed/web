@@ -14,7 +14,6 @@ export async function Layout({ children }: LayoutProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  console.log(user);
 
   return (
     <div className="flex min-h-screen flex-col">
