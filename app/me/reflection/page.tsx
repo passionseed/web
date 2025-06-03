@@ -39,34 +39,45 @@ export default function ReflectionPage() {
   const { toast } = useToast();
 
   const [user, setUser] = useState<User>();
+  const [interests, setInterests] = useState<string[]>([]);
   // get user from supabase
 
   useEffect(() => {
-    async function fetchUser() {
+    async function fetchUserAndInterests() {
       try {
         const {
           data: { user },
-          error,
+          error: userError,
         } = await supabase.auth.getUser();
-        if (error) throw error;
+        if (userError) throw userError;
         console.log(user, "user");
-        return user;
+
+        if (user) {
+          setUser(user);
+          // Fetch existing profile data to pre-fill the form
+          loadReflectionHistory(user);
+
+          const { data: userInterests, error: interestsError } = await supabase
+            .from("interests")
+            .select("interest")
+            .eq("user_id", user.id);
+
+          if (interestsError) throw interestsError;
+
+          if (userInterests) {
+            setInterests(userInterests.map((item) => item.interest));
+          }
+        } else {
+          // Redirect to login if no user is found, or handle appropriately
+          router.push("/login");
+        }
       } catch (error) {
-        console.error("Error fetching user:", error);
-        return null;
+        console.error("Error fetching user or interests:", error);
+        // Handle error, maybe redirect to an error page or show a toast
       }
     }
 
-    fetchUser().then((user) => {
-      if (user) {
-        setUser(user);
-        // Fetch existing profile data to pre-fill the form
-        loadReflectionHistory(user);
-      } else {
-        // Redirect to login if no user is found, or handle appropriately
-        router.push("/login");
-      }
-    });
+    fetchUserAndInterests();
   }, []);
 
   // Gemini client is created only if key is present
@@ -97,6 +108,8 @@ Facilitate deep self-discovery by collaboratively building and refining a dynami
    - Value rediscovery for low engagement
    - Skill scaffolding for stagnant mastery
    - Cross-pollination for emerging connections
+
+**User Interests:** ${interests.join(", ") || "No interests provided."}
 
 **Response Guidelines**
 - Keep responses concise but meaningful
@@ -237,12 +250,14 @@ Facilitate deep self-discovery by collaboratively building and refining a dynami
     <div className="container max-w-4xl py-10 px-4 md:px-6 font-mono">
       {/* Background gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-purple-950 via-violet-900 to-red-700 -z-10 opacity-80"></div>
-      
+
       <Card className="w-full mb-6 border-0 bg-white/10 backdrop-blur-md shadow-lg">
         <CardHeader className="border-b border-white/10">
           <div className="flex items-center space-x-2">
             <KeyRound className="h-5 w-5 text-yellow-400" />
-            <CardTitle className="text-lg font-bold text-white">Google Gemini API Key</CardTitle>
+            <CardTitle className="text-lg font-bold text-white">
+              Google Gemini API Key
+            </CardTitle>
           </div>
           <CardDescription className="text-white/80">
             Enter your Gemini API key. It will only be used in this session and
@@ -268,13 +283,15 @@ Facilitate deep self-discovery by collaboratively building and refining a dynami
           )}
         </CardContent>
       </Card>
-      
+
       <Card className="w-full border-0 bg-white/10 backdrop-blur-md shadow-lg overflow-hidden">
         <CardHeader className="border-b border-white/10">
           <div className="flex items-center space-x-3">
             <Sparkles className="h-6 w-6 text-yellow-400" />
             <div>
-              <CardTitle className="text-2xl font-bold text-white">Daily Reflection</CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">
+                Daily Reflection
+              </CardTitle>
               <CardDescription className="text-white/80">
                 Take a moment to reflect on your journey and growth
               </CardDescription>
@@ -283,7 +300,10 @@ Facilitate deep self-discovery by collaboratively building and refining a dynami
         </CardHeader>
         <CardContent className="pt-6">
           {error && (
-            <Alert variant="destructive" className="mb-4 border-red-700 bg-red-700/20 text-white">
+            <Alert
+              variant="destructive"
+              className="mb-4 border-red-700 bg-red-700/20 text-white"
+            >
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>

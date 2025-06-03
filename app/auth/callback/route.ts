@@ -16,29 +16,38 @@ export async function GET(request: Request) {
       // Attempt to create a profile entry.
       // This assumes a 'profiles' table with an 'id' column linked to auth.users.id.
       // Using upsert to avoid errors if the profile already exists or to create it.
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .upsert({ id: userId }, { onConflict: "id" });
 
-      if (profileError) {
-        console.error("Error creating/upserting profile:", profileError);
-        // Optionally handle this error more gracefully, e.g., redirect to an error page
-        // For now, we'll still redirect to finish-profile, which should handle cases where profile data might be incomplete.
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("full_name, username, date_of_birth")
+        .eq("id", userId)
+        .single();
+
+      if (profileError && profileError.code !== "PGRST116") {
+        // PGRST116 is 'No rows found'
+        console.error("Error fetching profile:", profileError);
       }
 
-      const finishProfileRedirectUrl = `/auth/finish-profile?next=${encodeURIComponent(next)}`;
+      let redirectTo = next;
+
+      // Check if profile data is incomplete
+      if (profileData) {
+        const profile = profileData;
+        if (!profile.full_name || !profile.username || !profile.date_of_birth) {
+          redirectTo = `/auth/finish-profile?next=${encodeURIComponent(next)}`;
+        }
+        console.log(profile, "profile");
+      } else {
+        // If no profile data is returned, assume it needs to be finished
+        redirectTo = `/auth/finish-profile?next=${encodeURIComponent(next)}`;
+      }
+
+      console.log(redirectTo, "redirectTo");
       const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === "development";
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${finishProfileRedirectUrl}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(
-          `https://${forwardedHost}${finishProfileRedirectUrl}`
-        );
-      } else {
-        return NextResponse.redirect(`${origin}${finishProfileRedirectUrl}`);
-      }
+      return NextResponse.redirect(`${siteUrl}${redirectTo}`);
     }
   }
 
