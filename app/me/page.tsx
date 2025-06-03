@@ -20,7 +20,7 @@ export default async function PortalPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1">
-        <UserPortal userId={user.id} />
+        <UserPortal userId={user!.id} />
       </main>
     </div>
   );
