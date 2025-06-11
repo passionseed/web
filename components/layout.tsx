@@ -3,7 +3,6 @@ import { UserNav } from "@/components/user-nav";
 import { LavaFooter } from "@/components/lava-footer";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/server";
-import { CloudCog } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
