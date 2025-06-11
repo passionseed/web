@@ -3,10 +3,6 @@ import type { Metadata } from "next";
 import { Space_Mono, Libre_Franklin } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { MainNav } from "@/components/main-nav";
-import { UserNav } from "@/components/user-nav";
-import { LavaFooter } from "@/components/lava-footer";
-import { Button } from "@/components/ui/button";
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],

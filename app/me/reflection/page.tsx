@@ -17,7 +17,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Send, Sparkles, AlertCircle, KeyRound } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
-import { log } from "console";
 import { User } from "@supabase/supabase-js";
 
 interface Message {
@@ -276,6 +275,7 @@ Facilitate deep self-discovery by collaboratively building and refining a dynami
         <CardContent className="pt-4">
           <input
             type="password"
+            name="geminiKey"
             className="w-full px-3 py-2 border border-white/20 rounded bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder:text-white/50"
             placeholder="Paste your Gemini API key here..."
             value={geminiKey}
