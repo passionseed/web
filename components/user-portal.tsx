@@ -68,20 +68,17 @@ export function UserPortal({ userId }: UserPortalProps) {
     async function fetchUserData() {
       setLoading(true);
 
-      // Fetch branches (interests)
-      const { data: branches, error: branchesError } = await supabase
-        .from("branches")
-        .select("*")
-        .order("importance", { ascending: false })
-        .limit(5);
+      // Fetch user interests
+      const { data: interests, error: interestsError } = await supabase
+        .from("interests") // Assuming 'interests' is the correct table name
+        .select("name, level") // Assuming 'name' and 'level' are the correct column names
+        .eq("user_id", userId) // Filter by the current user's ID
+        .order("level", { ascending: false }); // Order by level, for example
 
-      if (branches && !branchesError) {
-        setUserInterests(
-          branches.map((branch) => ({
-            name: branch.name,
-            level: branch.mastery || 50,
-          }))
-        );
+      if (interests && !interestsError) {
+        setUserInterests(interests);
+      } else if (interestsError) {
+        console.error("Error fetching user interests:", interestsError);
       }
 
       // Fetch emotions (skills with emotional ratings)

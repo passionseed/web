@@ -251,6 +251,8 @@ Facilitate deep self-discovery by collaboratively building and refining a dynami
       {/* Background gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-purple-950 via-violet-900 to-red-700 -z-10 opacity-80"></div>
 
+      {/* this is a way to get the key from the user https://aistudio.google.com/apikey, add a link */}
+
       <Card className="w-full mb-6 border-0 bg-white/10 backdrop-blur-md shadow-lg">
         <CardHeader className="border-b border-white/10">
           <div className="flex items-center space-x-2">
@@ -261,7 +263,14 @@ Facilitate deep self-discovery by collaboratively building and refining a dynami
           </div>
           <CardDescription className="text-white/80">
             Enter your Gemini API key. It will only be used in this session and
-            never saved.
+            never saved.{" "}
+            <a
+              href="https://aistudio.google.com/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Get your key here
+            </a>
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
