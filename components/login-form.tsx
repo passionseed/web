@@ -22,6 +22,7 @@ export function LoginForm() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "discord",
       options: {
+        scopes: "identify email guilds guilds.join guilds.members.read",
         redirectTo,
       },
     });

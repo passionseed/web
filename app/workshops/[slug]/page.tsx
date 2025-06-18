@@ -1,16 +1,16 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Suspense } from "react";
 import { Metadata } from "next";
+import Link from "next/link";
+
+// UI Components
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Custom Components
+import { JoinWorkshopButton } from "@/components/workshop/join-workshop-button";
 
 type Props = {
   params: { slug: string };
@@ -117,21 +117,42 @@ function formatDateRange(start: string, end?: string) {
   return `${startDate.toLocaleDateString(undefined, { month: "short", year: "numeric" })} - ${endDate.toLocaleDateString(undefined, { month: "short", year: "numeric" })}`;
 }
 
+// Server component for the workshop page
 export default async function WorkshopPage({
   params,
+  searchParams,
 }: {
   params: { slug: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  // Get the workshop data
   const { data: workshop, error } = await supabase
     .from("workshops")
-    .select("*")
+    .select('*')
     .eq("slug", params.slug)
     .single();
 
   if (error || !workshop) {
     notFound();
   }
+    
+  // Check if the current user is registered
+  let isRegistered = false;
+  if (session?.user?.id) {
+    const { data: registration } = await supabase
+      .from("workshop_participants")
+      .select('id')
+      .eq("workshop_id", workshop.id)
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+      
+    isRegistered = !!registration;
+  }
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-950 to-violet-900 pb-24">
@@ -152,8 +173,7 @@ export default async function WorkshopPage({
                   {workshop.title}
                 </CardTitle>
                 <Badge className={getStatusColor(workshop.status)}>
-                  {workshop.status.charAt(0).toUpperCase() +
-                    workshop.status.slice(1)}
+                  {workshop.status.charAt(0).toUpperCase() + workshop.status.slice(1)}
                 </Badge>
               </div>
             </div>
@@ -208,12 +228,32 @@ export default async function WorkshopPage({
             </div>
 
             <div className="flex justify-center mt-8">
-              <Button
-                size="lg"
-                className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-8"
-              >
-                Join Workshop
-              </Button>
+              {isRegistered ? (
+                <div className="text-center">
+                  <div className="inline-flex items-center px-6 py-3 rounded-full bg-green-100 text-green-800">
+                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    You're registered for this workshop!
+                  </div>
+                  <p className="mt-2 text-sm text-green-200">Check your email for the workshop details.</p>
+                </div>
+              ) : (
+                <Suspense fallback={
+                  <Button
+                    size="lg"
+                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-8"
+                    disabled
+                  >
+                    Loading...
+                  </Button>
+                }>
+                  <JoinWorkshopButton 
+                    workshopId={workshop.id} 
+                    isAuthenticated={!!session}
+                  />
+                </Suspense>
+              )}
             </div>
           </CardContent>
         </Card>
