@@ -10,9 +10,20 @@ import { JoinWorkshopForm } from "./join-workshop-form";
 type JoinWorkshopButtonProps = {
   workshopId: string;
   isAuthenticated: boolean;
+  questions?: {
+    question_1?: string | null;
+    question_2?: string | null;
+    question_3?: string | null;
+    question_4?: string | null;
+    question_5?: string | null;
+  };
 };
 
-export function JoinWorkshopButton({ workshopId, isAuthenticated }: JoinWorkshopButtonProps) {
+export function JoinWorkshopButton({ 
+  workshopId, 
+  isAuthenticated, 
+  questions = {} 
+}: JoinWorkshopButtonProps) {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const router = useRouter();
@@ -59,6 +70,7 @@ export function JoinWorkshopButton({ workshopId, isAuthenticated }: JoinWorkshop
             <JoinWorkshopForm 
               workshopId={workshopId} 
               onSuccess={() => setShowJoinDialog(false)}
+              questions={questions}
             />
           </div>
         </DialogContent>
