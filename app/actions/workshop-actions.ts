@@ -35,34 +35,54 @@ export async function joinWorkshop(workshopId: string, formData: FormData) {
   const { data: existingRegistration, error: registrationCheckError } =
     await supabase
       .from("user_workshops")
-      .select("id")
+      .select("id, status")
       .eq("workshop_id", workshopId)
       .eq("user_id", user.id)
       .maybeSingle();
 
   if (existingRegistration) {
-    return {
-      success: false,
-      error: "You are already registered for this workshop",
-    };
+    if (existingRegistration.status === 'pending') {
+      return {
+        success: false,
+        error: "Your registration is pending approval",
+      };
+    } else if (existingRegistration.status === 'approved') {
+      return {
+        success: false,
+        error: "You are already registered for this workshop",
+      };
+    }
   }
 
-  console.log(existingRegistration);
-
   try {
-    // Add user to workshop participants
-    const { data: participant, error: participantError } = await supabase
-      .from("workshop_participants")
-      .insert([
-        {
-          workshop_id: workshopId,
-          user_id: user.id,
-          status: "registered",
-          registration_data: Object.fromEntries(formData.entries()),
-        },
-      ])
-      .select()
-      .single();
+    // Extract form data and prepare registration data
+    const formDataObj = Object.fromEntries(formData.entries());
+    const { questions, discord_consent, ...answers } = formDataObj;
+    
+    // Prepare registration data (exclude answers and system fields)
+    const registrationData = {
+      discord_consent: discord_consent === 'on',
+      submitted_at: new Date().toISOString(),
+      ...(questions && { additional_notes: questions.toString() })
+    };
+
+    console.log('Form data:', formDataObj);
+    console.log('Extracted answers:', answers);
+    console.log('Registration data:', registrationData);
+
+    // Start a transaction
+    console.log('Calling join_workshop_with_answers RPC...');
+    const { data: participant, error: participantError } = await supabase.rpc('join_workshop_with_answers', {
+      p_workshop_id: workshopId,
+      p_user_id: user.id,
+      p_status: 'pending',
+      p_registration_data: registrationData,
+      p_answer_1: answers.answer_1 || null,
+      p_answer_2: answers.answer_2 || null,
+      p_answer_3: answers.answer_3 || null,
+      p_answer_4: answers.answer_4 || null,
+      p_answer_5: answers.answer_5 || null
+    });
 
     if (participantError) throw participantError;
 
@@ -92,6 +112,9 @@ export async function joinWorkshop(workshopId: string, formData: FormData) {
     return { success: true, data: participant };
   } catch (error) {
     console.error("Error joining workshop:", error);
-    return { success: false, error: "Failed to join workshop" };
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to join workshop"
+    };
   }
 }

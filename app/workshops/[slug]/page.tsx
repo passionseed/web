@@ -7,21 +7,29 @@ import Link from "next/link";
 // UI Components
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 // Custom Components
 import { JoinWorkshopButton } from "@/components/workshop/join-workshop-button";
 
 type Props = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = await createClient();
+  const { slug } = await params;
+
   const { data: workshop } = await supabase
     .from("workshops")
     .select("title, description, theme")
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .single();
 
   if (!workshop) {
@@ -122,37 +130,56 @@ export default async function WorkshopPage({
   params,
   searchParams,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  // Get the workshop data
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // Get the workshop data with questions
   const { data: workshop, error } = await supabase
     .from("workshops")
-    .select('*')
-    .eq("slug", params.slug)
+    .select(`
+      *,
+      user_workshops!left(
+        status, 
+        answer_1, 
+        answer_2, 
+        answer_3, 
+        answer_4, 
+        answer_5
+      )
+    `)
+    .eq("slug", (await params).slug)
     .single();
+    
+  // Extract questions from workshop data
+  const questions = {
+    question_1: workshop?.question_1,
+    question_2: workshop?.question_2,
+    question_3: workshop?.question_3,
+    question_4: workshop?.question_4,
+    question_5: workshop?.question_5
+  };
 
   if (error || !workshop) {
     notFound();
   }
-    
+
   // Check if the current user is registered
   let isRegistered = false;
   if (session?.user?.id) {
     const { data: registration } = await supabase
       .from("workshop_participants")
-      .select('id')
+      .select("id")
       .eq("workshop_id", workshop.id)
       .eq("user_id", session.user.id)
       .maybeSingle();
-      
+
     isRegistered = !!registration;
   }
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-950 to-violet-900 pb-24">
@@ -173,7 +200,8 @@ export default async function WorkshopPage({
                   {workshop.title}
                 </CardTitle>
                 <Badge className={getStatusColor(workshop.status)}>
-                  {workshop.status.charAt(0).toUpperCase() + workshop.status.slice(1)}
+                  {workshop.status.charAt(0).toUpperCase() +
+                    workshop.status.slice(1)}
                 </Badge>
               </div>
             </div>
@@ -231,26 +259,45 @@ export default async function WorkshopPage({
               {isRegistered ? (
                 <div className="text-center">
                   <div className="inline-flex items-center px-6 py-3 rounded-full bg-green-100 text-green-800">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     You're registered for this workshop!
                   </div>
-                  <p className="mt-2 text-sm text-green-200">Check your email for the workshop details.</p>
+                  <p className="mt-2 text-sm text-green-200">
+                    Check your email for the workshop details.
+                  </p>
                 </div>
               ) : (
-                <Suspense fallback={
-                  <Button
-                    size="lg"
-                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-8"
-                    disabled
-                  >
-                    Loading...
-                  </Button>
-                }>
-                  <JoinWorkshopButton 
-                    workshopId={workshop.id} 
+                <Suspense
+                  fallback={
+                    <Button
+                      size="lg"
+                      className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-8"
+                      disabled
+                    >
+                      Loading...
+                    </Button>
+                  }
+                >
+                  <JoinWorkshopButton
+                    workshopId={workshop.id}
                     isAuthenticated={!!session}
+                    questions={{
+                      question_1: workshop.question_1,
+                      question_2: workshop.question_2,
+                      question_3: workshop.question_3,
+                      question_4: workshop.question_4,
+                      question_5: workshop.question_5
+                    }}
                   />
                 </Suspense>
               )}
