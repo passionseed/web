@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@formkit/auto-animate": "^0.8.2",
     "@google/genai": "^0.14.1",
     "@hookform/resolvers": "^3.9.1",
     "@icons-pack/react-simple-icons": "^12.7.0",
