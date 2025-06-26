@@ -73,7 +73,7 @@ export default function NewReflectionPage() {
       try {
         const [tags, suggested] = await Promise.all([
           getUserTags(),
-          getMostUsedTags(3).catch(() => []) // Gracefully handle if no suggestions available
+          getMostUsedTags(3).catch(() => []), // Gracefully handle if no suggestions available
         ]);
         setAvailableTags(tags);
         setSuggestedTags(suggested);
@@ -133,6 +133,7 @@ export default function NewReflectionPage() {
 
     setIsSubmitting(true);
     try {
+      console.log("Saving reflection:", formData);
       await createReflection({
         ...formData,
         emotion: formData.emotion as any,
@@ -166,11 +167,12 @@ export default function NewReflectionPage() {
         });
         return;
       }
-      
+
       if (formData.tagIds.length === 0) {
         toast({
           title: "Tags required",
-          description: "Please add at least one tag to categorize your reflection.",
+          description:
+            "Please add at least one tag to categorize your reflection.",
           variant: "destructive",
         });
         return;
@@ -266,7 +268,7 @@ export default function NewReflectionPage() {
                           (required)
                         </span>
                       </div>
-                      
+
                       {suggestedTags.length > 0 && !isLoading && (
                         <div className="flex flex-wrap gap-2 mb-2">
                           <span className="text-xs text-muted-foreground self-center mr-1">
@@ -288,11 +290,13 @@ export default function NewReflectionPage() {
                                   : "bg-muted hover:bg-muted/80"
                               )}
                               style={{
-                                backgroundColor: formData.tagIds.includes(tag.id) 
-                                  ? tag.color 
+                                backgroundColor: formData.tagIds.includes(
+                                  tag.id
+                                )
+                                  ? tag.color
                                   : undefined,
-                                color: formData.tagIds.includes(tag.id) 
-                                  ? "#fff" 
+                                color: formData.tagIds.includes(tag.id)
+                                  ? "#fff"
                                   : undefined,
                               }}
                             >
@@ -301,7 +305,7 @@ export default function NewReflectionPage() {
                           ))}
                         </div>
                       )}
-                      
+
                       <TagInput
                         availableTags={availableTags}
                         selectedTagIds={formData.tagIds}
