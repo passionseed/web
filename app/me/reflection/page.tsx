@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Link2 } from "lucide-react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { getReflectionTimeline } from "@/lib/supabase/reflection";
 import { EmotionType, ReflectionTimelineNode } from "@/types/reflection";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { findReflectionConnections, getConnectionColor } from "@/lib/utils/reflection-connections";
 
 // Force dynamic rendering for this page
 export const dynamic = "force-dynamic";
@@ -24,18 +23,8 @@ export default function ReflectionHome() {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [hoveredReflection, setHoveredReflection] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
   const [parent] = useAutoAnimate();
-  
-  // Calculate connections between reflections
-  const connections = useMemo(() => {
-    return findReflectionConnections(reflections);
-  }, [reflections]);
-  
-  // Track reflections positions for drawing connections
-  const [reflectionPositions, setReflectionPositions] = useState<Record<string, DOMRect>>({});
 
   const fetchReflections = useCallback(async () => {
     try {
@@ -99,49 +88,23 @@ export default function ReflectionHome() {
       }
     };
 
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('gesturechange', handleGesture as EventListener);
-    container.addEventListener('gesturestart', (e) => e.preventDefault());
-    container.addEventListener('gestureend', (e) => e.preventDefault());
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    container.addEventListener("gesturechange", handleGesture as EventListener);
+    container.addEventListener("gesturestart", (e) => e.preventDefault());
+    container.addEventListener("gestureend", (e) => e.preventDefault());
 
     return () => {
-      container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('gesturechange', handleGesture as EventListener);
-      container.removeEventListener('gesturestart', (e) => e.preventDefault());
-      container.removeEventListener('gestureend', (e) => e.preventDefault());
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener(
+        "gesturechange",
+        handleGesture as EventListener
+      );
+      container.removeEventListener("gesturestart", (e) => e.preventDefault());
+      container.removeEventListener("gestureend", (e) => e.preventDefault());
     };
   }, []);
 
-  // Update reflection positions when reflections or scale changes
-  useEffect(() => {
-    if (reflections.length === 0) return;
-    
-    const updatePositions = () => {
-      const newPositions: Record<string, DOMRect> = {};
-      reflections.forEach(reflection => {
-        const element = document.querySelector(`[data-reflection-id="${reflection.id}"]`);
-        if (element) {
-          newPositions[reflection.id] = element.getBoundingClientRect();
-        }
-      });
-      setReflectionPositions(newPositions);
-    };
-    
-    // Initial update
-    updatePositions();
-    
-    // Update on window resize
-    window.addEventListener('resize', updatePositions);
-    return () => window.removeEventListener('resize', updatePositions);
-  }, [reflections, scale, position]);
-
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Don't start dragging if clicking on a reflection card
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-reflection-id]')) {
-      return;
-    }
-    
     if (e.button !== 0) return; // Only left mouse button
     setIsDragging(true);
     const startX = e.pageX - position.x;
@@ -161,11 +124,6 @@ export default function ReflectionHome() {
 
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp, { once: true });
-  };
-  
-  // Handle mouse enter/leave for connection highlighting
-  const handleReflectionHover = (reflectionId: string | null) => {
-    setHoveredReflection(reflectionId);
   };
 
   const getEmojiForEmotion = (emotion: string): string => {
@@ -268,70 +226,8 @@ export default function ReflectionHome() {
           userSelect: "none",
         }}
       >
-        {/* SVG overlay for connections */}
-        <svg
-          ref={svgRef}
-          className="absolute inset-0 w-full h-full pointer-events-none z-0"
-          style={{
-            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-            transformOrigin: "top left",
-          } as React.CSSProperties}
-        >
-          {connections.map((conn, index) => {
-            const sourcePos = reflectionPositions[conn.source];
-            const targetPos = reflectionPositions[conn.target];
-            
-            if (!sourcePos || !targetPos) return null;
-            
-            // Calculate center points of the reflection cards
-            const sourceX = sourcePos.left + sourcePos.width / 2;
-            const sourceY = sourcePos.top + sourcePos.height / 2;
-            const targetX = targetPos.left + targetPos.width / 2;
-            const targetY = targetPos.top + targetPos.height / 2;
-            
-            // Only draw line if both points are visible
-            const isVisible = 
-              sourceX > 0 && sourceY > 0 && 
-              targetX > 0 && targetY > 0;
-              
-            if (!isVisible) return null;
-            
-            // Highlight connections to/from hovered reflection
-            const isHighlighted = 
-              hoveredReflection && 
-              (conn.source === hoveredReflection || conn.target === hoveredReflection);
-            
-            // Get the first shared tag for coloring
-            const sharedTag = reflections
-              .find(r => r.id === conn.source)
-              ?.tags?.find(tag => conn.tags.includes(tag.id));
-            
-            const strokeColor = isHighlighted 
-              ? sharedTag?.color || '#3b82f6' 
-              : '#e2e8f0';
-            
-            const strokeWidth = isHighlighted ? 2.5 : 1.5;
-            const opacity = isHighlighted ? 0.8 : 0.4;
-            
-            return (
-              <line
-                key={`${conn.source}-${conn.target}-${index}`}
-                x1={sourceX}
-                y1={sourceY}
-                x2={targetX}
-                y2={targetY}
-                stroke={strokeColor}
-                strokeWidth={strokeWidth}
-                strokeDasharray={isHighlighted ? '0' : '4,4'}
-                opacity={opacity}
-                className="transition-all duration-200 ease-in-out"
-              />
-            );
-          })}
-        </svg>
-        
         <motion.div
-          className="absolute inset-0 p-8 z-10"
+          className="absolute inset-0 p-8"
           style={{
             transform: `scale(${scale})`,
             transformOrigin: "center",
@@ -418,49 +314,25 @@ export default function ReflectionHome() {
                   {reflections.map((reflection) => (
                     <motion.div
                       key={reflection.id}
-                      data-reflection-id={reflection.id}
-                      className="w-64 relative group"
+                      className="w-64"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       layout
-                      onMouseEnter={() => handleReflectionHover(reflection.id)}
-                      onMouseLeave={() => handleReflectionHover(null)}
                     >
-                      {/* Connection indicator dot */}
-                      {connections.some(conn => 
-                        (conn.source === reflection.id || conn.target === reflection.id) &&
-                        (hoveredReflection === null || 
-                         conn.source === hoveredReflection || 
-                         conn.target === hoveredReflection)
-                      ) && (
-                        <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="absolute inset-0 rounded-full bg-blue-500 animate-ping opacity-75"></div>
-                        </div>
-                      )}
-                      <Card className="h-full flex flex-col hover:shadow-md transition-shadow group-hover:ring-2 group-hover:ring-blue-400">
+                      <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
                         <CardHeader className="pb-2">
                           <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                              <CardTitle className="text-lg">
-                                {new Date(reflection.date).toLocaleDateString(
-                                  undefined,
-                                  {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                  }
-                                )}
-                              </CardTitle>
-                              {connections.some(conn => 
-                                (conn.source === reflection.id || conn.target === reflection.id) &&
-                                (hoveredReflection === null || 
-                                 conn.source === hoveredReflection || 
-                                 conn.target === hoveredReflection)
-                              ) && (
-                                <Link2 className="h-4 w-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <CardTitle className="text-lg">
+                              {new Date(reflection.date).toLocaleDateString(
+                                undefined,
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                }
                               )}
-                            </div>
+                            </CardTitle>
                             {reflection.emotion && (
                               <span
                                 className={`inline-flex items-center justify-center w-8 h-8 rounded-full border-2 ${getEmotionColor(reflection.emotion)}`}
@@ -508,63 +380,19 @@ export default function ReflectionHome() {
         </motion.div>
       </div>
 
-      <div className="border-t p-2 flex items-center justify-between text-sm text-muted-foreground bg-background/80 backdrop-blur-sm">
-        <div className="flex items-center gap-4">
-          <div>
-            <span className="font-medium">Zoom:</span>{" "}
-            <span>{Math.round(scale * 100)}%</span>
-          </div>
-          {connections.length > 0 && (
-            <div className="flex items-center gap-1 text-xs">
-              <div className="w-3 h-3 rounded-full bg-blue-500/20 border border-blue-500/50"></div>
-              <span>{connections.length} connection{connections.length !== 1 ? 's' : ''}</span>
-            </div>
-          )}
+      <div className="border-t p-2 flex items-center justify-between text-sm text-muted-foreground">
+        <div>
+          <span className="font-medium">Zoom:</span>{" "}
+          <span>{Math.round(scale * 100)}%</span>
         </div>
         <div className="space-x-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              setScale(1);
-              setPosition({ x: 0, y: 0 });
-            }}
+            onClick={() => setScale(1)}
             className="h-8"
           >
             Reset View
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // Auto-arrange reflections in a grid
-              const cols = Math.ceil(Math.sqrt(reflections.length));
-              const cardWidth = 288; // w-72 = 288px
-              const cardHeight = 200; // Approximate card height
-              const padding = 24; // p-6 = 24px
-              
-              // Center the grid
-              const container = containerRef.current;
-              if (!container) return;
-              
-              const containerWidth = container.clientWidth;
-              const containerHeight = container.clientHeight;
-              
-              const gridWidth = cols * (cardWidth + padding);
-              const startX = (containerWidth - gridWidth) / 2;
-              const startY = (containerHeight - (Math.ceil(reflections.length / cols) * (cardHeight + padding))) / 2;
-              
-              setPosition({
-                x: -startX,
-                y: -startY
-              });
-              
-              // Set a good zoom level to see the grid
-              setScale(0.8);
-            }}
-            className="h-8"
-          >
-            Arrange Grid
           </Button>
         </div>
       </div>

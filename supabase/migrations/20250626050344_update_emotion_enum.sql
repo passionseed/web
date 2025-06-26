@@ -1,0 +1,27 @@
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'joy';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'curiosity';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'fulfillment';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'challenge';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'anticipation';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'trust';
+-- And continue with the rest:
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'happy';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'excited';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'grateful';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'content';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'hopeful';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'sad';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'anxious';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'frustrated';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'overwhelmed';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'tired';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'neutral';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'calm';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'proud';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'motivated';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'creative';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'confused';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'stuck';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'bored';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'stressed';
+ALTER TYPE emotion ADD VALUE IF NOT EXISTS 'energized';
