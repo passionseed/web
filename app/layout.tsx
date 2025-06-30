@@ -31,7 +31,6 @@ export default async function RootLayout({
     data: { session },
   } = await supabase.auth.getSession();
 
-  console.log(session);
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${libreFranklin.variable} ${spaceMono.variable}`}>
