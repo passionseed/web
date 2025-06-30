@@ -1,7 +1,6 @@
 import { createClient } from "@/utils/supabase/client";
 import {
   EmotionType,
-  ReflectionBase,
   ReflectionWithMetrics,
   Tag,
   MonthlyInsight,
@@ -102,13 +101,18 @@ export async function getReflections({
 interface RawReflection {
   id: string;
   created_at: string;
+  updated_at: string;
   emotion: string;
   content: string;
   user_id: string;
   metrics: Array<{
+    id: string;
+    reflection_id: string;
     satisfaction: number;
     engagement: number;
     challenge: number;
+    created_at: string;
+    updated_at: string;
   }>;
   tags: Array<{ tags: Tag }>;
 }
@@ -118,7 +122,9 @@ interface RawReflection {
  * @param userId Optional user ID to fetch reflections for (server-side only)
  * @returns Promise with array of reflection timeline nodes
  */
-export async function getReflectionTimeline(): Promise<ReflectionTimelineNode[]> {
+export async function getReflectionTimeline(): Promise<
+  ReflectionTimelineNode[]
+> {
   try {
     const { createClient } = await import("@/utils/supabase/client");
     const supabase = createClient();
@@ -168,13 +174,98 @@ export async function getReflectionTimeline(): Promise<ReflectionTimelineNode[]>
       date: item.created_at,
       emotion: item.emotion,
       contentPreview:
-        item.content?.substring(0, 100) + (item.content?.length > 100 ? "..." : "") || "",
+        item.content?.substring(0, 100) +
+          (item.content?.length > 100 ? "..." : "") || "",
       tags: item.tags?.map((t) => t.tags).filter(Boolean) || [],
       metrics: item.metrics?.[0],
     })) as ReflectionTimelineNode[];
   } catch (error) {
     console.error("Unexpected error in getReflectionTimeline:", error);
     return [];
+  }
+}
+
+/**
+ * Fetches a single reflection by ID with full content
+ * @param id The ID of the reflection to fetch
+ * @returns Promise with the reflection data including full content
+ */
+export async function getReflectionById(id: string): Promise<ReflectionWithMetrics | null> {
+  try {
+    const { createClient } = await import("@/utils/supabase/client");
+    const supabase = createClient();
+
+    // Get current user for client-side
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error("Error getting user:", userError);
+      return null;
+    }
+
+    // Fetch the reflection with metrics and tags
+    const { data, error } = await supabase
+      .from(TABLE_NAMES.REFLECTIONS)
+      .select(
+        `
+        id,
+        created_at,
+        updated_at,
+        emotion,
+        content,
+        user_id,
+        metrics:reflection_metrics(satisfaction, engagement, challenge),
+        tags:reflection_tags(tags(id, name, color))
+      `
+      )
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching reflection:", error);
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    // Type assertion for the raw data
+    const rawReflection = data as unknown as RawReflection;
+
+    // Map to the expected format
+    const reflectionData: ReflectionWithMetrics = {
+      id: rawReflection.id,
+      user_id: rawReflection.user_id,
+      content: rawReflection.content,
+      emotion: rawReflection.emotion as EmotionType,
+      created_at: rawReflection.created_at,
+      updated_at: rawReflection.updated_at,
+      metrics: rawReflection.metrics?.[0] || {
+        id: '',
+        reflection_id: rawReflection.id,
+        satisfaction: 0,
+        engagement: 0,
+        challenge: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      tags: rawReflection.tags?.map((t) => t.tags).filter((t): t is Tag => Boolean(t)) || [],
+      // For backward compatibility with ReflectionTimelineNode
+      contentPreview: rawReflection.content?.substring(0, 100) + (rawReflection.content?.length > 100 ? '...' : '') || '',
+      satisfaction: rawReflection.metrics?.[0]?.satisfaction || 0,
+      engagement: rawReflection.metrics?.[0]?.engagement || 0,
+      challenge: rawReflection.metrics?.[0]?.challenge || 0,
+    };
+
+    return reflectionData;
+  } catch (error) {
+    console.error("Error in getReflectionById:", error);
+    return null;
   }
 }
 
@@ -187,10 +278,13 @@ export async function getMostUsedTags(limit: number = 3): Promise<Tag[]> {
   }
 
   // First, get the count of each tag usage for the user
-  const { data: tagCounts, error: countError } = await supabase.rpc('get_user_tag_counts', {
-    user_id: userId,
-    _limit: limit
-  });
+  const { data: tagCounts, error: countError } = await supabase.rpc(
+    "get_user_tag_counts",
+    {
+      user_id: userId,
+      _limit: limit,
+    }
+  );
 
   if (countError) throw countError;
 
@@ -198,17 +292,19 @@ export async function getMostUsedTags(limit: number = 3): Promise<Tag[]> {
   if (tagCounts && tagCounts.length > 0) {
     const tagIds = tagCounts.map((tc: any) => tc.tag_id);
     const { data: tags, error: tagsError } = await supabase
-      .from('tags')
-      .select('*')
-      .in('id', tagIds);
+      .from("tags")
+      .select("*")
+      .in("id", tagIds);
 
     if (tagsError) throw tagsError;
 
     // Merge the tag details with their counts
-    return tagCounts.map((tc: any) => {
-      const tag = tags.find((t: any) => t.id === tc.tag_id);
-      return tag ? { ...tag, count: tc.count } : null;
-    }).filter(Boolean);
+    return tagCounts
+      .map((tc: any) => {
+        const tag = tags.find((t: any) => t.id === tc.tag_id);
+        return tag ? { ...tag, count: tc.count } : null;
+      })
+      .filter(Boolean);
   }
 
   return [];
