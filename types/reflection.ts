@@ -2,7 +2,8 @@ export type EmotionType =
   | 'happy' | 'excited' | 'grateful' | 'content' | 'hopeful'
   | 'sad' | 'anxious' | 'frustrated' | 'overwhelmed' | 'tired'
   | 'neutral' | 'calm' | 'proud' | 'motivated' | 'creative'
-  | 'confused' | 'stuck' | 'bored' | 'stressed' | 'energized';
+  | 'confused' | 'stuck' | 'bored' | 'stressed' | 'energized'
+  | 'angry' | 'pensive' | 'peaceful' | 'nostalgic' | 'inspired';
 
 export interface Tag {
   id: string;
@@ -34,6 +35,10 @@ export interface ReflectionMetrics {
 export interface ReflectionWithMetrics extends ReflectionBase {
   metrics: ReflectionMetrics;
   tags: Tag[];
+  contentPreview: string;
+  satisfaction: number;
+  engagement: number;
+  challenge: number;
 }
 
 export interface MonthlyInsight {
@@ -64,7 +69,7 @@ export interface ReflectionCalendarDay {
   tags: string[];
 }
 
-export interface ReflectionTimelineNode {
+export interface ReflectionTimelineNode extends Omit<ReflectionBase, 'content'> {
   id: string;
   date: string;
   emotion: EmotionType;
@@ -75,8 +80,24 @@ export interface ReflectionTimelineNode {
     engagement: number;
     challenge: number;
   };
+  satisfaction: number;
+  engagement: number;
+  challenge: number;
   x?: number;
   y?: number;
   vx?: number;
   vy?: number;
 }
+
+export type ReflectionWithSatisfaction = ReflectionTimelineNode & {
+  satisfaction: number;
+  metrics: {
+    satisfaction: number;
+    engagement: number;
+    challenge: number;
+  };
+  contentPreview: string;
+  tags: Tag[];
+  emotion: EmotionType;
+  date: string;
+};
