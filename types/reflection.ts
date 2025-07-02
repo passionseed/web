@@ -54,12 +54,13 @@ export interface MonthlyInsight {
 }
 
 export interface ReflectionFormData {
-  content: string;
-  emotion: EmotionType;
+  projectId: string;
+  content: string; // "What I did today"
+  reason: string; // "Why I feel that way"
+  progress: number;
   satisfaction: number;
-  engagement: number;
   challenge: number;
-  tagIds: string[];
+  emotion: EmotionType;
 }
 
 export interface ReflectionCalendarDay {
