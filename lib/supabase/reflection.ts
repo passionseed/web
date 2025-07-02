@@ -209,32 +209,63 @@ interface RawReflection {
   project: Project;
 }
 
-export async function getGraphData() {
+export async function getUserDashboardData() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { projects: [], reflections: [] };
-
-  const { data: projects, error } = await supabase
-    .from(TABLE_NAMES.PROJECTS)
-    .select(`
-      *,
-      tags:project_tags(tags(*)),
-      reflections(*, metrics:reflection_metrics(*))
-    `)
-    .eq('user_id', user.id);
-
-  if (error) {
-    console.error("Error fetching graph data:", error);
-    return { projects: [], reflections: [] };
+  if (!user) {
+    throw new Error("User not authenticated");
   }
 
-  const reflections = projects.flatMap(p => 
-    p.reflections.map(r => ({...r, project: {id: p.id, name: p.name}}))
-  );
+  const projectsPromise = supabase
+    .from(TABLE_NAMES.PROJECTS)
+    .select('*, tags:project_tags(tags(*))')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  const reflectionsPromise = supabase
+    .from(TABLE_NAMES.REFLECTIONS)
+    .select('created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  const workshopsPromise = supabase
+    .from('user_workshops')
+    .select('workshops(*)')
+    .eq('user_id', user.id)
+    .limit(3);
+
+  const [projectsRes, reflectionsRes, workshopsRes] = await Promise.all([
+    projectsPromise,
+    reflectionsPromise,
+    workshopsPromise,
+  ]);
+
+  if (projectsRes.error) throw projectsRes.error;
+  if (reflectionsRes.error) throw reflectionsRes.error;
+  if (workshopsRes.error) throw workshopsRes.error;
+
+  // Calculate streak
+  let streak = 0;
+  if (reflectionsRes.data && reflectionsRes.data.length > 0) {
+    const reflectionDates = reflectionsRes.data.map(r => new Date(r.created_at).toDateString());
+    const uniqueDates = [...new Set(reflectionDates)];
+    
+    let today = new Date();
+    if (uniqueDates.includes(today.toDateString())) {
+        streak = 1;
+        let yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+        while(uniqueDates.includes(yesterday.toDateString())){
+            streak++;
+            yesterday.setDate(yesterday.getDate() - 1);
+        }
+    }
+  }
 
   return {
-      projects: projects.map(p => ({...p, tags: p.tags.map((t: any) => t.tags)})),
-      reflections
+    projects: projectsRes.data.map(p => ({...p, tags: p.tags.map((t: any) => t.tags)})) as Project[],
+    reflectionStreak: streak,
+    workshops: workshopsRes.data.map((w: any) => w.workshops),
   };
 }
 
