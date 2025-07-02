@@ -1,9 +1,10 @@
-import React from 'react';
-import { Metadata } from 'next';
+import React from "react";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'TechSeed Hacking Curriculum',
-  description: 'Comprehensive hacking curriculum covering CTF, web security, cryptography, and more',
+  title: "TechSeed Hacking Curriculum",
+  description:
+    "Comprehensive hacking curriculum covering CTF, web security, cryptography, and more",
 };
 
 export default function HackingCurriculum() {
@@ -15,18 +16,23 @@ export default function HackingCurriculum() {
             Hacking Curriculum
           </h1>
           <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
-            Master the art of ethical hacking through hands-on challenges and real-world scenarios
+            Master the art of ethical hacking through hands-on challenges and
+            real-world scenarios
           </p>
         </div>
 
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-12">
+        <div className="bg-gray-500 shadow overflow-hidden sm:rounded-lg mb-12">
           <div className="px-4 py-5 sm:px-6 bg-gray-50">
-            <h2 className="text-lg leading-6 font-medium text-gray-900">Teaching Style</h2>
+            <h2 className="text-lg leading-6 font-medium text-gray-900">
+              Teaching Style
+            </h2>
           </div>
           <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
             <dl className="sm:divide-y sm:divide-gray-200">
               <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Daily Structure</dt>
+                <dt className="text-sm font-medium text-gray-500">
+                  Daily Structure
+                </dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   <ul className="list-disc pl-5 space-y-1">
                     <li>1-2 hands-on tutorials & homework explanations</li>
@@ -39,7 +45,8 @@ export default function HackingCurriculum() {
               <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Approach</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  Follow-along sessions where everyone participates in practical exercises and challenges
+                  Follow-along sessions where everyone participates in practical
+                  exercises and challenges
                 </dd>
               </div>
             </dl>
@@ -50,7 +57,9 @@ export default function HackingCurriculum() {
           {/* Day 1 */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 bg-indigo-50">
-              <h2 className="text-lg leading-6 font-medium text-indigo-900">Day 1: Hacking Introduction</h2>
+              <h2 className="text-lg leading-6 font-medium text-indigo-900">
+                Day 1: Hacking Introduction
+              </h2>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
               <ul className="list-disc pl-5 space-y-2">
@@ -65,7 +74,9 @@ export default function HackingCurriculum() {
           {/* Day 2 */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 bg-indigo-50">
-              <h2 className="text-lg leading-6 font-medium text-indigo-900">Day 2: Basic CTF</h2>
+              <h2 className="text-lg leading-6 font-medium text-indigo-900">
+                Day 2: Basic CTF
+              </h2>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
               <ul className="list-disc pl-5 space-y-2">
@@ -79,7 +90,9 @@ export default function HackingCurriculum() {
           {/* Day 3 */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 bg-indigo-50">
-              <h2 className="text-lg leading-6 font-medium text-indigo-900">Day 3: Web Hacking & Ethics</h2>
+              <h2 className="text-lg leading-6 font-medium text-indigo-900">
+                Day 3: Web Hacking & Ethics
+              </h2>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
               <ul className="list-disc pl-5 space-y-2">
@@ -94,7 +107,9 @@ export default function HackingCurriculum() {
           {/* Day 4 */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 bg-indigo-50">
-              <h2 className="text-lg leading-6 font-medium text-indigo-900">Day 4: Cryptography & Forensics</h2>
+              <h2 className="text-lg leading-6 font-medium text-indigo-900">
+                Day 4: Cryptography & Forensics
+              </h2>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
               <ul className="list-disc pl-5 space-y-2">
@@ -114,7 +129,9 @@ export default function HackingCurriculum() {
           {/* Day 5 */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 bg-indigo-50">
-              <h2 className="text-lg leading-6 font-medium text-indigo-900">Day 5: PWN & Certifications</h2>
+              <h2 className="text-lg leading-6 font-medium text-indigo-900">
+                Day 5: PWN & Certifications
+              </h2>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
               <ul className="list-disc pl-5 space-y-2">
@@ -130,7 +147,9 @@ export default function HackingCurriculum() {
           {/* Day 6 */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 bg-indigo-50">
-              <h2 className="text-lg leading-6 font-medium text-indigo-900">Day 6: Reverse Engineering & Beyond</h2>
+              <h2 className="text-lg leading-6 font-medium text-indigo-900">
+                Day 6: Reverse Engineering & Beyond
+              </h2>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
               <ul className="list-disc pl-5 space-y-2">
@@ -146,7 +165,9 @@ export default function HackingCurriculum() {
 
         <div className="mt-12 bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6 bg-gray-50">
-            <h2 className="text-lg leading-6 font-medium text-gray-900">Additional Resources</h2>
+            <h2 className="text-lg leading-6 font-medium text-gray-900">
+              Additional Resources
+            </h2>
           </div>
           <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
             <ul className="list-disc pl-5 space-y-2">

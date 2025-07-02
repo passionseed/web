@@ -19,7 +19,7 @@ export function MetricsSlider({
   onChange,
   min = 1,
   max = 10,
-  step = 1,
+  step = 0.1,
   className,
   emoji,
 }: MetricsSliderProps) {
