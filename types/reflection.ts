@@ -1,3 +1,5 @@
+import { Project } from "./project";
+
 export type EmotionType = 
   | 'happy' | 'excited' | 'grateful' | 'content' | 'hopeful'
   | 'sad' | 'anxious' | 'frustrated' | 'overwhelmed' | 'tired'
@@ -26,7 +28,7 @@ export interface ReflectionMetrics {
   id: string;
   reflection_id: string;
   satisfaction: number;
-  engagement: number;
+  progress: number;
   challenge: number;
   created_at: string;
   updated_at: string;
@@ -34,10 +36,11 @@ export interface ReflectionMetrics {
 
 export interface ReflectionWithMetrics extends ReflectionBase {
   metrics: ReflectionMetrics;
-  tags: Tag[];
+  project: Project;
+  reason: string;
   contentPreview: string;
   satisfaction: number;
-  engagement: number;
+  progress: number;
   challenge: number;
 }
 
@@ -75,14 +78,14 @@ export interface ReflectionTimelineNode extends Omit<ReflectionBase, 'content'> 
   date: string;
   emotion: EmotionType;
   contentPreview: string;
-  tags: Tag[];
+  project: { id: string; name: string };
   metrics: {
     satisfaction: number;
-    engagement: number;
+    progress: number;
     challenge: number;
   };
   satisfaction: number;
-  engagement: number;
+  progress: number;
   challenge: number;
   x?: number;
   y?: number;
@@ -94,7 +97,7 @@ export type ReflectionWithSatisfaction = ReflectionTimelineNode & {
   satisfaction: number;
   metrics: {
     satisfaction: number;
-    engagement: number;
+    progress: number;
     challenge: number;
   };
   contentPreview: string;
