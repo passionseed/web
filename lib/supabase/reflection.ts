@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/client";
+import { createClient as createClientServer } from "@/utils/supabase/server";
 import {
   EmotionType,
   ReflectionWithMetrics,
@@ -9,6 +10,7 @@ import {
   ReflectionCalendarDay,
 } from "@/types/reflection";
 import { Project, ProjectFormData } from "@/types/project";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export type { ReflectionTimelineNode };
 
@@ -23,9 +25,7 @@ const TABLE_NAMES = {
 
 // --- PROJECT FUNCTIONS ---
 
-export async function createProject(
-  data: ProjectFormData
-): Promise<Project> {
+export async function createProject(data: ProjectFormData): Promise<Project> {
   const supabase = createClient();
   const {
     data: { user },
@@ -64,69 +64,73 @@ export async function createProject(
 
     if (tagsError) throw tagsError;
   }
-    
+
   // 3. Fetch the tags to return the full project object
   const { data: tags } = await supabase
     .from(TABLE_NAMES.TAGS)
     .select("*")
     .in("id", data.tagIds || []);
 
-
   return { ...project, tags: tags || [] };
 }
 
 export async function getProjects(): Promise<Project[]> {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
 
-    const { data, error } = await supabase
-        .from(TABLE_NAMES.PROJECTS)
-        .select(`
+  const { data, error } = await supabase
+    .from(TABLE_NAMES.PROJECTS)
+    .select(
+      `
             *,
             tags:project_tags(tags(*))
-        `)
-        .eq('user_id', user.id)
-        .order("created_at", { ascending: false });
+        `
+    )
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
-    if (error) throw error;
+  if (error) throw error;
 
-    return data.map((p: any) => ({
-        ...p,
-        tags: p.tags.map((t: any) => t.tags)
-    })) as Project[];
+  return data.map((p: any) => ({
+    ...p,
+    tags: p.tags.map((t: any) => t.tags),
+  })) as Project[];
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-        .from(TABLE_NAMES.PROJECTS)
-        .select(`
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from(TABLE_NAMES.PROJECTS)
+    .select(
+      `
             *,
             tags:project_tags(tags(*))
-        `)
-        .eq('id', id)
-        .single();
+        `
+    )
+    .eq("id", id)
+    .single();
 
-    if (error) {
-        console.error("Error fetching project:", error);
-        return null;
-    }
-    
-    return {
-        ...data,
-        tags: data.tags.map((t: any) => t.tags)
-    } as Project;
+  if (error) {
+    console.error("Error fetching project:", error);
+    return null;
+  }
+
+  return {
+    ...data,
+    tags: data.tags.map((t: any) => t.tags),
+  } as Project;
 }
-
 
 // --- REFLECTION FUNCTIONS ---
 
-export async function createReflection(
-  data: ReflectionFormData
-) {
+export async function createReflection(data: ReflectionFormData) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     throw new Error("User not authenticated");
@@ -209,29 +213,30 @@ interface RawReflection {
   project: Project;
 }
 
-export async function getUserDashboardData() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function getUserDashboardData(supabase: SupabaseClient) {
+  const { data } = await supabase.auth.getUser();
+  console.log(data);
+  const user = data.user;
   if (!user) {
     throw new Error("User not authenticated");
   }
 
   const projectsPromise = supabase
     .from(TABLE_NAMES.PROJECTS)
-    .select('*, tags:project_tags(tags(*))')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .select("*, tags:project_tags(tags(*))")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
   const reflectionsPromise = supabase
     .from(TABLE_NAMES.REFLECTIONS)
-    .select('created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .select("created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
   const workshopsPromise = supabase
-    .from('user_workshops')
-    .select('workshops(*)')
-    .eq('user_id', user.id)
+    .from("user_workshops")
+    .select("workshops(*)")
+    .eq("user_id", user.id)
     .limit(3);
 
   const [projectsRes, reflectionsRes, workshopsRes] = await Promise.all([
@@ -247,23 +252,28 @@ export async function getUserDashboardData() {
   // Calculate streak
   let streak = 0;
   if (reflectionsRes.data && reflectionsRes.data.length > 0) {
-    const reflectionDates = reflectionsRes.data.map(r => new Date(r.created_at).toDateString());
+    const reflectionDates = reflectionsRes.data.map((r) =>
+      new Date(r.created_at).toDateString()
+    );
     const uniqueDates = [...new Set(reflectionDates)];
-    
+
     let today = new Date();
     if (uniqueDates.includes(today.toDateString())) {
-        streak = 1;
-        let yesterday = new Date();
-        yesterday.setDate(today.getDate() - 1);
-        while(uniqueDates.includes(yesterday.toDateString())){
-            streak++;
-            yesterday.setDate(yesterday.getDate() - 1);
-        }
+      streak = 1;
+      let yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      while (uniqueDates.includes(yesterday.toDateString())) {
+        streak++;
+        yesterday.setDate(yesterday.getDate() - 1);
+      }
     }
   }
 
   return {
-    projects: projectsRes.data.map(p => ({...p, tags: p.tags.map((t: any) => t.tags)})) as Project[],
+    projects: projectsRes.data.map((p) => ({
+      ...p,
+      tags: p.tags.map((t: any) => t.tags),
+    })) as Project[],
     reflectionStreak: streak,
     workshops: workshopsRes.data.map((w: any) => w.workshops),
   };
@@ -274,14 +284,16 @@ export async function getUserDashboardData() {
  * @param id The ID of the reflection to fetch
  * @returns Promise with the reflection data including full content
  */
-export async function getReflectionById(id: string): Promise<ReflectionWithMetrics | null> {
+export async function getReflectionById(
+  id: string
+): Promise<ReflectionWithMetrics | null> {
   try {
     const supabase = createClient();
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    
+
     if (!user) {
       return null;
     }
@@ -325,11 +337,11 @@ export async function getReflectionById(id: string): Promise<ReflectionWithMetri
       created_at: rawReflection.created_at,
       updated_at: rawReflection.updated_at,
       project: {
-          ...rawReflection.project,
-          tags: rawReflection.project.tags.map((t: any) => t.tags)
+        ...rawReflection.project,
+        tags: rawReflection.project.tags.map((t: any) => t.tags),
       },
       metrics: rawReflection.metrics?.[0] || {
-        id: '',
+        id: "",
         reflection_id: rawReflection.id,
         satisfaction: 0,
         progress: 0,
@@ -337,7 +349,9 @@ export async function getReflectionById(id: string): Promise<ReflectionWithMetri
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-      contentPreview: rawReflection.content?.substring(0, 100) + (rawReflection.content?.length > 100 ? '...' : '') || '',
+      contentPreview:
+        rawReflection.content?.substring(0, 100) +
+          (rawReflection.content?.length > 100 ? "..." : "") || "",
       satisfaction: rawReflection.metrics?.[0]?.satisfaction || 0,
       progress: rawReflection.metrics?.[0]?.progress || 0,
       challenge: rawReflection.metrics?.[0]?.challenge || 0,
@@ -363,7 +377,9 @@ export async function getUserTags() {
 
 export async function createTag(name: string, color: string = "#6b7280") {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     throw new Error("User not authenticated");
@@ -381,4 +397,55 @@ export async function createTag(name: string, color: string = "#6b7280") {
 
   if (error) throw error;
   return data as Tag;
+}
+
+export async function getGraphData(): Promise<{
+  projects: Project[];
+  reflections: ReflectionWithMetrics[];
+}> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { projects: [], reflections: [] };
+  }
+
+  const { data: projects, error: projectsError } = await supabase
+    .from("projects")
+    .select(
+      `
+      *,
+      tags:project_tags(tags(*)),
+      reflections:reflections(*, metrics:reflection_metrics(*))
+    `
+    )
+    .eq("user_id", user.id);
+
+  if (projectsError) {
+    console.error("Error fetching graph data:", projectsError);
+    throw projectsError;
+  }
+
+  const allReflections: ReflectionWithMetrics[] = [];
+  const processedProjects = projects.map((p: any) => {
+    const reflections =
+      p.reflections?.map((r: any) => {
+        const reflectionWithMetrics = {
+          ...r,
+          metrics: r.metrics?.[0],
+          project: { id: p.id, name: p.name }, // Avoid circular dependency
+        };
+        allReflections.push(reflectionWithMetrics);
+        return reflectionWithMetrics;
+      }) || [];
+
+    return {
+      ...p,
+      tags: p.tags.map((t: any) => t.tags),
+      reflections,
+    };
+  });
+
+  return { projects: processedProjects, reflections: allReflections };
 }
