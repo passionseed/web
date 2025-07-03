@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import { Space_Mono, Libre_Franklin } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import { createClient } from "@/utils/supabase/server";
+import { Layout } from "@/components/layout";
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],
@@ -41,14 +44,9 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <Layout>{children}</Layout>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
   );
 }
-
-import "./globals.css";
-import { createClient } from "@/utils/supabase/server";
-import { CloudCog } from "lucide-react";
-import { log } from "console";
-import { Layout } from "@/components/layout";
