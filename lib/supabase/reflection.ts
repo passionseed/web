@@ -449,3 +449,37 @@ export async function getGraphData(): Promise<{
 
   return { projects: processedProjects, reflections: allReflections };
 }
+
+export async function getReflectionCalendar(
+  year: number,
+  month?: number
+): Promise<{ created_at: string; emotion: string }[]> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Correctly calculate date range for the query
+  const startDate = month
+    ? new Date(year, month - 1, 1)
+    : new Date(year, 0, 1);
+  const endDate = month
+    ? new Date(year, month, 1)
+    : new Date(year + 1, 0, 1);
+
+  const { data, error } = await supabase
+    .from("reflections")
+    .select("created_at, emotion")
+    .eq("user_id", user.id)
+    .gte("created_at", startDate.toISOString())
+    .lt("created_at", endDate.toISOString());
+
+  if (error) {
+    console.error("Error fetching reflection calendar data:", error);
+    return [];
+  }
+
+  // Return raw data and let the client handle timezone-specific grouping
+  return data;
+}

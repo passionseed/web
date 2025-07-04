@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { PassionTreeGarden } from "@/components/passion-tree/passion-tree-garden";
 

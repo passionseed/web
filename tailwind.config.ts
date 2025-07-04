@@ -20,6 +20,9 @@ const config = {
       },
     },
     extend: {
+      gridTemplateColumns: {
+        '53': 'repeat(53, minmax(0, 1fr))',
+      },
       fontFamily: {
         sans: ["var(--font-libre-franklin)"],
         mono: ["var(--font-space-mono)"],
