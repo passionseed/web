@@ -58,7 +58,7 @@ export function MainNav() {
         </Sheet>
         <Link href="/" className="flex items-center space-x-2 min-w-0">
           <Image
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/passionseed%20copy-U720vuvkoGUvBE10yQZS4CR9iQqzTX.png"
+            src="/passionseed-logo.svg"
             alt="Passion Seed Logo"
             width={36}
             height={36}
