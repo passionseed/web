@@ -41,8 +41,8 @@ export function DashboardHome({ user }: DashboardHomeProps) {
             size="lg"
             className="bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-700 hover:to-red-700"
           >
-            <Link href="/portal" className="flex items-center gap-2">
-              Visit Your Portal
+            <Link href="/me" className="flex items-center gap-2">
+              See Your Dashboard
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
