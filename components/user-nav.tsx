@@ -72,7 +72,7 @@ export function UserNav({ user }: UserNavProps) {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link
-              href="https://m.me/passionseed"
+              href="https://instagram.com/passion_seed.th"
               target="_blank"
               rel="noopener noreferrer"
             >
