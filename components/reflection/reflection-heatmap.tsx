@@ -97,9 +97,9 @@ const MonthlyHeatmap = React.memo(function MonthlyHeatmap({
       <table className="w-auto border-collapse">
         <thead>
           <tr>
-            {weekDays.map((day) => (
+            {weekDays.map((day, i) => (
               <th
-                key={day}
+                key={`${day}-${i}`}
                 className="font-medium text-xs text-center p-0 pb-1"
               >
                 {day}
