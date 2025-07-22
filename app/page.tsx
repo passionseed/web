@@ -13,7 +13,13 @@ export default async function Home() {
   return (
     <>
       {user ? (
-        <DashboardHome user={user} />
+        <>
+          <DashboardHome user={user} />
+          <HeroSection />
+          <FeatureSection />
+          <WorkshopCategories />
+          <CommunitySection />
+        </>
       ) : (
         <>
           <HeroSection />
