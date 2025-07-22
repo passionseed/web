@@ -169,7 +169,36 @@ export default function ReflectionHome() {
     : undefined;
 
   if (loading) {
-    return <div>Loading...</div>; // Add a proper skeleton loader
+    return (
+      <div className="p-4">
+        <div className="border-b p-4 flex justify-between items-center sticky top-0 bg-background z-10">
+          <h1 className="text-2xl font-semibold">Reflection Journey</h1>
+          <Button disabled>
+            <Plus className="mr-2 h-4 w-4" /> Add Reflection
+          </Button>
+        </div>
+
+        <main className="flex-1 p-4 space-y-8">
+          <div className="mb-8 p-4 border rounded-lg bg-card shadow-md">
+            <Skeleton className="w-full h-[500px] rounded-md" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-1/4 mt-2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-[80px] w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
