@@ -411,3 +411,175 @@ export const getAssessmentSubmission = async (progressId: string, assessmentId: 
 
     return data || null;
 }
+
+// --- Batch Save Functions ---
+
+export interface BatchMapUpdate {
+    map: Partial<LearningMap>;
+    nodes: {
+        create: Partial<MapNode>[];
+        update: (Partial<MapNode> & { id: string })[];
+        delete: string[];
+    };
+    paths: {
+        create: { source_node_id: string; destination_node_id: string }[];
+        delete: string[];
+    };
+    content: {
+        create: Partial<NodeContent>[];
+        update: (Partial<NodeContent> & { id: string })[];
+        delete: string[];
+    };
+    assessments: {
+        create: Partial<NodeAssessment>[];
+        update: (Partial<NodeAssessment> & { id: string })[];
+        delete: string[];
+    };
+    quizQuestions: {
+        create: Partial<QuizQuestion>[];
+        update: (Partial<QuizQuestion> & { id: string })[];
+        delete: string[];
+    };
+}
+
+export const batchUpdateMap = async (mapId: string, updates: BatchMapUpdate): Promise<void> => {
+    const supabase = createClient();
+    
+    try {
+        // Start a transaction-like approach by performing all operations
+        // Note: Supabase doesn't support transactions in client libraries, 
+        // so we'll do our best to maintain consistency
+        
+        // 1. Update map metadata
+        if (Object.keys(updates.map).length > 0) {
+            const { error: mapError } = await supabase
+                .from('learning_maps')
+                .update(updates.map)
+                .eq('id', mapId);
+            
+            if (mapError) throw mapError;
+        }
+
+        // 2. Delete operations first (to avoid constraint issues)
+        if (updates.quizQuestions.delete.length > 0) {
+            const { error } = await supabase
+                .from('quiz_questions')
+                .delete()
+                .in('id', updates.quizQuestions.delete);
+            if (error) throw error;
+        }
+
+        if (updates.assessments.delete.length > 0) {
+            const { error } = await supabase
+                .from('node_assessments')
+                .delete()
+                .in('id', updates.assessments.delete);
+            if (error) throw error;
+        }
+
+        if (updates.content.delete.length > 0) {
+            const { error } = await supabase
+                .from('node_content')
+                .delete()
+                .in('id', updates.content.delete);
+            if (error) throw error;
+        }
+
+        if (updates.paths.delete.length > 0) {
+            const { error } = await supabase
+                .from('node_paths')
+                .delete()
+                .in('id', updates.paths.delete);
+            if (error) throw error;
+        }
+
+        if (updates.nodes.delete.length > 0) {
+            const { error } = await supabase
+                .from('map_nodes')
+                .delete()
+                .in('id', updates.nodes.delete);
+            if (error) throw error;
+        }
+
+        // 3. Create operations
+        if (updates.nodes.create.length > 0) {
+            const { data: createdNodes, error } = await supabase
+                .from('map_nodes')
+                .insert(updates.nodes.create)
+                .select('*');
+            if (error) throw error;
+            
+            // Note: Created node IDs will be different from temp IDs
+            // The calling function should refresh data after batch update
+        }
+
+        if (updates.paths.create.length > 0) {
+            const { error } = await supabase
+                .from('node_paths')
+                .insert(updates.paths.create);
+            if (error) throw error;
+        }
+
+        if (updates.content.create.length > 0) {
+            const { error } = await supabase
+                .from('node_content')
+                .insert(updates.content.create);
+            if (error) throw error;
+        }
+
+        if (updates.assessments.create.length > 0) {
+            const { error } = await supabase
+                .from('node_assessments')
+                .insert(updates.assessments.create);
+            if (error) throw error;
+        }
+
+        if (updates.quizQuestions.create.length > 0) {
+            const { error } = await supabase
+                .from('quiz_questions')
+                .insert(updates.quizQuestions.create);
+            if (error) throw error;
+        }
+
+        // 4. Update operations
+        for (const node of updates.nodes.update) {
+            const { id, ...nodeData } = node;
+            const { error } = await supabase
+                .from('map_nodes')
+                .update(nodeData)
+                .eq('id', id);
+            if (error) throw error;
+        }
+
+        for (const content of updates.content.update) {
+            const { id, ...contentData } = content;
+            const { error } = await supabase
+                .from('node_content')
+                .update(contentData)
+                .eq('id', id);
+            if (error) throw error;
+        }
+
+        for (const assessment of updates.assessments.update) {
+            const { id, ...assessmentData } = assessment;
+            const { error } = await supabase
+                .from('node_assessments')
+                .update(assessmentData)
+                .eq('id', id);
+            if (error) throw error;
+        }
+
+        for (const question of updates.quizQuestions.update) {
+            const { id, ...questionData } = question;
+            const { error } = await supabase
+                .from('quiz_questions')
+                .update(questionData)
+                .eq('id', id);
+            if (error) throw error;
+        }
+
+    } catch (error) {
+        console.error('Error in batch update:', error);
+        throw new Error('Failed to save map changes. Please try again.');
+    }
+}

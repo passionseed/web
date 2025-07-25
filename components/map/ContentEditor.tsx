@@ -37,23 +37,18 @@ const ContentForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    startTransition(async () => {
-      try {
-        const payload = {
-          node_id: nodeId,
-          content_type: contentType,
-          content_url: ['video', 'canva_slide'].includes(contentType) ? contentUrl : null,
-          content_body: contentType === 'text_with_images' ? contentBody : null,
-        };
-        const savedContent = existingContent
-          ? await updateNodeContent(existingContent.id, payload)
-          : await createNodeContent(payload);
-        onSave(savedContent);
-        toast({ title: `Content ${existingContent ? 'updated' : 'created'}` });
-      } catch (error) {
-        toast({ title: 'Error saving content', variant: 'destructive' });
-      }
-    });
+    
+    const payload = {
+      id: existingContent?.id || `temp_content_${Date.now()}_${Math.random()}`,
+      node_id: nodeId,
+      content_type: contentType,
+      content_url: ['video', 'canva_slide'].includes(contentType) ? contentUrl : null,
+      content_body: contentType === 'text_with_images' ? contentBody : null,
+      created_at: existingContent?.created_at || new Date().toISOString()
+    };
+    
+    onSave(payload as NodeContent);
+    toast({ title: `Content ${existingContent ? 'updated' : 'created'} (Save map to persist)` });
   };
 
   return (
@@ -97,7 +92,6 @@ const ContentForm = ({
 export function ContentEditor({ nodeId, content, onContentChange }: ContentEditorProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSave = (savedContent: NodeContent) => {
@@ -107,17 +101,9 @@ export function ContentEditor({ nodeId, content, onContentChange }: ContentEdito
     setEditingId(null);
   };
 
-  const handleDelete = async (id: string) => {
-    setIsDeleting(id);
-    try {
-        await deleteNodeContent(id);
-        onContentChange({ id } as NodeContent, 'delete');
-        toast({ title: 'Content deleted' });
-    } catch (error) {
-        toast({ title: 'Error deleting content', variant: 'destructive' });
-    } finally {
-        setIsDeleting(null);
-    }
+  const handleDelete = (id: string) => {
+    onContentChange({ id } as NodeContent, 'delete');
+    toast({ title: 'Content deleted (Save map to persist)' });
   };
 
   return (
@@ -133,8 +119,8 @@ export function ContentEditor({ nodeId, content, onContentChange }: ContentEdito
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setEditingId(item.id)}>Edit</Button>
-              <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)} disabled={isDeleting === item.id}>
-                {isDeleting === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </CardContent>
