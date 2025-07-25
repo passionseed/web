@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { MapNode, NodeContent, QuizQuestion, StudentNodeProgress, AssessmentSubmission } from '@/types/map';
 import { CheckCircle, FileText, Film, Image as ImageIcon, Pencil, Play, Clock, CheckSquare, Upload } from 'lucide-react';
-import { getStudentProgress, startNodeProgress, submitNodeProgress, createAssessmentSubmission, getAssessmentSubmission } from '@/lib/supabase/maps';
+import { getStudentProgress, startNodeProgress, submitNodeProgress, createAssessmentSubmission, getAssessmentSubmission, getSubmissionGrade } from '@/lib/supabase/maps';
 import { createClient } from '@/lib/supabase/client';
 
 interface NodeViewPanelProps {
@@ -70,6 +70,7 @@ const renderQuizQuestion = (question: QuizQuestion) => (
 export function NodeViewPanel({ selectedNode, onProgressUpdate }: NodeViewPanelProps) {
   const [progress, setProgress] = useState<StudentNodeProgress | null>(null);
   const [submission, setSubmission] = useState<AssessmentSubmission | null>(null);
+  const [grade, setGrade] = useState<any | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assessmentAnswer, setAssessmentAnswer] = useState('');
@@ -105,6 +106,11 @@ export function NodeViewPanel({ selectedNode, onProgressUpdate }: NodeViewPanelP
           selectedNode.data.node_assessments[0].id
         );
         setSubmission(submissionData);
+
+        if (submissionData) {
+          const gradeData = await getSubmissionGrade(submissionData.id);
+          setGrade(gradeData);
+        }
       }
     } catch (error) {
       console.error('Error loading progress:', error);
@@ -320,6 +326,29 @@ export function NodeViewPanel({ selectedNode, onProgressUpdate }: NodeViewPanelP
                           <div className="mt-2">
                             <p className="text-xs font-medium">Your Answer:</p>
                             <p className="text-xs text-muted-foreground">{submission.text_answer}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {grade && (
+                      <div className="mt-4 p-3 bg-background rounded border">
+                        <p className="text-sm font-medium text-blue-600">Feedback</p>
+                        <p className="text-xs text-muted-foreground">
+                          Graded: {new Date(grade.graded_at).toLocaleString()}
+                        </p>
+                        <div className="mt-2">
+                          <p className="text-xs font-medium">Grade:</p>
+                          <p className="text-xs text-muted-foreground">{grade.grade}</p>
+                        </div>
+                        <div className="mt-2">
+                          <p className="text-xs font-medium">Comments:</p>
+                          <p className="text-xs text-muted-foreground">{grade.comments}</p>
+                        </div>
+                        {grade.rating && (
+                          <div className="mt-2">
+                            <p className="text-xs font-medium">Rating:</p>
+                            <p className="text-xs text-muted-foreground">{grade.rating}/5</p>
                           </div>
                         )}
                       </div>

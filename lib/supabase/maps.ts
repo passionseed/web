@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import { LearningMap, MapNode, NodePath, NodeContent, NodeAssessment, QuizQuestion, StudentNodeProgress, AssessmentSubmission, SubmissionGrade } from '@/types/map';
+import { LearningMap, MapNode, NodePath, NodeContent, NodeAssessment, QuizQuestion, StudentNodeProgress, AssessmentSubmission, SubmissionGrade, Grade } from '@/types/map';
 
 // A type for a map that includes its nodes and paths
 export type FullLearningMap = LearningMap & {
@@ -583,3 +583,178 @@ export const batchUpdateMap = async (mapId: string, updates: BatchMapUpdate): Pr
         throw new Error('Failed to save map changes. Please try again.');
     }
 }
+
+// --- Grading Functions ---
+
+export type SubmissionWithDetails = {
+    id: string;
+    submitted_at: string;
+    text_answer: string | null;
+    file_url: string | null;
+    image_url: string | null;
+    quiz_answers: Record<string, string> | null;
+    student_node_progress: {
+        status: string;
+        profiles: {
+            id: string;
+            username: string;
+            avatar_url: string | null;
+        };
+    };
+    node_assessments: {
+        assessment_type: string;
+        map_nodes: {
+            id: string;
+            title: string;
+        };
+    };
+    submission_grades: {
+        grade: string;
+        comments: string | null;
+        rating: number | null;
+    }[]
+};
+
+
+export const getSubmissionsForMap = async (mapId: string): Promise<SubmissionWithDetails[]> => {
+    const supabase = createClient();
+
+    // Step 1: Get all node IDs for the given map.
+    const { data: nodes, error: nodesError } = await supabase
+        .from('map_nodes')
+        .select('id')
+        .eq('map_id', mapId);
+
+    if (nodesError) {
+        console.error('Error fetching nodes for map:', nodesError);
+        throw new Error('Could not fetch nodes for the map.');
+    }
+
+    const nodeIds = nodes.map(node => node.id);
+    if (nodeIds.length === 0) {
+        return []; // No nodes, so no submissions.
+    }
+
+    // Step 2: Get all assessment IDs for those nodes.
+    const { data: assessments, error: assessmentsError } = await supabase
+        .from('node_assessments')
+        .select('id')
+        .in('node_id', nodeIds);
+
+    if (assessmentsError) {
+        console.error('Error fetching assessments for nodes:', assessmentsError);
+        throw new Error('Could not fetch assessments for the map.');
+    }
+
+    const assessmentIds = assessments.map(assessment => assessment.id);
+    if (assessmentIds.length === 0) {
+        return []; // No assessments, so no submissions.
+    }
+
+    // Step 3: Get all submissions for those assessments.
+    const { data, error } = await supabase
+        .from('assessment_submissions')
+        .select(`
+            id,
+            submitted_at,
+            text_answer,
+            file_url,
+            image_url,
+            quiz_answers,
+            student_node_progress (
+                status,
+                profiles (
+                    id,
+                    username,
+                    avatar_url
+                )
+            ),
+            node_assessments (
+                assessment_type,
+                map_nodes (
+                    id,
+                    title,
+                    map_id
+                )
+            ),
+            submission_grades (
+                grade,
+                comments,
+                rating
+            )
+        `)
+        .in('assessment_id', assessmentIds)
+        .order('submitted_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching submissions:', error);
+        throw new Error('Could not fetch submissions for the map.');
+    }
+
+    return data || [];
+};
+
+export const gradeSubmission = async (submissionId: string, grade: Grade, comments: string | null, rating: number | null, userId: string): Promise<SubmissionGrade> => {
+    const supabase = createClient();
+
+    // 1. Create a new grade entry
+    const { data: gradeData, error: gradeError } = await supabase
+        .from('submission_grades')
+        .insert({
+            submission_id: submissionId,
+            graded_by: userId,
+            grade: grade,
+            comments: comments,
+            rating: rating,
+        })
+        .select()
+        .single();
+
+    if (gradeError) {
+        console.error('Error creating grade:', gradeError);
+        throw new Error('Could not record the grade.');
+    }
+
+    // 2. Update the student's progress status
+    // First, get the progress_id from the submission
+    const { data: submissionData, error: submissionFetchError } = await supabase
+        .from('assessment_submissions')
+        .select('progress_id')
+        .eq('id', submissionId)
+        .single();
+
+    if (submissionFetchError || !submissionData) {
+        console.error('Error fetching submission progress id:', submissionFetchError);
+        throw new Error('Could not find the associated student progress.');
+    }
+
+    const { error: progressError } = await supabase
+        .from('student_node_progress')
+        .update({ status: grade }) // 'pass' or 'fail'
+        .eq('id', submissionData.progress_id);
+
+    if (progressError) {
+        // Note: This won't roll back the grade creation.
+        // A transaction (RPC) would be better for atomicity.
+        console.error('Error updating student progress:', progressError);
+        throw new Error('Could not update the student progress status.');
+    }
+
+    return gradeData;
+};
+
+export const getSubmissionGrade = async (submissionId: string): Promise<SubmissionGrade | null> => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('submission_grades')
+        .select('*')
+        .eq('submission_id', submissionId)
+        .single();
+
+    if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching submission grade:', error);
+        throw new Error('Could not fetch submission grade.');
+    }
+
+    return data || null;
+};

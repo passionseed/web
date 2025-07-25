@@ -42,6 +42,14 @@ export default async function MapViewerPage(props: {
             </Link>
           </Button>
         )}
+        {userIsInstructor && (
+          <Button asChild variant="secondary" size="sm">
+            <Link href={`/map/${params.id}/grading`}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Grade Submissions
+            </Link>
+          </Button>
+        )}
       </div>
       <MapViewer map={map} />
     </div>
