@@ -9,6 +9,8 @@ import ReactFlow, {
   Node,
   Edge,
   OnSelectionChangeParams,
+  Handle,
+  Position,
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -21,7 +23,7 @@ import { NodeViewPanel } from "@/components/map/NodeViewPanel";
 import { FullLearningMap, getStudentProgress } from "@/lib/supabase/maps";
 import { MapNode, StudentNodeProgress } from "@/types/map";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, Play, Lock } from "lucide-react";
 
 interface MapViewerProps {
   map: FullLearningMap;
@@ -72,62 +74,155 @@ export function MapViewer({ map }: MapViewerProps) {
     }
   }, [currentUser, map]);
 
-  // Custom node component that shows progress
+  // Check if node is unlocked based on prerequisites
+  const isNodeUnlocked = (nodeId: string): boolean => {
+    // Find all nodes that have paths leading to this node
+    const prerequisites = map.map_nodes.filter((node) =>
+      node.node_paths_source.some((path) => path.destination_node_id === nodeId)
+    );
+
+    // If no prerequisites, node is unlocked (starting node)
+    if (prerequisites.length === 0) return true;
+
+    // Check if at least one prerequisite is passed
+    return prerequisites.some((prereq) => {
+      const progress = progressMap[prereq.id];
+      return progress?.status === "passed";
+    });
+  };
+
+  // Custom node component with sprite-based gamified design
   const nodeTypes = {
     default: ({
       data,
+      selected,
     }: {
       data: MapNode & { progress?: StudentNodeProgress };
+      selected?: boolean;
     }) => {
       const progress = data.progress;
+      const isUnlocked = isNodeUnlocked(data.id);
+      const spriteUrl = data.sprite_url || "/islands/crystal.png";
 
-      let borderColor = "border-stone-400";
-      let bgColor = "bg-white";
+      // Determine node state and styling
+      let overlayColor = "";
       let statusIcon = null;
+      let glowEffect = "";
+      let brightness = "brightness(1)";
 
-      if (progress) {
+      if (!isUnlocked) {
+        brightness = "brightness(0.3) grayscale(1)";
+        statusIcon = <Lock className="h-4 w-4 text-gray-500" />;
+      } else if (progress) {
         switch (progress.status) {
           case "passed":
-            borderColor = "border-green-500";
-            bgColor = "bg-green-50";
+            glowEffect = "drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]";
             statusIcon = <CheckCircle className="h-4 w-4 text-green-500" />;
             break;
           case "failed":
-            borderColor = "border-red-500";
-            bgColor = "bg-red-50";
+            glowEffect = "drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]";
             statusIcon = <AlertTriangle className="h-4 w-4 text-red-500" />;
             break;
           case "submitted":
-            borderColor = "border-blue-500";
-            bgColor = "bg-blue-50";
+            glowEffect = "drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]";
             statusIcon = <Clock className="h-4 w-4 text-blue-500" />;
             break;
           case "in_progress":
-            borderColor = "border-orange-500";
-            bgColor = "bg-orange-50";
+            glowEffect = "drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]";
             statusIcon = (
               <Clock className="h-4 w-4 text-orange-500 animate-pulse" />
             );
             break;
+          case "not_started":
+            if (isUnlocked) {
+              statusIcon = <Play className="h-4 w-4 text-blue-400" />;
+            }
+            break;
         }
+      } else if (isUnlocked) {
+        statusIcon = <Play className="h-4 w-4 text-blue-400" />;
       }
 
       return (
-        <div
-          className={`px-4 py-2 shadow-md rounded-md ${bgColor} border-2 ${borderColor} min-w-[120px]`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="font-bold text-sm">{data.title}</div>
-            {statusIcon && <div className="ml-2">{statusIcon}</div>}
-          </div>
-          <div className="text-xs text-gray-500">
-            Difficulty: {data.difficulty}
-          </div>
-          {progress && (
-            <div className="text-xs text-gray-600 capitalize">
-              {progress.status.replace("_", " ")}
+        <div className="relative group">
+          {/* Connection Handles - Hidden in viewer mode */}
+          <Handle type="target" position={Position.Top} className="opacity-0" />
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            className="opacity-0"
+          />
+          <Handle
+            type="target"
+            position={Position.Left}
+            className="opacity-0"
+          />
+          <Handle
+            type="source"
+            position={Position.Right}
+            className="opacity-0"
+          />
+
+          {/* Main Sprite Container */}
+          <div
+            className={`relative ${selected ? "scale-110" : ""} transition-transform duration-200 cursor-pointer`}
+          >
+            {/* Selection Ring */}
+            {selected && (
+              <div className="absolute -inset-2 rounded-full border-4 border-blue-400 animate-pulse" />
+            )}
+
+            {/* Progress Glow Effect */}
+            {glowEffect && (
+              <div className={`absolute inset-0 ${glowEffect} rounded-full`} />
+            )}
+
+            {/* Sprite Image */}
+            <img
+              src={spriteUrl}
+              alt={data.title}
+              className={`w-20 h-20 object-contain hover:drop-shadow-xl transition-all duration-200 ${glowEffect}`}
+              style={{
+                filter: selected
+                  ? `${brightness} brightness(1.1) saturate(1.2)`
+                  : brightness,
+              }}
+            />
+
+            {/* Floating Label */}
+            <div
+              className={`absolute -bottom-8 left-1/2 transform -translate-x-1/2 ${selected ? "scale-105" : ""} transition-all duration-200`}
+            >
+              <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1 shadow-lg">
+                <div className="text-xs font-bold text-gray-800 text-center whitespace-nowrap max-w-24 truncate">
+                  {data.title}
+                </div>
+                <div className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
+                  ⭐ {data.difficulty}
+                  {statusIcon && <span className="ml-1">{statusIcon}</span>}
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Difficulty Badge */}
+            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+              {data.difficulty}
+            </div>
+
+            {/* Progress Status Badge */}
+            {progress && (
+              <div className="absolute -top-2 -left-2 z-10">{statusIcon}</div>
+            )}
+
+            {/* Lock Overlay for locked nodes */}
+            {!isUnlocked && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-black/50 rounded-full p-2">
+                  <Lock className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       );
     },
@@ -142,20 +237,34 @@ export function MapViewer({ map }: MapViewerProps) {
         x: Math.random() * 400,
         y: Math.random() * 400,
       },
-      connectable: false, // Make individual nodes non-connectable
+      draggable: true, // Disable dragging in viewer mode
+      connectable: false,
+      selectable: true,
     }));
 
     const transformedEdges: Edge[] = [];
     map.map_nodes.forEach((node) => {
       node.node_paths_source.forEach((path) => {
+        // Add visual indicators for path states
+        const sourceProgress = progressMap[path.source_node_id];
+        const isPathActive =
+          sourceProgress?.status === "passed" ||
+          sourceProgress?.status === "in_progress";
+
         transformedEdges.push({
           id: path.id,
           source: path.source_node_id,
           target: path.destination_node_id,
-          animated: true,
+          animated: isPathActive,
+          style: {
+            stroke: isPathActive ? "#10b981" : "#6b7280",
+            strokeWidth: isPathActive ? 3 : 2,
+            opacity: isPathActive ? 1 : 0.5,
+          },
         });
       });
     });
+
     setNodes(transformedNodes as any);
     setEdges(transformedEdges);
   }, [map, progressMap, setNodes, setEdges]);
@@ -180,6 +289,9 @@ export function MapViewer({ map }: MapViewerProps) {
           onSelectionChange={onSelectionChange}
           nodeTypes={nodeTypes}
           fitView
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={true}
         >
           <Controls showInteractive={false} />
           <Background />
