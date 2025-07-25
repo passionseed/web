@@ -18,11 +18,18 @@ export interface Cohort {
   updated_at: string; // timestamp with time zone
 }
 
+export type MapCategory = 'ai' | '3d' | 'unity' | 'hacking' | 'custom';
+
 export interface LearningMap {
   id: string; // uuid
   title: string;
   description: string | null;
   creator_id: string | null; // uuid
+  difficulty?: number; // 1-10, overall map difficulty
+  category?: MapCategory; // map category
+  total_students?: number; // cached count
+  finished_students?: number; // cached count
+  metadata?: Record<string, any>; // jsonb extensible data
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
   nodes?: MapNode[]; // Optional relation

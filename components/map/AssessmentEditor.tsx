@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion } from '@/lib/supabase/maps';
 import { NodeAssessment, AssessmentType, QuizQuestion } from '@/types/map';
 import { Loader2, Trash2, PlusCircle, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,27 +21,27 @@ const QuizEditor = ({ assessment, onQuestionChange }: { assessment: NodeAssessme
     const [isAdding, setIsAdding] = useState(false);
     const { toast } = useToast();
 
-    const handleAddQuestion = async () => {
+    const handleAddQuestion = () => {
         if (!newQuestion.trim()) return;
-        try {
-            const question = await createQuizQuestion({ assessment_id: assessment.id, question_text: newQuestion });
-            onQuestionChange(question, 'add');
-            setNewQuestion('');
-            setIsAdding(false);
-            toast({ title: 'Question added' });
-        } catch (error) {
-            toast({ title: 'Error adding question', variant: 'destructive' });
-        }
+        const question: QuizQuestion = {
+            id: `temp_question_${Date.now()}_${Math.random()}`,
+            assessment_id: assessment.id,
+            question_text: newQuestion,
+            question_options: null,
+            correct_answer: null,
+            explanation: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        onQuestionChange(question, 'add');
+        setNewQuestion('');
+        setIsAdding(false);
+        toast({ title: 'Question added (Save map to persist)' });
     };
 
-    const handleDeleteQuestion = async (id: string) => {
-        try {
-            await deleteQuizQuestion(id);
-            onQuestionChange({ id } as QuizQuestion, 'delete');
-            toast({ title: 'Question deleted' });
-        } catch (error) {
-            toast({ title: 'Error deleting question', variant: 'destructive' });
-        }
+    const handleDeleteQuestion = (id: string) => {
+        onQuestionChange({ id } as QuizQuestion, 'delete');
+        toast({ title: 'Question deleted (Save map to persist)' });
     }
 
     return (
@@ -67,32 +66,25 @@ const QuizEditor = ({ assessment, onQuestionChange }: { assessment: NodeAssessme
 }
 
 export function AssessmentEditor({ nodeId, assessment, onAssessmentChange }: AssessmentEditorProps) {
-  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   const handleAddAssessment = (type: AssessmentType) => {
-    startTransition(async () => {
-      try {
-        const newAssessment = await createNodeAssessment({ node_id: nodeId, assessment_type: type });
-        onAssessmentChange(newAssessment, 'add');
-        toast({ title: 'Assessment added' });
-      } catch (error) {
-        toast({ title: 'Error adding assessment', variant: 'destructive' });
-      }
-    });
+    const newAssessment: NodeAssessment = {
+      id: `temp_assessment_${Date.now()}_${Math.random()}`,
+      node_id: nodeId,
+      assessment_type: type,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      quiz_questions: []
+    };
+    onAssessmentChange(newAssessment, 'add');
+    toast({ title: 'Assessment added (Save map to persist)' });
   };
 
   const handleDeleteAssessment = () => {
     if (!assessment) return;
-    startTransition(async () => {
-        try {
-            await deleteNodeAssessment(assessment.id);
-            onAssessmentChange(null, 'delete');
-            toast({ title: 'Assessment removed' });
-        } catch (error) {
-            toast({ title: 'Error removing assessment', variant: 'destructive' });
-        }
-    });
+    onAssessmentChange(null, 'delete');
+    toast({ title: 'Assessment removed (Save map to persist)' });
   };
 
   const handleQuestionChange = (changedQuestion: QuizQuestion, action: 'add' | 'update' | 'delete') => {
@@ -108,9 +100,6 @@ export function AssessmentEditor({ nodeId, assessment, onAssessmentChange }: Ass
       onAssessmentChange({ ...assessment, quiz_questions: newQuestions }, 'add');
   }
 
-  if (isPending) {
-      return <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-  }
 
   if (!assessment) {
     return (
@@ -137,7 +126,7 @@ export function AssessmentEditor({ nodeId, assessment, onAssessmentChange }: Ass
             <CardHeader>
                 <CardTitle className="capitalize flex justify-between items-center">
                     {assessment.assessment_type.replace('_', ' ')}
-                    <Button variant="destructive" size="sm" onClick={handleDeleteAssessment} disabled={isPending}>
+                    <Button variant="destructive" size="sm" onClick={handleDeleteAssessment}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </CardTitle>
