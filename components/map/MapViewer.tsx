@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import ReactFlow, {
+import {
   Controls,
+  ReactFlow,
   Background,
   useNodesState,
   useEdgesState,
@@ -11,8 +12,8 @@ import ReactFlow, {
   OnSelectionChangeParams,
   Handle,
   Position,
-} from "reactflow";
-import "reactflow/dist/style.css";
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 
 import {
   ResizableHandle,
@@ -112,7 +113,7 @@ export function MapViewer({ map }: MapViewerProps) {
 
       if (!isUnlocked) {
         brightness = "brightness(0.3) grayscale(1)";
-        statusIcon = <Lock className="h-4 w-4 text-gray-500" />;
+        statusIcon = null;
       } else if (progress) {
         switch (progress.status) {
           case "passed":
@@ -202,11 +203,6 @@ export function MapViewer({ map }: MapViewerProps) {
                   {statusIcon && <span className="ml-1">{statusIcon}</span>}
                 </div>
               </div>
-            </div>
-
-            {/* Difficulty Badge */}
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
-              {data.difficulty}
             </div>
 
             {/* Progress Status Badge */}
