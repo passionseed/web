@@ -697,7 +697,7 @@ export const getSubmissionsForMap = async (mapId: string): Promise<SubmissionWit
 export const gradeSubmission = async (submissionId: string, grade: Grade, comments: string | null, rating: number | null, userId: string): Promise<SubmissionGrade> => {
     const supabase = createClient();
 
-    // 1. Create a new grade entry
+    // The trigger 'on_new_grade_update_progress' will now handle updating the student_node_progress table.
     const { data: gradeData, error: gradeError } = await supabase
         .from('submission_grades')
         .insert({
@@ -713,31 +713,6 @@ export const gradeSubmission = async (submissionId: string, grade: Grade, commen
     if (gradeError) {
         console.error('Error creating grade:', gradeError);
         throw new Error('Could not record the grade.');
-    }
-
-    // 2. Update the student's progress status
-    // First, get the progress_id from the submission
-    const { data: submissionData, error: submissionFetchError } = await supabase
-        .from('assessment_submissions')
-        .select('progress_id')
-        .eq('id', submissionId)
-        .single();
-
-    if (submissionFetchError || !submissionData) {
-        console.error('Error fetching submission progress id:', submissionFetchError);
-        throw new Error('Could not find the associated student progress.');
-    }
-
-    const { error: progressError } = await supabase
-        .from('student_node_progress')
-        .update({ status: grade }) // 'pass' or 'fail'
-        .eq('id', submissionData.progress_id);
-
-    if (progressError) {
-        // Note: This won't roll back the grade creation.
-        // A transaction (RPC) would be better for atomicity.
-        console.error('Error updating student progress:', progressError);
-        throw new Error('Could not update the student progress status.');
     }
 
     return gradeData;
