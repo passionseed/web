@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Node } from "reactflow";
+import { Node } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,7 +39,7 @@ export function NodeEditorPanel({
     const { name, value } = e.target;
     const newData = { ...nodeData, [name]: value };
     setNodeData(newData);
-    
+
     // Update immediately without needing a save button
     if (selectedNode) {
       onNodeDataChange(selectedNode.id, { [name]: value });
@@ -49,13 +49,12 @@ export function NodeEditorPanel({
   const handleSliderChange = (value: number[]) => {
     const newData = { ...nodeData, difficulty: value[0] };
     setNodeData(newData);
-    
+
     // Update immediately
     if (selectedNode) {
       onNodeDataChange(selectedNode.id, { difficulty: value[0] });
     }
   };
-
 
   const handleContentChange = (
     changedContent: NodeContent,
@@ -70,7 +69,7 @@ export function NodeEditorPanel({
       // Assign temporary ID if not present
       const contentWithId = {
         ...changedContent,
-        id: changedContent.id || `temp_content_${Date.now()}_${Math.random()}`
+        id: changedContent.id || `temp_content_${Date.now()}_${Math.random()}`,
       };
       newContentList = [...currentContent, contentWithId];
     } else if (action === "update") {
@@ -95,12 +94,17 @@ export function NodeEditorPanel({
   ) => {
     if (!selectedNode) return;
 
-    const newAssessments = action === "add" && changedAssessment 
-      ? [{
-          ...changedAssessment,
-          id: changedAssessment.id || `temp_assessment_${Date.now()}_${Math.random()}`
-        }] 
-      : [];
+    const newAssessments =
+      action === "add" && changedAssessment
+        ? [
+            {
+              ...changedAssessment,
+              id:
+                changedAssessment.id ||
+                `temp_assessment_${Date.now()}_${Math.random()}`,
+            },
+          ]
+        : [];
 
     const updatedNodeData = { ...nodeData, node_assessments: newAssessments };
     setNodeData(updatedNodeData);
@@ -182,7 +186,8 @@ export function NodeEditorPanel({
               </div>
             </div>
             <div className="text-xs text-muted-foreground mt-4 p-2 bg-muted rounded">
-              Changes are saved automatically to your draft. Use "Save All Changes" to persist to database.
+              Changes are saved automatically to your draft. Use "Save All
+              Changes" to persist to database.
             </div>
           </div>
         </TabsContent>
