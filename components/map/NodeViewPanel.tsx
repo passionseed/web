@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Node } from "@xyflow/react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Clock, Play } from "lucide-react";
+import { Clock, Play, Upload } from "lucide-react";
 import {
   MapNode,
   NodeContent,
@@ -16,9 +16,8 @@ import {
 import {
   getStudentProgress,
   startNodeProgress,
-  getSubmissionGrade,
   submitNodeProgress,
-} from "@/lib/supabase/maps";
+} from "@/lib/supabase/progresses";
 import { createClient } from "@/lib/supabase/client";
 import { NoNodeSelectedView } from "./NoNodeSelectedView";
 import { NodeHeaderView } from "./NodeHeaderView";
@@ -28,6 +27,7 @@ import {
   createAssessmentSubmission,
   getAssessmentSubmissions,
 } from "@/lib/supabase/assessment";
+import { getSubmissionGrade } from "@/lib/supabase/grading";
 
 interface NodeViewPanelProps {
   selectedNode: Node<MapNode> | null;
@@ -67,7 +67,7 @@ export function NodeViewPanel({
   const isSubmittedAndPending = progress?.status === "submitted" && !isGraded;
   const canResubmit = isFailed;
   const showAssessmentForm =
-    canResubmit || (hasStarted && !isSubmittedAndPending && !isPassed);
+    canResubmit || (hasStarted && !isSubmittedAndPending && !isPassed) || false;
 
   useEffect(() => {
     const getUser = async () => {
@@ -132,33 +132,48 @@ export function NodeViewPanel({
     }
   };
 
-  const handleSubmitAssessment = async () => {
-    if (!selectedNode || !currentUser || !progress || !assessment) return;
+  const handleSubmitAssessment = async (
+    fileUrls?: string[],
+    fileNames?: string[]
+  ) => {
+    if (!selectedNode || !currentUser || !progress) return;
+
+    const assessment = selectedNode.data.node_assessments?.[0];
+    if (!assessment) return;
+
     setIsSubmitting(true);
     try {
       const submissionData: Partial<AssessmentSubmission> = {
         progress_id: progress.id,
         assessment_id: assessment.id,
       };
+
       if (assessment.assessment_type === "text_answer") {
         submissionData.text_answer = assessmentAnswer;
       } else if (assessment.assessment_type === "quiz") {
         submissionData.quiz_answers = quizAnswers;
+      } else if (assessment.assessment_type === "file_upload") {
+        if (!fileUrls || fileUrls.length === 0) {
+          toast({
+            title: "Please upload at least one file",
+            variant: "destructive",
+          });
+          return;
+        }
+        submissionData.file_urls = fileUrls; // Changed to file_urls array
       }
-      // TODO: Handle file upload if needed
+
       await createAssessmentSubmission(submissionData);
 
-      await submitNodeProgress(progress.id);
-      setProgress((prev) => (prev ? { ...prev, status: "submitted" } : null));
-      onProgressUpdate?.();
-
+      // Clear form fields
       setAssessmentAnswer("");
       setQuizAnswers({});
 
-      await loadProgress(); // Reload submissions and progress
+      // Reload all submissions and progress to reflect the new state
+      await loadProgress();
+
       toast({ title: "Assessment submitted successfully!" });
     } catch (error) {
-      console.error("Error submitting assessment:", error);
       toast({ title: "Error submitting assessment", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -191,6 +206,7 @@ export function NodeViewPanel({
             {/* Assessment Section */}
             {assessment && (
               <AssessmentSection
+                nodeId={selectedNode.id}
                 assessment={assessment}
                 canResubmit={canResubmit}
                 showAssessmentForm={showAssessmentForm}

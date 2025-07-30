@@ -2,7 +2,7 @@
 
 // From 20250725075742_add_user_roles.sql
 
-export type UserRoleType = 'student' | 'TA' | 'instructor';
+export type UserRoleType = "student" | "TA" | "instructor";
 
 export interface UserRole {
   id: string; // uuid
@@ -18,7 +18,7 @@ export interface Cohort {
   updated_at: string; // timestamp with time zone
 }
 
-export type MapCategory = 'ai' | '3d' | 'unity' | 'hacking' | 'custom';
+export type MapCategory = "ai" | "3d" | "unity" | "hacking" | "custom";
 
 export interface LearningMap {
   id: string; // uuid
@@ -63,10 +63,9 @@ export interface CohortMapEnrollment {
   enrolled_at: string; // timestamp with time zone
 }
 
-
 // From 20250725080607_add_map_content.sql
 
-export type ContentType = 'video' | 'canva_slide' | 'text_with_images';
+export type ContentType = "video" | "canva_slide" | "text_with_images";
 
 export interface NodeContent {
   id: string; // uuid
@@ -77,7 +76,11 @@ export interface NodeContent {
   created_at: string; // timestamp with time zone
 }
 
-export type AssessmentType = 'quiz' | 'text_answer' | 'image_upload' | 'file_upload';
+export type AssessmentType =
+  | "quiz"
+  | "text_answer"
+  | "image_upload"
+  | "file_upload";
 
 export interface NodeAssessment {
   id: string; // uuid
@@ -94,7 +97,12 @@ export interface QuizQuestion {
   correct_option: string | null;
 }
 
-export type ProgressStatus = 'not_started' | 'in_progress' | 'submitted' | 'passed' | 'failed';
+export type ProgressStatus =
+  | "not_started"
+  | "in_progress"
+  | "submitted"
+  | "passed"
+  | "failed";
 
 export interface StudentNodeProgress {
   id: string; // uuid
@@ -111,13 +119,13 @@ export interface AssessmentSubmission {
   progress_id: string; // uuid
   assessment_id: string; // uuid
   text_answer: string | null;
-  file_url: string | null;
+  file_urls: string[] | null; // Changed from file_url to file_urls array
   image_url: string | null;
   quiz_answers: Record<string, string> | null; // jsonb, e.g., {"question_id": "A"}
   submitted_at: string; // timestamp with time zone
 }
 
-export type Grade = 'pass' | 'fail';
+export type Grade = "pass" | "fail";
 
 export interface SubmissionGrade {
   id: string; // uuid

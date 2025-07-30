@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { FileUpload } from "@/components/ui/file-upload";
 import {
   CheckSquare,
   Upload,
@@ -12,6 +13,8 @@ import {
   MessageCircle,
   Clock,
   Star,
+  X,
+  FileText,
 } from "lucide-react";
 import { Assessment, QuizQuestion } from "@/types/map";
 import { SubmissionItem } from "./SubmissionItem"; // Assuming component is created
@@ -25,8 +28,9 @@ interface AssessmentSectionProps {
   quizAnswers: Record<string, string>;
   setQuizAnswers: (value: React.SetStateAction<Record<string, string>>) => void;
   isSubmitting: boolean;
-  onSubmit: () => void;
+  onSubmit: (fileUrl: string[], fileName: string[]) => void;
   submissionsWithGrades: { submission: any; grade: any }[]; // Adjust type as needed
+  nodeId: string;
 }
 
 const renderQuizQuestion = (
@@ -83,7 +87,34 @@ export function AssessmentSection({
   isSubmitting,
   onSubmit,
   submissionsWithGrades,
+  nodeId,
 }: AssessmentSectionProps) {
+  const [isFileRequired, setIsFileRequired] = useState(false);
+  const [fileUrls, setFileUrls] = useState<string[]>([]);
+  const [fileNames, setFileNames] = useState<string[]>([]);
+
+  // Check if file is required for submission
+  const validateSubmission = () => {
+    if (assessment.assessment_type === "file_upload" && fileUrls.length === 0) {
+      setIsFileRequired(true);
+      return false;
+    }
+    setIsFileRequired(false);
+    return true;
+  };
+
+  const handleFileUpload = (url: string, name: string) => {
+    setFileUrls((prev) => [...prev, url]);
+    setFileNames((prev) => [...prev, name]);
+    setIsFileRequired(false);
+  };
+
+  const handleSubmit = () => {
+    if (validateSubmission()) {
+      onSubmit(fileUrls, fileNames);
+    }
+  };
+
   return (
     <Card className="border-l-4 border-l-primary">
       <CardHeader className="pb-3">
@@ -155,20 +186,32 @@ export function AssessmentSection({
             {assessment.assessment_type === "file_upload" && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">
-                  Upload Your Work
+                  Upload Your Work{" "}
+                  {isFileRequired && <span className="text-red-500">*</span>}
                 </label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors">
-                  <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <Input type="file" className="max-w-xs mx-auto" />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Supported formats: PDF, DOC, DOCX, PNG, JPG
-                  </p>
-                </div>
+                {isFileRequired && (
+                  <div className="text-sm text-red-600 mb-2">
+                    Please upload at least one file before submitting.
+                  </div>
+                )}
+
+                <FileUpload
+                  nodeId={nodeId}
+                  onUploadComplete={handleFileUpload}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip"
+                  maxSize={10}
+                  disabled={isSubmitting}
+                  allowMultiple={true}
+                />
+
+                <p className="text-xs text-muted-foreground">
+                  You can upload multiple files. Each file must be under 10MB.
+                </p>
               </div>
             )}
 
             <Button
-              onClick={onSubmit}
+              onClick={handleSubmit}
               disabled={isSubmitting}
               className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md"
               size="lg"

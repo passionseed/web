@@ -1,23 +1,15 @@
 import { notFound } from "next/navigation";
+import { getMapWithNodes } from "@/lib/supabase/maps";
 import {
   getSubmissionsForMap,
   SubmissionWithDetails,
-} from "@/lib/supabase/maps";
+} from "@/lib/supabase/grading";
 import { createClient } from "@/utils/supabase/server";
 import { isInstructor } from "@/lib/supabase/roles";
-import { GradeSubmissionForm } from "./grade-submission-form";
-import { ViewSubmissionDialog } from "./view-submission-dialog";
+import { GradingTable } from "./grading-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { BookOpen, Clock, CheckCircle, XCircle } from "lucide-react";
 
 export default async function GradingPage({
   params,
@@ -29,92 +21,127 @@ export default async function GradingPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !isInstructor(user.id)) {
+  if (!user || !(await isInstructor(user.id))) {
     notFound();
   }
 
-  const submissions = await getSubmissionsForMap((await params).id);
+  const mapId = (await params).id;
+  const [submissions, map] = await Promise.all([
+    getSubmissionsForMap(mapId),
+    getMapWithNodes(mapId),
+  ]);
+
+  if (!map) {
+    notFound();
+  }
+
+  // Calculate statistics
+  const totalSubmissions = submissions.length;
+  const pendingSubmissions = submissions.filter(
+    (s) => s.submission_grades.length === 0
+  ).length;
+  const passedSubmissions = submissions.filter(
+    (s) => s.submission_grades[0]?.grade === "pass"
+  ).length;
+  const failedSubmissions = submissions.filter(
+    (s) => s.submission_grades[0]?.grade === "fail"
+  ).length;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Submissions for Grading</h1>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <BookOpen className="h-4 w-4" />
+          <span>{map.title}</span>
+        </div>
+        <h1 className="text-3xl font-bold">Submissions for Grading</h1>
+        <p className="text-muted-foreground">
+          Review and grade student submissions for this learning map.
+        </p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Submissions
+                </p>
+                <p className="text-2xl font-bold">{totalSubmissions}</p>
+              </div>
+              <BookOpen className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Pending Review
+                </p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {pendingSubmissions}
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Passed
+                </p>
+                <p className="text-2xl font-bold text-green-600">
+                  {passedSubmissions}
+                </p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Failed
+                </p>
+                <p className="text-2xl font-bold text-red-600">
+                  {failedSubmissions}
+                </p>
+              </div>
+              <XCircle className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Submissions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Submissions</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Submissions ({totalSubmissions})</CardTitle>
+            <div className="flex items-center gap-2">
+              {pendingSubmissions > 0 && (
+                <Badge variant="destructive" className="text-xs">
+                  {pendingSubmissions} pending review
+                </Badge>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Node</TableHead>
-                <TableHead>Submitted At</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {submissions.map((submission) => (
-                <TableRow key={submission.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar>
-                        <AvatarImage
-                          src={
-                            submission.student_node_progress.profiles
-                              .avatar_url || ""
-                          }
-                        />
-                        <AvatarFallback>
-                          {
-                            submission.student_node_progress.profiles
-                              .username[0]
-                          }
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>
-                        {submission.student_node_progress.profiles.username}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {submission.node_assessments.map_nodes.title}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(submission.submitted_at).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        submission.submission_grades.length > 0
-                          ? submission.submission_grades[0].grade === "pass"
-                            ? "default"
-                            : "destructive"
-                          : "outline"
-                      }
-                    >
-                      {submission.submission_grades.length > 0
-                        ? submission.submission_grades[0].grade
-                        : "pending"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <ViewSubmissionDialog submission={submission} />
-                      {submission.submission_grades.length > 0 ? (
-                        <Badge variant="secondary">Graded</Badge>
-                      ) : (
-                        <GradeSubmissionForm
-                          submission={submission}
-                          userId={user.id}
-                        />
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <GradingTable submissions={submissions} userId={user.id} />
         </CardContent>
       </Card>
     </div>
