@@ -8,7 +8,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { MapNode, NodeContent, NodeAssessment } from "@/types/map";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { ContentEditor } from "./ContentEditor";
@@ -17,11 +28,13 @@ import { AssessmentEditor } from "./AssessmentEditor";
 interface NodeEditorPanelProps {
   selectedNode: Node<MapNode> | null;
   onNodeDataChange: (nodeId: string, data: Partial<MapNode>) => void;
+  onNodeDelete?: (nodeId: string) => void;
 }
 
 export function NodeEditorPanel({
   selectedNode,
   onNodeDataChange,
+  onNodeDelete,
 }: NodeEditorPanelProps) {
   const [nodeData, setNodeData] = useState<Partial<MapNode>>({});
   const [isPending, startTransition] = useTransition();
@@ -56,36 +69,24 @@ export function NodeEditorPanel({
     }
   };
 
-  const handleContentChange = (
-    changedContent: NodeContent,
-    action: "add" | "update" | "delete"
-  ) => {
-    if (!selectedNode) return;
+  const handleContentChange = (newContent: NodeContent[]) => {
+    console.log("NodeEditorPanel: Content changed, new content:", newContent);
 
-    let newContentList: NodeContent[];
-    const currentContent = (nodeData as any).node_content || [];
-
-    if (action === "add") {
-      // Assign temporary ID if not present
-      const contentWithId = {
-        ...changedContent,
-        id: changedContent.id || `temp_content_${Date.now()}_${Math.random()}`,
-      };
-      newContentList = [...currentContent, contentWithId];
-    } else if (action === "update") {
-      newContentList = currentContent.map((c: NodeContent) =>
-        c.id === changedContent.id ? changedContent : c
-      );
-    } else {
-      // delete
-      newContentList = currentContent.filter(
-        (c: NodeContent) => c.id !== changedContent.id
-      );
+    if (!selectedNode) {
+      console.warn("NodeEditorPanel: No selected node, cannot update content");
+      return;
     }
 
-    const updatedNodeData = { ...nodeData, node_content: newContentList };
-    setNodeData(updatedNodeData);
-    onNodeDataChange(selectedNode.id, { node_content: newContentList } as any);
+    // Update the node data with new content
+    const updatedNodeData = {
+      ...selectedNode.data,
+      node_content: newContent,
+    };
+
+    console.log(
+      "NodeEditorPanel: Calling onNodeDataChange with updated content"
+    );
+    onNodeDataChange(selectedNode.id, updatedNodeData);
   };
 
   const handleAssessmentChange = (
@@ -113,6 +114,12 @@ export function NodeEditorPanel({
     } as any);
   };
 
+  const handleDeleteNode = () => {
+    if (selectedNode && onNodeDelete) {
+      onNodeDelete(selectedNode.id);
+    }
+  };
+
   if (!selectedNode) {
     return (
       <div className="p-4 h-full flex items-center justify-center">
@@ -125,95 +132,131 @@ export function NodeEditorPanel({
 
   return (
     <div className="p-2 h-full">
-      <Tabs defaultValue="details" className="h-full flex flex-col">
-        <TabsList className="w-full">
-          <TabsTrigger value="details" className="flex-1">
-            Details
-          </TabsTrigger>
-          <TabsTrigger value="content" className="flex-1">
-            Content
-          </TabsTrigger>
-          <TabsTrigger value="assessment" className="flex-1">
-            Assessment
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="details" className="flex-grow">
-          <div className="p-2 space-y-4 h-full">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  name="title"
-                  value={nodeData.title || ""}
-                  onChange={handleInputChange}
-                />
+      <div className="space-y-6">
+        {/* Header with delete button */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Edit Node</h3>
+          {onNodeDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Node</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{selectedNode.data.title}"?{" "}
+                    This will also remove all connections to and from this node.{" "}
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteNode}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete Node
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+
+        <Tabs defaultValue="details" className="h-full flex flex-col">
+          <TabsList className="w-full">
+            <TabsTrigger value="details" className="flex-1">
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="content" className="flex-1">
+              Content
+            </TabsTrigger>
+            <TabsTrigger value="assessment" className="flex-1">
+              Assessment
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="details" className="flex-grow">
+            <div className="p-2 space-y-4 h-full">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={nodeData.title || ""}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="instructions">Instructions</Label>
+                  <Textarea
+                    id="instructions"
+                    name="instructions"
+                    placeholder="Instructions for the student..."
+                    value={nodeData.instructions || ""}
+                    onChange={handleInputChange}
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">
+                    Difficulty: {nodeData.difficulty}
+                  </Label>
+                  <Slider
+                    id="difficulty"
+                    name="difficulty"
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={[nodeData.difficulty || 1]}
+                    onValueChange={handleSliderChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sprite_url">Sprite URL</Label>
+                  <Input
+                    id="sprite_url"
+                    name="sprite_url"
+                    placeholder="http://path/to/image.png"
+                    value={nodeData.sprite_url || ""}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="instructions">Instructions</Label>
-                <Textarea
-                  id="instructions"
-                  name="instructions"
-                  placeholder="Instructions for the student..."
-                  value={nodeData.instructions || ""}
-                  onChange={handleInputChange}
-                  className="min-h-[100px]"
-                />
+              <div className="text-xs text-muted-foreground mt-4 p-2 bg-muted rounded">
+                Changes are saved automatically to your draft. Use "Save All
+                Changes" to persist to database.
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="difficulty">
-                  Difficulty: {nodeData.difficulty}
-                </Label>
-                <Slider
-                  id="difficulty"
-                  name="difficulty"
-                  min={1}
-                  max={10}
-                  step={1}
-                  value={[nodeData.difficulty || 1]}
-                  onValueChange={handleSliderChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sprite_url">Sprite URL</Label>
-                <Input
-                  id="sprite_url"
-                  name="sprite_url"
-                  placeholder="http://path/to/image.png"
-                  value={nodeData.sprite_url || ""}
-                  onChange={handleInputChange}
+            </div>
+          </TabsContent>
+          <TabsContent value="content" className="flex-grow overflow-y-auto">
+            <div className="h-full flex flex-col">
+              <div className="flex-grow">
+                <ContentEditor
+                  nodeId={selectedNode.id}
+                  content={selectedNode.data.node_content || []}
+                  onContentChange={handleContentChange}
                 />
               </div>
             </div>
-            <div className="text-xs text-muted-foreground mt-4 p-2 bg-muted rounded">
-              Changes are saved automatically to your draft. Use "Save All
-              Changes" to persist to database.
+          </TabsContent>
+          <TabsContent value="assessment" className="flex-grow overflow-y-auto">
+            <div className="h-full flex flex-col">
+              <div className="flex-grow">
+                <AssessmentEditor
+                  nodeId={selectedNode.id}
+                  assessment={(nodeData as any).node_assessments?.[0] || null}
+                  onAssessmentChange={handleAssessmentChange}
+                />
+              </div>
             </div>
-          </div>
-        </TabsContent>
-        <TabsContent value="content" className="flex-grow overflow-y-auto">
-          <div className="h-full flex flex-col">
-            <div className="flex-grow">
-              <ContentEditor
-                nodeId={selectedNode.id}
-                content={(nodeData as any).node_content || []}
-                onContentChange={handleContentChange}
-              />
-            </div>
-          </div>
-        </TabsContent>
-        <TabsContent value="assessment" className="flex-grow overflow-y-auto">
-          <div className="h-full flex flex-col">
-            <div className="flex-grow">
-              <AssessmentEditor
-                nodeId={selectedNode.id}
-                assessment={(nodeData as any).node_assessments?.[0] || null}
-                onAssessmentChange={handleAssessmentChange}
-              />
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
