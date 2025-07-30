@@ -6,6 +6,7 @@ import {
 import { createClient } from "@/utils/supabase/server";
 import { isInstructor } from "@/lib/supabase/roles";
 import { GradeSubmissionForm } from "./grade-submission-form";
+import { ViewSubmissionDialog } from "./view-submission-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -21,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 export default async function GradingPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -32,7 +33,7 @@ export default async function GradingPage({
     notFound();
   }
 
-  const submissions = await getSubmissionsForMap(params.id);
+  const submissions = await getSubmissionsForMap((await params).id);
 
   return (
     <div className="container mx-auto p-4">
@@ -98,10 +99,17 @@ export default async function GradingPage({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <GradeSubmissionForm
-                      submission={submission}
-                      userId={user.id}
-                    />
+                    <div className="flex items-center gap-2">
+                      <ViewSubmissionDialog submission={submission} />
+                      {submission.submission_grades.length > 0 ? (
+                        <Badge variant="secondary">Graded</Badge>
+                      ) : (
+                        <GradeSubmissionForm
+                          submission={submission}
+                          userId={user.id}
+                        />
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
