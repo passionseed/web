@@ -13,16 +13,38 @@ import {
   ProgressStatus,
 } from "@/types/map";
 
-// A type for a map that includes its nodes and paths
-export type FullLearningMap = LearningMap & {
-  map_nodes: (MapNode & {
-    node_paths_source: NodePath[];
-    node_paths_destination: NodePath[];
-    node_content: NodeContent[];
-    node_assessments: (NodeAssessment & {
-      quiz_questions: QuizQuestion[];
-    })[];
-  })[];
+// --- Assessment Functions ---
+
+export const createNodeAssessment = async (
+  assessmentData: Partial<NodeAssessment>
+): Promise<NodeAssessment> => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("node_assessments")
+    .insert([{ ...assessmentData }])
+    .select("*, quiz_questions(*)")
+    .single();
+
+  if (error) {
+    console.error("Error creating assessment:", error);
+    throw new Error("Could not create assessment.");
+  }
+  return data;
+};
+
+export const deleteNodeAssessment = async (id: string): Promise<void> => {
+  const supabase = createClient();
+  // Must delete questions first
+  await supabase.from("quiz_questions").delete().eq("assessment_id", id);
+  const { error } = await supabase
+    .from("node_assessments")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error deleting assessment:", error);
+    throw new Error("Could not delete assessment.");
+  }
 };
 
 export const createQuizQuestion = async (
@@ -108,4 +130,22 @@ export const getAssessmentSubmissions = async (
   }
 
   return data || [];
+};
+
+export const deleteFileSubmission = async (fileName: string): Promise<void> => {
+  try {
+    const response = await fetch(
+      `/api/upload?fileName=${encodeURIComponent(fileName)}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to delete file from storage");
+    }
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    throw new Error("Could not delete file from storage.");
+  }
 };

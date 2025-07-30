@@ -21,7 +21,8 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { NodeViewPanel } from "@/components/map/NodeViewPanel";
-import { FullLearningMap, getStudentProgress } from "@/lib/supabase/maps";
+import { FullLearningMap } from "@/lib/supabase/maps";
+import { getStudentProgress } from "@/lib/supabase/progresses";
 import { MapNode, StudentNodeProgress } from "@/types/map";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle, Clock, AlertTriangle, Play, Lock } from "lucide-react";
@@ -182,7 +183,7 @@ export function MapViewer({ map }: MapViewerProps) {
             <img
               src={spriteUrl}
               alt={data.title}
-              className={`w-20 h-20 object-contain hover:drop-shadow-xl transition-all duration-200 ${glowEffect}`}
+              className={`w-max h-max object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200 ${glowEffect}`}
               style={{
                 filter: selected
                   ? `${brightness} brightness(1.1) saturate(1.2)`
@@ -204,11 +205,6 @@ export function MapViewer({ map }: MapViewerProps) {
                 </div>
               </div>
             </div>
-
-            {/* Progress Status Badge */}
-            {progress && (
-              <div className="absolute -top-2 -left-2 z-10">{statusIcon}</div>
-            )}
 
             {/* Lock Overlay for locked nodes */}
             {!isUnlocked && (
@@ -236,6 +232,13 @@ export function MapViewer({ map }: MapViewerProps) {
       draggable: true, // Disable dragging in viewer mode
       connectable: false,
       selectable: true,
+      selected: selectedNode?.id === node.id,
+      style: {
+        backgroundColor: "#ffffff00",
+        border: "2px solid #cccccc00",
+        flexGrow: 1,
+        aspectRatio: "1 / 1",
+      },
     }));
 
     const transformedEdges: Edge[] = [];

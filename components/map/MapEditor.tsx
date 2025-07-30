@@ -138,7 +138,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
             return {
               ...node,
               node_paths_source: [
-                ...(node.node_paths_source || []),
+                ...(Array.isArray(node.node_paths_source)
+                  ? node.node_paths_source
+                  : []),
                 {
                   id: tempId,
                   source_node_id: params.source!,
@@ -228,7 +230,12 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
   const handleAddNode = () => {
     const tempId = `temp_node_${Date.now()}_${Math.random()}`;
-    const newNodeData: MapNode = {
+    const newNodeData: MapNode & {
+      node_paths_source: any[];
+      node_paths_destination: any[];
+      node_content: any[];
+      node_assessments: any[];
+    } = {
       id: tempId,
       map_id: map.id,
       title: "New Node",
@@ -238,6 +245,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       metadata: { position: { x: 100, y: 100 } },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      node_paths_source: [],
+      node_paths_destination: [],
+      node_content: [],
+      node_assessments: [],
     };
 
     const newNode: AppNode = {
@@ -297,6 +308,46 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       }),
     };
     onMapChange(updatedMap);
+  };
+
+  const handleDeleteNode = (nodeId: string) => {
+    const nodeToDelete = nodes.find((node) => node.id === nodeId);
+    if (!nodeToDelete) return;
+
+    // Remove node from React Flow state
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+
+    // Remove edges connected to this node
+    setEdges((eds) =>
+      eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
+    );
+
+    // Update map state by removing the node and its paths
+    const updatedMap = {
+      ...map,
+      map_nodes: map.map_nodes
+        .filter((node) => node.id !== nodeId)
+        .map((node) => ({
+          ...node,
+          node_paths_source: (node.node_paths_source || []).filter(
+            (path) => path.destination_node_id !== nodeId
+          ),
+          node_paths_destination: (node.node_paths_destination || []).filter(
+            (path) => path.source_node_id !== nodeId
+          ),
+        })),
+    };
+
+    onMapChange(updatedMap);
+
+    // Clear selection if deleted node was selected
+    if (selectedNode?.id === nodeId) {
+      setSelectedNode(null);
+    }
+
+    toast({
+      title: `Node "${nodeToDelete.data.title}" deleted (Save to persist)`,
+    });
   };
 
   const nodeTypes = {
@@ -399,6 +450,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         <NodeEditorPanel
           selectedNode={selectedNode}
           onNodeDataChange={handleNodeDataChange}
+          onNodeDelete={handleDeleteNode}
         />
       </ResizablePanel>
     </ResizablePanelGroup>
