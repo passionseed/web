@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Node } from "@xyflow/react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Clock, Play, Upload } from "lucide-react";
+import { Clock, Play, Upload, Lock } from "lucide-react";
 import {
   MapNode,
   NodeContent,
@@ -32,6 +32,7 @@ import { getSubmissionGrade } from "@/lib/supabase/grading";
 interface NodeViewPanelProps {
   selectedNode: Node<MapNode> | null;
   onProgressUpdate?: () => void;
+  isNodeUnlocked?: boolean;
 }
 
 interface SubmissionWithGrade {
@@ -42,6 +43,7 @@ interface SubmissionWithGrade {
 export function NodeViewPanel({
   selectedNode,
   onProgressUpdate,
+  isNodeUnlocked = true,
 }: NodeViewPanelProps) {
   const [progress, setProgress] = useState<StudentNodeProgress | null>(null);
   const [submissionsWithGrades, setSubmissionsWithGrades] = useState<
@@ -160,16 +162,14 @@ export function NodeViewPanel({
           });
           return;
         }
-        submissionData.file_urls = fileUrls; // Changed to file_urls array
+        submissionData.file_urls = fileUrls;
       }
 
       await createAssessmentSubmission(submissionData);
 
-      // Clear form fields
       setAssessmentAnswer("");
       setQuizAnswers({});
 
-      // Reload all submissions and progress to reflect the new state
       await loadProgress();
 
       toast({ title: "Assessment submitted successfully!" });
@@ -222,30 +222,69 @@ export function NodeViewPanel({
           </div>
         ) : (
           <div className="p-8 text-center">
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-6">
-              <Play className="h-10 w-10 text-blue-600" />
+            <div
+              className={`w-20 h-20 mx-auto ${
+                isNodeUnlocked
+                  ? "bg-gradient-to-br from-blue-100 to-blue-200"
+                  : "bg-gradient-to-br from-gray-100 to-gray-200"
+              } rounded-full flex items-center justify-center mb-6`}
+            >
+              {isNodeUnlocked ? (
+                <Play className="h-10 w-10 text-blue-600" />
+              ) : (
+                <Lock className="h-10 w-10 text-gray-500" />
+              )}
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Ready to Begin?
-            </h3>
-            <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
-              Click "Start Learning Journey" above to unlock the content and
-              begin your adventure through this node.
-            </p>
-            {currentUser && (
-              <Button
-                onClick={handleStartNode}
-                disabled={isStarting}
-                className="mt-4 w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md"
-                size="lg"
-              >
-                {isStarting ? (
-                  <Clock className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Play className="h-4 w-4 mr-2" />
+
+            {isNodeUnlocked ? (
+              <>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Ready to Begin?
+                </h3>
+                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed mb-6">
+                  Click "Start Learning Journey" below to unlock the content and
+                  begin your adventure through this node.
+                </p>
+                {currentUser && (
+                  <Button
+                    onClick={handleStartNode}
+                    disabled={isStarting}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md"
+                    size="lg"
+                  >
+                    {isStarting ? (
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4 mr-2" />
+                    )}
+                    Start Learning Journey
+                  </Button>
                 )}
-                Start Learning Journey
-              </Button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                  Node Locked
+                </h3>
+                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed mb-6">
+                  Complete the previous nodes to unlock this content. Your
+                  journey must follow the designated path.
+                </p>
+                <Button
+                  disabled
+                  className="w-full bg-gray-300 text-gray-500 cursor-not-allowed"
+                  size="lg"
+                >
+                  <Lock className="h-4 w-4 mr-2" />
+                  Locked - Complete Prerequisites
+                </Button>
+              </>
+            )}
+
+            {!currentUser && (
+              <p className="text-sm text-muted-foreground mt-4">
+                Please log in to start your learning journey.
+              </p>
             )}
           </div>
         )}

@@ -133,21 +133,9 @@ export function NodeHeaderView({
           </Badge>
         )}
       </div>
-      {currentUser && !hasStarted && (
-        <Button
-          onClick={onStartNode}
-          disabled={isStarting}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md"
-          size="lg"
-        >
-          {isStarting ? (
-            <Clock className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Play className="h-4 w-4 mr-2" />
-          )}
-          Start Learning Journey
-        </Button>
-      )}
+
+      {/* Remove the start button from header - it will be shown in the main content area */}
+
       {progress && hasStarted && (
         <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
           <div className="text-xs font-medium text-muted-foreground mb-1">

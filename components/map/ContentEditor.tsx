@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,23 +17,86 @@ import { Trash2, PlusCircle, Edit, Check, X, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+// Content type configurations
+const CONTENT_TYPE_CONFIG = {
+  video: {
+    label: "📹 Video",
+    placeholder: "https://youtube.com/watch?v=...",
+    hint: "YouTube, Vimeo, etc.",
+  },
+  canva_slide: {
+    label: "🎨 Canva Slide",
+    placeholder: "https://www.canva.com/design/...",
+    hint: "Canva presentation link",
+  },
+  text_with_images: {
+    label: "📝 Text & Images",
+    placeholder:
+      "Write your content here... You can use HTML tags like <img src='...'>, <p>, <h1>, etc.",
+    hint: "HTML tags supported: <img>, <p>, <h1>, etc.",
+  },
+} as const;
+
 interface ContentEditorProps {
   nodeId: string;
   content: NodeContent[];
   onContentChange: (newContent: NodeContent[]) => void;
 }
 
+interface ContentFormProps {
+  nodeId: string;
+  existingContent?: NodeContent;
+  onSave: (content: NodeContent) => void;
+  onCancel: () => void;
+}
+
+// Validation utilities
+const validateUrl = (url: string): boolean => {
+  try {
+    const urlObj = new URL(url);
+    return ["http:", "https:"].includes(urlObj.protocol);
+  } catch {
+    return false;
+  }
+};
+
+const validateContentForm = (
+  contentType: ContentType,
+  contentUrl: string,
+  contentBody: string
+): string[] => {
+  const errors: string[] = [];
+
+  if (!contentType) {
+    errors.push("Content type is required");
+  }
+
+  if (contentType === "video" || contentType === "canva_slide") {
+    if (!contentUrl.trim()) {
+      errors.push("URL is required for this content type");
+    } else if (!validateUrl(contentUrl)) {
+      errors.push("Please enter a valid URL starting with http:// or https://");
+    }
+  }
+
+  if (contentType === "text_with_images" && !contentBody.trim()) {
+    errors.push("Content body is required for text content");
+  }
+
+  return errors;
+};
+
+// Generate unique temporary ID
+const generateTempId = (): string =>
+  `temp_content_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+// Content form component
 const ContentForm = ({
   nodeId,
   existingContent,
   onSave,
   onCancel,
-}: {
-  nodeId: string;
-  existingContent?: NodeContent;
-  onSave: (content: NodeContent) => void;
-  onCancel: () => void;
-}) => {
+}: ContentFormProps) => {
   const [contentType, setContentType] = useState<ContentType>(
     existingContent?.content_type || "video"
   );
@@ -45,63 +108,40 @@ const ContentForm = ({
   );
   const [errors, setErrors] = useState<string[]>([]);
 
-  const validateForm = (): boolean => {
-    const newErrors: string[] = [];
+  const config = CONTENT_TYPE_CONFIG[contentType];
 
-    if (!contentType) {
-      newErrors.push("Content type is required");
-    }
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
 
-    if (contentType === "video" || contentType === "canva_slide") {
-      if (!contentUrl.trim()) {
-        newErrors.push("URL is required for this content type");
-      } else {
-        // Basic URL validation
-        try {
-          const url = new URL(contentUrl);
-          if (!["http:", "https:"].includes(url.protocol)) {
-            newErrors.push("URL must start with http:// or https://");
-          }
-        } catch {
-          newErrors.push("Please enter a valid URL");
-        }
+      const validationErrors = validateContentForm(
+        contentType,
+        contentUrl,
+        contentBody
+      );
+      if (validationErrors.length > 0) {
+        setErrors(validationErrors);
+        return;
       }
-    }
 
-    if (contentType === "text_with_images") {
-      if (!contentBody.trim()) {
-        newErrors.push("Content body is required for text content");
-      }
-    }
+      const payload: NodeContent = {
+        id: existingContent?.id || generateTempId(),
+        node_id: nodeId,
+        content_type: contentType,
+        content_url: ["video", "canva_slide"].includes(contentType)
+          ? contentUrl.trim()
+          : null,
+        content_body:
+          contentType === "text_with_images" ? contentBody.trim() : null,
+        created_at: existingContent?.created_at || new Date().toISOString(),
+      };
 
-    setErrors(newErrors);
-    return newErrors.length === 0;
-  };
+      onSave(payload);
+    },
+    [contentType, contentUrl, contentBody, existingContent, nodeId, onSave]
+  );
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    const payload: NodeContent = {
-      id:
-        existingContent?.id ||
-        `temp_content_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      node_id: nodeId,
-      content_type: contentType,
-      content_url: ["video", "canva_slide"].includes(contentType)
-        ? contentUrl.trim()
-        : null,
-      content_body:
-        contentType === "text_with_images" ? contentBody.trim() : null,
-      created_at: existingContent?.created_at || new Date().toISOString(),
-    };
-
-    console.log("Saving content:", payload);
-    onSave(payload);
-  };
+  const clearErrors = useCallback(() => setErrors([]), []);
 
   return (
     <form
@@ -127,16 +167,18 @@ const ContentForm = ({
           value={contentType}
           onValueChange={(v: ContentType) => {
             setContentType(v);
-            setErrors([]); // Clear errors when type changes
+            clearErrors();
           }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select content type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="video">📹 Video</SelectItem>
-            <SelectItem value="canva_slide">🎨 Canva Slide</SelectItem>
-            <SelectItem value="text_with_images">📝 Text & Images</SelectItem>
+            {Object.entries(CONTENT_TYPE_CONFIG).map(([type, config]) => (
+              <SelectItem key={type} value={type}>
+                {config.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -146,11 +188,7 @@ const ContentForm = ({
           <Label htmlFor="content_url">
             URL *
             <span className="text-xs text-muted-foreground ml-2">
-              (
-              {contentType === "video"
-                ? "YouTube, Vimeo, etc."
-                : "Canva presentation link"}
-              )
+              ({config.hint})
             </span>
           </Label>
           <Input
@@ -158,13 +196,9 @@ const ContentForm = ({
             value={contentUrl}
             onChange={(e) => {
               setContentUrl(e.target.value);
-              setErrors([]); // Clear errors on change
+              clearErrors();
             }}
-            placeholder={
-              contentType === "video"
-                ? "https://youtube.com/watch?v=..."
-                : "https://www.canva.com/design/..."
-            }
+            placeholder={config.placeholder}
             className={
               errors.some((e) => e.includes("URL")) ? "border-red-500" : ""
             }
@@ -177,7 +211,7 @@ const ContentForm = ({
           <Label htmlFor="content_body">
             Content *
             <span className="text-xs text-muted-foreground ml-2">
-              (HTML tags supported: &lt;img&gt;, &lt;p&gt;, &lt;h1&gt;, etc.)
+              ({config.hint})
             </span>
           </Label>
           <Textarea
@@ -185,14 +219,18 @@ const ContentForm = ({
             value={contentBody}
             onChange={(e) => {
               setContentBody(e.target.value);
-              setErrors([]); // Clear errors on change
+              clearErrors();
             }}
-            className={`min-h-[120px] ${errors.some((e) => e.includes("Content body")) ? "border-red-500" : ""}`}
-            placeholder="Write your content here... You can use HTML tags like <img src='...'>, <p>, <h1>, etc."
+            className={`min-h-[120px] ${
+              errors.some((e) => e.includes("Content body"))
+                ? "border-red-500"
+                : ""
+            }`}
+            placeholder={config.placeholder}
           />
           <div className="text-xs text-muted-foreground">
             💡 Tip: Use &lt;img src="url"&gt; to embed images, &lt;h1&gt; for
-            headings, &lt;p&gt; for paragraphs
+            headings
           </div>
         </div>
       )}
@@ -211,6 +249,24 @@ const ContentForm = ({
   );
 };
 
+// Content preview utilities
+const getContentPreview = (item: NodeContent): string => {
+  const previews = {
+    video: () =>
+      `📹 Video: ${item.content_url?.substring(0, 50)}${item.content_url && item.content_url.length > 50 ? "..." : ""}`,
+    canva_slide: () =>
+      `🎨 Canva: ${item.content_url?.substring(0, 50)}${item.content_url && item.content_url.length > 50 ? "..." : ""}`,
+    text_with_images: () => {
+      const bodyPreview =
+        item.content_body?.replace(/<[^>]*>/g, "").substring(0, 50) || "";
+      return `📝 Text: ${bodyPreview}${bodyPreview.length >= 50 ? "..." : ""}`;
+    },
+  };
+
+  return previews[item.content_type]?.() || item.content_type;
+};
+
+// Main component
 export function ContentEditor({
   nodeId,
   content,
@@ -219,101 +275,112 @@ export function ContentEditor({
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const handleSave = (savedContent: NodeContent) => {
-    console.log("ContentEditor: Handling save for content:", savedContent);
+  const isFormActive = isAdding || editingId;
 
-    // Validate the saved content
-    if (
-      !savedContent.id ||
-      !savedContent.node_id ||
-      !savedContent.content_type
-    ) {
-      console.error("Invalid content data:", savedContent);
-      return;
-    }
+  const handleSave = useCallback(
+    (savedContent: NodeContent) => {
+      if (
+        !savedContent.id ||
+        !savedContent.node_id ||
+        !savedContent.content_type
+      ) {
+        console.error("Invalid content data:", savedContent);
+        return;
+      }
 
-    const existingIndex = content.findIndex((c) => c.id === savedContent.id);
+      const existingIndex = content.findIndex((c) => c.id === savedContent.id);
 
-    if (existingIndex >= 0) {
-      // Update existing content
-      const updatedContent = [...content];
-      updatedContent[existingIndex] = savedContent;
-      console.log(
-        "ContentEditor: Updating existing content at index",
-        existingIndex
-      );
-      onContentChange(updatedContent);
-    } else {
-      // Add new content
-      const newContent = [...content, savedContent];
-      console.log(
-        "ContentEditor: Adding new content. Total items:",
-        newContent.length
-      );
-      onContentChange(newContent);
-    }
+      if (existingIndex >= 0) {
+        // Update existing content
+        const updatedContent = [...content];
+        updatedContent[existingIndex] = savedContent;
+        onContentChange(updatedContent);
+      } else {
+        // Add new content
+        onContentChange([...content, savedContent]);
+      }
 
-    // Reset form state
+      // Reset form state
+      setIsAdding(false);
+      setEditingId(null);
+    },
+    [content, onContentChange]
+  );
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      onContentChange(content.filter((c) => c.id !== id));
+    },
+    [content, onContentChange]
+  );
+
+  const handleEdit = useCallback((id: string) => {
+    setEditingId(id);
+  }, []);
+
+  const handleCancelForm = useCallback(() => {
     setIsAdding(false);
     setEditingId(null);
-  };
+  }, []);
 
-  const handleDelete = (id: string) => {
-    console.log("ContentEditor: Deleting content with id:", id);
-    const filteredContent = content.filter((c) => c.id !== id);
-    console.log(
-      "ContentEditor: Remaining content items:",
-      filteredContent.length
-    );
-    onContentChange(filteredContent);
-  };
+  const confirmDelete = useCallback(
+    (id: string) => {
+      if (window.confirm("Are you sure you want to delete this content?")) {
+        handleDelete(id);
+      }
+    },
+    [handleDelete]
+  );
 
-  const handleCancelAdd = () => {
-    setIsAdding(false);
-  };
+  // Empty state component
+  const EmptyState = useMemo(
+    () => (
+      <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+        <div className="space-y-2">
+          <p className="text-sm font-medium">No learning content added yet</p>
+          <p className="text-xs">
+            Add videos, slides, or text content to help students learn
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAdding(true)}
+            className="mt-2"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Your First Content
+          </Button>
+        </div>
+      </div>
+    ),
+    []
+  );
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-  };
-
-  const getContentPreview = (item: NodeContent): string => {
-    switch (item.content_type) {
-      case "video":
-        return `📹 Video: ${item.content_url?.substring(0, 50)}${item.content_url && item.content_url.length > 50 ? "..." : ""}`;
-      case "canva_slide":
-        return `🎨 Canva: ${item.content_url?.substring(0, 50)}${item.content_url && item.content_url.length > 50 ? "..." : ""}`;
-      case "text_with_images":
-        const bodyPreview =
-          item.content_body?.replace(/<[^>]*>/g, "").substring(0, 50) || "";
-        return `📝 Text: ${bodyPreview}${bodyPreview.length >= 50 ? "..." : ""}`;
-      default:
-        return item.content_type;
-    }
-  };
-
-  // Debug logging
-  console.log("ContentEditor render:", {
-    nodeId,
-    contentCount: content.length,
-    isAdding,
-    editingId,
-    content: content.map((c) => ({ id: c.id, type: c.content_type })),
-  });
+  // Help text component
+  const HelpText = useMemo(
+    () => (
+      <div className="text-xs text-muted-foreground text-center space-y-1">
+        <p>💡 Content will be shown to students in the order listed above</p>
+        <p>
+          🎯 Mix different content types to create engaging learning experiences
+        </p>
+      </div>
+    ),
+    []
+  );
 
   return (
     <div className="space-y-3">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h4 className="font-medium text-sm">
           Learning Content ({content.length})
         </h4>
-        {!isAdding && !editingId && (
+        {!isFormActive && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              console.log("ContentEditor: Starting to add new content");
-              setIsAdding(true);
-            }}
+            onClick={() => setIsAdding(true)}
             className="h-8"
           >
             <PlusCircle className="h-3 w-3 mr-1" />
@@ -328,12 +395,12 @@ export function ContentEditor({
           <ContentForm
             nodeId={nodeId}
             onSave={handleSave}
-            onCancel={handleCancelAdd}
+            onCancel={handleCancelForm}
           />
         </div>
       )}
 
-      {/* Existing content list */}
+      {/* Content list */}
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {content.map((item, index) => (
           <Card key={item.id} className="border-l-4 border-l-blue-500">
@@ -344,7 +411,7 @@ export function ContentEditor({
                     nodeId={nodeId}
                     existingContent={item}
                     onSave={handleSave}
-                    onCancel={handleCancelEdit}
+                    onCancel={handleCancelForm}
                   />
                 </div>
               ) : (
@@ -371,32 +438,18 @@ export function ContentEditor({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        console.log(
-                          "ContentEditor: Starting to edit content:",
-                          item.id
-                        );
-                        setEditingId(item.id);
-                      }}
+                      onClick={() => handleEdit(item.id)}
                       className="h-8 w-8 p-0"
-                      disabled={isAdding}
+                      disabled={!!isFormActive}
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            "Are you sure you want to delete this content?"
-                          )
-                        ) {
-                          handleDelete(item.id);
-                        }
-                      }}
+                      onClick={() => confirmDelete(item.id)}
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                      disabled={isAdding}
+                      disabled={isFormActive}
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -409,36 +462,10 @@ export function ContentEditor({
       </div>
 
       {/* Empty state */}
-      {content.length === 0 && !isAdding && (
-        <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-          <div className="space-y-2">
-            <p className="text-sm font-medium">No learning content added yet</p>
-            <p className="text-xs">
-              Add videos, slides, or text content to help students learn
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsAdding(true)}
-              className="mt-2"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Your First Content
-            </Button>
-          </div>
-        </div>
-      )}
+      {content.length === 0 && !isAdding && EmptyState}
 
       {/* Help text */}
-      {content.length > 0 && (
-        <div className="text-xs text-muted-foreground text-center space-y-1">
-          <p>💡 Content will be shown to students in the order listed above</p>
-          <p>
-            🎯 Mix different content types to create engaging learning
-            experiences
-          </p>
-        </div>
-      )}
+      {content.length > 0 && HelpText}
     </div>
   );
 }
