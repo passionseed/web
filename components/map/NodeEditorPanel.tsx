@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Node } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { MapNode, NodeContent, NodeAssessment } from "@/types/map";
-import { Loader2, Save, Trash2 } from "lucide-react";
+import {
+  MapNode,
+  NodeContent,
+  NodeAssessment,
+  QuizQuestion,
+} from "@/types/map";
+import { Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,88 +41,137 @@ export function NodeEditorPanel({
   onNodeDelete,
 }: NodeEditorPanelProps) {
   const [nodeData, setNodeData] = useState<Partial<MapNode>>({});
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
+  // Track quiz questions separately for batch operations
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
 
   useEffect(() => {
     if (selectedNode) {
       setNodeData(selectedNode.data);
+      // Initialize quiz questions from existing assessment
+      const assessment = selectedNode.data.node_assessments?.[0];
+      if (assessment?.assessment_type === "quiz") {
+        setQuizQuestions(assessment.quiz_questions || []);
+        console.log(
+          "📋 Loaded existing quiz questions:",
+          assessment.quiz_questions?.length || 0
+        );
+      }
     }
   }, [selectedNode]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    const newData = { ...nodeData, [name]: value };
-    setNodeData(newData);
+  const handleInputChange = useCallback(
+    (field: keyof MapNode) =>
+      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { value } = e.target;
+        const newData = { ...nodeData, [field]: value };
+        setNodeData(newData);
 
-    // Update immediately without needing a save button
-    if (selectedNode) {
-      onNodeDataChange(selectedNode.id, { [name]: value });
-    }
-  };
+        if (selectedNode) {
+          onNodeDataChange(selectedNode.id, { [field]: value });
+        }
+      },
+    [nodeData, selectedNode, onNodeDataChange]
+  );
 
-  const handleSliderChange = (value: number[]) => {
-    const newData = { ...nodeData, difficulty: value[0] };
-    setNodeData(newData);
+  const handleSliderChange = useCallback(
+    (value: number[]) => {
+      const newData = { ...nodeData, difficulty: value[0] };
+      setNodeData(newData);
 
-    // Update immediately
-    if (selectedNode) {
-      onNodeDataChange(selectedNode.id, { difficulty: value[0] });
-    }
-  };
+      if (selectedNode) {
+        onNodeDataChange(selectedNode.id, { difficulty: value[0] });
+      }
+    },
+    [nodeData, selectedNode, onNodeDataChange]
+  );
 
-  const handleContentChange = (newContent: NodeContent[]) => {
-    console.log("NodeEditorPanel: Content changed, new content:", newContent);
+  const handleContentChange = useCallback(
+    (newContent: NodeContent[]) => {
+      console.log(
+        "📝 NodeEditorPanel: Content changed, new content:",
+        newContent.length
+      );
 
-    if (!selectedNode) {
-      console.warn("NodeEditorPanel: No selected node, cannot update content");
-      return;
-    }
+      if (!selectedNode) {
+        console.warn(
+          "❌ NodeEditorPanel: No selected node, cannot update content"
+        );
+        return;
+      }
 
-    // Update the node data with new content
-    const updatedNodeData = {
-      ...selectedNode.data,
-      node_content: newContent,
-    };
+      const updatedNodeData = {
+        ...selectedNode.data,
+        node_content: newContent,
+      };
 
-    console.log(
-      "NodeEditorPanel: Calling onNodeDataChange with updated content"
-    );
-    onNodeDataChange(selectedNode.id, updatedNodeData);
-  };
+      onNodeDataChange(selectedNode.id, updatedNodeData);
+    },
+    [selectedNode, onNodeDataChange]
+  );
 
-  const handleAssessmentChange = (
-    changedAssessment: NodeAssessment | null,
-    action: "add" | "delete"
-  ) => {
-    if (!selectedNode) return;
+  const handleAssessmentChange = useCallback(
+    (changedAssessment: NodeAssessment | null, action: "add" | "delete") => {
+      if (!selectedNode) return;
 
-    const newAssessments =
-      action === "add" && changedAssessment
-        ? [
-            {
-              ...changedAssessment,
-              id:
-                changedAssessment.id ||
-                `temp_assessment_${Date.now()}_${Math.random()}`,
-            },
-          ]
-        : [];
+      console.log(
+        "🔧 Assessment change:",
+        action,
+        changedAssessment?.assessment_type
+      );
 
-    const updatedNodeData = { ...nodeData, node_assessments: newAssessments };
-    setNodeData(updatedNodeData);
-    onNodeDataChange(selectedNode.id, {
-      node_assessments: newAssessments,
-    } as any);
-  };
+      const newAssessments =
+        action === "add" && changedAssessment ? [changedAssessment] : [];
+      const updatedNodeData = { ...nodeData, node_assessments: newAssessments };
 
-  const handleDeleteNode = () => {
+      setNodeData(updatedNodeData);
+      onNodeDataChange(selectedNode.id, {
+        node_assessments: newAssessments,
+      } as any);
+
+      // Clear quiz questions if deleting assessment
+      if (action === "delete") {
+        setQuizQuestions([]);
+      }
+    },
+    [selectedNode, nodeData, onNodeDataChange]
+  );
+
+  // NEW: Handle quiz questions changes specifically
+  const handleQuizQuestionsChange = useCallback(
+    (questions: QuizQuestion[]) => {
+      console.log(
+        "🔄 NodeEditorPanel: Quiz questions changed:",
+        questions.length
+      );
+      setQuizQuestions(questions);
+
+      if (!selectedNode) return;
+
+      // Update the assessment with new questions
+      const currentAssessment = nodeData.node_assessments?.[0];
+      if (currentAssessment?.assessment_type === "quiz") {
+        const updatedAssessment = {
+          ...currentAssessment,
+          quiz_questions: questions,
+        };
+
+        const updatedNodeData = {
+          ...selectedNode.data,
+          node_assessments: [updatedAssessment],
+        };
+
+        console.log("📊 Updating node with quiz questions:", questions.length);
+        onNodeDataChange(selectedNode.id, updatedNodeData);
+      }
+    },
+    [selectedNode, nodeData, onNodeDataChange]
+  );
+
+  const handleDeleteNode = useCallback(() => {
     if (selectedNode && onNodeDelete) {
       onNodeDelete(selectedNode.id);
     }
-  };
+  }, [selectedNode, onNodeDelete]);
 
   if (!selectedNode) {
     return (
@@ -177,8 +230,14 @@ export function NodeEditorPanel({
             </TabsTrigger>
             <TabsTrigger value="assessment" className="flex-1">
               Assessment
+              {quizQuestions.length > 0 && (
+                <span className="ml-1 text-xs bg-green-100 text-green-800 px-1 rounded">
+                  {quizQuestions.length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
+
           <TabsContent value="details" className="flex-grow">
             <div className="p-2 space-y-4 h-full">
               <div className="space-y-4">
@@ -188,7 +247,7 @@ export function NodeEditorPanel({
                     id="title"
                     name="title"
                     value={nodeData.title || ""}
-                    onChange={handleInputChange}
+                    onChange={handleInputChange("title")}
                   />
                 </div>
                 <div className="space-y-2">
@@ -198,7 +257,7 @@ export function NodeEditorPanel({
                     name="instructions"
                     placeholder="Instructions for the student..."
                     value={nodeData.instructions || ""}
-                    onChange={handleInputChange}
+                    onChange={handleInputChange("instructions")}
                     className="min-h-[100px]"
                   />
                 </div>
@@ -223,7 +282,7 @@ export function NodeEditorPanel({
                     name="sprite_url"
                     placeholder="http://path/to/image.png"
                     value={nodeData.sprite_url || ""}
-                    onChange={handleInputChange}
+                    onChange={handleInputChange("sprite_url")}
                   />
                 </div>
               </div>
@@ -233,6 +292,7 @@ export function NodeEditorPanel({
               </div>
             </div>
           </TabsContent>
+
           <TabsContent value="content" className="flex-grow overflow-y-auto">
             <div className="h-full flex flex-col">
               <div className="flex-grow">
@@ -244,6 +304,7 @@ export function NodeEditorPanel({
               </div>
             </div>
           </TabsContent>
+
           <TabsContent value="assessment" className="flex-grow overflow-y-auto">
             <div className="h-full flex flex-col">
               <div className="flex-grow">
@@ -251,6 +312,7 @@ export function NodeEditorPanel({
                   nodeId={selectedNode.id}
                   assessment={(nodeData as any).node_assessments?.[0] || null}
                   onAssessmentChange={handleAssessmentChange}
+                  onQuizQuestionsChange={handleQuizQuestionsChange}
                 />
               </div>
             </div>

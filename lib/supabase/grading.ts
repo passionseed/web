@@ -128,7 +128,22 @@ export const getSubmissionsForMap = async (
     throw new Error("Could not fetch submissions for the map.");
   }
 
-  return data || [];
+  // Step 4: Handle regrading by getting the most recent grade for each submission
+  const submissionsWithLatestGrades = (data || []).map((submission) => {
+    // Sort grades by graded_at in descending order to get the most recent first
+    const sortedGrades = submission.submission_grades.sort(
+      (a, b) =>
+        new Date(b.graded_at).getTime() - new Date(a.graded_at).getTime()
+    );
+
+    return {
+      ...submission,
+      // Keep only the most recent grade, or empty array if no grades
+      submission_grades: sortedGrades.length > 0 ? [sortedGrades[0]] : [],
+    };
+  });
+
+  return submissionsWithLatestGrades;
 };
 
 export const gradeSubmission = async (
@@ -203,25 +218,22 @@ export const gradeSubmission = async (
       );
     }
 
-    // Step 3: Validate user permissions
-    const { data: userRoles, error: rolesError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .in("role", ["instructor", "TA"]);
+    // Step 3: Check for existing grades (for regrading handling)
+    const { data: existingGrades } = await supabase
+      .from("submission_grades")
+      .select("id, grade, graded_at")
+      .eq("submission_id", submissionId)
+      .order("graded_at", { ascending: false });
 
-    if (rolesError) {
-      console.error("Error checking user roles:", rolesError);
-      throw new Error("Unable to verify grading permissions");
+    if (existingGrades && existingGrades.length > 0) {
+      console.log(
+        `Found ${existingGrades.length} existing grades for submission ${submissionId}`
+      );
+      console.log("Most recent grade:", existingGrades[0]);
+      console.log("This will be a regrade - creating new grade entry");
     }
 
-    if (!userRoles || userRoles.length === 0) {
-      throw new Error("User does not have permission to grade submissions");
-    }
-
-    console.log("User roles verified:", userRoles);
-
-    // Step 4: Create the grade entry with explicit type casting
+    // Step 4: Create the grade entry (always create new entry for regrading history)
     const gradePayload = {
       submission_id: submissionId,
       graded_by: userId,
@@ -248,14 +260,10 @@ export const gradeSubmission = async (
         payload: gradePayload,
       });
 
-      // More specific error handling
+      // Handle specific error cases
       if (gradeError.code === "23503") {
         throw new Error(
           "Foreign key constraint violation - invalid submission or user ID"
-        );
-      } else if (gradeError.code === "23505") {
-        throw new Error(
-          "Duplicate grade entry - this submission may already be graded"
         );
       } else if (gradeError.code === "42501") {
         throw new Error("Permission denied - insufficient database privileges");
@@ -271,7 +279,7 @@ export const gradeSubmission = async (
           );
         } else if (errorMsg.includes("student_node_progress_status_check")) {
           throw new Error(
-            `Progress status constraint violation. This is likely due to the database trigger. Please check the trigger function.`
+            `Progress status constraint violation. This is likely due to the database trigger.`
           );
         } else {
           throw new Error(`Check constraint violation: ${errorMsg}`);
@@ -289,10 +297,7 @@ export const gradeSubmission = async (
 
     console.log("Grade created successfully:", gradeData);
 
-    // Step 5: The trigger should automatically update the progress status
-    // Let's verify it worked by checking the updated progress
-    console.log(`Checking if trigger updated progress ${progressId}...`);
-
+    // Step 5: Verify the trigger updated the progress status correctly
     const { data: updatedProgress, error: progressCheckError } = await supabase
       .from("student_node_progress")
       .select("status")
@@ -312,23 +317,6 @@ export const gradeSubmission = async (
         console.warn(
           `Progress status is ${updatedProgress.status}, expected ${expectedStatus}`
         );
-
-        // Manual fallback if trigger failed
-        console.log("Attempting manual progress update...");
-        const { error: manualUpdateError } = await supabase
-          .from("student_node_progress")
-          .update({
-            status: expectedStatus,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", progressId);
-
-        if (manualUpdateError) {
-          console.error("Manual progress update failed:", manualUpdateError);
-          console.warn("Grade created but progress status may be inconsistent");
-        } else {
-          console.log("Manual progress update successful");
-        }
       }
     }
 
@@ -360,6 +348,82 @@ export const getSubmissionGrade = async (
     console.error("Error fetching submission grade:", error);
     throw new Error("Could not fetch submission grade.");
   }
-
   return data || null;
+};
+
+// Get submission information for a specific node and user
+export const getNodeSubmission = async (
+  userId: string,
+  nodeId: string
+): Promise<SubmissionWithDetails | null> => {
+  const supabase = createClient();
+
+  // First, get the progress record for this user and node
+  const { data: progress, error: progressError } = await supabase
+    .from("student_node_progress")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("node_id", nodeId)
+    .in("status", ["submitted", "passed", "failed"])
+    .single();
+
+  if (progressError) {
+    // If no progress record exists or user hasn't submitted, return null
+    if (progressError.code === "PGRST116") {
+      return null;
+    }
+    console.error("Error fetching progress:", progressError);
+    throw new Error("Could not fetch student progress.");
+  }
+
+  // Then, get the submission for this progress record
+  const { data: submission, error: submissionError } = await supabase
+    .from("assessment_submissions")
+    .select(
+      `
+    id,
+    submitted_at,
+    text_answer,
+    file_urls,
+    image_url,
+    quiz_answers,
+    student_node_progress!inner (
+        id,
+        status,
+        profiles (
+            id,
+            username,
+            avatar_url
+        )
+    ),
+    node_assessments (
+        assessment_type,
+        map_nodes (
+            id,
+            title
+        )
+    ),
+    submission_grades (
+        grade,
+        comments,
+        rating,
+        graded_at
+    )
+    `
+    )
+    .eq("progress_id", progress.id)
+    .order("submitted_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (submissionError) {
+    // If no submission exists, return null
+    if (submissionError.code === "PGRST116") {
+      return null;
+    }
+    console.error("Error fetching submission:", submissionError);
+    throw new Error("Could not fetch submission.");
+  }
+
+  return submission as SubmissionWithDetails;
 };

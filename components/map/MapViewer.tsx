@@ -301,6 +301,7 @@ export function MapViewer({ map }: MapViewerProps) {
         <NodeViewPanel
           selectedNode={selectedNode}
           onProgressUpdate={loadAllProgress}
+          isNodeUnlocked={selectedNode ? isNodeUnlocked(selectedNode.id) : true}
         />
       </ResizablePanel>
     </ResizablePanelGroup>

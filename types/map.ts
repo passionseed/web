@@ -45,9 +45,10 @@ export interface MapNode {
   metadata: Record<string, any> | null; // jsonb
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
-  content?: NodeContent[]; // Optional relation
-  assessment?: NodeAssessment; // Optional relation
-  paths?: NodePath[]; // Optional relation
+  node_content?: NodeContent[]; // Changed from 'content' to 'node_content'
+  node_assessments?: NodeAssessment[]; // Changed from 'assessment' to 'node_assessments' and made it an array
+  node_paths_source?: NodePath[]; // Added missing relation
+  node_paths_destination?: NodePath[]; // Added missing relation
 }
 
 export interface NodePath {
@@ -86,7 +87,7 @@ export interface NodeAssessment {
   id: string; // uuid
   node_id: string; // uuid
   assessment_type: AssessmentType;
-  questions?: QuizQuestion[]; // Optional relation for quizzes
+  quiz_questions?: QuizQuestion[]; // Optional relation for quizzes
 }
 
 export interface QuizQuestion {
