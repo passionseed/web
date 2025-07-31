@@ -513,42 +513,204 @@ export const batchUpdateMap = async (
         createdNodes.map((n) => ({ id: n.id, title: n.title }))
       );
 
-      // Map temp IDs to real IDs for content creation
+      // FIXED: Map temp IDs to real IDs by matching properties in order
       createdNodes.forEach((createdNode, index) => {
-        const originalNode = updates.nodes.create[index];
-        if (originalNode && originalNode.title) {
-          // Create a mapping based on the order and properties
-          const tempKey = `${originalNode.title}_${index}`;
-          createdNodeMap.set(tempKey, createdNode.id);
-          console.log(
-            `🔗 Mapped temp node key ${tempKey} to real node ${createdNode.id}`
+        const originalNodeToCreate = updates.nodes.create[index];
+        if (originalNodeToCreate) {
+          // Find the original temp node from the client state by matching properties
+          // This is a more robust approach than relying on titles alone
+          const potentialTempIds = [
+            `temp_node_${originalNodeToCreate.title}_${index}`,
+            `temp_node_${index}`,
+            // Try to extract from any metadata if available
+            ...(originalNodeToCreate.metadata &&
+            typeof originalNodeToCreate.metadata === "object" &&
+            "temp_id" in originalNodeToCreate.metadata
+              ? [originalNodeToCreate.metadata.temp_id]
+              : []),
+          ];
+
+          // Also check all paths to find references to temp nodes
+          const allPaths = [...updates.paths.create];
+          const tempIdFromPaths = allPaths.find(
+            (path) =>
+              path.source_node_id?.startsWith("temp_node_") ||
+              path.destination_node_id?.startsWith("temp_node_")
           );
+
+          if (tempIdFromPaths) {
+            // Extract temp IDs from path references
+            const tempIds = [
+              tempIdFromPaths.source_node_id,
+              tempIdFromPaths.destination_node_id,
+            ].filter((id) => id?.startsWith("temp_node_"));
+
+            tempIds.forEach((tempId) => {
+              if (tempId && !createdNodeMap.has(tempId)) {
+                // Match by index if we can determine it
+                const tempIndex = parseInt(tempId.split("_")[2]) || index;
+                if (tempIndex === index) {
+                  createdNodeMap.set(tempId, createdNode.id);
+                  console.log(
+                    `🔗 Mapped temp node ${tempId} to real node ${createdNode.id} (via path reference)`
+                  );
+                }
+              }
+            });
+          }
+
+          // Fallback: create a mapping based on creation order
+          const fallbackTempId =
+            `temp_node_${Date.now()}_${Math.random()}`.substring(0, 50); // Ensure reasonable length
+
+          // Check if we already have a mapping for this node
+          let tempIdFound = false;
+          for (const [tempId, realId] of createdNodeMap.entries()) {
+            if (realId === createdNode.id) {
+              tempIdFound = true;
+              break;
+            }
+          }
+
+          if (!tempIdFound) {
+            // Use a predictable temp ID pattern that the frontend can generate
+            const predictableTempId = `temp_node_${originalNodeToCreate.title?.replace(/\s+/g, "_")}_${index}`;
+            createdNodeMap.set(predictableTempId, createdNode.id);
+            console.log(
+              `🔗 Mapped predictable temp node ${predictableTempId} to real node ${createdNode.id}`
+            );
+
+            // Also map any title-based patterns
+            potentialTempIds.forEach((potentialId) => {
+              if (potentialId && !createdNodeMap.has(potentialId)) {
+                createdNodeMap.set(potentialId, createdNode.id);
+                console.log(
+                  `🔗 Alternative mapping: ${potentialId} -> ${createdNode.id}`
+                );
+              }
+            });
+          }
         }
       });
+
+      console.log("📋 Final node mapping:", Object.fromEntries(createdNodeMap));
     }
 
     if (updates.paths.create.length > 0) {
       console.log("➕ Creating paths:", updates.paths.create);
 
-      // Map temp node IDs to real IDs in paths
-      const pathsToCreate = updates.paths.create.map((path) => {
+      // FIXED: Better temp node ID resolution for paths
+      const pathsToCreate = updates.paths.create.map((path, index) => {
+        let mappedSourceId = path.source_node_id;
+        let mappedTargetId = path.destination_node_id;
+
+        // Try direct mapping first
+        if (createdNodeMap.has(path.source_node_id)) {
+          mappedSourceId = createdNodeMap.get(path.source_node_id)!;
+        } else if (path.source_node_id.startsWith("temp_node_")) {
+          // Try to find by different patterns
+          for (const [tempId, realId] of createdNodeMap.entries()) {
+            if (
+              tempId.includes(path.source_node_id.split("_")[2]) ||
+              path.source_node_id.includes(tempId.split("_")[2])
+            ) {
+              mappedSourceId = realId;
+              console.log(
+                `🔍 Found source mapping via pattern: ${path.source_node_id} -> ${realId}`
+              );
+              break;
+            }
+          }
+
+          // If still not found, this might be an existing node ID
+          if (
+            mappedSourceId === path.source_node_id &&
+            path.source_node_id.startsWith("temp_node_")
+          ) {
+            console.error(
+              `❌ Could not resolve temp source node ID: ${path.source_node_id}`
+            );
+            console.error(
+              "Available mappings:",
+              Object.fromEntries(createdNodeMap)
+            );
+            throw new Error(
+              `Could not resolve temporary source node ID: ${path.source_node_id}`
+            );
+          }
+        }
+
+        if (createdNodeMap.has(path.destination_node_id)) {
+          mappedTargetId = createdNodeMap.get(path.destination_node_id)!;
+        } else if (path.destination_node_id.startsWith("temp_node_")) {
+          // Try to find by different patterns
+          for (const [tempId, realId] of createdNodeMap.entries()) {
+            if (
+              tempId.includes(path.destination_node_id.split("_")[2]) ||
+              path.destination_node_id.includes(tempId.split("_")[2])
+            ) {
+              mappedTargetId = realId;
+              console.log(
+                `🔍 Found target mapping via pattern: ${path.destination_node_id} -> ${realId}`
+              );
+              break;
+            }
+          }
+
+          // If still not found, this might be an existing node ID
+          if (
+            mappedTargetId === path.destination_node_id &&
+            path.destination_node_id.startsWith("temp_node_")
+          ) {
+            console.error(
+              `❌ Could not resolve temp destination node ID: ${path.destination_node_id}`
+            );
+            console.error(
+              "Available mappings:",
+              Object.fromEntries(createdNodeMap)
+            );
+            throw new Error(
+              `Could not resolve temporary destination node ID: ${path.destination_node_id}`
+            );
+          }
+        }
+
         const mappedPath = {
-          source_node_id:
-            createdNodeMap.get(path.source_node_id) || path.source_node_id,
-          destination_node_id:
-            createdNodeMap.get(path.destination_node_id) ||
-            path.destination_node_id,
+          source_node_id: mappedSourceId,
+          destination_node_id: mappedTargetId,
         };
-        console.log("🔗 Path mapping:", { original: path, mapped: mappedPath });
+
+        console.log(`🔗 Path ${index} mapping:`, {
+          original: path,
+          mapped: mappedPath,
+          sourceResolved: mappedSourceId !== path.source_node_id,
+          targetResolved: mappedTargetId !== path.destination_node_id,
+        });
+
         return mappedPath;
       });
+
+      // Validate all paths have valid UUIDs before inserting
+      const invalidPaths = pathsToCreate.filter(
+        (path) =>
+          path.source_node_id.startsWith("temp_") ||
+          path.destination_node_id.startsWith("temp_")
+      );
+
+      if (invalidPaths.length > 0) {
+        console.error("❌ Found paths with unresolved temp IDs:", invalidPaths);
+        throw new Error(
+          `Cannot create paths with temporary IDs: ${invalidPaths.map((p) => `${p.source_node_id} -> ${p.destination_node_id}`).join(", ")}`
+        );
+      }
 
       const { error } = await supabase.from("node_paths").insert(pathsToCreate);
       if (error) {
         console.error("❌ Path creation failed:", error);
+        console.error("❌ Attempted to insert paths:", pathsToCreate);
         throw new Error(`Path creation failed: ${error.message}`);
       }
-      console.log("✅ Paths created");
+      console.log("✅ Paths created successfully");
     }
 
     if (updates.content.create.length > 0) {
