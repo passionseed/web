@@ -167,11 +167,32 @@ export function MapViewer({ map }: MapViewerProps) {
 
           {/* Main Sprite Container */}
           <div
-            className={`relative ${selected ? "scale-110" : ""} transition-transform duration-200 cursor-pointer`}
+            className={`relative ${selected ? "scale-110 translate-y-3" : ""} transition-transform duration-200 cursor-pointer`}
           >
-            {/* Selection Ring */}
+            {/* Selection Shadow - FIXED */}
             {selected && (
-              <div className="absolute -inset-2 rounded-full border-4 border-blue-400 animate-pulse" />
+              <div className="absolute inset-0 -z-10">
+                {/* Main shadow image */}
+                <img
+                  src={spriteUrl}
+                  alt=""
+                  className="w-max h-max object-contain absolute opacity-60"
+                  style={{
+                    filter: "brightness(0) blur(3px)",
+                    transform: "scale(1.25)",
+                  }}
+                />
+                {/* Secondary softer shadow for depth */}
+                <img
+                  src={spriteUrl}
+                  alt=""
+                  className="w-max h-max object-contain absolute translate-y-4 opacity-30"
+                  style={{
+                    filter: "brightness(0) blur(6px)",
+                    transform: "translateY(12px) scale(1.1)",
+                  }}
+                />
+              </div>
             )}
 
             {/* Progress Glow Effect */}
@@ -183,7 +204,7 @@ export function MapViewer({ map }: MapViewerProps) {
             <img
               src={spriteUrl}
               alt={data.title}
-              className={`w-max h-max object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200 ${glowEffect}`}
+              className={`w-max h-max object-contain z-20 drop-shadow-lg hover:drop-shadow-xl transition-all duration-200 ${glowEffect}`}
               style={{
                 filter: selected
                   ? `${brightness} brightness(1.1) saturate(1.2)`

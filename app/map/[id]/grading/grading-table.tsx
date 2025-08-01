@@ -31,8 +31,11 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
-import { SubmissionWithDetails } from "@/lib/supabase/maps";
 import { ViewAndGradeDialog } from "./view-and-grade-dialog";
+import { ViewSubmissionDialog } from "./view-submission-dialog";
+import { GradeSubmissionForm } from "./grade-submission-form";
+import { SubmissionWithDetails } from "@/lib/supabase/grading";
+import { User, Bot } from "lucide-react";
 
 interface GradingTableProps {
   submissions: SubmissionWithDetails[];
@@ -204,10 +207,11 @@ export function GradingTable({ submissions, userId }: GradingTableProps) {
             <TableRow>
               <TableHead>Student</TableHead>
               <TableHead>Node</TableHead>
-              <TableHead>Type</TableHead>
+              <TableHead>Assessment Type</TableHead>
               <TableHead>Submitted</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Graded By</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -223,59 +227,99 @@ export function GradingTable({ submissions, userId }: GradingTableProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredSubmissions.map((submission) => (
-                <TableRow key={submission.id} className="hover:bg-muted/50">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={
-                            submission.student_node_progress.profiles
-                              .avatar_url || ""
-                          }
-                        />
-                        <AvatarFallback className="text-xs">
-                          {submission.student_node_progress.profiles.username[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">
-                        {submission.student_node_progress.profiles.username}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">
+              filteredSubmissions.map((submission) => {
+                const grade = submission.submission_grades[0];
+                const isAutoGraded = grade && grade.graded_by === null;
+                const graderInfo = grade
+                  ? isAutoGraded
+                    ? {
+                        name: "System",
+                        icon: <Bot className="h-3 w-3 text-purple-600" />,
+                      }
+                    : {
+                        name: grade.profiles?.username || "Unknown",
+                        icon: <User className="h-3 w-3 text-blue-600" />,
+                      }
+                  : null;
+
+                return (
+                  <TableRow key={submission.id}>
+                    <TableCell className="font-medium">
+                      {submission.student_node_progress.profiles.username}
+                    </TableCell>
+                    <TableCell>
                       {submission.node_assessments.map_nodes.title}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getSubmissionTypeIcon(submission)}
-                      <span className="text-sm capitalize">
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">
                         {submission.node_assessments.assessment_type.replace(
                           "_",
                           " "
                         )}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono text-sm">
+                        {new Date(submission.submitted_at).toLocaleDateString()}
                       </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {new Date(submission.submitted_at).toLocaleDateString()}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(submission.submitted_at).toLocaleTimeString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(submission)}</TableCell>
-                  <TableCell className="text-right">
-                    <ViewAndGradeDialog
-                      submission={submission}
-                      userId={userId}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {submission.submission_grades.length > 0 ? (
+                          <>
+                            <Badge
+                              variant={
+                                submission.submission_grades[0].grade === "pass"
+                                  ? "default"
+                                  : "destructive"
+                              }
+                            >
+                              {submission.submission_grades[0].grade.toUpperCase()}
+                            </Badge>
+                            {isAutoGraded && (
+                              <Badge variant="secondary" className="text-xs">
+                                🤖 Auto
+                              </Badge>
+                            )}
+                          </>
+                        ) : (
+                          <Badge variant="outline">PENDING</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {graderInfo ? (
+                        <div className="flex items-center gap-2">
+                          {graderInfo.icon}
+                          <span className="text-sm">{graderInfo.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <ViewSubmissionDialog submission={submission} />
+                        {/* Only show grade button for non-auto-graded submissions */}
+                        {(submission.submission_grades.length === 0 ||
+                          submission.submission_grades[0].graded_by !== null) && (
+                          <GradeSubmissionForm
+                            submission={submission}
+                            userId={userId}
+                          />
+                        )}
+                        {/* Show "Auto-Graded" indicator for system grades */}
+                        {submission.submission_grades.length > 0 &&
+                          submission.submission_grades[0].graded_by === null && (
+                            <Badge variant="outline" className="text-xs">
+                              Auto-Graded
+                            </Badge>
+                          )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

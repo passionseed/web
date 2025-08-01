@@ -35,10 +35,17 @@ export default async function GradingPage({
     notFound();
   }
 
-  // Calculate statistics
+  // Calculate statistics - exclude auto-graded submissions from pending count
   const totalSubmissions = submissions.length;
+  const autoGradedSubmissions = submissions.filter(
+    (s) => s.submission_grades.length > 0 && s.submission_grades[0]?.graded_by === null
+  ).length;
   const pendingSubmissions = submissions.filter(
-    (s) => s.submission_grades.length === 0
+    (s) => s.submission_grades.length === 0 || 
+    (s.submission_grades[0]?.graded_by !== null && s.submission_grades.length === 0)
+  ).length;
+  const manuallyGradedSubmissions = submissions.filter(
+    (s) => s.submission_grades.length > 0 && s.submission_grades[0]?.graded_by !== null
   ).length;
   const passedSubmissions = submissions.filter(
     (s) => s.submission_grades[0]?.grade === "pass"
@@ -62,7 +69,7 @@ export default async function GradingPage({
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -89,6 +96,24 @@ export default async function GradingPage({
                 </p>
               </div>
               <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Auto-Graded
+                </p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {autoGradedSubmissions}
+                </p>
+              </div>
+              <div className="h-8 w-8 text-purple-500 flex items-center justify-center text-lg">
+                🤖
+              </div>
             </div>
           </CardContent>
         </Card>
