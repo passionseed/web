@@ -154,6 +154,8 @@ export function NodeViewPanel({
         submissionData.text_answer = assessmentAnswer;
       } else if (assessment.assessment_type === "quiz") {
         submissionData.quiz_answers = quizAnswers;
+        console.log("🤖 Submitting quiz for auto-grading...");
+        console.log("📝 Quiz answers being submitted:", quizAnswers);
       } else if (assessment.assessment_type === "file_upload") {
         if (!fileUrls || fileUrls.length === 0) {
           toast({
@@ -165,16 +167,48 @@ export function NodeViewPanel({
         submissionData.file_urls = fileUrls;
       }
 
+      console.log("📤 Creating assessment submission:", submissionData);
       await createAssessmentSubmission(submissionData);
 
       setAssessmentAnswer("");
       setQuizAnswers({});
 
+      // Refresh progress and submissions
       await loadProgress();
+      onProgressUpdate?.();
 
-      toast({ title: "Assessment submitted successfully!" });
+      // Different success messages based on assessment type
+      if (assessment.assessment_type === "quiz") {
+        toast({
+          title: "Quiz completed!",
+          description:
+            "Your answers have been graded automatically. Check your results above.",
+        });
+      } else {
+        toast({
+          title: "Assessment submitted successfully!",
+          description: "Your submission is pending review by an instructor.",
+        });
+      }
     } catch (error) {
-      toast({ title: "Error submitting assessment", variant: "destructive" });
+      console.error("❌ Error submitting assessment:", error);
+      console.error("❌ Error type:", typeof error);
+      console.error("❌ Error details:", {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+      });
+
+      let errorMessage = "Error submitting assessment";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Submission Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }

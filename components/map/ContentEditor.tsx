@@ -391,28 +391,32 @@ export function ContentEditor({
 
       {/* Add new content form */}
       {isAdding && (
-        <div className="border-2 border-dashed border-blue-300 rounded-lg p-1">
-          <ContentForm
-            nodeId={nodeId}
-            onSave={handleSave}
-            onCancel={handleCancelForm}
-          />
+        <div className="border-2 border-dashed border-blue-300 rounded-lg p-1 max-h-[70vh] overflow-hidden">
+          <div className="max-h-[65vh] overflow-y-auto">
+            <ContentForm
+              nodeId={nodeId}
+              onSave={handleSave}
+              onCancel={handleCancelForm}
+            />
+          </div>
         </div>
       )}
 
       {/* Content list */}
-      <div className="space-y-2 max-h-64 overflow-y-auto">
+      <div className="space-y-2 max-h-[50vh] overflow-y-auto">
         {content.map((item, index) => (
           <Card key={item.id} className="border-l-4 border-l-blue-500">
             <CardContent className="p-3">
               {editingId === item.id ? (
-                <div className="border border-yellow-300 rounded-lg p-1 bg-yellow-50">
-                  <ContentForm
-                    nodeId={nodeId}
-                    existingContent={item}
-                    onSave={handleSave}
-                    onCancel={handleCancelForm}
-                  />
+                <div className="border border-yellow-300 rounded-lg p-1 bg-yellow-50 max-h-[65vh] overflow-hidden">
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    <ContentForm
+                      nodeId={nodeId}
+                      existingContent={item}
+                      onSave={handleSave}
+                      onCancel={handleCancelForm}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="flex justify-between items-start gap-2">
