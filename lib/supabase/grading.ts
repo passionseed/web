@@ -43,6 +43,7 @@ export type SubmissionWithDetails = {
     comments: string | null;
     rating: number | null;
     graded_at: string;
+    graded_by?: string | null; // User ID of the grader
   }[];
 };
 
@@ -51,99 +52,51 @@ export const getSubmissionsForMap = async (
 ): Promise<SubmissionWithDetails[]> => {
   const supabase = createClient();
 
-  // Step 1: Get all node IDs for the given map.
-  const { data: nodes, error: nodesError } = await supabase
-    .from("map_nodes")
-    .select("id")
-    .eq("map_id", mapId);
-
-  if (nodesError) {
-    console.error("Error fetching nodes for map:", nodesError);
-    throw new Error("Could not fetch nodes for the map.");
-  }
-
-  const nodeIds = nodes.map((node) => node.id);
-  if (nodeIds.length === 0) {
-    return []; // No nodes, so no submissions.
-  }
-
-  // Step 2: Get all progress records with submissions (submitted, passed, failed)
-  const { data: progressRecords, error: progressError } = await supabase
-    .from("student_node_progress")
-    .select("id")
-    .in("node_id", nodeIds)
-    .in("status", ["submitted", "in_progress", "passed", "failed"]); // Include all relevant statuses
-
-  if (progressError) {
-    console.error("Error fetching progress records:", progressError);
-    throw new Error("Could not fetch progress records for the map.");
-  }
-
-  const progressIds = progressRecords?.map((p) => p.id) || [];
-  if (progressIds.length === 0) {
-    return []; // No relevant progress records, so no submissions to show.
-  }
-
-  // Step 3: Get all submissions for these progress records
   const { data, error } = await supabase
     .from("assessment_submissions")
     .select(
       `
-            id,
-            submitted_at,
-            text_answer,
-            file_urls,
-            image_url,
-            quiz_answers,
-            student_node_progress!inner (
-                id,
-                status,
-                profiles (
-                    id,
-                    username,
-                    avatar_url
-                )
-            ),
-            node_assessments (
-                assessment_type,
-                map_nodes (
-                    id,
-                    title,
-                    map_id
-                )
-            ),
-            submission_grades (
-                grade,
-                comments,
-                rating,
-                graded_at
-            )
-        `
+      *,
+      student_node_progress (
+        id,
+        status,
+        profiles (
+          id,
+          username
+        )
+      ),
+      node_assessments (
+        id,
+        assessment_type,
+        map_nodes (
+          id,
+          title,
+          map_id
+        )
+      ),
+      submission_grades (
+        id,
+        grade,
+        rating,
+        comments,
+        graded_at,
+        graded_by,
+        profiles (
+          id,
+          username
+        )
+      )
+    `
     )
-    .in("progress_id", progressIds)
+    .eq("node_assessments.map_nodes.map_id", mapId)
     .order("submitted_at", { ascending: false });
 
   if (error) {
     console.error("Error fetching submissions:", error);
-    throw new Error("Could not fetch submissions for the map.");
+    throw new Error("Could not fetch submissions for this map.");
   }
 
-  // Step 4: Handle regrading by getting the most recent grade for each submission
-  const submissionsWithLatestGrades = (data || []).map((submission) => {
-    // Sort grades by graded_at in descending order to get the most recent first
-    const sortedGrades = submission.submission_grades.sort(
-      (a, b) =>
-        new Date(b.graded_at).getTime() - new Date(a.graded_at).getTime()
-    );
-
-    return {
-      ...submission,
-      // Keep only the most recent grade, or empty array if no grades
-      submission_grades: sortedGrades.length > 0 ? [sortedGrades[0]] : [],
-    };
-  });
-
-  return submissionsWithLatestGrades;
+  return data || [];
 };
 
 export const gradeSubmission = async (

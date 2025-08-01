@@ -164,7 +164,10 @@ export default function EditMapPage() {
         batchUpdate.content.delete.length > 0 ||
         batchUpdate.assessments.create.length > 0 ||
         batchUpdate.assessments.update.length > 0 ||
-        batchUpdate.assessments.delete.length > 0;
+        batchUpdate.assessments.delete.length > 0 ||
+        batchUpdate.quizQuestions.create.length > 0 ||
+        batchUpdate.quizQuestions.update.length > 0 ||
+        batchUpdate.quizQuestions.delete.length > 0;
 
       if (!hasChanges) {
         console.log("ℹ️ No actual changes detected in batch update");
@@ -595,7 +598,10 @@ export default function EditMapPage() {
                 correct_option: q.correct_option,
               };
               batchUpdate.quizQuestions.create.push(questionToCreate);
-              console.log("➕ Adding quiz question to create:", questionToCreate);
+              console.log(
+                "➕ Adding quiz question to create:",
+                questionToCreate
+              );
             });
           }
           return;
@@ -621,7 +627,8 @@ export default function EditMapPage() {
         if (
           initialAssessment &&
           currentAssessment &&
-          initialAssessment.assessment_type !== currentAssessment.assessment_type
+          initialAssessment.assessment_type !==
+            currentAssessment.assessment_type
         ) {
           const assessmentToUpdate = {
             id: initialAssessment.id,
@@ -650,7 +657,10 @@ export default function EditMapPage() {
                 correct_option: q.correct_option,
               };
               batchUpdate.quizQuestions.create.push(questionToCreate);
-              console.log("➕ Adding quiz question to create:", questionToCreate);
+              console.log(
+                "➕ Adding quiz question to create:",
+                questionToCreate
+              );
             });
 
           // Deleted questions
@@ -679,7 +689,10 @@ export default function EditMapPage() {
                 correct_option: cq.correct_option,
               };
               batchUpdate.quizQuestions.update.push(questionToUpdate);
-              console.log("📝 Adding quiz question to update:", questionToUpdate);
+              console.log(
+                "📝 Adding quiz question to update:",
+                questionToUpdate
+              );
             });
         }
       });

@@ -22,6 +22,8 @@ import {
   XCircle,
   Image as ImageIcon,
   X,
+  User,
+  Bot,
 } from "lucide-react";
 
 export function ViewSubmissionDialog({
@@ -45,6 +47,14 @@ export function ViewSubmissionDialog({
     }
     return <FileText className="h-4 w-4 text-blue-600" />;
   };
+
+  // Determine if this was auto-graded (system) or manually graded
+  const isAutoGraded = hasGrade && grade.graded_by === null;
+  const graderInfo = hasGrade
+    ? isAutoGraded
+      ? { name: "System (Auto-graded)", icon: <Bot className="h-4 w-4 text-purple-600" /> }
+      : { name: grade.profiles?.username || "Instructor", icon: <User className="h-4 w-4 text-blue-600" /> }
+    : null;
 
   return (
     <>
@@ -91,17 +101,24 @@ export function ViewSubmissionDialog({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Status:</span>
-                  <Badge
-                    variant={
-                      hasGrade
-                        ? grade.grade === "pass"
-                          ? "default"
-                          : "destructive"
-                        : "outline"
-                    }
-                  >
-                    {hasGrade ? grade.grade.toUpperCase() : "PENDING"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        hasGrade
+                          ? grade.grade === "pass"
+                            ? "default"
+                            : "destructive"
+                          : "outline"
+                      }
+                    >
+                      {hasGrade ? grade.grade.toUpperCase() : "PENDING"}
+                    </Badge>
+                    {isAutoGraded && (
+                      <Badge variant="secondary" className="text-xs">
+                        🤖 Auto
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -195,12 +212,12 @@ export function ViewSubmissionDialog({
 
             {/* Grade and Feedback */}
             {hasGrade && (
-              <Card className="border-l-4 border-l-primary">
+              <Card className={`border-l-4 ${isAutoGraded ? 'border-l-purple-500' : 'border-l-primary'}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <MessageCircle className="h-5 w-5 text-primary" />
-                      Instructor Feedback
+                      {isAutoGraded ? "System Feedback" : "Instructor Feedback"}
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       {grade.grade === "pass" ? (
@@ -223,7 +240,10 @@ export function ViewSubmissionDialog({
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Graded by:</span>
-                      <span className="font-medium">Instructor</span>
+                      <div className="flex items-center gap-2">
+                        {graderInfo?.icon}
+                        <span className="font-medium">{graderInfo?.name}</span>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Graded at:</span>
@@ -252,8 +272,14 @@ export function ViewSubmissionDialog({
                       <h4 className="font-medium text-sm text-muted-foreground">
                         Comments:
                       </h4>
-                      <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                        <p className="text-blue-800 leading-relaxed">
+                      <div className={`p-4 rounded-lg border ${
+                        isAutoGraded 
+                          ? 'bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200' 
+                          : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+                      }`}>
+                        <p className={`leading-relaxed ${
+                          isAutoGraded ? 'text-purple-800' : 'text-blue-800'
+                        }`}>
                           "{grade.comments}"
                         </p>
                       </div>
