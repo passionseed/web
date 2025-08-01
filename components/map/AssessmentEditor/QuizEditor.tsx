@@ -104,7 +104,7 @@ export function QuizEditor({ assessment, onQuestionChange }: QuizEditorProps) {
 
       {/* Add new question form */}
       {isAdding && (
-        <div className="border-2 border-dashed border-blue-300 rounded-lg p-1">
+        <div className="border-2 border-dashed border-blue-300 rounded-lg p-1 max-h-[75vh] overflow-hidden">
           <QuestionForm
             onSave={handleSaveQuestion}
             onCancel={handleCancelForm}
@@ -113,12 +113,12 @@ export function QuizEditor({ assessment, onQuestionChange }: QuizEditorProps) {
       )}
 
       {/* Questions list */}
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-[60vh] overflow-y-auto">
         {questions.map((question, index) => (
           <Card key={question.id} className="border-l-4 border-l-green-500">
             <CardContent className="p-3">
               {editingId === question.id ? (
-                <div className="border border-yellow-300 rounded-lg p-1 bg-yellow-50">
+                <div className="border border-yellow-300 rounded-lg p-1 bg-yellow-50 max-h-[70vh] overflow-hidden">
                   <QuestionForm
                     existingQuestion={question}
                     onSave={handleSaveQuestion}

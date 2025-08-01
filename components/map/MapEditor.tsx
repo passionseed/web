@@ -18,6 +18,7 @@ import {
   Position,
   MarkerType,
   MiniMap,
+  OnNodeDrag,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -40,7 +41,7 @@ type AppEdge = Edge;
 
 interface MapEditorProps {
   map: FullLearningMap;
-  onMapChange: (updatedMap: FullLearningMap) => void;
+  onMapChange: React.Dispatch<React.SetStateAction<FullLearningMap | null>>;
 }
 
 // Constants
@@ -362,23 +363,53 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   );
 
   // Node drag handler
-  const onNodeDragStop: NodeDragHandler = useCallback(
+  // const onNodeDragStop: NodeDragHandler = useCallback(
+  //   (_, node) => {
+  //     const updatedMap = {
+  //       ...map,
+  //       map_nodes: map.map_nodes.map((mapNode) => {
+  //         if (mapNode.id === node.id) {
+  //           return {
+  //             ...mapNode,
+  //             metadata: { ...mapNode.metadata, position: node.position },
+  //           };
+  //         }
+  //         return mapNode;
+  //       }),
+  //     };
+  //     onMapChange(updatedMap);
+  //   },
+  //   [map, onMapChange]
+  // );
+
+  const onNodeDragStop: OnNodeDrag = useCallback(
     (_, node) => {
-      const updatedMap = {
-        ...map,
-        map_nodes: map.map_nodes.map((mapNode) => {
-          if (mapNode.id === node.id) {
-            return {
-              ...mapNode,
-              metadata: { ...mapNode.metadata, position: node.position },
-            };
-          }
-          return mapNode;
-        }),
-      };
-      onMapChange(updatedMap);
+      onMapChange((prev: FullLearningMap | null) => {
+        if (!prev) return null;
+
+        const target = prev.map_nodes.find((m) => m.id === node.id);
+        if (!target) return prev;
+
+        const oldPos = target.metadata.position;
+        // avoid no-op if position didn’t actually change
+        if (oldPos.x === node.position.x && oldPos.y === node.position.y) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          map_nodes: prev.map_nodes.map((m) =>
+            m.id === node.id
+              ? {
+                  ...m,
+                  metadata: { ...m.metadata, position: node.position },
+                }
+              : m
+          ),
+        };
+      });
     },
-    [map, onMapChange]
+    [onMapChange]
   );
 
   // Selection change handler

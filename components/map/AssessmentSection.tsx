@@ -16,11 +16,11 @@ import {
   X,
   FileText,
 } from "lucide-react";
-import { Assessment, QuizQuestion } from "@/types/map";
+import { NodeAssessment, QuizQuestion } from "@/types/map";
 import { SubmissionItem } from "./SubmissionItem"; // Assuming component is created
 
 interface AssessmentSectionProps {
-  assessment: Assessment;
+  assessment: NodeAssessment;
   canResubmit: boolean;
   showAssessmentForm: boolean;
   assessmentAnswer: string;

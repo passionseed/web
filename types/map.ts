@@ -129,13 +129,17 @@ export interface AssessmentSubmission {
 export type Grade = "pass" | "fail";
 
 export interface SubmissionGrade {
-  id: string; // uuid
-  submission_id: string; // uuid
-  graded_by: string; // uuid
+  id: string;
+  submission_id: string;
+  graded_by: string | null; // null for system/auto-graded submissions
   grade: Grade;
-  rating: number | null;
-  comments: string | null;
-  graded_at: string; // timestamp with time zone
+  rating?: number;
+  comments?: string;
+  graded_at: string;
+  profiles?: {
+    id: string;
+    username: string;
+  };
 }
 
 export interface NodeLeaderboard {
