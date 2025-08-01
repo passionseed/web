@@ -570,6 +570,120 @@ export default function EditMapPage() {
         });
       });
 
+      // ---------- Assessment & Quiz Question Changes ----------
+      console.log("🔍 Checking assessment changes...");
+      map.map_nodes.forEach((node) => {
+        const initialNode = initialNodeMap.get(node.id);
+        const currentAssessment = node.node_assessments?.[0] || null;
+        const initialAssessment = initialNode?.node_assessments?.[0] || null;
+
+        // Created assessment
+        if (!initialAssessment && currentAssessment) {
+          const assessmentToCreate = {
+            node_id: node.id,
+            assessment_type: currentAssessment.assessment_type,
+          };
+          batchUpdate.assessments.create.push(assessmentToCreate);
+          console.log("➕ Adding assessment to create:", assessmentToCreate);
+
+          if (currentAssessment.assessment_type === "quiz") {
+            (currentAssessment.quiz_questions || []).forEach((q) => {
+              const questionToCreate = {
+                assessment_id: currentAssessment.id,
+                question_text: q.question_text,
+                options: q.options,
+                correct_option: q.correct_option,
+              };
+              batchUpdate.quizQuestions.create.push(questionToCreate);
+              console.log("➕ Adding quiz question to create:", questionToCreate);
+            });
+          }
+          return;
+        }
+
+        // Deleted assessment
+        if (initialAssessment && !currentAssessment) {
+          batchUpdate.assessments.delete.push(initialAssessment.id);
+          console.log("🗑️ Adding assessment to delete:", initialAssessment.id);
+
+          if (initialAssessment.assessment_type === "quiz") {
+            (initialAssessment.quiz_questions || []).forEach((q) => {
+              if (q.id && !q.id.startsWith("temp_")) {
+                batchUpdate.quizQuestions.delete.push(q.id);
+                console.log("🗑️ Adding quiz question to delete:", q.id);
+              }
+            });
+          }
+          return;
+        }
+
+        // Updated assessment type
+        if (
+          initialAssessment &&
+          currentAssessment &&
+          initialAssessment.assessment_type !== currentAssessment.assessment_type
+        ) {
+          const assessmentToUpdate = {
+            id: initialAssessment.id,
+            assessment_type: currentAssessment.assessment_type,
+          };
+          batchUpdate.assessments.update.push(assessmentToUpdate);
+          console.log("📝 Adding assessment to update:", assessmentToUpdate);
+        }
+
+        // Handle quiz questions if quiz type
+        if (
+          currentAssessment?.assessment_type === "quiz" &&
+          initialAssessment?.assessment_type === "quiz"
+        ) {
+          const initialQuestions = initialAssessment.quiz_questions || [];
+          const currentQuestions = currentAssessment.quiz_questions || [];
+
+          // Created questions
+          currentQuestions
+            .filter((q) => q.id?.startsWith("temp_"))
+            .forEach((q) => {
+              const questionToCreate = {
+                assessment_id: currentAssessment.id,
+                question_text: q.question_text,
+                options: q.options,
+                correct_option: q.correct_option,
+              };
+              batchUpdate.quizQuestions.create.push(questionToCreate);
+              console.log("➕ Adding quiz question to create:", questionToCreate);
+            });
+
+          // Deleted questions
+          initialQuestions
+            .filter((iq) => !currentQuestions.some((cq) => cq.id === iq.id))
+            .forEach((iq) => {
+              if (iq.id && !iq.id.startsWith("temp_")) {
+                batchUpdate.quizQuestions.delete.push(iq.id);
+                console.log("🗑️ Adding quiz question to delete:", iq.id);
+              }
+            });
+
+          // Updated questions
+          currentQuestions
+            .filter((cq) => {
+              if (!cq.id || cq.id.startsWith("temp_")) return false;
+              const iq = initialQuestions.find((q) => q.id === cq.id);
+              if (!iq) return false;
+              return JSON.stringify(cq) !== JSON.stringify(iq);
+            })
+            .forEach((cq) => {
+              const questionToUpdate = {
+                id: cq.id!,
+                question_text: cq.question_text,
+                options: cq.options,
+                correct_option: cq.correct_option,
+              };
+              batchUpdate.quizQuestions.update.push(questionToUpdate);
+              console.log("📝 Adding quiz question to update:", questionToUpdate);
+            });
+        }
+      });
+
       console.log("✅ Batch update generation completed");
       console.log("📊 Final batch update summary:", {
         mapChanges: Object.keys(batchUpdate.map).length,
