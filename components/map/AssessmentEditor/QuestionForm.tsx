@@ -206,7 +206,9 @@ export function QuestionForm({
                     </Badge>
                     <Input
                       value={option.text}
-                      onChange={(e) => handleOptionChange(index, e.target.value)}
+                      onChange={(e) =>
+                        handleOptionChange(index, e.target.value)
+                      }
                       placeholder={`Option ${option.option.toUpperCase()}`}
                       className="flex-1"
                     />
@@ -226,17 +228,18 @@ export function QuestionForm({
                         Correct
                       </Label>
                     </div>
-                    {questionType === "multiple_choice" && options.length > 2 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeOption(index)}
-                        className="text-red-600 hover:text-red-800 p-1 flex-shrink-0"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
+                    {questionType === "multiple_choice" &&
+                      options.length > 2 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeOption(index)}
+                          className="text-red-600 hover:text-red-800 p-1 flex-shrink-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
                   </div>
                 ))}
               </div>

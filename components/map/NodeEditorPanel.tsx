@@ -12,7 +12,7 @@ import {
   NodeAssessment,
   QuizQuestion,
 } from "@/types/map";
-import { Trash2 } from "lucide-react";
+import { Trash2, MapPin } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { ContentEditor } from "./ContentEditor";
 import { AssessmentEditor } from "./AssessmentEditor";
+import { SpritePickerDialog } from "./SpritePickerDialog";
 
 interface NodeEditorPanelProps {
   selectedNode: Node<MapNode> | null;
@@ -175,71 +176,68 @@ export function NodeEditorPanel({
 
   if (!selectedNode) {
     return (
-      <div className="p-4 h-full flex items-center justify-center">
-        <div className="text-center text-muted-foreground">
-          <p>Select a node to edit its details.</p>
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-muted/10">
+        <div className="space-y-4 max-w-sm">
+          <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+            <MapPin className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              No Node Selected
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Click on a node in the map to view and edit its properties,
+              content, and assessments.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-2 h-full">
-      <div className="space-y-6">
-        {/* Header with delete button */}
+    <div className="h-full flex flex-col bg-background overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex-shrink-0 p-4 border-b bg-background">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Edit Node</h3>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <MapPin className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-foreground">Node Editor</h2>
+              <p className="text-xs text-muted-foreground">
+                ID: {selectedNode.id.substring(0, 8)}...
+              </p>
+            </div>
+          </div>
           {onNodeDelete && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Node</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete "{selectedNode.data.title}"?{" "}
-                    This will also remove all connections to and from this node.{" "}
-                    This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteNode}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete Node
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button
+              onClick={handleDeleteNode}
+              variant="outline"
+              size="sm"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
           )}
         </div>
+      </div>
 
+      {/* Tabs Content - Scrollable */}
+      <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="details" className="h-full flex flex-col">
-          <TabsList className="w-full">
-            <TabsTrigger value="details" className="flex-1">
-              Details
-            </TabsTrigger>
-            <TabsTrigger value="content" className="flex-1">
-              Content
-            </TabsTrigger>
-            <TabsTrigger value="assessment" className="flex-1">
-              Assessment
-              {quizQuestions.length > 0 && (
-                <span className="ml-1 text-xs bg-green-100 text-green-800 px-1 rounded">
-                  {quizQuestions.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex-shrink-0 px-4 pt-2 bg-background border-b">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="assessment">Assessment</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="details" className="flex-grow">
-            <div className="p-2 space-y-4 h-full">
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <TabsContent value="details" className="m-0 p-4 space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Title</Label>
@@ -276,47 +274,75 @@ export function NodeEditorPanel({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sprite_url">Sprite URL</Label>
-                  <Input
-                    id="sprite_url"
-                    name="sprite_url"
-                    placeholder="http://path/to/image.png"
-                    value={nodeData.sprite_url || ""}
-                    onChange={handleInputChange("sprite_url")}
-                  />
+                  <Label htmlFor="sprite_url">Node Sprite</Label>
+                  <div className="flex items-center gap-2">
+                    {nodeData.sprite_url && (
+                      <div className="w-12 h-12 bg-gradient-to-br from-sky-100 to-blue-100 rounded-lg flex items-center justify-center p-1 border">
+                        <img
+                          src={nodeData.sprite_url}
+                          alt="Current sprite"
+                          className="max-w-full max-h-full object-contain drop-shadow-sm"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <SpritePickerDialog
+                        currentSprite={nodeData.sprite_url || undefined}
+                        onSpriteSelect={(spriteUrl) => {
+                          const newData = {
+                            ...nodeData,
+                            sprite_url: spriteUrl,
+                          };
+                          setNodeData(newData);
+                          if (selectedNode) {
+                            onNodeDataChange(selectedNode.id, {
+                              sprite_url: spriteUrl,
+                            });
+                          }
+                        }}
+                      >
+                        <Button variant="outline" className="w-full">
+                          <MapPin className="h-4 w-4 mr-2" />
+                          {nodeData.sprite_url
+                            ? "Change Sprite"
+                            : "Choose Sprite"}
+                        </Button>
+                      </SpritePickerDialog>
+                    </div>
+                  </div>
+                  {nodeData.sprite_url && (
+                    <p className="text-xs text-muted-foreground">
+                      Current: {nodeData.sprite_url.split("/").pop()}
+                    </p>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mt-4 p-2 bg-muted rounded">
+                  Changes are saved automatically to your draft. Use "Save All
+                  Changes" to persist to database.
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground mt-4 p-2 bg-muted rounded">
-                Changes are saved automatically to your draft. Use "Save All
-                Changes" to persist to database.
-              </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="content" className="flex-grow overflow-y-auto">
-            <div className="h-full flex flex-col">
-              <div className="flex-grow">
+            <TabsContent value="content" className="m-0 h-full">
+              <div className="h-full overflow-y-auto">
                 <ContentEditor
                   nodeId={selectedNode.id}
                   content={selectedNode.data.node_content || []}
                   onContentChange={handleContentChange}
                 />
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="assessment" className="flex-grow overflow-y-auto">
-            <div className="h-full flex flex-col">
-              <div className="flex-grow">
+            <TabsContent value="assessment" className="m-0 h-full">
+              <div className="h-full overflow-y-auto">
                 <AssessmentEditor
                   nodeId={selectedNode.id}
-                  assessment={(nodeData as any).node_assessments?.[0] || null}
+                  assessment={selectedNode.data.node_assessments?.[0] || null}
                   onAssessmentChange={handleAssessmentChange}
-                  onQuizQuestionsChange={handleQuizQuestionsChange}
                 />
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </div>

@@ -55,8 +55,14 @@ export function SubmissionItem({
   const isAutoGraded = grade && grade.graded_by === null;
   const graderInfo = grade
     ? isAutoGraded
-      ? { name: "System (Auto-graded)", icon: <Bot className="h-4 w-4 text-purple-600" /> }
-      : { name: grade.profiles?.username || "Instructor", icon: <User className="h-4 w-4 text-blue-600" /> }
+      ? {
+          name: "System (Auto-graded)",
+          icon: <Bot className="h-4 w-4 text-purple-600" />,
+        }
+      : {
+          name: grade.profiles?.username || "Instructor",
+          icon: <User className="h-4 w-4 text-blue-600" />,
+        }
     : null;
 
   return (
@@ -85,7 +91,9 @@ export function SubmissionItem({
               <p className="text-xs font-medium text-muted-foreground mb-1">
                 Your Answer:
               </p>
-              <p className="text-sm text-foreground">{submission.text_answer}</p>
+              <p className="text-sm text-foreground">
+                {submission.text_answer}
+              </p>
             </div>
           )}
 
@@ -125,15 +133,21 @@ export function SubmissionItem({
           )}
 
           {grade ? (
-            <div className={`mt-4 p-4 rounded-lg border ${
-              isAutoGraded 
-                ? 'bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800' 
-                : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'
-            }`}>
+            <div
+              className={`mt-4 p-4 rounded-lg border ${
+                isAutoGraded
+                  ? "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800"
+                  : "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+              }`}
+            >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <MessageCircle className={`h-4 w-4 ${isAutoGraded ? 'text-purple-600 dark:text-purple-400' : 'text-blue-600 dark:text-blue-400'}`} />
-                  <span className={`text-sm font-semibold ${isAutoGraded ? 'text-purple-900 dark:text-purple-100' : 'text-blue-900 dark:text-blue-100'}`}>
+                  <MessageCircle
+                    className={`h-4 w-4 ${isAutoGraded ? "text-purple-600 dark:text-purple-400" : "text-blue-600 dark:text-blue-400"}`}
+                  />
+                  <span
+                    className={`text-sm font-semibold ${isAutoGraded ? "text-purple-900 dark:text-purple-100" : "text-blue-900 dark:text-blue-100"}`}
+                  >
                     {isAutoGraded ? "System Feedback" : "Instructor Feedback"}
                   </span>
                 </div>
@@ -154,13 +168,17 @@ export function SubmissionItem({
 
               {grade.comments && (
                 <div className="mb-3">
-                  <p className={`text-sm leading-relaxed ${isAutoGraded ? 'text-purple-800 dark:text-purple-200' : 'text-blue-800 dark:text-blue-200'}`}>
+                  <p
+                    className={`text-sm leading-relaxed ${isAutoGraded ? "text-purple-800 dark:text-purple-200" : "text-blue-800 dark:text-blue-200"}`}
+                  >
                     "{grade.comments}"
                   </p>
                 </div>
               )}
 
-              <div className={`flex items-center justify-between text-xs ${isAutoGraded ? 'text-purple-700 dark:text-purple-300' : 'text-blue-700 dark:text-blue-300'}`}>
+              <div
+                className={`flex items-center justify-between text-xs ${isAutoGraded ? "text-purple-700 dark:text-purple-300" : "text-blue-700 dark:text-blue-300"}`}
+              >
                 <div className="flex items-center gap-4">
                   <span>
                     Graded: {new Date(grade.graded_at).toLocaleString()}
