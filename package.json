@@ -65,6 +65,7 @@
     "react-force-graph-2d": "^1.27.1",
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
+    "react-tiny-oembed": "^1.1.0",
     "recharts": "2.15.0",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
