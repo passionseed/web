@@ -8,8 +8,17 @@ import { createClient } from "@/utils/supabase/server";
 import { isInstructor } from "@/lib/supabase/roles";
 import { GradingTable } from "./grading-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Clock, CheckCircle, XCircle } from "lucide-react";
+import {
+  BookOpen,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ArrowLeft,
+  Map,
+} from "lucide-react";
+import Link from "next/link";
 
 export default async function GradingPage({
   params,
@@ -38,14 +47,20 @@ export default async function GradingPage({
   // Calculate statistics - exclude auto-graded submissions from pending count
   const totalSubmissions = submissions.length;
   const autoGradedSubmissions = submissions.filter(
-    (s) => s.submission_grades.length > 0 && s.submission_grades[0]?.graded_by === null
+    (s) =>
+      s.submission_grades.length > 0 &&
+      s.submission_grades[0]?.graded_by === null
   ).length;
   const pendingSubmissions = submissions.filter(
-    (s) => s.submission_grades.length === 0 || 
-    (s.submission_grades[0]?.graded_by !== null && s.submission_grades.length === 0)
+    (s) =>
+      s.submission_grades.length === 0 ||
+      (s.submission_grades[0]?.graded_by !== null &&
+        s.submission_grades.length === 0)
   ).length;
   const manuallyGradedSubmissions = submissions.filter(
-    (s) => s.submission_grades.length > 0 && s.submission_grades[0]?.graded_by !== null
+    (s) =>
+      s.submission_grades.length > 0 &&
+      s.submission_grades[0]?.graded_by !== null
   ).length;
   const passedSubmissions = submissions.filter(
     (s) => s.submission_grades[0]?.grade === "pass"
@@ -56,16 +71,51 @@ export default async function GradingPage({
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
+      {/* Navigation Breadcrumb */}
+      <div className="flex items-center gap-4">
+        <Link
+          href={`/map/${mapId}`}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <Map className="h-4 w-4" />
+          Back to Map
+        </Link>
+        <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <BookOpen className="h-4 w-4" />
-          <span>{map.title}</span>
+          <span>Grading Dashboard</span>
         </div>
-        <h1 className="text-3xl font-bold">Submissions for Grading</h1>
-        <p className="text-muted-foreground">
-          Review and grade student submissions for this learning map.
-        </p>
+      </div>
+
+      {/* Header */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <BookOpen className="h-4 w-4" />
+              <span>{map.title}</span>
+            </div>
+            <h1 className="text-3xl font-bold">Submissions for Grading</h1>
+            <p className="text-muted-foreground">
+              Review and grade student submissions for this learning map.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Link href={`/map/${mapId}`}>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Map className="h-4 w-4" />
+                View Map
+              </Button>
+            </Link>
+            <Link href={`/map/${mapId}/edit`}>
+              <Button variant="outline" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Edit Map
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Statistics Cards */}

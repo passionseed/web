@@ -219,21 +219,23 @@ export function NodeViewPanel({
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Header Section */}
-      <NodeHeaderView
-        nodeData={nodeData}
-        progress={progress}
-        currentUser={currentUser}
-        hasStarted={!!hasStarted}
-        isStarting={isStarting}
-        onStartNode={handleStartNode}
-      />
+    <div className="h-full flex flex-col bg-background overflow-hidden">
+      {/* Header Section - Fixed */}
+      <div className="flex-shrink-0 border-b">
+        <NodeHeaderView
+          nodeData={nodeData}
+          progress={progress}
+          currentUser={currentUser}
+          hasStarted={!!hasStarted}
+          isStarting={isStarting}
+          onStartNode={handleStartNode}
+        />
+      </div>
 
-      {/* Content Section */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Content Section - Scrollable */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {hasStarted ? (
-          <div className="p-4 space-y-6">
+          <div className="p-4 space-y-6 min-h-full">
             {/* Learning Content */}
             <LearningContentView nodeContent={nodeData?.node_content || []} />
 
@@ -255,7 +257,7 @@ export function NodeViewPanel({
             )}
           </div>
         ) : (
-          <div className="p-8 text-center">
+          <div className="p-8 text-center flex flex-col justify-center min-h-full">
             <div
               className={`w-20 h-20 mx-auto ${
                 isNodeUnlocked

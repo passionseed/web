@@ -11,6 +11,7 @@ import {
   SubmissionGrade,
   Grade,
   ProgressStatus,
+  UserMapEnrollment,
 } from "@/types/map";
 
 // A type for a map that includes its nodes and paths
@@ -29,7 +30,7 @@ export const getMaps = async (): Promise<LearningMap[]> => {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("learning_maps")
-    .select("id, title, description")
+    .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -38,6 +39,73 @@ export const getMaps = async (): Promise<LearningMap[]> => {
   }
 
   return data || [];
+};
+
+// Enhanced function to get maps with detailed statistics
+export const getMapsWithStats = async (): Promise<
+  (LearningMap & {
+    node_count: number;
+    avg_difficulty: number;
+    total_assessments: number;
+  })[]
+> => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("learning_maps")
+    .select(
+      `
+      *,
+      map_nodes (
+        id,
+        difficulty,
+        node_assessments (id)
+      )
+    `
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching maps with stats:", error);
+    throw new Error("Could not fetch learning maps.");
+  }
+
+  // Transform data to include calculated statistics
+  const mapsWithStats = (data || []).map((map: any) => {
+    const nodes = map.map_nodes || [];
+    const nodeCount = nodes.length;
+    const avgDifficulty =
+      nodeCount > 0
+        ? Math.round(
+            nodes.reduce(
+              (sum: number, node: any) => sum + (node.difficulty || 1),
+              0
+            ) / nodeCount
+          )
+        : 1;
+    const totalAssessments = nodes.reduce(
+      (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
+      0
+    );
+
+    return {
+      id: map.id,
+      title: map.title,
+      description: map.description,
+      creator_id: map.creator_id,
+      difficulty: map.difficulty,
+      category: map.category,
+      total_students: map.total_students,
+      finished_students: map.finished_students,
+      metadata: map.metadata,
+      created_at: map.created_at,
+      updated_at: map.updated_at,
+      node_count: nodeCount,
+      avg_difficulty: avgDifficulty,
+      total_assessments: totalAssessments,
+    };
+  });
+
+  return mapsWithStats;
 };
 
 export const getMapWithNodes = async (
@@ -489,6 +557,7 @@ export const batchUpdateMap = async (
     // 4. Create operations
     console.log("➕ Step 4: Performing create operations...");
     const createdNodeMap = new Map<string, string>(); // temp_id -> real_id
+    const createdAssessmentMap = new Map<string, string>(); // temp_assessment_id -> real_id
 
     if (updates.nodes.create.length > 0) {
       console.log("➕ Creating nodes:", updates.nodes.create);
@@ -741,23 +810,162 @@ export const batchUpdateMap = async (
 
     if (updates.assessments.create.length > 0) {
       console.log("➕ Creating assessments:", updates.assessments.create);
-      const { error } = await supabase
+
+      // Map temp node IDs to real IDs in assessments
+      const assessmentsToCreate = updates.assessments.create.map(
+        (assessment) => {
+          const mappedAssessment = {
+            ...assessment,
+            node_id:
+              createdNodeMap.get(assessment.node_id!) || assessment.node_id,
+          };
+          console.log("🔗 Assessment node mapping:", {
+            original: assessment,
+            mapped: mappedAssessment,
+            nodeIdResolved: mappedAssessment.node_id !== assessment.node_id,
+          });
+          return mappedAssessment;
+        }
+      );
+
+      // Validate all assessments have valid node IDs before inserting
+      const invalidAssessments = assessmentsToCreate.filter((assessment) =>
+        assessment.node_id?.startsWith("temp_")
+      );
+
+      if (invalidAssessments.length > 0) {
+        console.error(
+          "❌ Found assessments with unresolved temp node IDs:",
+          invalidAssessments
+        );
+        console.error(
+          "Available node mappings:",
+          Object.fromEntries(createdNodeMap)
+        );
+        throw new Error(
+          `Cannot create assessments with temporary node IDs: ${invalidAssessments.map((a) => a.node_id).join(", ")}`
+        );
+      }
+
+      const { data: createdAssessments, error } = await supabase
         .from("node_assessments")
-        .insert(updates.assessments.create);
+        .insert(assessmentsToCreate)
+        .select("*");
+
       if (error) {
         console.error("❌ Assessment creation failed:", error);
         throw new Error(`Assessment creation failed: ${error.message}`);
       }
-      console.log("✅ Assessments created");
+
+      if (!createdAssessments || createdAssessments.length === 0) {
+        console.error("❌ No assessments were created");
+        throw new Error("Assessment creation returned no data");
+      }
+
+      console.log("✅ Assessments created:", createdAssessments.length);
+      console.log(
+        "📊 Created assessments:",
+        createdAssessments.map((a) => ({
+          id: a.id,
+          node_id: a.node_id,
+          type: a.assessment_type,
+        }))
+      );
+
+      // Map temporary assessment IDs to real ones
+      // First, collect all unique temp assessment IDs from quiz questions
+      const tempAssessmentIds = [
+        ...new Set(
+          updates.quizQuestions.create
+            .map((q) => q.assessment_id)
+            .filter((id) => id?.startsWith("temp_assessment_"))
+        ),
+      ].filter(Boolean) as string[];
+
+      console.log(
+        "🔍 Found temp assessment IDs in quiz questions:",
+        tempAssessmentIds
+      );
+
+      createdAssessments.forEach((createdAssessment, index) => {
+        // Map each created assessment to its corresponding temp ID
+        if (tempAssessmentIds[index]) {
+          createdAssessmentMap.set(
+            tempAssessmentIds[index],
+            createdAssessment.id
+          );
+          console.log(
+            `🔗 Mapped temp assessment ${tempAssessmentIds[index]} to real assessment ${createdAssessment.id}`
+          );
+        } else {
+          // Fallback: create predictable mapping
+          const originalAssessmentToCreate = updates.assessments.create[index];
+          if (originalAssessmentToCreate) {
+            const predictableTempId = `temp_assessment_${originalAssessmentToCreate.node_id}_${index}`;
+            createdAssessmentMap.set(predictableTempId, createdAssessment.id);
+            console.log(
+              `🔗 Mapped predictable temp assessment ${predictableTempId} to real assessment ${createdAssessment.id}`
+            );
+          }
+        }
+      });
+
+      console.log(
+        "📋 Final assessment mapping:",
+        Object.fromEntries(createdAssessmentMap)
+      );
     }
 
     if (updates.quizQuestions.create.length > 0) {
       console.log("➕ Creating quiz questions:", updates.quizQuestions.create);
+
+      // Map temp assessment IDs to real IDs in quiz questions
+      const quizQuestionsToCreate = updates.quizQuestions.create.map(
+        (question) => {
+          const mappedQuestion = {
+            ...question,
+            assessment_id:
+              createdAssessmentMap.get(question.assessment_id!) ||
+              question.assessment_id,
+          };
+          console.log("🔗 Quiz question mapping:", {
+            original: question,
+            mapped: mappedQuestion,
+            assessmentIdResolved:
+              mappedQuestion.assessment_id !== question.assessment_id,
+          });
+          return mappedQuestion;
+        }
+      );
+
+      // Validate all questions have valid assessment IDs before inserting
+      const invalidQuestions = quizQuestionsToCreate.filter((question) =>
+        question.assessment_id?.startsWith("temp_")
+      );
+
+      if (invalidQuestions.length > 0) {
+        console.error(
+          "❌ Found quiz questions with unresolved temp assessment IDs:",
+          invalidQuestions
+        );
+        console.error(
+          "Available assessment mappings:",
+          Object.fromEntries(createdAssessmentMap)
+        );
+        throw new Error(
+          `Cannot create quiz questions with temporary assessment IDs: ${invalidQuestions.map((q) => q.assessment_id).join(", ")}`
+        );
+      }
+
       const { error } = await supabase
         .from("quiz_questions")
-        .insert(updates.quizQuestions.create);
+        .insert(quizQuestionsToCreate);
       if (error) {
         console.error("❌ Quiz question creation failed:", error);
+        console.error(
+          "❌ Attempted to insert questions:",
+          quizQuestionsToCreate
+        );
         throw new Error(`Quiz question creation failed: ${error.message}`);
       }
       console.log("✅ Quiz questions created");
@@ -840,9 +1048,9 @@ export const batchUpdateMap = async (
     console.error("❌ Batch update failed:", error);
     console.error("❌ Error type:", typeof error);
     console.error("❌ Error details:", {
-      name: error?.name,
-      message: error?.message,
-      stack: error?.stack,
+      name: (error as any)?.name,
+      message: (error as any)?.message,
+      stack: (error as any)?.stack,
     });
 
     if (error instanceof Error) {
@@ -851,4 +1059,475 @@ export const batchUpdateMap = async (
       throw new Error(`Batch update failed: ${String(error)}`);
     }
   }
+};
+
+// --- User Map Enrollment Functions ---
+
+/**
+ * Enrolls a user in a learning map when they click "Start Adventure"
+ */
+export const enrollUserInMap = async (
+  mapId: string
+): Promise<UserMapEnrollment> => {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("User must be authenticated to join a map");
+  }
+
+  // Check if user is already enrolled
+  const { data: existingEnrollment, error: checkError } = await supabase
+    .from("user_map_enrollments")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("map_id", mapId)
+    .single();
+
+  if (checkError && checkError.code !== "PGRST116") {
+    console.error("Error checking existing enrollment:", checkError);
+    throw new Error("Failed to check enrollment status");
+  }
+
+  // If already enrolled, return existing enrollment
+  if (existingEnrollment) {
+    console.log("✅ User already enrolled in map:", mapId);
+    return existingEnrollment;
+  }
+
+  // Create new enrollment
+  const { data, error } = await supabase
+    .from("user_map_enrollments")
+    .insert([
+      {
+        user_id: user.id,
+        map_id: mapId,
+        progress_percentage: 0,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error enrolling user in map:", error);
+    throw new Error("Failed to join the learning map");
+  }
+
+  console.log("🎉 User successfully enrolled in map:", mapId);
+  return data;
+};
+
+/**
+ * Checks if the current user is enrolled in a specific map
+ */
+export const isUserEnrolledInMap = async (mapId: string): Promise<boolean> => {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data, error } = await supabase
+    .from("user_map_enrollments")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("map_id", mapId)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    console.error("Error checking enrollment:", error);
+    return false;
+  }
+
+  return !!data;
+};
+
+/**
+ * Gets user's enrollment details for a specific map
+ */
+export const getUserMapEnrollment = async (
+  mapId: string
+): Promise<UserMapEnrollment | null> => {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("user_map_enrollments")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("map_id", mapId)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    console.error("Error fetching enrollment:", error);
+    return null;
+  }
+
+  return data;
+};
+
+// --- Progress Calculation Functions ---
+
+/**
+ * Loads all student progress for a specific map and user
+ */
+export const loadMapProgress = async (
+  mapId: string,
+  userId?: string
+): Promise<Record<string, StudentNodeProgress>> => {
+  const supabase = createClient();
+
+  let targetUserId = userId;
+  if (!targetUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return {};
+    targetUserId = user.id;
+  }
+
+  const { data, error } = await supabase
+    .from("student_node_progress")
+    .select("*")
+    .eq("user_id", targetUserId)
+    .in("node_id", [
+      // Subquery to get all node IDs for this map
+      supabase
+        .from("map_nodes")
+        .select("id")
+        .eq("map_id", mapId)
+    ]);
+
+  if (error) {
+    console.error("Error loading map progress:", error);
+    return {};
+  }
+
+  // Convert to map for easy lookup
+  const progressMap: Record<string, StudentNodeProgress> = {};
+  (data || []).forEach((progress) => {
+    progressMap[progress.node_id] = progress;
+  });
+
+  return progressMap;
+};
+
+/**
+ * Calculates real-time progress percentage for a user's map enrollment
+ */
+export const calculateMapProgress = async (
+  mapId: string,
+  userId?: string
+): Promise<{
+  progressPercentage: number;
+  completedNodes: number;
+  totalNodes: number;
+  passedNodes: number;
+  failedNodes: number;
+  submittedNodes: number;
+  inProgressNodes: number;
+}> => {
+  const supabase = createClient();
+
+  let targetUserId = userId;
+  if (!targetUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return {
+        progressPercentage: 0,
+        completedNodes: 0,
+        totalNodes: 0,
+        passedNodes: 0,
+        failedNodes: 0,
+        submittedNodes: 0,
+        inProgressNodes: 0,
+      };
+    }
+    targetUserId = user.id;
+  }
+
+  // Get all nodes for this map
+  const { data: mapNodes, error: nodesError } = await supabase
+    .from("map_nodes")
+    .select("id")
+    .eq("map_id", mapId);
+
+  if (nodesError) {
+    console.error("Error fetching map nodes:", nodesError);
+    throw new Error("Failed to calculate map progress");
+  }
+
+  const totalNodes = mapNodes?.length || 0;
+  if (totalNodes === 0) {
+    return {
+      progressPercentage: 0,
+      completedNodes: 0,
+      totalNodes: 0,
+      passedNodes: 0,
+      failedNodes: 0,
+      submittedNodes: 0,
+      inProgressNodes: 0,
+    };
+  }
+
+  // Get progress for all nodes
+  const nodeIds = mapNodes.map((node) => node.id);
+  const { data: progressData, error: progressError } = await supabase
+    .from("student_node_progress")
+    .select("node_id, status")
+    .eq("user_id", targetUserId)
+    .in("node_id", nodeIds);
+
+  if (progressError) {
+    console.error("Error fetching progress data:", progressError);
+    throw new Error("Failed to calculate map progress");
+  }
+
+  // Count nodes by status
+  let passedNodes = 0;
+  let failedNodes = 0;
+  let submittedNodes = 0;
+  let inProgressNodes = 0;
+
+  (progressData || []).forEach((progress) => {
+    switch (progress.status) {
+      case "passed":
+        passedNodes++;
+        break;
+      case "failed":
+        failedNodes++;
+        break;
+      case "submitted":
+        submittedNodes++;
+        break;
+      case "in_progress":
+        inProgressNodes++;
+        break;
+    }
+  });
+
+  // Calculate progress: passed nodes / total nodes
+  const progressPercentage = Math.floor((passedNodes / totalNodes) * 100);
+  const completedNodes = passedNodes + failedNodes; // Nodes that have been fully processed
+
+  return {
+    progressPercentage,
+    completedNodes,
+    totalNodes,
+    passedNodes,
+    failedNodes,
+    submittedNodes,
+    inProgressNodes,
+  };
+};
+
+/**
+ * Updates the user's map enrollment progress percentage
+ */
+export const updateMapEnrollmentProgress = async (
+  mapId: string,
+  progressPercentage: number,
+  isCompleted: boolean = false
+): Promise<void> => {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("User must be authenticated");
+
+  const updateData: Partial<UserMapEnrollment> = {
+    progress_percentage: progressPercentage,
+  };
+
+  if (isCompleted && progressPercentage === 100) {
+    updateData.completed_at = new Date().toISOString();
+  }
+
+  const { error } = await supabase
+    .from("user_map_enrollments")
+    .update(updateData)
+    .eq("user_id", user.id)
+    .eq("map_id", mapId);
+
+  if (error) {
+    console.error("Error updating enrollment progress:", error);
+    throw new Error("Failed to update progress");
+  }
+
+  console.log(
+    `✅ Updated map ${mapId} progress to ${progressPercentage}%${isCompleted ? " (COMPLETED)" : ""}`
+  );
+};
+
+/**
+ * Gets enrolled maps with real-time calculated progress
+ */
+export const getUserEnrolledMapsWithProgress = async (): Promise<
+  (LearningMap & {
+    enrollment: UserMapEnrollment;
+    node_count: number;
+    avg_difficulty: number;
+    total_assessments: number;
+    realTimeProgress: {
+      progressPercentage: number;
+      completedNodes: number;
+      totalNodes: number;
+      passedNodes: number;
+      failedNodes: number;
+      submittedNodes: number;
+      inProgressNodes: number;
+    };
+  })[]
+> => {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Get enrolled maps with basic stats
+  const enrolledMaps = await getUserEnrolledMaps();
+
+  // Calculate real-time progress for each enrolled map
+  const mapsWithProgress = await Promise.all(
+    enrolledMaps.map(async (enrolledMap) => {
+      try {
+        const realTimeProgress = await calculateMapProgress(
+          enrolledMap.id,
+          user.id
+        );
+
+        // Update enrollment progress if it's significantly different
+        if (
+          Math.abs(
+            realTimeProgress.progressPercentage -
+              enrolledMap.enrollment.progress_percentage
+          ) >= 5
+        ) {
+          // Only update if difference is 5% or more to avoid constant updates
+          await updateMapEnrollmentProgress(
+            enrolledMap.id,
+            realTimeProgress.progressPercentage,
+            realTimeProgress.progressPercentage === 100
+          );
+
+          // Update the enrollment object to reflect the new progress
+          enrolledMap.enrollment.progress_percentage =
+            realTimeProgress.progressPercentage;
+        }
+
+        return {
+          ...enrolledMap,
+          realTimeProgress,
+        };
+      } catch (error) {
+        console.error(
+          `Error calculating progress for map ${enrolledMap.id}:`,
+          error
+        );
+        // Return with zero progress if calculation fails
+        return {
+          ...enrolledMap,
+          realTimeProgress: {
+            progressPercentage: 0,
+            completedNodes: 0,
+            totalNodes: 0,
+            passedNodes: 0,
+            failedNodes: 0,
+            submittedNodes: 0,
+            inProgressNodes: 0,
+          },
+        };
+      }
+    })
+  );
+
+  return mapsWithProgress;
+};
+
+/**
+ * Gets all maps the current user is enrolled in
+ */
+export const getUserEnrolledMaps = async (): Promise<
+  (LearningMap & {
+    enrollment: UserMapEnrollment;
+    node_count: number;
+    avg_difficulty: number;
+    total_assessments: number;
+  })[]
+> => {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("user_map_enrollments")
+    .select(
+      `
+      *,
+      learning_maps (
+        *,
+        map_nodes (
+          id,
+          difficulty,
+          node_assessments (id)
+        )
+      )
+    `
+    )
+    .eq("user_id", user.id)
+    .order("enrolled_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching enrolled maps:", error);
+    throw new Error("Failed to fetch your enrolled maps");
+  }
+
+  return (data || []).map((enrollment: any) => {
+    const map = enrollment.learning_maps;
+    const nodes = map.map_nodes || [];
+    const nodeCount = nodes.length;
+    const avgDifficulty =
+      nodeCount > 0
+        ? Math.round(
+            nodes.reduce(
+              (sum: number, node: any) => sum + (node.difficulty || 1),
+              0
+            ) / nodeCount
+          )
+        : 1;
+    const totalAssessments = nodes.reduce(
+      (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
+      0
+    );
+
+    return {
+      ...map,
+      enrollment: {
+        id: enrollment.id,
+        user_id: enrollment.user_id,
+        map_id: enrollment.map_id,
+        enrolled_at: enrollment.enrolled_at,
+        completed_at: enrollment.completed_at,
+        progress_percentage: enrollment.progress_percentage,
+      },
+      node_count: nodeCount,
+      avg_difficulty: avgDifficulty,
+      total_assessments: totalAssessments,
+    };
+  });
 };

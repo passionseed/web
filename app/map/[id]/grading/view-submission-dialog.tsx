@@ -52,8 +52,14 @@ export function ViewSubmissionDialog({
   const isAutoGraded = hasGrade && grade.graded_by === null;
   const graderInfo = hasGrade
     ? isAutoGraded
-      ? { name: "System (Auto-graded)", icon: <Bot className="h-4 w-4 text-purple-600" /> }
-      : { name: grade.profiles?.username || "Instructor", icon: <User className="h-4 w-4 text-blue-600" /> }
+      ? {
+          name: "System (Auto-graded)",
+          icon: <Bot className="h-4 w-4 text-purple-600" />,
+        }
+      : {
+          name: grade.profiles?.username || "Instructor",
+          icon: <User className="h-4 w-4 text-blue-600" />,
+        }
     : null;
 
   return (
@@ -212,7 +218,9 @@ export function ViewSubmissionDialog({
 
             {/* Grade and Feedback */}
             {hasGrade && (
-              <Card className={`border-l-4 ${isAutoGraded ? 'border-l-purple-500' : 'border-l-primary'}`}>
+              <Card
+                className={`border-l-4 ${isAutoGraded ? "border-l-purple-500" : "border-l-primary"}`}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -272,14 +280,18 @@ export function ViewSubmissionDialog({
                       <h4 className="font-medium text-sm text-muted-foreground">
                         Comments:
                       </h4>
-                      <div className={`p-4 rounded-lg border ${
-                        isAutoGraded 
-                          ? 'bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200' 
-                          : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
-                      }`}>
-                        <p className={`leading-relaxed ${
-                          isAutoGraded ? 'text-purple-800' : 'text-blue-800'
-                        }`}>
+                      <div
+                        className={`p-4 rounded-lg border ${
+                          isAutoGraded
+                            ? "bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200"
+                            : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+                        }`}
+                      >
+                        <p
+                          className={`leading-relaxed ${
+                            isAutoGraded ? "text-purple-800" : "text-blue-800"
+                          }`}
+                        >
                           "{grade.comments}"
                         </p>
                       </div>

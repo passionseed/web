@@ -302,7 +302,8 @@ export function GradingTable({ submissions, userId }: GradingTableProps) {
                         <ViewSubmissionDialog submission={submission} />
                         {/* Only show grade button for non-auto-graded submissions */}
                         {(submission.submission_grades.length === 0 ||
-                          submission.submission_grades[0].graded_by !== null) && (
+                          submission.submission_grades[0].graded_by !==
+                            null) && (
                           <GradeSubmissionForm
                             submission={submission}
                             userId={userId}
@@ -310,7 +311,8 @@ export function GradingTable({ submissions, userId }: GradingTableProps) {
                         )}
                         {/* Show "Auto-Graded" indicator for system grades */}
                         {submission.submission_grades.length > 0 &&
-                          submission.submission_grades[0].graded_by === null && (
+                          submission.submission_grades[0].graded_by ===
+                            null && (
                             <Badge variant="outline" className="text-xs">
                               Auto-Graded
                             </Badge>
