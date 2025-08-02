@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,14 +17,73 @@ import {
   ArrowRight,
   Sparkles,
   Heart,
+  Map,
+  Compass,
 } from "lucide-react";
 import Link from "next/link";
+import { getMapsWithStats, getUserEnrolledMaps } from "@/lib/supabase/maps";
+import { LearningMap, UserMapEnrollment } from "@/types/map";
+import { useProgressMaps } from "@/hooks/use-progress-maps";
+import { LearningMapsSkeleton } from "@/components/learning-maps-skeleton";
 
 interface DashboardHomeProps {
   user: any;
 }
 
+type MapWithStats = LearningMap & {
+  node_count: number;
+  avg_difficulty: number;
+  total_assessments: number;
+};
+
+type EnrolledMapWithStats = MapWithStats & {
+  enrollment: UserMapEnrollment;
+  isEnrolled: true;
+  realTimeProgress: {
+    progressPercentage: number;
+    completedNodes: number;
+    totalNodes: number;
+    passedNodes: number;
+    failedNodes: number;
+    submittedNodes: number;
+    inProgressNodes: number;
+  };
+};
+
 export function DashboardHome({ user }: DashboardHomeProps) {
+  const { enrolledMaps, availableMaps, isLoading, error } = useProgressMaps();
+
+  const getProgressStatus = (map: MapWithStats | EnrolledMapWithStats) => {
+    // For enrolled maps with real-time progress, use the calculated progress
+    if ("isEnrolled" in map && map.isEnrolled && map.realTimeProgress) {
+      const progress = map.realTimeProgress.progressPercentage;
+      const { passedNodes, failedNodes, submittedNodes, inProgressNodes } =
+        map.realTimeProgress;
+
+      if (progress === 100) return { status: "Completed", progress: 100 };
+      if (
+        passedNodes > 0 ||
+        failedNodes > 0 ||
+        submittedNodes > 0 ||
+        inProgressNodes > 0
+      ) {
+        return { status: "In Progress", progress };
+      }
+      return { status: "Not Started", progress: 0 };
+    }
+
+    // For enrolled maps without real-time progress (fallback), use enrollment progress
+    if ("isEnrolled" in map && map.isEnrolled) {
+      const progress = map.enrollment.progress_percentage;
+      if (progress === 0) return { status: "Not Started", progress: 0 };
+      if (progress < 100) return { status: "In Progress", progress };
+      return { status: "Completed", progress: 100 };
+    }
+
+    // For non-enrolled maps, show as "Not Started"
+    return { status: "Not Started", progress: 0 };
+  };
+
   return (
     <div className="container py-10 px-4 md:px-6">
       {/* Welcome Section */}
@@ -104,6 +165,192 @@ export function DashboardHome({ user }: DashboardHomeProps) {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Learning Maps Section */}
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold tracking-tight">Learning Maps</h2>
+          <Button variant="ghost" asChild>
+            <Link href="/map" className="flex items-center gap-2">
+              View All
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <LearningMapsSkeleton />
+        ) : error ? (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="text-destructive mb-4">⚠️</div>
+              <h3 className="text-lg font-semibold mb-2 text-destructive">
+                Failed to Load Maps
+              </h3>
+              <p className="text-sm text-muted-foreground text-center mb-4 max-w-sm">
+                {error}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        ) : enrolledMaps.length > 0 || availableMaps.length > 0 ? (
+          <div className="space-y-8">
+            {/* Enrolled Maps Section */}
+            {enrolledMaps.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-primary flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  Continue Learning
+                </h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {enrolledMaps.map((map) => {
+                    const { status, progress } = getProgressStatus(map);
+                    return (
+                      <Link key={map.id} href={`/map/${map.id}`}>
+                        <Card className="hover:shadow-lg transition-shadow cursor-pointer group border-primary/20">
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                                {map.title}
+                              </CardTitle>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Map className="h-4 w-4" />
+                                <span>{map.node_count}</span>
+                              </div>
+                            </div>
+                            <CardDescription>
+                              {map.description ||
+                                "Embark on an exciting learning journey through interactive islands"}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">
+                                  Progress
+                                </span>
+                                <span className="font-medium">{progress}%</span>
+                              </div>
+                              <Progress value={progress} className="h-2" />
+                              {/* Real-time progress details */}
+                              {map.realTimeProgress && (
+                                <div className="text-xs text-muted-foreground">
+                                  {map.realTimeProgress.passedNodes > 0 && (
+                                    <span className="text-green-600">
+                                      {map.realTimeProgress.passedNodes} passed
+                                    </span>
+                                  )}
+                                  {map.realTimeProgress.submittedNodes > 0 && (
+                                    <span className="text-blue-600 ml-2">
+                                      {map.realTimeProgress.submittedNodes}{" "}
+                                      submitted
+                                    </span>
+                                  )}
+                                  {map.realTimeProgress.inProgressNodes > 0 && (
+                                    <span className="text-orange-600 ml-2">
+                                      {map.realTimeProgress.inProgressNodes} in
+                                      progress
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              <div className="flex justify-between items-center">
+                                <Badge
+                                  variant={
+                                    status === "In Progress"
+                                      ? "default"
+                                      : status === "Completed"
+                                        ? "secondary"
+                                        : "outline"
+                                  }
+                                  className="text-xs"
+                                >
+                                  {status}
+                                </Badge>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Sparkles className="h-3 w-3" />
+                                  <span>{map.total_assessments} Quests</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Available Maps Section */}
+            {availableMaps.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Compass className="h-5 w-5" />
+                  Discover New Adventures
+                </h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {availableMaps.slice(0, 6).map((map) => (
+                    <Link key={map.id} href={`/map/${map.id}`}>
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                              {map.title}
+                            </CardTitle>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Map className="h-4 w-4" />
+                              <span>{map.node_count}</span>
+                            </div>
+                          </div>
+                          <CardDescription>
+                            {map.description ||
+                              "Embark on an exciting learning journey through interactive islands"}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <Badge variant="outline" className="text-xs">
+                                Start Adventure
+                              </Badge>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Sparkles className="h-3 w-3" />
+                                <span>{map.total_assessments} Quests</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <Card className="border-2 border-dashed border-gray-200 hover:border-gray-300 transition-colors">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Map className="h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                No Learning Maps Yet
+              </h3>
+              <p className="text-sm text-muted-foreground text-center mb-4 max-w-sm">
+                Discover interactive learning adventures with gamified islands
+                and quests.
+              </p>
+              <Button asChild>
+                <Link href="/map">Explore Maps</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Recommended Workshops */}
