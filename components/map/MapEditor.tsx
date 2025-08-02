@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useCallback, useState, useMemo } from "react";
+import React, {
+  useEffect,
+  useCallback,
+  useState,
+  useMemo,
+  useRef,
+} from "react";
 import {
   ReactFlow,
   Background,
@@ -19,19 +25,22 @@ import {
   MarkerType,
   MiniMap,
   OnNodeDrag,
+  useReactFlow,
+  ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { FullLearningMap } from "@/lib/supabase/maps";
-import { MapNode } from "@/types/map";
+import { MapNode, QuizQuestion } from "@/types/map";
 import { Plus } from "lucide-react";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { ImperativePanelHandle } from "react-resizable-panels";
 import { NodeEditorPanel } from "./NodeEditorPanel";
 import FloatingEdge, { FloatingEdgeEdit } from "./FloatingEdge";
 
@@ -147,6 +156,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const [selectedNode, setSelectedNode] = useState<AppNode | null>(null);
   const { toast } = useToast();
+  const reactFlowInstance = useReactFlow();
+  const rightPanelRef = useRef<ImperativePanelHandle>(null);
+  const leftPanelRef = useRef<ImperativePanelHandle>(null);
 
   // Track quiz questions for batch operations
   const [pendingQuizQuestions, setPendingQuizQuestions] = useState<
@@ -412,11 +424,60 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     [onMapChange]
   );
 
-  // Selection change handler
-  const onSelectionChange = useCallback((params: OnSelectionChangeParams) => {
-    const node = params.nodes[0];
-    setSelectedNode((node as AppNode) || null);
-  }, []);
+  // Selection change handler with dynamic panel resizing and node centering
+  const onSelectionChange = useCallback(
+    (params: OnSelectionChangeParams) => {
+      const node = params.nodes[0];
+      const newSelectedNode = (node as unknown as AppNode) || null;
+
+      setSelectedNode(newSelectedNode);
+
+      // Animate panel resize based on selection
+      if (newSelectedNode && rightPanelRef.current && leftPanelRef.current) {
+        // Node selected: expand right panel to 60%, shrink left to 40%
+        rightPanelRef.current.resize(60);
+        leftPanelRef.current.resize(40);
+
+        // Center the selected node accounting for the expanded panel
+        setTimeout(() => {
+          if (reactFlowInstance && newSelectedNode) {
+            // Get the current viewport
+            const viewport = reactFlowInstance.getViewport();
+
+            // Calculate the center position accounting for the 40/60 panel split
+            // We want to center in the left panel (40% of total width) but shift slightly left for visual balance
+            const containerRect = document
+              .querySelector(".react-flow")
+              ?.getBoundingClientRect();
+            if (containerRect) {
+              const leftPanelWidth = containerRect.width * 0.4; // 40% for left panel after resize
+              const targetX = leftPanelWidth * 0.45; // Center in the left panel, slightly left of center
+              const targetY = containerRect.height * 0.5; // Center vertically
+
+              // Use fitView to center on the selected node with padding
+              reactFlowInstance.fitView({
+                nodes: [{ id: newSelectedNode.id }],
+                duration: 500,
+                padding: 0.1,
+                // Custom center point accounting for panel layout
+                minZoom: viewport.zoom,
+                maxZoom: viewport.zoom,
+              });
+            }
+          }
+        }, 350); // Wait for panel animation to complete
+      } else if (
+        !newSelectedNode &&
+        rightPanelRef.current &&
+        leftPanelRef.current
+      ) {
+        // Node deselected: restore default sizes (75% left, 25% right)
+        leftPanelRef.current.resize(75);
+        rightPanelRef.current.resize(25);
+      }
+    },
+    [reactFlowInstance]
+  );
 
   // Enhanced node data change handler to capture quiz questions
   const handleNodeDataChange = useCallback(
@@ -524,7 +585,13 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
   return (
     <ResizablePanelGroup direction="horizontal" className="border rounded-lg">
-      <ResizablePanel defaultSize={75}>
+      <ResizablePanel
+        ref={leftPanelRef}
+        defaultSize={75}
+        minSize={40}
+        maxSize={85}
+        className="transition-all duration-300 ease-in-out"
+      >
         <div className="h-full relative">
           <Button
             onClick={handleAddNode}
@@ -550,19 +617,17 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           >
             <Background />
             <MiniMap
-              // Position
               position="bottom-right"
-              // Node styling - rounded nodes
               nodeBorderRadius={8}
               nodeStrokeWidth={2}
               nodeColor={(node) => {
                 switch (node.type) {
                   case "input":
-                    return "#4CAF50"; // Green
+                    return "#4CAF50";
                   case "output":
-                    return "#9C27B0"; // Purple
+                    return "#9C27B0";
                   default:
-                    return "#FF9800"; // Orange
+                    return "#FF9800";
                 }
               }}
               style={{
@@ -570,31 +635,43 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 transformOrigin: "bottom right",
               }}
               nodeStrokeColor="#ffffff"
-              // Background
               bgColor="#1e1e1e"
-              // Mask (viewport indicator)
               maskColor="rgba(255, 255, 255, 0.15)"
               maskStrokeColor="#ffffff"
               maskStrokeWidth={1}
-              // Interactivity
               pannable
               zoomable
-              // Accessibility
               ariaLabel="Flow overview minimap"
-              // Optional tweaks
               offsetScale={5}
             />
           </ReactFlow>
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-        <NodeEditorPanel
-          selectedNode={selectedNode}
-          onNodeDataChange={handleNodeDataChange}
-          onNodeDelete={handleDeleteNode}
-        />
+      <ResizablePanel
+        ref={rightPanelRef}
+        defaultSize={25}
+        minSize={15}
+        maxSize={60}
+        className="transition-all duration-300 ease-in-out"
+      >
+        <div className="h-full overflow-hidden">
+          <NodeEditorPanel
+            selectedNode={selectedNode}
+            onNodeDataChange={handleNodeDataChange}
+            onNodeDelete={handleDeleteNode}
+          />
+        </div>
       </ResizablePanel>
     </ResizablePanelGroup>
+  );
+}
+
+// Wrapper component that provides ReactFlow context
+export function MapEditorWithProvider({ map, onMapChange }: MapEditorProps) {
+  return (
+    <ReactFlowProvider>
+      <MapEditor map={map} onMapChange={onMapChange} />
+    </ReactFlowProvider>
   );
 }

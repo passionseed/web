@@ -102,7 +102,7 @@ supabase db reset
 
 ### Node Unlocking Logic
 
-Nodes unlock when **at least one** prerequisite node has `status = 'passed'`:
+Nodes unlock when **at least one** prerequisite node has `status = 'passed'` OR `status = 'submitted'` (allowing progression while awaiting grading):
 
 ```typescript
 const isNodeUnlocked = (nodeId: string): boolean => {
@@ -111,7 +111,9 @@ const isNodeUnlocked = (nodeId: string): boolean => {
   );
   if (prerequisites.length === 0) return true; // Starting node
   return prerequisites.some(
-    (prereq) => progressMap[prereq.id]?.status === "passed"
+    (prereq) =>
+      progressMap[prereq.id]?.status === "passed" ||
+      progressMap[prereq.id]?.status === "submitted"
   );
 };
 ```
