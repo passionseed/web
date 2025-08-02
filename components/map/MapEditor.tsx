@@ -18,7 +18,6 @@ import {
   Node,
   OnNodesDelete,
   OnEdgesDelete,
-  NodeDragHandler,
   OnSelectionChangeParams,
   Handle,
   Position,
@@ -45,7 +44,7 @@ import { NodeEditorPanel } from "./NodeEditorPanel";
 import FloatingEdge, { FloatingEdgeEdit } from "./FloatingEdge";
 
 // Type definitions
-type AppNode = Node<MapNode, "default">;
+type AppNode = Node<any, "default">;
 type AppEdge = Edge;
 
 interface MapEditorProps {
@@ -152,7 +151,9 @@ const CustomNode = ({
 };
 
 export function MapEditor({ map, onMapChange }: MapEditorProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    INITIAL_NODES as Node[]
+  );
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const [selectedNode, setSelectedNode] = useState<AppNode | null>(null);
   const { toast } = useToast();
@@ -201,13 +202,32 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       });
     });
 
-    setNodes(transformedNodes);
+    setNodes(transformedNodes as Node[]);
     setEdges(transformedEdges);
   }, [map, selectedNode, setNodes, setEdges]);
 
   // Add node handler
   const handleAddNode = useCallback(() => {
     const tempId = generateTempId("temp_node");
+
+    // Get center of current viewport
+    let nodePosition = { x: 100, y: 100 }; // Default position
+
+    if (reactFlowInstance) {
+      const viewport = reactFlowInstance.getViewport();
+      const canvasRect = reactFlowInstance.getViewport();
+
+      // Calculate the center of the visible viewport
+      // Account for the right panel if a node is selected
+      const panelOffset = selectedNode ? 0.35 : 0; // 35% for right panel
+      const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
+
+      nodePosition = {
+        x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
+        y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+      };
+    }
+
     const newNodeData: MapNode & {
       node_paths_source: any[];
       node_paths_destination: any[];
@@ -221,7 +241,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       difficulty: 1,
       sprite_url: null,
       metadata: {
-        position: { x: 100, y: 100 },
+        position: nodePosition,
         temp_id: tempId, // FIXED: Include temp ID in metadata for reliable mapping
       },
       created_at: new Date().toISOString(),
@@ -234,7 +254,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
     const newNode: AppNode = {
       id: tempId,
-      position: { x: 100, y: 100 },
+      position: nodePosition,
       data: newNodeData,
       type: "default",
       draggable: true,
@@ -242,7 +262,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       selectable: true,
     };
 
-    setNodes((nds) => [...nds, newNode]);
+    setNodes((nds) => [...nds, newNode as Node]);
 
     const updatedMap = {
       ...map,
@@ -251,7 +271,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     onMapChange(updatedMap);
 
     toast({ title: "Node Added! (Save to persist)" });
-  }, [map, onMapChange, setNodes, toast]);
+  }, [map, onMapChange, setNodes, toast, reactFlowInstance, selectedNode]);
 
   // Connection handler
   const onConnect = useCallback(
@@ -584,86 +604,135 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   );
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="border rounded-lg">
-      <ResizablePanel
-        ref={leftPanelRef}
-        defaultSize={75}
-        minSize={40}
-        maxSize={85}
-        className="transition-all duration-300 ease-in-out"
-      >
-        <div className="h-full relative">
-          <Button
-            onClick={handleAddNode}
-            className="absolute top-4 right-4 z-10"
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Node
-          </Button>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodesDelete={onNodesDelete}
-            onEdgesDelete={onEdgesDelete}
-            onNodeDragStop={onNodeDragStop}
-            onConnect={onConnect}
-            onSelectionChange={onSelectionChange}
-            nodeTypes={nodeTypes}
-            edgeTypes={EDGE_TYPES}
-            fitView
-          >
-            <Background />
-            <MiniMap
-              position="bottom-right"
-              nodeBorderRadius={8}
-              nodeStrokeWidth={2}
-              nodeColor={(node) => {
-                switch (node.type) {
-                  case "input":
-                    return "#4CAF50";
-                  case "output":
-                    return "#9C27B0";
-                  default:
-                    return "#FF9800";
-                }
-              }}
-              style={{
-                transform: "scale(0.6)",
-                transformOrigin: "bottom right",
-              }}
-              nodeStrokeColor="#ffffff"
-              bgColor="#1e1e1e"
-              maskColor="rgba(255, 255, 255, 0.15)"
-              maskStrokeColor="#ffffff"
-              maskStrokeWidth={1}
-              pannable
-              zoomable
-              ariaLabel="Flow overview minimap"
-              offsetScale={5}
+    <div className="h-full w-full">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Main Canvas Area */}
+        <ResizablePanel
+          ref={leftPanelRef}
+          defaultSize={selectedNode ? 65 : 100}
+          minSize={40}
+          maxSize={85}
+          className="relative transition-[width] duration-300 ease-in-out"
+        >
+          <div className="h-full w-full bg-slate-50 dark:bg-slate-950 relative">
+            {/* Enhanced Floating Toolbar */}
+            <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg">
+              <Button onClick={handleAddNode} size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Node
+              </Button>
+              <div className="h-4 w-px bg-border" />
+              <div className="text-xs text-muted-foreground px-2">
+                {nodes.length} nodes • {edges.length} paths
+              </div>
+            </div>
+
+            {/* Keyboard Shortcuts Helper */}
+            <div className="absolute top-4 right-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-3 shadow-lg max-w-xs">
+              <div className="text-xs font-medium mb-2">Quick Actions</div>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Add Node</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">+</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Delete Selected</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                    Del
+                  </kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Pan Canvas</span>
+                  <span className="text-xs">Space + Drag</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Zoom</span>
+                  <span className="text-xs">Mouse Wheel</span>
+                </div>
+              </div>
+            </div>
+
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodesDelete={onNodesDelete}
+              onEdgesDelete={onEdgesDelete}
+              onNodeDragStop={onNodeDragStop}
+              onConnect={onConnect}
+              onSelectionChange={onSelectionChange}
+              nodeTypes={nodeTypes}
+              edgeTypes={EDGE_TYPES}
+              snapToGrid={true}
+              snapGrid={[20, 20]}
+              fitView
+              attributionPosition="bottom-left"
+              panOnScroll
+              selectionOnDrag
+              panOnDrag={[1, 2]}
+            >
+              <Background gap={20} size={1} color="#94a3b8" />
+              <MiniMap
+                position="bottom-right"
+                nodeBorderRadius={8}
+                nodeStrokeWidth={2}
+                nodeColor={(node) => {
+                  if (node.selected) return "#3b82f6";
+                  switch (node.type) {
+                    case "input":
+                      return "#4CAF50";
+                    case "output":
+                      return "#9C27B0";
+                    default:
+                      return "#FF9800";
+                  }
+                }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.9)",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                }}
+                nodeStrokeColor="#ffffff"
+                bgColor="#f8fafc"
+                maskColor="rgba(255, 255, 255, 0.7)"
+                maskStrokeColor="#e2e8f0"
+                maskStrokeWidth={1}
+                pannable
+                zoomable
+                ariaLabel="Map overview"
+                offsetScale={5}
+              />
+            </ReactFlow>
+          </div>
+        </ResizablePanel>
+
+        {/* Node Editor Panel */}
+        {selectedNode && (
+          <>
+            <ResizableHandle
+              withHandle
+              className="w-1.5 bg-border hover:bg-primary/20 transition-colors"
             />
-          </ReactFlow>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel
-        ref={rightPanelRef}
-        defaultSize={25}
-        minSize={15}
-        maxSize={60}
-        className="transition-all duration-300 ease-in-out"
-      >
-        <div className="h-full overflow-hidden">
-          <NodeEditorPanel
-            selectedNode={selectedNode}
-            onNodeDataChange={handleNodeDataChange}
-            onNodeDelete={handleDeleteNode}
-          />
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+            <ResizablePanel
+              ref={rightPanelRef}
+              defaultSize={35}
+              minSize={25}
+              maxSize={60}
+              className="transition-all duration-300 ease-in-out border-l bg-background"
+            >
+              <div className="h-full overflow-hidden">
+                <NodeEditorPanel
+                  selectedNode={selectedNode}
+                  onNodeDataChange={handleNodeDataChange}
+                  onNodeDelete={handleDeleteNode}
+                />
+              </div>
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
+    </div>
   );
 }
 
