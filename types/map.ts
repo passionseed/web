@@ -64,6 +64,15 @@ export interface CohortMapEnrollment {
   enrolled_at: string; // timestamp with time zone
 }
 
+export interface UserMapEnrollment {
+  id: string; // uuid
+  user_id: string; // uuid
+  map_id: string; // uuid
+  enrolled_at: string; // timestamp with time zone
+  completed_at: string | null; // timestamp with time zone
+  progress_percentage: number; // 0-100
+}
+
 // From 20250725080607_add_map_content.sql
 
 export type ContentType = "video" | "canva_slide" | "text_with_images";

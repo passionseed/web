@@ -52,7 +52,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import Loading from "./loading";
-import { MapEditor } from "@/components/map/MapEditor";
+import { MapEditorWithProvider as MapEditor } from "@/components/map/MapEditor";
 import { RawDataView } from "@/components/map/RawDataView";
 
 export default function EditMapPage() {
