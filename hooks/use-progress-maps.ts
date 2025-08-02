@@ -44,12 +44,13 @@ export function useProgressMaps() {
         setError(null);
 
         // Start both requests in parallel for better performance
-        const [enrolledMapsPromise, availableMapsPromise] = await Promise.allSettled([
-          // Get enrolled maps with real-time progress (slower)
-          getUserEnrolledMapsWithProgress(),
-          // Get all available maps (faster)
-          getMapsWithStats(),
-        ]);
+        const [enrolledMapsPromise, availableMapsPromise] =
+          await Promise.allSettled([
+            // Get enrolled maps with real-time progress (slower)
+            getUserEnrolledMapsWithProgress(),
+            // Get all available maps (faster)
+            getMapsWithStats(),
+          ]);
 
         if (!isMounted) return;
 
@@ -78,7 +79,7 @@ export function useProgressMaps() {
         // Handle available maps result
         if (availableMapsPromise.status === "fulfilled") {
           const allMaps = availableMapsPromise.value;
-          
+
           // Filter out enrolled maps from available maps
           const enrolledMapIds = new Set(userEnrolledMaps.map((map) => map.id));
           const availableNonEnrolledMaps = allMaps.filter(
@@ -87,13 +88,17 @@ export function useProgressMaps() {
 
           setAvailableMaps(availableNonEnrolledMaps.slice(0, 3));
         } else {
-          console.error("Error fetching available maps:", availableMapsPromise.reason);
+          console.error(
+            "Error fetching available maps:",
+            availableMapsPromise.reason
+          );
           throw new Error("Failed to fetch available maps");
         }
       } catch (err) {
         if (!isMounted) return;
-        
-        const errorMessage = err instanceof Error ? err.message : "Failed to load maps";
+
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load maps";
         setError(errorMessage);
         console.error("Error in fetchMaps:", err);
       } finally {

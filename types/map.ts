@@ -75,7 +75,11 @@ export interface UserMapEnrollment {
 
 // From 20250725080607_add_map_content.sql
 
-export type ContentType = "video" | "canva_slide" | "text_with_images";
+export type ContentType =
+  | "video"
+  | "canva_slide"
+  | "text_with_images"
+  | "resource_link";
 
 export interface NodeContent {
   id: string; // uuid

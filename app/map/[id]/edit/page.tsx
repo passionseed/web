@@ -775,240 +775,299 @@ export default function EditMapPage() {
   }
 
   return (
-    <div className="container max-w-7xl py-8 space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Map Editor</h1>
-          {hasUnsavedChanges && (
-            <p className="text-sm text-orange-600 mt-1">
-              ⚠️ You have unsaved changes
-            </p>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href={`/map/${mapId}`}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Viewer
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
+    <div className="flex flex-col h-screen bg-background">
+      {/* Top Navigation Bar */}
+      <div className="flex-none border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+        <div className="container max-w-none px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <Button asChild variant="ghost" size="sm">
+                <Link href={`/map/${mapId}`}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Map
+                </Link>
+              </Button>
+              <div className="h-6 w-px bg-border" />
+              <div>
+                <h1 className="text-xl font-semibold">Map Editor</h1>
+                {hasUnsavedChanges && (
+                  <p className="text-xs text-orange-600 mt-0.5">
+                    ⚠️ Unsaved changes
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </Button>
+
+              {hasUnsavedChanges && (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleReset}>
+                    Reset Changes
+                  </Button>
+                  <Button
+                    onClick={handleSaveAll}
+                    disabled={isSavingAll}
+                    size="sm"
+                    className="min-w-[100px]"
+                  >
+                    {isSavingAll ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save All
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Map Settings</CardTitle>
-          <CardDescription>
-            Modify the general details of your map.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdate} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Map Title</Label>
-                <Input
-                  id="title"
-                  value={map.title}
-                  onChange={(e) =>
-                    setMap((prev) =>
-                      prev ? { ...prev, title: e.target.value } : null
-                    )
-                  }
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={map.category || ""}
-                  onValueChange={(value: MapCategory) =>
-                    setMap((prev) =>
-                      prev ? { ...prev, category: value } : null
-                    )
-                  }
-                  disabled={isSubmitting}
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden">
+        <Tabs defaultValue="editor" className="h-full flex flex-col">
+          {/* Tab Navigation */}
+          <div className="flex-none border-b bg-muted/30">
+            <div className="container max-w-none px-6">
+              <TabsList className="h-12 bg-transparent">
+                <TabsTrigger
+                  value="editor"
+                  className="data-[state=active]:bg-background"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ai">AI</SelectItem>
-                    <SelectItem value="3d">3D</SelectItem>
-                    <SelectItem value="unity">Unity</SelectItem>
-                    <SelectItem value="hacking">Hacking</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={map.description || ""}
-                  onChange={(e) =>
-                    setMap((prev) =>
-                      prev ? { ...prev, description: e.target.value } : null
-                    )
-                  }
-                  className="min-h-[60px]"
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="difficulty">
-                  Overall Difficulty: {map.difficulty || 1}
-                </Label>
-                <Slider
-                  id="difficulty"
-                  min={1}
-                  max={10}
-                  step={1}
-                  value={[map.difficulty || 1]}
-                  onValueChange={(value) =>
-                    setMap((prev) =>
-                      prev ? { ...prev, difficulty: value[0] } : null
-                    )
-                  }
-                  disabled={isSubmitting}
-                  className="w-full"
-                />
-              </div>
+                  Visual Editor
+                </TabsTrigger>
+                <TabsTrigger
+                  value="settings"
+                  className="data-[state=active]:bg-background"
+                >
+                  Map Settings
+                </TabsTrigger>
+                <TabsTrigger
+                  value="raw"
+                  className="data-[state=active]:bg-background"
+                >
+                  Raw Data
+                </TabsTrigger>
+              </TabsList>
             </div>
-            <div className="flex justify-between items-center pt-4">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    type="button"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="mr-2 h-4 w-4" />
-                    )}
-                    Delete Map
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Are you absolutely sure?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      the learning map and all of its associated data (nodes,
-                      paths, etc.).
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
 
-      <Tabs defaultValue="editor">
-        <TabsList>
-          <TabsTrigger value="editor">Visual Editor</TabsTrigger>
-          <TabsTrigger value="raw">Raw Data</TabsTrigger>
-        </TabsList>
-        <TabsContent value="editor" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Map Editor</CardTitle>
-              <CardDescription>
-                Add, connect, and edit the nodes of your learning map. Select a
-                node to edit its details.
-              </CardDescription>
-            </CardHeader>
-            <CardContent style={{ height: "70vh" }}>
-              <MapEditor map={map} onMapChange={setMap} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="raw" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Raw Data Diff</CardTitle>
-              <CardDescription>
-                This shows the difference between your current local edits and
-                the last saved version of the map.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RawDataView
-                currentData={map}
-                initialData={initialMap}
-                onRefresh={handleRefresh}
-                onReset={handleReset}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Unified Save Button */}
-      {hasUnsavedChanges && (
-        <Card className="border-orange-800 bg-orange-950">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">Unsaved Changes</h3>
-                <p className="text-sm text-muted-foreground">
-                  You have unsaved changes to your map. Save them to persist to
-                  the database.
-                </p>
+          {/* Tab Content */}
+          <div className="flex-1 overflow-hidden">
+            <TabsContent value="editor" className="h-full m-0 p-0">
+              <div className="h-full">
+                <MapEditor map={map} onMapChange={setMap} />
               </div>
-              <Button
-                onClick={handleSaveAll}
-                disabled={isSavingAll}
-                size="lg"
-                className="min-w-[120px]"
-              >
-                {isSavingAll ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save All Changes
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </TabsContent>
+
+            <TabsContent value="settings" className="h-full m-0 overflow-auto">
+              <div className="container max-w-4xl mx-auto p-6 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Map Configuration</CardTitle>
+                    <CardDescription>
+                      Configure the general settings and metadata for your
+                      learning map.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleUpdate} className="space-y-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="title">Map Title *</Label>
+                          <Input
+                            id="title"
+                            value={map.title}
+                            onChange={(e) =>
+                              setMap((prev) =>
+                                prev ? { ...prev, title: e.target.value } : null
+                              )
+                            }
+                            disabled={isSubmitting}
+                            placeholder="Enter map title..."
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="category">Category</Label>
+                          <Select
+                            value={map.category || ""}
+                            onValueChange={(value: MapCategory) =>
+                              setMap((prev) =>
+                                prev ? { ...prev, category: value } : null
+                              )
+                            }
+                            disabled={isSubmitting}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ai">
+                                AI & Machine Learning
+                              </SelectItem>
+                              <SelectItem value="3d">
+                                3D Design & Modeling
+                              </SelectItem>
+                              <SelectItem value="unity">
+                                Unity Development
+                              </SelectItem>
+                              <SelectItem value="hacking">
+                                Cybersecurity & Hacking
+                              </SelectItem>
+                              <SelectItem value="custom">
+                                Custom Topic
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2 lg:col-span-2">
+                          <Label htmlFor="description">Description</Label>
+                          <Textarea
+                            id="description"
+                            value={map.description || ""}
+                            onChange={(e) =>
+                              setMap((prev) =>
+                                prev
+                                  ? { ...prev, description: e.target.value }
+                                  : null
+                              )
+                            }
+                            className="min-h-[100px]"
+                            disabled={isSubmitting}
+                            placeholder="Describe what students will learn in this map..."
+                          />
+                        </div>
+
+                        <div className="space-y-4 lg:col-span-2">
+                          <Label htmlFor="difficulty">
+                            Overall Difficulty Level: {map.difficulty || 1}/10
+                          </Label>
+                          <div className="px-3">
+                            <Slider
+                              id="difficulty"
+                              min={1}
+                              max={10}
+                              step={1}
+                              value={[map.difficulty || 1]}
+                              onValueChange={(value) =>
+                                setMap((prev) =>
+                                  prev
+                                    ? { ...prev, difficulty: value[0] }
+                                    : null
+                                )
+                              }
+                              disabled={isSubmitting}
+                              className="w-full"
+                            />
+                            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                              <span>Beginner</span>
+                              <span>Intermediate</span>
+                              <span>Advanced</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-6 border-t">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              type="button"
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="mr-2 h-4 w-4" />
+                              )}
+                              Delete Map
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Are you absolutely sure?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will
+                                permanently delete the learning map "{map.title}
+                                " and all of its associated data including
+                                nodes, paths, content, and student progress.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDelete}>
+                                Delete Permanently
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving Settings...
+                            </>
+                          ) : (
+                            "Save Settings"
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="raw" className="h-full m-0 overflow-auto">
+              <div className="container max-w-6xl mx-auto p-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Raw Data Comparison</CardTitle>
+                    <CardDescription>
+                      View the differences between your current edits and the
+                      last saved version. This is useful for debugging and
+                      understanding what changes will be applied.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RawDataView
+                      currentData={map}
+                      initialData={initialMap}
+                      onRefresh={handleRefresh}
+                      onReset={handleReset}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
     </div>
   );
 }
