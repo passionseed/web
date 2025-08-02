@@ -13,7 +13,10 @@ export function LearningMapsSkeleton() {
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2].map((i) => (
-            <Card key={`enrolled-${i}`} className="animate-pulse border-primary/20">
+            <Card
+              key={`enrolled-${i}`}
+              className="animate-pulse border-primary/20"
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="space-y-2 flex-1">

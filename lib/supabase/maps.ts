@@ -1199,10 +1199,7 @@ export const loadMapProgress = async (
     .eq("user_id", targetUserId)
     .in("node_id", [
       // Subquery to get all node IDs for this map
-      supabase
-        .from("map_nodes")
-        .select("id")
-        .eq("map_id", mapId)
+      supabase.from("map_nodes").select("id").eq("map_id", mapId),
     ]);
 
   if (error) {

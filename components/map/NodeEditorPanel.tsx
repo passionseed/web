@@ -228,7 +228,7 @@ export function NodeEditorPanel({
       {/* Tabs Content - Scrollable */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="details" className="h-full flex flex-col">
-          <div className="flex-shrink-0 px-4 pt-2 bg-background border-b">
+          <div className="flex-shrink-0 px-4 py-2 bg-background border-b">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="content">Content</TabsTrigger>

@@ -20,20 +20,25 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 // Content type configurations
 const CONTENT_TYPE_CONFIG = {
   video: {
-    label: "📹 Video",
-    placeholder: "https://youtube.com/watch?v=...",
-    hint: "YouTube, Vimeo, etc.",
+    label: "📹 Video & Media",
+    placeholder: "https://youtube.com/watch?v=... or https://vimeo.com/...",
+    hint: "YouTube, Vimeo, SoundCloud, Twitter, Reddit, GIPHY, Flickr",
   },
   canva_slide: {
     label: "🎨 Canva Slide",
-    placeholder: "https://www.canva.com/design/...",
-    hint: "Canva presentation link",
+    placeholder: "https://www.canva.com/design/DAGu7Owilr4/...",
+    hint: "Copy Canva Smart embed link",
   },
   text_with_images: {
     label: "📝 Text & Images",
     placeholder:
       "Write your content here... You can use HTML tags like <img src='...'>, <p>, <h1>, etc.",
     hint: "HTML tags supported: <img>, <p>, <h1>, etc.",
+  },
+  resource_link: {
+    label: "🔗 Resource Link",
+    placeholder: "https://example.com/document.pdf or https://book-website.com",
+    hint: "Files, books, documents, external resources",
   },
 } as const;
 
@@ -71,16 +76,52 @@ const validateContentForm = (
     errors.push("Content type is required");
   }
 
-  if (contentType === "video" || contentType === "canva_slide") {
+  if (
+    contentType === "video" ||
+    contentType === "canva_slide" ||
+    contentType === "resource_link"
+  ) {
     if (!contentUrl.trim()) {
       errors.push("URL is required for this content type");
     } else if (!validateUrl(contentUrl)) {
       errors.push("Please enter a valid URL starting with http:// or https://");
+    } else if (
+      contentType === "canva_slide" &&
+      !contentUrl.includes("canva.com/design/")
+    ) {
+      errors.push(
+        "Please enter a valid Canva design URL (should contain 'canva.com/design/')"
+      );
+    } else if (contentType === "video") {
+      // Enhanced validation for video URLs - check for supported platforms
+      const supportedPlatforms = [
+        "youtube.com",
+        "youtu.be",
+        "vimeo.com",
+        "soundcloud.com",
+        "twitter.com",
+        "reddit.com",
+        "giphy.com",
+        "flickr.com",
+      ];
+      const isSupported = supportedPlatforms.some((platform) =>
+        contentUrl.toLowerCase().includes(platform)
+      );
+
+      if (!isSupported) {
+        errors.push(
+          "For best compatibility, use URLs from: YouTube, Vimeo, SoundCloud, Twitter, Reddit, GIPHY, or Flickr. Other URLs may still work but aren't guaranteed."
+        );
+      }
     }
   }
 
   if (contentType === "text_with_images" && !contentBody.trim()) {
     errors.push("Content body is required for text content");
+  }
+
+  if (contentType === "resource_link" && !contentBody.trim()) {
+    errors.push("Description is required for resource links");
   }
 
   return errors;
@@ -128,11 +169,15 @@ const ContentForm = ({
         id: existingContent?.id || generateTempId(),
         node_id: nodeId,
         content_type: contentType,
-        content_url: ["video", "canva_slide"].includes(contentType)
+        content_url: ["video", "canva_slide", "resource_link"].includes(
+          contentType
+        )
           ? contentUrl.trim()
           : null,
         content_body:
-          contentType === "text_with_images" ? contentBody.trim() : null,
+          contentType === "text_with_images" || contentType === "resource_link"
+            ? contentBody.trim()
+            : null,
         created_at: existingContent?.created_at || new Date().toISOString(),
       };
 
@@ -146,7 +191,7 @@ const ContentForm = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 p-4 border rounded-lg bg-muted/30"
+      className="space-x--4 p-4 border rounded-lg bg-muted/30"
     >
       {errors.length > 0 && (
         <Alert variant="destructive">
@@ -161,7 +206,7 @@ const ContentForm = ({
         </Alert>
       )}
 
-      <div className="space-y-2">
+      <div className="space--2">
         <Label htmlFor="contentType">Content Type *</Label>
         <Select
           value={contentType}
@@ -183,11 +228,16 @@ const ContentForm = ({
         </Select>
       </div>
 
-      {(contentType === "video" || contentType === "canva_slide") && (
-        <div className="space-y-2">
-          <Label htmlFor="content_url">
-            URL *
-            <span className="text-xs text-muted-foreground ml-2">
+      {(contentType === "video" ||
+        contentType === "canva_slide" ||
+        contentType === "resource_link") && (
+        <div className="space-y-3">
+          <Label
+            htmlFor="content_url"
+            className="text-sm font-semibold text-slate-700"
+          >
+            URL <span className="text-red-500">*</span>
+            <span className="text-xs text-slate-500 ml-2 font-normal">
               ({config.hint})
             </span>
           </Label>
@@ -199,17 +249,46 @@ const ContentForm = ({
               clearErrors();
             }}
             placeholder={config.placeholder}
-            className={
-              errors.some((e) => e.includes("URL")) ? "border-red-500" : ""
-            }
+            className={`h-11 border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 transition-colors ${
+              errors.some((e) => e.includes("URL"))
+                ? "border-red-400 focus:border-red-500"
+                : ""
+            }`}
           />
+
+          {contentType === "video" && (
+            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="text-green-600 mt-0.5">🎯</div>
+              <div className="text-xs text-green-800 leading-relaxed">
+                <strong>Supported platforms:</strong> YouTube, Vimeo,
+                SoundCloud, Twitter, Reddit, GIPHY, Flickr.
+                <br />
+                <strong>Pro tip:</strong> Most social media and video platform
+                URLs work automatically!
+              </div>
+            </div>
+          )}
+
+          {contentType === "resource_link" && (
+            <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="text-purple-600 mt-0.5">📚</div>
+              <div className="text-xs text-purple-800 leading-relaxed">
+                <strong>Examples:</strong> PDFs, Google Docs, GitHub repos,
+                books, articles, datasets, tools.
+                <br />
+                <strong>Tip:</strong> Add a clear description below to help
+                students understand what this resource is!
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {contentType === "text_with_images" && (
+      {(contentType === "text_with_images" ||
+        contentType === "resource_link") && (
         <div className="space-y-2">
           <Label htmlFor="content_body">
-            Content *
+            {contentType === "resource_link" ? "Description" : "Content"} *
             <span className="text-xs text-muted-foreground ml-2">
               ({config.hint})
             </span>
@@ -222,15 +301,30 @@ const ContentForm = ({
               clearErrors();
             }}
             className={`min-h-[120px] ${
-              errors.some((e) => e.includes("Content body"))
+              errors.some(
+                (e) => e.includes("Content body") || e.includes("Description")
+              )
                 ? "border-red-500"
                 : ""
             }`}
-            placeholder={config.placeholder}
+            placeholder={
+              contentType === "resource_link"
+                ? "Describe what this resource is and why it's useful for students. e.g., 'Essential reading on machine learning fundamentals' or 'Python documentation for reference'"
+                : config.placeholder
+            }
           />
           <div className="text-xs text-muted-foreground">
-            💡 Tip: Use &lt;img src="url"&gt; to embed images, &lt;h1&gt; for
-            headings
+            {contentType === "resource_link" ? (
+              <>
+                📚 Tip: Explain what students will find in this resource and how
+                it relates to the lesson
+              </>
+            ) : (
+              <>
+                💡 Tip: Use &lt;img src="url"&gt; to embed images, &lt;h1&gt;
+                for headings
+              </>
+            )}
           </div>
         </div>
       )}
@@ -260,6 +354,11 @@ const getContentPreview = (item: NodeContent): string => {
       const bodyPreview =
         item.content_body?.replace(/<[^>]*>/g, "").substring(0, 50) || "";
       return `📝 Text: ${bodyPreview}${bodyPreview.length >= 50 ? "..." : ""}`;
+    },
+    resource_link: () => {
+      const descriptionPreview = item.content_body?.substring(0, 30) || "";
+      const urlPreview = item.content_url?.substring(0, 25) || "";
+      return `🔗 Resource: ${descriptionPreview}${descriptionPreview.length >= 30 ? "..." : ""} (${urlPreview}${urlPreview.length >= 25 ? "..." : ""})`;
     },
   };
 
@@ -370,9 +469,9 @@ export function ContentEditor({
   );
 
   return (
-    <div className="space-y-3">
+    <div className="p-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <h4 className="font-medium text-sm">
           Learning Content ({content.length})
         </h4>
@@ -383,7 +482,7 @@ export function ContentEditor({
             onClick={() => setIsAdding(true)}
             className="h-8"
           >
-            <PlusCircle className="h-3 w-3 mr-1" />
+            <PlusCircle className="h-3 w-3 mr-1 my-2" />
             Add Content
           </Button>
         )}
@@ -453,7 +552,7 @@ export function ContentEditor({
                       size="sm"
                       onClick={() => confirmDelete(item.id)}
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                      disabled={isFormActive}
+                      disabled={!!isFormActive}
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>

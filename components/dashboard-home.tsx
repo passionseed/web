@@ -57,10 +57,16 @@ export function DashboardHome({ user }: DashboardHomeProps) {
     // For enrolled maps with real-time progress, use the calculated progress
     if ("isEnrolled" in map && map.isEnrolled && map.realTimeProgress) {
       const progress = map.realTimeProgress.progressPercentage;
-      const { passedNodes, failedNodes, submittedNodes, inProgressNodes } = map.realTimeProgress;
-      
+      const { passedNodes, failedNodes, submittedNodes, inProgressNodes } =
+        map.realTimeProgress;
+
       if (progress === 100) return { status: "Completed", progress: 100 };
-      if (passedNodes > 0 || failedNodes > 0 || submittedNodes > 0 || inProgressNodes > 0) {
+      if (
+        passedNodes > 0 ||
+        failedNodes > 0 ||
+        submittedNodes > 0 ||
+        inProgressNodes > 0
+      ) {
         return { status: "In Progress", progress };
       }
       return { status: "Not Started", progress: 0 };
@@ -185,8 +191,8 @@ export function DashboardHome({ user }: DashboardHomeProps) {
               <p className="text-sm text-muted-foreground text-center mb-4 max-w-sm">
                 {error}
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => window.location.reload()}
               >
                 Try Again
@@ -242,12 +248,14 @@ export function DashboardHome({ user }: DashboardHomeProps) {
                                   )}
                                   {map.realTimeProgress.submittedNodes > 0 && (
                                     <span className="text-blue-600 ml-2">
-                                      {map.realTimeProgress.submittedNodes} submitted
+                                      {map.realTimeProgress.submittedNodes}{" "}
+                                      submitted
                                     </span>
                                   )}
                                   {map.realTimeProgress.inProgressNodes > 0 && (
                                     <span className="text-orange-600 ml-2">
-                                      {map.realTimeProgress.inProgressNodes} in progress
+                                      {map.realTimeProgress.inProgressNodes} in
+                                      progress
                                     </span>
                                   )}
                                 </div>

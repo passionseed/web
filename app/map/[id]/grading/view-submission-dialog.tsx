@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { SubmissionWithDetails } from "@/lib/supabase/maps";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -25,6 +24,7 @@ import {
   User,
   Bot,
 } from "lucide-react";
+import { SubmissionWithDetails } from "@/lib/supabase/grading";
 
 export function ViewSubmissionDialog({
   submission,
