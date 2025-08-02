@@ -483,3 +483,45 @@ export async function getReflectionCalendar(
   // Return raw data and let the client handle timezone-specific grouping
   return data;
 }
+
+export async function getMonthlyInsights(
+  year: number,
+  month: number
+): Promise<MonthlyInsight | null> {
+  // This is a placeholder. In a real app, you would fetch this from your backend.
+  console.log(`Fetching insights for ${year}-${month}`);
+  return {
+    currentStreak: 5,
+    lastReflectionDate: new Date().toISOString(),
+    bestDay: {
+      date: new Date().toISOString(),
+      averageScore: 8.5,
+      emotion: "happy",
+    },
+    mostCommonEmotion: {
+      emotion: "creative",
+      count: 12,
+    },
+    topTopics: [
+      {
+        tagId: "1",
+        name: "3D Modeling",
+        count: 8,
+        averageScore: 7.8,
+      },
+      {
+        tagId: "2",
+        name: "Game Development",
+        count: 6,
+        averageScore: 8.2,
+      },
+    ],
+    insights: [
+      {
+        title: "Creative Surge in 3D Modeling",
+        description: "You seem to be most creative and engaged when working on 3D modeling projects, especially in the evenings.",
+        suggestion: "Consider dedicating more evening time to 3D modeling to maximize your creative flow."
+      }
+    ]
+  };
+}
