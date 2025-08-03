@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  getMapsWithStats,
-  getUserEnrolledMapsWithProgress,
-} from "@/lib/supabase/maps";
+import { getMapsWithStats } from "@/lib/supabase/maps";
+import { getUserEnrolledMapsWithProgress } from "@/lib/supabase/enrollment";
 import { LearningMap, UserMapEnrollment } from "@/types/map";
 
 type MapWithStats = LearningMap & {

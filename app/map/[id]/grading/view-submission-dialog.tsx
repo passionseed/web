@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Eye,
   Calendar,
@@ -23,17 +24,97 @@ import {
   X,
   User,
   Bot,
+  AlertTriangle,
 } from "lucide-react";
 import { SubmissionWithDetails } from "@/lib/supabase/grading";
+
+// Type guard to ensure submission has all required data
+type ValidSubmissionWithDetails = SubmissionWithDetails & {
+  student_node_progress: {
+    id: string;
+    status: string;
+    profiles: {
+      id: string;
+      username: string;
+      avatar_url: string | null;
+    };
+  };
+  node_assessments: {
+    assessment_type: string;
+    map_nodes: {
+      id: string;
+      title: string;
+    };
+  };
+};
+
+function isValidSubmission(submission: SubmissionWithDetails): submission is ValidSubmissionWithDetails {
+  return (
+    submission?.student_node_progress?.profiles?.username != null &&
+    submission?.node_assessments?.map_nodes?.title != null &&
+    submission?.node_assessments?.map_nodes?.id != null
+  );
+}
+
+function InvalidSubmissionView({ submission }: { submission: SubmissionWithDetails }) {
+  const missingFields = [];
+  
+  if (!submission?.student_node_progress?.profiles?.username) {
+    missingFields.push("student username");
+  }
+  if (!submission?.node_assessments?.map_nodes?.title) {
+    missingFields.push("node title");
+  }
+  if (!submission?.node_assessments?.map_nodes?.id) {
+    missingFields.push("node ID");
+  }
+
+  return (
+    <Alert variant="destructive" className="m-4">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertDescription>
+        Cannot display submission: Missing {missingFields.join(", ")}. 
+        This may indicate a database integrity issue.
+        <br />
+        <strong>Submission ID:</strong> {submission?.id || "Unknown"}
+      </AlertDescription>
+    </Alert>
+  );
+}
 
 export function ViewSubmissionDialog({
   submission,
 }: {
   submission: SubmissionWithDetails;
 }) {
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+
+  // Validate submission data integrity first
+  if (!isValidSubmission(submission)) {
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Eye className="h-4 w-4 mr-1" />
+            View
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Invalid Submission Data
+            </DialogTitle>
+          </DialogHeader>
+          <InvalidSubmissionView submission={submission} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Now TypeScript knows submission is valid
   const grade = submission.submission_grades[0];
   const hasGrade = !!grade;
-  const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
   const isImageFile = (url: string): boolean => {
     const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
@@ -57,7 +138,7 @@ export function ViewSubmissionDialog({
           icon: <Bot className="h-4 w-4 text-purple-600" />,
         }
       : {
-          name: grade.profiles?.username || "Instructor",
+          name: "Instructor", // Fixed: removed grade.profiles reference
           icon: <User className="h-4 w-4 text-blue-600" />,
         }
     : null;
