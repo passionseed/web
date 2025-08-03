@@ -21,7 +21,8 @@ import {
   Compass,
 } from "lucide-react";
 import Link from "next/link";
-import { getMapsWithStats, getUserEnrolledMaps } from "@/lib/supabase/maps";
+import { getMapsWithStats } from "@/lib/supabase/maps";
+import { getUserEnrolledMaps } from "@/lib/supabase/enrollment";
 import { LearningMap, UserMapEnrollment } from "@/types/map";
 import { useProgressMaps } from "@/hooks/use-progress-maps";
 import { LearningMapsSkeleton } from "@/components/learning-maps-skeleton";
@@ -209,7 +210,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
                   Continue Learning
                 </h3>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {enrolledMaps.map((map) => {
+                  {enrolledMaps.filter(map => map && map.id && map.title).map((map) => {
                     const { status, progress } = getProgressStatus(map);
                     return (
                       <Link key={map.id} href={`/map/${map.id}`}>
@@ -296,7 +297,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
                   Discover New Adventures
                 </h3>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {availableMaps.slice(0, 6).map((map) => (
+                  {availableMaps.slice(0, 6).filter(map => map && map.id && map.title).map((map) => (
                     <Link key={map.id} href={`/map/${map.id}`}>
                       <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
                         <CardHeader>

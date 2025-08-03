@@ -36,6 +36,7 @@ export type SubmissionWithDetails = {
     map_nodes: {
       id: string;
       title: string;
+      map_id: string;
     };
   };
   submission_grades: {
@@ -96,7 +97,12 @@ export const getSubmissionsForMap = async (
     throw new Error("Could not fetch submissions for this map.");
   }
 
-  return data || [];
+  // Defensive filter: only include submissions where node_assessments.map_nodes.map_id matches mapId
+  const safeData = (data || []).filter(
+    (s) =>
+      s?.node_assessments?.map_nodes?.map_id === mapId
+  );
+  return safeData;
 };
 
 export const gradeSubmission = async (

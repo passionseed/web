@@ -12,7 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { getMapsWithStats, isUserEnrolledInMap } from "@/lib/supabase/maps";
+import { getMapsWithStats } from "@/lib/supabase/maps";
+import { isUserEnrolledInMap } from "@/lib/supabase/enrollment";
 import { LearningMap } from "@/types/map";
 import { useToast } from "@/components/ui/use-toast";
 import { MapEnrollmentDialog } from "@/components/map/MapEnrollmentDialog";
@@ -51,10 +52,13 @@ export default function MapsPage() {
     const fetchMaps = async () => {
       try {
         const fetchedMaps = await getMapsWithStats();
+        
+        // Additional safety filter to remove any null or invalid maps
+        const validMaps = fetchedMaps.filter(map => map && map.id && map.title);
 
         // Check enrollment status for each map
         const mapsWithEnrollment = await Promise.all(
-          fetchedMaps.map(async (map) => {
+          validMaps.map(async (map) => {
             try {
               const isEnrolled = await isUserEnrolledInMap(map.id);
               return { ...map, isEnrolled };
