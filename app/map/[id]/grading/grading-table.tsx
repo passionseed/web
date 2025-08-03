@@ -40,22 +40,35 @@ import { User, Bot } from "lucide-react";
 interface GradingTableProps {
   submissions: SubmissionWithDetails[];
   userId: string;
+  mapId?: string;
 }
 
-export function GradingTable({ submissions, userId }: GradingTableProps) {
+export function GradingTable({ submissions, userId, mapId }: GradingTableProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [nodeFilter, setNodeFilter] = useState<string>("all");
 
+  // Filter out submissions that do not belong to the current map
+  const validSubmissions = submissions.filter(
+    (s) =>
+      s &&
+      s.node_assessments &&
+      s.node_assessments.map_nodes &&
+      s.node_assessments.map_nodes.title &&
+      (!mapId || s.node_assessments.map_nodes.map_id === mapId)
+  );
+
   // Get unique nodes for filtering
   const uniqueNodes = Array.from(
-    new Set(submissions.map((s) => s.node_assessments.map_nodes.title))
+    new Set(
+      validSubmissions.map((s) => s.node_assessments.map_nodes.title)
+    )
   );
 
   // Filter submissions
-  const filteredSubmissions = submissions.filter((submission) => {
+  const filteredSubmissions = validSubmissions.filter((submission) => {
     const matchesSearch = submission.student_node_progress.profiles.username
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -72,7 +85,9 @@ export function GradingTable({ submissions, userId }: GradingTableProps) {
 
     const matchesNode =
       nodeFilter === "all" ||
-      submission.node_assessments.map_nodes.title === nodeFilter;
+      (submission.node_assessments &&
+        submission.node_assessments.map_nodes &&
+        submission.node_assessments.map_nodes.title === nodeFilter);
 
     return matchesSearch && matchesStatus && matchesNode;
   });
@@ -197,7 +212,7 @@ export function GradingTable({ submissions, userId }: GradingTableProps) {
 
       {/* Results Summary */}
       <div className="text-sm text-muted-foreground">
-        Showing {filteredSubmissions.length} of {submissions.length} submissions
+        Showing {filteredSubmissions.length} of {validSubmissions.length} valid submissions
       </div>
 
       {/* Table */}
@@ -237,7 +252,7 @@ export function GradingTable({ submissions, userId }: GradingTableProps) {
                         icon: <Bot className="h-3 w-3 text-purple-600" />,
                       }
                     : {
-                        name: grade.profiles?.username || "Unknown",
+                        name: "Instructor",
                         icon: <User className="h-3 w-3 text-blue-600" />,
                       }
                   : null;
@@ -248,7 +263,7 @@ export function GradingTable({ submissions, userId }: GradingTableProps) {
                       {submission.student_node_progress.profiles.username}
                     </TableCell>
                     <TableCell>
-                      {submission.node_assessments.map_nodes.title}
+                      {submission.node_assessments?.map_nodes?.title || "Unknown Node"}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
