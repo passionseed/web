@@ -30,6 +30,7 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  GraduationCap,
 } from "lucide-react";
 import { ViewAndGradeDialog } from "./view-and-grade-dialog";
 import { ViewSubmissionDialog } from "./view-submission-dialog";
@@ -41,9 +42,15 @@ interface GradingTableProps {
   submissions: SubmissionWithDetails[];
   userId: string;
   mapId?: string;
+  assignmentId?: string;
 }
 
-export function GradingTable({ submissions, userId, mapId }: GradingTableProps) {
+export function GradingTable({
+  submissions,
+  userId,
+  mapId,
+  assignmentId,
+}: GradingTableProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,9 +69,7 @@ export function GradingTable({ submissions, userId, mapId }: GradingTableProps) 
 
   // Get unique nodes for filtering
   const uniqueNodes = Array.from(
-    new Set(
-      validSubmissions.map((s) => s.node_assessments.map_nodes.title)
-    )
+    new Set(validSubmissions.map((s) => s.node_assessments.map_nodes.title))
   );
 
   // Filter submissions
@@ -155,6 +160,19 @@ export function GradingTable({ submissions, userId, mapId }: GradingTableProps) 
 
   return (
     <div className="space-y-4">
+      {/* Assignment Filter Note */}
+      {assignmentId && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 text-sm text-blue-800">
+            <GraduationCap className="h-4 w-4" />
+            <span className="font-medium">Assignment Filter Active</span>
+          </div>
+          <p className="text-xs text-blue-600 mt-1">
+            Showing submissions filtered for a specific classroom assignment.
+          </p>
+        </div>
+      )}
+
       {/* Filters and Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex flex-1 gap-2 items-center">
@@ -212,7 +230,8 @@ export function GradingTable({ submissions, userId, mapId }: GradingTableProps) 
 
       {/* Results Summary */}
       <div className="text-sm text-muted-foreground">
-        Showing {filteredSubmissions.length} of {validSubmissions.length} valid submissions
+        Showing {filteredSubmissions.length} of {validSubmissions.length} valid
+        submissions
       </div>
 
       {/* Table */}
@@ -263,7 +282,8 @@ export function GradingTable({ submissions, userId, mapId }: GradingTableProps) 
                       {submission.student_node_progress.profiles.username}
                     </TableCell>
                     <TableCell>
-                      {submission.node_assessments?.map_nodes?.title || "Unknown Node"}
+                      {submission.node_assessments?.map_nodes?.title ||
+                        "Unknown Node"}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">

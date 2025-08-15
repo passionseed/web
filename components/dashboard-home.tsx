@@ -26,6 +26,7 @@ import { getUserEnrolledMaps } from "@/lib/supabase/enrollment";
 import { LearningMap, UserMapEnrollment } from "@/types/map";
 import { useProgressMaps } from "@/hooks/use-progress-maps";
 import { LearningMapsSkeleton } from "@/components/learning-maps-skeleton";
+import { ClassroomSection } from "@/components/dashboard/ClassroomSection";
 
 interface DashboardHomeProps {
   user: any;
@@ -210,11 +211,106 @@ export function DashboardHome({ user }: DashboardHomeProps) {
                   Continue Learning
                 </h3>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {enrolledMaps.filter(map => map && map.id && map.title).map((map) => {
-                    const { status, progress } = getProgressStatus(map);
-                    return (
+                  {enrolledMaps
+                    .filter((map) => map && map.id && map.title)
+                    .map((map) => {
+                      const { status, progress } = getProgressStatus(map);
+                      return (
+                        <Link key={map.id} href={`/map/${map.id}`}>
+                          <Card className="hover:shadow-lg transition-shadow cursor-pointer group border-primary/20">
+                            <CardHeader>
+                              <div className="flex justify-between items-start">
+                                <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                                  {map.title}
+                                </CardTitle>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Map className="h-4 w-4" />
+                                  <span>{map.node_count}</span>
+                                </div>
+                              </div>
+                              <CardDescription>
+                                {map.description ||
+                                  "Embark on an exciting learning journey through interactive islands"}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-muted-foreground">
+                                    Progress
+                                  </span>
+                                  <span className="font-medium">
+                                    {progress}%
+                                  </span>
+                                </div>
+                                <Progress value={progress} className="h-2" />
+                                {/* Real-time progress details */}
+                                {map.realTimeProgress && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {map.realTimeProgress.passedNodes > 0 && (
+                                      <span className="text-green-600">
+                                        {map.realTimeProgress.passedNodes}{" "}
+                                        passed
+                                      </span>
+                                    )}
+                                    {map.realTimeProgress.submittedNodes >
+                                      0 && (
+                                      <span className="text-blue-600 ml-2">
+                                        {map.realTimeProgress.submittedNodes}{" "}
+                                        submitted
+                                      </span>
+                                    )}
+                                    {map.realTimeProgress.inProgressNodes >
+                                      0 && (
+                                      <span className="text-orange-600 ml-2">
+                                        {map.realTimeProgress.inProgressNodes}{" "}
+                                        in progress
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                <div className="flex justify-between items-center">
+                                  <Badge
+                                    variant={
+                                      status === "In Progress"
+                                        ? "default"
+                                        : status === "Completed"
+                                          ? "secondary"
+                                          : "outline"
+                                    }
+                                    className="text-xs"
+                                  >
+                                    {status}
+                                  </Badge>
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Sparkles className="h-3 w-3" />
+                                    <span>{map.total_assessments} Quests</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* Available Maps Section */}
+            {availableMaps.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Compass className="h-5 w-5" />
+                  Discover New Adventures
+                </h3>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {availableMaps
+                    .slice(0, 6)
+                    .filter((map) => map && map.id && map.title)
+                    .map((map) => (
                       <Link key={map.id} href={`/map/${map.id}`}>
-                        <Card className="hover:shadow-lg transition-shadow cursor-pointer group border-primary/20">
+                        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
                           <CardHeader>
                             <div className="flex justify-between items-start">
                               <CardTitle className="text-lg group-hover:text-primary transition-colors">
@@ -232,47 +328,9 @@ export function DashboardHome({ user }: DashboardHomeProps) {
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-3">
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">
-                                  Progress
-                                </span>
-                                <span className="font-medium">{progress}%</span>
-                              </div>
-                              <Progress value={progress} className="h-2" />
-                              {/* Real-time progress details */}
-                              {map.realTimeProgress && (
-                                <div className="text-xs text-muted-foreground">
-                                  {map.realTimeProgress.passedNodes > 0 && (
-                                    <span className="text-green-600">
-                                      {map.realTimeProgress.passedNodes} passed
-                                    </span>
-                                  )}
-                                  {map.realTimeProgress.submittedNodes > 0 && (
-                                    <span className="text-blue-600 ml-2">
-                                      {map.realTimeProgress.submittedNodes}{" "}
-                                      submitted
-                                    </span>
-                                  )}
-                                  {map.realTimeProgress.inProgressNodes > 0 && (
-                                    <span className="text-orange-600 ml-2">
-                                      {map.realTimeProgress.inProgressNodes} in
-                                      progress
-                                    </span>
-                                  )}
-                                </div>
-                              )}
                               <div className="flex justify-between items-center">
-                                <Badge
-                                  variant={
-                                    status === "In Progress"
-                                      ? "default"
-                                      : status === "Completed"
-                                        ? "secondary"
-                                        : "outline"
-                                  }
-                                  className="text-xs"
-                                >
-                                  {status}
+                                <Badge variant="outline" className="text-xs">
+                                  Start Adventure
                                 </Badge>
                                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                   <Sparkles className="h-3 w-3" />
@@ -283,54 +341,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
                           </CardContent>
                         </Card>
                       </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Available Maps Section */}
-            {availableMaps.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Compass className="h-5 w-5" />
-                  Discover New Adventures
-                </h3>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {availableMaps.slice(0, 6).filter(map => map && map.id && map.title).map((map) => (
-                    <Link key={map.id} href={`/map/${map.id}`}>
-                      <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                              {map.title}
-                            </CardTitle>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Map className="h-4 w-4" />
-                              <span>{map.node_count}</span>
-                            </div>
-                          </div>
-                          <CardDescription>
-                            {map.description ||
-                              "Embark on an exciting learning journey through interactive islands"}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                              <Badge variant="outline" className="text-xs">
-                                Start Adventure
-                              </Badge>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Sparkles className="h-3 w-3" />
-                                <span>{map.total_assessments} Quests</span>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
+                    ))}
                 </div>
               </div>
             )}
@@ -353,6 +364,9 @@ export function DashboardHome({ user }: DashboardHomeProps) {
           </Card>
         )}
       </div>
+
+      {/* Classrooms Section */}
+      <ClassroomSection />
 
       {/* Recommended Workshops */}
       <div className="mb-12">

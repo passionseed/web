@@ -99,8 +99,7 @@ export const getSubmissionsForMap = async (
 
   // Defensive filter: only include submissions where node_assessments.map_nodes.map_id matches mapId
   const safeData = (data || []).filter(
-    (s) =>
-      s?.node_assessments?.map_nodes?.map_id === mapId
+    (s) => s?.node_assessments?.map_nodes?.map_id === mapId
   );
   return safeData;
 };
@@ -297,16 +296,35 @@ export const getSubmissionGrade = async (
   submissionId: string
 ): Promise<SubmissionGrade | null> => {
   const supabase = createClient();
+  
+  // Validate input
+  if (!submissionId || typeof submissionId !== 'string') {
+    console.warn("Invalid submission ID provided to getSubmissionGrade:", submissionId);
+    return null;
+  }
+  
   const { data, error } = await supabase
     .from("submission_grades")
     .select("*")
     .eq("submission_id", submissionId)
     .single();
 
-  if (error && error.code !== "PGRST116") {
-    console.error("Error fetching submission grade:", error);
-    throw new Error("Could not fetch submission grade.");
+  if (error) {
+    if (error.code === "PGRST116") {
+      // No grade found - this is normal for ungraded submissions
+      return null;
+    } else if (error.code === "42501" || error.message?.includes("policy")) {
+      // Permission denied / RLS policy violation - student doesn't have access to grades
+      console.warn("Permission denied accessing grades for submission:", submissionId);
+      return null;
+    } else {
+      // Other errors - log but don't throw to prevent breaking the UI
+      console.warn("Error fetching submission grade:", error);
+      console.warn("Submission ID that caused error:", submissionId);
+      return null;
+    }
   }
+  
   return data || null;
 };
 

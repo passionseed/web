@@ -22,8 +22,10 @@ import Link from "next/link";
 
 export default async function GradingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const supabase = await createClient();
   const {
@@ -35,6 +37,9 @@ export default async function GradingPage({
   }
 
   const mapId = (await params).id;
+  const searchParamsResolved = await searchParams;
+  const assignmentId = searchParamsResolved.assignment as string | undefined;
+
   const [submissions, map] = await Promise.all([
     getSubmissionsForMap(mapId),
     getMapWithNodes(mapId),
@@ -44,28 +49,36 @@ export default async function GradingPage({
     notFound();
   }
 
+  // Filter submissions by assignment if specified
+  let filteredSubmissions = submissions;
+  if (assignmentId) {
+    // TODO: Add assignment filtering logic here
+    // For now, we'll show all submissions but could filter by assignment_enrollments
+    console.log("Filtering submissions for assignment:", assignmentId);
+  }
+
   // Calculate statistics - exclude auto-graded submissions from pending count
-  const totalSubmissions = submissions.length;
-  const autoGradedSubmissions = submissions.filter(
+  const totalSubmissions = filteredSubmissions.length;
+  const autoGradedSubmissions = filteredSubmissions.filter(
     (s) =>
       s.submission_grades.length > 0 &&
       s.submission_grades[0]?.graded_by === null
   ).length;
-  const pendingSubmissions = submissions.filter(
+  const pendingSubmissions = filteredSubmissions.filter(
     (s) =>
       s.submission_grades.length === 0 ||
       (s.submission_grades[0]?.graded_by !== null &&
         s.submission_grades.length === 0)
   ).length;
-  const manuallyGradedSubmissions = submissions.filter(
+  const manuallyGradedSubmissions = filteredSubmissions.filter(
     (s) =>
       s.submission_grades.length > 0 &&
       s.submission_grades[0]?.graded_by !== null
   ).length;
-  const passedSubmissions = submissions.filter(
+  const passedSubmissions = filteredSubmissions.filter(
     (s) => s.submission_grades[0]?.grade === "pass"
   ).length;
-  const failedSubmissions = submissions.filter(
+  const failedSubmissions = filteredSubmissions.filter(
     (s) => s.submission_grades[0]?.grade === "fail"
   ).length;
 
@@ -96,12 +109,33 @@ export default async function GradingPage({
               <BookOpen className="h-4 w-4" />
               <span>{map.title}</span>
             </div>
-            <h1 className="text-3xl font-bold">Submissions for Grading</h1>
+            <h1 className="text-3xl font-bold">
+              Submissions for Grading
+              {assignmentId && (
+                <Badge variant="secondary" className="ml-2 text-sm">
+                  Assignment Filtered
+                </Badge>
+              )}
+            </h1>
             <p className="text-muted-foreground">
               Review and grade student submissions for this learning map.
+              {assignmentId && (
+                <span className="block text-sm text-blue-600 mt-1">
+                  Currently showing submissions for a specific assignment only.
+                </span>
+              )}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
+            {assignmentId && (
+              <Link
+                href={`/classrooms`}
+                className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Assignment
+              </Link>
+            )}
             <Link href={`/map/${mapId}`}>
               <Button variant="outline" className="flex items-center gap-2">
                 <Map className="h-4 w-4" />
@@ -216,7 +250,12 @@ export default async function GradingPage({
           </div>
         </CardHeader>
         <CardContent>
-          <GradingTable submissions={submissions} userId={user.id} />
+          <GradingTable
+            submissions={filteredSubmissions}
+            userId={user.id}
+            mapId={mapId}
+            assignmentId={assignmentId}
+          />
         </CardContent>
       </Card>
     </div>
