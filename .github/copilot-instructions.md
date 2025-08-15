@@ -135,10 +135,10 @@ console.log("🔗 Mapped temp node temp_123 to real node uuid_456");
 
 ```typescript
 // Server components
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 
 // Client components
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 ```
 
 ### File Upload Flow (Multi-file Support)
@@ -234,3 +234,7 @@ import { createClient } from "@/lib/supabase/client";
 - **Path creation errors**: Validate temp node IDs are properly mapped to real UUIDs
 
 Follow these patterns and architectural decisions to maintain consistency across this gamified learning platform.
+
+# Think before you code!
+
+# Always consider the impact of your changes on the overall system architecture and user experience.

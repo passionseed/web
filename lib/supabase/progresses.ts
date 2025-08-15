@@ -1,4 +1,17 @@
-import { createClient } from "./client";
+/**
+ * Student Progress Management - API-based approach
+ * This module provides functions for managing student progress through maps
+ */
+
+import { 
+  getMapProgress, 
+  getNodeProgress, 
+  updateNodeProgress, 
+  startNodeProgress as apiStartNodeProgress, 
+  submitNodeProgress as apiSubmitNodeProgress,
+  type StudentProgress
+} from "@/lib/api/progress-client";
+
 import {
   LearningMap,
   MapNode,
@@ -13,73 +26,99 @@ import {
   ProgressStatus,
 } from "@/types/map";
 
-// --- Student Progress Functions ---
+// Re-export the StudentProgress type for compatibility
+export type { StudentProgress };
 
-export const getStudentProgress = async (
+/**
+ * Get student progress for a specific node
+ * This is the main function used throughout the app
+ */
+export async function getStudentProgress(
   userId: string,
-  nodeId: string
-): Promise<StudentNodeProgress | null> => {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("student_node_progress")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("node_id", nodeId)
-    .single();
-
-  if (error && error.code !== "PGRST116") {
-    console.error("Error fetching progress:", error);
-    throw new Error("Could not fetch student progress.");
+  nodeId: string,
+  mapId?: string
+): Promise<StudentProgress | null> {
+  console.log("📊 Loading progress for node:", nodeId);
+  
+  if (!mapId) {
+    console.warn("⚠️ [Progress] No mapId provided, cannot fetch progress");
+    return null;
   }
 
-  return data || null;
-};
+  try {
+    console.log("🔄 Using API client for progress fetch");
+    return await getNodeProgress(mapId, nodeId);
+  } catch (error) {
+    console.error("❌ [Progress] Error fetching progress:", error);
+    return null;
+  }
+}
 
+/**
+ * Load all progress for a map
+ * Returns a map of nodeId -> progress for easy lookup
+ */
+export async function loadAllProgress(mapId: string): Promise<Record<string, StudentProgress>> {
+  console.log("🗺️ Loading all progress for map:", mapId);
+  
+  try {
+    return await getMapProgress(mapId);
+  } catch (error) {
+    console.error("❌ [Progress] Error loading all progress:", error);
+    return {};
+  }
+}
+
+/**
+ * Start progress on a node (mark as in_progress)
+ */
 export const startNodeProgress = async (
   userId: string,
-  nodeId: string
-): Promise<StudentNodeProgress> => {
-  const supabase = createClient();
-  const now = new Date().toISOString();
-
-  const { data, error } = await supabase
-    .from("student_node_progress")
-    .upsert({
-      user_id: userId,
-      node_id: nodeId,
-      status: "in_progress",
-      arrived_at: now,
-      started_at: now,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error starting progress:", error);
-    throw new Error("Could not start node progress.");
+  nodeId: string,
+  mapId?: string
+): Promise<StudentProgress | null> => {
+  console.log("🚀 Starting node progress:", { userId, nodeId, mapId });
+  
+  if (!mapId) {
+    console.warn("⚠️ [Progress] No mapId provided, cannot start progress");
+    return null;
   }
 
-  return data;
+  try {
+    return await apiStartNodeProgress(mapId, nodeId);
+  } catch (error) {
+    console.error("❌ [Progress] Error starting node progress:", error);
+    return null;
+  }
 };
 
+/**
+ * Submit node progress (mark as submitted)
+ * This version takes a mapId and nodeId instead of progressId
+ */
 export const submitNodeProgress = async (
-  progressId: string
-): Promise<StudentNodeProgress> => {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("student_node_progress")
-    .update({
-      status: "submitted",
-      submitted_at: new Date().toISOString(),
-    })
-    .eq("id", progressId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error submitting progress:", error);
-    throw new Error("Could not submit progress.");
+  mapId: string,
+  nodeId: string
+): Promise<StudentProgress | null> => {
+  console.log("📤 Submitting node progress:", { mapId, nodeId });
+  
+  try {
+    return await apiSubmitNodeProgress(mapId, nodeId);
+  } catch (error) {
+    console.error("❌ [Progress] Error submitting node progress:", error);
+    return null;
   }
+};
 
-  return data;
+/**
+ * Legacy function for compatibility with existing code
+ * @deprecated Use submitNodeProgress(mapId, nodeId) instead
+ */
+export const submitNodeProgressLegacy = async (
+  progressId: string
+): Promise<StudentNodeProgress | null> => {
+  console.warn("⚠️ [Progress] Using legacy submitNodeProgress - this may not work due to RLS restrictions");
+  // This function is deprecated and may not work due to RLS
+  // Callers should be updated to use the new API-based approach
+  return null;
 };
