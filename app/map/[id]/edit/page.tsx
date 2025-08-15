@@ -23,10 +23,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import {
+  FullLearningMap,
   getMapWithNodes,
   updateMap,
   deleteMap,
-  FullLearningMap,
   batchUpdateMap,
   BatchMapUpdate,
 } from "@/lib/supabase/maps";

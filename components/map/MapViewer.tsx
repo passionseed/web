@@ -5,6 +5,7 @@ import {
   Controls,
   ReactFlow,
   Background,
+  MiniMap,
   useNodesState,
   useEdgesState,
   Node,
@@ -27,25 +28,152 @@ import { NodeViewPanel } from "@/components/map/NodeViewPanel";
 import { FullLearningMap } from "@/lib/supabase/maps";
 import { getStudentProgress } from "@/lib/supabase/progresses";
 import { MapNode, StudentNodeProgress } from "@/types/map";
-import { createClient } from "@/lib/supabase/client";
-import { CheckCircle, Clock, AlertTriangle, Play, Lock } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+import {
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Play,
+  Lock,
+  Info,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import FloatingEdge from "@/components/map/FloatingEdge";
 
 interface MapViewerProps {
   map: FullLearningMap;
 }
 
+const edgeTypes = {
+  floating: FloatingEdge,
+};
+
+const miniMapConfig = {
+  position: "bottom-right" as const,
+  nodeBorderRadius: 8,
+  nodeStrokeWidth: 2,
+  nodeColor: (node: any) => {
+    const progress = node.data?.progress;
+    if (!progress) return "#94a3b8"; // Default slate-400
+
+    switch (progress.status) {
+      case "passed":
+        return "#22c55e"; // Green-500
+      case "failed":
+        return "#ef4444"; // Red-500
+      case "submitted":
+        return "#3b82f6"; // Blue-500
+      case "in_progress":
+        return "#f59e0b"; // Amber-500
+      default:
+        return "#94a3b8"; // Slate-400
+    }
+  },
+  style: {
+    transform: "scale(0.8)",
+    transformOrigin: "bottom right",
+  },
+  nodeStrokeColor: "#ffffff",
+  bgColor: "rgba(15, 23, 42, 0.8)", // slate-900 with opacity
+  maskColor: "rgba(255, 255, 255, 0.1)",
+  maskStrokeColor: "#ffffff",
+  maskStrokeWidth: 1,
+  pannable: true,
+  zoomable: true,
+  ariaLabel: "Learning map overview",
+  offsetScale: 5,
+};
+
 export function MapViewer({ map }: MapViewerProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNode, setSelectedNode] = useState<Node<MapNode> | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
+  const [selectedNode, setSelectedNode] = useState<any | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [progressMap, setProgressMap] = useState<
     Record<string, StudentNodeProgress>
   >({});
+  const [isNavigationExpanded, setIsNavigationExpanded] = useState(false);
   const reactFlowInstance = useReactFlow();
 
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!reactFlowInstance) return;
+
+      switch (event.key) {
+        case "f":
+        case "F":
+          if (!event.ctrlKey && !event.metaKey) {
+            event.preventDefault();
+            reactFlowInstance.fitView({ duration: 600, padding: 0.1 });
+          }
+          break;
+        case "Escape":
+          setSelectedNode(null);
+          if (rightPanelRef.current && leftPanelRef.current) {
+            leftPanelRef.current.resize(70);
+            rightPanelRef.current.resize(30);
+          }
+          break;
+        case "Tab":
+          if (event.shiftKey) {
+            // Navigate to previous unlocked node
+            event.preventDefault();
+            navigateToAdjacentNode(-1);
+          } else {
+            // Navigate to next unlocked node
+            event.preventDefault();
+            navigateToAdjacentNode(1);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [reactFlowInstance, selectedNode]);
+
+  // Function to navigate to adjacent unlocked nodes
+  const navigateToAdjacentNode = (direction: 1 | -1) => {
+    const unlockedNodes = map.map_nodes.filter((node) =>
+      isNodeUnlocked(node.id)
+    );
+    if (unlockedNodes.length === 0) return;
+
+    const currentIndex = selectedNode
+      ? unlockedNodes.findIndex((node) => node.id === selectedNode.id)
+      : -1;
+
+    let nextIndex;
+    if (currentIndex === -1) {
+      nextIndex = direction === 1 ? 0 : unlockedNodes.length - 1;
+    } else {
+      nextIndex =
+        (currentIndex + direction + unlockedNodes.length) %
+        unlockedNodes.length;
+    }
+
+    const nextNode = unlockedNodes[nextIndex];
+    if (nextNode && reactFlowInstance) {
+      // Select the node
+      reactFlowInstance.setCenter(
+        (nextNode.metadata as any)?.position?.x || 0,
+        (nextNode.metadata as any)?.position?.y || 0,
+        { zoom: 1.2, duration: 600 }
+      );
+
+      // Update selection
+      setSelectedNode({
+        id: nextNode.id,
+        data: nextNode,
+        position: (nextNode.metadata as any)?.position || { x: 0, y: 0 },
+      });
+    }
+  };
 
   useEffect(() => {
     const getUser = async () => {
@@ -165,28 +293,38 @@ export function MapViewer({ map }: MapViewerProps) {
       }
 
       return (
-        <div className="relative group">
-          {/* Connection Handles - Hidden in viewer mode */}
-          <Handle type="target" position={Position.Top} className="opacity-0" />
+        <div className="relative inline-block group w-fit h-fit">
+          {/* Connection handles - visible but non-interactive in viewer mode */}
+          <Handle
+            type="target"
+            position={Position.Top}
+            className="w-3 h-3 bg-blue-500/20 border-2 border-blue-400/50 shadow-sm opacity-60"
+            style={{ pointerEvents: "none" }}
+          />
           <Handle
             type="source"
             position={Position.Bottom}
-            className="opacity-0"
+            className="w-2 h-2 bg-green-500/20 border-2 border-green-400/50 shadow-sm opacity-60"
+            style={{ pointerEvents: "none" }}
           />
           <Handle
             type="target"
             position={Position.Left}
-            className="opacity-0"
+            className="w-2 h-2 bg-blue-500/20 border-2 border-blue-400/50 shadow-sm opacity-60"
+            style={{ pointerEvents: "none" }}
           />
           <Handle
             type="source"
             position={Position.Right}
-            className="opacity-0"
+            className="w-2 h-2 bg-green-500/20 border-2 border-green-400/50 shadow-sm opacity-60"
+            style={{ pointerEvents: "none" }}
           />
-
-          {/* Main Sprite Container with Floating Animation */}
           <div
             className={`relative ${selected ? "scale-110 translate-y-3" : ""} transition-transform duration-300 cursor-pointer ${animationClass}`}
+            role="button"
+            tabIndex={isUnlocked ? 0 : -1}
+            aria-label={`${data.title} - ${isUnlocked ? "Available" : "Locked"} - Difficulty: ${data.difficulty} stars`}
+            aria-describedby={progress ? `progress-${data.id}` : undefined}
           >
             {/* Selection Shadow - Enhanced for flying islands */}
             {selected && (
@@ -195,7 +333,7 @@ export function MapViewer({ map }: MapViewerProps) {
                 <img
                   src={spriteUrl}
                   alt=""
-                  className="w-max h-max object-contain absolute opacity-60"
+                  className="w-auto h-auto object-contain absolute opacity-60"
                   style={{
                     filter: "brightness(0) blur(4px)",
                     transform: "scale(1.3)",
@@ -250,7 +388,7 @@ export function MapViewer({ map }: MapViewerProps) {
             <img
               src={spriteUrl}
               alt={data.title}
-              className={`w-max h-max object-contain z-20 drop-shadow-lg hover:drop-shadow-xl transition-all duration-300 ${glowEffect}`}
+              className={`w-auto h-auto object-contain z-20 drop-shadow-lg hover:drop-shadow-xl transition-all duration-300 ${glowEffect}`}
               style={{
                 filter: selected
                   ? `${brightness} brightness(1.15) saturate(1.3)`
@@ -288,6 +426,15 @@ export function MapViewer({ map }: MapViewerProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-blue-400/10 to-transparent rounded-full blur-sm" />
               </div>
             )}
+
+            {/* Screen Reader Description */}
+            {progress && (
+              <div id={`progress-${data.id}`} className="sr-only">
+                Progress: {progress.status.replace("_", " ")}
+                {progress.submitted_at &&
+                  `, Submitted: ${new Date(progress.submitted_at).toLocaleDateString()}`}
+              </div>
+            )}
           </div>
         </div>
       );
@@ -322,17 +469,19 @@ export function MapViewer({ map }: MapViewerProps) {
         const sourceProgress = progressMap[path.source_node_id];
         const isPathActive =
           sourceProgress?.status === "passed" ||
-          sourceProgress?.status === "in_progress";
+          sourceProgress?.status === "in_progress" ||
+          sourceProgress?.status === "submitted";
 
         transformedEdges.push({
           id: path.id,
+          type: "floating",
           source: path.source_node_id,
           target: path.destination_node_id,
           animated: isPathActive,
           style: {
             stroke: isPathActive ? "#10b981" : "#6b7280",
             strokeWidth: isPathActive ? 3 : 2,
-            opacity: isPathActive ? 1 : 0.5,
+            opacity: isPathActive ? 1 : 0.6,
           },
         });
       });
@@ -345,7 +494,7 @@ export function MapViewer({ map }: MapViewerProps) {
   const onSelectionChange = useCallback(
     (params: OnSelectionChangeParams) => {
       const selected = params.nodes[0];
-      const newSelectedNode = (selected as unknown as Node<MapNode>) || null;
+      const newSelectedNode = selected || null;
 
       setSelectedNode(newSelectedNode);
 
@@ -403,8 +552,112 @@ export function MapViewer({ map }: MapViewerProps) {
         defaultSize={70}
         minSize={35}
         maxSize={85}
-        className="transition-all duration-300 ease-in-out"
+        className="transition-all duration-300 ease-in-out relative"
       >
+        {/* Info Panel - Top Right */}
+        <div className="absolute top-4 right-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg shadow-lg max-w-xs">
+          <button
+            onClick={() => setIsNavigationExpanded(!isNavigationExpanded)}
+            className="w-full flex items-center justify-between gap-2 text-xs font-medium p-3 hover:bg-muted/50 transition-colors rounded-lg"
+            aria-expanded={isNavigationExpanded}
+            aria-controls="navigation-content"
+          >
+            <div className="flex items-center gap-2">
+              <Info className="h-3 w-3" />
+              Navigation
+            </div>
+            {isNavigationExpanded ? (
+              <ChevronUp className="h-3 w-3" />
+            ) : (
+              <ChevronDown className="h-3 w-3" />
+            )}
+          </button>
+
+          {isNavigationExpanded && (
+            <div
+              id="navigation-content"
+              className="px-3 pb-3 space-y-1 text-xs text-muted-foreground animate-in slide-in-from-top-2 duration-200"
+            >
+              <div className="flex justify-between">
+                <span>Select Node</span>
+                <span className="text-xs">Click</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Next Node</span>
+                <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Tab</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Previous Node</span>
+                <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                  Shift+Tab
+                </kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Pan Map</span>
+                <span className="text-xs">Drag</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Zoom</span>
+                <span className="text-xs">Mouse Wheel</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Fit View</span>
+                <kbd className="px-1 py-0.5 bg-muted rounded text-xs">F</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Deselect</span>
+                <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Esc</kbd>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Progress Statistics - Bottom Left, above controls */}
+        <div className="absolute bottom-20 left-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-3 shadow-lg">
+          <div className="flex flex-col gap-2 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>
+                  {
+                    Object.values(progressMap).filter(
+                      (p) => p.status === "passed"
+                    ).length
+                  }{" "}
+                  Completed
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <span>
+                  {
+                    Object.values(progressMap).filter(
+                      (p) => p.status === "submitted"
+                    ).length
+                  }{" "}
+                  Submitted
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                <span>
+                  {
+                    Object.values(progressMap).filter(
+                      (p) => p.status === "in_progress"
+                    ).length
+                  }{" "}
+                  In Progress
+                </span>
+              </div>
+              <div className="text-muted-foreground">
+                {map.map_nodes.length} Total
+              </div>
+            </div>
+          </div>
+        </div>
+
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -412,13 +665,35 @@ export function MapViewer({ map }: MapViewerProps) {
           onEdgesChange={onEdgesChange}
           onSelectionChange={onSelectionChange}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable={true}
+          panOnScroll
+          panOnDrag={[1, 2]}
+          attributionPosition="bottom-left"
+          aria-label="Interactive learning map"
         >
-          <Controls showInteractive={false} />
-          <Background />
+          <Controls
+            showInteractive={false}
+            position="bottom-left"
+            style={{
+              background: "rgba(255, 255, 255, 0.9)",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+            }}
+          />
+          <Background gap={20} size={1} color="#94a3b8" />
+          <MiniMap
+            {...miniMapConfig}
+            style={{
+              ...miniMapConfig.style,
+              background: "rgba(255, 255, 255, 0.9)",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+            }}
+          />
         </ReactFlow>
       </ResizablePanel>
       <ResizableHandle withHandle />
@@ -431,7 +706,9 @@ export function MapViewer({ map }: MapViewerProps) {
       >
         <div className="h-full flex flex-col overflow-hidden">
           <NodeViewPanel
+            key={selectedNode?.id || 'no-selection'} // Force remount on node change
             selectedNode={selectedNode}
+            mapId={map.id}
             onProgressUpdate={loadAllProgress}
             isNodeUnlocked={
               selectedNode ? isNodeUnlocked(selectedNode.id) : true
@@ -448,185 +725,350 @@ export function MapViewerWithProvider({ map }: MapViewerProps) {
   return (
     <ReactFlowProvider>
       <style jsx global>{`
-        /* Floating Island Animations */
+        /* ================================
+     Tunables
+     ================================ */
+        :root {
+          --island-ease: cubic-bezier(0.33, 1, 0.68, 1);
+          --island-amp: 6px; /* vertical travel of islands */
+          --island-amp-sm: 3px; /* for micro motions (rope/knot) */
+          --island-rot: 0.6deg;
+
+          --particle-opacity: 0.14; /* max opacity when visible */
+          --particle-blur: 0.6px;
+          --particle-rise: 10px;
+          --particle-wander: 3px;
+          --particle-dura: 14s;
+          --particle-durb: 16s;
+          --particle-durc: 18s;
+
+          --edge-active: #10b981; /* active path color */
+          --edge-idle: #475569; /* idle path color (slate-600) */
+          --edge-width: 2.25;
+          --edge-width-active: 2.75;
+          --edge-opacity: 0.55;
+          --edge-opacity-active: 0.85;
+        }
+
+        /* ================================
+     Islands — calmer motion
+     ================================ */
         @keyframes float {
           0%,
           100% {
-            transform: translateY(0px) rotate(0deg);
+            transform: translateY(0) rotate(0deg);
           }
           50% {
-            transform: translateY(-8px) rotate(1deg);
+            transform: translateY(calc(-1 * var(--island-amp)))
+              rotate(var(--island-rot));
           }
         }
-
         @keyframes float-success {
           0%,
           100% {
-            transform: translateY(0px) rotate(0deg);
-            filter: brightness(1) saturate(1.2) hue-rotate(0deg);
+            transform: translateY(0) rotate(0deg);
+            filter: brightness(1) saturate(1.12);
           }
           50% {
-            transform: translateY(-12px) rotate(-1deg);
-            filter: brightness(1.1) saturate(1.3) hue-rotate(5deg);
+            transform: translateY(calc(-1.2 * var(--island-amp)))
+              rotate(calc(-1 * var(--island-rot)));
+            filter: brightness(1.04) saturate(1.16);
           }
         }
-
         @keyframes float-failed {
           0%,
           100% {
-            transform: translateY(0px) rotate(0deg);
-            filter: brightness(0.9) saturate(1.1);
+            transform: translateY(0) rotate(0deg);
+            filter: brightness(0.98) saturate(1.05);
           }
           50% {
-            transform: translateY(-6px) rotate(0.5deg);
-            filter: brightness(0.95) saturate(1.2);
+            transform: translateY(calc(-0.7 * var(--island-amp))) rotate(0.3deg);
+            filter: brightness(0.99) saturate(1.08);
           }
         }
-
         @keyframes float-submitted {
           0%,
           100% {
-            transform: translateY(0px) rotate(0deg);
-            filter: brightness(1) saturate(1.1) hue-rotate(0deg);
+            transform: translateY(0) rotate(0deg);
+            filter: brightness(1) saturate(1.08);
           }
           50% {
-            transform: translateY(-10px) rotate(-0.5deg);
-            filter: brightness(1.05) saturate(1.2) hue-rotate(-5deg);
+            transform: translateY(calc(-1 * var(--island-amp))) rotate(-0.3deg);
+            filter: brightness(1.02) saturate(1.12);
           }
         }
-
         @keyframes float-progress {
           0%,
           100% {
-            transform: translateY(0px) rotate(0deg) scale(1);
-            filter: brightness(1) saturate(1.1);
-          }
-          25% {
-            transform: translateY(-5px) rotate(0.5deg) scale(1.02);
-            filter: brightness(1.05) saturate(1.2);
-          }
-          75% {
-            transform: translateY(-5px) rotate(-0.5deg) scale(0.98);
-            filter: brightness(1.03) saturate(1.15);
-          }
-        }
-
-        @keyframes float-particle-1 {
-          0%,
-          100% {
-            transform: translateY(0px) translateX(0px) scale(1);
-            opacity: 0.6;
-          }
-          33% {
-            transform: translateY(-20px) translateX(10px) scale(1.2);
-            opacity: 1;
-          }
-          66% {
-            transform: translateY(-40px) translateX(-5px) scale(0.8);
-            opacity: 0.4;
-          }
-        }
-
-        @keyframes float-particle-2 {
-          0%,
-          100% {
-            transform: translateY(0px) translateX(0px) scale(0.8);
-            opacity: 0.4;
+            transform: translateY(0) rotate(0deg) scale(1);
+            filter: brightness(1) saturate(1.08);
           }
           50% {
-            transform: translateY(-30px) translateX(-15px) scale(1.1);
-            opacity: 0.8;
+            transform: translateY(calc(-0.8 * var(--island-amp))) rotate(0.3deg)
+              scale(1.01);
+            filter: brightness(1.01) saturate(1.12);
           }
         }
 
-        @keyframes float-particle-3 {
+        .animate-float {
+          animation: float 5s var(--island-ease) infinite;
+        }
+        .animate-float-success {
+          animation: float-success 5.5s var(--island-ease) infinite;
+        }
+        .animate-float-failed {
+          animation: float-failed 6s var(--island-ease) infinite;
+        }
+        .animate-float-submitted {
+          animation: float-submitted 5.5s var(--island-ease) infinite;
+        }
+        .animate-float-progress {
+          animation: float-progress 4.5s var(--island-ease) infinite;
+        }
+
+        /* Hover tempo: barely faster */
+        .react-flow__node:hover .animate-float,
+        .react-flow__node:hover .animate-float-success,
+        .react-flow__node:hover .animate-float-progress {
+          animation-duration: 80%;
+        }
+
+        /* ================================
+     Bridge / Rope — subtle micro-motion
+     ================================ */
+        @keyframes float-bridge {
           0%,
           100% {
-            transform: translateY(0px) translateX(0px) scale(1);
-            opacity: 0.5;
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(calc(-1 * var(--island-amp-sm)));
+          }
+        }
+        @keyframes rope-sway {
+          0%,
+          100% {
+            transform: rotate(0deg);
+          }
+          50% {
+            transform: rotate(1.2deg);
+          }
+        }
+        @keyframes float-knot {
+          0%,
+          100% {
+            transform: translateY(0) scale(1);
+          }
+          50% {
+            transform: translateY(calc(-0.5 * var(--island-amp-sm))) scale(1.03);
+          }
+        }
+        .animate-float-bridge {
+          animation: float-bridge 7s var(--island-ease) infinite;
+        }
+        .animate-float-rope {
+          animation: rope-sway 6.5s var(--island-ease) infinite;
+        }
+        .animate-float-knot {
+          animation: float-knot 6s var(--island-ease) infinite;
+        }
+
+        /* ================================
+     Particles — OFF by default
+     ================================ */
+        .animate-float-particle-1,
+        .animate-float-particle-2,
+        .animate-float-particle-3 {
+          opacity: 0; /* hidden by default */
+          filter: blur(var(--particle-blur));
+          will-change: transform, opacity;
+          pointer-events: none;
+          mix-blend-mode: normal;
+          animation: none;
+        }
+        /* Only show gently on hover/selected nodes */
+        .react-flow__node:hover .animate-float-particle-1,
+        .react-flow__node:hover .animate-float-particle-2,
+        .react-flow__node:hover .animate-float-particle-3,
+        .react-flow__node.selected .animate-float-particle-1,
+        .react-flow__node.selected .animate-float-particle-2,
+        .react-flow__node.selected .animate-float-particle-3 {
+          opacity: var(--particle-opacity);
+        }
+
+        /* Calmer motion when shown */
+        @keyframes particle-a {
+          0% {
+            transform: translate3d(0, 0, 0) scale(0.96);
+            opacity: calc(var(--particle-opacity) * 0.7);
+          }
+          30% {
+            transform: translate3d(
+                var(--particle-wander),
+                calc(-0.45 * var(--particle-rise)),
+                0
+              )
+              scale(1);
+            opacity: var(--particle-opacity);
+          }
+          60% {
+            transform: translate3d(
+                calc(-0.5 * var(--particle-wander)),
+                calc(-0.8 * var(--particle-rise)),
+                0
+              )
+              scale(1.02);
+            opacity: calc(var(--particle-opacity) * 0.85);
+          }
+          100% {
+            transform: translate3d(0, calc(-1 * var(--particle-rise)), 0)
+              scale(0.98);
+            opacity: calc(var(--particle-opacity) * 0.7);
+          }
+        }
+        @keyframes particle-b {
+          0% {
+            transform: translate3d(0, 0, 0) scale(0.94);
+            opacity: calc(var(--particle-opacity) * 0.6);
           }
           40% {
-            transform: translateY(-25px) translateX(20px) scale(1.3);
-            opacity: 0.9;
+            transform: translate3d(
+                calc(-0.7 * var(--particle-wander)),
+                calc(-0.5 * var(--particle-rise)),
+                0
+              )
+              scale(0.99);
+            opacity: calc(var(--particle-opacity) * 0.9);
           }
-          80% {
-            transform: translateY(-50px) translateX(5px) scale(0.6);
-            opacity: 0.3;
+          70% {
+            transform: translate3d(
+                calc(0.5 * var(--particle-wander)),
+                calc(-0.85 * var(--particle-rise)),
+                0
+              )
+              scale(1);
+            opacity: calc(var(--particle-opacity) * 0.8);
+          }
+          100% {
+            transform: translate3d(0, calc(-1.05 * var(--particle-rise)), 0)
+              scale(0.97);
+            opacity: calc(var(--particle-opacity) * 0.6);
           }
         }
-
-        @keyframes shadow-pulse {
-          0%,
-          100% {
-            transform: translateX(-50%) scale(1);
-            opacity: 0.2;
+        @keyframes particle-c {
+          0% {
+            transform: translate3d(0, 0, 0) scale(0.92);
+            opacity: calc(var(--particle-opacity) * 0.55);
           }
           50% {
-            transform: translateX(-50%) scale(1.1);
-            opacity: 0.3;
+            transform: translate3d(
+                calc(0.25 * var(--particle-wander)),
+                calc(-0.55 * var(--particle-rise)),
+                0
+              )
+              scale(1);
+            opacity: calc(var(--particle-opacity) * 0.8);
           }
-        }
-
-        @keyframes pulse-slow {
-          0%,
           100% {
-            opacity: 0.7;
+            transform: translate3d(0, calc(-1.1 * var(--particle-rise)), 0)
+              scale(0.96);
+            opacity: calc(var(--particle-opacity) * 0.55);
           }
-          50% {
-            opacity: 1;
+        }
+        .react-flow__node:hover .animate-float-particle-1,
+        .react-flow__node.selected .animate-float-particle-1 {
+          animation: particle-a var(--particle-dura) var(--island-ease) infinite;
+        }
+        .react-flow__node:hover .animate-float-particle-2,
+        .react-flow__node.selected .animate-float-particle-2 {
+          animation: particle-b var(--particle-durb) var(--island-ease) infinite
+            0.8s;
+        }
+        .react-flow__node:hover .animate-float-particle-3,
+        .react-flow__node.selected .animate-float-particle-3 {
+          animation: particle-c var(--particle-durc) var(--island-ease) infinite
+            1.6s;
+        }
+
+        /* ================================
+     Edges — no dashes, no dots
+     ================================ */
+        /* Kill the default dashed animation that looks like dots */
+        .react-flow__edge-path.animated {
+          stroke-dasharray: none !important;
+          animation: none !important;
+        }
+        /* Smoother, consistent look */
+        .react-flow__edge-path {
+          stroke-linecap: round;
+          transition:
+            stroke 200ms ease,
+            opacity 200ms ease,
+            stroke-width 200ms ease;
+        }
+        /* Use className on edges to toggle these: edge--active / edge--idle */
+        .edge--idle .react-flow__edge-path {
+          stroke: var(--edge-idle);
+          stroke-width: var(--edge-width);
+          opacity: var(--edge-opacity);
+        }
+        .edge--active .react-flow__edge-path {
+          stroke: var(--edge-active);
+          stroke-width: var(--edge-width-active);
+          opacity: var(--edge-opacity-active);
+        }
+
+        /* ================================
+     Focus / Accessibility
+     ================================ */
+        .react-flow__node:focus {
+          outline: 3px solid #3b82f6;
+          outline-offset: 2px;
+        }
+        .react-flow__edge:focus {
+          outline: 2px solid #3b82f6;
+          outline-offset: 1px;
+        }
+
+        @media (prefers-contrast: high) {
+          .react-flow__edge {
+            stroke-width: 4px !important;
+          }
+          .react-flow__node {
+            border: 2px solid currentColor !important;
           }
         }
 
-        /* Apply animations */
-        .animate-float {
-          animation: float 4s ease-in-out infinite;
+        @media (min-resolution: 2dppx) {
+          :root {
+            --particle-blur: 0.7px;
+          }
         }
 
-        .animate-float-success {
-          animation: float-success 3.5s ease-in-out infinite;
-        }
-
-        .animate-float-failed {
-          animation: float-failed 5s ease-in-out infinite;
-        }
-
-        .animate-float-submitted {
-          animation: float-submitted 4.5s ease-in-out infinite;
-        }
-
-        .animate-float-progress {
-          animation: float-progress 2.5s ease-in-out infinite;
-        }
-
-        .animate-float-particle-1 {
-          animation: float-particle-1 6s ease-in-out infinite;
-        }
-
-        .animate-float-particle-2 {
-          animation: float-particle-2 8s ease-in-out infinite 1s;
-        }
-
-        .animate-float-particle-3 {
-          animation: float-particle-3 7s ease-in-out infinite 2s;
-        }
-
-        .animate-pulse-slow {
-          animation: pulse-slow 3s ease-in-out infinite;
-        }
-
-        /* Enhanced hover effects for floating islands */
-        .react-flow__node:hover .animate-float {
-          animation-duration: 2s;
-        }
-
-        .react-flow__node:hover .animate-float-success {
-          animation-duration: 2s;
-        }
-
-        .react-flow__node:hover .animate-float-progress {
-          animation-duration: 1.5s;
+        /* Reduced motion: stop all animations and hide particles */
+        @media (prefers-reduced-motion: reduce) {
+          .animate-float,
+          .animate-float-success,
+          .animate-float-failed,
+          .animate-float-submitted,
+          .animate-float-progress,
+          .animate-float-bridge,
+          .animate-float-rope,
+          .animate-float-knot {
+            animation: none !important;
+          }
+          .animate-float-particle-1,
+          .animate-float-particle-2,
+          .animate-float-particle-3 {
+            animation: none !important;
+            opacity: 0;
+          }
+          .react-flow__edge-path {
+            transition: none !important;
+          }
         }
       `}</style>
+
       <MapViewer map={map} />
     </ReactFlowProvider>
   );

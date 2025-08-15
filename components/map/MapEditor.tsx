@@ -105,6 +105,16 @@ const CustomNode = ({
         className="w-5 h-5 bg-blue-500 border-2 border-white shadow-md"
       />
       <Handle
+        type="target"
+        position={Position.Bottom}
+        className="w-3 h-3 bg-green-500 border-2 border-white shadow-md"
+      />
+      <Handle
+        type="source"
+        position={Position.Top}
+        className="w-5 h-5 bg-blue-500 border-2 border-white shadow-md"
+      />
+      <Handle
         type="source"
         position={Position.Bottom}
         className="w-3 h-3 bg-green-500 border-2 border-white shadow-md"

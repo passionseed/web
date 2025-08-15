@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { submitNodeProgress, submitNodeProgressLegacy } from "./progresses";
 import {
   LearningMap,
   MapNode,
@@ -121,6 +122,42 @@ export const createAssessmentSubmission = async (
   }
 
   console.log("✅ Assessment submission created:", data);
+
+  // Update progress status to "submitted"
+  try {
+    console.log("📈 Updating progress status to 'submitted'...");
+    
+    // For now, try to get mapId and nodeId from the progress record
+    const { data: progressRecord, error: progressError } = await supabase
+      .from("student_node_progress")
+      .select(`
+        node_id,
+        map_nodes!inner (
+          map_id
+        )
+      `)
+      .eq("id", data.progress_id)
+      .single();
+
+    if (progressError || !progressRecord) {
+      console.warn("⚠️ Could not fetch progress record for API update, using legacy method");
+      await submitNodeProgressLegacy(data.progress_id);
+    } else {
+      // Use the new API-based approach
+      const mapId = (progressRecord.map_nodes as any)?.map_id;
+      if (mapId) {
+        await submitNodeProgress(mapId, progressRecord.node_id);
+      } else {
+        console.warn("⚠️ No mapId found, using legacy method");
+        await submitNodeProgressLegacy(data.progress_id);
+      }
+    }
+    
+    console.log("✅ Progress status updated to 'submitted'");
+  } catch (progressError) {
+    console.error("❌ Failed to update progress status:", progressError);
+    // Don't throw here - submission was successful, progress update is secondary
+  }
 
   // For quiz assessments, automatically grade the submission
   if (data.node_assessments.assessment_type === "quiz" && data.quiz_answers) {

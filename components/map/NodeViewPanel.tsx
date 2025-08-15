@@ -9,7 +9,6 @@ import {
   MapNode,
   NodeContent,
   QuizQuestion,
-  StudentNodeProgress,
   AssessmentSubmission,
   SubmissionGrade,
 } from "@/types/map";
@@ -17,6 +16,7 @@ import {
   getStudentProgress,
   startNodeProgress,
   submitNodeProgress,
+  type StudentProgress,
 } from "@/lib/supabase/progresses";
 import { createClient } from "@/lib/supabase/client";
 import { NoNodeSelectedView } from "./NoNodeSelectedView";
@@ -31,6 +31,7 @@ import { getSubmissionGrade } from "@/lib/supabase/grading";
 
 interface NodeViewPanelProps {
   selectedNode: Node<MapNode> | null;
+  mapId: string;
   onProgressUpdate?: () => void;
   isNodeUnlocked?: boolean;
 }
@@ -42,10 +43,11 @@ interface SubmissionWithGrade {
 
 export function NodeViewPanel({
   selectedNode,
+  mapId,
   onProgressUpdate,
   isNodeUnlocked = true,
 }: NodeViewPanelProps) {
-  const [progress, setProgress] = useState<StudentNodeProgress | null>(null);
+  const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [submissionsWithGrades, setSubmissionsWithGrades] = useState<
     SubmissionWithGrade[]
   >([]);
@@ -54,22 +56,32 @@ export function NodeViewPanel({
   const [assessmentAnswer, setAssessmentAnswer] = useState("");
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const nodeData = selectedNode?.data;
   const assessment = nodeData?.node_assessments?.[0];
-  const hasStarted = progress?.status !== "not_started" && progress?.status;
-  // Determine assessment submission states
-  const latestSubmissionWithGrade = submissionsWithGrades[0];
-  const isGraded = latestSubmissionWithGrade?.grade !== null;
-  const isPassed =
-    isGraded && latestSubmissionWithGrade?.grade?.grade === "pass";
-  const isFailed =
-    isGraded && latestSubmissionWithGrade?.grade?.grade === "fail";
+  
+  // Handle progress state more comprehensively
+  const hasStarted = progress !== null && progress?.status !== "not_started";
+  const isNotStarted = progress === null || progress?.status === "not_started";
+  
+  // Determine assessment submission states with null checks
+  const latestSubmissionWithGrade = submissionsWithGrades?.[0] || null;
+  const isGraded = latestSubmissionWithGrade?.grade !== null && latestSubmissionWithGrade?.grade !== undefined;
+  const isPassed = isGraded && latestSubmissionWithGrade?.grade?.grade === "pass";
+  const isFailed = isGraded && latestSubmissionWithGrade?.grade?.grade === "fail";
   const isSubmittedAndPending = progress?.status === "submitted" && !isGraded;
+  const isInProgress = progress?.status === "in_progress";
   const canResubmit = isFailed;
-  const showAssessmentForm =
-    canResubmit || (hasStarted && !isSubmittedAndPending && !isPassed) || false;
+  
+  // Show assessment form if:
+  // - Student can resubmit (failed previous attempt)
+  // - Student has started but hasn't submitted yet and hasn't passed
+  // - Student is in progress state
+  const showAssessmentForm = canResubmit || 
+    (hasStarted && !isSubmittedAndPending && !isPassed) || 
+    isInProgress;
 
   useEffect(() => {
     const getUser = async () => {
@@ -83,52 +95,220 @@ export function NodeViewPanel({
   }, []);
 
   useEffect(() => {
-    if (selectedNode && currentUser) {
+    // Immediately clear state when selectedNode changes to prevent stale data
+    setProgress(null);
+    setSubmissionsWithGrades([]);
+    setAssessmentAnswer("");
+    setQuizAnswers({});
+    
+    // Load new data if we have both selectedNode and currentUser
+    if (selectedNode && currentUser && !isLoading) {
       loadProgress();
     }
-  }, [selectedNode, currentUser]);
+  }, [selectedNode?.id, currentUser]);
+
+  // Separate effect to clear state when no node is selected
+  useEffect(() => {
+    if (!selectedNode) {
+      setProgress(null);
+      setSubmissionsWithGrades([]);
+      setAssessmentAnswer("");
+      setQuizAnswers({});
+    }
+  }, [selectedNode]);
 
   const loadProgress = async () => {
-    if (!selectedNode || !currentUser) return;
+    if (!selectedNode || !currentUser || isLoading) return;
+    
+    setIsLoading(true);
     try {
+      console.log("📊 Loading progress for node:", selectedNode.id);
+      
+      // Validate required data before proceeding
+      if (!selectedNode.id || !currentUser.id) {
+        console.error("Missing required IDs:", { nodeId: selectedNode.id, userId: currentUser.id });
+        toast({
+          title: "Error loading progress",
+          description: "Missing required information",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const progressData = await getStudentProgress(
         currentUser.id,
-        selectedNode.id
+        selectedNode.id,
+        mapId
       );
-      setProgress(progressData);
-      if (progressData && selectedNode.data.node_assessments?.[0]) {
-        const fetchedSubmissions = await getAssessmentSubmissions(
-          progressData.id,
-          selectedNode.data.node_assessments[0].id
-        );
-        const submissionsWithGradesData = await Promise.all(
-          fetchedSubmissions.map(async (submission) => {
-            const gradeData = await getSubmissionGrade(submission.id);
-            return { submission, grade: gradeData };
-          })
-        );
-        setSubmissionsWithGrades(submissionsWithGradesData);
+      
+      // Handle different progress states
+      if (!progressData) {
+        console.log("📝 No progress found - student hasn't started this node yet (or access denied)");
+        setProgress(null);
+        setSubmissionsWithGrades([]);
+        return;
       }
+
+      setProgress(progressData);
+      
+      // Only try to load submissions if there's an assessment AND the student has started
+      if (progressData && selectedNode.data.node_assessments?.[0]) {
+        try {
+          const fetchedSubmissions = await getAssessmentSubmissions(
+            progressData.id,
+            selectedNode.data.node_assessments[0].id
+          );
+          
+          console.log("📋 Fetched submissions:", fetchedSubmissions);
+          
+          // Handle empty submissions array
+          if (!fetchedSubmissions || fetchedSubmissions.length === 0) {
+            console.log("📝 No submissions found for this progress");
+            setSubmissionsWithGrades([]);
+            return;
+          }
+          
+          // Process submissions with graceful grade fetching
+          const submissionsWithGradesData = await Promise.all(
+            fetchedSubmissions.map(async (submission) => {
+              // Always return the submission, even if grade fetching fails
+              let gradeData = null;
+              
+              try {
+                if (!submission.id) {
+                  console.warn("Submission missing ID:", submission);
+                  return { submission, grade: null };
+                }
+                
+                console.log("🔍 Fetching grade for submission:", submission.id);
+                gradeData = await getSubmissionGrade(submission.id);
+              } catch (error) {
+                // Silently handle 406 errors - students may not have permission to read grades
+                console.warn(`Could not fetch grade for submission ${submission.id}:`, error);
+                gradeData = null;
+              }
+              
+              return { submission, grade: gradeData };
+            })
+          );
+          
+          setSubmissionsWithGrades(submissionsWithGradesData);
+        } catch (submissionError) {
+          console.warn("Error loading submissions:", submissionError);
+          // Don't fail the entire load if submissions can't be fetched
+          setSubmissionsWithGrades([]);
+        }
+      } else {
+        // No assessment or no progress - clear submissions
+        setSubmissionsWithGrades([]);
+      }
+      
+      console.log("✅ Progress and submissions loaded successfully");
+      
     } catch (error) {
-      console.error("Error loading progress:", error);
-      toast({ title: "Error loading progress", variant: "destructive" });
+      console.error("❌ Error loading progress:", error);
+      
+      // Don't show error toasts for permission/access issues since they're expected
+      // in cases where students don't have direct access to progress data
+      let shouldShowToast = true;
+      let errorMessage = "Some data may not be available";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("permission") || 
+            error.message.includes("policy") || 
+            error.message.includes("406") ||
+            error.message.includes("Not Acceptable") ||
+            error.message.includes("Access denied")) {
+          console.warn("Access denied - this is expected for students accessing their own progress");
+          shouldShowToast = false;
+        } else if (error.message.includes("network") || error.message.includes("fetch")) {
+          errorMessage = "Network error - please check your connection";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      if (shouldShowToast) {
+        toast({ 
+          title: "Error loading progress", 
+          description: errorMessage,
+          variant: "destructive" 
+        });
+      }
+      
+      // Set safe defaults on error
+      setProgress(null);
+      setSubmissionsWithGrades([]);
+      
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleStartNode = async () => {
-    if (!selectedNode || !currentUser) return;
+    if (!selectedNode || !currentUser) {
+      console.error("Cannot start node: missing selectedNode or currentUser");
+      toast({ 
+        title: "Cannot start node", 
+        description: "Missing required information",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Prevent starting if already started
+    if (hasStarted) {
+      console.warn("Node already started, ignoring start request");
+      toast({
+        title: "Node already started",
+        description: "This node is already in progress",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsStarting(true);
     try {
+      console.log("🚀 Starting node progress...");
       const newProgress = await startNodeProgress(
         currentUser.id,
-        selectedNode.id
+        selectedNode.id,
+        mapId
       );
+      
+      if (!newProgress) {
+        throw new Error("Failed to create progress record");
+      }
+      
       setProgress(newProgress);
       onProgressUpdate?.();
-      toast({ title: "Node started! Time tracking has begun." });
+      
+      toast({ 
+        title: "Node started successfully!", 
+        description: "Time tracking has begun. Good luck on your learning journey!" 
+      });
+      
+      console.log("✅ Node started successfully:", newProgress);
+      
     } catch (error) {
-      console.error("Error starting node:", error);
-      toast({ title: "Error starting node", variant: "destructive" });
+      console.error("❌ Error starting node:", error);
+      
+      let errorMessage = "Failed to start node";
+      if (error instanceof Error) {
+        if (error.message.includes("duplicate") || error.message.includes("already exists")) {
+          errorMessage = "Node has already been started";
+        } else if (error.message.includes("permission") || error.message.includes("policy")) {
+          errorMessage = "You don't have permission to start this node";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast({ 
+        title: "Error starting node", 
+        description: errorMessage,
+        variant: "destructive" 
+      });
     } finally {
       setIsStarting(false);
     }
@@ -138,10 +318,51 @@ export function NodeViewPanel({
     fileUrls?: string[],
     fileNames?: string[]
   ) => {
-    if (!selectedNode || !currentUser || !progress) return;
+    // Comprehensive validation
+    if (!selectedNode || !currentUser || !progress) {
+      console.error("Cannot submit assessment: missing required data", {
+        hasSelectedNode: !!selectedNode,
+        hasCurrentUser: !!currentUser,
+        hasProgress: !!progress
+      });
+      toast({
+        title: "Cannot submit assessment",
+        description: "Missing required information. Please try refreshing the page.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const assessment = selectedNode.data.node_assessments?.[0];
-    if (!assessment) return;
+    if (!assessment) {
+      console.error("No assessment found for this node");
+      toast({
+        title: "No assessment available",
+        description: "This node doesn't have an assessment to submit.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if student has already passed
+    if (isPassed) {
+      toast({
+        title: "Assessment already passed",
+        description: "You have already successfully completed this assessment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if student has submitted and is awaiting grade (unless they can resubmit)
+    if (isSubmittedAndPending && !canResubmit) {
+      toast({
+        title: "Assessment already submitted",
+        description: "Your submission is pending review. Please wait for grading.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -150,26 +371,80 @@ export function NodeViewPanel({
         assessment_id: assessment.id,
       };
 
+      // Validate and handle different assessment types
       if (assessment.assessment_type === "text_answer") {
-        submissionData.text_answer = assessmentAnswer;
-      } else if (assessment.assessment_type === "quiz") {
-        submissionData.quiz_answers = quizAnswers;
-        console.log("🤖 Submitting quiz for auto-grading...");
-        console.log("📝 Quiz answers being submitted:", quizAnswers);
-      } else if (assessment.assessment_type === "file_upload") {
-        if (!fileUrls || fileUrls.length === 0) {
+        if (!assessmentAnswer || assessmentAnswer.trim().length === 0) {
           toast({
-            title: "Please upload at least one file",
+            title: "Please provide an answer",
+            description: "Text answer cannot be empty.",
             variant: "destructive",
           });
           return;
         }
-        submissionData.file_urls = fileUrls;
+        submissionData.text_answer = assessmentAnswer.trim();
+        
+      } else if (assessment.assessment_type === "quiz") {
+        // Validate quiz answers
+        const questions = assessment.quiz_questions || [];
+        const answeredQuestions = Object.keys(quizAnswers).length;
+        
+        if (answeredQuestions === 0) {
+          toast({
+            title: "Please answer the quiz questions",
+            description: "You must answer at least one question to submit.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (answeredQuestions < questions.length) {
+          toast({
+            title: "Incomplete quiz",
+            description: `Please answer all ${questions.length} questions before submitting.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        submissionData.quiz_answers = quizAnswers;
+        console.log("🤖 Submitting quiz for auto-grading...");
+        console.log("📝 Quiz answers being submitted:", quizAnswers);
+        
+      } else if (assessment.assessment_type === "file_upload") {
+        if (!fileUrls || fileUrls.length === 0) {
+          toast({
+            title: "Please upload at least one file",
+            description: "File upload is required for this assessment.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Validate file URLs
+        const validUrls = fileUrls.filter(url => url && url.trim().length > 0);
+        if (validUrls.length === 0) {
+          toast({
+            title: "Invalid file uploads",
+            description: "Please ensure all files are properly uploaded.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        submissionData.file_urls = validUrls;
+      } else {
+        toast({
+          title: "Unknown assessment type",
+          description: "This assessment type is not supported.",
+          variant: "destructive",
+        });
+        return;
       }
 
       console.log("📤 Creating assessment submission:", submissionData);
       await createAssessmentSubmission(submissionData);
 
+      // Clear form data after successful submission
       setAssessmentAnswer("");
       setQuizAnswers({});
 
@@ -181,8 +456,7 @@ export function NodeViewPanel({
       if (assessment.assessment_type === "quiz") {
         toast({
           title: "Quiz completed!",
-          description:
-            "Your answers have been graded automatically. Check your results above.",
+          description: "Your answers have been graded automatically. Check your results above.",
         });
       } else {
         toast({
@@ -190,18 +464,27 @@ export function NodeViewPanel({
           description: "Your submission is pending review by an instructor.",
         });
       }
+      
     } catch (error) {
       console.error("❌ Error submitting assessment:", error);
-      console.error("❌ Error type:", typeof error);
-      console.error("❌ Error details:", {
-        name: error?.name,
-        message: error?.message,
-        stack: error?.stack,
-      });
-
-      let errorMessage = "Error submitting assessment";
+      
+      let errorMessage = "Failed to submit assessment";
       if (error instanceof Error) {
-        errorMessage = error.message;
+        console.error("❌ Error details:", {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        });
+        
+        if (error.message.includes("duplicate") || error.message.includes("already submitted")) {
+          errorMessage = "Assessment has already been submitted";
+        } else if (error.message.includes("permission") || error.message.includes("policy")) {
+          errorMessage = "You don't have permission to submit this assessment";
+        } else if (error.message.includes("network") || error.message.includes("fetch")) {
+          errorMessage = "Network error - please check your connection and try again";
+        } else {
+          errorMessage = error.message;
+        }
       }
 
       toast({
@@ -224,7 +507,7 @@ export function NodeViewPanel({
       <div className="flex-shrink-0 border-b">
         <NodeHeaderView
           nodeData={nodeData}
-          progress={progress}
+          progress={progress as any} // Type conversion - StudentProgress compatible with StudentNodeProgress
           currentUser={currentUser}
           hasStarted={!!hasStarted}
           isStarting={isStarting}

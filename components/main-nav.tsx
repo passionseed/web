@@ -33,18 +33,18 @@ export function MainNav() {
                 About
               </Link>
               <Link
-                href="/workshops"
+                href="/map"
                 className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
                 onClick={() => setMenuOpen(false)}
               >
-                Workshops
+                maps
               </Link>
               <Link
-                href="/communities"
+                href="/classroom"
                 className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
                 onClick={() => setMenuOpen(false)}
               >
-                Communities
+                Classroom
               </Link>
               <Link
                 href="/me"
@@ -79,16 +79,16 @@ export function MainNav() {
           About
         </Link>
         <Link
-          href="/workshops"
+          href="/map"
           className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
         >
-          Workshops
+          Maps
         </Link>
         <Link
-          href="/communities"
+          href="/classrooms"
           className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
         >
-          Communities
+          Classrooms
         </Link>
         <Link
           href="/me"
