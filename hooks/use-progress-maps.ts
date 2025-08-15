@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { getMapsWithStats } from "@/lib/supabase/maps";
-import { getUserEnrolledMapsWithProgress } from "@/lib/supabase/enrollment";
+// TODO: Create API route for enrolled maps with progress
+// import { getUserEnrolledMapsWithProgress } from "@/lib/supabase/enrollment";
 import { LearningMap, UserMapEnrollment } from "@/types/map";
 
 type MapWithStats = LearningMap & {
@@ -44,8 +45,9 @@ export function useProgressMaps() {
         // Start both requests in parallel for better performance
         const [enrolledMapsPromise, availableMapsPromise] =
           await Promise.allSettled([
-            // Get enrolled maps with real-time progress (slower)
-            getUserEnrolledMapsWithProgress(),
+            // TODO: Implement API route for enrolled maps with progress
+            // getUserEnrolledMapsWithProgress(),
+            Promise.resolve([]), // Temporary empty array
             // Get all available maps (faster)
             getMapsWithStats(),
           ]);
@@ -55,7 +57,7 @@ export function useProgressMaps() {
         // Handle enrolled maps result
         let userEnrolledMaps: EnrolledMapWithProgress[] = [];
         if (enrolledMapsPromise.status === "fulfilled") {
-          userEnrolledMaps = enrolledMapsPromise.value.map((enrolledMap) => ({
+          userEnrolledMaps = enrolledMapsPromise.value.map((enrolledMap: any) => ({
             ...enrolledMap,
             isEnrolled: true as const,
           }));

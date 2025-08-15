@@ -1,6 +1,6 @@
 /**
- * Student Progress Management - API-based approach
- * This module provides functions for managing student progress through maps
+ * Student Progress Management - Consolidated API-based approach
+ * This is the single source of truth for all student progress operations
  */
 
 import { 
@@ -26,8 +26,9 @@ import {
   ProgressStatus,
 } from "@/types/map";
 
-// Re-export the StudentProgress type for compatibility
+// Re-export types for compatibility
 export type { StudentProgress };
+export type { StudentNodeProgress };
 
 /**
  * Get student progress for a specific node
@@ -38,16 +39,18 @@ export async function getStudentProgress(
   nodeId: string,
   mapId?: string
 ): Promise<StudentProgress | null> {
-  console.log("📊 Loading progress for node:", nodeId);
+  console.log("📊 [Progress] Loading progress for node:", nodeId, "mapId:", mapId);
   
   if (!mapId) {
-    console.warn("⚠️ [Progress] No mapId provided, cannot fetch progress");
+    console.warn("⚠️ [Progress] No mapId provided, cannot fetch progress reliably");
     return null;
   }
 
   try {
-    console.log("🔄 Using API client for progress fetch");
-    return await getNodeProgress(mapId, nodeId);
+    console.log("🔄 [Progress] Using API client for progress fetch");
+    const result = await getNodeProgress(mapId, nodeId);
+    console.log("✅ [Progress] Successfully fetched progress:", result?.status || 'not_started');
+    return result;
   } catch (error) {
     console.error("❌ [Progress] Error fetching progress:", error);
     return null;
@@ -59,10 +62,12 @@ export async function getStudentProgress(
  * Returns a map of nodeId -> progress for easy lookup
  */
 export async function loadAllProgress(mapId: string): Promise<Record<string, StudentProgress>> {
-  console.log("🗺️ Loading all progress for map:", mapId);
+  console.log("🗺️ [Progress] Loading all progress for map:", mapId);
   
   try {
-    return await getMapProgress(mapId);
+    const result = await getMapProgress(mapId);
+    console.log("✅ [Progress] Successfully loaded progress for", Object.keys(result).length, "nodes");
+    return result;
   } catch (error) {
     console.error("❌ [Progress] Error loading all progress:", error);
     return {};
@@ -77,7 +82,7 @@ export const startNodeProgress = async (
   nodeId: string,
   mapId?: string
 ): Promise<StudentProgress | null> => {
-  console.log("🚀 Starting node progress:", { userId, nodeId, mapId });
+  console.log("🚀 [Progress] Starting node progress:", { userId, nodeId, mapId });
   
   if (!mapId) {
     console.warn("⚠️ [Progress] No mapId provided, cannot start progress");
@@ -85,7 +90,9 @@ export const startNodeProgress = async (
   }
 
   try {
-    return await apiStartNodeProgress(mapId, nodeId);
+    const result = await apiStartNodeProgress(mapId, nodeId);
+    console.log("✅ [Progress] Successfully started progress");
+    return result;
   } catch (error) {
     console.error("❌ [Progress] Error starting node progress:", error);
     return null;
@@ -100,10 +107,12 @@ export const submitNodeProgress = async (
   mapId: string,
   nodeId: string
 ): Promise<StudentProgress | null> => {
-  console.log("📤 Submitting node progress:", { mapId, nodeId });
+  console.log("📤 [Progress] Submitting node progress:", { mapId, nodeId });
   
   try {
-    return await apiSubmitNodeProgress(mapId, nodeId);
+    const result = await apiSubmitNodeProgress(mapId, nodeId);
+    console.log("✅ [Progress] Successfully submitted progress");
+    return result;
   } catch (error) {
     console.error("❌ [Progress] Error submitting node progress:", error);
     return null;
@@ -122,3 +131,88 @@ export const submitNodeProgressLegacy = async (
   // Callers should be updated to use the new API-based approach
   return null;
 };
+
+/**
+ * Calculate real-time progress percentage for a user's map enrollment
+ * Uses the new API-based approach
+ */
+export const calculateMapProgress = async (
+  mapId: string,
+  userId?: string
+): Promise<{
+  progressPercentage: number;
+  completedNodes: number;
+  totalNodes: number;
+  passedNodes: number;
+  failedNodes: number;
+  submittedNodes: number;
+  inProgressNodes: number;
+}> => {
+  console.log("📊 [Progress] Calculating map progress for:", mapId);
+  
+  try {
+    // Get all progress for this map
+    const progressMap = await getMapProgress(mapId);
+    const progressArray = Object.values(progressMap);
+    
+    // Count nodes by status
+    let passedNodes = 0;
+    let failedNodes = 0;
+    let submittedNodes = 0;
+    let inProgressNodes = 0;
+
+    progressArray.forEach((progress) => {
+      switch (progress.status) {
+        case "passed":
+          passedNodes++;
+          break;
+        case "failed":
+          failedNodes++;
+          break;
+        case "submitted":
+          submittedNodes++;
+          break;
+        case "in_progress":
+          inProgressNodes++;
+          break;
+      }
+    });
+
+    // For total nodes, we need to get the actual count from the map
+    // This is a limitation of the current approach - we might not have progress for all nodes
+    const totalNodes = Math.max(progressArray.length, passedNodes + failedNodes + submittedNodes + inProgressNodes);
+    
+    // Calculate progress: passed nodes / total nodes
+    const progressPercentage = totalNodes > 0 ? Math.floor((passedNodes / totalNodes) * 100) : 0;
+    const completedNodes = passedNodes + failedNodes; // Nodes that have been fully processed
+
+    const result = {
+      progressPercentage,
+      completedNodes,
+      totalNodes,
+      passedNodes,
+      failedNodes,
+      submittedNodes,
+      inProgressNodes,
+    };
+
+    console.log("✅ [Progress] Calculated progress:", result);
+    return result;
+  } catch (error) {
+    console.error("❌ [Progress] Error calculating map progress:", error);
+    return {
+      progressPercentage: 0,
+      completedNodes: 0,
+      totalNodes: 0,
+      passedNodes: 0,
+      failedNodes: 0,
+      submittedNodes: 0,
+      inProgressNodes: 0,
+    };
+  }
+};
+
+/**
+ * Load map progress (alias for loadAllProgress for compatibility)
+ */
+export const loadMapProgress = loadAllProgress;
