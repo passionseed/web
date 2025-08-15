@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ import { isUserEnrolledInMap } from "@/lib/supabase/enrollment";
 import { LearningMap } from "@/types/map";
 import { useToast } from "@/components/ui/use-toast";
 import { MapEnrollmentDialog } from "@/components/map/MapEnrollmentDialog";
+import { useAuth } from "@/hooks/use-auth";
 import Loading from "./loading";
 import {
   Map,
@@ -32,6 +34,8 @@ import {
   Compass,
   Plus,
   ArrowRight,
+  LogIn,
+  Lock,
 } from "lucide-react";
 
 type MapWithStats = LearningMap & {
@@ -42,19 +46,25 @@ type MapWithStats = LearningMap & {
 };
 
 export default function MapsPage() {
+  const router = useRouter();
   const [maps, setMaps] = useState<MapWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMapForEnrollment, setSelectedMapForEnrollment] =
     useState<MapWithStats | null>(null);
   const { toast } = useToast();
 
+  // Use our new auth hook
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+
   useEffect(() => {
     const fetchMaps = async () => {
       try {
         const fetchedMaps = await getMapsWithStats();
-        
+
         // Additional safety filter to remove any null or invalid maps
-        const validMaps = fetchedMaps.filter(map => map && map.id && map.title);
+        const validMaps = fetchedMaps.filter(
+          (map) => map && map.id && map.title
+        );
 
         // Check enrollment status for each map
         const mapsWithEnrollment = await Promise.all(
@@ -87,7 +97,32 @@ export default function MapsPage() {
 
   const handleStartAdventure = (map: MapWithStats, event: React.MouseEvent) => {
     event.preventDefault(); // Prevent Link navigation
+
+    // Check authentication before allowing enrollment
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to start your learning adventure.",
+        variant: "default",
+      });
+      router.push("/login");
+      return;
+    }
+
     setSelectedMapForEnrollment(map);
+  };
+
+  const handleCreateNewMap = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to create learning maps.",
+        variant: "default",
+      });
+      router.push("/login");
+      return;
+    }
+    router.push("/map/new");
   };
 
   const handleEnrollmentSuccess = () => {
@@ -147,7 +182,7 @@ export default function MapsPage() {
     );
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return <Loading />;
   }
 
@@ -203,11 +238,19 @@ export default function MapsPage() {
                 size="lg"
                 variant="secondary"
                 className="bg-blue-800/50 hover:bg-blue-700/60 backdrop-blur-sm border-blue-400/30 text-blue-100"
+                onClick={isAuthenticated ? undefined : handleCreateNewMap}
               >
-                <Link href="/map/new" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create New Map
-                </Link>
+                {isAuthenticated ? (
+                  <Link href="/map/new" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Create New Map
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <LogIn className="h-4 w-4" />
+                    Login to Create Maps
+                  </div>
+                )}
               </Button>
             </div>
           </div>
@@ -348,7 +391,7 @@ export default function MapsPage() {
                           <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       </Link>
-                    ) : (
+                    ) : isAuthenticated ? (
                       <Button
                         onClick={(e) => handleStartAdventure(map, e)}
                         className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 group-hover:shadow-xl group-hover:shadow-blue-900/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] border border-blue-500/30 hover:border-blue-400/50"
@@ -356,6 +399,16 @@ export default function MapsPage() {
                         <Sparkles className="h-4 w-4 mr-2" />
                         Start Adventure
                         <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={(e) => handleStartAdventure(map, e)}
+                        variant="outline"
+                        className="w-full border-slate-600 hover:bg-slate-700/50 text-slate-300 hover:text-slate-200 group-hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Login to Start Adventure
+                        <Lock className="h-4 w-4 ml-2" />
                       </Button>
                     )}
 
@@ -395,11 +448,19 @@ export default function MapsPage() {
                 and assessments
               </p>
               <Button
-                asChild
+                asChild={isAuthenticated}
                 variant="outline"
                 className="border-slate-600 hover:bg-slate-700 text-gray-200 hover:text-gray-100"
+                onClick={isAuthenticated ? undefined : handleCreateNewMap}
               >
-                <Link href="/map/new">Create New Map</Link>
+                {isAuthenticated ? (
+                  <Link href="/map/new">Create New Map</Link>
+                ) : (
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <LogIn className="h-4 w-4" />
+                    Login to Create Maps
+                  </div>
+                )}
               </Button>
             </CardContent>
           </Card>

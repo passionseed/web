@@ -196,7 +196,10 @@ export const getUserEnrolledMapsWithProgress = async (): Promise<
   // Extract all node IDs from all enrolled maps
   const allNodeIds: string[] = [];
   enrollmentData
-    .filter((enrollment: any) => enrollment && enrollment.learning_maps && enrollment.learning_maps.id)
+    .filter(
+      (enrollment: any) =>
+        enrollment && enrollment.learning_maps && enrollment.learning_maps.id
+    )
     .forEach((enrollment: any) => {
       const nodes = enrollment.learning_maps?.map_nodes || [];
       nodes.forEach((node: any) => {
@@ -228,101 +231,112 @@ export const getUserEnrolledMapsWithProgress = async (): Promise<
 
   const mapsWithProgress = await Promise.all(
     enrollmentData
-      .filter((enrollment: any) => enrollment && enrollment.learning_maps && enrollment.learning_maps.id && enrollment.learning_maps.title)
+      .filter(
+        (enrollment: any) =>
+          enrollment &&
+          enrollment.learning_maps &&
+          enrollment.learning_maps.id &&
+          enrollment.learning_maps.title
+      )
       .map(async (enrollment: any) => {
-      const map = enrollment.learning_maps;
-      const nodes = map.map_nodes || [];
+        const map = enrollment.learning_maps;
+        const nodes = map.map_nodes || [];
 
-      // Calculate statistics
-      const nodeCount = nodes.length;
-      const avgDifficulty =
-        nodeCount > 0
-          ? Math.round(
-              nodes.reduce(
-                (sum: number, node: any) => sum + (node.difficulty || 1),
-                0
-              ) / nodeCount
-            )
-          : 1;
-      const totalAssessments = nodes.reduce(
-        (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
-        0
-      );
+        // Calculate statistics
+        const nodeCount = nodes.length;
+        const avgDifficulty =
+          nodeCount > 0
+            ? Math.round(
+                nodes.reduce(
+                  (sum: number, node: any) => sum + (node.difficulty || 1),
+                  0
+                ) / nodeCount
+              )
+            : 1;
+        const totalAssessments = nodes.reduce(
+          (sum: number, node: any) =>
+            sum + (node.node_assessments?.length || 0),
+          0
+        );
 
-      // Calculate real-time progress using the lookup map
-      let passedNodes = 0;
-      let failedNodes = 0;
-      let submittedNodes = 0;
-      let inProgressNodes = 0;
+        // Calculate real-time progress using the lookup map
+        let passedNodes = 0;
+        let failedNodes = 0;
+        let submittedNodes = 0;
+        let inProgressNodes = 0;
 
-      nodes.forEach((node: any) => {
-        const status = progressByNodeId[node.id];
-        switch (status) {
-          case "passed":
-            passedNodes++;
-            break;
-          case "failed":
-            failedNodes++;
-            break;
-          case "submitted":
-            submittedNodes++;
-            break;
-          case "in_progress":
-            inProgressNodes++;
-            break;
-          // Node without progress data is implicitly "not_started"
+        nodes.forEach((node: any) => {
+          const status = progressByNodeId[node.id];
+          switch (status) {
+            case "passed":
+              passedNodes++;
+              break;
+            case "failed":
+              failedNodes++;
+              break;
+            case "submitted":
+              submittedNodes++;
+              break;
+            case "in_progress":
+              inProgressNodes++;
+              break;
+            // Node without progress data is implicitly "not_started"
+          }
+        });
+
+        const progressPercentage =
+          nodeCount > 0 ? Math.floor((passedNodes / nodeCount) * 100) : 0;
+        const completedNodes = passedNodes + failedNodes;
+
+        const realTimeProgress = {
+          progressPercentage,
+          completedNodes,
+          totalNodes: nodeCount,
+          passedNodes,
+          failedNodes,
+          submittedNodes,
+          inProgressNodes,
+        };
+
+        // Update enrollment progress if it's significantly different
+        if (
+          Math.abs(
+            realTimeProgress.progressPercentage - enrollment.progress_percentage
+          ) >= 5
+        ) {
+          try {
+            await updateMapEnrollmentProgress(
+              map.id,
+              realTimeProgress.progressPercentage,
+              realTimeProgress.progressPercentage === 100
+            );
+            // Update the enrollment object to reflect the new progress
+            enrollment.progress_percentage =
+              realTimeProgress.progressPercentage;
+          } catch (error) {
+            console.error(
+              `Failed to update progress for map ${map.id}:`,
+              error
+            );
+          }
         }
-      });
 
-      const progressPercentage =
-        nodeCount > 0 ? Math.floor((passedNodes / nodeCount) * 100) : 0;
-      const completedNodes = passedNodes + failedNodes;
-
-      const realTimeProgress = {
-        progressPercentage,
-        completedNodes,
-        totalNodes: nodeCount,
-        passedNodes,
-        failedNodes,
-        submittedNodes,
-        inProgressNodes,
-      };
-
-      // Update enrollment progress if it's significantly different
-      if (
-        Math.abs(
-          realTimeProgress.progressPercentage - enrollment.progress_percentage
-        ) >= 5
-      ) {
-        try {
-          await updateMapEnrollmentProgress(
-            map.id,
-            realTimeProgress.progressPercentage,
-            realTimeProgress.progressPercentage === 100
-          );
-          // Update the enrollment object to reflect the new progress
-          enrollment.progress_percentage = realTimeProgress.progressPercentage;
-        } catch (error) {
-          console.error(`Failed to update progress for map ${map.id}:`, error);
-        }
-      }
-
-      return {
-        ...map,
-        enrollment: {
-          id: enrollment.id,
-          user_id: enrollment.user_id,
-          map_id: enrollment.map_id,
-          enrolled_at: enrollment.enrolled_at,
-          completed_at: enrollment.completed_at,
-          progress_percentage: enrollment.progress_percentage,
-        },
-        node_count: nodeCount,
-        avg_difficulty: avgDifficulty,
-        total_assessments: totalAssessments,
-        realTimeProgress,
-      };
-    })
+        return {
+          ...map,
+          enrollment: {
+            id: enrollment.id,
+            user_id: enrollment.user_id,
+            map_id: enrollment.map_id,
+            enrolled_at: enrollment.enrolled_at,
+            completed_at: enrollment.completed_at,
+            progress_percentage: enrollment.progress_percentage,
+          },
+          node_count: nodeCount,
+          avg_difficulty: avgDifficulty,
+          total_assessments: totalAssessments,
+          realTimeProgress,
+        };
+      })
   );
 
   return mapsWithProgress;
@@ -371,7 +385,13 @@ export const getUserEnrolledMaps = async (): Promise<
   }
 
   return (data || [])
-    .filter((enrollment: any) => enrollment && enrollment.learning_maps && enrollment.learning_maps.id && enrollment.learning_maps.title)
+    .filter(
+      (enrollment: any) =>
+        enrollment &&
+        enrollment.learning_maps &&
+        enrollment.learning_maps.id &&
+        enrollment.learning_maps.title
+    )
     .map((enrollment: any) => {
       const map = enrollment.learning_maps;
       const nodes = map.map_nodes || [];
@@ -390,19 +410,19 @@ export const getUserEnrolledMaps = async (): Promise<
         0
       );
 
-    return {
-      ...map,
-      enrollment: {
-        id: enrollment.id,
-        user_id: enrollment.user_id,
-        map_id: enrollment.map_id,
-        enrolled_at: enrollment.enrolled_at,
-        completed_at: enrollment.completed_at,
-        progress_percentage: enrollment.progress_percentage,
-      },
-      node_count: nodeCount,
-      avg_difficulty: avgDifficulty,
-      total_assessments: totalAssessments,
-    };
-  });
+      return {
+        ...map,
+        enrollment: {
+          id: enrollment.id,
+          user_id: enrollment.user_id,
+          map_id: enrollment.map_id,
+          enrolled_at: enrollment.enrolled_at,
+          completed_at: enrollment.completed_at,
+          progress_percentage: enrollment.progress_percentage,
+        },
+        node_count: nodeCount,
+        avg_difficulty: avgDifficulty,
+        total_assessments: totalAssessments,
+      };
+    });
 };

@@ -48,7 +48,9 @@ type ValidSubmissionWithDetails = SubmissionWithDetails & {
   };
 };
 
-function isValidSubmission(submission: SubmissionWithDetails): submission is ValidSubmissionWithDetails {
+function isValidSubmission(
+  submission: SubmissionWithDetails
+): submission is ValidSubmissionWithDetails {
   return (
     submission?.student_node_progress?.profiles?.username != null &&
     submission?.node_assessments?.map_nodes?.title != null &&
@@ -56,9 +58,13 @@ function isValidSubmission(submission: SubmissionWithDetails): submission is Val
   );
 }
 
-function InvalidSubmissionView({ submission }: { submission: SubmissionWithDetails }) {
+function InvalidSubmissionView({
+  submission,
+}: {
+  submission: SubmissionWithDetails;
+}) {
   const missingFields = [];
-  
+
   if (!submission?.student_node_progress?.profiles?.username) {
     missingFields.push("student username");
   }
@@ -73,8 +79,8 @@ function InvalidSubmissionView({ submission }: { submission: SubmissionWithDetai
     <Alert variant="destructive" className="m-4">
       <AlertTriangle className="h-4 w-4" />
       <AlertDescription>
-        Cannot display submission: Missing {missingFields.join(", ")}. 
-        This may indicate a database integrity issue.
+        Cannot display submission: Missing {missingFields.join(", ")}. This may
+        indicate a database integrity issue.
         <br />
         <strong>Submission ID:</strong> {submission?.id || "Unknown"}
       </AlertDescription>
