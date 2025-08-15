@@ -17,7 +17,8 @@ import {
 } from "@/types/reflection";
 import { getEmotionColor, getEmojiForEmotion } from "@/lib/emotions";
 import { useEffect, useState } from "react";
-import { getReflectionById } from "@/lib/supabase/reflection";
+// TODO: Fix reflection system to use client-side API
+// import { getReflectionById } from "@/lib/supabase/reflection";
 import { toast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -67,7 +68,9 @@ export function ExpandedReflectionCard({
       if (!reflection.id) return;
       setIsLoading(true);
       try {
-        const data = await getReflectionById(reflection.id);
+        // TODO: Implement client-side reflection API
+        // const data = await getReflectionById(reflection.id);
+        const data = null; // Temporary
         if (data) {
           setFullReflection(data);
         } else {

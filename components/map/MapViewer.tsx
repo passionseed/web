@@ -26,8 +26,8 @@ import {
 import { ImperativePanelHandle } from "react-resizable-panels";
 import { NodeViewPanel } from "@/components/map/NodeViewPanel";
 import { FullLearningMap } from "@/lib/supabase/maps";
-import { getStudentProgress } from "@/lib/supabase/progresses";
-import { MapNode, StudentNodeProgress } from "@/types/map";
+import { getStudentProgress, loadAllProgress as loadMapProgress, type StudentProgress } from "@/lib/supabase/progresses";
+import { MapNode } from "@/types/map";
 import { createClient } from "@/utils/supabase/client";
 import {
   CheckCircle,
@@ -91,7 +91,7 @@ export function MapViewer({ map }: MapViewerProps) {
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [progressMap, setProgressMap] = useState<
-    Record<string, StudentNodeProgress>
+    Record<string, StudentProgress>
   >({});
   const [isNavigationExpanded, setIsNavigationExpanded] = useState(false);
   const reactFlowInstance = useReactFlow();
@@ -189,20 +189,18 @@ export function MapViewer({ map }: MapViewerProps) {
   const loadAllProgress = async () => {
     if (!currentUser) return;
 
-    const progressData: Record<string, StudentNodeProgress> = {};
-
-    for (const node of map.map_nodes) {
-      try {
-        const progress = await getStudentProgress(currentUser.id, node.id);
-        if (progress) {
-          progressData[node.id] = progress;
-        }
-      } catch (error) {
-        console.error(`Error loading progress for node ${node.id}:`, error);
-      }
+    try {
+      console.log("🗺️ [MapViewer] Loading all progress for map:", map.id);
+      
+      // Use the new API-based approach to load all progress at once
+      const progressData = await loadMapProgress(map.id);
+      
+      console.log("✅ [MapViewer] Loaded progress for", Object.keys(progressData).length, "nodes");
+      setProgressMap(progressData);
+    } catch (error) {
+      console.error("❌ [MapViewer] Error loading all progress:", error);
+      setProgressMap({}); // Fallback to empty progress
     }
-
-    setProgressMap(progressData);
   };
 
   useEffect(() => {
@@ -234,7 +232,7 @@ export function MapViewer({ map }: MapViewerProps) {
       data,
       selected,
     }: {
-      data: MapNode & { progress?: StudentNodeProgress };
+      data: MapNode & { progress?: StudentProgress };
       selected?: boolean;
     }) => {
       const progress = data.progress;

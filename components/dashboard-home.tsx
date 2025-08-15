@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getMapsWithStats } from "@/lib/supabase/maps";
-import { getUserEnrolledMaps } from "@/lib/supabase/enrollment";
 import { LearningMap, UserMapEnrollment } from "@/types/map";
 import { useProgressMaps } from "@/hooks/use-progress-maps";
 import { LearningMapsSkeleton } from "@/components/learning-maps-skeleton";

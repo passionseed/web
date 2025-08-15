@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { getReflectionCalendar } from "@/lib/supabase/reflection";
+// TODO: Fix reflection system to use client-side API
+// import { getReflectionCalendar } from "@/lib/supabase/reflection";
 import {
   eachDayOfInterval,
   startOfMonth,
@@ -140,9 +141,11 @@ export function ReflectionHeatmap() {
 
   React.useEffect(() => {
     const fetchData = async () => {
-      const reflections = await getReflectionCalendar(currentYear);
+      // TODO: Implement client-side reflection API
+      // const reflections = await getReflectionCalendar(currentYear);
+      const reflections: any[] = []; // Temporary empty array
       const map = new Map<string, number>();
-      reflections.forEach((r) => {
+      reflections.forEach((r: any) => {
         const date = format(new Date(r.created_at), "yyyy-MM-dd");
         map.set(date, (map.get(date) || 0) + 1);
       });
