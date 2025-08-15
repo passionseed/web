@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { getMapsWithStats } from "@/lib/supabase/maps";
-import { isUserEnrolledInMap } from "@/lib/supabase/enrollment";
+import { isUserEnrolledInMap } from "@/lib/api/enrollment-client";
 import { LearningMap } from "@/types/map";
 import { useToast } from "@/components/ui/use-toast";
 import { MapEnrollmentDialog } from "@/components/map/MapEnrollmentDialog";

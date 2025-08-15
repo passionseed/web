@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   enrollUserInMap,
   isUserEnrolledInMap,
-} from "@/lib/supabase/enrollment";
+} from "@/lib/api/enrollment-client";
 import { useToast } from "@/components/ui/use-toast";
 import { MapWelcomeDialog } from "./MapWelcomeDialog";
 import { LearningMap } from "@/types/map";
