@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { enrollUserInMap } from "@/lib/supabase/enrollment";
+import { enrollUserInMap } from "@/lib/api/enrollment-client";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Map,
