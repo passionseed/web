@@ -7,7 +7,7 @@ export interface StudentProgress {
   id: string;
   user_id: string;
   node_id: string;
-  status: 'not_started' | 'in_progress' | 'submitted' | 'passed' | 'failed';
+  status: "not_started" | "in_progress" | "submitted" | "passed" | "failed";
   arrived_at?: string;
   started_at?: string;
   submitted_at?: string;
@@ -40,14 +40,16 @@ export interface UpdateProgressResponse {
 /**
  * Get all progress for a student in a specific map
  */
-export async function getMapProgress(mapId: string): Promise<Record<string, StudentProgress>> {
+export async function getMapProgress(
+  mapId: string
+): Promise<Record<string, StudentProgress>> {
   try {
     console.log("🔍 [Progress Client] Fetching map progress for:", mapId);
-    
+
     const response = await fetch(`/api/maps/${mapId}/progress`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -60,7 +62,7 @@ export async function getMapProgress(mapId: string): Promise<Record<string, Stud
     }
 
     const result: MapProgressResponse = await response.json();
-    
+
     if (!result.success) {
       console.error("❌ [Progress Client] API returned error:", result.error);
       return {};
@@ -81,16 +83,25 @@ export async function getMapProgress(mapId: string): Promise<Record<string, Stud
 /**
  * Get progress for a specific node
  */
-export async function getNodeProgress(mapId: string, nodeId: string): Promise<StudentProgress | null> {
+export async function getNodeProgress(
+  mapId: string,
+  nodeId: string
+): Promise<StudentProgress | null> {
   try {
-    console.log("📊 [Progress Client] Fetching node progress:", { mapId, nodeId });
-    
-    const response = await fetch(`/api/maps/${mapId}/progress?node_id=${nodeId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    console.log("📊 [Progress Client] Fetching node progress:", {
+      mapId,
+      nodeId,
     });
+
+    const response = await fetch(
+      `/api/maps/${mapId}/progress?node_id=${nodeId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       console.error("❌ [Progress Client] API response not ok:", {
@@ -102,7 +113,7 @@ export async function getNodeProgress(mapId: string, nodeId: string): Promise<St
     }
 
     const result: NodeProgressResponse = await response.json();
-    
+
     if (!result.success) {
       console.error("❌ [Progress Client] API returned error:", result.error);
       return null;
@@ -110,7 +121,7 @@ export async function getNodeProgress(mapId: string, nodeId: string): Promise<St
 
     console.log("✅ [Progress Client] Node progress fetched:", {
       nodeId,
-      status: result.data?.status || 'not_started',
+      status: result.data?.status || "not_started",
     });
 
     return result.data;
@@ -126,7 +137,7 @@ export async function getNodeProgress(mapId: string, nodeId: string): Promise<St
 export async function updateNodeProgress(
   mapId: string,
   nodeId: string,
-  status: StudentProgress['status'],
+  status: StudentProgress["status"],
   options: {
     arrived_at?: string;
     started_at?: string;
@@ -140,11 +151,11 @@ export async function updateNodeProgress(
       status,
       options,
     });
-    
+
     const response = await fetch(`/api/maps/${mapId}/progress`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         node_id: nodeId,
@@ -164,7 +175,7 @@ export async function updateNodeProgress(
     }
 
     const result: UpdateProgressResponse = await response.json();
-    
+
     if (!result.success) {
       console.error("❌ [Progress Client] API returned error:", result.error);
       return null;
@@ -172,7 +183,7 @@ export async function updateNodeProgress(
 
     console.log("✅ [Progress Client] Node progress updated:", {
       nodeId,
-      oldStatus: 'unknown',
+      oldStatus: "unknown",
       newStatus: result.data.status,
       message: result.message,
     });
@@ -187,8 +198,11 @@ export async function updateNodeProgress(
 /**
  * Mark a node as started (in_progress)
  */
-export async function startNodeProgress(mapId: string, nodeId: string): Promise<StudentProgress | null> {
-  return await updateNodeProgress(mapId, nodeId, 'in_progress', {
+export async function startNodeProgress(
+  mapId: string,
+  nodeId: string
+): Promise<StudentProgress | null> {
+  return await updateNodeProgress(mapId, nodeId, "in_progress", {
     arrived_at: new Date().toISOString(),
     started_at: new Date().toISOString(),
   });
@@ -197,8 +211,11 @@ export async function startNodeProgress(mapId: string, nodeId: string): Promise<
 /**
  * Mark a node as submitted
  */
-export async function submitNodeProgress(mapId: string, nodeId: string): Promise<StudentProgress | null> {
-  return await updateNodeProgress(mapId, nodeId, 'submitted', {
+export async function submitNodeProgress(
+  mapId: string,
+  nodeId: string
+): Promise<StudentProgress | null> {
+  return await updateNodeProgress(mapId, nodeId, "submitted", {
     submitted_at: new Date().toISOString(),
   });
 }

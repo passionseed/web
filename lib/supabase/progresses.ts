@@ -3,13 +3,13 @@
  * This is the single source of truth for all student progress operations
  */
 
-import { 
-  getMapProgress, 
-  getNodeProgress, 
-  updateNodeProgress, 
-  startNodeProgress as apiStartNodeProgress, 
+import {
+  getMapProgress,
+  getNodeProgress,
+  updateNodeProgress,
+  startNodeProgress as apiStartNodeProgress,
   submitNodeProgress as apiSubmitNodeProgress,
-  type StudentProgress
+  type StudentProgress,
 } from "@/lib/api/progress-client";
 
 import {
@@ -39,17 +39,27 @@ export async function getStudentProgress(
   nodeId: string,
   mapId?: string
 ): Promise<StudentProgress | null> {
-  console.log("📊 [Progress] Loading progress for node:", nodeId, "mapId:", mapId);
-  
+  console.log(
+    "📊 [Progress] Loading progress for node:",
+    nodeId,
+    "mapId:",
+    mapId
+  );
+
   if (!mapId) {
-    console.warn("⚠️ [Progress] No mapId provided, cannot fetch progress reliably");
+    console.warn(
+      "⚠️ [Progress] No mapId provided, cannot fetch progress reliably"
+    );
     return null;
   }
 
   try {
     console.log("🔄 [Progress] Using API client for progress fetch");
     const result = await getNodeProgress(mapId, nodeId);
-    console.log("✅ [Progress] Successfully fetched progress:", result?.status || 'not_started');
+    console.log(
+      "✅ [Progress] Successfully fetched progress:",
+      result?.status || "not_started"
+    );
     return result;
   } catch (error) {
     console.error("❌ [Progress] Error fetching progress:", error);
@@ -61,12 +71,18 @@ export async function getStudentProgress(
  * Load all progress for a map
  * Returns a map of nodeId -> progress for easy lookup
  */
-export async function loadAllProgress(mapId: string): Promise<Record<string, StudentProgress>> {
+export async function loadAllProgress(
+  mapId: string
+): Promise<Record<string, StudentProgress>> {
   console.log("🗺️ [Progress] Loading all progress for map:", mapId);
-  
+
   try {
     const result = await getMapProgress(mapId);
-    console.log("✅ [Progress] Successfully loaded progress for", Object.keys(result).length, "nodes");
+    console.log(
+      "✅ [Progress] Successfully loaded progress for",
+      Object.keys(result).length,
+      "nodes"
+    );
     return result;
   } catch (error) {
     console.error("❌ [Progress] Error loading all progress:", error);
@@ -82,8 +98,12 @@ export const startNodeProgress = async (
   nodeId: string,
   mapId?: string
 ): Promise<StudentProgress | null> => {
-  console.log("🚀 [Progress] Starting node progress:", { userId, nodeId, mapId });
-  
+  console.log("🚀 [Progress] Starting node progress:", {
+    userId,
+    nodeId,
+    mapId,
+  });
+
   if (!mapId) {
     console.warn("⚠️ [Progress] No mapId provided, cannot start progress");
     return null;
@@ -108,7 +128,7 @@ export const submitNodeProgress = async (
   nodeId: string
 ): Promise<StudentProgress | null> => {
   console.log("📤 [Progress] Submitting node progress:", { mapId, nodeId });
-  
+
   try {
     const result = await apiSubmitNodeProgress(mapId, nodeId);
     console.log("✅ [Progress] Successfully submitted progress");
@@ -126,7 +146,9 @@ export const submitNodeProgress = async (
 export const submitNodeProgressLegacy = async (
   progressId: string
 ): Promise<StudentNodeProgress | null> => {
-  console.warn("⚠️ [Progress] Using legacy submitNodeProgress - this may not work due to RLS restrictions");
+  console.warn(
+    "⚠️ [Progress] Using legacy submitNodeProgress - this may not work due to RLS restrictions"
+  );
   // This function is deprecated and may not work due to RLS
   // Callers should be updated to use the new API-based approach
   return null;
@@ -149,12 +171,12 @@ export const calculateMapProgress = async (
   inProgressNodes: number;
 }> => {
   console.log("📊 [Progress] Calculating map progress for:", mapId);
-  
+
   try {
     // Get all progress for this map
     const progressMap = await getMapProgress(mapId);
     const progressArray = Object.values(progressMap);
-    
+
     // Count nodes by status
     let passedNodes = 0;
     let failedNodes = 0;
@@ -180,10 +202,14 @@ export const calculateMapProgress = async (
 
     // For total nodes, we need to get the actual count from the map
     // This is a limitation of the current approach - we might not have progress for all nodes
-    const totalNodes = Math.max(progressArray.length, passedNodes + failedNodes + submittedNodes + inProgressNodes);
-    
+    const totalNodes = Math.max(
+      progressArray.length,
+      passedNodes + failedNodes + submittedNodes + inProgressNodes
+    );
+
     // Calculate progress: passed nodes / total nodes
-    const progressPercentage = totalNodes > 0 ? Math.floor((passedNodes / totalNodes) * 100) : 0;
+    const progressPercentage =
+      totalNodes > 0 ? Math.floor((passedNodes / totalNodes) * 100) : 0;
     const completedNodes = passedNodes + failedNodes; // Nodes that have been fully processed
 
     const result = {

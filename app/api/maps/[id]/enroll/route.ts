@@ -46,7 +46,10 @@ export async function POST(
       .maybeSingle();
 
     if (checkError) {
-      console.error("❌ [Enroll API] Error checking existing enrollment:", checkError);
+      console.error(
+        "❌ [Enroll API] Error checking existing enrollment:",
+        checkError
+      );
       return NextResponse.json(
         { error: "Failed to check enrollment status" },
         { status: 500 }
@@ -75,7 +78,10 @@ export async function POST(
       .single();
 
     if (enrollError || !enrollment) {
-      console.error("❌ [Enroll API] Failed to create enrollment:", enrollError);
+      console.error(
+        "❌ [Enroll API] Failed to create enrollment:",
+        enrollError
+      );
       return NextResponse.json(
         { error: "Failed to enroll in map" },
         { status: 500 }

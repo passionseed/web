@@ -70,7 +70,10 @@ export async function GET(
       });
     } else {
       // Get all progress for this user and map
-      console.log("🎯 [Map Progress API] Fetching all progress for map:", mapId);
+      console.log(
+        "🎯 [Map Progress API] Fetching all progress for map:",
+        mapId
+      );
 
       // First get all nodes in this map
       const { data: mapNodes, error: nodesError } = await supabase
@@ -79,14 +82,17 @@ export async function GET(
         .eq("map_id", mapId);
 
       if (nodesError) {
-        console.error("❌ [Map Progress API] Error fetching map nodes:", nodesError);
+        console.error(
+          "❌ [Map Progress API] Error fetching map nodes:",
+          nodesError
+        );
         return NextResponse.json(
           { error: "Failed to fetch map nodes" },
           { status: 500 }
         );
       }
 
-      const nodeIds = mapNodes?.map(node => node.id) || [];
+      const nodeIds = mapNodes?.map((node) => node.id) || [];
 
       // Get progress for all nodes in this map
       const { data: allProgress, error: progressError } = await supabase
@@ -108,7 +114,7 @@ export async function GET(
 
       // Create a map of node_id -> progress for easy lookup
       const progressMap = {};
-      allProgress?.forEach(progress => {
+      allProgress?.forEach((progress) => {
         progressMap[progress.node_id] = progress;
       });
 
@@ -197,16 +203,25 @@ export async function POST(
     // Upsert the progress record
     const { data: progress, error: upsertError } = await supabase
       .from("student_node_progress")
-      .upsert({
-        user_id: user.id,
-        node_id,
-        status,
-        arrived_at: arrived_at || (status === 'in_progress' ? new Date().toISOString() : null),
-        started_at: started_at || (status === 'in_progress' ? new Date().toISOString() : null),
-        submitted_at: submitted_at || (status === 'submitted' ? new Date().toISOString() : null),
-      }, {
-        onConflict: 'user_id,node_id'
-      })
+      .upsert(
+        {
+          user_id: user.id,
+          node_id,
+          status,
+          arrived_at:
+            arrived_at ||
+            (status === "in_progress" ? new Date().toISOString() : null),
+          started_at:
+            started_at ||
+            (status === "in_progress" ? new Date().toISOString() : null),
+          submitted_at:
+            submitted_at ||
+            (status === "submitted" ? new Date().toISOString() : null),
+        },
+        {
+          onConflict: "user_id,node_id",
+        }
+      )
       .select("*")
       .single();
 
