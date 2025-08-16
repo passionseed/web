@@ -25,11 +25,11 @@ export interface EnrollmentCheckResponse {
 export async function isUserEnrolledInMap(mapId: string): Promise<boolean> {
   try {
     console.log("🔍 [Enrollment Client] Checking enrollment for map:", mapId);
-    
+
     const response = await fetch(`/api/maps/${mapId}/enrollment`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -42,13 +42,16 @@ export async function isUserEnrolledInMap(mapId: string): Promise<boolean> {
     }
 
     const result: EnrollmentCheckResponse = await response.json();
-    
+
     if (!result.success) {
       console.error("❌ [Enrollment Client] API returned error:", result.error);
       return false;
     }
 
-    console.log("✅ [Enrollment Client] Enrollment check result:", result.data.isEnrolled);
+    console.log(
+      "✅ [Enrollment Client] Enrollment check result:",
+      result.data.isEnrolled
+    );
     return result.data.isEnrolled;
   } catch (error) {
     console.error("❌ [Enrollment Client] Error checking enrollment:", error);
@@ -62,11 +65,11 @@ export async function isUserEnrolledInMap(mapId: string): Promise<boolean> {
 export async function enrollUserInMap(mapId: string): Promise<boolean> {
   try {
     console.log("🎯 [Enrollment Client] Enrolling in map:", mapId);
-    
+
     const response = await fetch(`/api/maps/${mapId}/enroll`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -79,13 +82,16 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
     }
 
     const result: EnrollmentResponse = await response.json();
-    
+
     if (!result.success) {
       console.error("❌ [Enrollment Client] API returned error:", result.error);
       return false;
     }
 
-    console.log("✅ [Enrollment Client] Successfully enrolled:", result.message);
+    console.log(
+      "✅ [Enrollment Client] Successfully enrolled:",
+      result.message
+    );
     return true;
   } catch (error) {
     console.error("❌ [Enrollment Client] Error enrolling in map:", error);

@@ -26,7 +26,11 @@ import {
 import { ImperativePanelHandle } from "react-resizable-panels";
 import { NodeViewPanel } from "@/components/map/NodeViewPanel";
 import { FullLearningMap } from "@/lib/supabase/maps";
-import { getStudentProgress, loadAllProgress as loadMapProgress, type StudentProgress } from "@/lib/supabase/progresses";
+import {
+  getStudentProgress,
+  loadAllProgress as loadMapProgress,
+  type StudentProgress,
+} from "@/lib/supabase/progresses";
 import { MapNode } from "@/types/map";
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -191,11 +195,15 @@ export function MapViewer({ map }: MapViewerProps) {
 
     try {
       console.log("🗺️ [MapViewer] Loading all progress for map:", map.id);
-      
+
       // Use the new API-based approach to load all progress at once
       const progressData = await loadMapProgress(map.id);
-      
-      console.log("✅ [MapViewer] Loaded progress for", Object.keys(progressData).length, "nodes");
+
+      console.log(
+        "✅ [MapViewer] Loaded progress for",
+        Object.keys(progressData).length,
+        "nodes"
+      );
       setProgressMap(progressData);
     } catch (error) {
       console.error("❌ [MapViewer] Error loading all progress:", error);
@@ -364,22 +372,6 @@ export function MapViewer({ map }: MapViewerProps) {
               <div
                 className={`absolute inset-0 ${glowEffect} rounded-full animate-pulse-slow`}
               />
-            )}
-
-            {/* Floating Particles for Special States */}
-            {progress?.status === "passed" && (
-              <div className="absolute -inset-4 pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-1 h-1 bg-green-400 rounded-full animate-float-particle-1"></div>
-                <div className="absolute top-1/4 right-0 w-0.5 h-0.5 bg-green-300 rounded-full animate-float-particle-2"></div>
-                <div className="absolute bottom-1/4 left-0 w-0.5 h-0.5 bg-green-500 rounded-full animate-float-particle-3"></div>
-              </div>
-            )}
-
-            {progress?.status === "in_progress" && (
-              <div className="absolute -inset-4 pointer-events-none">
-                <div className="absolute top-0 right-1/4 w-1 h-1 bg-orange-400 rounded-full animate-float-particle-1"></div>
-                <div className="absolute bottom-0 left-1/4 w-0.5 h-0.5 bg-orange-300 rounded-full animate-float-particle-2"></div>
-              </div>
             )}
 
             {/* Sprite Image */}
@@ -704,7 +696,7 @@ export function MapViewer({ map }: MapViewerProps) {
       >
         <div className="h-full flex flex-col overflow-hidden">
           <NodeViewPanel
-            key={selectedNode?.id || 'no-selection'} // Force remount on node change
+            key={selectedNode?.id || "no-selection"} // Force remount on node change
             selectedNode={selectedNode}
             mapId={map.id}
             onProgressUpdate={loadAllProgress}
@@ -731,14 +723,6 @@ export function MapViewerWithProvider({ map }: MapViewerProps) {
           --island-amp: 6px; /* vertical travel of islands */
           --island-amp-sm: 3px; /* for micro motions (rope/knot) */
           --island-rot: 0.6deg;
-
-          --particle-opacity: 0.14; /* max opacity when visible */
-          --particle-blur: 0.6px;
-          --particle-rise: 10px;
-          --particle-wander: 3px;
-          --particle-dura: 14s;
-          --particle-durb: 16s;
-          --particle-durc: 18s;
 
           --edge-active: #10b981; /* active path color */
           --edge-idle: #475569; /* idle path color (slate-600) */
@@ -872,123 +856,6 @@ export function MapViewerWithProvider({ map }: MapViewerProps) {
         }
 
         /* ================================
-     Particles — OFF by default
-     ================================ */
-        .animate-float-particle-1,
-        .animate-float-particle-2,
-        .animate-float-particle-3 {
-          opacity: 0; /* hidden by default */
-          filter: blur(var(--particle-blur));
-          will-change: transform, opacity;
-          pointer-events: none;
-          mix-blend-mode: normal;
-          animation: none;
-        }
-        /* Only show gently on hover/selected nodes */
-        .react-flow__node:hover .animate-float-particle-1,
-        .react-flow__node:hover .animate-float-particle-2,
-        .react-flow__node:hover .animate-float-particle-3,
-        .react-flow__node.selected .animate-float-particle-1,
-        .react-flow__node.selected .animate-float-particle-2,
-        .react-flow__node.selected .animate-float-particle-3 {
-          opacity: var(--particle-opacity);
-        }
-
-        /* Calmer motion when shown */
-        @keyframes particle-a {
-          0% {
-            transform: translate3d(0, 0, 0) scale(0.96);
-            opacity: calc(var(--particle-opacity) * 0.7);
-          }
-          30% {
-            transform: translate3d(
-                var(--particle-wander),
-                calc(-0.45 * var(--particle-rise)),
-                0
-              )
-              scale(1);
-            opacity: var(--particle-opacity);
-          }
-          60% {
-            transform: translate3d(
-                calc(-0.5 * var(--particle-wander)),
-                calc(-0.8 * var(--particle-rise)),
-                0
-              )
-              scale(1.02);
-            opacity: calc(var(--particle-opacity) * 0.85);
-          }
-          100% {
-            transform: translate3d(0, calc(-1 * var(--particle-rise)), 0)
-              scale(0.98);
-            opacity: calc(var(--particle-opacity) * 0.7);
-          }
-        }
-        @keyframes particle-b {
-          0% {
-            transform: translate3d(0, 0, 0) scale(0.94);
-            opacity: calc(var(--particle-opacity) * 0.6);
-          }
-          40% {
-            transform: translate3d(
-                calc(-0.7 * var(--particle-wander)),
-                calc(-0.5 * var(--particle-rise)),
-                0
-              )
-              scale(0.99);
-            opacity: calc(var(--particle-opacity) * 0.9);
-          }
-          70% {
-            transform: translate3d(
-                calc(0.5 * var(--particle-wander)),
-                calc(-0.85 * var(--particle-rise)),
-                0
-              )
-              scale(1);
-            opacity: calc(var(--particle-opacity) * 0.8);
-          }
-          100% {
-            transform: translate3d(0, calc(-1.05 * var(--particle-rise)), 0)
-              scale(0.97);
-            opacity: calc(var(--particle-opacity) * 0.6);
-          }
-        }
-        @keyframes particle-c {
-          0% {
-            transform: translate3d(0, 0, 0) scale(0.92);
-            opacity: calc(var(--particle-opacity) * 0.55);
-          }
-          50% {
-            transform: translate3d(
-                calc(0.25 * var(--particle-wander)),
-                calc(-0.55 * var(--particle-rise)),
-                0
-              )
-              scale(1);
-            opacity: calc(var(--particle-opacity) * 0.8);
-          }
-          100% {
-            transform: translate3d(0, calc(-1.1 * var(--particle-rise)), 0)
-              scale(0.96);
-            opacity: calc(var(--particle-opacity) * 0.55);
-          }
-        }
-        .react-flow__node:hover .animate-float-particle-1,
-        .react-flow__node.selected .animate-float-particle-1 {
-          animation: particle-a var(--particle-dura) var(--island-ease) infinite;
-        }
-        .react-flow__node:hover .animate-float-particle-2,
-        .react-flow__node.selected .animate-float-particle-2 {
-          animation: particle-b var(--particle-durb) var(--island-ease) infinite
-            0.8s;
-        }
-        .react-flow__node:hover .animate-float-particle-3,
-        .react-flow__node.selected .animate-float-particle-3 {
-          animation: particle-c var(--particle-durc) var(--island-ease) infinite
-            1.6s;
-        }
-
-        /* ================================
      Edges — no dashes, no dots
      ================================ */
         /* Kill the default dashed animation that looks like dots */
@@ -1038,12 +905,10 @@ export function MapViewerWithProvider({ map }: MapViewerProps) {
         }
 
         @media (min-resolution: 2dppx) {
-          :root {
-            --particle-blur: 0.7px;
-          }
+          /* High DPI adjustments could go here if needed */
         }
 
-        /* Reduced motion: stop all animations and hide particles */
+        /* Reduced motion: stop all animations */
         @media (prefers-reduced-motion: reduce) {
           .animate-float,
           .animate-float-success,
@@ -1054,12 +919,6 @@ export function MapViewerWithProvider({ map }: MapViewerProps) {
           .animate-float-rope,
           .animate-float-knot {
             animation: none !important;
-          }
-          .animate-float-particle-1,
-          .animate-float-particle-2,
-          .animate-float-particle-3 {
-            animation: none !important;
-            opacity: 0;
           }
           .react-flow__edge-path {
             transition: none !important;
