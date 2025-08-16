@@ -26,6 +26,7 @@ import {
   OnNodeDrag,
   useReactFlow,
   ReactFlowProvider,
+  ConnectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -98,36 +99,37 @@ const CustomNode = ({
 
   return (
     <>
-      {/* Connection handles */}
+      {/* Connection handles - properly positioned and typed */}
+      {/* Top handle - target only (for incoming connections) */}
       <Handle
         type="target"
         position={Position.Top}
-        className="w-5 h-5 bg-blue-500 border-2 border-white shadow-md"
+        id="top"
+        className="w-4 h-4 bg-blue-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
       />
-      <Handle
-        type="target"
-        position={Position.Bottom}
-        className="w-3 h-3 bg-green-500 border-2 border-white shadow-md"
-      />
-      <Handle
-        type="source"
-        position={Position.Top}
-        className="w-5 h-5 bg-blue-500 border-2 border-white shadow-md"
-      />
+
+      {/* Bottom handle - source only (for outgoing connections) */}
       <Handle
         type="source"
         position={Position.Bottom}
-        className="w-3 h-3 bg-green-500 border-2 border-white shadow-md"
+        id="bottom"
+        className="w-4 h-4 bg-green-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
       />
+
+      {/* Left handle - target only (for incoming connections) */}
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-blue-500 border-2 border-white shadow-md"
+        id="left"
+        className="w-3 h-3 bg-blue-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
       />
+
+      {/* Right handle - source only (for outgoing connections) */}
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-green-500 border-2 border-white shadow-md"
+        id="right"
+        className="w-3 h-3 bg-green-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
       />
 
       <div className={nodeClassName}>
@@ -861,6 +863,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               panOnScroll
               selectionOnDrag
               panOnDrag={[1, 2]}
+              connectionMode={ConnectionMode.Loose}
+              deleteKeyCode={["Delete", "Backspace"]}
             >
               <Background gap={20} size={1} color="#94a3b8" />
               <MiniMap
