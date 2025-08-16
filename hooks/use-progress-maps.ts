@@ -57,10 +57,12 @@ export function useProgressMaps() {
         // Handle enrolled maps result
         let userEnrolledMaps: EnrolledMapWithProgress[] = [];
         if (enrolledMapsPromise.status === "fulfilled") {
-          userEnrolledMaps = enrolledMapsPromise.value.map((enrolledMap: any) => ({
-            ...enrolledMap,
-            isEnrolled: true as const,
-          }));
+          userEnrolledMaps = enrolledMapsPromise.value.map(
+            (enrolledMap: any) => ({
+              ...enrolledMap,
+              isEnrolled: true as const,
+            })
+          );
           setEnrolledMaps(userEnrolledMaps);
         } else {
           console.warn(

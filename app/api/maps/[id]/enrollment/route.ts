@@ -46,7 +46,10 @@ export async function GET(
       .maybeSingle();
 
     if (checkError) {
-      console.error("❌ [Enrollment Check API] Error checking enrollment:", checkError);
+      console.error(
+        "❌ [Enrollment Check API] Error checking enrollment:",
+        checkError
+      );
       return NextResponse.json(
         { error: "Failed to check enrollment status" },
         { status: 500 }

@@ -126,21 +126,25 @@ export const createAssessmentSubmission = async (
   // Update progress status to "submitted"
   try {
     console.log("📈 Updating progress status to 'submitted'...");
-    
+
     // For now, try to get mapId and nodeId from the progress record
     const { data: progressRecord, error: progressError } = await supabase
       .from("student_node_progress")
-      .select(`
+      .select(
+        `
         node_id,
         map_nodes!inner (
           map_id
         )
-      `)
+      `
+      )
       .eq("id", data.progress_id)
       .single();
 
     if (progressError || !progressRecord) {
-      console.warn("⚠️ Could not fetch progress record for API update, using legacy method");
+      console.warn(
+        "⚠️ Could not fetch progress record for API update, using legacy method"
+      );
       await submitNodeProgressLegacy(data.progress_id);
     } else {
       // Use the new API-based approach
@@ -152,7 +156,7 @@ export const createAssessmentSubmission = async (
         await submitNodeProgressLegacy(data.progress_id);
       }
     }
-    
+
     console.log("✅ Progress status updated to 'submitted'");
   } catch (progressError) {
     console.error("❌ Failed to update progress status:", progressError);

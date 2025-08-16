@@ -296,13 +296,16 @@ export const getSubmissionGrade = async (
   submissionId: string
 ): Promise<SubmissionGrade | null> => {
   const supabase = createClient();
-  
+
   // Validate input
-  if (!submissionId || typeof submissionId !== 'string') {
-    console.warn("Invalid submission ID provided to getSubmissionGrade:", submissionId);
+  if (!submissionId || typeof submissionId !== "string") {
+    console.warn(
+      "Invalid submission ID provided to getSubmissionGrade:",
+      submissionId
+    );
     return null;
   }
-  
+
   const { data, error } = await supabase
     .from("submission_grades")
     .select("*")
@@ -315,7 +318,10 @@ export const getSubmissionGrade = async (
       return null;
     } else if (error.code === "42501" || error.message?.includes("policy")) {
       // Permission denied / RLS policy violation - student doesn't have access to grades
-      console.warn("Permission denied accessing grades for submission:", submissionId);
+      console.warn(
+        "Permission denied accessing grades for submission:",
+        submissionId
+      );
       return null;
     } else {
       // Other errors - log but don't throw to prevent breaking the UI
@@ -324,7 +330,7 @@ export const getSubmissionGrade = async (
       return null;
     }
   }
-  
+
   return data || null;
 };
 

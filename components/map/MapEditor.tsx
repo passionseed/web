@@ -33,7 +33,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { FullLearningMap } from "@/lib/supabase/maps";
 import { MapNode, QuizQuestion } from "@/types/map";
-import { Plus } from "lucide-react";
+import { Plus, Copy, Clipboard } from "lucide-react";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -176,6 +176,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     Record<string, QuizQuestion[]>
   >({});
 
+  // Clipboard functionality
+  const [copiedNode, setCopiedNode] = useState<MapNode | null>(null);
+
   // Memoized node types
   const nodeTypes = useMemo(
     () => ({
@@ -183,6 +186,150 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     }),
     []
   );
+
+  // Copy/Paste functionality
+  const copyNode = useCallback(() => {
+    if (!selectedNode) {
+      toast({
+        title: "No node selected",
+        description: "Please select a node to copy",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Deep clone the node data to avoid reference issues
+    const nodeToCopy = JSON.parse(JSON.stringify(selectedNode.data));
+    setCopiedNode(nodeToCopy);
+
+    toast({
+      title: "Node copied!",
+      description: `"${nodeToCopy.title}" copied to clipboard`,
+    });
+  }, [selectedNode, toast]);
+
+  const pasteNode = useCallback(() => {
+    if (!copiedNode) {
+      toast({
+        title: "Nothing to paste",
+        description: "Copy a node first using Ctrl+C",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const tempId = generateTempId("temp_node");
+
+    // Calculate paste position (offset from original or center if no original position)
+    let pastePosition = { x: 150, y: 150 }; // Default fallback
+
+    if (reactFlowInstance) {
+      const viewport = reactFlowInstance.getViewport();
+      // Calculate center of visible viewport
+      const panelOffset = selectedNode ? 0.35 : 0; // Account for right panel
+      const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
+
+      pastePosition = {
+        x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
+        y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+      };
+
+      // Add small offset if pasting near the copied node's position
+      if (copiedNode.metadata?.position) {
+        const originalPos = copiedNode.metadata.position;
+        const distance = Math.sqrt(
+          Math.pow(pastePosition.x - originalPos.x, 2) +
+            Math.pow(pastePosition.y - originalPos.y, 2)
+        );
+
+        // If too close to original, add offset
+        if (distance < 100) {
+          pastePosition.x += 80;
+          pastePosition.y += 80;
+        }
+      }
+    }
+
+    // Create new node data with new ID and position
+    const newNodeData: MapNode & {
+      node_paths_source: any[];
+      node_paths_destination: any[];
+      node_content: any[];
+      node_assessments: any[];
+    } = {
+      ...copiedNode,
+      id: tempId,
+      title: `${copiedNode.title} (Copy)`,
+      metadata: {
+        position: pastePosition,
+        temp_id: tempId,
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      node_paths_source: [], // Don't copy connections
+      node_paths_destination: [], // Don't copy connections
+      node_content: copiedNode.node_content || [], // Preserve content
+      node_assessments: copiedNode.node_assessments || [], // Preserve assessments
+    };
+
+    const newNode: AppNode = {
+      id: tempId,
+      position: pastePosition,
+      data: newNodeData,
+      type: "default",
+      draggable: true,
+      connectable: true,
+      selectable: true,
+    };
+
+    setNodes((nds) => [...nds, newNode as Node]);
+
+    const updatedMap = {
+      ...map,
+      map_nodes: [...map.map_nodes, newNodeData],
+    };
+    onMapChange(updatedMap);
+
+    // Select the newly pasted node
+    setSelectedNode(newNode);
+
+    toast({
+      title: "Node pasted!",
+      description: `"${newNodeData.title}" added to map`,
+    });
+  }, [
+    copiedNode,
+    reactFlowInstance,
+    selectedNode,
+    map,
+    onMapChange,
+    setNodes,
+    toast,
+  ]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for modifier key (Ctrl on Windows/Linux, Cmd on Mac)
+      const isModifierPressed = event.ctrlKey || event.metaKey;
+
+      if (!isModifierPressed) return;
+
+      switch (event.key.toLowerCase()) {
+        case "c":
+          event.preventDefault();
+          copyNode();
+          break;
+        case "v":
+          event.preventDefault();
+          pasteNode();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [copyNode, pasteNode]);
 
   // Transform map data to React Flow format
   useEffect(() => {
@@ -464,9 +611,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
       // Animate panel resize based on selection
       if (newSelectedNode && rightPanelRef.current && leftPanelRef.current) {
-        // Node selected: expand right panel to 60%, shrink left to 40%
-        rightPanelRef.current.resize(60);
-        leftPanelRef.current.resize(40);
+        // Node selected: expand right panel to 35%, shrink left to 65% (matching default)
+        rightPanelRef.current.resize(35);
+        leftPanelRef.current.resize(65);
 
         // Center the selected node accounting for the expanded panel
         setTimeout(() => {
@@ -474,14 +621,14 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
             // Get the current viewport
             const viewport = reactFlowInstance.getViewport();
 
-            // Calculate the center position accounting for the 40/60 panel split
-            // We want to center in the left panel (40% of total width) but shift slightly left for visual balance
+            // Calculate the center position accounting for the 65/35 panel split
+            // We want to center in the left panel (65% of total width) but shift slightly left for visual balance
             const containerRect = document
               .querySelector(".react-flow")
               ?.getBoundingClientRect();
             if (containerRect) {
-              const leftPanelWidth = containerRect.width * 0.4; // 40% for left panel after resize
-              const targetX = leftPanelWidth * 0.45; // Center in the left panel, slightly left of center
+              const leftPanelWidth = containerRect.width * 0.65; // 65% for left panel after resize
+              const targetX = leftPanelWidth * 0.5; // Center in the left panel
               const targetY = containerRect.height * 0.5; // Center vertically
 
               // Use fitView to center on the selected node with padding
@@ -496,14 +643,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
             }
           }
         }, 350); // Wait for panel animation to complete
-      } else if (
-        !newSelectedNode &&
-        rightPanelRef.current &&
-        leftPanelRef.current
-      ) {
-        // Node deselected: restore default sizes (75% left, 25% right)
-        leftPanelRef.current.resize(75);
-        rightPanelRef.current.resize(25);
+      } else if (!newSelectedNode) {
+        // Node deselected: panel will disappear automatically due to conditional rendering
+        // No manual resize needed since right panel is conditionally rendered
       }
     },
     [reactFlowInstance]
@@ -631,6 +773,32 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 <Plus className="h-4 w-4" />
                 Add Node
               </Button>
+
+              {/* Copy/Paste buttons */}
+              <div className="h-4 w-px bg-border" />
+              <Button
+                onClick={copyNode}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={!selectedNode}
+                title="Copy selected node (Ctrl+C)"
+              >
+                <Copy className="h-4 w-4" />
+                Copy
+              </Button>
+              <Button
+                onClick={pasteNode}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={!copiedNode}
+                title="Paste node (Ctrl+V)"
+              >
+                <Clipboard className="h-4 w-4" />
+                Paste
+              </Button>
+
               <div className="h-4 w-px bg-border" />
               <div className="text-xs text-muted-foreground px-2">
                 {nodes.length} nodes • {edges.length} paths
@@ -644,6 +812,18 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 <div className="flex justify-between">
                   <span>Add Node</span>
                   <kbd className="px-1 py-0.5 bg-muted rounded text-xs">+</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Copy Node</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                    Ctrl+C
+                  </kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Paste Node</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                    Ctrl+V
+                  </kbd>
                 </div>
                 <div className="flex justify-between">
                   <span>Delete Selected</span>
