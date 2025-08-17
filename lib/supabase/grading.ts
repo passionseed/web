@@ -139,16 +139,27 @@ export const gradeSubmission = async (
     // Validate rating more strictly
     if (rating !== null && rating !== undefined) {
       const numRating = Number(rating);
-      if (
-        isNaN(numRating) ||
-        numRating < 1 ||
-        numRating > 5 ||
-        !Number.isInteger(numRating)
-      ) {
+      // Check if it's a valid number
+      if (isNaN(numRating)) {
         throw new Error(
-          `Invalid rating value: ${rating}. Must be an integer between 1 and 5, or null`
+          `Invalid rating value: ${rating}. Must be a valid number or null`
         );
       }
+      
+      // Check if it's within the 0-10 range
+      if (numRating < 0 || numRating > 10) {
+        throw new Error(
+          `Invalid rating value: ${rating}. Must be between 0 and 10, or null`
+        );
+      }
+      
+      // Check if it has at most one decimal place
+      if (Math.round(numRating * 10) / 10 !== numRating) {
+        throw new Error(
+          `Invalid rating value: ${rating}. Must have at most one decimal place`
+        );
+      }
+      
       rating = numRating; // Ensure it's a proper number
     } else {
       rating = null; // Explicitly set to null
