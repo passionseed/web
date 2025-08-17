@@ -12,9 +12,10 @@ import {
   OnNodeDrag,
 } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
-import { Plus, Info } from "lucide-react";
+import { Plus, Info, Type } from "lucide-react";
 import { AppNode, AppEdge } from "./types";
 import { CustomNode } from "./components/CustomNode";
+import { TextNode } from "./components/TextNode";
 import { EDGE_TYPES, MINIMAP_CONFIG } from "./constants";
 
 interface MapCanvasProps {
@@ -28,6 +29,8 @@ interface MapCanvasProps {
   onNodeDragStop: OnNodeDrag;
   onSelectionChange: (params: OnSelectionChangeParams) => void;
   onAddNode: () => void;
+  onAddTextNode: () => void;
+  onNodeDataChange: (nodeId: string, data: any) => void;
 }
 
 export function MapCanvas({
@@ -41,12 +44,20 @@ export function MapCanvas({
   onNodeDragStop,
   onSelectionChange,
   onAddNode,
+  onAddTextNode,
+  onNodeDataChange,
 }: MapCanvasProps) {
   const nodeTypes = useMemo(
     () => ({
       default: CustomNode,
+      text: (props: any) => (
+        <TextNode 
+          {...props} 
+          onDataChange={(data) => onNodeDataChange(props.id, data)}
+        />
+      ),
     }),
-    []
+    [onNodeDataChange]
   );
 
   return (
@@ -56,6 +67,10 @@ export function MapCanvas({
         <Button onClick={onAddNode} size="sm" className="gap-2">
           <Plus className="h-4 w-4" />
           Add Node
+        </Button>
+        <Button onClick={onAddTextNode} size="sm" variant="outline" className="gap-2">
+          <Type className="h-4 w-4" />
+          Add Text
         </Button>
         <div className="h-4 w-px bg-border" />
         <div className="text-xs text-muted-foreground px-2">

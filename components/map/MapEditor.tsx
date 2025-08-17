@@ -34,7 +34,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { FullLearningMap } from "@/lib/supabase/maps";
 import { MapNode, QuizQuestion } from "@/types/map";
-import { Plus, Copy, Clipboard } from "lucide-react";
+import { Plus, Copy, Clipboard, Type } from "lucide-react";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -45,7 +45,7 @@ import { NodeEditorPanel } from "./NodeEditorPanel";
 import FloatingEdge, { FloatingEdgeEdit } from "./FloatingEdge";
 
 // Type definitions
-type AppNode = Node<any, "default">;
+type AppNode = Node<any, "default" | "text">;
 type AppEdge = Edge;
 
 interface MapEditorProps {
@@ -70,6 +70,7 @@ const NODE_STYLE = {
   backgroundColor: "#ffffff00",
   border: "2px solid #cccccc00",
   flexGrow: 1,
+  textColor: "#dddddd",
   aspectRatio: "1 / 1",
 } as const;
 
@@ -162,6 +163,133 @@ const CustomNode = ({
   );
 };
 
+// Text Node component for text-only elements
+const TextNode = ({
+  data,
+  selected,
+  id,
+  onDataChange,
+}: {
+  data: MapNode & { node_type?: string };
+  selected?: boolean;
+  id: string;
+  onDataChange?: (nodeId: string, data: Partial<MapNode>) => void;
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [text, setText] = useState(data.title || "Double-click to edit");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local text state with data changes from external sources (like NodeEditorPanel)
+  useEffect(() => {
+    if (!isEditing) {
+      setText(data.title || "Double-click to edit");
+    }
+  }, [data.title, isEditing]);
+
+  // Handle double-click to edit
+  const handleDoubleClick = () => {
+    setIsEditing(true);
+  };
+
+  // Handle text change
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+  };
+
+  // Handle text save (on Enter or blur)
+  const handleSave = () => {
+    setIsEditing(false);
+    if (onDataChange && text !== data.title) {
+      onDataChange(id, { title: text });
+    }
+  };
+
+  // Handle key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSave();
+    } else if (e.key === "Escape") {
+      setText(data.title || "Double-click to edit");
+      setIsEditing(false);
+    }
+  };
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  // Get text styling based on metadata
+  const textStyle = {
+    fontSize: (data.metadata as any)?.fontSize || "16px",
+    color: (data.metadata as any)?.textColor || "#c1c1c1",
+    backgroundColor: (data.metadata as any)?.backgroundColor || "transparent",
+    fontWeight: (data.metadata as any)?.fontWeight || "normal",
+    textAlign: (data.metadata as any)?.textAlign || ("center" as const),
+  };
+
+  const containerClassName = `
+    relative min-w-32 min-h-8 p-2 rounded-lg border-2 transition-all duration-200
+    ${
+      selected
+        ? "border-blue-400 bg-blue-50/80 shadow-lg scale-105"
+        : "border-gray-200 bg-white/90 hover:bg-white shadow-sm"
+    }
+    ${isEditing ? "border-blue-500 shadow-md" : ""}
+    backdrop-blur-sm
+  `.trim();
+
+  return (
+    <div
+      className={containerClassName}
+      onDoubleClick={handleDoubleClick}
+      style={{ backgroundColor: textStyle.backgroundColor }}
+    >
+      {/* Selection indicator */}
+      {selected && !isEditing && (
+        <div className="absolute -inset-1 rounded-lg border-2 border-blue-400 animate-pulse" />
+      )}
+
+      {/* Text content */}
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={text}
+          onChange={handleTextChange}
+          onBlur={handleSave}
+          onKeyDown={handleKeyPress}
+          className="w-full bg-transparent border-none outline-none text-center"
+          style={{
+            fontSize: textStyle.fontSize,
+            color: textStyle.color,
+            fontWeight: textStyle.fontWeight,
+            textAlign: textStyle.textAlign,
+          }}
+          placeholder="Enter text..."
+        />
+      ) : (
+        <div
+          className="cursor-pointer select-none whitespace-nowrap"
+          style={textStyle}
+        >
+          {text || "Double-click to edit"}
+        </div>
+      )}
+
+      {/* Edit hint when selected */}
+      {selected && !isEditing && (
+        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">
+          Double-click to edit
+        </div>
+      )}
+    </div>
+  );
+};
+
 export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(
     INITIAL_NODES as Node[]
@@ -180,14 +308,6 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
   // Clipboard functionality
   const [copiedNode, setCopiedNode] = useState<MapNode | null>(null);
-
-  // Memoized node types
-  const nodeTypes = useMemo(
-    () => ({
-      default: CustomNode,
-    }),
-    []
-  );
 
   // Copy/Paste functionality
   const copyNode = useCallback(() => {
@@ -335,17 +455,21 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
   // Transform map data to React Flow format
   useEffect(() => {
-    const transformedNodes: AppNode[] = map.map_nodes.map((node) => ({
-      id: node.id,
-      type: "default",
-      data: node,
-      position: (node.metadata as any)?.position || getRandomPosition(),
-      draggable: true,
-      connectable: true,
-      selectable: true,
-      selected: selectedNode?.id === node.id,
-      style: NODE_STYLE,
-    }));
+    const transformedNodes: AppNode[] = map.map_nodes.map((node) => {
+      const nodeType = (node as any).node_type === "text" ? "text" : "default";
+
+      return {
+        id: node.id,
+        type: nodeType,
+        data: { ...node, node_type: (node as any).node_type || "learning" },
+        position: (node.metadata as any)?.position || getRandomPosition(),
+        draggable: true,
+        connectable: nodeType !== "text", // Text nodes can't be connected
+        selectable: true,
+        selected: selectedNode?.id === node.id,
+        style: NODE_STYLE,
+      };
+    });
 
     const transformedEdges: AppEdge[] = [];
     map.map_nodes.forEach((node) => {
@@ -427,9 +551,79 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       ...map,
       map_nodes: [...map.map_nodes, newNodeData],
     };
-    onMapChange(updatedMap);
+    onMapChange(updatedMap as any);
 
     toast({ title: "Node Added! (Save to persist)" });
+  }, [map, onMapChange, setNodes, toast, reactFlowInstance, selectedNode]);
+
+  // Add text node handler
+  const handleAddTextNode = useCallback(() => {
+    const tempId = generateTempId("temp_text");
+
+    // Get center of current viewport
+    let nodePosition = { x: 150, y: 150 }; // Default position
+
+    if (reactFlowInstance) {
+      const viewport = reactFlowInstance.getViewport();
+      const panelOffset = selectedNode ? 0.35 : 0; // 35% for right panel
+      const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
+
+      nodePosition = {
+        x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
+        y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+      };
+    }
+
+    const newTextData: MapNode & {
+      node_paths_source: any[];
+      node_paths_destination: any[];
+      node_content: any[];
+      node_assessments: any[];
+      node_type: string;
+    } = {
+      id: tempId,
+      map_id: map.id,
+      title: "Double-click to edit",
+      instructions: null,
+      difficulty: 1,
+      sprite_url: null,
+      metadata: {
+        position: nodePosition,
+        fontSize: "16px",
+        textColor: "#374151",
+        backgroundColor: "transparent",
+        fontWeight: "normal",
+        textAlign: "center",
+        temp_id: tempId,
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      node_type: "text",
+      node_paths_source: [],
+      node_paths_destination: [],
+      node_content: [],
+      node_assessments: [],
+    };
+
+    const newNode: AppNode = {
+      id: tempId,
+      position: nodePosition,
+      data: newTextData,
+      type: "text",
+      draggable: true,
+      connectable: false, // Text nodes shouldn't connect
+      selectable: true,
+    };
+
+    setNodes((nds) => [...nds, newNode as Node]);
+
+    const updatedMap = {
+      ...map,
+      map_nodes: [...map.map_nodes, newTextData],
+    };
+    onMapChange(updatedMap as any);
+
+    toast({ title: "Text Added! (Save to persist)" });
   }, [map, onMapChange, setNodes, toast, reactFlowInstance, selectedNode]);
 
   // Connection handler
@@ -710,9 +904,20 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         }),
       };
 
-      onMapChange(updatedMap);
+      onMapChange(updatedMap as any);
     },
     [map, onMapChange, selectedNode, setNodes]
+  );
+
+  // Memoized node types
+  const nodeTypes = useMemo(
+    () => ({
+      default: CustomNode,
+      text: (props: any) => (
+        <TextNode {...props} onDataChange={handleNodeDataChange} />
+      ),
+    }),
+    [handleNodeDataChange]
   );
 
   // Node delete handler
@@ -774,6 +979,15 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               <Button onClick={handleAddNode} size="sm" className="gap-2">
                 <Plus className="h-4 w-4" />
                 Add Node
+              </Button>
+              <Button
+                onClick={handleAddTextNode}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <Type className="h-4 w-4" />
+                Add Text
               </Button>
 
               {/* Copy/Paste buttons */}
