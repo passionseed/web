@@ -45,6 +45,34 @@ export function NodeEditorPanel({
   // Track quiz questions separately for batch operations
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
 
+  // Check if this is a text node (text nodes don't need content/assessment tabs)
+  const isTextNode = useMemo(() => {
+    return (selectedNode?.data as any)?.node_type === "text";
+  }, [selectedNode]);
+
+  // For text nodes, we want immediate UI updates with debounced data changes
+  const [localText, setLocalText] = useState("");
+
+  // Sync local text with selected node data
+  useEffect(() => {
+    if (selectedNode && isTextNode) {
+      setLocalText(selectedNode.data.title || "");
+    }
+  }, [selectedNode, isTextNode]);
+
+  // Debounced update for text nodes
+  useEffect(() => {
+    if (!isTextNode || !selectedNode) return;
+    
+    const timeoutId = setTimeout(() => {
+      if (localText !== selectedNode.data.title) {
+        onNodeDataChange(selectedNode.id, { title: localText });
+      }
+    }, 150); // 150ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [localText, isTextNode, selectedNode, onNodeDataChange]);
+
   useEffect(() => {
     if (selectedNode) {
       setNodeData(selectedNode.data);
@@ -64,6 +92,14 @@ export function NodeEditorPanel({
     (field: keyof MapNode) =>
       (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { value } = e.target;
+        
+        // For text nodes title field, use local state for immediate UI updates
+        if (isTextNode && field === "title") {
+          setLocalText(value);
+          return;
+        }
+        
+        // For other fields, use normal update flow
         const newData = { ...nodeData, [field]: value };
         setNodeData(newData);
 
@@ -229,10 +265,14 @@ export function NodeEditorPanel({
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="details" className="h-full flex flex-col">
           <div className="flex-shrink-0 px-4 py-2 bg-background border-b">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${isTextNode ? 'grid-cols-1' : 'grid-cols-3'}`}>
               <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="assessment">Assessment</TabsTrigger>
+              {!isTextNode && (
+                <>
+                  <TabsTrigger value="content">Content</TabsTrigger>
+                  <TabsTrigger value="assessment">Assessment</TabsTrigger>
+                </>
+              )}
             </TabsList>
           </div>
 
@@ -240,108 +280,274 @@ export function NodeEditorPanel({
             <TabsContent value="details" className="m-0 p-4 space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="title">{isTextNode ? "Text Content" : "Title"}</Label>
                   <Input
                     id="title"
                     name="title"
-                    value={nodeData.title || ""}
+                    value={isTextNode ? localText : (nodeData.title || "")}
                     onChange={handleInputChange("title")}
+                    placeholder={isTextNode ? "Enter your text..." : "Node title..."}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="instructions">Instructions</Label>
-                  <Textarea
-                    id="instructions"
-                    name="instructions"
-                    placeholder="Instructions for the student..."
-                    value={nodeData.instructions || ""}
-                    onChange={handleInputChange("instructions")}
-                    className="min-h-[100px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="difficulty">
-                    Difficulty: {nodeData.difficulty}
-                  </Label>
-                  <Slider
-                    id="difficulty"
-                    name="difficulty"
-                    min={1}
-                    max={10}
-                    step={1}
-                    value={[nodeData.difficulty || 1]}
-                    onValueChange={handleSliderChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sprite_url">Node Sprite</Label>
-                  <div className="flex items-center gap-2">
-                    {nodeData.sprite_url && (
-                      <div className="w-12 h-12 bg-gradient-to-br from-sky-100 to-blue-100 rounded-lg flex items-center justify-center p-1 border">
-                        <img
-                          src={nodeData.sprite_url}
-                          alt="Current sprite"
-                          className="max-w-full max-h-full object-contain drop-shadow-sm"
-                        />
+                {isTextNode && (
+                  <>
+                    {/* Text Styling Options for Text Nodes */}
+                    <div className="space-y-4 border-t pt-4">
+                      <Label className="text-sm font-medium">Text Styling</Label>
+                      
+                      {/* Font Size */}
+                      <div className="space-y-2">
+                        <Label htmlFor="fontSize" className="text-xs">Font Size</Label>
+                        <select
+                          id="fontSize"
+                          value={(nodeData.metadata as any)?.fontSize || "16px"}
+                          onChange={(e) => {
+                            const newMetadata = {
+                              ...(nodeData.metadata || {}),
+                              fontSize: e.target.value,
+                            };
+                            if (selectedNode) {
+                              onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                            }
+                          }}
+                          className="w-full px-3 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="12px">12px</option>
+                          <option value="14px">14px</option>
+                          <option value="16px">16px</option>
+                          <option value="18px">18px</option>
+                          <option value="20px">20px</option>
+                          <option value="24px">24px</option>
+                          <option value="28px">28px</option>
+                          <option value="32px">32px</option>
+                        </select>
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <SpritePickerDialog
-                        currentSprite={nodeData.sprite_url || undefined}
-                        onSpriteSelect={(spriteUrl) => {
-                          const newData = {
-                            ...nodeData,
-                            sprite_url: spriteUrl,
-                          };
-                          setNodeData(newData);
-                          if (selectedNode) {
-                            onNodeDataChange(selectedNode.id, {
-                              sprite_url: spriteUrl,
-                            });
-                          }
-                        }}
-                      >
-                        <Button variant="outline" className="w-full">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          {nodeData.sprite_url
-                            ? "Change Sprite"
-                            : "Choose Sprite"}
-                        </Button>
-                      </SpritePickerDialog>
+
+                      {/* Text Color */}
+                      <div className="space-y-2">
+                        <Label htmlFor="textColor" className="text-xs">Text Color</Label>
+                        <div className="flex gap-2">
+                          <input
+                            id="textColor"
+                            type="color"
+                            value={(nodeData.metadata as any)?.textColor || "#374151"}
+                            onChange={(e) => {
+                              const newMetadata = {
+                                ...(nodeData.metadata || {}),
+                                textColor: e.target.value,
+                              };
+                              if (selectedNode) {
+                                onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                              }
+                            }}
+                            className="w-16 h-8 border border-gray-300 rounded cursor-pointer"
+                          />
+                          <Input
+                            value={(nodeData.metadata as any)?.textColor || "#374151"}
+                            onChange={(e) => {
+                              const newMetadata = {
+                                ...(nodeData.metadata || {}),
+                                textColor: e.target.value,
+                              };
+                              if (selectedNode) {
+                                onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                              }
+                            }}
+                            placeholder="#374151"
+                            className="flex-1 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Background Color */}
+                      <div className="space-y-2">
+                        <Label htmlFor="backgroundColor" className="text-xs">Background Color</Label>
+                        <div className="flex gap-2">
+                          <input
+                            id="backgroundColor"
+                            type="color"
+                            value={(nodeData.metadata as any)?.backgroundColor || "#ffffff"}
+                            onChange={(e) => {
+                              const newMetadata = {
+                                ...(nodeData.metadata || {}),
+                                backgroundColor: e.target.value,
+                              };
+                              if (selectedNode) {
+                                onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                              }
+                            }}
+                            className="w-16 h-8 border border-gray-300 rounded cursor-pointer"
+                          />
+                          <Input
+                            value={(nodeData.metadata as any)?.backgroundColor || "transparent"}
+                            onChange={(e) => {
+                              const newMetadata = {
+                                ...(nodeData.metadata || {}),
+                                backgroundColor: e.target.value,
+                              };
+                              if (selectedNode) {
+                                onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                              }
+                            }}
+                            placeholder="transparent"
+                            className="flex-1 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Font Weight */}
+                      <div className="space-y-2">
+                        <Label htmlFor="fontWeight" className="text-xs">Font Weight</Label>
+                        <select
+                          id="fontWeight"
+                          value={(nodeData.metadata as any)?.fontWeight || "normal"}
+                          onChange={(e) => {
+                            const newMetadata = {
+                              ...(nodeData.metadata || {}),
+                              fontWeight: e.target.value,
+                            };
+                            if (selectedNode) {
+                              onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                            }
+                          }}
+                          className="w-full px-3 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="normal">Normal</option>
+                          <option value="bold">Bold</option>
+                          <option value="600">Semi Bold</option>
+                          <option value="300">Light</option>
+                        </select>
+                      </div>
+
+                      {/* Text Alignment */}
+                      <div className="space-y-2">
+                        <Label htmlFor="textAlign" className="text-xs">Text Alignment</Label>
+                        <select
+                          id="textAlign"
+                          value={(nodeData.metadata as any)?.textAlign || "center"}
+                          onChange={(e) => {
+                            const newMetadata = {
+                              ...(nodeData.metadata || {}),
+                              textAlign: e.target.value,
+                            };
+                            if (selectedNode) {
+                              onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                            }
+                          }}
+                          className="w-full px-3 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="left">Left</option>
+                          <option value="center">Center</option>
+                          <option value="right">Right</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                  {nodeData.sprite_url && (
-                    <p className="text-xs text-muted-foreground">
-                      Current: {nodeData.sprite_url.split("/").pop()}
-                    </p>
-                  )}
-                </div>
+                  </>
+                )}
+                {!isTextNode && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="instructions">Instructions</Label>
+                      <Textarea
+                        id="instructions"
+                        name="instructions"
+                        placeholder="Instructions for the student..."
+                        value={nodeData.instructions || ""}
+                        onChange={handleInputChange("instructions")}
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="difficulty">
+                        Difficulty: {nodeData.difficulty}
+                      </Label>
+                      <Slider
+                        id="difficulty"
+                        name="difficulty"
+                        min={1}
+                        max={10}
+                        step={1}
+                        value={[nodeData.difficulty || 1]}
+                        onValueChange={handleSliderChange}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sprite_url">Node Sprite</Label>
+                      <div className="flex items-center gap-2">
+                        {nodeData.sprite_url && (
+                          <div className="w-12 h-12 bg-gradient-to-br from-sky-100 to-blue-100 rounded-lg flex items-center justify-center p-1 border">
+                            <img
+                              src={nodeData.sprite_url}
+                              alt="Current sprite"
+                              className="max-w-full max-h-full object-contain drop-shadow-sm"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <SpritePickerDialog
+                            currentSprite={nodeData.sprite_url || undefined}
+                            onSpriteSelect={(spriteUrl) => {
+                              const newData = {
+                                ...nodeData,
+                                sprite_url: spriteUrl,
+                              };
+                              setNodeData(newData);
+                              if (selectedNode) {
+                                onNodeDataChange(selectedNode.id, {
+                                  sprite_url: spriteUrl,
+                                });
+                              }
+                            }}
+                          >
+                            <Button variant="outline" className="w-full">
+                              <MapPin className="h-4 w-4 mr-2" />
+                              {nodeData.sprite_url
+                                ? "Change Sprite"
+                                : "Choose Sprite"}
+                            </Button>
+                          </SpritePickerDialog>
+                        </div>
+                      </div>
+                      {nodeData.sprite_url && (
+                        <p className="text-xs text-muted-foreground">
+                          Current: {nodeData.sprite_url.split("/").pop()}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
                 <div className="text-xs text-muted-foreground mt-4 p-2 bg-muted rounded">
-                  Changes are saved automatically to your draft. Use "Save All
-                  Changes" to persist to database.
+                  {isTextNode 
+                    ? "Text nodes are for annotations and labels. Changes are saved automatically to your draft."
+                    : "Changes are saved automatically to your draft. Use \"Save All Changes\" to persist to database."
+                  }
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="content" className="m-0 h-full">
-              <div className="h-full overflow-y-auto">
-                <ContentEditor
-                  nodeId={selectedNode.id}
-                  content={selectedNode.data.node_content || []}
-                  onContentChange={handleContentChange}
-                />
-              </div>
-            </TabsContent>
+            {!isTextNode && (
+              <>
+                <TabsContent value="content" className="m-0 h-full">
+                  <div className="h-full overflow-y-auto">
+                    <ContentEditor
+                      nodeId={selectedNode.id}
+                      content={selectedNode.data.node_content || []}
+                      onContentChange={handleContentChange}
+                    />
+                  </div>
+                </TabsContent>
 
-            <TabsContent value="assessment" className="m-0 h-full">
-              <div className="h-full overflow-y-auto">
-                <AssessmentEditor
-                  nodeId={selectedNode.id}
-                  assessment={selectedNode.data.node_assessments?.[0] || null}
-                  onAssessmentChange={handleAssessmentChange}
-                />
-              </div>
-            </TabsContent>
+                <TabsContent value="assessment" className="m-0 h-full">
+                  <div className="h-full overflow-y-auto">
+                    <AssessmentEditor
+                      nodeId={selectedNode.id}
+                      assessment={selectedNode.data.node_assessments?.[0] || null}
+                      onAssessmentChange={handleAssessmentChange}
+                    />
+                  </div>
+                </TabsContent>
+              </>
+            )}
           </div>
         </Tabs>
       </div>

@@ -6,18 +6,19 @@ import {
   Connection,
   OnNodesDelete,
   OnEdgesDelete,
-  NodeDragHandler,
   OnSelectionChangeParams,
+  MarkerType,
 } from "@xyflow/react";
 import { useToast } from "@/components/ui/use-toast";
 import { FullLearningMap } from "@/lib/supabase/maps";
 import { MapNode } from "@/types/map";
-import { AppNode, AppEdge } from "../types";
+import { AppNode, AppEdge, ExtendedMapNode } from "../types";
 import {
   transformMapToReactFlow,
   createNewNode,
+  createNewTextNode,
   validateConnection,
-  updateMapWithNewNode,
+  updateMapWithNewEdge,
   updateMapWithDeletedNodes,
   updateMapWithDeletedEdges,
   updateMapWithNodePosition,
@@ -57,7 +58,7 @@ export function useMapEditor(
         id: tempId,
         ...params,
         type: "floating",
-        markerEnd: { type: "ArrowClosed" },
+        markerEnd: { type: MarkerType.ArrowClosed },
       };
 
       setEdges((eds) => addEdge(newEdge, eds));
@@ -72,10 +73,10 @@ export function useMapEditor(
   // Node deletion handler
   const onNodesDelete: OnNodesDelete = useCallback(
     (deleted) => {
-      const updatedMap = updateMapWithDeletedNodes(map, deleted);
+      const updatedMap = updateMapWithDeletedNodes(map, deleted as AppNode[]);
       onMapChange(updatedMap);
 
-      deleted.forEach((node) => {
+      deleted.forEach((node: any) => {
         toast({ title: `Node "${node.data.title}" deleted (Save to persist)` });
       });
     },
@@ -93,8 +94,8 @@ export function useMapEditor(
   );
 
   // Node drag handler
-  const onNodeDragStop: NodeDragHandler = useCallback(
-    (_, node) => {
+  const onNodeDragStop = useCallback(
+    (_: any, node: any) => {
       const updatedMap = updateMapWithNodePosition(map, node);
       onMapChange(updatedMap);
     },
@@ -115,9 +116,17 @@ export function useMapEditor(
     toast({ title: "Node Added! (Save to persist)" });
   }, [map, onMapChange, setNodes, toast]);
 
+  // Add text node handler
+  const handleAddTextNode = useCallback(() => {
+    const { newNode, updatedMap } = createNewTextNode(map);
+    setNodes((nds) => [...nds, newNode]);
+    onMapChange(updatedMap);
+    toast({ title: "Text Added! (Save to persist)" });
+  }, [map, onMapChange, setNodes, toast]);
+
   // Node data change handler
   const handleNodeDataChange = useCallback(
-    (nodeId: string, data: Partial<MapNode>) => {
+    (nodeId: string, data: Partial<ExtendedMapNode>) => {
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === nodeId) {
@@ -138,12 +147,12 @@ export function useMapEditor(
         ...map,
         map_nodes: map.map_nodes.map((node) => {
           if (node.id === nodeId) {
-            return { ...node, ...data };
+            return { ...node, ...data } as any;
           }
           return node;
         }),
       };
-      onMapChange(updatedMap);
+      onMapChange(updatedMap as FullLearningMap);
     },
     [map, onMapChange, selectedNode, setNodes]
   );
@@ -185,6 +194,7 @@ export function useMapEditor(
     onNodeDragStop,
     onSelectionChange,
     handleAddNode,
+    handleAddTextNode,
     handleNodeDataChange,
     handleDeleteNode,
   };
