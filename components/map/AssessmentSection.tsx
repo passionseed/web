@@ -92,6 +92,7 @@ export function AssessmentSection({
   const [isFileRequired, setIsFileRequired] = useState(false);
   const [fileUrls, setFileUrls] = useState<string[]>([]);
   const [fileNames, setFileNames] = useState<string[]>([]);
+  const [fileSizeError, setFileSizeError] = useState<string | null>(null);
 
   // Check if file is required for submission
   const validateSubmission = () => {
@@ -106,6 +107,13 @@ export function AssessmentSection({
   const handleFileUpload = (url: string, name: string) => {
     setFileUrls((prev) => [...prev, url]);
     setFileNames((prev) => [...prev, name]);
+    setIsFileRequired(false);
+    setFileSizeError(null); // Clear any previous file size error
+  };
+
+  const handleFileSizeError = (error: string) => {
+    setFileSizeError(error);
+    // Also clear the file required error since we're showing a different error
     setIsFileRequired(false);
   };
 
@@ -170,7 +178,7 @@ export function AssessmentSection({
             )}
 
             {assessment.assessment_type === "quiz" &&
-              assessment.quiz_questions?.length > 0 && (
+              assessment.quiz_questions && assessment.quiz_questions.length > 0 && (
                 <div className="space-y-6">
                   {assessment.quiz_questions.map((question, index) =>
                     renderQuizQuestion(
@@ -189,15 +197,16 @@ export function AssessmentSection({
                   Upload Your Work{" "}
                   {isFileRequired && <span className="text-red-500">*</span>}
                 </label>
-                {isFileRequired && (
+                {(isFileRequired || fileSizeError) && (
                   <div className="text-sm text-red-600 mb-2">
-                    Please upload at least one file before submitting.
+                    {fileSizeError || "Please upload at least one file before submitting."}
                   </div>
                 )}
 
                 <FileUpload
                   nodeId={nodeId}
                   onUploadComplete={handleFileUpload}
+                  onValidationError={handleFileSizeError}
                   accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip"
                   maxSize={10}
                   disabled={isSubmitting}
