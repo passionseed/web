@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { Grade } from "@/types/map";
 import { useRouter } from "next/navigation";
 import { FileText, Image as ImageIcon, X } from "lucide-react";
@@ -203,21 +204,41 @@ export function GradeSubmissionForm({
             </div>
             <div>
               <Label htmlFor="rating">Rating (optional)</Label>
-              <Select
-                onValueChange={(value) => setRating(parseInt(value, 10))}
-                defaultValue={rating?.toString()}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select rating" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[...Array(5)].map((_, i) => (
-                    <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      {i + 1}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-4">
+                <Slider
+                  min={0}
+                  max={10}
+                  step={0.1}
+                  value={[rating || 0]}
+                  onValueChange={([value]) => setRating(value)}
+                  className="w-full"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  value={rating || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "") {
+                      setRating(undefined);
+                    } else {
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue) && numValue >= 0 && numValue <= 10) {
+                        // Round to one decimal place
+                        const roundedValue = Math.round(numValue * 10) / 10;
+                        setRating(roundedValue);
+                      }
+                    }
+                  }}
+                  className="w-20 px-2 py-1 border rounded text-sm"
+                  placeholder="0-10"
+                />
+                <span className="text-sm font-medium w-8">
+                  {rating !== undefined ? rating.toFixed(1) : "-"}
+                </span>
+              </div>
             </div>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? "Submitting..." : "Submit Grade"}
