@@ -26,6 +26,13 @@ export default async function MapViewerPage(props: {
     notFound();
   }
 
+  // Simple inline permission check - user can edit if they're the creator OR instructor
+  const userCanEdit = user && (map.creator_id === user.id || userIsInstructor);
+
+  if (!map) {
+    notFound();
+  }
+
   return (
     <MapEnrollmentTracker map={map}>
       <div className="w-full" style={{ height: "calc(100vh - 65px)" }}>
@@ -36,7 +43,7 @@ export default async function MapViewerPage(props: {
               Back to Maps
             </Link>
           </Button>
-          {userIsInstructor && (
+          {userCanEdit && (
             <Button asChild variant="default" size="sm">
               <Link href={`/map/${params.id}/edit`}>
                 <Pencil className="h-4 w-4 mr-2" />
