@@ -147,9 +147,20 @@ export const createMap = async (
   mapData: Pick<LearningMap, "title" | "description">
 ): Promise<LearningMap> => {
   const supabase = createClient();
+  
+  // Get the current authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("User must be authenticated to create a map");
+  }
+
   const { data, error } = await supabase
     .from("learning_maps")
-    .insert([{ ...mapData }])
+    .insert([{ ...mapData, creator_id: user.id }])
     .select()
     .single();
 
