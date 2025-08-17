@@ -1,7 +1,7 @@
 import { Connection, MarkerType } from "@xyflow/react";
 import { FullLearningMap } from "@/lib/supabase/maps";
 import { MapNode } from "@/types/map";
-import { AppNode, AppEdge } from "../types";
+import { AppNode, AppEdge, ExtendedMapNode } from "../types";
 import { NODE_STYLE, EDGE_STYLE } from "../constants";
 import { generateTempId, getRandomPosition } from "./helpers";
 
@@ -9,17 +9,24 @@ export function transformMapToReactFlow(
   map: FullLearningMap,
   selectedNode: AppNode | null
 ): { transformedNodes: AppNode[]; transformedEdges: AppEdge[] } {
-  const transformedNodes: AppNode[] = map.map_nodes.map((node) => ({
-    id: node.id,
-    type: "default",
-    data: node,
-    position: (node.metadata as any)?.position || getRandomPosition(),
-    draggable: true,
-    connectable: true,
-    selectable: true,
-    selected: selectedNode?.id === node.id,
-    style: NODE_STYLE,
-  }));
+  const transformedNodes: AppNode[] = map.map_nodes.map((node) => {
+    const extendedNode: ExtendedMapNode = {
+      ...node,
+      node_type: (node as any).node_type || "learning", // Default to learning if not specified
+    };
+    
+    return {
+      id: node.id,
+      type: extendedNode.node_type === "text" ? "text" : "default",
+      data: extendedNode,
+      position: (node.metadata as any)?.position || getRandomPosition(),
+      draggable: true,
+      connectable: extendedNode.node_type !== "text", // Text nodes can't be connected
+      selectable: true,
+      selected: selectedNode?.id === node.id,
+      style: NODE_STYLE,
+    };
+  });
 
   const transformedEdges: AppEdge[] = [];
   map.map_nodes.forEach((node) => {
@@ -43,7 +50,7 @@ export function createNewNode(map: FullLearningMap): {
   updatedMap: FullLearningMap;
 } {
   const tempId = generateTempId("temp_node");
-  const newNodeData: MapNode & {
+  const newNodeData: ExtendedMapNode & {
     node_paths_source: any[];
     node_paths_destination: any[];
     node_content: any[];
@@ -58,6 +65,7 @@ export function createNewNode(map: FullLearningMap): {
     metadata: { position: { x: 100, y: 100 } },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    node_type: "learning",
     node_paths_source: [],
     node_paths_destination: [],
     node_content: [],
@@ -77,6 +85,58 @@ export function createNewNode(map: FullLearningMap): {
   const updatedMap = {
     ...map,
     map_nodes: [...map.map_nodes, newNodeData],
+  };
+
+  return { newNode, updatedMap };
+}
+
+export function createNewTextNode(map: FullLearningMap): {
+  newNode: AppNode;
+  updatedMap: FullLearningMap;
+} {
+  const tempId = generateTempId("temp_text");
+  const newTextData: ExtendedMapNode & {
+    node_paths_source: any[];
+    node_paths_destination: any[];
+    node_content: any[];
+    node_assessments: any[];
+  } = {
+    id: tempId,
+    map_id: map.id,
+    title: "Double-click to edit",
+    instructions: null,
+    difficulty: 1,
+    sprite_url: null,
+    metadata: { 
+      position: { x: 150, y: 150 },
+      fontSize: "16px",
+      textColor: "#374151",
+      backgroundColor: "transparent",
+      fontWeight: "normal",
+      textAlign: "center"
+    },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    node_type: "text",
+    node_paths_source: [],
+    node_paths_destination: [],
+    node_content: [],
+    node_assessments: [],
+  };
+
+  const newNode: AppNode = {
+    id: tempId,
+    position: { x: 150, y: 150 },
+    data: newTextData,
+    type: "text",
+    draggable: true,
+    connectable: false, // Text nodes shouldn't connect
+    selectable: true,
+  };
+
+  const updatedMap = {
+    ...map,
+    map_nodes: [...map.map_nodes, newTextData],
   };
 
   return { newNode, updatedMap };

@@ -343,12 +343,12 @@ export default function EditMapPage() {
 
       // Find created nodes (temporary IDs)
       const createdNodes = map.map_nodes.filter((node) =>
-        node.id.startsWith("temp_node_")
+        node.id.startsWith("temp_node_") || node.id.startsWith("temp_text_")
       );
       console.log(
         "➕ Created nodes:",
         createdNodes.length,
-        createdNodes.map((n) => ({ id: n.id, title: n.title }))
+        createdNodes.map((n) => ({ id: n.id, title: n.title, type: (n as any).node_type }))
       );
 
       createdNodes.forEach((node) => {
@@ -359,6 +359,8 @@ export default function EditMapPage() {
           difficulty: node.difficulty,
           sprite_url: node.sprite_url,
           metadata: node.metadata,
+          // Include node_type for text nodes
+          ...((node as any).node_type && { node_type: (node as any).node_type }),
         };
         batchUpdate.nodes.create.push(nodeToCreate);
         console.log("➕ Adding node to create:", nodeToCreate);
@@ -376,7 +378,8 @@ export default function EditMapPage() {
           node.difficulty !== initialNode.difficulty ||
           node.sprite_url !== initialNode.sprite_url ||
           JSON.stringify(node.metadata) !==
-            JSON.stringify(initialNode.metadata);
+            JSON.stringify(initialNode.metadata) ||
+          (node as any).node_type !== (initialNode as any).node_type;
 
         return nodeChanged;
       });
@@ -395,6 +398,8 @@ export default function EditMapPage() {
           difficulty: node.difficulty,
           sprite_url: node.sprite_url,
           metadata: node.metadata,
+          // Include node_type for text nodes
+          ...((node as any).node_type && { node_type: (node as any).node_type }),
         };
         batchUpdate.nodes.update.push(nodeToUpdate);
         console.log("📝 Adding node to update:", nodeToUpdate);
@@ -460,6 +465,12 @@ export default function EditMapPage() {
       // Handle content changes for each node
       console.log("🔍 Checking content changes...");
       map.map_nodes.forEach((node) => {
+        // Skip content processing for text nodes (they don't have content)
+        if ((node as any).node_type === "text") {
+          console.log(`⏭️ Skipping content for text node ${node.id}`);
+          return;
+        }
+
         const initialNode = initialNodeMap.get(node.id);
 
         // For new nodes, add all their content as new
@@ -576,6 +587,12 @@ export default function EditMapPage() {
       // ---------- Assessment & Quiz Question Changes ----------
       console.log("🔍 Checking assessment changes...");
       map.map_nodes.forEach((node) => {
+        // Skip assessment processing for text nodes (they don't have assessments)
+        if ((node as any).node_type === "text") {
+          console.log(`⏭️ Skipping assessments for text node ${node.id}`);
+          return;
+        }
+
         const initialNode = initialNodeMap.get(node.id);
         const currentAssessment = node.node_assessments?.[0] || null;
         const initialAssessment = initialNode?.node_assessments?.[0] || null;
