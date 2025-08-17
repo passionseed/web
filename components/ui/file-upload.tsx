@@ -26,6 +26,7 @@ import {
 interface FileUploadProps {
   nodeId: string;
   onUploadComplete: (fileUrl: string, fileName: string) => void;
+  onValidationError?: (error: string) => void;
   accept?: string;
   maxSize?: number; // in MB
   className?: string;
@@ -51,6 +52,7 @@ interface UploadProgress {
 export function FileUpload({
   nodeId,
   onUploadComplete,
+  onValidationError,
   accept = ".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.txt,.zip,.json,.csv",
   maxSize = 10,
   className = "",
@@ -129,6 +131,8 @@ export function FileUpload({
         preparing: "Preparing file...",
         uploading: "Uploading to cloud...",
         finalizing: "Finalizing upload...",
+        complete: "Upload complete!",
+        error: "Upload failed",
       };
 
       setUploadProgress({
@@ -147,11 +151,16 @@ export function FileUpload({
     async (file: File) => {
       const validation = validateFile(file);
       if (!validation.valid) {
-        toast({
-          title: "Invalid file",
-          description: validation.error,
-          variant: "destructive",
-        });
+        if (onValidationError) {
+          onValidationError(validation.error || "Invalid file");
+          return;
+        } else {
+          toast({
+            title: "Invalid file",
+            description: validation.error,
+            variant: "destructive",
+          });
+        }
         return;
       }
 
