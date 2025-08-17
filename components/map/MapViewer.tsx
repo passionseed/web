@@ -33,6 +33,7 @@ import {
 } from "@/lib/supabase/progresses";
 import { MapNode } from "@/types/map";
 import { createClient } from "@/utils/supabase/client";
+import { TextNode } from "@/components/map/MapEditor/components/TextNode";
 import {
   CheckCircle,
   Clock,
@@ -42,6 +43,8 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import FloatingEdge from "@/components/map/FloatingEdge";
 
@@ -98,10 +101,33 @@ export function MapViewer({ map }: MapViewerProps) {
     Record<string, StudentProgress>
   >({});
   const [isNavigationExpanded, setIsNavigationExpanded] = useState(false);
+  const [isPanelMinimized, setIsPanelMinimized] = useState(false);
   const reactFlowInstance = useReactFlow();
 
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
+
+  // Toggle panel minimize/maximize
+  const togglePanelSize = useCallback(() => {
+    if (!rightPanelRef.current || !leftPanelRef.current) return;
+
+    if (isPanelMinimized) {
+      // Maximize: restore to appropriate size based on selection
+      if (selectedNode) {
+        rightPanelRef.current.resize(65);
+        leftPanelRef.current.resize(35);
+      } else {
+        rightPanelRef.current.resize(30);
+        leftPanelRef.current.resize(70);
+      }
+      setIsPanelMinimized(false);
+    } else {
+      // Minimize: shrink right panel to minimal size
+      rightPanelRef.current.resize(5);
+      leftPanelRef.current.resize(95);
+      setIsPanelMinimized(true);
+    }
+  }, [isPanelMinimized, selectedNode]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -143,7 +169,11 @@ export function MapViewer({ map }: MapViewerProps) {
 
   // Function to navigate to adjacent unlocked nodes
   const navigateToAdjacentNode = (direction: 1 | -1) => {
-    const unlockedNodes = map.map_nodes.filter((node) =>
+    // Only navigate through learning nodes, not text nodes
+    const learningNodes = map.map_nodes.filter((node) => 
+      (node as any)?.node_type !== "text"
+    );
+    const unlockedNodes = learningNodes.filter((node) =>
       isNodeUnlocked(node.id)
     );
     if (unlockedNodes.length === 0) return;
@@ -219,6 +249,14 @@ export function MapViewer({ map }: MapViewerProps) {
 
   // Check if node is unlocked based on prerequisites
   const isNodeUnlocked = (nodeId: string): boolean => {
+    // Find the node data
+    const nodeData = map.map_nodes.find(n => n.id === nodeId);
+    
+    // Text nodes are always "unlocked" (visible) since they're just annotations
+    if ((nodeData as any)?.node_type === "text") {
+      return true;
+    }
+    
     // Find all nodes that have paths leading to this node
     const prerequisites = map.map_nodes.filter((node) =>
       node.node_paths_source.some((path) => path.destination_node_id === nodeId)
@@ -227,8 +265,8 @@ export function MapViewer({ map }: MapViewerProps) {
     // If no prerequisites, node is unlocked (starting node)
     if (prerequisites.length === 0) return true;
 
-    // Check if at least one prerequisite is passed OR submitted (pending grade)
-    return prerequisites.some((prereq) => {
+    // Check if ALL prerequisites are passed OR submitted (pending grade)
+    return prerequisites.every((prereq) => {
       const progress = progressMap[prereq.id];
       return progress?.status === "passed" || progress?.status === "submitted";
     });
@@ -429,28 +467,49 @@ export function MapViewer({ map }: MapViewerProps) {
         </div>
       );
     },
+    text: ({
+      data,
+      selected,
+    }: {
+      data: MapNode & { node_type?: string };
+      selected?: boolean;
+    }) => {
+      // Text nodes are read-only in the viewer, so no onDataChange
+      return (
+        <TextNode 
+          data={data}
+          selected={selected}
+          // No onDataChange prop since this is viewer mode
+        />
+      );
+    },
   };
 
   useEffect(() => {
-    const transformedNodes = map.map_nodes.map((node) => ({
-      id: node.id,
-      type: "default",
-      data: { ...node, progress: progressMap[node.id] },
-      position: (node.metadata as any)?.position || {
-        x: Math.random() * 400,
-        y: Math.random() * 400,
-      },
-      draggable: true, // Disable dragging in viewer mode
-      connectable: false,
-      selectable: true,
-      selected: selectedNode?.id === node.id,
-      style: {
-        backgroundColor: "#ffffff00",
-        border: "2px solid #cccccc00",
-        flexGrow: 1,
-        aspectRatio: "1 / 1",
-      },
-    }));
+    const transformedNodes = map.map_nodes.map((node) => {
+      // Determine node type - check for node_type property
+      const nodeType = (node as any)?.node_type === "text" ? "text" : "default";
+      
+      return {
+        id: node.id,
+        type: nodeType,
+        data: { ...node, progress: progressMap[node.id] },
+        position: (node.metadata as any)?.position || {
+          x: Math.random() * 400,
+          y: Math.random() * 400,
+        },
+        draggable: false, // Disable dragging in viewer mode
+        connectable: false,
+        selectable: true,
+        selected: selectedNode?.id === node.id,
+        style: {
+          backgroundColor: "#ffffff00",
+          border: "2px solid #cccccc00",
+          flexGrow: 1,
+          aspectRatio: "1 / 1",
+        },
+      };
+    });
 
     const transformedEdges: Edge[] = [];
     map.map_nodes.forEach((node) => {
@@ -488,11 +547,17 @@ export function MapViewer({ map }: MapViewerProps) {
 
       setSelectedNode(newSelectedNode);
 
+      // Don't resize panels if currently minimized - let user control that
+      if (isPanelMinimized) return;
+
       // Animate panel resize based on selection
       if (newSelectedNode && rightPanelRef.current && leftPanelRef.current) {
-        // Node selected: expand right panel to 65%, shrink left to 35%
-        rightPanelRef.current.resize(65);
-        leftPanelRef.current.resize(35);
+        // Only resize if panel is not minimized
+        if (!isPanelMinimized) {
+          // Node selected: expand right panel to 45%, shrink left to 55%
+          rightPanelRef.current.resize(45);
+          leftPanelRef.current.resize(55);
+        }
 
         // Center the selected node accounting for the expanded panel
         setTimeout(() => {
@@ -500,13 +565,13 @@ export function MapViewer({ map }: MapViewerProps) {
             // Get the current viewport
             const viewport = reactFlowInstance.getViewport();
 
-            // Calculate the center position accounting for the 35/65 panel split
-            // We want to center in the left panel (35% of total width) but shift slightly left for visual balance
+            // Calculate the center position accounting for the 55/45 panel split
+            // We want to center in the left panel (55% of total width) but shift slightly left for visual balance
             const containerRect = document
               .querySelector(".react-flow")
               ?.getBoundingClientRect();
             if (containerRect) {
-              const leftPanelWidth = containerRect.width * 0.35; // 35% for left panel after resize
+              const leftPanelWidth = containerRect.width * 0.55; // 55% for left panel after resize
               const targetX = leftPanelWidth * 0.5; // Center in the left panel
               const targetY = containerRect.height * 0.5; // Center vertically
 
@@ -532,7 +597,7 @@ export function MapViewer({ map }: MapViewerProps) {
         rightPanelRef.current.resize(30);
       }
     },
-    [reactFlowInstance]
+    [reactFlowInstance, isPanelMinimized]
   );
 
   return (
@@ -542,168 +607,185 @@ export function MapViewer({ map }: MapViewerProps) {
         defaultSize={70}
         minSize={35}
         maxSize={85}
-        className="transition-all duration-300 ease-in-out relative"
+        className="transition-all duration-300 ease-in-out relative flex flex-col"
       >
-        {/* Info Panel - Top Right */}
-        <div className="absolute top-4 right-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg shadow-lg max-w-xs">
-          <button
-            onClick={() => setIsNavigationExpanded(!isNavigationExpanded)}
-            className="w-full flex items-center justify-between gap-2 text-xs font-medium p-3 hover:bg-muted/50 transition-colors rounded-lg"
-            aria-expanded={isNavigationExpanded}
-            aria-controls="navigation-content"
+        {/* Map Container - Takes up full space */}
+        <div className="flex-1">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onSelectionChange={onSelectionChange}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            fitView
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={true}
+            panOnScroll
+            panOnDrag={[1, 2]}
+            attributionPosition="bottom-left"
+            aria-label="Interactive learning map"
           >
-            <div className="flex items-center gap-2">
-              <Info className="h-3 w-3" />
-              Navigation
-            </div>
-            {isNavigationExpanded ? (
-              <ChevronUp className="h-3 w-3" />
-            ) : (
-              <ChevronDown className="h-3 w-3" />
-            )}
-          </button>
-
-          {isNavigationExpanded && (
-            <div
-              id="navigation-content"
-              className="px-3 pb-3 space-y-1 text-xs text-muted-foreground animate-in slide-in-from-top-2 duration-200"
-            >
-              <div className="flex justify-between">
-                <span>Select Node</span>
-                <span className="text-xs">Click</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Next Node</span>
-                <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Tab</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Previous Node</span>
-                <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                  Shift+Tab
-                </kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Pan Map</span>
-                <span className="text-xs">Drag</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Zoom</span>
-                <span className="text-xs">Mouse Wheel</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Fit View</span>
-                <kbd className="px-1 py-0.5 bg-muted rounded text-xs">F</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Deselect</span>
-                <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Esc</kbd>
-              </div>
-            </div>
-          )}
+            <Background gap={20} size={1} color="#94a3b8" />
+            <MiniMap
+              {...miniMapConfig}
+              style={{
+                ...miniMapConfig.style,
+                background: "rgba(255, 255, 255, 0.9)",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+              }}
+            />
+          </ReactFlow>
         </div>
 
-        {/* Progress Statistics - Bottom Left, above controls */}
-        <div className="absolute bottom-20 left-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-3 shadow-lg">
-          <div className="flex flex-col gap-2 text-xs">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span>
-                  {
-                    Object.values(progressMap).filter(
-                      (p) => p.status === "passed"
-                    ).length
-                  }{" "}
-                  Completed
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                <span>
-                  {
-                    Object.values(progressMap).filter(
-                      (p) => p.status === "submitted"
-                    ).length
-                  }{" "}
-                  Submitted
-                </span>
+        {/* Navigation Guide & Progress Stats - Bottom */}
+        {isNavigationExpanded && (
+          <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                Navigation Guide & Progress
+              </h3>
+              <button
+                onClick={() => setIsNavigationExpanded(false)}
+                className="p-1 hover:bg-muted/50 rounded transition-colors"
+                aria-label="Hide navigation guide"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+            
+            {/* Progress Statistics */}
+            <div className="mb-4 bg-muted/30 rounded-lg p-3">
+              <div className="text-xs text-muted-foreground mb-2 font-medium">Progress Overview</div>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>
+                    {
+                      Object.values(progressMap).filter(
+                        (p) => p.status === "passed"
+                      ).length
+                    }{" "}
+                    Completed
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span>
+                    {
+                      Object.values(progressMap).filter(
+                        (p) => p.status === "submitted"
+                      ).length
+                    }{" "}
+                    Submitted
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                  <span>
+                    {
+                      Object.values(progressMap).filter(
+                        (p) => p.status === "in_progress"
+                      ).length
+                    }{" "}
+                    In Progress
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                  <span className="text-muted-foreground">
+                    {map.map_nodes.length} Total
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                <span>
-                  {
-                    Object.values(progressMap).filter(
-                      (p) => p.status === "in_progress"
-                    ).length
-                  }{" "}
-                  In Progress
-                </span>
+
+            {/* Navigation Instructions */}
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Select Node</span>
+                  <span className="text-muted-foreground">Click</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Next Node</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Tab</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Previous Node</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Shift+Tab</kbd>
+                </div>
               </div>
-              <div className="text-muted-foreground">
-                {map.map_nodes.length} Total
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Pan Map</span>
+                  <span className="text-muted-foreground">Drag</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Zoom</span>
+                  <span className="text-muted-foreground">Mouse Wheel</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Deselect</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Esc</kbd>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onSelectionChange={onSelectionChange}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          fitView
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={true}
-          panOnScroll
-          panOnDrag={[1, 2]}
-          attributionPosition="bottom-left"
-          aria-label="Interactive learning map"
+        {/* Toggle Navigation Guide Button - Fixed Bottom Right */}
+        <button
+          onClick={() => setIsNavigationExpanded(!isNavigationExpanded)}
+          className="absolute bottom-4 right-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg hover:bg-muted/50 transition-colors"
+          aria-expanded={isNavigationExpanded}
+          title={isNavigationExpanded ? "Hide navigation guide" : "Show navigation guide"}
         >
-          <Controls
-            showInteractive={false}
-            position="bottom-left"
-            style={{
-              background: "rgba(255, 255, 255, 0.9)",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-            }}
-          />
-          <Background gap={20} size={1} color="#94a3b8" />
-          <MiniMap
-            {...miniMapConfig}
-            style={{
-              ...miniMapConfig.style,
-              background: "rgba(255, 255, 255, 0.9)",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-            }}
-          />
-        </ReactFlow>
+          {isNavigationExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <Info className="h-4 w-4" />
+          )}
+        </button>
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel
         ref={rightPanelRef}
         defaultSize={30}
-        minSize={15}
+        minSize={5}
         maxSize={65}
-        className="transition-all duration-300 ease-in-out"
+        className="transition-all duration-300 ease-in-out relative"
       >
+        {/* Panel Minimize/Maximize Button */}
+        <button
+          onClick={togglePanelSize}
+          className="absolute top-2 right-2 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg hover:bg-muted/50 transition-colors"
+          title={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
+          aria-label={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
+        >
+          {isPanelMinimized ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+
         <div className="h-full flex flex-col overflow-hidden">
-          <NodeViewPanel
-            key={selectedNode?.id || "no-selection"} // Force remount on node change
-            selectedNode={selectedNode}
-            mapId={map.id}
-            onProgressUpdate={loadAllProgress}
-            isNodeUnlocked={
-              selectedNode ? isNodeUnlocked(selectedNode.id) : true
-            }
-          />
+          {!isPanelMinimized && (
+            <NodeViewPanel
+              key={selectedNode?.id || "no-selection"} // Force remount on node change
+              selectedNode={selectedNode}
+              mapId={map.id}
+              onProgressUpdate={loadAllProgress}
+              isNodeUnlocked={
+                selectedNode ? isNodeUnlocked(selectedNode.id) : true
+              }
+            />
+          )}
         </div>
       </ResizablePanel>
     </ResizablePanelGroup>
