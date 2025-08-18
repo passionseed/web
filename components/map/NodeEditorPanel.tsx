@@ -63,7 +63,7 @@ export function NodeEditorPanel({
   // Debounced update for text nodes
   useEffect(() => {
     if (!isTextNode || !selectedNode) return;
-    
+
     const timeoutId = setTimeout(() => {
       if (localText !== selectedNode.data.title) {
         onNodeDataChange(selectedNode.id, { title: localText });
@@ -92,13 +92,13 @@ export function NodeEditorPanel({
     (field: keyof MapNode) =>
       (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { value } = e.target;
-        
+
         // For text nodes title field, use local state for immediate UI updates
         if (isTextNode && field === "title") {
           setLocalText(value);
           return;
         }
-        
+
         // For other fields, use normal update flow
         const newData = { ...nodeData, [field]: value };
         setNodeData(newData);
@@ -265,7 +265,9 @@ export function NodeEditorPanel({
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="details" className="h-full flex flex-col">
           <div className="flex-shrink-0 px-4 py-2 bg-background border-b">
-            <TabsList className={`grid w-full ${isTextNode ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            <TabsList
+              className={`grid w-full ${isTextNode ? "grid-cols-1" : "grid-cols-3"}`}
+            >
               <TabsTrigger value="details">Details</TabsTrigger>
               {!isTextNode && (
                 <>
@@ -280,24 +282,32 @@ export function NodeEditorPanel({
             <TabsContent value="details" className="m-0 p-4 space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">{isTextNode ? "Text Content" : "Title"}</Label>
+                  <Label htmlFor="title">
+                    {isTextNode ? "Text Content" : "Title"}
+                  </Label>
                   <Input
                     id="title"
                     name="title"
-                    value={isTextNode ? localText : (nodeData.title || "")}
+                    value={isTextNode ? localText : nodeData.title || ""}
                     onChange={handleInputChange("title")}
-                    placeholder={isTextNode ? "Enter your text..." : "Node title..."}
+                    placeholder={
+                      isTextNode ? "Enter your text..." : "Node title..."
+                    }
                   />
                 </div>
                 {isTextNode && (
                   <>
                     {/* Text Styling Options for Text Nodes */}
                     <div className="space-y-4 border-t pt-4">
-                      <Label className="text-sm font-medium">Text Styling</Label>
-                      
+                      <Label className="text-sm font-medium">
+                        Text Styling
+                      </Label>
+
                       {/* Font Size */}
                       <div className="space-y-2">
-                        <Label htmlFor="fontSize" className="text-xs">Font Size</Label>
+                        <Label htmlFor="fontSize" className="text-xs">
+                          Font Size
+                        </Label>
                         <select
                           id="fontSize"
                           value={(nodeData.metadata as any)?.fontSize || "16px"}
@@ -307,7 +317,9 @@ export function NodeEditorPanel({
                               fontSize: e.target.value,
                             };
                             if (selectedNode) {
-                              onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                              onNodeDataChange(selectedNode.id, {
+                                metadata: newMetadata,
+                              });
                             }
                           }}
                           className="w-full px-3 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -325,32 +337,42 @@ export function NodeEditorPanel({
 
                       {/* Text Color */}
                       <div className="space-y-2">
-                        <Label htmlFor="textColor" className="text-xs">Text Color</Label>
+                        <Label htmlFor="textColor" className="text-xs">
+                          Text Color
+                        </Label>
                         <div className="flex gap-2">
                           <input
                             id="textColor"
                             type="color"
-                            value={(nodeData.metadata as any)?.textColor || "#374151"}
+                            value={
+                              (nodeData.metadata as any)?.textColor || "#374151"
+                            }
                             onChange={(e) => {
                               const newMetadata = {
                                 ...(nodeData.metadata || {}),
                                 textColor: e.target.value,
                               };
                               if (selectedNode) {
-                                onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                                onNodeDataChange(selectedNode.id, {
+                                  metadata: newMetadata,
+                                });
                               }
                             }}
                             className="w-16 h-8 border border-gray-300 rounded cursor-pointer"
                           />
                           <Input
-                            value={(nodeData.metadata as any)?.textColor || "#374151"}
+                            value={
+                              (nodeData.metadata as any)?.textColor || "#374151"
+                            }
                             onChange={(e) => {
                               const newMetadata = {
                                 ...(nodeData.metadata || {}),
                                 textColor: e.target.value,
                               };
                               if (selectedNode) {
-                                onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                                onNodeDataChange(selectedNode.id, {
+                                  metadata: newMetadata,
+                                });
                               }
                             }}
                             placeholder="#374151"
@@ -361,32 +383,44 @@ export function NodeEditorPanel({
 
                       {/* Background Color */}
                       <div className="space-y-2">
-                        <Label htmlFor="backgroundColor" className="text-xs">Background Color</Label>
+                        <Label htmlFor="backgroundColor" className="text-xs">
+                          Background Color
+                        </Label>
                         <div className="flex gap-2">
                           <input
                             id="backgroundColor"
                             type="color"
-                            value={(nodeData.metadata as any)?.backgroundColor || "#ffffff"}
+                            value={
+                              (nodeData.metadata as any)?.backgroundColor ||
+                              "#ffffff"
+                            }
                             onChange={(e) => {
                               const newMetadata = {
                                 ...(nodeData.metadata || {}),
                                 backgroundColor: e.target.value,
                               };
                               if (selectedNode) {
-                                onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                                onNodeDataChange(selectedNode.id, {
+                                  metadata: newMetadata,
+                                });
                               }
                             }}
                             className="w-16 h-8 border border-gray-300 rounded cursor-pointer"
                           />
                           <Input
-                            value={(nodeData.metadata as any)?.backgroundColor || "transparent"}
+                            value={
+                              (nodeData.metadata as any)?.backgroundColor ||
+                              "transparent"
+                            }
                             onChange={(e) => {
                               const newMetadata = {
                                 ...(nodeData.metadata || {}),
                                 backgroundColor: e.target.value,
                               };
                               if (selectedNode) {
-                                onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                                onNodeDataChange(selectedNode.id, {
+                                  metadata: newMetadata,
+                                });
                               }
                             }}
                             placeholder="transparent"
@@ -397,17 +431,23 @@ export function NodeEditorPanel({
 
                       {/* Font Weight */}
                       <div className="space-y-2">
-                        <Label htmlFor="fontWeight" className="text-xs">Font Weight</Label>
+                        <Label htmlFor="fontWeight" className="text-xs">
+                          Font Weight
+                        </Label>
                         <select
                           id="fontWeight"
-                          value={(nodeData.metadata as any)?.fontWeight || "normal"}
+                          value={
+                            (nodeData.metadata as any)?.fontWeight || "normal"
+                          }
                           onChange={(e) => {
                             const newMetadata = {
                               ...(nodeData.metadata || {}),
                               fontWeight: e.target.value,
                             };
                             if (selectedNode) {
-                              onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                              onNodeDataChange(selectedNode.id, {
+                                metadata: newMetadata,
+                              });
                             }
                           }}
                           className="w-full px-3 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -421,17 +461,23 @@ export function NodeEditorPanel({
 
                       {/* Text Alignment */}
                       <div className="space-y-2">
-                        <Label htmlFor="textAlign" className="text-xs">Text Alignment</Label>
+                        <Label htmlFor="textAlign" className="text-xs">
+                          Text Alignment
+                        </Label>
                         <select
                           id="textAlign"
-                          value={(nodeData.metadata as any)?.textAlign || "center"}
+                          value={
+                            (nodeData.metadata as any)?.textAlign || "center"
+                          }
                           onChange={(e) => {
                             const newMetadata = {
                               ...(nodeData.metadata || {}),
                               textAlign: e.target.value,
                             };
                             if (selectedNode) {
-                              onNodeDataChange(selectedNode.id, { metadata: newMetadata });
+                              onNodeDataChange(selectedNode.id, {
+                                metadata: newMetadata,
+                              });
                             }
                           }}
                           className="w-full px-3 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -517,10 +563,9 @@ export function NodeEditorPanel({
                   </>
                 )}
                 <div className="text-xs text-muted-foreground mt-4 p-2 bg-muted rounded">
-                  {isTextNode 
+                  {isTextNode
                     ? "Text nodes are for annotations and labels. Changes are saved automatically to your draft."
-                    : "Changes are saved automatically to your draft. Use \"Save All Changes\" to persist to database."
-                  }
+                    : 'Changes are saved automatically to your draft. Use "Save All Changes" to persist to database.'}
                 </div>
               </div>
             </TabsContent>
@@ -541,7 +586,9 @@ export function NodeEditorPanel({
                   <div className="h-full overflow-y-auto">
                     <AssessmentEditor
                       nodeId={selectedNode.id}
-                      assessment={selectedNode.data.node_assessments?.[0] || null}
+                      assessment={
+                        selectedNode.data.node_assessments?.[0] || null
+                      }
                       onAssessmentChange={handleAssessmentChange}
                     />
                   </div>

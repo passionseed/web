@@ -3,13 +3,12 @@ import { createClient } from "@/utils/supabase/server";
 import { ClassroomDetailsDashboard } from "@/components/classroom/ClassroomDetailsDashboard";
 
 interface ClassroomPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default async function ClassroomPage({ params }: ClassroomPageProps) {
   const supabase = await createClient();
+  const { id } = await params; // Destructure the id after awaiting
 
   // Get current user
   const {
@@ -31,7 +30,7 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
       )
     `
     )
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("classroom_memberships.user_id", user.id)
     .single();
 
