@@ -29,6 +29,7 @@ import { AssignmentCard } from "./AssignmentCard";
 import { StudentProgressTable } from "./StudentProgressTable";
 import { ClassroomSettingsModal } from "./ClassroomSettingsModal";
 import { ClassroomMapsManager } from "./ClassroomMapsManager";
+import { ClassroomTeamsManager } from "./ClassroomTeamsManager";
 
 interface ClassroomDetailsDashboardProps {
   classroom: Classroom & {
@@ -247,6 +248,7 @@ export function ClassroomDetailsDashboard({
         <TabsList>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
+          <TabsTrigger value="teams">Teams</TabsTrigger>
           {canManage && <TabsTrigger value="maps">Learning Maps</TabsTrigger>}
           <TabsTrigger value="progress">Progress</TabsTrigger>
           {canManage && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
@@ -298,6 +300,14 @@ export function ClassroomDetailsDashboard({
               )}
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="teams" className="space-y-4">
+          <ClassroomTeamsManager
+            classroomId={classroom.id}
+            userRole={userRole}
+            canManage={canManage}
+          />
         </TabsContent>
 
         {canManage && (

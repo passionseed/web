@@ -342,13 +342,18 @@ export default function EditMapPage() {
       });
 
       // Find created nodes (temporary IDs)
-      const createdNodes = map.map_nodes.filter((node) =>
-        node.id.startsWith("temp_node_") || node.id.startsWith("temp_text_")
+      const createdNodes = map.map_nodes.filter(
+        (node) =>
+          node.id.startsWith("temp_node_") || node.id.startsWith("temp_text_")
       );
       console.log(
         "➕ Created nodes:",
         createdNodes.length,
-        createdNodes.map((n) => ({ id: n.id, title: n.title, type: (n as any).node_type }))
+        createdNodes.map((n) => ({
+          id: n.id,
+          title: n.title,
+          type: (n as any).node_type,
+        }))
       );
 
       createdNodes.forEach((node) => {
@@ -360,7 +365,9 @@ export default function EditMapPage() {
           sprite_url: node.sprite_url,
           metadata: node.metadata,
           // Include node_type for text nodes
-          ...((node as any).node_type && { node_type: (node as any).node_type }),
+          ...((node as any).node_type && {
+            node_type: (node as any).node_type,
+          }),
         };
         batchUpdate.nodes.create.push(nodeToCreate);
         console.log("➕ Adding node to create:", nodeToCreate);
@@ -399,7 +406,9 @@ export default function EditMapPage() {
           sprite_url: node.sprite_url,
           metadata: node.metadata,
           // Include node_type for text nodes
-          ...((node as any).node_type && { node_type: (node as any).node_type }),
+          ...((node as any).node_type && {
+            node_type: (node as any).node_type,
+          }),
         };
         batchUpdate.nodes.update.push(nodeToUpdate);
         console.log("📝 Adding node to update:", nodeToUpdate);

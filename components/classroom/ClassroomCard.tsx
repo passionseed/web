@@ -18,6 +18,7 @@ interface ClassroomCardProps {
     member_count?: number;
     assignment_count?: number;
     active_assignments_count?: number;
+    userRole?: string;
   };
 }
 
@@ -42,9 +43,20 @@ export function ClassroomCard({ classroom }: ClassroomCardProps) {
               {classroom.description || "No description provided"}
             </CardDescription>
           </div>
-          <Badge variant={classroom.is_active ? "default" : "secondary"}>
-            {classroom.is_active ? "Active" : "Inactive"}
-          </Badge>
+          <div className="flex gap-2">
+            {classroom.userRole && (
+              <Badge 
+                variant={classroom.userRole === "instructor" ? "default" : "secondary"}
+                className="text-xs"
+              >
+                {classroom.userRole === "instructor" ? "Instructor" : 
+                 classroom.userRole === "ta" ? "TA" : "Student"}
+              </Badge>
+            )}
+            <Badge variant={classroom.is_active ? "default" : "secondary"}>
+              {classroom.is_active ? "Active" : "Inactive"}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
 
