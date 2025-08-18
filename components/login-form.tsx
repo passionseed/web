@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/utils/supabase/client";
-import { SiDiscord } from "@icons-pack/react-simple-icons";
+import { SiDiscord, SiGoogle } from "@icons-pack/react-simple-icons";
 import { DiscIcon as Discord, Mail, Lock, UserPlus, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,6 +36,26 @@ export function LoginForm() {
       },
     });
     console.log(data, "heyhey");
+
+    if (error) {
+      console.error("Auth error:", error);
+      toast({
+        title: "Authentication Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function signInWithGoogle() {
+    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
+    });
 
     if (error) {
       console.error("Auth error:", error);
@@ -100,13 +120,23 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <Button
-          className="w-full bg-[#5865F2] hover:bg-[#4752c4] text-white"
-          onClick={signInWithDiscord}
-        >
-          <SiDiscord className="mr-2 h-4 w-4" />
-          Sign in with Discord
-        </Button>
+        <div className="grid gap-2">
+          <Button
+            className="w-full bg-[#5865F2] hover:bg-[#4752c4] text-white"
+            onClick={signInWithDiscord}
+          >
+            <SiDiscord className="mr-2 h-4 w-4" />
+            Sign in with Discord
+          </Button>
+          
+          <Button
+            className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+            onClick={signInWithGoogle}
+          >
+            <SiGoogle className="mr-2 h-4 w-4" />
+            Sign in with Google
+          </Button>
+        </div>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
