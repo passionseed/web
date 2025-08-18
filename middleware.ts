@@ -2,7 +2,16 @@ import { type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  // Handle Supabase session updates
+  const response = await updateSession(request);
+  
+  // Check for admin routes
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    // This basic check will be handled by the page component
+    // More sophisticated middleware checks could be added here
+  }
+  
+  return response;
 }
 
 export const config = {
