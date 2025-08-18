@@ -335,23 +335,27 @@ export function GradingTable({
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <ViewSubmissionDialog submission={submission} />
-                        {/* Only show grade button for non-auto-graded submissions */}
-                        {(submission.submission_grades.length === 0 ||
-                          submission.submission_grades[0].graded_by !==
-                            null) && (
+                        {/* Only show grade button for submissions with no grades */}
+                        {submission.submission_grades.length === 0 && (
                           <GradeSubmissionForm
                             submission={submission}
                             userId={userId}
                           />
                         )}
-                        {/* Show "Auto-Graded" indicator for system grades */}
-                        {submission.submission_grades.length > 0 &&
-                          submission.submission_grades[0].graded_by ===
-                            null && (
-                            <Badge variant="outline" className="text-xs">
-                              Auto-Graded
-                            </Badge>
-                          )}
+                        {/* Show grade status for graded submissions */}
+                        {submission.submission_grades.length > 0 && (
+                          <>
+                            {submission.submission_grades[0].graded_by === null ? (
+                              <Badge variant="outline" className="text-xs">
+                                Auto-Graded
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">
+                                Manually Graded
+                              </Badge>
+                            )}
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
