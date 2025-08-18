@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { ClassroomError } from "@/types/classroom";
 import type {
   AssignmentEnrollment,
