@@ -70,3 +70,10 @@ export function useInstructor() {
 export function useTA() {
   return useAuth("TA");
 }
+
+/**
+ * Hook for checking admin role
+ */
+export function useAdmin() {
+  return useAuth("admin");
+}
