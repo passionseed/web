@@ -12,8 +12,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/utils/supabase/client";
-import { LogOut, Settings, User, Leaf, MessageCircle } from "lucide-react";
+import { LogOut, Settings, User, Leaf, MessageCircle, Shield } from "lucide-react";
 import Link from "next/link";
+import { useAdmin } from "@/hooks/use-auth";
 
 interface UserNavProps {
   user: any;
@@ -21,6 +22,7 @@ interface UserNavProps {
 
 export function UserNav({ user }: UserNavProps) {
   const supabase = createClient();
+  const { hasRole: isAdmin } = useAdmin();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -70,6 +72,14 @@ export function UserNav({ user }: UserNavProps) {
               <span>Passion Tree Garden</span>
             </Link>
           </DropdownMenuItem>
+          {isAdmin && (
+            <DropdownMenuItem asChild>
+              <Link href="/admin">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild>
             <Link
               href="https://instagram.com/passion_seed.th"
