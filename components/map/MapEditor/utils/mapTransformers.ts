@@ -14,7 +14,7 @@ export function transformMapToReactFlow(
       ...node,
       node_type: (node as any).node_type || "learning", // Default to learning if not specified
     };
-    
+
     return {
       id: node.id,
       type: extendedNode.node_type === "text" ? "text" : "default",
@@ -107,13 +107,13 @@ export function createNewTextNode(map: FullLearningMap): {
     instructions: null,
     difficulty: 1,
     sprite_url: null,
-    metadata: { 
+    metadata: {
       position: { x: 150, y: 150 },
       fontSize: "16px",
       textColor: "#374151",
       backgroundColor: "transparent",
       fontWeight: "normal",
-      textAlign: "center"
+      textAlign: "center",
     },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

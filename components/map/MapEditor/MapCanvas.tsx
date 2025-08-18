@@ -51,8 +51,8 @@ export function MapCanvas({
     () => ({
       default: CustomNode,
       text: (props: any) => (
-        <TextNode 
-          {...props} 
+        <TextNode
+          {...props}
           onDataChange={(data) => onNodeDataChange(props.id, data)}
         />
       ),
@@ -68,7 +68,12 @@ export function MapCanvas({
           <Plus className="h-4 w-4" />
           Add Node
         </Button>
-        <Button onClick={onAddTextNode} size="sm" variant="outline" className="gap-2">
+        <Button
+          onClick={onAddTextNode}
+          size="sm"
+          variant="outline"
+          className="gap-2"
+        >
           <Type className="h-4 w-4" />
           Add Text
         </Button>

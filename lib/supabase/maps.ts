@@ -1,4 +1,4 @@
-import { createClient } from "./client";
+import { createClient } from "@/utils/supabase/client";
 import {
   LearningMap,
   MapNode,
@@ -147,7 +147,7 @@ export const createMap = async (
   mapData: Pick<LearningMap, "title" | "description">
 ): Promise<LearningMap> => {
   const supabase = createClient();
-  
+
   // Get the current authenticated user
   const {
     data: { user },

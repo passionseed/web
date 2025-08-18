@@ -47,11 +47,7 @@ CREATE TABLE IF NOT EXISTS public.team_memberships (
         'leader'::character varying
       ]::text[]
     )
-  ),
-  CONSTRAINT team_memberships_one_leader_per_team EXCLUDE USING gist (
-    (team_id::text) WITH =, 
-    (is_leader::int) WITH = 
-  ) WHERE (is_leader = true)
+  )
 ) TABLESPACE pg_default;
 
 -- Create indexes for better performance
@@ -67,6 +63,26 @@ CREATE INDEX IF NOT EXISTS idx_team_memberships_leader ON public.team_membership
 -- Create unique index to prevent duplicate active memberships
 CREATE UNIQUE INDEX IF NOT EXISTS idx_team_memberships_unique_active ON public.team_memberships USING btree (team_id, user_id) TABLESPACE pg_default WHERE (left_at IS NULL);
 
+-- Function to ensure only one leader per team
+CREATE OR REPLACE FUNCTION public.ensure_single_leader_per_team()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If this is setting someone as a leader, remove leader status from others in the team
+  IF NEW.is_leader = true THEN
+    UPDATE public.team_memberships 
+    SET is_leader = false 
+    WHERE team_id = NEW.team_id AND id != NEW.id AND is_leader = true;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to enforce single leader per team
+CREATE TRIGGER trigger_ensure_single_leader_per_team
+  BEFORE INSERT OR UPDATE ON public.team_memberships
+  FOR EACH ROW
+  EXECUTE FUNCTION public.ensure_single_leader_per_team();
+
 -- Enable Row Level Security
 ALTER TABLE public.classroom_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.team_memberships ENABLE ROW LEVEL SECURITY;
@@ -76,7 +92,7 @@ CREATE POLICY "Users can view teams in their classrooms" ON public.classroom_tea
   FOR SELECT USING (
     classroom_id IN (
       SELECT classroom_id FROM public.classroom_memberships 
-      WHERE user_id = auth.uid() AND left_at IS NULL
+      WHERE user_id = auth.uid()
     )
   );
 
@@ -85,7 +101,7 @@ CREATE POLICY "Classroom instructors and leaders can create teams" ON public.cla
     created_by = auth.uid() AND
     classroom_id IN (
       SELECT classroom_id FROM public.classroom_memberships 
-      WHERE user_id = auth.uid() AND role IN ('instructor', 'ta') AND left_at IS NULL
+      WHERE user_id = auth.uid() AND role IN ('instructor', 'ta')
     )
   );
 
@@ -98,7 +114,7 @@ CREATE POLICY "Team leaders and classroom instructors can update teams" ON publi
     ) OR
     classroom_id IN (
       SELECT classroom_id FROM public.classroom_memberships 
-      WHERE user_id = auth.uid() AND role IN ('instructor', 'ta') AND left_at IS NULL
+      WHERE user_id = auth.uid() AND role IN ('instructor', 'ta')
     )
   );
 
@@ -109,7 +125,7 @@ CREATE POLICY "Users can view team memberships in their classrooms" ON public.te
       SELECT id FROM public.classroom_teams 
       WHERE classroom_id IN (
         SELECT classroom_id FROM public.classroom_memberships 
-        WHERE user_id = auth.uid() AND left_at IS NULL
+        WHERE user_id = auth.uid()
       )
     )
   );
@@ -120,7 +136,7 @@ CREATE POLICY "Team leaders and classroom instructors can manage memberships" ON
       SELECT id FROM public.classroom_teams 
       WHERE classroom_id IN (
         SELECT classroom_id FROM public.classroom_memberships 
-        WHERE user_id = auth.uid() AND role IN ('instructor', 'ta') AND left_at IS NULL
+        WHERE user_id = auth.uid() AND role IN ('instructor', 'ta')
       )
     ) OR
     team_id IN (

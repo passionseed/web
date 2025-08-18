@@ -170,8 +170,8 @@ export function MapViewer({ map }: MapViewerProps) {
   // Function to navigate to adjacent unlocked nodes
   const navigateToAdjacentNode = (direction: 1 | -1) => {
     // Only navigate through learning nodes, not text nodes
-    const learningNodes = map.map_nodes.filter((node) => 
-      (node as any)?.node_type !== "text"
+    const learningNodes = map.map_nodes.filter(
+      (node) => (node as any)?.node_type !== "text"
     );
     const unlockedNodes = learningNodes.filter((node) =>
       isNodeUnlocked(node.id)
@@ -250,13 +250,13 @@ export function MapViewer({ map }: MapViewerProps) {
   // Check if node is unlocked based on prerequisites
   const isNodeUnlocked = (nodeId: string): boolean => {
     // Find the node data
-    const nodeData = map.map_nodes.find(n => n.id === nodeId);
-    
+    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+
     // Text nodes are always "unlocked" (visible) since they're just annotations
     if ((nodeData as any)?.node_type === "text") {
       return true;
     }
-    
+
     // Find all nodes that have paths leading to this node
     const prerequisites = map.map_nodes.filter((node) =>
       node.node_paths_source.some((path) => path.destination_node_id === nodeId)
@@ -476,7 +476,7 @@ export function MapViewer({ map }: MapViewerProps) {
     }) => {
       // Text nodes are read-only in the viewer, so no onDataChange
       return (
-        <TextNode 
+        <TextNode
           data={data}
           selected={selected}
           // No onDataChange prop since this is viewer mode
@@ -489,7 +489,7 @@ export function MapViewer({ map }: MapViewerProps) {
     const transformedNodes = map.map_nodes.map((node) => {
       // Determine node type - check for node_type property
       const nodeType = (node as any)?.node_type === "text" ? "text" : "default";
-      
+
       return {
         id: node.id,
         type: nodeType,
@@ -657,10 +657,12 @@ export function MapViewer({ map }: MapViewerProps) {
                 <ChevronDown className="h-4 w-4" />
               </button>
             </div>
-            
+
             {/* Progress Statistics */}
             <div className="mb-4 bg-muted/30 rounded-lg p-3">
-              <div className="text-xs text-muted-foreground mb-2 font-medium">Progress Overview</div>
+              <div className="text-xs text-muted-foreground mb-2 font-medium">
+                Progress Overview
+              </div>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -713,11 +715,15 @@ export function MapViewer({ map }: MapViewerProps) {
                 </div>
                 <div className="flex justify-between">
                   <span>Next Node</span>
-                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Tab</kbd>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                    Tab
+                  </kbd>
                 </div>
                 <div className="flex justify-between">
                   <span>Previous Node</span>
-                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Shift+Tab</kbd>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                    Shift+Tab
+                  </kbd>
                 </div>
               </div>
               <div className="space-y-2">
@@ -731,7 +737,9 @@ export function MapViewer({ map }: MapViewerProps) {
                 </div>
                 <div className="flex justify-between">
                   <span>Deselect</span>
-                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Esc</kbd>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                    Esc
+                  </kbd>
                 </div>
               </div>
             </div>
@@ -743,7 +751,11 @@ export function MapViewer({ map }: MapViewerProps) {
           onClick={() => setIsNavigationExpanded(!isNavigationExpanded)}
           className="absolute bottom-4 right-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg hover:bg-muted/50 transition-colors"
           aria-expanded={isNavigationExpanded}
-          title={isNavigationExpanded ? "Hide navigation guide" : "Show navigation guide"}
+          title={
+            isNavigationExpanded
+              ? "Hide navigation guide"
+              : "Show navigation guide"
+          }
         >
           {isNavigationExpanded ? (
             <ChevronDown className="h-4 w-4" />

@@ -56,21 +56,22 @@ export function TextNode({ data, selected, onDataChange }: TextNodeProps) {
     color: (data.metadata as any)?.textColor || "#374151",
     backgroundColor: (data.metadata as any)?.backgroundColor || "transparent",
     fontWeight: (data.metadata as any)?.fontWeight || "normal",
-    textAlign: (data.metadata as any)?.textAlign || "center" as const,
+    textAlign: (data.metadata as any)?.textAlign || ("center" as const),
   };
 
   const containerClassName = `
     relative min-w-32 min-h-8 p-2 rounded-lg border-2 transition-all duration-200
-    ${selected 
-      ? "border-blue-400 bg-blue-50/80 shadow-lg scale-105" 
-      : "border-gray-200 bg-white/90 hover:bg-white shadow-sm"
+    ${
+      selected
+        ? "border-blue-400 bg-blue-50/80 shadow-lg scale-105"
+        : "border-gray-200 bg-white/90 hover:bg-white shadow-sm"
     }
     ${isEditing ? "border-blue-500 shadow-md" : ""}
     backdrop-blur-sm
   `.trim();
 
   return (
-    <div 
+    <div
       className={containerClassName}
       onDoubleClick={handleDoubleClick}
       style={{ backgroundColor: textStyle.backgroundColor }}
