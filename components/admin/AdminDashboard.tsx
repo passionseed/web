@@ -142,6 +142,16 @@ export function AdminDashboard() {
     }
   };
 
+  const getRoleDisplayName = (role: UserRole) => {
+    switch (role) {
+      case "TA": return "moderator";
+      case "admin": return "admin";
+      case "instructor": return "instructor";
+      case "student": return "student";
+      default: return role;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -217,42 +227,53 @@ export function AdminDashboard() {
         <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>User Management</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Management
+              </CardTitle>
               <CardDescription>
-                View and manage user accounts and roles
+                View and manage user accounts, roles, and profile information. Admins cannot assign admin roles to other users.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {/* Search and Filter */}
-              <div className="flex gap-4 mb-4">
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="flex-1">
-                  <Label htmlFor="search">Search Users</Label>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="search" className="text-sm font-medium">Search Users</Label>
+                  <div className="relative mt-1">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="search"
                       placeholder="Search by email, username, or name..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8"
+                      className="pl-10 h-10"
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="role-filter">Filter by Role</Label>
+                <div className="md:w-48">
+                  <Label htmlFor="role-filter" className="text-sm font-medium">Filter by Role</Label>
                   <Select value={selectedRole} onValueChange={setSelectedRole}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="mt-1 h-10">
                       <SelectValue placeholder="All roles" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All roles</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="instructor">Instructor</SelectItem>
-                      <SelectItem value="TA">TA</SelectItem>
+                      <SelectItem value="TA">Moderator</SelectItem>
                       <SelectItem value="student">Student</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              {/* Results summary */}
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Showing {filteredUsers.length} of {users.length} users
+                  {searchTerm && ` matching "${searchTerm}"`}
+                  {selectedRole !== "all" && ` with role "${selectedRole === "TA" ? "moderator" : selectedRole}"`}
+                </p>
               </div>
 
               {/* Users Table */}
@@ -284,16 +305,16 @@ export function AdminDashboard() {
                         <TableCell>
                           <div className="flex gap-1 flex-wrap">
                             {user.user_roles.map((roleData, index) => (
-                              <Badge 
-                                key={index} 
+                              <Badge
+                                key={index}
                                 variant={getRoleBadgeVariant(roleData.role)}
-                                className="text-xs"
+                                className="text-xs capitalize"
                               >
-                                {roleData.role}
+                                {getRoleDisplayName(roleData.role)}
                               </Badge>
                             ))}
                             {user.user_roles.length === 0 && (
-                              <Badge variant="outline">No roles</Badge>
+                              <Badge variant="outline" className="text-xs">No roles</Badge>
                             )}
                           </div>
                         </TableCell>
@@ -302,18 +323,17 @@ export function AdminDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-3 w-3" />
-                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
+                              className="hover:bg-primary/10"
                               onClick={() => {
                                 setSelectedUser(user);
                                 setRoleDialogOpen(true);
                               }}
                             >
-                              <Edit2 className="h-3 w-3" />
+                              <Edit2 className="h-3 w-3 mr-1" />
+                              Edit
                             </Button>
                           </div>
                         </TableCell>
