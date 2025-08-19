@@ -27,8 +27,13 @@ import { Classroom } from "@/types/classroom";
 import { CreateAssignmentModal } from "./CreateAssignmentModal";
 import { AssignmentCard } from "./AssignmentCard";
 import { StudentProgressTable } from "./StudentProgressTable";
+import { StudentProgressView } from "./StudentProgressView";
 import { ClassroomSettingsModal } from "./ClassroomSettingsModal";
 import { ClassroomMapsManager } from "./ClassroomMapsManager";
+import { ClassroomTeamsManager } from "./ClassroomTeamsManager";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import StudentMapsViewWrapper from "./StudentMapsViewWrapper";
 
 interface ClassroomDetailsDashboardProps {
   classroom: Classroom & {
@@ -53,6 +58,7 @@ export function ClassroomDetailsDashboard({
   userRole,
   canManage,
 }: ClassroomDetailsDashboardProps) {
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     activeAssignments: 0,
@@ -96,6 +102,8 @@ export function ClassroomDetailsDashboard({
       const studentsData = studentsResponse.ok
         ? await studentsResponse.json()
         : [];
+
+      console.log("xx studentsData", studentsData);
 
       // Log errors for debugging
       if (!statsResponse.ok) {
@@ -147,6 +155,20 @@ export function ClassroomDetailsDashboard({
       month: "short",
       day: "numeric",
     });
+  };
+
+  // Sync active tab with URL query param `tab` (e.g. ?tab=teams)
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const currentTab = searchParams?.get("tab") ?? "assignments";
+
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.set("tab", value);
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
   };
 
   return (
@@ -243,11 +265,16 @@ export function ClassroomDetailsDashboard({
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="assignments" className="space-y-4">
+      <Tabs
+        value={currentTab}
+        onValueChange={handleTabChange}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
-          {canManage && <TabsTrigger value="maps">Learning Maps</TabsTrigger>}
+          <TabsTrigger value="teams">Teams</TabsTrigger>
+          <TabsTrigger value="maps">Learning Maps</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
           {canManage && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
         </TabsList>
@@ -300,18 +327,45 @@ export function ClassroomDetailsDashboard({
           )}
         </TabsContent>
 
-        {canManage && (
-          <TabsContent value="maps" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Learning Maps</h3>
-              <p className="text-sm text-muted-foreground">
-                Link learning maps to create assignments from their nodes
-              </p>
-            </div>
+        <TabsContent value="teams" className="space-y-4">
+          <ClassroomTeamsManager
+            classroomId={classroom.id}
+            userRole={userRole}
+            canManage={canManage}
+          />
+        </TabsContent>
 
-            <ClassroomMapsManager classroomId={classroom.id} />
-          </TabsContent>
-        )}
+        <TabsContent value="maps" className="space-y-4">
+          {canManage ? (
+            <>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Learning Maps</h3>
+                <p className="text-sm text-muted-foreground">
+                  Link learning maps to create assignments from their nodes
+                </p>
+              </div>
+
+              <ClassroomMapsManager classroomId={classroom.id} />
+            </>
+          ) : (
+            // Student-focused, emphasized view
+            <>
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold mb-2">🗺️ Learning Maps</h3>
+                <p className="text-muted-foreground max-w-lg mx-auto">
+                  Fork learning maps to your team to create collaborative
+                  workspaces where you can work through content and assessments
+                  together.
+                </p>
+              </div>
+
+              {/* Student maps view */}
+              <div>
+                <StudentMapsViewWrapper classroomId={classroom.id} />
+              </div>
+            </>
+          )}
+        </TabsContent>
 
         <TabsContent value="students" className="space-y-4">
           <div className="flex items-center justify-between">
@@ -329,11 +383,19 @@ export function ClassroomDetailsDashboard({
           {loading ? (
             <Card className="h-64 animate-pulse bg-muted" />
           ) : students.length > 0 ? (
-            <StudentProgressTable
-              students={students}
-              assignments={assignments}
-              canManage={canManage}
-            />
+            canManage ? (
+              <StudentProgressTable
+                students={students}
+                assignments={assignments}
+                canManage={canManage}
+              />
+            ) : (
+              <StudentProgressView
+                students={students}
+                assignments={assignments}
+                currentUserId={user?.id || ""}
+              />
+            )
           ) : (
             <Card className="p-8 text-center">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -341,11 +403,17 @@ export function ClassroomDetailsDashboard({
                 No students enrolled
               </h3>
               <p className="text-muted-foreground">
-                Share the join code{" "}
-                <span className="font-mono font-bold">
-                  {classroom.join_code}
-                </span>{" "}
-                with students to get started.
+                {canManage ? (
+                  <>
+                    Share the join code{" "}
+                    <span className="font-mono font-bold">
+                      {classroom.join_code}
+                    </span>{" "}
+                    with students to get started.
+                  </>
+                ) : (
+                  "No students data available."
+                )}
               </p>
             </Card>
           )}

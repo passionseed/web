@@ -18,7 +18,7 @@ import {
   submitNodeProgress,
   type StudentProgress,
 } from "@/lib/supabase/progresses";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { NoNodeSelectedView } from "./NoNodeSelectedView";
 import { NodeHeaderView } from "./NodeHeaderView";
 import { LearningContentView } from "./LearningContentView";

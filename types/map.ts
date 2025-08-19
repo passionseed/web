@@ -19,14 +19,18 @@ export interface Cohort {
 }
 
 export type MapCategory = "ai" | "3d" | "unity" | "hacking" | "custom";
+export type MapVisibility = "public" | "private" | "team";
 
 export interface LearningMap {
   id: string; // uuid
   title: string;
   description: string | null;
   creator_id: string | null; // uuid
+  version?: number; // lightweight versioning for forks/pulls
+  last_modified_by?: string | null;
   difficulty?: number; // 1-10, overall map difficulty
   category?: MapCategory; // map category
+  visibility?: MapVisibility; // visibility setting
   total_students?: number; // cached count
   finished_students?: number; // cached count
   metadata?: Record<string, any>; // jsonb extensible data
@@ -40,15 +44,30 @@ export interface MapNode {
   map_id: string; // uuid
   title: string;
   instructions: string | null;
+  version?: number; // node-level version
+  last_modified_by?: string | null;
   difficulty: number;
   sprite_url: string | null;
   metadata: Record<string, any> | null; // jsonb
+  node_type?: 'learning' | 'text'; // Added node_type field
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
   node_content?: NodeContent[]; // Changed from 'content' to 'node_content'
   node_assessments?: NodeAssessment[]; // Changed from 'assessment' to 'node_assessments' and made it an array
   node_paths_source?: NodePath[]; // Added missing relation
   node_paths_destination?: NodePath[]; // Added missing relation
+}
+
+export interface TeamMap {
+  id: string; // uuid
+  team_id: string; // uuid
+  map_id: string; // uuid (forked map id)
+  original_map_id?: string | null;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  visibility?: string;
+  metadata?: Record<string, any> | null;
 }
 
 export interface NodePath {
@@ -78,7 +97,9 @@ export interface UserMapEnrollment {
 export type ContentType =
   | "video"
   | "canva_slide"
-  | "text_with_images"
+  | "text"
+  | "image"
+  | "pdf"
   | "resource_link";
 
 export interface NodeContent {
