@@ -30,6 +30,7 @@ import { StudentProgressTable } from "./StudentProgressTable";
 import { ClassroomSettingsModal } from "./ClassroomSettingsModal";
 import { ClassroomMapsManager } from "./ClassroomMapsManager";
 import { ClassroomTeamsManager } from "./ClassroomTeamsManager";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface ClassroomDetailsDashboardProps {
   classroom: Classroom & {
@@ -152,6 +153,20 @@ export function ClassroomDetailsDashboard({
     });
   };
 
+  // Sync active tab with URL query param `tab` (e.g. ?tab=teams)
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const currentTab = searchParams?.get("tab") ?? "assignments";
+
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.set("tab", value);
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -246,7 +261,11 @@ export function ClassroomDetailsDashboard({
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="assignments" className="space-y-4">
+      <Tabs
+        value={currentTab}
+        onValueChange={handleTabChange}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>

@@ -72,9 +72,9 @@ export function ClassroomDashboard() {
       if (!response.ok) {
         throw new Error("Failed to fetch classrooms");
       }
-      
+
       const memberships: ClassroomMembership[] = await response.json();
-      
+
       // Transform memberships to classroom format with user role
       const classroomList = memberships.map((membership) => ({
         ...membership.classroom,
@@ -85,12 +85,13 @@ export function ClassroomDashboard() {
         assignment_count: 0,
         active_assignment_count: 0,
       }));
-      
+
       setClassrooms(classroomList);
 
       // Check if user can create classrooms (has instructor or TA role in any classroom)
       const hasInstructorRole = memberships.some(
-        (membership) => membership.role === "instructor" || membership.role === "ta"
+        (membership) =>
+          membership.role === "instructor" || membership.role === "ta"
       );
       setUserCanCreateClassrooms(hasInstructorRole);
 
@@ -106,7 +107,8 @@ export function ClassroomDashboard() {
       );
       const activeAssignments = classroomList.reduce(
         (sum: number, classroom) =>
-          sum + (classroom.assignments?.filter((a: any) => a.is_active).length || 0),
+          sum +
+          (classroom.assignments?.filter((a: any) => a.is_active).length || 0),
         0
       );
 
@@ -146,10 +148,9 @@ export function ClassroomDashboard() {
         <div>
           <h1 className="text-3xl font-bold">Classroom Dashboard</h1>
           <p className="text-muted-foreground">
-            {userCanCreateClassrooms 
+            {userCanCreateClassrooms
               ? "Manage your classrooms, assignments, and track student progress"
-              : "View your classrooms, assignments, and track your learning progress"
-            }
+              : "View your classrooms, assignments, and track your learning progress"}
           </p>
         </div>
         {userCanCreateClassrooms && (
@@ -258,10 +259,9 @@ export function ClassroomDashboard() {
                     No Active Classrooms
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {userCanCreateClassrooms 
+                    {userCanCreateClassrooms
                       ? "Create your first classroom to start teaching"
-                      : "Join a classroom with a code or ask your instructor to add you"
-                    }
+                      : "Join a classroom with a code or ask your instructor to add you"}
                   </p>
                   {userCanCreateClassrooms ? (
                     <CreateClassroomModal onClassroomCreated={loadClassrooms} />
