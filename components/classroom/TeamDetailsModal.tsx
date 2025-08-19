@@ -31,9 +31,17 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   LogOut,
+  ImageIcon,
 } from "lucide-react";
-import { TeamWithMembers } from "@/types/teams";
+import { TeamWithMembers, JoinTeamRequest } from "@/types/teams";
 import { useToast } from "@/hooks/use-toast";
+import {
+  joinTeam,
+  leaveTeam,
+  removeMemberFromTeam,
+  updateMemberRole,
+  transferTeamLeadership,
+} from "@/lib/supabase/teams";
 
 interface TeamDetailsModalProps {
   team: TeamWithMembers;
@@ -63,35 +71,29 @@ export function TeamDetailsModal({
   const handleJoinTeam = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `/api/classrooms/${classroomId}/teams/${team.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "join" }),
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "You've joined the team!",
-        });
-        onTeamUpdated();
-        onOpenChange(false);
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Error",
-          description: error.error || "Failed to join team",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error joining team:", error);
+      await joinTeam({ team_id: team.id });
       toast({
-        title: "Error",
-        description: "Failed to join team",
+        title: "Success",
+        description: "You've joined the team!",
+      });
+      onTeamUpdated();
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Error joining team:", error);
+      let errorMessage = error.message || "Failed to join team";
+      if (error.code === "TEAM_FULL") {
+        errorMessage = "This team is full. Try joining a different team.";
+      } else if (error.code === "ALREADY_IN_TEAM") {
+        errorMessage =
+          "You're already in a team. Leave your current team first.";
+      } else if (error.code === "TEAM_NOT_FOUND") {
+        errorMessage = "Team not found. It may have been deleted.";
+      } else if (error.code === "AUTH_ERROR") {
+        errorMessage = "Please log in to join teams.";
+      }
+      toast({
+        title: "Unable to Join Team",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -102,35 +104,26 @@ export function TeamDetailsModal({
   const handleLeaveTeam = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `/api/classrooms/${classroomId}/teams/${team.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "leave" }),
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "You've left the team",
-        });
-        onTeamUpdated();
-        onOpenChange(false);
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Error",
-          description: error.error || "Failed to leave team",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error leaving team:", error);
+      await leaveTeam(team.id);
       toast({
-        title: "Error",
-        description: "Failed to leave team",
+        title: "Success",
+        description: "You've left the team",
+      });
+      onTeamUpdated();
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Error leaving team:", error);
+      let errorMessage = error.message || "Failed to leave team";
+      if (error.code === "LEAVE_TEAM" && error.action === "LEAVE_TEAM") {
+        errorMessage = "Team leaders must transfer leadership before leaving.";
+      } else if (error.code === "NOT_MEMBER") {
+        errorMessage = "Team not found or you're not a member.";
+      } else if (error.code === "AUTH_ERROR") {
+        errorMessage = "Please log in to perform this action.";
+      }
+      toast({
+        title: "Unable to Leave Team",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -147,34 +140,25 @@ export function TeamDetailsModal({
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `/api/classrooms/${classroomId}/teams/${team.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "remove_member", user_id: userId }),
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `${userName} has been removed from the team`,
-        });
-        onTeamUpdated();
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Error",
-          description: error.error || "Failed to remove member",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error removing member:", error);
+      await removeMemberFromTeam(team.id, userId);
       toast({
-        title: "Error",
-        description: "Failed to remove member",
+        title: "Success",
+        description: `${userName} has been removed from the team`,
+      });
+      onTeamUpdated();
+    } catch (error: any) {
+      console.error("Error removing member:", error);
+      let errorMessage = error.message || "Failed to remove member";
+      if (error.code === "NOT_MEMBER") {
+        errorMessage = "User is not a member of this team.";
+      } else if (error.code === "AUTH_ERROR") {
+        errorMessage = "Please log in to perform this action.";
+      } else if (error.code === "REMOVE_MEMBER") {
+        errorMessage = "Only team leaders can remove members.";
+      }
+      toast({
+        title: "Unable to Remove Member",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -185,39 +169,93 @@ export function TeamDetailsModal({
   const handlePromoteMember = async (userId: string, userName: string) => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `/api/classrooms/${classroomId}/teams/${team.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "update_member_role",
-            user_id: userId,
-            role: "co-leader",
-            is_leader: false,
-          }),
-        }
+      console.log("🚀 Promoting member:", { teamId: team.id, userId, userName });
+      console.log("👤 Current user:", team.current_user_membership);
+      console.log(
+        "🎯 Target user:",
+        team.team_memberships.find((m) => m.user_id === userId)
       );
 
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `${userName} has been promoted to co-leader`,
-        });
-        onTeamUpdated();
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Error",
-          description: error.error || "Failed to promote member",
-          variant: "destructive",
-        });
+      // Use API route instead of direct client call to avoid RLS issues
+      const response = await fetch(`/api/classrooms/${classroomId}/teams/${team.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update_member_role',
+          user_id: userId,
+          role: 'co-leader',
+          is_leader: false,
+        }),
+      });
+
+      console.log("📡 API response status:", response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ API error response:", errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}`);
       }
-    } catch (error) {
-      console.error("Error promoting member:", error);
+
+      const result = await response.json();
+      console.log("✅ API success response:", result);
+
       toast({
-        title: "Error",
-        description: "Failed to promote member",
+        title: "Success",
+        description: `${userName} has been promoted to co-leader`,
+      });
+      onTeamUpdated();
+    } catch (error: any) {
+      console.error("❌ Error promoting member:", error);
+      let errorMessage = error.message || "Failed to promote member";
+      if (error.code === "AUTH_ERROR") {
+        errorMessage = "Please log in to perform this action.";
+      } else if (error.code === "UPDATE_FAILED") {
+        errorMessage = "Failed to update member role.";
+      } else if (error.code === "INVALID_ACTION") {
+        errorMessage = "Cannot update your own role.";
+      } else if (error.code === "UPDATE_MEMBER_ROLE") {
+        errorMessage = "Only team leaders can update member roles.";
+      } else if (error.code === "PERMISSION_CHECK_FAILED") {
+        errorMessage = "Permission check failed.";
+      } else if (error.code === "NOT_MEMBER") {
+        errorMessage = "User is not a member of this team.";
+      }
+      toast({
+        title: "Unable to Promote Member",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTransferLeadership = async (userId: string, userName: string) => {
+    try {
+      setLoading(true);
+      await transferTeamLeadership(team.id, userId);
+      toast({
+        title: "Success",
+        description: `Leadership has been transferred to ${userName}`,
+      });
+      onTeamUpdated();
+    } catch (error: any) {
+      console.error("Error transferring leadership:", error);
+      let errorMessage = error.message || "Failed to transfer leadership";
+      if (error.code === "AUTH_ERROR") {
+        errorMessage = "Please log in to perform this action.";
+      } else if (error.code === "TRANSFER_LEADERSHIP") {
+        errorMessage = "Only the current leader can transfer leadership.";
+      } else if (error.code === "NOT_MEMBER") {
+        errorMessage = "New leader must be a current member of the team.";
+      } else if (error.code === "TRANSFER_FAILED") {
+        errorMessage = "Failed to transfer leadership.";
+      }
+      toast({
+        title: "Unable to Transfer Leadership",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -278,6 +316,31 @@ export function TeamDetailsModal({
 
             {/* Team Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Team Avatar */}
+              {team.team_metadata?.avatar_url && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <ImageIcon className="h-5 w-5" />
+                      <span>Team Avatar</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-center">
+                      <img 
+                        src={team.team_metadata.avatar_url} 
+                        alt="Team Avatar" 
+                        className="w-32 h-32 object-cover rounded-lg border"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Skills */}
               {team.team_metadata?.skills &&
                 team.team_metadata.skills.length > 0 && (
@@ -333,6 +396,30 @@ export function TeamDetailsModal({
                   </CardContent>
                 </Card>
               )}
+
+              {/* Preferred Meeting Times */}
+              {team.team_metadata?.preferred_meeting_times &&
+                team.team_metadata.preferred_meeting_times.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center space-x-2">
+                        <Calendar className="h-5 w-5" />
+                        <span>Preferred Meeting Times</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {team.team_metadata.preferred_meeting_times.map(
+                          (time, index) => (
+                            <Badge key={index} variant="secondary">
+                              {time}
+                            </Badge>
+                          )
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
               {/* Team Stats */}
               <Card>
@@ -425,6 +512,24 @@ export function TeamDetailsModal({
                         membership.profiles?.id !==
                           team.current_user_membership?.user_id && (
                           <div className="flex items-center space-x-2">
+                            {isUserLeader && !membership.is_leader && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleTransferLeadership(
+                                    membership.user_id,
+                                    membership.profiles?.full_name ||
+                                      membership.profiles?.username
+                                  )
+                                }
+                                disabled={loading}
+                                className="text-yellow-600 hover:text-yellow-700"
+                              >
+                                <Crown className="h-4 w-4" />
+                              </Button>
+                            )}
+
                             {!membership.is_leader &&
                               membership.role === "member" && (
                                 <Button

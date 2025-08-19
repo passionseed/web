@@ -32,7 +32,7 @@ export async function GET(
     }
 
     // Get all students in the classroom with their user data
-    const { data: students, error } = await supabase
+    const { data: students, error: studentsError } = await supabase
       .from("classroom_memberships")
       .select(
         `
@@ -45,67 +45,36 @@ export async function GET(
       .eq("role", "student")
       .order("joined_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching students:", error);
+    if (studentsError) {
+      console.error("Error fetching students:", studentsError);
       return NextResponse.json(
         { error: "Failed to fetch students" },
         { status: 500 }
       );
     }
 
-    // Get user details separately from auth.users
+    // Get user details from profiles table
     const userIds = students?.map((s) => s.user_id) || [];
     let usersData: any[] = [];
 
     if (userIds.length > 0) {
-      const { data: authUsers } = await supabase.auth.admin.listUsers();
-      usersData =
-        authUsers?.users?.filter((user) => userIds.includes(user.id)) || [];
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, avatar_url")
+        .in("id", userIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        return NextResponse.json(
+          { error: "Failed to fetch user profiles" },
+          { status: 500 }
+        );
+      }
+      usersData = profiles || [];
     }
 
-    if (error) {
-      console.error("Error fetching students:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch students" },
-        { status: 500 }
-      );
-    }
-
-    // Get assignment progress for each student
-    const studentIds = students?.map((s) => s.user_id) || [];
-
-    const { data: assignmentProgress } = await supabase
-      .from("assignment_enrollments")
-      .select(
-        `
-        user_id,
-        assignment_id,
-        status,
-        progress_percentage,
-        due_date,
-        completed_at,
-        classroom_assignments!inner(
-          classroom_id
-        )
-      `
-      )
-      .eq("classroom_assignments.classroom_id", classroomId)
-      .in("user_id", studentIds);
-
-    // Group progress by student
-    const progressByStudent = (assignmentProgress || []).reduce(
-      (acc, progress) => {
-        if (!acc[progress.user_id]) {
-          acc[progress.user_id] = [];
-        }
-        acc[progress.user_id].push(progress);
-        return acc;
-      },
-      {} as Record<string, any[]>
-    );
-
-    // Combine student data with progress
-    const studentsWithProgress =
+    // Combine student data with profile information
+    const studentsWithProfiles =
       students?.map((student) => {
         const userInfo = usersData.find((user) => user.id === student.user_id);
         return {
@@ -113,12 +82,9 @@ export async function GET(
           user: userInfo
             ? {
                 id: userInfo.id,
-                email: userInfo.email,
-                full_name:
-                  userInfo.user_metadata?.full_name ||
-                  userInfo.user_metadata?.name ||
-                  null,
-                avatar_url: userInfo.user_metadata?.avatar_url || null,
+                email: userInfo.email || "Unknown",
+                full_name: userInfo.full_name || null,
+                avatar_url: userInfo.avatar_url || null,
               }
             : {
                 id: student.user_id,
@@ -126,11 +92,10 @@ export async function GET(
                 full_name: null,
                 avatar_url: null,
               },
-          assignment_progress: progressByStudent[student.user_id] || [],
         };
       }) || [];
 
-    return NextResponse.json(studentsWithProgress);
+    return NextResponse.json(studentsWithProfiles);
   } catch (error) {
     console.error("Error fetching classroom students:", error);
     return NextResponse.json(
