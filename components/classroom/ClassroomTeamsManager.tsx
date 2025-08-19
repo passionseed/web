@@ -151,13 +151,16 @@ export function ClassroomTeamsManager({
           }
           const refreshed = teams.find((t: any) => t.id === prev.id) || null;
           if (!refreshed) {
-            console.log("❌ selectedTeam not found in refreshed data, clearing:", prev.id);
+            console.log(
+              "❌ selectedTeam not found in refreshed data, clearing:",
+              prev.id
+            );
             return null; // team might have been deleted
           }
-          console.log("🔄 Refreshing selectedTeam:", { 
-            oldTeam: prev.name, 
+          console.log("🔄 Refreshing selectedTeam:", {
+            oldTeam: prev.name,
             newTeam: refreshed.name,
-            membersCount: refreshed.team_memberships?.length 
+            membersCount: refreshed.team_memberships?.length,
           });
           return refreshed;
         });

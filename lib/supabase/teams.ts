@@ -675,7 +675,7 @@ export const updateMemberRole = async (
   updates: TeamMembershipUpdateRequest
 ): Promise<TeamMembership> => {
   console.log("🔄 updateMemberRole START:", { teamId, userId, updates });
-  
+
   const supabase = createClient();
 
   const {
@@ -692,7 +692,10 @@ export const updateMemberRole = async (
 
   // Cannot update yourself
   if (user.id === userId) {
-    console.error("❌ Cannot update self:", { currentUser: user.id, targetUser: userId });
+    console.error("❌ Cannot update self:", {
+      currentUser: user.id,
+      targetUser: userId,
+    });
     throw new TeamError("INVALID_ACTION", "Cannot update your own role");
   }
 
@@ -705,10 +708,10 @@ export const updateMemberRole = async (
     .is("left_at", null)
     .single();
 
-  console.log("👤 Current user membership check:", { 
-    currentUserMembership, 
+  console.log("👤 Current user membership check:", {
+    currentUserMembership,
     permissionError,
-    query: { team_id: teamId, user_id: user.id }
+    query: { team_id: teamId, user_id: user.id },
   });
 
   if (permissionError) {
@@ -736,10 +739,10 @@ export const updateMemberRole = async (
     .is("left_at", null)
     .single();
 
-  console.log("🎯 Target membership check:", { 
-    targetMembership, 
+  console.log("🎯 Target membership check:", {
+    targetMembership,
     targetError,
-    query: { team_id: teamId, user_id: userId }
+    query: { team_id: teamId, user_id: userId },
   });
 
   if (targetError) {
@@ -786,7 +789,7 @@ export const updateMemberRole = async (
 
   console.log("🔄 Preparing update payload:", {
     targetMembershipId: targetMembership.id,
-    updates
+    updates,
   });
 
   // Perform update by membership id to avoid ambiguity and RLS edge cases

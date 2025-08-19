@@ -45,12 +45,17 @@ export function ClassroomCard({ classroom }: ClassroomCardProps) {
           </div>
           <div className="flex gap-2">
             {classroom.userRole && (
-              <Badge 
-                variant={classroom.userRole === "instructor" ? "default" : "secondary"}
+              <Badge
+                variant={
+                  classroom.userRole === "instructor" ? "default" : "secondary"
+                }
                 className="text-xs"
               >
-                {classroom.userRole === "instructor" ? "Instructor" : 
-                 classroom.userRole === "ta" ? "TA" : "Student"}
+                {classroom.userRole === "instructor"
+                  ? "Instructor"
+                  : classroom.userRole === "ta"
+                    ? "TA"
+                    : "Student"}
               </Badge>
             )}
             <Badge variant={classroom.is_active ? "default" : "secondary"}>

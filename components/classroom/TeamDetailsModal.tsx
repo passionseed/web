@@ -169,7 +169,11 @@ export function TeamDetailsModal({
   const handlePromoteMember = async (userId: string, userName: string) => {
     try {
       setLoading(true);
-      console.log("🚀 Promoting member:", { teamId: team.id, userId, userName });
+      console.log("🚀 Promoting member:", {
+        teamId: team.id,
+        userId,
+        userName,
+      });
       console.log("👤 Current user:", team.current_user_membership);
       console.log(
         "🎯 Target user:",
@@ -177,21 +181,24 @@ export function TeamDetailsModal({
       );
 
       // Use API route instead of direct client call to avoid RLS issues
-      const response = await fetch(`/api/classrooms/${classroomId}/teams/${team.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'update_member_role',
-          user_id: userId,
-          role: 'co-leader',
-          is_leader: false,
-        }),
-      });
+      const response = await fetch(
+        `/api/classrooms/${classroomId}/teams/${team.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "update_member_role",
+            user_id: userId,
+            role: "co-leader",
+            is_leader: false,
+          }),
+        }
+      );
 
       console.log("📡 API response status:", response.status);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error("❌ API error response:", errorData);
@@ -327,13 +334,13 @@ export function TeamDetailsModal({
                   </CardHeader>
                   <CardContent>
                     <div className="flex justify-center">
-                      <img 
-                        src={team.team_metadata.avatar_url} 
-                        alt="Team Avatar" 
+                      <img
+                        src={team.team_metadata.avatar_url}
+                        alt="Team Avatar"
                         className="w-32 h-32 object-cover rounded-lg border"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
+                          target.style.display = "none";
                         }}
                       />
                     </div>
