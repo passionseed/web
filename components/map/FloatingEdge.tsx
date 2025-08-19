@@ -10,6 +10,7 @@ function FloatingEdge({
   markerEnd,
   style,
   edit,
+  selected,
 }: EdgeProps & { edit?: boolean }) {
   const sourceNode = useStore(
     useCallback((store) => store.nodeLookup.get(source), [source])
@@ -45,35 +46,65 @@ function FloatingEdge({
   });
 
   if (edit) {
-    // Simple path for edit mode
+    // Clean edit mode without visual clutter
     return (
-      <path
-        id={id}
-        className="react-flow__edge-path"
-        d={edgePath}
-        markerEnd={markerEnd}
-        style={{
-          ...style,
-          stroke: "#8B4513",
-          strokeWidth: 2,
-          strokeDasharray: "5,5",
-        }}
-      />
+      <g className="edge-edit-group">
+        {/* Invisible thick path for easier selection */}
+        <path
+          className="react-flow__edge-path"
+          d={edgePath}
+          style={{
+            stroke: "transparent",
+            strokeWidth: 20,
+            fill: "none",
+            cursor: "pointer",
+          }}
+        />
+        {/* Visible path */}
+        <path
+          id={id}
+          className="react-flow__edge-path"
+          d={edgePath}
+          markerEnd={markerEnd}
+          style={{
+            ...style,
+            stroke: selected ? "#3b82f6" : "#8B4513",
+            strokeWidth: selected ? 3 : 2,
+            strokeDasharray: selected ? "8,4" : "5,5",
+            transition: "all 200ms ease-in-out",
+            filter: selected ? "drop-shadow(0 0 6px rgba(59, 130, 246, 0.6))" : "none",
+            pointerEvents: "none", // Let the invisible path handle events
+          }}
+        />
+      </g>
     );
   }
 
   return (
-    <g className="sky-bridge-group">
+    <g className="sky-bridge-group" style={{ cursor: selected ? "pointer" : "default" }}>
+      {/* Invisible thick path for easier selection */}
+      <path
+        className="react-flow__edge-path"
+        d={edgePath}
+        style={{
+          stroke: "transparent",
+          strokeWidth: 20,
+          fill: "none",
+          cursor: "pointer",
+        }}
+      />
       {/* Bridge Shadow */}
       <path
         d={edgePath}
         className="bridge-shadow"
         style={{
-          stroke: "rgba(0,0,0,0.2)",
-          strokeWidth: 12,
+          stroke: selected ? "rgba(59, 130, 246, 0.3)" : "rgba(0,0,0,0.2)",
+          strokeWidth: selected ? 14 : 12,
           fill: "none",
           transform: "translate(2px, 4px)",
-          filter: "blur(3px)",
+          filter: selected ? "blur(4px)" : "blur(3px)",
+          transition: "all 300ms ease-in-out",
+          pointerEvents: "none",
         }}
       />
 
@@ -84,11 +115,13 @@ function FloatingEdge({
         d={edgePath}
         style={{
           ...style,
-          stroke: "#D2691E", // Sandy brown wood color
-          strokeWidth: 8,
+          stroke: selected ? "#3b82f6" : "#D2691E", // Blue when selected, sandy brown otherwise
+          strokeWidth: selected ? 10 : 8,
           fill: "none",
           strokeLinecap: "round",
           transition: "all 300ms ease-in-out",
+          filter: selected ? "drop-shadow(0 0 8px rgba(59, 130, 246, 0.8))" : "none",
+          pointerEvents: "none",
         }}
       />
 
@@ -97,13 +130,14 @@ function FloatingEdge({
         className="sky-bridge-planks animate-float-bridge"
         d={edgePath}
         style={{
-          stroke: "#8B4513", // Saddle brown
-          strokeWidth: 6,
+          stroke: selected ? "#1e40af" : "#8B4513", // Blue when selected, saddle brown otherwise
+          strokeWidth: selected ? 7 : 6,
           fill: "none",
           strokeDasharray: "12,3",
           strokeLinecap: "round",
-          opacity: 0.8,
+          opacity: selected ? 1 : 0.8,
           transition: "all 300ms ease-in-out",
+          pointerEvents: "none",
         }}
       />
 
@@ -112,26 +146,29 @@ function FloatingEdge({
         className="sky-bridge-rail-top animate-float-bridge"
         d={edgePath}
         style={{
-          stroke: "#654321", // Dark brown
-          strokeWidth: 2,
+          stroke: selected ? "#1e3a8a" : "#654321", // Dark blue when selected, dark brown otherwise
+          strokeWidth: selected ? 3 : 2,
           fill: "none",
           transform: "translateY(-4px)",
-          opacity: 0.7,
+          opacity: selected ? 0.9 : 0.7,
           transition: "all 300ms ease-in-out",
+          pointerEvents: "none",
         }}
       />
       <path
         className="sky-bridge-rail-bottom animate-float-bridge"
         d={edgePath}
         style={{
-          stroke: "#654321",
-          strokeWidth: 2,
+          stroke: selected ? "#1e3a8a" : "#654321",
+          strokeWidth: selected ? 3 : 2,
           fill: "none",
           transform: "translateY(4px)",
-          opacity: 0.7,
+          opacity: selected ? 0.9 : 0.7,
           transition: "all 300ms ease-in-out",
+          pointerEvents: "none",
         }}
       />
+
 
       {/* Rope supports */}
       {ropePositions.map((pos, index) => (
