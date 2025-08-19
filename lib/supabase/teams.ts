@@ -674,6 +674,8 @@ export const updateMemberRole = async (
   userId: string,
   updates: TeamMembershipUpdateRequest
 ): Promise<TeamMembership> => {
+  console.log("🔄 updateMemberRole START:", { teamId, userId, updates });
+  
   const supabase = createClient();
 
   const {
@@ -681,35 +683,161 @@ export const updateMemberRole = async (
     error: authError,
   } = await supabase.auth.getUser();
 
+  console.log("🔐 Auth check:", { user: user?.id, authError });
+
   if (authError || !user) {
+    console.error("❌ Auth failed:", authError);
     throw new TeamError("AUTH_ERROR", "User must be authenticated");
   }
 
   // Cannot update yourself
   if (user.id === userId) {
+    console.error("❌ Cannot update self:", { currentUser: user.id, targetUser: userId });
     throw new TeamError("INVALID_ACTION", "Cannot update your own role");
   }
 
-  const { data, error } = await supabase
+  // Check permissions - only team leaders can update member roles
+  const { data: currentUserMembership, error: permissionError } = await supabase
     .from("team_memberships")
-    .update({
-      ...(updates.role && { role: updates.role }),
-      ...(updates.is_leader !== undefined && { is_leader: updates.is_leader }),
-      ...(updates.member_metadata !== undefined && {
-        member_metadata: updates.member_metadata,
-      }),
-    })
+    .select("is_leader")
+    .eq("team_id", teamId)
+    .eq("user_id", user.id)
+    .is("left_at", null)
+    .single();
+
+  console.log("👤 Current user membership check:", { 
+    currentUserMembership, 
+    permissionError,
+    query: { team_id: teamId, user_id: user.id }
+  });
+
+  if (permissionError) {
+    console.error("❌ Permission check error:", permissionError);
+    throw new TeamPermissionError(
+      "UPDATE_MEMBER_ROLE",
+      "You are not a member of this team"
+    );
+  }
+
+  if (!currentUserMembership.is_leader) {
+    console.error("❌ Not a leader:", currentUserMembership);
+    throw new TeamPermissionError(
+      "UPDATE_MEMBER_ROLE",
+      "Only team leaders can update member roles"
+    );
+  }
+
+  // Check if target user is a member of the team
+  const { data: targetMembership, error: targetError } = await supabase
+    .from("team_memberships")
+    .select("*")
     .eq("team_id", teamId)
     .eq("user_id", userId)
     .is("left_at", null)
-    .select()
     .single();
 
-  if (error) {
-    throw new TeamError("UPDATE_FAILED", error.message);
+  console.log("🎯 Target membership check:", { 
+    targetMembership, 
+    targetError,
+    query: { team_id: teamId, user_id: userId }
+  });
+
+  if (targetError) {
+    console.error("❌ Target membership check error:", targetError);
+    throw new TeamError("NOT_MEMBER", "Error checking target user membership");
   }
 
-  return data;
+  if (!targetMembership) {
+    console.error("❌ Target membership not found");
+    throw new TeamError(
+      "NOT_MEMBER",
+      "Target user is not a member of this team"
+    );
+  }
+  // If attempting to demote a leader, ensure this is not the last leader for the team
+  if (targetMembership.is_leader && updates.is_leader === false) {
+    console.log("🔄 Checking leader count before demotion...");
+    // Count active leaders in this team
+    const { count: leaderCount, error: leaderCountError } = await supabase
+      .from("team_memberships")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", teamId)
+      .eq("is_leader", true)
+      .is("left_at", null);
+
+    console.log("👑 Leader count check:", { leaderCount, leaderCountError });
+
+    if (leaderCountError) {
+      console.error("❌ Failed to count team leaders:", leaderCountError);
+      throw new TeamError(
+        "UPDATE_FAILED",
+        "Failed to validate team leadership before demotion"
+      );
+    }
+
+    if (leaderCount === 1) {
+      console.error("❌ Cannot demote last leader:", { leaderCount });
+      throw new TeamPermissionError(
+        "DEMOTE_LAST_LEADER",
+        "Cannot demote the last leader — transfer leadership first"
+      );
+    }
+  }
+
+  console.log("🔄 Preparing update payload:", {
+    targetMembershipId: targetMembership.id,
+    updates
+  });
+
+  // Perform update by membership id to avoid ambiguity and RLS edge cases
+  try {
+    console.log("💾 Executing update...");
+    const { data: updatedMembership, error: updateError } = await supabase
+      .from("team_memberships")
+      .update({
+        ...(updates.role && { role: updates.role }),
+        ...(updates.is_leader !== undefined && {
+          is_leader: updates.is_leader,
+        }),
+        ...(updates.member_metadata !== undefined && {
+          member_metadata: updates.member_metadata,
+        }),
+      })
+      .eq("id", targetMembership.id)
+      .select()
+      .single();
+
+    console.log("📝 Update result:", { updatedMembership, updateError });
+
+    if (updateError) {
+      console.error("❌ Update error:", updateError);
+      throw new TeamError(
+        "UPDATE_FAILED",
+        updateError.message || "Failed to update member role"
+      );
+    }
+
+    if (!updatedMembership) {
+      console.error("❌ No updated membership returned");
+      throw new TeamError(
+        "UPDATE_FAILED",
+        "Failed to update member role - member not found"
+      );
+    }
+
+    console.log("✅ Update successful:", updatedMembership);
+    return updatedMembership as TeamMembership;
+  } catch (err: any) {
+    if (err instanceof TeamError) {
+      console.error("❌ TeamError caught:", err);
+      throw err;
+    }
+    console.error("❌ Unexpected update error:", err);
+    throw new TeamError(
+      "UPDATE_FAILED",
+      err?.message || "Failed to update member role"
+    );
+  }
 };
 
 /**
@@ -903,10 +1031,17 @@ export const transferTeamLeadership = async (
     .is("left_at", null)
     .single();
 
-  if (currentLeaderError || !currentLeader) {
+  if (currentLeaderError) {
     throw new TeamPermissionError(
       "TRANSFER_LEADERSHIP",
       "Only the current leader can transfer leadership"
+    );
+  }
+
+  if (!currentLeader) {
+    throw new TeamPermissionError(
+      "TRANSFER_LEADERSHIP",
+      "You are not the current leader of this team"
     );
   }
 
@@ -919,7 +1054,11 @@ export const transferTeamLeadership = async (
     .is("left_at", null)
     .single();
 
-  if (newLeaderError || !newLeader) {
+  if (newLeaderError) {
+    throw new TeamError("NOT_MEMBER", "Error checking team membership");
+  }
+
+  if (!newLeader) {
     throw new TeamError(
       "NOT_MEMBER",
       "New leader must be a current member of the team"

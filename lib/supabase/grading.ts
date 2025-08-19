@@ -1,4 +1,4 @@
-import { createClient } from "./client";
+import { createClient } from "@/utils/supabase/client";
 import {
   LearningMap,
   MapNode,
@@ -145,21 +145,21 @@ export const gradeSubmission = async (
           `Invalid rating value: ${rating}. Must be a valid number or null`
         );
       }
-      
+
       // Check if it's within the 0-10 range
       if (numRating < 0 || numRating > 10) {
         throw new Error(
           `Invalid rating value: ${rating}. Must be between 0 and 10, or null`
         );
       }
-      
+
       // Check if it has at most one decimal place
       if (Math.round(numRating * 10) / 10 !== numRating) {
         throw new Error(
           `Invalid rating value: ${rating}. Must have at most one decimal place`
         );
       }
-      
+
       rating = numRating; // Ensure it's a proper number
     } else {
       rating = null; // Explicitly set to null
