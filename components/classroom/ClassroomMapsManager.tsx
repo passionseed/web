@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LinkMapModal } from "./LinkMapModal";
 import { CreateAssignmentFromMapModal } from "./CreateAssignmentFromMapModal";
 import {
@@ -35,6 +36,7 @@ import {
   unlinkMapFromClassroom,
   reorderClassroomMaps,
 } from "@/lib/supabase/classrooms";
+import { getClassroomTeams } from "@/lib/supabase/teams";
 
 interface LinkedMap {
   link_id: string;
@@ -59,6 +61,10 @@ export function ClassroomMapsManager({
   const [linkedMaps, setLinkedMaps] = useState<LinkedMap[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unlinkingMapId, setUnlinkingMapId] = useState<string>("");
+  const [teams, setTeams] = useState<any[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [forkingMapId, setForkingMapId] = useState<string>("");
+  const router = useRouter();
   const { toast } = useToast();
 
   const loadLinkedMaps = async () => {
@@ -80,6 +86,22 @@ export function ClassroomMapsManager({
 
   useEffect(() => {
     loadLinkedMaps();
+  }, [classroomId]);
+
+  useEffect(() => {
+    const loadTeams = async () => {
+      setTeamsLoading(true);
+      try {
+        const t = await getClassroomTeams(classroomId);
+        setTeams(t || []);
+      } catch (err) {
+        console.error("Failed to load teams for fork UI", err);
+      } finally {
+        setTeamsLoading(false);
+      }
+    };
+
+    loadTeams();
   }, [classroomId]);
 
   const handleUnlinkMap = async (mapId: string, mapTitle: string) => {
@@ -261,6 +283,110 @@ export function ClassroomMapsManager({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {/* Fork to team - only show if user is leader of any team */}
+                      {teamsLoading ? (
+                        <DropdownMenuItem disabled>
+                          Loading teams...
+                        </DropdownMenuItem>
+                      ) : null}
+                      {teams && teams.length > 0 ? (
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            // Show inline prompt to select team by name
+                            const leaderTeams = teams.filter(
+                              (t) =>
+                                t.current_user_membership &&
+                                t.current_user_membership.is_leader
+                            );
+                            if (!leaderTeams || leaderTeams.length === 0) {
+                              toast({
+                                title: "Not a team leader",
+                                description:
+                                  "You must be a leader of a team to fork this map",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+
+                            // If only one leader team, pick it; otherwise prompt via prompt()
+                            let selectedTeamId = leaderTeams[0].id;
+                            if (leaderTeams.length > 1) {
+                              const pick = prompt(
+                                `You lead multiple teams. Enter the team number to fork to:\n${leaderTeams.map((lt: any, i: number) => `${i + 1}) ${lt.name}`).join("\n")}`
+                              );
+                              const idx = parseInt(pick || "", 10) - 1;
+                              if (
+                                isNaN(idx) ||
+                                idx < 0 ||
+                                idx >= leaderTeams.length
+                              ) {
+                                toast({
+                                  title: "Cancelled",
+                                  description: "Invalid team selection",
+                                });
+                                return;
+                              }
+                              selectedTeamId = leaderTeams[idx].id;
+                            }
+
+                            // Call API
+                            try {
+                              setForkingMapId(map.map_id);
+                              const res = await fetch(
+                                `/api/classrooms/${classroomId}/maps/${map.map_id}/fork-to-team`,
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    team_id: selectedTeamId,
+                                  }),
+                                }
+                              );
+                              const data = await res.json();
+                              if (!res.ok) {
+                                console.error("Fork failed", data);
+                                toast({
+                                  title: "Fork failed",
+                                  description:
+                                    data?.error || "Could not fork map",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+
+                              toast({
+                                title: "Fork created",
+                                description: "Opening map editor...",
+                              });
+                              // Navigate to new map editor
+                              const newMapId =
+                                data?.map?.id || data?.team_map?.map_id;
+                              if (newMapId)
+                                router.push(`/map/${newMapId}/edit`);
+                              else
+                                console.warn(
+                                  "No new map id returned from fork API",
+                                  data
+                                );
+                            } catch (err) {
+                              console.error("Error calling fork API", err);
+                              toast({
+                                title: "Error",
+                                description: "Failed to fork map",
+                                variant: "destructive",
+                              });
+                            } finally {
+                              setForkingMapId("");
+                            }
+                          }}
+                        >
+                          <GripVertical className="h-4 w-4 mr-2" />
+                          Fork to team
+                        </DropdownMenuItem>
+                      ) : null}
+
                       <DropdownMenuItem
                         onClick={() =>
                           handleUnlinkMap(map.map_id, map.map_title)

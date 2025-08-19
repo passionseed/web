@@ -31,6 +31,7 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    console.log(membership, "memxx");
     // Get all students in the classroom with their user data
     const { data: students, error: studentsError } = await supabase
       .from("classroom_memberships")
