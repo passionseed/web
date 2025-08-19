@@ -26,7 +26,7 @@ export async function GET(
       id: node.id,
       title: node.title,
       description: node.instructions || "",
-      node_type: "learning", // Default type since it's not in the schema
+      node_type: node.node_type || "learning", // Use actual node_type with fallback
       sequence_number: index + 1, // Generate sequence based on order
       has_assessment: node.node_assessments && node.node_assessments.length > 0,
     }));
