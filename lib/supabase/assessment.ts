@@ -1,4 +1,4 @@
-import { createClient } from "./client";
+import { createClient } from "@/utils/supabase/client";
 import { submitNodeProgress, submitNodeProgressLegacy } from "./progresses";
 import {
   LearningMap,

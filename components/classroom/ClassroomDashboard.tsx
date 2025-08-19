@@ -24,7 +24,6 @@ import Link from "next/link";
 import { ClassroomCard } from "./ClassroomCard";
 import { CreateClassroomModal } from "./CreateClassroomModal";
 import { ClassroomMapsManager } from "./ClassroomMapsManager";
-import { getInstructorClassrooms } from "@/lib/supabase/classrooms";
 import { useToast } from "@/hooks/use-toast";
 import type { ClassroomWithAssignments } from "@/types/classroom";
 
@@ -35,14 +34,28 @@ interface DashboardStats {
   activeAssignments: number;
 }
 
+interface ClassroomMembership {
+  id: string;
+  classroom_id: string;
+  user_id: string;
+  role: "instructor" | "ta" | "student";
+  joined_at: string;
+  classroom: ClassroomWithAssignments & {
+    member_count: number;
+    student_count: number;
+  };
+}
+
 export function ClassroomDashboard() {
   const [classrooms, setClassrooms] = useState<
     (ClassroomWithAssignments & {
       member_count: number;
       student_count: number;
+      userRole: string;
     })[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userCanCreateClassrooms, setUserCanCreateClassrooms] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalClassrooms: 0,
     totalStudents: 0,
@@ -54,22 +67,48 @@ export function ClassroomDashboard() {
   const loadClassrooms = async () => {
     setIsLoading(true);
     try {
-      const result = await getInstructorClassrooms();
-      setClassrooms(result);
+      // Fetch user's classroom memberships (works for all roles)
+      const response = await fetch("/api/classrooms");
+      if (!response.ok) {
+        throw new Error("Failed to fetch classrooms");
+      }
+
+      const memberships: ClassroomMembership[] = await response.json();
+
+      // Transform memberships to classroom format with user role
+      const classroomList = memberships.map((membership) => ({
+        ...membership.classroom,
+        userRole: membership.role,
+        member_count: 0, // Will be fetched separately if needed
+        student_count: 0, // Will be fetched separately if needed
+        assignments: [], // Will be fetched separately if needed
+        assignment_count: 0,
+        active_assignment_count: 0,
+      }));
+
+      setClassrooms(classroomList);
+
+      // Check if user can create classrooms (has instructor or TA role in any classroom)
+      const hasInstructorRole = memberships.some(
+        (membership) =>
+          membership.role === "instructor" || membership.role === "ta"
+      );
+      setUserCanCreateClassrooms(hasInstructorRole);
 
       // Calculate stats
-      const totalClassrooms = result.length;
-      const totalStudents = result.reduce(
-        (sum, classroom) => sum + (classroom.member_count || 0),
+      const totalClassrooms = classroomList.length;
+      const totalStudents = classroomList.reduce(
+        (sum: number, classroom) => sum + (classroom.member_count || 0),
         0
       );
-      const totalAssignments = result.reduce(
-        (sum, classroom) => sum + (classroom.assignments?.length || 0),
+      const totalAssignments = classroomList.reduce(
+        (sum: number, classroom) => sum + (classroom.assignments?.length || 0),
         0
       );
-      const activeAssignments = result.reduce(
-        (sum, classroom) =>
-          sum + (classroom.assignments?.filter((a) => a.is_active).length || 0),
+      const activeAssignments = classroomList.reduce(
+        (sum: number, classroom) =>
+          sum +
+          (classroom.assignments?.filter((a: any) => a.is_active).length || 0),
         0
       );
 
@@ -109,10 +148,14 @@ export function ClassroomDashboard() {
         <div>
           <h1 className="text-3xl font-bold">Classroom Dashboard</h1>
           <p className="text-muted-foreground">
-            Manage your classrooms, assignments, and track student progress
+            {userCanCreateClassrooms
+              ? "Manage your classrooms, assignments, and track student progress"
+              : "View your classrooms, assignments, and track your learning progress"}
           </p>
         </div>
-        <CreateClassroomModal onClassroomCreated={loadClassrooms} />
+        {userCanCreateClassrooms && (
+          <CreateClassroomModal onClassroomCreated={loadClassrooms} />
+        )}
       </div>
 
       {/* Stats Overview */}
@@ -216,9 +259,17 @@ export function ClassroomDashboard() {
                     No Active Classrooms
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    Create your first classroom to start teaching
+                    {userCanCreateClassrooms
+                      ? "Create your first classroom to start teaching"
+                      : "Join a classroom with a code or ask your instructor to add you"}
                   </p>
-                  <CreateClassroomModal onClassroomCreated={loadClassrooms} />
+                  {userCanCreateClassrooms ? (
+                    <CreateClassroomModal onClassroomCreated={loadClassrooms} />
+                  ) : (
+                    <Button asChild>
+                      <Link href="/classrooms/join">Join with Code</Link>
+                    </Button>
+                  )}
                 </div>
               )}
             </TabsContent>

@@ -20,18 +20,18 @@ For all new features and when refactoring, the preferred method is to use Client
 
     ```typescript
     // Example: lib/supabase/maps.ts
-    import { createClient } from './client'; // Uses the client-side Supabase client
-    import { LearningMap } from '@/types/map';
+    import { createClient } from "@/utils/supabase/client"; // Uses the client-side Supabase client
+    import { LearningMap } from "@/types/map";
 
     export const getMaps = async (): Promise<LearningMap[]> => {
       const supabase = createClient();
       const { data, error } = await supabase
-        .from('learning_maps')
-        .select('id, title, description');
+        .from("learning_maps")
+        .select("id, title, description");
 
       if (error) {
-        console.error('Error fetching maps:', error);
-        throw new Error('Could not fetch learning maps.');
+        console.error("Error fetching maps:", error);
+        throw new Error("Could not fetch learning maps.");
       }
 
       return data || [];
@@ -73,6 +73,6 @@ For all new features and when refactoring, the preferred method is to use Client
 
 ### Reference Implementations
 
-*   **Fetching Data:** See `@app/me/reflection/page.tsx` for an example of fetching and displaying data.
-*   **Creating Data:** See `@app/me/reflection/new/page.tsx` for an example of a form that creates new data entries.
-*   **Data-Access Logic:** See `@lib/supabase/reflection.ts` for how data-access functions are structured.
+- **Fetching Data:** See `@app/me/reflection/page.tsx` for an example of fetching and displaying data.
+- **Creating Data:** See `@app/me/reflection/new/page.tsx` for an example of a form that creates new data entries.
+- **Data-Access Logic:** See `@lib/supabase/reflection.ts` for how data-access functions are structured.
