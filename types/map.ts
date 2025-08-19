@@ -97,7 +97,9 @@ export interface UserMapEnrollment {
 export type ContentType =
   | "video"
   | "canva_slide"
-  | "text_with_images"
+  | "text"
+  | "image"
+  | "pdf"
   | "resource_link";
 
 export interface NodeContent {
