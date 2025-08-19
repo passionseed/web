@@ -66,14 +66,20 @@ export default function MapsPage() {
           (map) => map && map.id && map.title
         );
 
-        // Check enrollment status for each map
+        // Check enrollment status for each map (only for authenticated users)
         const mapsWithEnrollment = await Promise.all(
           validMaps.map(async (map) => {
-            try {
-              const isEnrolled = await isUserEnrolledInMap(map.id);
-              return { ...map, isEnrolled };
-            } catch (err) {
-              // If there's an error checking enrollment (e.g., user not logged in), assume not enrolled
+            // Only check enrollment if user is authenticated
+            if (isAuthenticated) {
+              try {
+                const isEnrolled = await isUserEnrolledInMap(map.id);
+                return { ...map, isEnrolled };
+              } catch (err) {
+                // If there's an error checking enrollment, assume not enrolled
+                return { ...map, isEnrolled: false };
+              }
+            } else {
+              // For unauthenticated users, set enrollment to false
               return { ...map, isEnrolled: false };
             }
           })
