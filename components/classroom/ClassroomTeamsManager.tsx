@@ -117,6 +117,8 @@ export function ClassroomTeamsManager({
       setLoading(true);
       setError(null); // Clear any previous errors
 
+      console.log("🔄 loadTeamsData called for classroom:", classroomId);
+
       if (isDebugMode) {
         console.log("🔄 Loading teams data for classroom:", classroomId);
       }
@@ -139,6 +141,26 @@ export function ClassroomTeamsManager({
         const teams = teamsData.value || [];
         console.log(teams, "teams loaded");
         setTeams(teams);
+
+        // If a team details modal is open for a specific team, refresh the selectedTeam
+        // so modals show the latest data instead of a stale reference.
+        setSelectedTeam((prev) => {
+          if (!prev) {
+            console.log("📋 No selectedTeam to refresh");
+            return prev;
+          }
+          const refreshed = teams.find((t: any) => t.id === prev.id) || null;
+          if (!refreshed) {
+            console.log("❌ selectedTeam not found in refreshed data, clearing:", prev.id);
+            return null; // team might have been deleted
+          }
+          console.log("🔄 Refreshing selectedTeam:", { 
+            oldTeam: prev.name, 
+            newTeam: refreshed.name,
+            membersCount: refreshed.team_memberships?.length 
+          });
+          return refreshed;
+        });
 
         if (isDebugMode) {
           console.log("✅ Teams loaded successfully:", {
@@ -670,7 +692,7 @@ function TeamCard({
   const hasSpace = !team.max_members || team.member_count < team.max_members;
   const canJoin = !currentUser && hasSpace && userRole === "student";
 
-  console.log(team, "team");
+  // console.log(team, "team");
 
   return (
     <Card className="relative overflow-hidden">

@@ -98,6 +98,8 @@ export function ClassroomDetailsDashboard({
         ? await studentsResponse.json()
         : [];
 
+      console.log("xx studentsData", studentsData);
+
       // Log errors for debugging
       if (!statsResponse.ok) {
         console.error("Failed to load stats:", await statsResponse.text());

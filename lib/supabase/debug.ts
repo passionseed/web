@@ -1,4 +1,4 @@
-import { createClient } from "./client";
+import { createClient } from "@/utils/supabase/client";
 
 export const debugGradingIssue = async (
   submissionId: string,

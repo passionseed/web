@@ -98,13 +98,22 @@ export async function PATCH(
       }
 
       case "update_member_role": {
+        console.log("🔄 API: update_member_role action received:", body);
         const { user_id, role, is_leader, member_metadata } = body;
-        const membership = await updateMemberRole(params.teamId, user_id, {
-          role,
-          is_leader,
-          member_metadata,
-        });
-        return NextResponse.json({ membership });
+        console.log("📋 API: Extracted params:", { user_id, role, is_leader, member_metadata, teamId: params.teamId });
+        
+        try {
+          const membership = await updateMemberRole(params.teamId, user_id, {
+            role,
+            is_leader,
+            member_metadata,
+          });
+          console.log("✅ API: updateMemberRole succeeded:", membership);
+          return NextResponse.json({ membership });
+        } catch (error) {
+          console.error("❌ API: updateMemberRole failed:", error);
+          throw error; // Re-throw to be handled by outer catch
+        }
       }
 
       case "transfer_leadership": {

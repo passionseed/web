@@ -1,4 +1,4 @@
-import { createClient } from "./client";
+import { createClient } from "@/utils/supabase/client";
 import {
   LearningMap,
   MapNode,
@@ -91,7 +91,6 @@ export const deleteNode = async (id: string): Promise<void> => {
     throw new Error("Could not delete map node and its related data.");
   }
 };
-
 
 // --- Path Functions ---
 
