@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/client";
 
 // Types for auth utilities
-export type UserRole = "instructor" | "TA" | "student";
+export type UserRole = "instructor" | "TA" | "student" | "admin";
 
 export interface AuthResult {
   user: any | null;
