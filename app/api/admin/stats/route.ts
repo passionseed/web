@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 async function checkAdminAccess() {
   const supabase = await createClient();
@@ -32,6 +33,7 @@ export async function GET() {
 
   try {
     const supabase = await createClient();
+    const adminSupabase = createAdminClient();
 
     // Get all stats in parallel
     const [
@@ -42,8 +44,8 @@ export async function GET() {
       totalClassroomsResult,
       totalMapsResult,
     ] = await Promise.all([
-      // Total users (from auth.users)
-      supabase.auth.admin.listUsers(),
+      // Total users (from auth.users) - requires service role
+      adminSupabase.auth.admin.listUsers(),
       
       // Total students
       supabase
