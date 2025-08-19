@@ -67,8 +67,19 @@ const CustomImageComponent = ({ responce }: { responce?: any }) => {
 // Move renderContent here if it's not made a component
 export const renderContent = (content: NodeContent) => {
   const contentUrl = content.content_url;
+  const contentType = content.content_type;
 
-  switch (content.content_type) {
+  // Handle backward compatibility for old content type
+  if (contentType === "text_with_images" as any) {
+    return (
+      <div
+        className="prose prose-sm dark:prose-invert max-w-none"
+        dangerouslySetInnerHTML={{ __html: content.content_body || "" }}
+      />
+    );
+  }
+
+  switch (contentType) {
     case "video":
       // Use React Tiny Oembed for video content - supports YouTube, Vimeo, etc.
       if (!contentUrl) {
@@ -97,12 +108,155 @@ export const renderContent = (content: NodeContent) => {
         </div>
       );
 
-    case "text_with_images":
+    case "text":
       return (
         <div
           className="prose prose-sm dark:prose-invert max-w-none"
           dangerouslySetInnerHTML={{ __html: content.content_body || "" }}
         />
+      );
+
+    case "image":
+      if (!contentUrl) {
+        return <ErrorFallback url="#" />;
+      }
+      
+      return (
+        <div className="w-full">
+          <div className="relative rounded-lg shadow-lg bg-white overflow-hidden">
+            <img
+              src={contentUrl}
+              alt="Uploaded image content"
+              className="w-full h-auto object-contain"
+              style={{ maxWidth: "100%" }}
+            />
+          </div>
+        </div>
+      );
+
+    case "pdf":
+      if (!contentUrl) {
+        return <ErrorFallback url="#" />;
+      }
+
+      const fileName = contentUrl.split('/').pop() || 'document.pdf';
+
+      return (
+        <div className="w-full space-y-4">
+          {/* PDF Viewer with better options */}
+          <div className="relative w-full bg-white rounded-lg shadow-lg border border-gray-200">
+            {/* Header with controls */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">PDF</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-900 block">
+                    {fileName}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    PDF Document
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={contentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700 border-blue-300 hover:bg-blue-50"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Full Screen
+                  </Button>
+                </a>
+              </div>
+            </div>
+
+            {/* Multiple PDF viewing options for better compatibility */}
+            <div className="relative w-full">
+              {/* Primary PDF viewer using Google Docs viewer */}
+              <div className="bg-gray-100 p-2 rounded">
+                <iframe
+                  src={`https://docs.google.com/viewer?url=${encodeURIComponent(contentUrl)}&embedded=true`}
+                  className="w-full border-0 rounded"
+                  style={{ height: "70vh", minHeight: "500px" }}
+                  title={`PDF Viewer - ${fileName}`}
+                  allow="fullscreen"
+                />
+              </div>
+              
+              {/* Alternative viewing options */}
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg border-t border-gray-200">
+                <div className="flex flex-col gap-4">
+                  <p className="text-sm text-gray-600 text-center">
+                    Choose your preferred viewing method:
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Direct browser viewer */}
+                    <a
+                      href={contentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-blue-600 hover:text-blue-700 border-blue-300 hover:bg-blue-50"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Browser Viewer
+                      </Button>
+                    </a>
+                    
+                    {/* Direct PDF link with viewer params */}
+                    <a
+                      href={`${contentUrl}#view=FitH&toolbar=1&navpanes=1`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-green-600 hover:text-green-700 border-green-300 hover:bg-green-50"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Full Screen
+                      </Button>
+                    </a>
+                    
+                    {/* Download option */}
+                    <a
+                      href={contentUrl}
+                      download
+                      className="inline-flex items-center justify-center"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-purple-600 hover:text-purple-700 border-purple-300 hover:bg-purple-50"
+                      >
+                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       );
 
     case "canva_slide":
