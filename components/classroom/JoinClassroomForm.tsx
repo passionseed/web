@@ -107,7 +107,7 @@ export function JoinClassroomForm() {
               value={joinCode}
               onChange={handleJoinCodeChange}
               className="text-center text-lg font-mono font-bold tracking-widest uppercase"
-              maxLength={6}
+              maxLength={7}
               required
               disabled={loading}
             />

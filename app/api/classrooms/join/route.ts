@@ -122,6 +122,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(user.id, "Joining classroom:", classroom.id);
+
     // Add user to classroom as student
     const { data: membership, error: membershipError } = await supabase
       .from("classroom_memberships")
