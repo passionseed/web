@@ -27,6 +27,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 import { LinkMapModal } from "./LinkMapModal";
 import { CreateAssignmentFromMapModal } from "./CreateAssignmentFromMapModal";
 import {
@@ -202,7 +203,12 @@ export function ClassroomMapsManager({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
                     <h4 className="font-medium text-sm truncate">
-                      {map.map_title}
+                      <Link
+                        href={`/map/${map.map_id}/edit`}
+                        className="hover:underline"
+                      >
+                        {map.map_title}
+                      </Link>
                     </h4>
                     <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                       <Users className="h-3 w-3" />
@@ -240,6 +246,13 @@ export function ClassroomMapsManager({
                       // Optionally refresh parent component
                     }}
                   />
+
+                  {/* Quick edit link to map editor */}
+                  <Link href={`/map/${map.map_id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      Edit
+                    </Button>
+                  </Link>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
