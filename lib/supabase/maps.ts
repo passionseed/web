@@ -28,10 +28,24 @@ export type FullLearningMap = LearningMap & {
 
 export const getMaps = async (): Promise<LearningMap[]> => {
   const supabase = createClient();
-  const { data, error } = await supabase
+  
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let query = supabase
     .from("learning_maps")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("*");
+
+  // Apply visibility filters based on authentication status
+  if (!user) {
+    // Unauthenticated users can only see public maps
+    query = query.eq("visibility", "public");
+  } else {
+    // Authenticated users can see public maps and their own private/team maps
+    query = query.or(`visibility.eq.public,creator_id.eq.${user.id}`);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) {
     console.error("Error fetching maps:", error);
@@ -50,7 +64,11 @@ export const getMapsWithStats = async (): Promise<
   })[]
 > => {
   const supabase = createClient();
-  const { data, error } = await supabase
+  
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let query = supabase
     .from("learning_maps")
     .select(
       `
@@ -61,8 +79,18 @@ export const getMapsWithStats = async (): Promise<
         node_assessments (id)
       )
     `
-    )
-    .order("created_at", { ascending: false });
+    );
+
+  // Apply visibility filters based on authentication status
+  if (!user) {
+    // Unauthenticated users can only see public maps
+    query = query.eq("visibility", "public");
+  } else {
+    // Authenticated users can see public maps and their own private/team maps
+    query = query.or(`visibility.eq.public,creator_id.eq.${user.id}`);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) {
     console.error("Error fetching maps with stats:", error);
@@ -99,6 +127,7 @@ export const getMapsWithStats = async (): Promise<
         total_students: map.total_students,
         finished_students: map.finished_students,
         metadata: map.metadata,
+        visibility: map.visibility,
         created_at: map.created_at,
         updated_at: map.updated_at,
         node_count: nodeCount,
@@ -215,6 +244,233 @@ export const deleteMap = async (id: string): Promise<void> => {
   if (error) {
     console.error("Error deleting map:", error);
     throw new Error("Could not delete the map.");
+  }
+};
+
+// --- Fork Map for Team Helper ---
+export const forkMapForTeam = async (
+  originalMapId: string,
+  teamId: string,
+  createdBy: string,
+  adminClient?: any,
+  teamData?: { id: string; classroom_id: string; name: string }
+): Promise<{ team_map: any; map: LearningMap }> => {
+  const supabase = adminClient || createClient();
+
+  console.log("🔀 forkMapForTeam START", { originalMapId, teamId, createdBy });
+
+  // 1) Verify original exists
+  const original = await getMapWithNodes(originalMapId);
+  if (!original) {
+    throw new Error("ORIGINAL_NOT_FOUND");
+  }
+
+  // 2) Use provided team data or verify team exists and belongs to a classroom
+  let team = teamData;
+  if (!team) {
+    const { data: teamFromDb, error: teamError } = await supabase
+      .from("classroom_teams")
+      .select("id, classroom_id, name")
+      .eq("id", teamId)
+      .single();
+
+    console.log("🔍 Team lookup:", { team: teamFromDb, teamError });
+    if (teamError || !teamFromDb) {
+      console.error("Team lookup failed", teamError);
+      throw new Error("TEAM_NOT_FOUND_OR_NOT_IN_CLASSROOM");
+    }
+    team = teamFromDb;
+  } else {
+    console.log("🔍 Using provided team data:", { team });
+  }
+
+  // 3) Prevent duplicate fork for same original map and team
+  const { data: existing, error: existingErr } = await supabase
+    .from("classroom_team_maps")
+    .select("*")
+    .eq("team_id", teamId)
+    .eq("original_map_id", originalMapId)
+    .single();
+
+  if (existingErr == null && existing) {
+    console.log("🔁 Existing fork found, returning it");
+    // fetch the forked map as well
+    const { data: forkedMap } = await supabase
+      .from("learning_maps")
+      .select("*")
+      .eq("id", existing.map_id)
+      .single();
+    return { team_map: existing, map: forkedMap } as any;
+  }
+
+  // 4) Begin copy in a transaction-like sequence (Supabase doesn't expose transactions here, so perform carefully)
+  try {
+    // Create new map row with adjusted title
+    const newTitle = `${original.title} (Team: ${team!.name})`;
+    const { data: newMap, error: createMapErr } = await supabase
+      .from("learning_maps")
+      .insert([
+        {
+          title: newTitle,
+          description: original.description,
+          creator_id: createdBy,
+          difficulty: original.difficulty,
+          category: original.category,
+          metadata: {
+            ...original.metadata,
+            forked_from: original.id,
+          },
+        },
+      ])
+      .select("*")
+      .single();
+
+    if (createMapErr || !newMap) {
+      console.error("Failed to create forked map", createMapErr);
+      throw new Error("COPY_FAILED");
+    }
+
+    const newMapId = newMap.id;
+    console.log("🆕 Created forked map:", newMapId);
+
+    // Copy nodes
+    const oldNodes = original.map_nodes || [];
+    const nodeIdMap = new Map<string, string>(); // oldId -> newId
+
+    for (const node of oldNodes) {
+      const nodeInsert = {
+        map_id: newMapId,
+        title: node.title,
+        instructions: node.instructions,
+        difficulty: node.difficulty,
+        sprite_url: node.sprite_url,
+        metadata: node.metadata,
+        node_type: node.node_type || 'learning',
+        version: node.version || 1,
+        last_modified_by: createdBy,
+      };
+      const { data: createdNode, error: nodeErr } = await supabase
+        .from("map_nodes")
+        .insert([nodeInsert])
+        .select("*")
+        .single();
+      if (nodeErr || !createdNode) {
+        console.error("Failed to create node", nodeErr);
+        throw new Error("COPY_FAILED_NODE");
+      }
+      nodeIdMap.set(node.id, createdNode.id);
+    }
+
+    console.log("✅ Nodes copied", nodeIdMap.size);
+
+    // Copy paths (remap node ids)
+    const allPaths: any[] = [];
+    for (const node of oldNodes) {
+      const srcPaths = node.node_paths_source || [];
+      for (const p of srcPaths) {
+        const newSource = nodeIdMap.get(p.source_node_id) || p.source_node_id;
+        const newDest =
+          nodeIdMap.get(p.destination_node_id) || p.destination_node_id;
+        allPaths.push({
+          source_node_id: newSource,
+          destination_node_id: newDest,
+        });
+      }
+    }
+
+    if (allPaths.length > 0) {
+      const { error: pathsErr } = await supabase
+        .from("node_paths")
+        .insert(allPaths);
+      if (pathsErr) {
+        console.error("Failed to insert paths", pathsErr);
+        throw new Error("COPY_FAILED_PATHS");
+      }
+    }
+
+    // Copy content and assessments
+    for (const node of oldNodes) {
+      const newNodeId = nodeIdMap.get(node.id);
+      // content
+      const contents = node.node_content || [];
+      if (contents.length > 0) {
+        const contentToInsert = contents.map((c) => ({
+          node_id: newNodeId,
+          content_type: c.content_type,
+          content_url: c.content_url,
+          content_body: c.content_body,
+        }));
+        const { error: contentErr } = await supabase
+          .from("node_content")
+          .insert(contentToInsert);
+        if (contentErr) {
+          console.error("Failed to copy node content", contentErr);
+          throw new Error("COPY_FAILED_CONTENT");
+        }
+      }
+
+      // assessments + quiz questions
+      const assessments = node.node_assessments || [];
+      for (const a of assessments) {
+        const { data: createdAssessment, error: aErr } = await supabase
+          .from("node_assessments")
+          .insert([
+            {
+              node_id: newNodeId,
+              assessment_type: a.assessment_type,
+            },
+          ])
+          .select("*")
+          .single();
+        if (aErr || !createdAssessment) {
+          console.error("Failed to copy assessment", aErr);
+          throw new Error("COPY_FAILED_ASSESSMENT");
+        }
+
+        const questions = a.quiz_questions || [];
+        if (questions.length > 0) {
+          const questionsToInsert = questions.map((q) => ({
+            assessment_id: createdAssessment.id,
+            question_text: q.question_text,
+            options: q.options,
+            correct_option: q.correct_option,
+          }));
+          const { error: qErr } = await supabase
+            .from("quiz_questions")
+            .insert(questionsToInsert);
+          if (qErr) {
+            console.error("Failed to copy quiz questions", qErr);
+            throw new Error("COPY_FAILED_QUIZQUESTIONS");
+          }
+        }
+      }
+    }
+
+    // 5) Insert classroom_team_maps row
+    const { data: teamMapRow, error: tmErr } = await supabase
+      .from("classroom_team_maps")
+      .insert([
+        {
+          team_id: teamId,
+          map_id: newMapId,
+          original_map_id: original.id,
+          created_by: createdBy,
+          metadata: { forked_at: new Date().toISOString() },
+        },
+      ])
+      .select("*")
+      .single();
+
+    if (tmErr || !teamMapRow) {
+      console.error("Failed to insert classroom_team_maps row", tmErr);
+      throw new Error("COPY_FAILED_TEAMMAP_INSERT");
+    }
+
+    console.log("🎉 Fork complete", { teamMapRow, newMap });
+    return { team_map: teamMapRow, map: newMap } as any;
+  } catch (err) {
+    console.error("❌ forkMapForTeam failed", err);
+    throw err;
   }
 };
 
