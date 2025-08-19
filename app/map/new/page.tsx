@@ -36,10 +36,40 @@ export default function NewMapPage() {
       });
       router.push(`/map/${newMap.id}/edit`);
     } catch (error) {
-      console.error(error);
+      console.error("❌ Map creation failed:", error);
+      
+      // Extract specific error message from the enhanced error reporting
+      let errorMessage = "Failed to create the map. Please try again.";
+      let errorTitle = "Error";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Provide more user-friendly titles based on error content
+        if (error.message.includes("Authentication failed")) {
+          errorTitle = "Authentication Error";
+          errorMessage = "Please log in again to create a map.";
+        } else if (error.message.includes("Profile verification failed")) {
+          errorTitle = "Profile Setup Required";
+          errorMessage = "Please complete your profile setup before creating maps.";
+        } else if (error.message.includes("Permission denied")) {
+          errorTitle = "Permission Denied";
+          errorMessage = "You don't have permission to create maps. Please contact support.";
+        } else if (error.message.includes("already exists")) {
+          errorTitle = "Duplicate Title";
+          errorMessage = "A map with this title already exists. Please choose a different title.";
+        } else if (error.message.includes("Foreign key constraint")) {
+          errorTitle = "Profile Issue";
+          errorMessage = "There's an issue with your profile. Please contact support.";
+        } else if (error.message.includes("RLS") || error.message.includes("policy")) {
+          errorTitle = "Access Denied";
+          errorMessage = "Access denied due to security policies. Please contact support.";
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to create the map. Please try again.",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
       setIsSubmitting(false);
