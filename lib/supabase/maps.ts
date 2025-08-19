@@ -177,26 +177,122 @@ export const createMap = async (
 ): Promise<LearningMap> => {
   const supabase = createClient();
 
-  // Get the current authenticated user
+  console.log("🔄 Starting map creation process...");
+  console.log("📝 Map data:", JSON.stringify(mapData, null, 2));
+
+  // Step 1: Get the current authenticated user with detailed logging
+  console.log("🔐 Step 1: Checking authentication...");
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
+  if (authError) {
+    console.error("❌ Authentication error details:");
+    console.error("  Message:", authError.message);
+    console.error("  Name:", authError.name);
+    console.error("  Stack:", authError.stack);
+    console.error("  Full error object:", authError);
+    console.error("  Error as JSON:", JSON.stringify(authError, Object.getOwnPropertyNames(authError)));
+    throw new Error(`Authentication failed: ${authError.message}`);
+  }
+
+  if (!user) {
+    console.error("❌ No authenticated user found");
     throw new Error("User must be authenticated to create a map");
   }
 
+  console.log("✅ User authenticated successfully:", {
+    id: user.id,
+    email: user.email,
+    email_confirmed_at: user.email_confirmed_at,
+    created_at: user.created_at,
+  });
+
+  // Step 2: Verify user profile exists in profiles table
+  console.log("👤 Step 2: Verifying user profile...");
+  console.log("🔍 DEBUG: Selecting correct columns: id, email, full_name, username");
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, email, full_name, username")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError) {
+    console.error("❌ Profile verification error details:");
+    console.error("  Message:", profileError.message || "No message");
+    console.error("  Code:", profileError.code || "No code");
+    console.error("  Details:", profileError.details || "No details");
+    console.error("  Hint:", profileError.hint || "No hint");
+    console.error("  Full error object:", profileError);
+    console.error("  Error as JSON:", JSON.stringify(profileError, Object.getOwnPropertyNames(profileError)));
+    throw new Error(`Profile verification failed: ${profileError.message} (Code: ${profileError.code}). User may not have completed profile setup.`);
+  }
+
+  if (!profile) {
+    console.error("❌ No profile found for user:", user.id);
+    throw new Error("User profile not found. Please complete your profile setup first.");
+  }
+
+  console.log("✅ Profile verified successfully:", {
+    id: profile.id,
+    email: profile.email,
+    full_name: profile.full_name,
+    username: profile.username,
+  });
+  console.log("🔍 DEBUG: Available profile properties:", Object.keys(profile));
+
+  // Step 3: Attempt to create the map with detailed error reporting
+  console.log("🗺️ Step 3: Creating map in database...");
+  const mapPayload = { ...mapData, creator_id: user.id };
+  console.log("📦 Map payload:", JSON.stringify(mapPayload, null, 2));
+
   const { data, error } = await supabase
     .from("learning_maps")
-    .insert([{ ...mapData, creator_id: user.id }])
+    .insert([mapPayload])
     .select()
     .single();
 
   if (error) {
-    console.error("Error creating map:", error);
-    throw new Error("Could not create the new map.");
+    console.error("❌ Map creation error - FULL ERROR DETAILS:");
+    console.error("  Message:", error.message || "No message");
+    console.error("  Code:", error.code || "No code");
+    console.error("  Details:", error.details || "No details");
+    console.error("  Hint:", error.hint || "No hint");
+    console.error("  Full error object:", error);
+    console.error("  Error as JSON:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    
+    // Provide specific error messages based on error code
+    let specificMessage = "Could not create the new map.";
+    
+    if (error.code === "23505") {
+      specificMessage = "A map with this title already exists. Please choose a different title.";
+    } else if (error.code === "23503") {
+      specificMessage = "Foreign key constraint violation. User profile may be incomplete.";
+    } else if (error.code === "42501") {
+      specificMessage = "Permission denied. You may not have the required privileges to create maps.";
+    } else if (error.code === "P0001") {
+      specificMessage = "Database policy violation. Please check your permissions.";
+    } else if (error.message.includes("RLS")) {
+      specificMessage = "Row Level Security policy blocked this operation. Please contact support.";
+    } else if (error.message.includes("permission")) {
+      specificMessage = "Permission denied. You may not have the required role to create maps.";
+    }
+    
+    throw new Error(`${specificMessage} (${error.code}: ${error.message})`);
   }
+
+  if (!data) {
+    console.error("❌ Map creation returned no data");
+    throw new Error("Map creation failed: No data returned from database");
+  }
+
+  console.log("✅ Map created successfully:", {
+    id: data.id,
+    title: data.title,
+    creator_id: data.creator_id,
+    created_at: data.created_at,
+  });
 
   return data;
 };

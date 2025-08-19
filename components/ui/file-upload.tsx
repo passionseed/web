@@ -32,6 +32,7 @@ interface FileUploadProps {
   className?: string;
   disabled?: boolean;
   allowMultiple?: boolean; // New prop to control multiple uploads
+  uploadEndpoint?: "default" | "images" | "documents"; // New prop to specify endpoint
 }
 
 interface UploadedFile {
@@ -58,6 +59,7 @@ export function FileUpload({
   className = "",
   disabled = false,
   allowMultiple = true, // Default to true for multiple uploads
+  uploadEndpoint = "default", // Default to the main upload endpoint
 }: FileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]); // Changed to array for multiple files
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(
@@ -181,9 +183,16 @@ export function FileUpload({
           uploadCompleted = true;
         });
 
-        console.log("Uploading file:", file.name, "for node:", nodeId);
+        // Determine the upload endpoint based on the uploadEndpoint prop
+        const uploadUrl = uploadEndpoint === "images"
+          ? "/api/upload/images"
+          : uploadEndpoint === "documents"
+          ? "/api/upload/documents"
+          : "/api/upload";
 
-        const response = await fetch("/api/upload", {
+        console.log("Uploading file:", file.name, "for node:", nodeId, "to endpoint:", uploadUrl);
+
+        const response = await fetch(uploadUrl, {
           method: "POST",
           body: formData,
         });
@@ -250,8 +259,13 @@ export function FileUpload({
           uploadedAt: result.uploadedAt,
         };
 
-        // Add to uploaded files array
-        setUploadedFiles((prev) => [...prev, uploadedFileData]);
+        // Add to uploaded files array - handle single vs multiple file uploads
+        if (allowMultiple) {
+          setUploadedFiles((prev) => [...prev, uploadedFileData]);
+        } else {
+          // For single file uploads, replace the existing file
+          setUploadedFiles([uploadedFileData]);
+        }
 
         // Call parent callback
         onUploadComplete(result.fileUrl, result.fileName);
@@ -503,8 +517,8 @@ export function FileUpload({
 
         {/* Always show upload interface - even during upload for multiple files */}
         <div className="space-y-2">
-          {/* Compact "Add Another File" button when files are already uploaded or uploading */}
-          {(uploadedFiles.length > 0 || isUploading) && (
+          {/* For multiple file uploads - show "Add Another File" button when files are uploaded */}
+          {allowMultiple && (uploadedFiles.length > 0 || isUploading) && (
             <div className="flex justify-center">
               <Button
                 type="button"
@@ -516,6 +530,23 @@ export function FileUpload({
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {isUploading ? "Upload Another File" : "Add Another File"}
+              </Button>
+            </div>
+          )}
+
+          {/* For single file uploads - show compact "Replace File" button when file is uploaded */}
+          {!allowMultiple && uploadedFiles.length > 0 && !isUploading && (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => !disabled && fileInputRef.current?.click()}
+                disabled={disabled}
+                className="w-full"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Replace File
               </Button>
             </div>
           )}
@@ -556,7 +587,7 @@ export function FileUpload({
                 >
                   Drag and drop or click to browse
                   <br />
-                  Max {maxSize}MB • PDF, DOC, Images, and more
+                  Max {maxSize}MB • {uploadEndpoint === "images" ? "Images only" : uploadEndpoint === "documents" ? "PDF documents only" : "PDF, DOC, Images, and more"}
                 </p>
               </div>
 
@@ -585,6 +616,7 @@ export function FileUpload({
             accept={accept}
             onChange={handleFileSelect}
             disabled={disabled}
+            multiple={allowMultiple}
             className="hidden"
           />
 
@@ -593,6 +625,12 @@ export function FileUpload({
             <p className="text-xs text-muted-foreground text-center">
               You can upload multiple files. Each file must be under {maxSize}
               MB.
+            </p>
+          )}
+          
+          {!allowMultiple && uploadedFiles.length > 0 && (
+            <p className="text-xs text-muted-foreground text-center">
+              File uploaded successfully. You can replace it by clicking "Replace File" above.
             </p>
           )}
         </div>

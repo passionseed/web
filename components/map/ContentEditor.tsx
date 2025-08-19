@@ -13,9 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { NodeContent, ContentType } from "@/types/map";
-import { Trash2, PlusCircle, Edit, Check, X, AlertCircle } from "lucide-react";
+import { Trash2, PlusCircle, Edit, Check, X, AlertCircle, Upload } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FileUpload } from "@/components/ui/file-upload";
 
 // Content type configurations
 const CONTENT_TYPE_CONFIG = {
@@ -29,11 +30,20 @@ const CONTENT_TYPE_CONFIG = {
     placeholder: "https://www.canva.com/design/DAGu7Owilr4/...",
     hint: "Copy Canva Smart embed link",
   },
-  text_with_images: {
-    label: "📝 Text & Images",
-    placeholder:
-      "Write your content here... You can use HTML tags like <img src='...'>, <p>, <h1>, etc.",
-    hint: "HTML tags supported: <img>, <p>, <h1>, etc.",
+  text: {
+    label: "📝 Text Content",
+    placeholder: "Write your text content here... You can use HTML tags like <p>, <h1>, <strong>, etc.",
+    hint: "HTML tags supported: <p>, <h1>, <strong>, <em>, <ul>, <ol>, <li>, etc.",
+  },
+  image: {
+    label: "🖼️ Image Upload",
+    placeholder: "",
+    hint: "Upload images (JPG, PNG, GIF, WebP) up to 5MB",
+  },
+  pdf: {
+    label: "📄 PDF Document",
+    placeholder: "",
+    hint: "Upload PDF documents up to 40MB",
   },
   resource_link: {
     label: "🔗 Resource Link",
@@ -116,8 +126,16 @@ const validateContentForm = (
     }
   }
 
-  if (contentType === "text_with_images" && !contentBody.trim()) {
+  if (contentType === "text" && !contentBody.trim()) {
     errors.push("Content body is required for text content");
+  }
+
+  if (contentType === "image" && !contentUrl.trim()) {
+    errors.push("Please upload an image file");
+  }
+
+  if (contentType === "pdf" && !contentUrl.trim()) {
+    errors.push("Please upload a PDF file");
   }
 
   if (contentType === "resource_link" && !contentBody.trim()) {
@@ -148,18 +166,29 @@ const ContentForm = ({
     existingContent?.content_body || ""
   );
   const [errors, setErrors] = useState<string[]>([]);
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
 
   const config = CONTENT_TYPE_CONFIG[contentType];
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
+      
+      console.log("Form submission attempted:", {
+        contentType,
+        contentUrl,
+        contentBody,
+        uploadedFileName
+      });
 
       const validationErrors = validateContentForm(
         contentType,
         contentUrl,
         contentBody
       );
+      
+      console.log("Validation errors:", validationErrors);
+      
       if (validationErrors.length > 0) {
         setErrors(validationErrors);
         return;
@@ -169,18 +198,19 @@ const ContentForm = ({
         id: existingContent?.id || generateTempId(),
         node_id: nodeId,
         content_type: contentType,
-        content_url: ["video", "canva_slide", "resource_link"].includes(
+        content_url: ["video", "canva_slide", "resource_link", "image", "pdf"].includes(
           contentType
         )
           ? contentUrl.trim()
           : null,
         content_body:
-          contentType === "text_with_images" || contentType === "resource_link"
+          contentType === "text" || contentType === "resource_link"
             ? contentBody.trim()
             : null,
         created_at: existingContent?.created_at || new Date().toISOString(),
       };
 
+      console.log("Saving content payload:", payload);
       onSave(payload);
     },
     [contentType, contentUrl, contentBody, existingContent, nodeId, onSave]
@@ -188,10 +218,21 @@ const ContentForm = ({
 
   const clearErrors = useCallback(() => setErrors([]), []);
 
+  const handleFileUploadComplete = useCallback((fileUrl: string, fileName: string) => {
+    console.log("File upload completed:", { fileUrl, fileName });
+    setContentUrl(fileUrl);
+    setUploadedFileName(fileName);
+    clearErrors();
+  }, [clearErrors]);
+
+  const handleFileUploadError = useCallback((error: string) => {
+    setErrors([error]);
+  }, []);
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-x--4 p-4 border rounded-lg bg-muted/30"
+      className="space-y-4 p-4 border rounded-lg bg-muted/30"
     >
       {errors.length > 0 && (
         <Alert variant="destructive">
@@ -206,7 +247,7 @@ const ContentForm = ({
         </Alert>
       )}
 
-      <div className="space--2">
+      <div className="space-y-2">
         <Label htmlFor="contentType">Content Type *</Label>
         <Select
           value={contentType}
@@ -284,7 +325,62 @@ const ContentForm = ({
         </div>
       )}
 
-      {(contentType === "text_with_images" ||
+      {/* File Upload for Images */}
+      {contentType === "image" && (
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold text-slate-700">
+            Upload Image <span className="text-red-500">*</span>
+            <span className="text-xs text-slate-500 ml-2 font-normal">
+              ({config.hint})
+            </span>
+          </Label>
+          <FileUpload
+            nodeId={nodeId}
+            onUploadComplete={handleFileUploadComplete}
+            onValidationError={handleFileUploadError}
+            accept=".jpg,.jpeg,.png,.gif,.webp"
+            maxSize={5} // 5MB limit for images
+            allowMultiple={false}
+            uploadEndpoint="images"
+            className="border-2 border-dashed border-blue-200"
+          />
+          {(uploadedFileName || contentUrl) && (
+            <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+              ✅ Image uploaded successfully
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* File Upload for PDFs */}
+      {contentType === "pdf" && (
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold text-slate-700">
+            Upload PDF Document <span className="text-red-500">*</span>
+            <span className="text-xs text-slate-500 ml-2 font-normal">
+              ({config.hint})
+            </span>
+          </Label>
+          <FileUpload
+            nodeId={nodeId}
+            onUploadComplete={handleFileUploadComplete}
+            onValidationError={handleFileUploadError}
+            accept=".pdf"
+            maxSize={40} // 40MB limit for PDFs
+            allowMultiple={false}
+            uploadEndpoint="documents"
+            className="border-2 border-dashed border-purple-200"
+          />
+          {(uploadedFileName || contentUrl) && (
+            <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+              ✅ PDF uploaded successfully
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Text Content and Resource Link Description */}
+      {(contentType === "text" ||
         contentType === "resource_link") && (
         <div className="space-y-2">
           <Label htmlFor="content_body">
@@ -321,8 +417,7 @@ const ContentForm = ({
               </>
             ) : (
               <>
-                💡 Tip: Use &lt;img src="url"&gt; to embed images, &lt;h1&gt;
-                for headings
+                💡 Tip: Use &lt;p&gt; for paragraphs, &lt;h1&gt; for headings, &lt;strong&gt; for bold text
               </>
             )}
           </div>
@@ -334,7 +429,13 @@ const ContentForm = ({
           <X className="h-4 w-4 mr-1" />
           Cancel
         </Button>
-        <Button type="submit" size="sm">
+        <Button
+          type="submit"
+          size="sm"
+          disabled={
+            (contentType === "image" || contentType === "pdf") && !contentUrl
+          }
+        >
           <Check className="h-4 w-4 mr-1" />
           {existingContent ? "Update Content" : "Add Content"}
         </Button>
@@ -350,10 +451,18 @@ const getContentPreview = (item: NodeContent): string => {
       `📹 Video: ${item.content_url?.substring(0, 50)}${item.content_url && item.content_url.length > 50 ? "..." : ""}`,
     canva_slide: () =>
       `🎨 Canva: ${item.content_url?.substring(0, 50)}${item.content_url && item.content_url.length > 50 ? "..." : ""}`,
-    text_with_images: () => {
+    text: () => {
       const bodyPreview =
         item.content_body?.replace(/<[^>]*>/g, "").substring(0, 50) || "";
       return `📝 Text: ${bodyPreview}${bodyPreview.length >= 50 ? "..." : ""}`;
+    },
+    image: () => {
+      const fileName = item.content_url?.split('/').pop()?.substring(0, 30) || "";
+      return `🖼️ Image: ${fileName}${fileName.length >= 30 ? "..." : ""}`;
+    },
+    pdf: () => {
+      const fileName = item.content_url?.split('/').pop()?.substring(0, 30) || "";
+      return `📄 PDF: ${fileName}${fileName.length >= 30 ? "..." : ""}`;
     },
     resource_link: () => {
       const descriptionPreview = item.content_body?.substring(0, 30) || "";
