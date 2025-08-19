@@ -269,10 +269,9 @@ export default function FinishProfilePage() {
         }
       }
 
-      // Redirect to interests page after profile and skills are updated
-      router.push(
-        `/auth/interests?next=${encodeURIComponent(searchParams.get("next") || "/me")}`
-      );
+  // Redirect to user profile page after profile and skills are updated
+  // (skip the interests flow for now)
+  router.push("/me");
     } catch (error) {
       console.error("Error in profile update process:", error);
       alert("An unexpected error occurred. Please try again.");
