@@ -100,8 +100,14 @@ export async function PATCH(
       case "update_member_role": {
         console.log("🔄 API: update_member_role action received:", body);
         const { user_id, role, is_leader, member_metadata } = body;
-        console.log("📋 API: Extracted params:", { user_id, role, is_leader, member_metadata, teamId: params.teamId });
-        
+        console.log("📋 API: Extracted params:", {
+          user_id,
+          role,
+          is_leader,
+          member_metadata,
+          teamId: params.teamId,
+        });
+
         try {
           const membership = await updateMemberRole(params.teamId, user_id, {
             role,
