@@ -5,6 +5,7 @@ import { Node } from "@xyflow/react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Clock, Play, Upload, Lock } from "lucide-react";
+import { TextNode } from "@/components/map/MapEditor/components/TextNode";
 import {
   MapNode,
   NodeContent,
@@ -31,7 +32,9 @@ import {
 import { getSubmissionGrade } from "@/lib/supabase/grading";
 
 interface NodeViewPanelProps {
-  selectedNode: Node<MapNode> | null;
+  // React Flow Node requires a generic that extends Record<string, unknown>
+  // MapNode doesn't include an index signature, so intersect with Record to satisfy the constraint
+  selectedNode: Node<Record<string, unknown> & MapNode> | null;
   mapId: string;
   onProgressUpdate?: () => void;
   isNodeUnlocked?: boolean;
@@ -61,6 +64,9 @@ export function NodeViewPanel({
   const { toast } = useToast();
 
   const nodeData = selectedNode?.data;
+  const [editableNodeData, setEditableNodeData] = useState<MapNode | null>(
+    nodeData || null
+  );
   const assessment = nodeData?.node_assessments?.[0];
 
   // Handle progress state more comprehensively
@@ -101,6 +107,8 @@ export function NodeViewPanel({
   }, []);
 
   useEffect(() => {
+    // sync editable copy when selection changes
+    setEditableNodeData(nodeData || null);
     // Immediately clear state when selectedNode changes to prevent stale data
     setProgress(null);
     setSubmissionsWithGrades([]);
@@ -269,6 +277,53 @@ export function NodeViewPanel({
     }
   };
 
+  // Persist text node edits
+  const persistTextNodeEdit = async (updated: Partial<MapNode>) => {
+    if (!editableNodeData) return;
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from("map_nodes")
+        .update(updated)
+        .eq("id", editableNodeData.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Failed to persist text node edit:", error);
+        toast({
+          title: "Could not save text",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local editable copy
+      setEditableNodeData((prev) => (prev ? { ...prev, ...data } : prev));
+
+      // Inform parent viewers/editors that the map node changed
+      window.dispatchEvent(
+        new CustomEvent("map_node_updated", {
+          detail: { nodeId: editableNodeData.id },
+        })
+      );
+
+      toast({
+        title: "Saved",
+        description: "Text node updated",
+        variant: "default",
+      });
+    } catch (err) {
+      console.error("Error saving text node:", err);
+      toast({
+        title: "Save failed",
+        description: "Could not save text node",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleStartNode = async () => {
     if (!selectedNode || !currentUser) {
       console.error("Cannot start node: missing selectedNode or currentUser");
@@ -346,7 +401,8 @@ export function NodeViewPanel({
 
   const handleSubmitAssessment = async (
     fileUrls?: string[],
-    fileNames?: string[]
+    fileNames?: string[],
+    checklistData?: Record<string, boolean>
   ) => {
     // Comprehensive validation
     if (!selectedNode || !currentUser || !progress) {
@@ -464,6 +520,39 @@ export function NodeViewPanel({
         }
 
         submissionData.file_urls = validUrls;
+      } else if (assessment.assessment_type === "checklist") {
+        // Validate checklist data
+        if (!checklistData) {
+          toast({
+            title: "Checklist data missing",
+            description: "Please complete all checklist items.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Ensure all checklist items are completed
+        const allChecked = Object.values(checklistData).every(
+          (checked) => checked
+        );
+        if (!allChecked) {
+          toast({
+            title: "Incomplete checklist",
+            description: "Please check all items before submitting.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Store checklist completion data in metadata
+        // Ensure submissionData has a metadata field by asserting the type
+        (
+          submissionData as Partial<
+            AssessmentSubmission & { metadata?: Record<string, any> }
+          >
+        ).metadata = {
+          checklist_completion: checklistData,
+        };
       } else {
         toast({
           title: "Unknown assessment type",
@@ -490,6 +579,12 @@ export function NodeViewPanel({
           title: "Quiz completed!",
           description:
             "Your answers have been graded automatically. Check your results above.",
+        });
+      } else if (assessment.assessment_type === "checklist") {
+        toast({
+          title: "Checklist completed successfully!",
+          description:
+            "You have successfully completed all checklist items. Great job!",
         });
       } else {
         toast({
@@ -600,26 +695,52 @@ export function NodeViewPanel({
 
       {/* Content Section - Scrollable */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-        {hasStarted ? (
+        {hasStarted || nodeData?.node_type === "text" ? (
           <div className="p-4 space-y-6 min-h-full">
-            {/* Learning Content */}
-            <LearningContentView nodeContent={nodeData?.node_content || []} />
+            {nodeData?.node_type === "text" ? (
+              <div className="p-4">
+                <TextNode
+                  data={editableNodeData || nodeData}
+                  selected
+                  // Do not allow double-click to edit in the viewer/panel — editing is performed via the inline control
+                  allowDoubleClick={false}
+                  showHint={false}
+                  showEditButton={false}
+                  onDataChange={(d) => {
+                    // Optimistic update
+                    setEditableNodeData((prev) =>
+                      prev ? { ...prev, ...d } : (nodeData as MapNode)
+                    );
+                    // Persist to DB
+                    persistTextNodeEdit(d as Partial<MapNode>);
+                  }}
+                />
+              </div>
+            ) : (
+              <>
+                {/* Learning Content */}
+                <LearningContentView
+                  nodeContent={nodeData?.node_content || []}
+                />
 
-            {/* Assessment Section */}
-            {assessment && (
-              <AssessmentSection
-                nodeId={selectedNode.id}
-                assessment={assessment}
-                canResubmit={canResubmit}
-                showAssessmentForm={showAssessmentForm}
-                assessmentAnswer={assessmentAnswer}
-                setAssessmentAnswer={setAssessmentAnswer}
-                quizAnswers={quizAnswers}
-                setQuizAnswers={setQuizAnswers}
-                isSubmitting={isSubmitting}
-                onSubmit={handleSubmitAssessment}
-                submissionsWithGrades={submissionsWithGrades}
-              />
+                {/* Assessment Section */}
+                {assessment && (
+                  <AssessmentSection
+                    nodeId={selectedNode.id}
+                    assessment={assessment}
+                    canResubmit={canResubmit}
+                    showAssessmentForm={showAssessmentForm}
+                    assessmentAnswer={assessmentAnswer}
+                    setAssessmentAnswer={setAssessmentAnswer}
+                    quizAnswers={quizAnswers}
+                    setQuizAnswers={setQuizAnswers}
+                    isSubmitting={isSubmitting}
+                    onSubmit={handleSubmitAssessment}
+                    submissionsWithGrades={submissionsWithGrades}
+                    progressStatus={progress?.status}
+                  />
+                )}
+              </>
             )}
           </div>
         ) : (

@@ -6,7 +6,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { NodeAssessment, AssessmentType, QuizQuestion } from "@/types/map";
 import { Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { QuizEditor } from "./AssessmentEditor/QuizEditor";
+import { ChecklistEditor } from "./AssessmentEditor/ChecklistEditor";
 import { ASSESSMENT_TYPE_CONFIG } from "./AssessmentEditor/constants";
 import { AssessmentEditorProps } from "./AssessmentEditor/types";
 
@@ -52,6 +56,17 @@ export function AssessmentEditor({
       toast({ title: "Assessment removed (Save map to persist)" });
     }
   }, [assessment, onAssessmentChange, toast]);
+
+  const handleGradingChange = useCallback(
+    (field: 'is_graded' | 'points_possible', value: boolean | number | null) => {
+      if (!assessment) return;
+
+      const updatedAssessment = { ...assessment, [field]: value };
+      console.log(`📊 Updating ${field}:`, value);
+      onAssessmentChange(updatedAssessment, "add");
+    },
+    [assessment, onAssessmentChange]
+  );
 
   const handleQuestionChange = useCallback(
     (changedQuestion: QuizQuestion, action: "add" | "update" | "delete") => {
@@ -145,14 +160,71 @@ export function AssessmentEditor({
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          {/* Grading Configuration */}
+          <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+            <h4 className="font-medium text-sm">Grading Configuration</h4>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_graded"
+                  checked={assessment.is_graded || false}
+                  onCheckedChange={(checked) => 
+                    handleGradingChange('is_graded', checked as boolean)
+                  }
+                />
+                <Label htmlFor="is_graded" className="text-sm">
+                  Enable grading for this assessment
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground ml-6">
+                When enabled, instructors can set how many points this assessment is worth
+              </p>
+              
+              {assessment.is_graded && (
+                <div className="ml-6 space-y-2">
+                  <Label htmlFor="points_possible" className="text-sm">
+                    Points possible
+                  </Label>
+                  <Input
+                    id="points_possible"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={assessment.points_possible || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const points = value === "" ? null : parseInt(value, 10);
+                      if (points === null || (points > 0 && Number.isInteger(points))) {
+                        handleGradingChange('points_possible', points);
+                      }
+                    }}
+                    placeholder="Enter points (integer)"
+                    className="w-32"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Maximum points students can earn for this assessment
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {assessment.assessment_type === "quiz" && (
             <QuizEditor
               assessment={assessment}
               onQuestionChange={handleQuestionChange}
             />
           )}
-          {assessment.assessment_type !== "quiz" && (
+          {assessment.assessment_type === "checklist" && (
+            <ChecklistEditor
+              assessment={assessment}
+              onAssessmentChange={(updatedAssessment) => 
+                onAssessmentChange(updatedAssessment, "add")
+              }
+            />
+          )}
+          {assessment.assessment_type !== "quiz" && assessment.assessment_type !== "checklist" && (
             <div className="text-center py-8 text-muted-foreground">
               <div className="text-4xl mb-4">
                 {ASSESSMENT_TYPE_CONFIG[assessment.assessment_type]?.icon ||

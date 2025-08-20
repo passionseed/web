@@ -1083,3 +1083,209 @@ export const transferTeamLeadership = async (
 
   // The trigger will automatically demote the old leader
 };
+
+/**
+ * Gets all team forked maps for a classroom
+ * Instructors can see all team maps, while team members can only see their own team's maps
+ */
+export const getClassroomTeamMaps = async (classroomId: string) => {
+  const supabase = createClient();
+  console.log("🔍 getClassroomTeamMaps called with classroomId:", classroomId);
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    console.error("❌ Auth error:", authError);
+    throw new TeamError("AUTH_ERROR", "User must be authenticated");
+  }
+
+  console.log("✅ User authenticated:", user.id);
+
+  // Check user's role in the classroom
+  const { data: membership, error: membershipError } = await supabase
+    .from("classroom_memberships")
+    .select("role")
+    .eq("classroom_id", classroomId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (membershipError || !membership) {
+    console.error("❌ Membership error:", membershipError);
+    throw new TeamError("NOT_IN_CLASSROOM", "User is not in this classroom");
+  }
+
+  console.log("✅ User membership:", membership);
+  const isInstructor = membership.role === "instructor";
+  console.log("👤 Is instructor:", isInstructor);
+
+  // Get team maps based on user role
+  let query = supabase
+    .from("classroom_team_maps")
+    .select(
+      `
+      id,
+      team_id,
+      map_id,
+      original_map_id,
+      created_by,
+      created_at,
+      metadata,
+      classroom_teams!team_id (
+        id,
+        classroom_id,
+        name,
+        description
+      ),
+      learning_maps!map_id (
+        id,
+        title,
+        description,
+        creator_id,
+        created_at,
+        updated_at,
+        map_nodes (
+          id,
+          difficulty,
+          node_assessments (id)
+        )
+      ),
+      original_maps:learning_maps!original_map_id (
+        id,
+        title,
+        description
+      )
+    `
+    )
+    .eq("classroom_teams.classroom_id", classroomId);
+
+  // If not an instructor, only show maps for teams the user is in
+  if (!isInstructor) {
+    console.log("🔍 Non-instructor: Getting user's teams in classroom");
+    // Get user's team IDs in this classroom
+    const { data: userTeams, error: userTeamsError } = await supabase
+      .from("team_memberships")
+      .select(
+        `
+        team_id,
+        classroom_teams!team_id (
+          classroom_id
+        )
+      `
+      )
+      .eq("user_id", user.id)
+      .eq("classroom_teams.classroom_id", classroomId)
+      .is("left_at", null);
+
+    console.log("🔍 User teams query result:", { userTeams, userTeamsError });
+
+    if (userTeamsError) {
+      console.error("❌ User teams fetch error:", userTeamsError);
+      throw new TeamError("FETCH_FAILED", userTeamsError.message);
+    }
+
+    const teamIds = userTeams?.map((ut) => ut.team_id) || [];
+    console.log("📝 User team IDs:", teamIds);
+    
+    if (teamIds.length === 0) {
+      console.log("ℹ️ User is not in any teams, returning empty array");
+      return []; // User is not in any teams, so no team maps to show
+    }
+
+    query = query.in("team_id", teamIds);
+    console.log("🔍 Filtered query to user's teams:", teamIds);
+  } else {
+    console.log("👨‍🏫 Instructor: Will see all team maps in classroom");
+  }
+
+  console.log("🔍 Executing team maps query...");
+  const { data: teamMaps, error: teamMapsError } = await query.order(
+    "created_at",
+    { ascending: false }
+  );
+
+  console.log("📊 Team maps query result:", { 
+    teamMapsCount: teamMaps?.length || 0, 
+    teamMapsError,
+    sampleData: teamMaps?.[0] ? {
+      id: teamMaps[0].id,
+      team_id: teamMaps[0].team_id,
+      map_id: teamMaps[0].map_id,
+      hasLearningMaps: !!teamMaps[0].learning_maps,
+      hasClassroomTeams: !!teamMaps[0].classroom_teams
+    } : null
+  });
+
+  if (teamMapsError) {
+    console.error("❌ Team maps fetch error:", teamMapsError);
+    throw new TeamError("FETCH_FAILED", teamMapsError.message);
+  }
+
+  // Check if there are any team maps at all for debugging
+  console.log("🔍 Checking total team maps in database...");
+  const { data: allTeamMaps, error: allTeamMapsError } = await supabase
+    .from("classroom_team_maps")
+    .select("id, team_id, map_id, classroom_teams!team_id(classroom_id)")
+    .limit(10);
+  
+  console.log("📊 All team maps in database:", { 
+    count: allTeamMaps?.length || 0,
+    data: allTeamMaps 
+  });
+
+  // Transform the data to include calculated statistics
+  const transformedMaps = (teamMaps || []).map((teamMap: any) => {
+    console.log("🔄 Transforming team map:", {
+      id: teamMap.id,
+      team_id: teamMap.team_id,
+      map_id: teamMap.map_id,
+      hasLearningMaps: !!teamMap.learning_maps,
+      hasClassroomTeams: !!teamMap.classroom_teams,
+      hasOriginalMaps: !!teamMap.original_maps
+    });
+
+    const map = teamMap.learning_maps;
+    const nodes = map?.map_nodes || [];
+    const nodeCount = nodes.length;
+    const avgDifficulty =
+      nodeCount > 0
+        ? Math.round(
+            nodes.reduce(
+              (sum: number, node: any) => sum + (node.difficulty || 1),
+              0
+            ) / nodeCount
+          )
+        : 1;
+    const totalAssessments = nodes.reduce(
+      (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
+      0
+    );
+
+    const transformed = {
+      team_map_id: teamMap.id,
+      map_id: teamMap.map_id,
+      original_map_id: teamMap.original_map_id,
+      team_id: teamMap.team_id,
+      team_name: teamMap.classroom_teams?.name || "Unknown Team",
+      team_description: teamMap.classroom_teams?.description,
+      map_title: map?.title || "Unknown Map",
+      map_description: map?.description,
+      original_map_title: teamMap.original_maps?.title || "Unknown Original",
+      created_by: teamMap.created_by,
+      created_at: teamMap.created_at,
+      forked_at: teamMap.created_at,
+      node_count: nodeCount,
+      avg_difficulty: avgDifficulty,
+      total_assessments: totalAssessments,
+      metadata: teamMap.metadata,
+    };
+
+    console.log("✅ Transformed map:", transformed);
+    return transformed;
+  });
+
+  console.log("🎉 Returning transformed maps:", { count: transformedMaps.length });
+  return transformedMaps;
+};

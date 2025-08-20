@@ -611,6 +611,10 @@ export default function EditMapPage() {
           const assessmentToCreate = {
             node_id: node.id,
             assessment_type: currentAssessment.assessment_type,
+            // Add metadata for checklist assessments
+            ...(currentAssessment.metadata && {
+              metadata: currentAssessment.metadata,
+            }),
           };
           batchUpdate.assessments.create.push(assessmentToCreate);
           console.log("➕ Adding assessment to create:", assessmentToCreate);
@@ -653,12 +657,18 @@ export default function EditMapPage() {
         if (
           initialAssessment &&
           currentAssessment &&
-          initialAssessment.assessment_type !==
-            currentAssessment.assessment_type
+          (initialAssessment.assessment_type !==
+            currentAssessment.assessment_type ||
+          JSON.stringify(initialAssessment.metadata) !==
+            JSON.stringify(currentAssessment.metadata))
         ) {
           const assessmentToUpdate = {
             id: initialAssessment.id,
             assessment_type: currentAssessment.assessment_type,
+            // Add metadata for checklist assessments
+            ...(currentAssessment.metadata && {
+              metadata: currentAssessment.metadata,
+            }),
           };
           batchUpdate.assessments.update.push(assessmentToUpdate);
           console.log("📝 Adding assessment to update:", assessmentToUpdate);

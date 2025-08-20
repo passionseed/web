@@ -32,7 +32,7 @@ import {
   Users,
   Lightbulb,
   X,
-  ArrowLeft
+  ArrowLeft,
 } from "lucide-react";
 
 type Skill = {
@@ -64,34 +64,85 @@ export default function FinishProfilePage() {
       name: "Programming & Development",
       icon: <Code className="h-4 w-4" />,
       description: "Software development and technical programming skills",
-      skills: ["Frontend Development", "Backend Development", "Full-Stack Development", "Mobile Development", "Game Development", "Data Science", "Machine Learning", "DevOps", "Web Development", "API Development"]
+      skills: [
+        "Frontend Development",
+        "Backend Development",
+        "Full-Stack Development",
+        "Mobile Development",
+        "Game Development",
+        "Data Science",
+        "Machine Learning",
+        "DevOps",
+        "Web Development",
+        "API Development",
+      ],
     },
     design: {
       name: "Art and Design",
       icon: <Palette className="h-4 w-4" />,
       description: "Visual arts, design, and creative visual skills",
-      skills: ["UI/UX Design", "Graphic Design", "Drawing", "Illustration", "Branding", "Visual Design", "Product Design", "Web Design", "User Research", "Prototyping"]
+      skills: [
+        "UI/UX Design",
+        "Graphic Design",
+        "Drawing",
+        "Illustration",
+        "Branding",
+        "Visual Design",
+        "Product Design",
+        "Web Design",
+        "User Research",
+        "Prototyping",
+      ],
     },
     business: {
       name: "Business & Operations",
       icon: <Briefcase className="h-4 w-4" />,
-      description: "Business development, operations, and customer-facing skills",
-      skills: ["Customer Onboarding", "Sales", "Business Development", "Operations Management", "Strategic Planning", "Financial Analysis", "Market Research", "Customer Success"]
+      description:
+        "Business development, operations, and customer-facing skills",
+      skills: [
+        "Customer Onboarding",
+        "Sales",
+        "Business Development",
+        "Operations Management",
+        "Strategic Planning",
+        "Financial Analysis",
+        "Market Research",
+        "Customer Success",
+      ],
     },
     soft: {
       name: "Soft Skills",
       icon: <Users className="h-4 w-4" />,
       description: "Interpersonal and professional development skills",
-      skills: ["Leadership", "Communication", "Project Management", "Teaching", "Public Speaking", "Team Collaboration", "Problem Solving", "Time Management"]
+      skills: [
+        "Leadership",
+        "Communication",
+        "Project Management",
+        "Teaching",
+        "Public Speaking",
+        "Team Collaboration",
+        "Problem Solving",
+        "Time Management",
+      ],
     },
     content: {
       name: "Content",
       icon: <Lightbulb className="h-4 w-4" />,
       description: "Content creation, digital media, and storytelling skills",
-      skills: ["Writing", "Video Editing", "Photography", "Music", "Content Creation", "Social Media", "Marketing", "Storytelling", "Blogging", "Copywriting"]
-    }
+      skills: [
+        "Writing",
+        "Video Editing",
+        "Photography",
+        "Music",
+        "Content Creation",
+        "Social Media",
+        "Marketing",
+        "Storytelling",
+        "Blogging",
+        "Copywriting",
+      ],
+    },
   };
-
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -102,7 +153,7 @@ export default function FinishProfilePage() {
         return;
       }
       setUser(data.user);
-      
+
       // Fetch existing profile data to pre-fill the form
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
@@ -127,7 +178,7 @@ export default function FinishProfilePage() {
         console.error("Error fetching skills:", skillsError);
       } else if (skillsData) {
         // Map skills from database
-        const skills = skillsData.map(skill => ({
+        const skills = skillsData.map((skill) => ({
           id: skill.id,
           name: skill.name,
           category: skill.emotion, // Using emotion field to store category
@@ -172,33 +223,38 @@ export default function FinishProfilePage() {
 
   const handleAddSkill = (skillName: string, category: string) => {
     // Check if skill already exists
-    if (selectedSkills.some(skill => skill.name === skillName)) {
+    if (selectedSkills.some((skill) => skill.name === skillName)) {
       return;
     }
 
     // Check if limit of 5 skills is reached
     if (selectedSkills.length >= 5) {
-      alert("You can only select up to 5 skills. Please remove a skill before adding a new one.");
+      alert(
+        "You can only select up to 5 skills. Please remove a skill before adding a new one."
+      );
       return;
     }
 
     const newSkill: Skill = {
       name: skillName,
-      category
+      category,
     };
 
     setSelectedSkills([...selectedSkills, newSkill]);
   };
 
   const handleRemoveSkill = (skillName: string) => {
-    setSelectedSkills(selectedSkills.filter(skill => skill.name !== skillName));
+    setSelectedSkills(
+      selectedSkills.filter((skill) => skill.name !== skillName)
+    );
   };
 
-
-  const handleProfileUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleProfileUpdate = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
     setSubmitting(true);
-    
+
     if (!user) {
       console.error("User not available for profile update");
       setSubmitting(false);
@@ -248,13 +304,13 @@ export default function FinishProfilePage() {
 
       // Save skills to interests table
       if (selectedSkills.length > 0) {
-        const skillsToSave = selectedSkills.map(skill => ({
+        const skillsToSave = selectedSkills.map((skill) => ({
           user_id: user.id,
           name: skill.name,
           type: "skill",
           emotion: skill.category, // Store category in emotion field
           level: 60, // Default level for skills
-          created_at: new Date()
+          created_at: new Date(),
         }));
 
         const { error: skillsError } = await supabase
@@ -269,14 +325,14 @@ export default function FinishProfilePage() {
         }
       }
 
-  // Redirect to user profile page after profile and skills are updated
-  // (skip the interests flow for now)
-  router.push("/me");
+      // Redirect to user profile page after profile and skills are updated
+      // (skip the interests flow for now)
+      router.push("/me");
     } catch (error) {
       console.error("Error in profile update process:", error);
       alert("An unexpected error occurred. Please try again.");
     }
-    
+
     setSubmitting(false);
   };
 
@@ -326,8 +382,10 @@ export default function FinishProfilePage() {
           <form onSubmit={handleProfileUpdate} className="space-y-8">
             {/* Basic Profile Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b pb-2">Basic Information</h3>
-              
+              <h3 className="text-lg font-medium border-b pb-2">
+                Basic Information
+              </h3>
+
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <MailIcon className="h-4 w-4" /> Email
@@ -384,7 +442,10 @@ export default function FinishProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth" className="flex items-center gap-2">
+                <Label
+                  htmlFor="dateOfBirth"
+                  className="flex items-center gap-2"
+                >
                   <CalendarIcon className="h-4 w-4" /> Date of Birth
                 </Label>
                 <Input
@@ -404,35 +465,42 @@ export default function FinishProfilePage() {
                 Choose your top 5 skills you excel in
               </p>
               <p className="text-xs text-muted-foreground">
-                First select a skill category, then choose specific skills from that category
+                First select a skill category, then choose specific skills from
+                that category
               </p>
 
               {!selectedCategory ? (
                 /* Step 1: Category Selection */
                 <div className="space-y-4">
-                  <h4 className="font-medium">Step 1: Choose a skill category</h4>
+                  <h4 className="font-medium">
+                    Step 1: Choose a skill category
+                  </h4>
                   <div className="space-y-3">
-                    {Object.entries(skillCategories).map(([categoryKey, category]) => (
-                      <Button
-                        key={categoryKey}
-                        type="button"
-                        variant="outline"
-                        className="w-full h-auto p-4 justify-start text-left"
-                        onClick={() => setSelectedCategory(categoryKey)}
-                      >
-                        <div className="flex items-start gap-3 w-full">
-                          <div className="flex-shrink-0 mt-1">
-                            {category.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm mb-1">{category.name}</div>
-                            <div className="text-xs text-muted-foreground leading-relaxed">
-                              {category.description}
+                    {Object.entries(skillCategories).map(
+                      ([categoryKey, category]) => (
+                        <Button
+                          key={categoryKey}
+                          type="button"
+                          variant="outline"
+                          className="w-full h-auto p-4 justify-start text-left"
+                          onClick={() => setSelectedCategory(categoryKey)}
+                        >
+                          <div className="flex items-start gap-3 w-full">
+                            <div className="flex-shrink-0 mt-1">
+                              {category.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm mb-1">
+                                {category.name}
+                              </div>
+                              <div className="text-xs text-muted-foreground leading-relaxed">
+                                {category.description}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Button>
-                    ))}
+                        </Button>
+                      )
+                    )}
                   </div>
                 </div>
               ) : (
@@ -450,16 +518,28 @@ export default function FinishProfilePage() {
                       Back
                     </Button>
                     <div className="flex items-center gap-2">
-                      {skillCategories[selectedCategory as keyof typeof skillCategories]?.icon}
+                      {
+                        skillCategories[
+                          selectedCategory as keyof typeof skillCategories
+                        ]?.icon
+                      }
                       <span className="font-medium">
-                        {skillCategories[selectedCategory as keyof typeof skillCategories]?.name}
+                        {
+                          skillCategories[
+                            selectedCategory as keyof typeof skillCategories
+                          ]?.name
+                        }
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {skillCategories[selectedCategory as keyof typeof skillCategories]?.skills.map((skillName) => {
-                      const isSelected = selectedSkills.some(s => s.name === skillName);
+                    {skillCategories[
+                      selectedCategory as keyof typeof skillCategories
+                    ]?.skills.map((skillName) => {
+                      const isSelected = selectedSkills.some(
+                        (s) => s.name === skillName
+                      );
                       const canAdd = selectedSkills.length < 5;
                       return (
                         <Button
@@ -491,15 +571,26 @@ export default function FinishProfilePage() {
                   <h4 className="font-medium">
                     Selected Skills ({selectedSkills.length}/5)
                     {selectedSkills.length === 5 && (
-                      <span className="text-green-600 text-sm ml-2">✓ Complete</span>
+                      <span className="text-green-600 text-sm ml-2">
+                        ✓ Complete
+                      </span>
                     )}
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedSkills.map((skill) => (
-                      <div key={skill.name} className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full">
+                      <div
+                        key={skill.name}
+                        className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full"
+                      >
                         <div className="flex items-center gap-1">
-                          {skillCategories[skill.category as keyof typeof skillCategories]?.icon}
-                          <span className="font-medium text-xs">{skill.name}</span>
+                          {
+                            skillCategories[
+                              skill.category as keyof typeof skillCategories
+                            ]?.icon
+                          }
+                          <span className="font-medium text-xs">
+                            {skill.name}
+                          </span>
                         </div>
                         <Button
                           type="button"
@@ -517,12 +608,14 @@ export default function FinishProfilePage() {
               )}
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={submitting || !!usernameError}
             >
-              {submitting ? "Saving Profile & Skills..." : "Save Profile & Continue"}
+              {submitting
+                ? "Saving Profile & Skills..."
+                : "Save Profile & Continue"}
             </Button>
           </form>
         </CardContent>

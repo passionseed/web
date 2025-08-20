@@ -49,7 +49,7 @@ export interface MapNode {
   difficulty: number;
   sprite_url: string | null;
   metadata: Record<string, any> | null; // jsonb
-  node_type?: 'learning' | 'text'; // Added node_type field
+  node_type?: "learning" | "text"; // Added node_type field
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
   node_content?: NodeContent[]; // Changed from 'content' to 'node_content'
@@ -115,13 +115,16 @@ export type AssessmentType =
   | "quiz"
   | "text_answer"
   | "image_upload"
-  | "file_upload";
+  | "file_upload"
+  | "checklist";
 
 export interface NodeAssessment {
   id: string; // uuid
   node_id: string; // uuid
   assessment_type: AssessmentType;
   quiz_questions?: QuizQuestion[]; // Optional relation for quizzes
+  points_possible?: number | null;
+  is_graded?: boolean;
 }
 
 export interface QuizQuestion {
@@ -158,6 +161,7 @@ export interface AssessmentSubmission {
   image_url: string | null;
   quiz_answers: Record<string, string> | null; // jsonb, e.g., {"question_id": "A"}
   submitted_at: string; // timestamp with time zone
+  metadata?: Record<string, any> | null; // optional extensible metadata (e.g., checklist completion)
 }
 
 export type Grade = "pass" | "fail";
@@ -168,6 +172,7 @@ export interface SubmissionGrade {
   graded_by: string | null; // null for system/auto-graded submissions
   grade: Grade;
   rating?: number;
+  points_awarded?: number | null;
   comments?: string;
   graded_at: string;
   profiles?: {

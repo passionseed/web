@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { getMapsWithStats } from "@/lib/supabase/maps";
-import { isUserEnrolledInMap } from "@/lib/api/enrollment-client";
+import { checkUserEnrollmentStatus } from "@/lib/api/enrollment-client";
 import { LearningMap } from "@/types/map";
 import { useToast } from "@/components/ui/use-toast";
 import { MapEnrollmentDialog } from "@/components/map/MapEnrollmentDialog";
@@ -36,13 +36,24 @@ import {
   ArrowRight,
   LogIn,
   Lock,
+  School,
+  GitBranch,
+  Globe,
+  User,
 } from "lucide-react";
 
 type MapWithStats = LearningMap & {
   node_count: number;
   avg_difficulty: number;
   total_assessments: number;
-  isEnrolled?: boolean; // Add enrollment status
+  isEnrolled?: boolean;
+  hasStarted?: boolean;
+  map_type: 'personal' | 'classroom' | 'team' | 'forked' | 'public';
+  source_info?: {
+    classroom_name?: string;
+    team_name?: string;
+    original_title?: string;
+  };
 };
 
 export default function MapsPage() {
@@ -72,15 +83,15 @@ export default function MapsPage() {
             // Only check enrollment if user is authenticated
             if (isAuthenticated) {
               try {
-                const isEnrolled = await isUserEnrolledInMap(map.id);
-                return { ...map, isEnrolled };
+                const { isEnrolled, hasStarted } = await checkUserEnrollmentStatus(map.id);
+                return { ...map, isEnrolled, hasStarted };
               } catch (err) {
                 // If there's an error checking enrollment, assume not enrolled
-                return { ...map, isEnrolled: false };
+                return { ...map, isEnrolled: false, hasStarted: false };
               }
             } else {
               // For unauthenticated users, set enrollment to false
-              return { ...map, isEnrolled: false };
+              return { ...map, isEnrolled: false, hasStarted: false };
             }
           })
         );
@@ -137,7 +148,7 @@ export default function MapsPage() {
       setMaps((prevMaps) =>
         prevMaps.map((map) =>
           map.id === selectedMapForEnrollment.id
-            ? { ...map, isEnrolled: true }
+            ? { ...map, isEnrolled: true, hasStarted: false }
             : map
         )
       );
@@ -186,6 +197,314 @@ export default function MapsPage() {
     return Math.round(
       ((map.finished_students || 0) / map.total_students) * 100
     );
+  };
+
+  const getMapTypeInfo = (mapType: string) => {
+    switch (mapType) {
+      case 'personal':
+        return {
+          title: 'My Maps',
+          icon: User,
+          description: 'Maps you created',
+          bgColor: 'from-blue-900/50 to-indigo-900/50',
+          borderColor: 'border-blue-600/30',
+          iconColor: 'text-blue-400'
+        };
+      case 'classroom':
+        return {
+          title: 'Classroom Maps',
+          icon: School,
+          description: 'Learning maps assigned by instructors',
+          bgColor: 'from-green-900/50 to-emerald-900/50',
+          borderColor: 'border-green-600/30',
+          iconColor: 'text-green-400'
+        };
+      case 'team':
+        return {
+          title: 'Team Maps',
+          icon: Users,
+          description: 'Collaborative maps for your team',
+          bgColor: 'from-purple-900/50 to-violet-900/50',
+          borderColor: 'border-purple-600/30',
+          iconColor: 'text-purple-400'
+        };
+      case 'forked':
+        return {
+          title: 'Forked Maps',
+          icon: GitBranch,
+          description: 'Maps you forked and customized',
+          bgColor: 'from-orange-900/50 to-amber-900/50',
+          borderColor: 'border-orange-600/30',
+          iconColor: 'text-orange-400'
+        };
+      default:
+        return {
+          title: 'Public Maps',
+          icon: Globe,
+          description: 'Community learning maps',
+          bgColor: 'from-slate-900/50 to-gray-900/50',
+          borderColor: 'border-slate-600/30',
+          iconColor: 'text-slate-400'
+        };
+    }
+  };
+
+  const groupMapsByType = (maps: MapWithStats[]) => {
+    const grouped = maps.reduce((acc, map) => {
+      const type = map.map_type || 'public';
+      if (!acc[type]) acc[type] = [];
+      acc[type].push(map);
+      return acc;
+    }, {} as Record<string, MapWithStats[]>);
+
+    // Order the sections
+    const orderedTypes = ['personal', 'classroom', 'team', 'forked', 'public'];
+    return orderedTypes.filter(type => grouped[type]?.length > 0).map(type => ({
+      type,
+      maps: grouped[type],
+      ...getMapTypeInfo(type)
+    }));
+  };
+
+  const renderMapCard = (map: MapWithStats) => {
+    const difficultyInfo = getDifficultyBadge(map.avg_difficulty);
+    const completionRate = getCompletionRate(map);
+    const categoryIcon = getCategoryIcon(map.category);
+
+    return (
+      <Card
+        key={map.id}
+        className="group relative overflow-hidden hover:shadow-2xl hover:shadow-blue-900/50 transition-all duration-500 hover:scale-105 bg-slate-800/80 backdrop-blur-sm border-2 border-slate-700 hover:border-blue-500/50"
+      >
+        {/* Floating Islands Background Effect */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+          <div className="absolute top-4 right-4 w-8 h-8 bg-blue-400/20 rounded-full animate-float" />
+          <div className="absolute bottom-8 left-6 w-6 h-6 bg-purple-400/20 rounded-full animate-float-particle-1" />
+          <div className="absolute top-1/2 left-2 w-4 h-4 bg-indigo-400/20 rounded-full animate-float-particle-2" />
+        </div>
+
+        <CardHeader className="relative">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-full flex items-center justify-center text-2xl border border-blue-600/30">
+                {categoryIcon}
+              </div>
+              <div>
+                <CardTitle className="text-xl group-hover:text-blue-300 transition-colors text-gray-100">
+                  {map.title}
+                </CardTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className={`text-xs ${difficultyInfo.className}`}>
+                    {difficultyInfo.label}
+                  </Badge>
+                  {map.isEnrolled && !map.hasStarted && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs bg-green-900/20 text-green-400 border-green-500/50"
+                    >
+                      <BookOpen className="h-3 w-3 mr-1" />
+                      Enrolled
+                    </Badge>
+                  )}
+                  {map.isEnrolled && map.hasStarted && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs bg-blue-900/20 text-blue-400 border-blue-500/50"
+                    >
+                      <Zap className="h-3 w-3 mr-1" />
+                      Started
+                    </Badge>
+                  )}
+                  {map.node_count > 10 && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-yellow-500/50 text-yellow-400 bg-yellow-900/20"
+                    >
+                      <Crown className="h-3 w-3 mr-1" />
+                      Epic
+                    </Badge>
+                  )}
+                  {map.source_info?.classroom_name && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-green-500/50 text-green-300 bg-green-900/20"
+                    >
+                      {map.source_info.classroom_name}
+                    </Badge>
+                  )}
+                  {map.source_info?.team_name && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-purple-500/50 text-purple-300 bg-purple-900/20"
+                    >
+                      {map.source_info.team_name}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <CardDescription className="text-sm leading-relaxed text-gray-400">
+            {map.description ||
+              "Embark on an exciting learning journey through interactive islands"}
+            {map.source_info?.original_title && (
+              <span className="block text-xs text-amber-400 mt-1">
+                Forked from: {map.source_info.original_title}
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center gap-2 p-2 bg-blue-900/30 rounded-lg border border-blue-700/30">
+              <Map className="h-4 w-4 text-blue-400" />
+              <div>
+                <div className="font-medium text-blue-200">
+                  {map.node_count}
+                </div>
+                <div className="text-blue-400 text-xs">Islands</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-green-900/30 rounded-lg border border-green-700/30">
+              <Target className="h-4 w-4 text-green-400" />
+              <div>
+                <div className="font-medium text-green-200">
+                  {map.total_assessments}
+                </div>
+                <div className="text-green-400 text-xs">Quests</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-purple-900/30 rounded-lg border border-purple-700/30">
+              <Star className="h-4 w-4 text-purple-400" />
+              <div>
+                <div className="font-medium text-purple-200">
+                  {map.avg_difficulty}/10
+                </div>
+                <div className="text-purple-400 text-xs">Challenge</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-orange-900/30 rounded-lg border border-orange-700/30">
+              <Users className="h-4 w-4 text-orange-400" />
+              <div>
+                <div className="font-medium text-orange-200">
+                  {map.total_students || 0}
+                </div>
+                <div className="text-orange-400 text-xs">Explorers</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Completion Rate */}
+          {map.total_students && map.total_students > 0 && (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-400 flex items-center gap-1">
+                  <Trophy className="h-3 w-3" />
+                  Completion Rate
+                </span>
+                <span className="font-medium text-gray-200">
+                  {completionRate}%
+                </span>
+              </div>
+              <Progress
+                value={completionRate}
+                className="h-2 bg-slate-700"
+              />
+            </div>
+          )}
+
+          {/* Action Button */}
+          <div className="relative">
+            {map.isEnrolled ? (
+              <Link href={`/map/${map.id}`} className="block">
+                <Button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 group-hover:shadow-xl group-hover:shadow-green-900/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] border border-green-500/30 hover:border-green-400/50">
+                  {map.hasStarted ? (
+                    <>
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Continue Adventure
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Start Adventure
+                    </>
+                  )}
+                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            ) : isAuthenticated ? (
+              <Button
+                onClick={(e) => handleStartAdventure(map, e)}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 group-hover:shadow-xl group-hover:shadow-blue-900/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] border border-blue-500/30 hover:border-blue-400/50"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Start Adventure
+                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            ) : (
+              <Button
+                onClick={(e) => handleStartAdventure(map, e)}
+                variant="outline"
+                className="w-full border-slate-600 hover:bg-slate-700/50 text-slate-300 hover:text-slate-200 group-hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <LogIn className="h-4 w-4 mr-2" />
+                Login to Start Adventure
+                <Lock className="h-4 w-4 ml-2" />
+              </Button>
+            )}
+
+            {/* Backup Link - for those who prefer direct navigation */}
+            <Link
+              href={`/map/${map.id}`}
+              className="absolute inset-0 opacity-0 pointer-events-none"
+            >
+              <span className="sr-only">Go to {map.title}</span>
+            </Link>
+          </div>
+        </CardContent>
+
+        {/* Floating Achievement Badge */}
+        {completionRate >= 80 && (
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+            <Crown className="h-4 w-4 text-white" />
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+  const renderMapsSections = () => {
+    const sections = groupMapsByType(maps);
+    
+    if (sections.length === 0) return null;
+
+    return sections.map(section => (
+      <div key={section.type} className="space-y-6">
+        {/* Section Header */}
+        <div className={`bg-gradient-to-r ${section.bgColor} rounded-lg border ${section.borderColor} p-6`}>
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border ${section.borderColor}`}>
+              <section.icon className={`h-6 w-6 ${section.iconColor}`} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-1">
+                {section.title}
+              </h2>
+              <p className="text-sm text-gray-300">
+                {section.description} • {section.maps.length} maps
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Maps Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {section.maps.map(renderMapCard)}
+        </div>
+      </div>
+    ));
   };
 
   if (loading || authLoading) {
@@ -263,181 +582,9 @@ export default function MapsPage() {
         </div>
       </div>
 
-      {/* Maps Grid */}
-      <div className="container mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {maps.map((map) => {
-            const difficultyInfo = getDifficultyBadge(map.avg_difficulty);
-            const completionRate = getCompletionRate(map);
-            const categoryIcon = getCategoryIcon(map.category);
-
-            return (
-              <Card
-                key={map.id}
-                className="group relative overflow-hidden hover:shadow-2xl hover:shadow-blue-900/50 transition-all duration-500 hover:scale-105 bg-slate-800/80 backdrop-blur-sm border-2 border-slate-700 hover:border-blue-500/50"
-              >
-                {/* Floating Islands Background Effect */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-blue-400/20 rounded-full animate-float" />
-                  <div className="absolute bottom-8 left-6 w-6 h-6 bg-purple-400/20 rounded-full animate-float-particle-1" />
-                  <div className="absolute top-1/2 left-2 w-4 h-4 bg-indigo-400/20 rounded-full animate-float-particle-2" />
-                </div>
-
-                <CardHeader className="relative">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-full flex items-center justify-center text-2xl border border-blue-600/30">
-                        {categoryIcon}
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl group-hover:text-blue-300 transition-colors text-gray-100">
-                          {map.title}
-                        </CardTitle>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge
-                            className={`text-xs ${difficultyInfo.className}`}
-                          >
-                            {difficultyInfo.label}
-                          </Badge>
-                          {map.isEnrolled && (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs bg-green-900/20 text-green-400 border-green-500/50"
-                            >
-                              <BookOpen className="h-3 w-3 mr-1" />
-                              Enrolled
-                            </Badge>
-                          )}
-                          {map.node_count > 10 && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs border-yellow-500/50 text-yellow-400 bg-yellow-900/20"
-                            >
-                              <Crown className="h-3 w-3 mr-1" />
-                              Epic
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <CardDescription className="text-sm leading-relaxed text-gray-400">
-                    {map.description ||
-                      "Embark on an exciting learning journey through interactive islands"}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2 p-2 bg-blue-900/30 rounded-lg border border-blue-700/30">
-                      <Map className="h-4 w-4 text-blue-400" />
-                      <div>
-                        <div className="font-medium text-blue-200">
-                          {map.node_count}
-                        </div>
-                        <div className="text-blue-400 text-xs">Islands</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 bg-green-900/30 rounded-lg border border-green-700/30">
-                      <Target className="h-4 w-4 text-green-400" />
-                      <div>
-                        <div className="font-medium text-green-200">
-                          {map.total_assessments}
-                        </div>
-                        <div className="text-green-400 text-xs">Quests</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 bg-purple-900/30 rounded-lg border border-purple-700/30">
-                      <Star className="h-4 w-4 text-purple-400" />
-                      <div>
-                        <div className="font-medium text-purple-200">
-                          {map.avg_difficulty}/10
-                        </div>
-                        <div className="text-purple-400 text-xs">Challenge</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 bg-orange-900/30 rounded-lg border border-orange-700/30">
-                      <Users className="h-4 w-4 text-orange-400" />
-                      <div>
-                        <div className="font-medium text-orange-200">
-                          {map.total_students || 0}
-                        </div>
-                        <div className="text-orange-400 text-xs">Explorers</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Completion Rate */}
-                  {map.total_students && map.total_students > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400 flex items-center gap-1">
-                          <Trophy className="h-3 w-3" />
-                          Completion Rate
-                        </span>
-                        <span className="font-medium text-gray-200">
-                          {completionRate}%
-                        </span>
-                      </div>
-                      <Progress
-                        value={completionRate}
-                        className="h-2 bg-slate-700"
-                      />
-                    </div>
-                  )}
-
-                  {/* Action Button */}
-                  <div className="relative">
-                    {map.isEnrolled ? (
-                      <Link href={`/map/${map.id}`} className="block">
-                        <Button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 group-hover:shadow-xl group-hover:shadow-green-900/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] border border-green-500/30 hover:border-green-400/50">
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Continue Adventure
-                          <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                      </Link>
-                    ) : isAuthenticated ? (
-                      <Button
-                        onClick={(e) => handleStartAdventure(map, e)}
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 group-hover:shadow-xl group-hover:shadow-blue-900/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] border border-blue-500/30 hover:border-blue-400/50"
-                      >
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Start Adventure
-                        <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={(e) => handleStartAdventure(map, e)}
-                        variant="outline"
-                        className="w-full border-slate-600 hover:bg-slate-700/50 text-slate-300 hover:text-slate-200 group-hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-                      >
-                        <LogIn className="h-4 w-4 mr-2" />
-                        Login to Start Adventure
-                        <Lock className="h-4 w-4 ml-2" />
-                      </Button>
-                    )}
-
-                    {/* Backup Link - for those who prefer direct navigation */}
-                    <Link
-                      href={`/map/${map.id}`}
-                      className="absolute inset-0 opacity-0 pointer-events-none"
-                    >
-                      <span className="sr-only">Go to {map.title}</span>
-                    </Link>
-                  </div>
-                </CardContent>
-
-                {/* Floating Achievement Badge */}
-                {completionRate >= 80 && (
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                    <Crown className="h-4 w-4 text-white" />
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
+      {/* Maps by Category */}
+      <div className="container mx-auto px-6 py-12 space-y-12">
+        {renderMapsSections()}
 
         {/* Create New Map CTA */}
         <div className="mt-16 text-center">

@@ -28,6 +28,8 @@ interface SubmissionItemProps {
   grade: SubmissionGrade | null;
   index: number; // Index in the submissions list
   totalSubmissions: number; // Total number of submissions
+  progressStatus?: "not_started" | "in_progress" | "submitted" | "passed" | "failed";
+  assessment?: { points_possible?: number | null; is_graded?: boolean };
 }
 
 export function SubmissionItem({
@@ -35,6 +37,8 @@ export function SubmissionItem({
   grade,
   index,
   totalSubmissions,
+  progressStatus,
+  assessment,
 }: SubmissionItemProps) {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
@@ -188,13 +192,35 @@ export function SubmissionItem({
                     <span className="font-medium">by {graderInfo?.name}</span>
                   </div>
                 </div>
-                {grade.rating && (
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{grade.rating}/5</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-3">
+                  {(grade.points_awarded !== null && grade.points_awarded !== undefined) || assessment?.points_possible ? (
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">
+                        {grade.points_awarded ?? 0}
+                        {assessment?.points_possible && ` / ${assessment.points_possible}`} points
+                      </span>
+                    </div>
+                  ) : null}
+                  {grade.rating && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="font-medium">{grade.rating}/5</span>
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
+          ) : progressStatus === "passed" ? (
+            <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Completed Successfully
+                </span>
+              </div>
+              <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                You have successfully completed this checklist assessment.
+              </p>
             </div>
           ) : (
             <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">

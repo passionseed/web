@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/client";
-import { submitNodeProgress, submitNodeProgressLegacy } from "./progresses";
+import { submitNodeProgress, submitNodeProgressLegacy, updateNodeProgress } from "./progresses";
 import {
   LearningMap,
   MapNode,
@@ -123,9 +123,9 @@ export const createAssessmentSubmission = async (
 
   console.log("✅ Assessment submission created:", data);
 
-  // Update progress status to "submitted"
+  // Update progress status based on assessment type
   try {
-    console.log("📈 Updating progress status to 'submitted'...");
+    console.log("📈 Updating progress status...");
 
     // For now, try to get mapId and nodeId from the progress record
     const { data: progressRecord, error: progressError } = await supabase
@@ -150,14 +150,23 @@ export const createAssessmentSubmission = async (
       // Use the new API-based approach
       const mapId = (progressRecord.map_nodes as any)?.map_id;
       if (mapId) {
-        await submitNodeProgress(mapId, progressRecord.node_id);
+        // For checklist assessments, automatically pass the student
+        if (data.node_assessments.assessment_type === "checklist") {
+          console.log("✅ Auto-passing checklist assessment...");
+          await updateNodeProgress(mapId, progressRecord.node_id, "passed", {
+            submitted_at: new Date().toISOString(),
+          });
+        } else {
+          // For other assessment types, mark as submitted for review
+          await submitNodeProgress(mapId, progressRecord.node_id);
+        }
       } else {
         console.warn("⚠️ No mapId found, using legacy method");
         await submitNodeProgressLegacy(data.progress_id);
       }
     }
 
-    console.log("✅ Progress status updated to 'submitted'");
+    console.log("✅ Progress status updated successfully");
   } catch (progressError) {
     console.error("❌ Failed to update progress status:", progressError);
     // Don't throw here - submission was successful, progress update is secondary
@@ -204,6 +213,7 @@ const autoGradeQuizSubmission = async (submission: any) => {
       totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
     const grade: Grade = score >= 70 ? "pass" : "fail"; // 70% passing threshold
     const rating = Math.min(Math.max(Math.ceil(score / 20), 1), 5); // Convert percentage to 1-5 rating, ensuring valid range
+    const pointsAwarded = correctAnswers; // Award points equal to number of correct answers
 
     console.log(
       `📊 Quiz Results: ${correctAnswers}/${totalQuestions} (${score.toFixed(
@@ -217,6 +227,7 @@ const autoGradeQuizSubmission = async (submission: any) => {
       graded_by: null,
       grade: grade,
       rating: rating,
+      points_awarded: pointsAwarded,
       comments: `Auto-graded quiz: ${correctAnswers}/${totalQuestions} correct answers (${score.toFixed(
         1
       )}%). ${grade === "pass" ? "Congratulations!" : "Keep practicing and try again."}`,

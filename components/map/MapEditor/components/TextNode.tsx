@@ -7,15 +7,38 @@ interface TextNodeProps {
   data: MapNode & { node_type?: string };
   selected?: boolean;
   onDataChange?: (data: Partial<MapNode>) => void;
+  /** Allow the node to be edited at all. If false, editing is disabled. Defaults to true. */
+  allowEdit?: boolean;
+  /** Allow double-click to start editing. Defaults to true. */
+  allowDoubleClick?: boolean;
+  /** Show the small "Double-click to edit" hint. Defaults to true. */
+  showHint?: boolean;
+  /** Show the small explicit Edit button when double-click is disabled. Defaults to true. */
+  showEditButton?: boolean;
 }
 
-export function TextNode({ data, selected, onDataChange }: TextNodeProps) {
+export function TextNode({
+  data,
+  selected,
+  onDataChange,
+  allowEdit = true,
+  allowDoubleClick = true,
+  showHint = true,
+  showEditButton = true,
+}: TextNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.title || "Double-click to edit");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Handle double-click to edit
+  // Handle double-click to edit (only if enabled and editing is allowed)
   const handleDoubleClick = () => {
+    if (!allowEdit || !allowDoubleClick) return;
+    setIsEditing(true);
+  };
+
+  // Explicit UI edit trigger (used when double-click is disabled)
+  const handleStartEdit = () => {
+    if (!allowEdit) return;
     setIsEditing(true);
   };
 
@@ -109,11 +132,26 @@ export function TextNode({ data, selected, onDataChange }: TextNodeProps) {
       )}
 
       {/* Edit hint when selected */}
-      {selected && !isEditing && (
+      {/* Edit hint when selected (optional) */}
+      {selected && !isEditing && showHint && (
         <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">
           Double-click to edit
         </div>
       )}
+      {/* If double-click is disabled but editing is allowed, optionally show an explicit edit button */}
+      {selected &&
+        !isEditing &&
+        allowEdit &&
+        !allowDoubleClick &&
+        showEditButton && (
+          <button
+            onClick={handleStartEdit}
+            className="absolute -top-3 right-2 p-1 rounded bg-white/90 shadow-sm text-xs text-gray-600 hover:bg-gray-100"
+            aria-label="Edit text"
+          >
+            Edit
+          </button>
+        )}
     </div>
   );
 }
