@@ -14,6 +14,7 @@ import { gradeSubmission } from "@/lib/supabase/grading";
 import { SubmissionWithDetails } from "@/lib/supabase/grading";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -29,9 +30,11 @@ import { FileText, Image as ImageIcon, X } from "lucide-react";
 export function GradeSubmissionForm({
   submission,
   userId,
+  assessment,
 }: {
   submission: SubmissionWithDetails;
   userId: string;
+  assessment?: { points_possible?: number | null; is_graded?: boolean };
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -44,6 +47,9 @@ export function GradeSubmissionForm({
   const [rating, setRating] = useState<number | undefined>(
     submission.submission_grades[0]?.rating || undefined
   );
+  const [pointsAwarded, setPointsAwarded] = useState<number | undefined>(
+    submission.submission_grades[0]?.points_awarded || undefined
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
@@ -54,15 +60,45 @@ export function GradeSubmissionForm({
       return;
     }
 
+    // Validate rating if provided: must be integer between 1 and 5
+    if (rating !== undefined) {
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        toast({
+          title: "Rating must be an integer between 1 and 5.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Validate points_awarded if provided
+    if (pointsAwarded !== undefined) {
+      if (!Number.isInteger(pointsAwarded) || pointsAwarded < 0) {
+        toast({
+          title: "Points awarded must be a non-negative integer.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (assessment?.points_possible && pointsAwarded > assessment.points_possible) {
+        toast({
+          title: `Points awarded cannot exceed ${assessment.points_possible}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       await gradeSubmission(
         submission.id,
         grade,
         feedback,
-        rating || null,
+        rating ?? null,
         userId,
-        submission.student_node_progress.id
+        submission.student_node_progress.id,
+        pointsAwarded ?? null
       );
       toast({ title: "Submission graded successfully!" });
       setIsOpen(false);
@@ -206,29 +242,27 @@ export function GradeSubmissionForm({
               <Label htmlFor="rating">Rating (optional)</Label>
               <div className="flex items-center gap-4">
                 <Slider
-                  min={0}
-                  max={10}
-                  step={0.1}
-                  value={[rating || 0]}
-                  onValueChange={([value]) => setRating(value)}
+                  min={1}
+                  max={5}
+                  step={1}
+                  value={[rating ?? 1]}
+                  onValueChange={([value]) => setRating(Math.round(value))}
                   className="w-full"
                 />
                 <input
                   type="number"
-                  min="0"
-                  max="10"
-                  step="0.1"
-                  value={rating || ""}
+                  min="1"
+                  max="5"
+                  step="1"
+                  value={rating !== undefined ? rating : ""}
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value === "") {
                       setRating(undefined);
                     } else {
-                      const numValue = parseFloat(value);
-                      if (!isNaN(numValue) && numValue >= 0 && numValue <= 10) {
-                        // Round to one decimal place
-                        const roundedValue = Math.round(numValue * 10) / 10;
-                        setRating(roundedValue);
+                      const intValue = parseInt(value, 10);
+                      if (!isNaN(intValue) && intValue >= 1 && intValue <= 5) {
+                        setRating(intValue);
                       }
                     }
                   }}
@@ -236,10 +270,44 @@ export function GradeSubmissionForm({
                   placeholder="0-10"
                 />
                 <span className="text-sm font-medium w-8">
-                  {rating !== undefined ? rating.toFixed(1) : "-"}
+                  {rating !== undefined ? String(rating) : "-"}
                 </span>
               </div>
             </div>
+            
+            {/* Points Awarded Input - only show if assessment has grading enabled */}
+            {assessment?.is_graded && assessment?.points_possible && (
+              <div>
+                <Label htmlFor="pointsAwarded">
+                  Points Awarded (0 - {assessment.points_possible})
+                </Label>
+                <Input
+                  id="pointsAwarded"
+                  type="number"
+                  min="0"
+                  max={assessment.points_possible}
+                  step="1"
+                  value={pointsAwarded !== undefined ? pointsAwarded : ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "") {
+                      setPointsAwarded(undefined);
+                    } else {
+                      const intValue = parseInt(value, 10);
+                      if (!isNaN(intValue) && intValue >= 0 && intValue <= (assessment.points_possible || 0)) {
+                        setPointsAwarded(intValue);
+                      }
+                    }
+                  }}
+                  placeholder={`Enter points (0-${assessment.points_possible})`}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {assessment.points_possible} points possible for this assessment
+                </p>
+              </div>
+            )}
+            
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? "Submitting..." : "Submit Grade"}
             </Button>

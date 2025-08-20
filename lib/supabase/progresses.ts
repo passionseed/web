@@ -6,7 +6,7 @@
 import {
   getMapProgress,
   getNodeProgress,
-  updateNodeProgress,
+  updateNodeProgress as apiUpdateNodeProgress,
   startNodeProgress as apiStartNodeProgress,
   submitNodeProgress as apiSubmitNodeProgress,
   type StudentProgress,
@@ -135,6 +135,41 @@ export const submitNodeProgress = async (
     return result;
   } catch (error) {
     console.error("❌ [Progress] Error submitting node progress:", error);
+    return null;
+  }
+};
+
+/**
+ * Update node progress with custom status and additional data
+ */
+export const updateNodeProgress = async (
+  mapId: string,
+  nodeId: string,
+  status: "not_started" | "in_progress" | "submitted" | "passed" | "failed",
+  options: {
+    arrived_at?: string;
+    started_at?: string;
+    submitted_at?: string;
+  } = {}
+): Promise<StudentProgress | null> => {
+  console.log("📝 [Progress] Updating node progress:", {
+    mapId,
+    nodeId,
+    status,
+    options,
+  });
+
+  try {
+    const result = await apiUpdateNodeProgress(
+      mapId,
+      nodeId,
+      status,
+      options
+    );
+    console.log("✅ [Progress] Successfully updated progress");
+    return result;
+  } catch (error) {
+    console.error("❌ [Progress] Error updating node progress:", error);
     return null;
   }
 };

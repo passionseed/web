@@ -57,9 +57,37 @@ export async function GET(
     }
 
     const isEnrolled = !!enrollment;
+    let hasStarted = false;
+
+    // If enrolled, check if they have any progress on map nodes
+    if (isEnrolled) {
+      // First get all node IDs for this map
+      const { data: nodes, error: nodesError } = await supabase
+        .from("map_nodes")
+        .select("id")
+        .eq("map_id", mapId);
+
+      if (!nodesError && nodes && nodes.length > 0) {
+        const nodeIds = nodes.map(node => node.id);
+        
+        // Check if user has progress on any of these nodes
+        const { data: progress, error: progressError } = await supabase
+          .from("student_node_progress")
+          .select("status")
+          .eq("user_id", user.id)
+          .in("node_id", nodeIds)
+          .not("status", "eq", "not_started")
+          .limit(1);
+
+        if (!progressError && progress && progress.length > 0) {
+          hasStarted = true;
+        }
+      }
+    }
 
     console.log("✅ [Enrollment Check API] Enrollment check result:", {
       isEnrolled,
+      hasStarted,
       enrollment: enrollment ? "found" : "not found",
     });
 
@@ -67,6 +95,7 @@ export async function GET(
       success: true,
       data: {
         isEnrolled,
+        hasStarted,
         enrollment,
       },
     });

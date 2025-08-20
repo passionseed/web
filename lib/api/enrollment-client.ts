@@ -14,15 +14,19 @@ export interface EnrollmentCheckResponse {
   success: boolean;
   data: {
     isEnrolled: boolean;
+    hasStarted?: boolean;
     enrollment?: any;
   };
   error?: string;
 }
 
 /**
- * Check if user is enrolled in a map
+ * Check if user is enrolled in a map and their progress status
  */
-export async function isUserEnrolledInMap(mapId: string): Promise<boolean> {
+export async function checkUserEnrollmentStatus(mapId: string): Promise<{
+  isEnrolled: boolean;
+  hasStarted: boolean;
+}> {
   try {
     console.log("🔍 [Enrollment Client] Checking enrollment for map:", mapId);
 
@@ -37,26 +41,47 @@ export async function isUserEnrolledInMap(mapId: string): Promise<boolean> {
       console.error("❌ [Enrollment Client] API response not ok:", {
         status: response.status,
         statusText: response.statusText,
+        url: response.url,
       });
-      return false;
+      
+      // Try to get response body for more details
+      try {
+        const errorText = await response.text();
+        console.error("❌ [Enrollment Client] Response body:", errorText);
+      } catch (e) {
+        console.error("❌ [Enrollment Client] Could not read response body:", e);
+      }
+      
+      return { isEnrolled: false, hasStarted: false };
     }
 
     const result: EnrollmentCheckResponse = await response.json();
 
     if (!result.success) {
       console.error("❌ [Enrollment Client] API returned error:", result.error);
-      return false;
+      return { isEnrolled: false, hasStarted: false };
     }
 
     console.log(
       "✅ [Enrollment Client] Enrollment check result:",
-      result.data.isEnrolled
+      result.data
     );
-    return result.data.isEnrolled;
+    return { 
+      isEnrolled: result.data.isEnrolled, 
+      hasStarted: result.data.hasStarted || false 
+    };
   } catch (error) {
     console.error("❌ [Enrollment Client] Error checking enrollment:", error);
-    return false;
+    return { isEnrolled: false, hasStarted: false };
   }
+}
+
+/**
+ * Check if user is enrolled in a map (backward compatibility)
+ */
+export async function isUserEnrolledInMap(mapId: string): Promise<boolean> {
+  const { isEnrolled } = await checkUserEnrollmentStatus(mapId);
+  return isEnrolled;
 }
 
 /**

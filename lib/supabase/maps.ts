@@ -28,13 +28,13 @@ export type FullLearningMap = LearningMap & {
 
 export const getMaps = async (): Promise<LearningMap[]> => {
   const supabase = createClient();
-  
+
   // Check if user is authenticated
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  let query = supabase
-    .from("learning_maps")
-    .select("*");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let query = supabase.from("learning_maps").select("*");
 
   // Apply visibility filters based on authentication status
   if (!user) {
@@ -55,23 +55,29 @@ export const getMaps = async (): Promise<LearningMap[]> => {
   return data || [];
 };
 
-// Enhanced function to get maps with detailed statistics
+// Enhanced function to get maps with detailed statistics and categorization
 export const getMapsWithStats = async (): Promise<
   (LearningMap & {
     node_count: number;
     avg_difficulty: number;
     total_assessments: number;
+    map_type: "personal" | "classroom" | "team" | "forked" | "public";
+    source_info?: {
+      classroom_name?: string;
+      team_name?: string;
+      original_title?: string;
+    };
   })[]
 > => {
   const supabase = createClient();
-  
+
   // Check if user is authenticated
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  let query = supabase
-    .from("learning_maps")
-    .select(
-      `
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let query = supabase.from("learning_maps").select(
+    `
       *,
       map_nodes (
         id,
@@ -79,14 +85,18 @@ export const getMapsWithStats = async (): Promise<
         node_assessments (id)
       )
     `
-    );
+  );
 
   // Apply visibility filters based on authentication status
   if (!user) {
     // Unauthenticated users can only see public maps
     query = query.eq("visibility", "public");
   } else {
-    // Authenticated users can see public maps and their own private/team maps
+    // Authenticated users can see:
+    // 1. Public maps
+    // 2. Their own private maps
+    // 3. Team maps if they're in the team (handled later in categorization)
+    // 4. Classroom maps if they're enrolled (handled later in categorization)
     query = query.or(`visibility.eq.public,creator_id.eq.${user.id}`);
   }
 
@@ -97,8 +107,145 @@ export const getMapsWithStats = async (): Promise<
     throw new Error("Could not fetch learning maps.");
   }
 
-  // Transform data to include calculated statistics
-  const mapsWithStats = (data || [])
+  // Get additional data for authenticated users
+  let userClassrooms: any[] = [];
+  let userTeams: any[] = [];
+  let teamMaps: any[] = [];
+  let additionalMaps: any[] = [];
+
+  if (user) {
+    // Get user's classrooms (as student or instructor)
+    const { data: classroomMemberships } = await supabase
+      .from("classroom_memberships")
+      .select(
+        `
+        classroom_id,
+        classrooms!inner (
+          id,
+          name,
+          classroom_maps (
+            map_id,
+            learning_maps!inner (id, title)
+          )
+        )
+      `
+      )
+      .eq("user_id", user.id);
+
+    if (classroomMemberships) {
+      userClassrooms = classroomMemberships.flatMap(
+        (m) =>
+          m.classrooms.classroom_maps?.map((cm) => ({
+            map_id: cm.map_id,
+            classroom_name: m.classrooms.name,
+          })) || []
+      );
+    }
+
+    // Get user's teams
+    const { data: teamMemberships } = await supabase
+      .from("team_memberships")
+      .select(
+        `
+        team_id,
+        classroom_teams!inner (
+          id,
+          name,
+          classroom_id
+        )
+      `
+      )
+      .eq("user_id", user.id);
+
+    if (teamMemberships) {
+      userTeams = teamMemberships.map((tm) => ({
+        team_id: tm.team_id,
+        team_name: tm.classroom_teams.name,
+      }));
+    }
+
+    // Get team maps (only query if user has teams)
+    const userTeamIds = userTeams.map((t) => t.team_id).filter(Boolean);
+    if (userTeamIds.length > 0) {
+      const { data: teamMapData, error: teamMapError } = await supabase
+        .from("classroom_team_maps")
+        .select(
+          `
+        map_id,
+        original_map_id,
+        team_id,
+        classroom_teams!inner (name),
+        learning_maps!map_id_fkey!inner (title),
+        original_maps:learning_maps!original_map_id_fkey (title)
+      `
+        )
+        .in("team_id", userTeamIds);
+
+      if (teamMapError) {
+        console.error("Error fetching classroom_team_maps:", teamMapError);
+      } else if (teamMapData) {
+        teamMaps = teamMapData;
+      }
+    } else {
+      // No teams for user - nothing to fetch
+      teamMaps = [];
+    }
+
+    // Fetch additional team maps that user has access to
+    const teamMapIds = teamMaps.map((tm) => tm.map_id);
+    if (teamMapIds.length > 0) {
+      const { data: additionalTeamMaps } = await supabase
+        .from("learning_maps")
+        .select(
+          `
+          *,
+          map_nodes (
+            id,
+            difficulty,
+            node_assessments (id)
+          )
+        `
+        )
+        .in("id", teamMapIds)
+        .not("creator_id", "eq", user.id); // Exclude maps the user already owns
+
+      if (additionalTeamMaps) {
+        additionalMaps = additionalMaps.concat(additionalTeamMaps);
+      }
+    }
+
+    // Fetch classroom maps that user has access to
+    const classroomMapIds = userClassrooms.map((cm) => cm.map_id);
+    if (classroomMapIds.length > 0) {
+      const { data: classroomMapsData } = await supabase
+        .from("learning_maps")
+        .select(
+          `
+          *,
+          map_nodes (
+            id,
+            difficulty,
+            node_assessments (id)
+          )
+        `
+        )
+        .in("id", classroomMapIds)
+        .not("creator_id", "eq", user.id); // Exclude maps the user already owns
+
+      if (classroomMapsData) {
+        additionalMaps = additionalMaps.concat(classroomMapsData);
+      }
+    }
+  }
+
+  // Combine all maps and remove duplicates
+  const allMaps = [...(data || []), ...additionalMaps];
+  const uniqueMaps = allMaps.filter(
+    (map, index, self) => index === self.findIndex((m) => m.id === map.id)
+  );
+
+  // Transform data to include calculated statistics and categorization
+  const mapsWithStats = uniqueMaps
     .filter((map: any) => map && map.id && map.title) // Filter out null/invalid maps
     .map((map: any) => {
       const nodes = map.map_nodes || [];
@@ -117,6 +264,38 @@ export const getMapsWithStats = async (): Promise<
         0
       );
 
+      // Determine map type and source info
+      let mapType: "personal" | "classroom" | "team" | "forked" | "public" =
+        "public";
+      let sourceInfo: any = {};
+
+      if (user) {
+        // Check if it's the user's own map
+        if (map.creator_id === user.id) {
+          if (map.metadata?.forked_from) {
+            mapType = "forked";
+            sourceInfo.original_title = "Original Map"; // You might want to fetch this
+          } else {
+            mapType = "personal";
+          }
+        } else {
+          // Check if it's a classroom map
+          const classroomInfo = userClassrooms.find((c) => c.map_id === map.id);
+          if (classroomInfo) {
+            mapType = "classroom";
+            sourceInfo.classroom_name = classroomInfo.classroom_name;
+          } else {
+            // Check if it's a team map
+            const teamInfo = teamMaps.find((tm) => tm.map_id === map.id);
+            if (teamInfo) {
+              mapType = "team";
+              sourceInfo.team_name = teamInfo.classroom_teams.name;
+              sourceInfo.original_title = teamInfo.original_maps?.title;
+            }
+          }
+        }
+      }
+
       return {
         id: map.id,
         title: map.title,
@@ -133,6 +312,8 @@ export const getMapsWithStats = async (): Promise<
         node_count: nodeCount,
         avg_difficulty: avgDifficulty,
         total_assessments: totalAssessments,
+        map_type: mapType,
+        source_info: sourceInfo,
       };
     });
 
@@ -193,7 +374,10 @@ export const createMap = async (
     console.error("  Name:", authError.name);
     console.error("  Stack:", authError.stack);
     console.error("  Full error object:", authError);
-    console.error("  Error as JSON:", JSON.stringify(authError, Object.getOwnPropertyNames(authError)));
+    console.error(
+      "  Error as JSON:",
+      JSON.stringify(authError, Object.getOwnPropertyNames(authError))
+    );
     throw new Error(`Authentication failed: ${authError.message}`);
   }
 
@@ -211,7 +395,9 @@ export const createMap = async (
 
   // Step 2: Verify user profile exists in profiles table
   console.log("👤 Step 2: Verifying user profile...");
-  console.log("🔍 DEBUG: Selecting correct columns: id, email, full_name, username");
+  console.log(
+    "🔍 DEBUG: Selecting correct columns: id, email, full_name, username"
+  );
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, email, full_name, username")
@@ -225,13 +411,20 @@ export const createMap = async (
     console.error("  Details:", profileError.details || "No details");
     console.error("  Hint:", profileError.hint || "No hint");
     console.error("  Full error object:", profileError);
-    console.error("  Error as JSON:", JSON.stringify(profileError, Object.getOwnPropertyNames(profileError)));
-    throw new Error(`Profile verification failed: ${profileError.message} (Code: ${profileError.code}). User may not have completed profile setup.`);
+    console.error(
+      "  Error as JSON:",
+      JSON.stringify(profileError, Object.getOwnPropertyNames(profileError))
+    );
+    throw new Error(
+      `Profile verification failed: ${profileError.message} (Code: ${profileError.code}). User may not have completed profile setup.`
+    );
   }
 
   if (!profile) {
     console.error("❌ No profile found for user:", user.id);
-    throw new Error("User profile not found. Please complete your profile setup first.");
+    throw new Error(
+      "User profile not found. Please complete your profile setup first."
+    );
   }
 
   console.log("✅ Profile verified successfully:", {
@@ -260,25 +453,34 @@ export const createMap = async (
     console.error("  Details:", error.details || "No details");
     console.error("  Hint:", error.hint || "No hint");
     console.error("  Full error object:", error);
-    console.error("  Error as JSON:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    
+    console.error(
+      "  Error as JSON:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error))
+    );
+
     // Provide specific error messages based on error code
     let specificMessage = "Could not create the new map.";
-    
+
     if (error.code === "23505") {
-      specificMessage = "A map with this title already exists. Please choose a different title.";
+      specificMessage =
+        "A map with this title already exists. Please choose a different title.";
     } else if (error.code === "23503") {
-      specificMessage = "Foreign key constraint violation. User profile may be incomplete.";
+      specificMessage =
+        "Foreign key constraint violation. User profile may be incomplete.";
     } else if (error.code === "42501") {
-      specificMessage = "Permission denied. You may not have the required privileges to create maps.";
+      specificMessage =
+        "Permission denied. You may not have the required privileges to create maps.";
     } else if (error.code === "P0001") {
-      specificMessage = "Database policy violation. Please check your permissions.";
+      specificMessage =
+        "Database policy violation. Please check your permissions.";
     } else if (error.message.includes("RLS")) {
-      specificMessage = "Row Level Security policy blocked this operation. Please contact support.";
+      specificMessage =
+        "Row Level Security policy blocked this operation. Please contact support.";
     } else if (error.message.includes("permission")) {
-      specificMessage = "Permission denied. You may not have the required role to create maps.";
+      specificMessage =
+        "Permission denied. You may not have the required role to create maps.";
     }
-    
+
     throw new Error(`${specificMessage} (${error.code}: ${error.message})`);
   }
 
@@ -441,7 +643,7 @@ export const forkMapForTeam = async (
         difficulty: node.difficulty,
         sprite_url: node.sprite_url,
         metadata: node.metadata,
-        node_type: node.node_type || 'learning',
+        node_type: node.node_type || "learning",
         version: node.version || 1,
         last_modified_by: createdBy,
       };

@@ -25,6 +25,9 @@ import {
   GripVertical,
   Users,
   Calendar,
+  GitBranch,
+  Eye,
+  Edit,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -36,7 +39,7 @@ import {
   unlinkMapFromClassroom,
   reorderClassroomMaps,
 } from "@/lib/supabase/classrooms";
-import { getClassroomTeams } from "@/lib/supabase/teams";
+import { getClassroomTeams, getClassroomTeamMaps } from "@/lib/supabase/teams";
 
 interface LinkedMap {
   link_id: string;
@@ -59,7 +62,9 @@ export function ClassroomMapsManager({
   classroomId,
 }: ClassroomMapsManagerProps) {
   const [linkedMaps, setLinkedMaps] = useState<LinkedMap[]>([]);
+  const [teamForkedMaps, setTeamForkedMaps] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [teamMapsLoading, setTeamMapsLoading] = useState(true);
   const [unlinkingMapId, setUnlinkingMapId] = useState<string>("");
   const [teams, setTeams] = useState<any[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
@@ -84,8 +89,28 @@ export function ClassroomMapsManager({
     }
   };
 
+  const loadTeamForkedMaps = async () => {
+    console.log("🔄 ClassroomMapsManager: Loading team forked maps for classroom:", classroomId);
+    setTeamMapsLoading(true);
+    try {
+      const teamMaps = await getClassroomTeamMaps(classroomId);
+      console.log("✅ ClassroomMapsManager: Received team maps:", teamMaps);
+      setTeamForkedMaps(teamMaps);
+    } catch (error) {
+      console.error("❌ ClassroomMapsManager: Failed to load team forked maps:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load team forked maps",
+        variant: "destructive",
+      });
+    } finally {
+      setTeamMapsLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadLinkedMaps();
+    loadTeamForkedMaps();
   }, [classroomId]);
 
   useEffect(() => {
@@ -168,7 +193,8 @@ export function ClassroomMapsManager({
   }
 
   return (
-    <Card>
+    <div className="space-y-6">
+      <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -406,5 +432,122 @@ export function ClassroomMapsManager({
         )}
       </CardContent>
     </Card>
+
+    {/* Team Forked Maps Section */}
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center space-x-2">
+              <GitBranch className="h-5 w-5" />
+              <span>Team Forked Maps</span>
+              <Badge variant="secondary">{teamForkedMaps.length}</Badge>
+            </CardTitle>
+            <CardDescription>
+              Maps that teams have forked and customized from classroom maps
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {teamMapsLoading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-4 border rounded-lg"
+              >
+                <Skeleton className="h-8 w-8" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-48 mb-2" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-8 w-8" />
+              </div>
+            ))}
+          </div>
+        ) : teamForkedMaps.length === 0 ? (
+          <div className="text-center py-12">
+            <GitBranch className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Team Forked Maps</h3>
+            <p className="text-muted-foreground mb-4">
+              Teams haven't created any custom forks of the classroom maps yet
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {teamForkedMaps.map((teamMap) => (
+              <div
+                key={teamMap.team_map_id}
+                className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                {/* Fork Icon */}
+                <div className="flex-shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <GitBranch className="h-5 w-5 text-orange-500" />
+                  </div>
+                </div>
+
+                {/* Map Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <h4 className="font-medium text-sm truncate">
+                      {teamMap.map_title}
+                    </h4>
+                    <Badge variant="outline" className="text-xs">
+                      {teamMap.team_name}
+                    </Badge>
+                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                      <Users className="h-3 w-3" />
+                      <span>{teamMap.node_count} nodes</span>
+                    </div>
+                  </div>
+
+                  {teamMap.map_description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
+                      {teamMap.map_description}
+                    </p>
+                  )}
+
+                  <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                    <div className="flex items-center space-x-1">
+                      <GitBranch className="h-3 w-3" />
+                      <span>Forked from: {teamMap.original_map_title}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        Forked {new Date(teamMap.forked_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center space-x-2">
+                  {/* View link */}
+                  <Link href={`/map/${teamMap.map_id}`}>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                  </Link>
+
+                  {/* Edit link */}
+                  <Link href={`/map/${teamMap.map_id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+    </div>
   );
 }

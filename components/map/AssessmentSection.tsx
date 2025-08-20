@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   CheckSquare,
   Upload,
@@ -15,6 +16,8 @@ import {
   Star,
   X,
   FileText,
+  CheckCircle,
+  AlertTriangle
 } from "lucide-react";
 import { NodeAssessment, QuizQuestion } from "@/types/map";
 import { SubmissionItem } from "./SubmissionItem"; // Assuming component is created
@@ -28,9 +31,10 @@ interface AssessmentSectionProps {
   quizAnswers: Record<string, string>;
   setQuizAnswers: (value: React.SetStateAction<Record<string, string>>) => void;
   isSubmitting: boolean;
-  onSubmit: (fileUrl: string[], fileName: string[]) => void;
+  onSubmit: (fileUrl?: string[], fileName?: string[], checklistData?: Record<string, boolean>) => void;
   submissionsWithGrades: { submission: any; grade: any }[]; // Adjust type as needed
   nodeId: string;
+  progressStatus?: "not_started" | "in_progress" | "submitted" | "passed" | "failed";
 }
 
 const renderQuizQuestion = (
@@ -88,11 +92,24 @@ export function AssessmentSection({
   onSubmit,
   submissionsWithGrades,
   nodeId,
+  progressStatus,
 }: AssessmentSectionProps) {
   const [isFileRequired, setIsFileRequired] = useState(false);
   const [fileUrls, setFileUrls] = useState<string[]>([]);
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
+  const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>({});
+
+  // Initialize checklist items from assessment metadata
+  useState(() => {
+    if (assessment.assessment_type === "checklist" && assessment.metadata?.checklist_items) {
+      const initialChecklist: Record<string, boolean> = {};
+      assessment.metadata.checklist_items.forEach((item: any) => {
+        initialChecklist[item.id] = false;
+      });
+      setChecklistItems(initialChecklist);
+    }
+  }, [assessment]);
 
   // Check if file is required for submission
   const validateSubmission = () => {
@@ -100,8 +117,24 @@ export function AssessmentSection({
       setIsFileRequired(true);
       return false;
     }
+    
+    // For checklist, ensure all items are checked
+    if (assessment.assessment_type === "checklist") {
+      const allChecked = Object.values(checklistItems).every(checked => checked);
+      if (!allChecked) {
+        return false;
+      }
+    }
+    
     setIsFileRequired(false);
     return true;
+  };
+
+  const handleChecklistToggle = (itemId: string) => {
+    setChecklistItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
   };
 
   const handleFileUpload = (url: string, name: string) => {
@@ -119,7 +152,11 @@ export function AssessmentSection({
 
   const handleSubmit = () => {
     if (validateSubmission()) {
-      onSubmit(fileUrls, fileNames);
+      if (assessment.assessment_type === "checklist") {
+        onSubmit(undefined, undefined, checklistItems);
+      } else {
+        onSubmit(fileUrls, fileNames);
+      }
     }
   };
 
@@ -191,6 +228,80 @@ export function AssessmentSection({
                 </div>
               )}
 
+            {assessment.assessment_type === "checklist" && assessment.metadata?.checklist_items && (
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">
+                    Checklist Items
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Check off each item as you complete it. All items must be checked to submit.
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  {assessment.metadata.checklist_items.map((item: any, index: number) => (
+                    <Card key={item.id} className="bg-muted/30">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id={`checklist-${item.id}`}
+                            checked={checklistItems[item.id] || false}
+                            onCheckedChange={() => handleChecklistToggle(item.id)}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <label 
+                              htmlFor={`checklist-${item.id}`}
+                              className="font-medium text-foreground text-sm"
+                            >
+                              {index + 1}. {item.title}
+                            </label>
+                            {item.description && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+                          {checklistItems[item.id] && (
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                
+                {/* Checklist completion indicator */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {Object.values(checklistItems).filter(Boolean).length} of {Object.keys(checklistItems).length} items completed
+                    </span>
+                    {Object.values(checklistItems).every(checked => checked) ? (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        All items completed!
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-orange-600">
+                        <AlertTriangle className="h-4 w-4" />
+                        Complete all items to submit
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 w-full bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${(Object.values(checklistItems).filter(Boolean).length / Math.max(Object.keys(checklistItems).length, 1)) * 100}%` 
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {assessment.assessment_type === "file_upload" && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">
@@ -221,7 +332,7 @@ export function AssessmentSection({
 
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || (assessment.assessment_type === "checklist" && !Object.values(checklistItems).every(checked => checked))}
               className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md"
               size="lg"
             >
@@ -253,6 +364,7 @@ export function AssessmentSection({
                   grade={grade}
                   index={index}
                   totalSubmissions={submissionsWithGrades.length}
+                  progressStatus={progressStatus}
                 />
               ))}
             </div>

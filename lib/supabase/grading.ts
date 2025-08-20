@@ -43,6 +43,7 @@ export type SubmissionWithDetails = {
     grade: string;
     comments: string | null;
     rating: number | null;
+    points_awarded: number | null;
     graded_at: string;
     graded_by?: string | null; // User ID of the grader
   }[];
@@ -79,6 +80,7 @@ export const getSubmissionsForMap = async (
         id,
         grade,
         rating,
+        points_awarded,
         comments,
         graded_at,
         graded_by,
@@ -110,7 +112,8 @@ export const gradeSubmission = async (
   comments: string | null,
   rating: number | null,
   userId: string,
-  progressId: string
+  progressId: string,
+  pointsAwarded: number | null = null
 ): Promise<SubmissionGrade> => {
   const supabase = createClient();
 
@@ -121,6 +124,7 @@ export const gradeSubmission = async (
     rating,
     userId,
     progressId,
+    pointsAwarded,
   });
 
   try {
@@ -136,33 +140,56 @@ export const gradeSubmission = async (
       );
     }
 
-    // Validate rating more strictly
+    // Validate rating to match DB constraint: integer between 1 and 5, or null
     if (rating !== null && rating !== undefined) {
       const numRating = Number(rating);
-      // Check if it's a valid number
       if (isNaN(numRating)) {
         throw new Error(
           `Invalid rating value: ${rating}. Must be a valid number or null`
         );
       }
 
-      // Check if it's within the 0-10 range
-      if (numRating < 0 || numRating > 10) {
+      if (!Number.isInteger(numRating)) {
         throw new Error(
-          `Invalid rating value: ${rating}. Must be between 0 and 10, or null`
+          `Invalid rating value: ${rating}. Rating must be an integer between 1 and 5`
         );
       }
 
-      // Check if it has at most one decimal place
-      if (Math.round(numRating * 10) / 10 !== numRating) {
+      if (numRating < 1 || numRating > 5) {
         throw new Error(
-          `Invalid rating value: ${rating}. Must have at most one decimal place`
+          `Invalid rating value: ${rating}. Must be between 1 and 5, or null`
         );
       }
 
-      rating = numRating; // Ensure it's a proper number
+      rating = numRating; // Ensure it's a proper integer
     } else {
       rating = null; // Explicitly set to null
+    }
+
+    // Validate points_awarded
+    if (pointsAwarded !== null && pointsAwarded !== undefined) {
+      const numPoints = Number(pointsAwarded);
+      if (isNaN(numPoints)) {
+        throw new Error(
+          `Invalid points_awarded value: ${pointsAwarded}. Must be a valid number or null`
+        );
+      }
+
+      if (!Number.isInteger(numPoints)) {
+        throw new Error(
+          `Invalid points_awarded value: ${pointsAwarded}. Must be an integer`
+        );
+      }
+
+      if (numPoints < 0) {
+        throw new Error(
+          `Invalid points_awarded value: ${pointsAwarded}. Must be non-negative`
+        );
+      }
+
+      pointsAwarded = numPoints; // Ensure it's a proper integer
+    } else {
+      pointsAwarded = null; // Explicitly set to null
     }
 
     // Step 2: Check if submission exists and validate progress_id
@@ -209,6 +236,7 @@ export const gradeSubmission = async (
       grade: grade as "pass" | "fail",
       comments: comments || null,
       rating: rating,
+      points_awarded: pointsAwarded,
     };
 
     console.log("Creating grade with payload:", gradePayload);
@@ -245,6 +273,10 @@ export const gradeSubmission = async (
         } else if (errorMsg.includes("rating")) {
           throw new Error(
             `Invalid rating value. Database expects 1-5 or null, received: ${rating}`
+          );
+        } else if (errorMsg.includes("points_awarded")) {
+          throw new Error(
+            `Invalid points_awarded value. Database expects non-negative integer or null, received: ${pointsAwarded}`
           );
         } else if (errorMsg.includes("student_node_progress_status_check")) {
           throw new Error(
@@ -401,6 +433,7 @@ export const getNodeSubmission = async (
         grade,
         comments,
         rating,
+        points_awarded,
         graded_at
     )
     `
@@ -419,5 +452,5 @@ export const getNodeSubmission = async (
     throw new Error("Could not fetch submission.");
   }
 
-  return submission as SubmissionWithDetails;
+  return submission as unknown as SubmissionWithDetails;
 };

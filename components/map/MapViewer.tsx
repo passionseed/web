@@ -479,7 +479,10 @@ export function MapViewer({ map }: MapViewerProps) {
         <TextNode
           data={data}
           selected={selected}
-          // No onDataChange prop since this is viewer mode
+          // Disable editing and double-click in viewer mode
+          allowEdit={false}
+          allowDoubleClick={false}
+          showHint={false}
         />
       );
     },
