@@ -40,6 +40,38 @@ export default function ProfilePage() {
     fetchProfile()
   }, [])
 
+  const createProfile = async (user: any) => {
+    try {
+      const { data: newProfile, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+          username: user.user_metadata?.preferred_username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+          avatar_url: user.user_metadata?.avatar_url || null,
+        })
+        .select('*')
+        .single()
+
+      if (error) {
+        console.error('Error creating profile:', error)
+        toast.error('Failed to create profile')
+        return
+      }
+
+      setProfile(newProfile)
+      setFullName(newProfile.full_name || '')
+      setUsername(newProfile.username || '')
+      setDateOfBirth(newProfile.date_of_birth || '')
+      setDiscordId(newProfile.discord_id || '')
+      toast.success('Profile created successfully!')
+    } catch (error) {
+      console.error('Profile creation error:', error)
+      toast.error('Failed to create profile')
+    }
+  }
+
   const fetchProfile = async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -56,8 +88,13 @@ export default function ProfilePage() {
         .single()
 
       if (profileError) {
-        console.error('Error fetching profile:', profileError)
-        toast.error('Failed to load profile')
+        if (profileError.code === 'PGRST116') {
+          // Profile doesn't exist, create one
+          await createProfile(user)
+        } else {
+          console.error('Error fetching profile:', profileError)
+          toast.error('Failed to load profile')
+        }
         return
       }
 
