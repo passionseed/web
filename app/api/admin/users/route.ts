@@ -36,7 +36,11 @@ export async function GET() {
     const adminSupabase = createAdminClient();
 
     // Get all users from auth.users (admin only) - requires service role
-    const { data: authUsers, error: authError } = await adminSupabase.auth.admin.listUsers();
+    // Set a higher limit to get more users (max 1000 per request)
+    const { data: authUsers, error: authError } = await adminSupabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000
+    });
     
     if (authError) {
       console.error("Error fetching auth users:", authError);
