@@ -45,7 +45,11 @@ export async function GET() {
       totalMapsResult,
     ] = await Promise.all([
       // Total users (from auth.users) - requires service role
-      adminSupabase.auth.admin.listUsers(),
+      // Set a higher limit to get accurate user count
+      adminSupabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000
+      }),
       
       // Total students
       supabase

@@ -99,6 +99,7 @@ export function AssessmentSection({
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
   const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>({});
+  const [isUploading, setIsUploading] = useState(false);
 
   // Initialize checklist items from assessment metadata
   useState(() => {
@@ -318,6 +319,7 @@ export function AssessmentSection({
                   nodeId={nodeId}
                   onUploadComplete={handleFileUpload}
                   onValidationError={handleFileSizeError}
+                  onUploadStateChange={setIsUploading}
                   accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip"
                   maxSize={10}
                   disabled={isSubmitting}
@@ -332,16 +334,27 @@ export function AssessmentSection({
 
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting || (assessment.assessment_type === "checklist" && !Object.values(checklistItems).every(checked => checked))}
+              disabled={
+                isSubmitting || 
+                isUploading || 
+                (assessment.assessment_type === "checklist" && !Object.values(checklistItems).every(checked => checked))
+              }
               className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md"
               size="lg"
             >
               {isSubmitting ? (
                 <Clock className="h-4 w-4 mr-2 animate-spin" />
+              ) : isUploading ? (
+                <Clock className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Upload className="h-4 w-4 mr-2" />
               )}
-              Submit Assessment
+              {isSubmitting 
+                ? "Submitting..." 
+                : isUploading 
+                ? "Uploading Files..." 
+                : "Submit Assessment"
+              }
             </Button>
           </div>
         )}
