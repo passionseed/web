@@ -695,28 +695,36 @@ export const forkMapForTeam = async (
     const oldNodes = original.map_nodes || [];
     const nodeIdMap = new Map<string, string>(); // oldId -> newId
 
-    for (const node of oldNodes) {
-      const nodeInsert = {
-        map_id: newMapId,
-        title: node.title,
-        instructions: node.instructions,
-        difficulty: node.difficulty,
-        sprite_url: node.sprite_url,
-        metadata: node.metadata,
-        node_type: node.node_type || "learning",
-        version: node.version || 1,
-        last_modified_by: createdBy,
-      };
-      const { data: createdNode, error: nodeErr } = await supabase
+    // Insert all nodes at once for better performance
+    const nodesToInsert = oldNodes.map(node => ({
+      map_id: newMapId,
+      title: node.title,
+      instructions: node.instructions,
+      difficulty: node.difficulty,
+      sprite_url: node.sprite_url,
+      metadata: node.metadata,
+      node_type: node.node_type || "learning",
+      version: node.version || 1,
+      last_modified_by: createdBy,
+    }));
+
+    if (nodesToInsert.length > 0) {
+      const { data: createdNodes, error: nodeErr } = await supabase
         .from("map_nodes")
-        .insert([nodeInsert])
-        .select("*")
-        .single();
-      if (nodeErr || !createdNode) {
-        console.error("Failed to create node", nodeErr);
+        .insert(nodesToInsert)
+        .select("*");
+      
+      if (nodeErr || !createdNodes) {
+        console.error("Failed to create nodes", nodeErr);
         throw new Error("COPY_FAILED_NODE");
       }
-      nodeIdMap.set(node.id, createdNode.id);
+
+      // Map old node IDs to new node IDs
+      oldNodes.forEach((node, index) => {
+        if (createdNodes[index]) {
+          nodeIdMap.set(node.id, createdNodes[index].id);
+        }
+      });
     }
 
     console.log("✅ Nodes copied", nodeIdMap.size);
@@ -769,33 +777,54 @@ export const forkMapForTeam = async (
 
       // assessments + quiz questions
       const assessments = node.node_assessments || [];
-      for (const a of assessments) {
-        const { data: createdAssessment, error: aErr } = await supabase
+      const assessmentIdMap = new Map<string, string>(); // old assessment id -> new assessment id
+      
+      // Insert all assessments for this node
+      const assessmentsToInsert = assessments.map(a => ({
+        node_id: newNodeId,
+        assessment_type: a.assessment_type,
+      }));
+      
+      if (assessmentsToInsert.length > 0) {
+        const { data: createdAssessments, error: aErr } = await supabase
           .from("node_assessments")
-          .insert([
-            {
-              node_id: newNodeId,
-              assessment_type: a.assessment_type,
-            },
-          ])
-          .select("*")
-          .single();
-        if (aErr || !createdAssessment) {
-          console.error("Failed to copy assessment", aErr);
+          .insert(assessmentsToInsert)
+          .select("*");
+        
+        if (aErr || !createdAssessments) {
+          console.error("Failed to copy assessments", aErr);
           throw new Error("COPY_FAILED_ASSESSMENT");
         }
-
-        const questions = a.quiz_questions || [];
-        if (questions.length > 0) {
-          const questionsToInsert = questions.map((q) => ({
-            assessment_id: createdAssessment.id,
-            question_text: q.question_text,
-            options: q.options,
-            correct_option: q.correct_option,
-          }));
+        
+        // Map old assessment IDs to new ones
+        assessments.forEach((a, index) => {
+          if (createdAssessments[index]) {
+            assessmentIdMap.set(a.id, createdAssessments[index].id);
+          }
+        });
+        
+        // Copy quiz questions for all assessments
+        const allQuestionsToInsert: any[] = [];
+        
+        for (const a of assessments) {
+          const questions = a.quiz_questions || [];
+          const newAssessmentId = assessmentIdMap.get(a.id);
+          
+          if (newAssessmentId && questions.length > 0) {
+            const questionsForThisAssessment = questions.map((q) => ({
+              assessment_id: newAssessmentId,
+              question_text: q.question_text,
+              options: q.options,
+              correct_option: q.correct_option,
+            }));
+            allQuestionsToInsert.push(...questionsForThisAssessment);
+          }
+        }
+        
+        if (allQuestionsToInsert.length > 0) {
           const { error: qErr } = await supabase
             .from("quiz_questions")
-            .insert(questionsToInsert);
+            .insert(allQuestionsToInsert);
           if (qErr) {
             console.error("Failed to copy quiz questions", qErr);
             throw new Error("COPY_FAILED_QUIZQUESTIONS");
