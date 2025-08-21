@@ -81,6 +81,21 @@ export async function POST(
       name: team.name,
     };
 
+    // Check if this team has already forked this map
+    const { data: existingTeamMap, error: existingTeamMapError } = await adminClient
+      .from("classroom_team_maps")
+      .select("*")
+      .eq("team_id", team_id)
+      .eq("original_map_id", mapId)
+      .single();
+
+    if (existingTeamMapError == null && existingTeamMap) {
+      return NextResponse.json(
+        { error: "This team has already forked this map" },
+        { status: 409 }
+      );
+    }
+
     // User is a verified team leader, proceed to fork the map.
     const result = await forkMapForTeam(mapId, team_id, user.id, adminClient, teamData);
 

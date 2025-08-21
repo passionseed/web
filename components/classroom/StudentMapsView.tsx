@@ -211,11 +211,19 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
 
       if (!res.ok) {
         console.error("Fork failed", data);
-        toast({
-          title: "Fork failed",
-          description: data?.error || "Could not fork map",
-          variant: "destructive",
-        });
+        if (res.status === 409) {
+          toast({
+            title: "Already forked",
+            description: data?.error || "This map has already been forked by your team",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Fork failed",
+            description: data?.error || "Could not fork map",
+            variant: "destructive",
+          });
+        }
         return;
       }
 
@@ -246,6 +254,10 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
     return teams.filter(
       (t) => t.current_user_membership && t.current_user_membership.is_leader
     );
+  };
+
+  const hasTeamAlreadyForkedMap = (mapId: string) => {
+    return teamMaps?.some(tm => tm.original_map_id === mapId) || false;
   };
 
   return (
@@ -395,10 +407,12 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
                         <Button
                           size="sm"
                           className="bg-primary hover:bg-primary/90 text-white"
-                          disabled={forkingMapId === m.map_id}
+                          disabled={forkingMapId === m.map_id || hasTeamAlreadyForkedMap(m.map_id)}
                         >
                           {forkingMapId === m.map_id ? (
                             "Forking..."
+                          ) : hasTeamAlreadyForkedMap(m.map_id) ? (
+                            "Already Forked"
                           ) : (
                             <>
                               <GitFork className="h-4 w-4 mr-1" />
@@ -409,7 +423,12 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {getLeaderTeams().length === 0 ? (
+                        {hasTeamAlreadyForkedMap(m.map_id) ? (
+                          <DropdownMenuItem disabled>
+                            <GitFork className="h-4 w-4 mr-2" />
+                            Already forked by your team
+                          </DropdownMenuItem>
+                        ) : getLeaderTeams().length === 0 ? (
                           <DropdownMenuItem disabled>
                             You must be a team leader to fork
                           </DropdownMenuItem>
