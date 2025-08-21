@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
 import { useToast } from "./use-toast";
@@ -73,30 +73,25 @@ export function FileUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Helper function to remove upload ID and check if all uploads are done
-  const finishUpload = useCallback((uploadId: string) => {
-    let shouldNotifyParent = false;
+  // Use effect to sync upload state with parent component
+  useEffect(() => {
+    const isCurrentlyUploading = uploadingFiles.size > 0;
+    console.log(`Upload state changed: ${isCurrentlyUploading ? 'uploading' : 'idle'}, active uploads: ${uploadingFiles.size}`);
     
+    if (onUploadStateChange) {
+      onUploadStateChange(isCurrentlyUploading);
+    }
+  }, [uploadingFiles.size, onUploadStateChange]);
+
+  // Helper function to remove upload ID
+  const finishUpload = useCallback((uploadId: string) => {
     setUploadingFiles(prev => {
       const newSet = new Set(prev);
       newSet.delete(uploadId);
-      
       console.log(`Upload finished: ${uploadId}, remaining uploads: ${newSet.size}`);
-      
-      // Check if all uploads are finished
-      if (newSet.size === 0) {
-        shouldNotifyParent = true;
-      }
-      
       return newSet;
     });
-
-    // Notify parent component outside of setState
-    if (shouldNotifyParent && onUploadStateChange) {
-      console.log('All uploads finished, notifying parent component');
-      onUploadStateChange(false);
-    }
-  }, [onUploadStateChange]);
+  }, []);
 
   const formatFileSize = useCallback((bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -203,11 +198,6 @@ export function FileUpload({
         console.log(`Upload started: ${uploadId}, total uploads: ${newSet.size}`);
         return newSet;
       });
-
-      // Notify parent component that uploading started (outside of setState)
-      if (onUploadStateChange) {
-        onUploadStateChange(true);
-      }
 
       setUploadProgress({
         stage: "preparing",
