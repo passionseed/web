@@ -81,11 +81,12 @@ export default function MapsPage() {
         const mapsWithEnrollment = await Promise.all(
           validMaps.map(async (map) => {
             // Only check enrollment if user is authenticated
-            if (isAuthenticated) {
+            if (isAuthenticated && !authLoading) {
               try {
                 const { isEnrolled, hasStarted } = await checkUserEnrollmentStatus(map.id);
                 return { ...map, isEnrolled, hasStarted };
               } catch (err) {
+                console.warn(`Failed to check enrollment for map ${map.id}:`, err);
                 // If there's an error checking enrollment, assume not enrolled
                 return { ...map, isEnrolled: false, hasStarted: false };
               }
@@ -98,7 +99,7 @@ export default function MapsPage() {
 
         setMaps(mapsWithEnrollment);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching maps:", err);
         toast({
           title: "Error",
           description: "Failed to load learning maps.",
@@ -109,8 +110,11 @@ export default function MapsPage() {
       }
     };
 
-    fetchMaps();
-  }, [toast]);
+    // Only fetch maps after auth loading is complete
+    if (!authLoading) {
+      fetchMaps();
+    }
+  }, [toast, isAuthenticated, authLoading]);
 
   const handleStartAdventure = (map: MapWithStats, event: React.MouseEvent) => {
     event.preventDefault(); // Prevent Link navigation

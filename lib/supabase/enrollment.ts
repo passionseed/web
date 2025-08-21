@@ -2,8 +2,6 @@
 
 import { LearningMap, UserMapEnrollment } from "@/types/map";
 import { createClient } from "@/utils/supabase/server";
-import { Database } from "@/types/supabase";
-import { calculateMapProgress } from "./progresses";
 
 /**
  * Enrolls a user in a learning map when they click "Start Adventure"
