@@ -27,6 +27,7 @@ interface FileUploadProps {
   nodeId: string;
   onUploadComplete: (fileUrl: string, fileName: string) => void;
   onValidationError?: (error: string) => void;
+  onUploadStateChange?: (isUploading: boolean) => void; // New prop to track upload state
   accept?: string;
   maxSize?: number; // in MB
   className?: string;
@@ -54,6 +55,7 @@ export function FileUpload({
   nodeId,
   onUploadComplete,
   onValidationError,
+  onUploadStateChange,
   accept = ".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.txt,.zip,.json,.csv",
   maxSize = 10,
   className = "",
@@ -65,10 +67,36 @@ export function FileUpload({
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(
     null
   );
+  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set()); // Track actively uploading files by unique ID
   const [isDragging, setIsDragging] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Helper function to remove upload ID and check if all uploads are done
+  const finishUpload = useCallback((uploadId: string) => {
+    let shouldNotifyParent = false;
+    
+    setUploadingFiles(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(uploadId);
+      
+      console.log(`Upload finished: ${uploadId}, remaining uploads: ${newSet.size}`);
+      
+      // Check if all uploads are finished
+      if (newSet.size === 0) {
+        shouldNotifyParent = true;
+      }
+      
+      return newSet;
+    });
+
+    // Notify parent component outside of setState
+    if (shouldNotifyParent && onUploadStateChange) {
+      console.log('All uploads finished, notifying parent component');
+      onUploadStateChange(false);
+    }
+  }, [onUploadStateChange]);
 
   const formatFileSize = useCallback((bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -155,7 +183,6 @@ export function FileUpload({
       if (!validation.valid) {
         if (onValidationError) {
           onValidationError(validation.error || "Invalid file");
-          return;
         } else {
           toast({
             title: "Invalid file",
@@ -164,6 +191,22 @@ export function FileUpload({
           });
         }
         return;
+      }
+
+      // Create unique ID for this upload
+      const uploadId = `${file.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Add to uploading files set
+      setUploadingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.add(uploadId);
+        console.log(`Upload started: ${uploadId}, total uploads: ${newSet.size}`);
+        return newSet;
+      });
+
+      // Notify parent component that uploading started (outside of setState)
+      if (onUploadStateChange) {
+        onUploadStateChange(true);
       }
 
       setUploadProgress({
@@ -292,7 +335,8 @@ export function FileUpload({
           variant: "destructive",
         });
 
-        // Clear error state after 5 seconds
+        // Immediately remove from uploading set on error, then clear UI after delay
+        finishUpload(uploadId);
         setTimeout(() => {
           setUploadProgress(null);
         }, 5000);
@@ -305,10 +349,11 @@ export function FileUpload({
         // Clear progress after a brief delay to show completion
         setTimeout(() => {
           setUploadProgress(null);
+          finishUpload(uploadId);
         }, 1000);
       }
     },
-    [nodeId, onUploadComplete, toast, validateFile, simulateProgress]
+    [nodeId, onUploadComplete, onUploadStateChange, toast, validateFile, simulateProgress, finishUpload]
   );
 
   const handleFileSelect = useCallback(
@@ -403,8 +448,7 @@ export function FileUpload({
     return <File className="h-5 w-5 text-blue-600" />;
   };
 
-  const isUploading =
-    uploadProgress !== null && uploadProgress.stage !== "error";
+  const isUploading = uploadingFiles.size > 0;
   const hasError = uploadProgress?.stage === "error";
 
   return (
