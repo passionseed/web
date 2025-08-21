@@ -114,6 +114,16 @@ export const getMapsWithStats = async (): Promise<
   let additionalMaps: any[] = [];
 
   if (user) {
+    console.log(`getMapsWithStats: Fetching data for authenticated user ${user.id}`);
+    
+    // Get user's roles for debugging
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+    
+    console.log(`User ${user.id} has roles:`, userRoles?.map(r => r.role) || ['no explicit roles']);
+
     // Get user's classrooms (as student or instructor)
     const { data: classroomMemberships } = await supabase
       .from("classroom_memberships")
@@ -143,11 +153,13 @@ export const getMapsWithStats = async (): Promise<
     }
 
     // Get user's teams
-    const { data: teamMemberships } = await supabase
+    const { data: teamMemberships, error: teamMembershipError } = await supabase
       .from("team_memberships")
       .select(
         `
         team_id,
+        left_at,
+        is_leader,
         classroom_teams!inner (
           id,
           name,
@@ -157,16 +169,30 @@ export const getMapsWithStats = async (): Promise<
       )
       .eq("user_id", user.id);
 
+    if (teamMembershipError) {
+      console.error(`Error fetching team memberships for user ${user.id}:`, teamMembershipError);
+    }
+
     if (teamMemberships) {
       userTeams = teamMemberships.map((tm) => ({
         team_id: tm.team_id,
-        team_name: tm.classroom_teams.name,
+        team_name: (tm.classroom_teams as any).name,
+        left_at: tm.left_at,
+        is_leader: tm.is_leader,
       }));
+      
+      const activeTeams = userTeams.filter(t => !t.left_at);
+      console.log(`User ${user.id} has ${userTeams.length} team memberships (${activeTeams.length} active):`, 
+        activeTeams.map(t => `${t.team_name} (${t.team_id})`));
+    } else {
+      console.log(`User ${user.id} has no team memberships`);
     }
 
     // Get team maps (only query if user has teams)
     const userTeamIds = userTeams.map((t) => t.team_id).filter(Boolean);
     if (userTeamIds.length > 0) {
+      console.log(`Fetching team maps for user ${user.id}, team IDs: ${userTeamIds.join(', ')}`);
+      
       const { data: teamMapData, error: teamMapError } = await supabase
         .from("classroom_team_maps")
         .select(
@@ -175,19 +201,53 @@ export const getMapsWithStats = async (): Promise<
         original_map_id,
         team_id,
         classroom_teams!inner (name),
-        learning_maps!map_id_fkey!inner (title),
-        original_maps:learning_maps!original_map_id_fkey (title)
+        learning_maps!map_id!inner (title),
+        original_maps:learning_maps!original_map_id (title)
       `
         )
         .in("team_id", userTeamIds);
 
       if (teamMapError) {
-        console.error("Error fetching classroom_team_maps:", teamMapError);
+        console.error("Error fetching classroom_team_maps:", {
+          error: teamMapError,
+          message: teamMapError.message,
+          code: teamMapError.code,
+          details: teamMapError.details,
+          hint: teamMapError.hint,
+          userId: user.id,
+          userTeamIds: userTeamIds,
+        });
+        
+        // Try a fallback query with left joins to get partial data
+        console.log("Attempting fallback query for team maps...");
+        const { data: fallbackTeamMapData, error: fallbackError } = await supabase
+          .from("classroom_team_maps")
+          .select(
+            `
+          map_id,
+          original_map_id,
+          team_id,
+          classroom_teams (name),
+          learning_maps!map_id_fkey (title),
+          original_maps:learning_maps!original_map_id_fkey (title)
+        `
+          )
+          .in("team_id", userTeamIds);
+
+        if (fallbackError) {
+          console.error("Fallback query also failed:", fallbackError);
+          teamMaps = []; // Set empty array as final fallback
+        } else {
+          console.log(`Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`);
+          teamMaps = fallbackTeamMapData || [];
+        }
       } else if (teamMapData) {
+        console.log(`Successfully fetched ${teamMapData.length} team maps`);
         teamMaps = teamMapData;
       }
     } else {
       // No teams for user - nothing to fetch
+      console.log(`User ${user.id} has no teams, skipping team map fetch`);
       teamMaps = [];
     }
 
