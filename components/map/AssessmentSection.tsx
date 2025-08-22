@@ -1,21 +1,16 @@
 // app/components/NodeViewPanel/AssessmentSection.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   CheckSquare,
   Upload,
   AlertCircle,
-  MessageCircle,
   Clock,
-  Star,
-  X,
-  FileText,
   CheckCircle,
   AlertTriangle
 } from "lucide-react";
@@ -102,7 +97,7 @@ export function AssessmentSection({
   const [isUploading, setIsUploading] = useState(false);
 
   // Initialize checklist items from assessment metadata
-  useState(() => {
+  useEffect(() => {
     if (assessment.assessment_type === "checklist" && assessment.metadata?.checklist_items) {
       const initialChecklist: Record<string, boolean> = {};
       assessment.metadata.checklist_items.forEach((item: any) => {
@@ -171,7 +166,7 @@ export function AssessmentSection({
           </CardTitle>
           <div className="flex gap-2">
             <Badge variant="outline" className="capitalize">
-              {assessment.assessment_type.replace("_", " ")}
+              {assessment.assessment_type.replace(/_/g, " ")}
             </Badge>
             {assessment.assessment_type === "quiz" && (
               <Badge variant="secondary">
