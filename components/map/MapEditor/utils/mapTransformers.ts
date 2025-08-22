@@ -59,7 +59,7 @@ export function createNewNode(map: FullLearningMap): {
     id: tempId,
     map_id: map.id,
     title: "New Node",
-    instructions: "Add instructions...",
+    instructions: "",
     difficulty: 1,
     sprite_url: null,
     metadata: { position: { x: 100, y: 100 } },
