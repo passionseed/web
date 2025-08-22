@@ -310,7 +310,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [copiedNode, setCopiedNode] = useState<MapNode | null>(null);
 
   // Copy/Paste functionality
-  const copyNode = useCallback(() => {
+  const copyNode = useCallback(async () => {
     if (!selectedNode) {
       toast({
         title: "No node selected",
@@ -323,6 +323,14 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     // Deep clone the node data to avoid reference issues
     const nodeToCopy = JSON.parse(JSON.stringify(selectedNode.data));
     setCopiedNode(nodeToCopy);
+
+    // Clear the system text clipboard to ensure only island can be pasted
+    try {
+      await navigator.clipboard.writeText('');
+    } catch (error) {
+      // Fallback for browsers that don't support clipboard API
+      console.log('Clipboard API not available');
+    }
 
     toast({
       title: "Node copied!",
@@ -439,19 +447,40 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
       switch (event.key.toLowerCase()) {
         case "c":
-          event.preventDefault();
-          copyNode();
+          // Only prevent default for node copy, let text copy work normally
+          const activeElement = document.activeElement;
+          const isTypingInInput = activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            (activeElement as HTMLElement).contentEditable === 'true' ||
+            activeElement.getAttribute('role') === 'textbox'
+          );
+          
+          if (!isTypingInInput) {
+            event.preventDefault();
+            copyNode();
+          } else {
+            // User is copying text, clear the island clipboard
+            setCopiedNode(null);
+          }
           break;
         case "v":
-          event.preventDefault();
-          pasteNode();
+          // Check if we have a copied node in our clipboard
+          const hasNodeToPaste = !!copiedNode;
+          
+          // If we have a copied node, always paste it (even in input fields)
+          if (hasNodeToPaste) {
+            event.preventDefault();
+            pasteNode();
+          }
+          // Otherwise, let normal text paste work in input fields
           break;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [copyNode, pasteNode]);
+  }, [copyNode, pasteNode, copiedNode]);
 
   // Transform map data to React Flow format
   useEffect(() => {
@@ -520,7 +549,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       id: tempId,
       map_id: map.id,
       title: "New Node",
-      instructions: "Add instructions...",
+      instructions: "",
       difficulty: 1,
       sprite_url: null,
       metadata: {
@@ -775,9 +804,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         const target = prev.map_nodes.find((m) => m.id === node.id);
         if (!target) return prev;
 
-        const oldPos = target.metadata.position;
-        // avoid no-op if position didn’t actually change
-        if (oldPos.x === node.position.x && oldPos.y === node.position.y) {
+        const oldPos = target.metadata?.position;
+        // avoid no-op if position didn't actually change
+        if (oldPos && oldPos.x === node.position.x && oldPos.y === node.position.y) {
           return prev;
         }
 
