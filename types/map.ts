@@ -125,6 +125,7 @@ export interface NodeAssessment {
   quiz_questions?: QuizQuestion[]; // Optional relation for quizzes
   points_possible?: number | null;
   is_graded?: boolean;
+  metadata?: Record<string, any> | null; // jsonb for checklist items and other metadata
 }
 
 export interface QuizQuestion {
