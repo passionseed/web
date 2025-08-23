@@ -30,6 +30,9 @@ import {
   getAssessmentSubmissions,
 } from "@/lib/supabase/assessment";
 import { getSubmissionGrade } from "@/lib/supabase/grading";
+import { InstructorGradingPanel } from "./InstructorGradingPanel";
+import { CommentNode } from "./CommentNode";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface NodeViewPanelProps {
   // React Flow Node requires a generic that extends Record<string, unknown>
@@ -38,6 +41,8 @@ interface NodeViewPanelProps {
   mapId: string;
   onProgressUpdate?: () => void;
   isNodeUnlocked?: boolean;
+  userRole?: "instructor" | "TA" | "student";
+  isInstructorOrTA?: boolean;
 }
 
 interface SubmissionWithGrade {
@@ -50,6 +55,8 @@ export function NodeViewPanel({
   mapId,
   onProgressUpdate,
   isNodeUnlocked = true,
+  userRole = "student",
+  isInstructorOrTA = false,
 }: NodeViewPanelProps) {
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [submissionsWithGrades, setSubmissionsWithGrades] = useState<
@@ -679,6 +686,74 @@ export function NodeViewPanel({
     );
   }
 
+  // For instructors/TAs viewing nodes, show grading interface for learning nodes
+  if (isInstructorOrTA && selectedNode && nodeData?.node_type !== "text" && nodeData?.node_type !== "comment") {
+    return (
+      <div className="h-full flex flex-col bg-background overflow-hidden">
+        <Tabs defaultValue="student-view" className="h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-2 mx-4 mt-4 mb-0">
+            <TabsTrigger value="student-view">Student View</TabsTrigger>
+            <TabsTrigger value="grading">Grading ({selectedNode?.id ? '?' : '0'})</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="student-view" className="flex-1 overflow-hidden mt-0">
+            <div className="h-full flex flex-col bg-background overflow-hidden">
+              {/* Header Section - Fixed */}
+              <div className="flex-shrink-0 border-b">
+                <NodeHeaderView
+                  nodeData={nodeData}
+                  progress={progress as any}
+                  currentUser={currentUser}
+                  hasStarted={!!hasStarted}
+                  isStarting={isStarting}
+                  onStartNode={handleStartNode}
+                />
+              </div>
+
+              {/* Content Section - Scrollable */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <div className="p-4 space-y-6 min-h-full">
+                  {/* Learning Content */}
+                  <LearningContentView
+                    nodeContent={nodeData?.node_content || []}
+                  />
+
+                  {/* Assessment Section */}
+                  {assessment && (
+                    <AssessmentSection
+                      nodeId={selectedNode.id}
+                      assessment={assessment}
+                      canResubmit={canResubmit}
+                      showAssessmentForm={false} // Instructors don't submit
+                      assessmentAnswer={assessmentAnswer}
+                      setAssessmentAnswer={setAssessmentAnswer}
+                      quizAnswers={quizAnswers}
+                      setQuizAnswers={setQuizAnswers}
+                      isSubmitting={isSubmitting}
+                      onSubmit={handleSubmitAssessment}
+                      submissionsWithGrades={submissionsWithGrades}
+                      progressStatus={progress?.status}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="grading" className="flex-1 overflow-hidden mt-0">
+            <InstructorGradingPanel
+              mapId={mapId}
+              selectedNode={selectedNode}
+              userId={currentUser?.id || ""}
+              onGradingComplete={onProgressUpdate}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
+  // Regular student view (or text/comment nodes for instructors)
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Header Section - Fixed */}
@@ -695,7 +770,7 @@ export function NodeViewPanel({
 
       {/* Content Section - Scrollable */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-        {hasStarted || nodeData?.node_type === "text" ? (
+        {hasStarted || nodeData?.node_type === "text" || nodeData?.node_type === "comment" ? (
           <div className="p-4 space-y-6 min-h-full">
             {nodeData?.node_type === "text" ? (
               <div className="p-4">
@@ -706,6 +781,26 @@ export function NodeViewPanel({
                   allowDoubleClick={false}
                   showHint={false}
                   showEditButton={false}
+                  onDataChange={(d) => {
+                    // Optimistic update
+                    setEditableNodeData((prev) =>
+                      prev ? { ...prev, ...d } : (nodeData as MapNode)
+                    );
+                    // Persist to DB
+                    persistTextNodeEdit(d as Partial<MapNode>);
+                  }}
+                />
+              </div>
+            ) : nodeData?.node_type === "comment" ? (
+              <div className="p-4">
+                <CommentNode
+                  data={editableNodeData || nodeData}
+                  selected
+                  userRole={userRole}
+                  allowEdit={isInstructorOrTA}
+                  allowDoubleClick={false}
+                  showHint={false}
+                  showEditButton={true}
                   onDataChange={(d) => {
                     // Optimistic update
                     setEditableNodeData((prev) =>
