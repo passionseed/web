@@ -33,7 +33,14 @@ import {
 } from "@/lib/supabase/progresses";
 import { MapNode } from "@/types/map";
 import { createClient } from "@/utils/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { TextNode } from "@/components/map/MapEditor/components/TextNode";
+import { CommentNode } from "@/components/map/CommentNode";
+import { SubmissionList } from "./SubmissionList";
+import { InlineGradingForm } from "./InlineGradingForm";
+import { getSubmissionsForMap } from "@/lib/supabase/grading";
+import { getTeamMapClassroomInfo, getUserClassroomRoleClient, getTeamProgressForInstructor, getUserTeamForMap } from "@/lib/supabase/maps";
+import { MapGrader } from "./MapGrader";
 import {
   CheckCircle,
   Clock,
@@ -102,8 +109,37 @@ export function MapViewer({ map }: MapViewerProps) {
   >({});
   const [isNavigationExpanded, setIsNavigationExpanded] = useState(false);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
+  const [showGradingOverview, setShowGradingOverview] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [allSubmissions, setAllSubmissions] = useState<any[]>([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+  const [classroomRole, setClassroomRole] = useState<string | null>(null);
+  const [isTeamMap, setIsTeamMap] = useState(false);
+  const [teamId, setTeamId] = useState<string | null>(null);
   const reactFlowInstance = useReactFlow();
 
+  // Role detection for instructor/TA functionality
+  const { user: authUser, userRoles, isAuthenticated } = useAuth();
+  
+  // Default role from global user_roles
+  const globalUserRole = userRoles?.includes("instructor")
+    ? "instructor"
+    : userRoles?.includes("TA")
+      ? "TA"
+      : "student";
+  
+  // Use classroom role if available, otherwise fall back to global role
+  const userRole = classroomRole || globalUserRole;
+  const isInstructorOrTA = userRole === "instructor" || userRole === "TA";
+
+  console.log(
+    "🗺️ [MapViewer] Rendering map:",
+    map.title,
+    "for user:",
+    authUser?.email,
+    "as",
+    userRole
+  );
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
 
@@ -224,28 +260,99 @@ export function MapViewer({ map }: MapViewerProps) {
     if (!currentUser) return;
 
     try {
-      console.log("🗺️ [MapViewer] Loading all progress for map:", map.id);
+      console.log("🗺️ [MapViewer] Loading progress for map:", map.id);
 
-      // Use the new API-based approach to load all progress at once
-      const progressData = await loadMapProgress(map.id);
-
-      console.log(
-        "✅ [MapViewer] Loaded progress for",
-        Object.keys(progressData).length,
-        "nodes"
-      );
+      let progressData;
+      
+      // For instructors viewing team maps, load team progress instead of individual progress
+      if (isTeamMap && isInstructorOrTA && teamId) {
+        console.log("👥 [MapViewer] Loading TEAM progress for instructor");
+        progressData = await getTeamProgressForInstructor(map.id, teamId);
+        
+        console.log(
+          "✅ [MapViewer] Loaded team progress for",
+          Object.keys(progressData).length,
+          "nodes"
+        );
+      } else {
+        // Use the standard individual progress loading
+        progressData = await loadMapProgress(map.id);
+        
+        console.log(
+          "✅ [MapViewer] Loaded individual progress for",
+          Object.keys(progressData).length,
+          "nodes"
+        );
+      }
+      
       setProgressMap(progressData);
     } catch (error) {
-      console.error("❌ [MapViewer] Error loading all progress:", error);
+      console.error("❌ [MapViewer] Error loading progress:", error);
       setProgressMap({}); // Fallback to empty progress
+    }
+  };
+
+  const loadAllSubmissions = async () => {
+    if (!isInstructorOrTA) return;
+
+    setIsLoadingSubmissions(true);
+    try {
+      const submissions = await getSubmissionsForMap(map.id);
+      setAllSubmissions(submissions);
+    } catch (error) {
+      console.error("Error loading submissions:", error);
+    } finally {
+      setIsLoadingSubmissions(false);
     }
   };
 
   useEffect(() => {
     if (currentUser) {
       loadAllProgress();
+      if (isInstructorOrTA) {
+        loadAllSubmissions();
+
+        // Set up periodic refresh for real-time updates (every 30 seconds)
+        const interval = setInterval(() => {
+          loadAllSubmissions();
+        }, 30000);
+
+        return () => clearInterval(interval);
+      }
     }
-  }, [currentUser, map]);
+  }, [currentUser, map, isInstructorOrTA]);
+
+  // Check if map is a team map and get classroom role
+  useEffect(() => {
+    const checkTeamMapAndRole = async () => {
+      if (!currentUser) return;
+
+      try {
+        // Check if this map is a team map
+        const teamMapInfo = await getTeamMapClassroomInfo(map.id);
+        setIsTeamMap(teamMapInfo.isTeamMap);
+        setTeamId(teamMapInfo.teamId || null);
+
+        if (teamMapInfo.isTeamMap && teamMapInfo.classroomId) {
+          // Get user's role in the classroom
+          const role = await getUserClassroomRoleClient(teamMapInfo.classroomId);
+          if (role) {
+            setClassroomRole(role);
+            console.log(
+              "👥 [MapViewer] User role in classroom:",
+              role,
+              "for classroom:",
+              teamMapInfo.classroomId
+            );
+          }
+        }
+      } catch (error) {
+        console.error("❌ [MapViewer] Error checking team map or classroom role:", error);
+      }
+    };
+
+    checkTeamMapAndRole();
+  }, [currentUser, map.id]);
 
   // Check if node is unlocked based on prerequisites
   const isNodeUnlocked = (nodeId: string): boolean => {
@@ -254,6 +361,11 @@ export function MapViewer({ map }: MapViewerProps) {
 
     // Text nodes are always "unlocked" (visible) since they're just annotations
     if ((nodeData as any)?.node_type === "text") {
+      return true;
+    }
+
+    // Instructors can see all nodes in team maps
+    if (isTeamMap && isInstructorOrTA) {
       return true;
     }
 
@@ -278,7 +390,7 @@ export function MapViewer({ map }: MapViewerProps) {
       data,
       selected,
     }: {
-      data: MapNode & { progress?: StudentProgress };
+      data: MapNode & { progress?: StudentProgress | any };
       selected?: boolean;
     }) => {
       const progress = data.progress;
@@ -301,7 +413,10 @@ export function MapViewer({ map }: MapViewerProps) {
         brightness = "brightness(0.3) grayscale(1)";
         statusIcon = null;
       } else if (progress) {
-        switch (progress.status) {
+        // Handle both individual progress (StudentProgress) and team progress (any) structures
+        const status = progress.status || (progress as any)?.status;
+        
+        switch (status) {
           case "passed":
             glowEffect = "drop-shadow-[0_0_12px_rgba(34,197,94,0.6)]";
             statusIcon = <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -334,6 +449,59 @@ export function MapViewer({ map }: MapViewerProps) {
       } else if (isUnlocked) {
         statusIcon = <Play className="h-4 w-4 text-blue-400" />;
         animationClass = "animate-float";
+      }
+
+      // Add grading indicators for instructors/TAs
+      let gradingIndicator = null;
+      let submissionCount = 0;
+      let pendingCount = 0;
+      let memberProgressInfo = null;
+
+      if (isInstructorOrTA && data.id) {
+        if (isTeamMap && progress && progress.member_progress) {
+          // Show team member progress for team maps
+          const memberProgress = progress.member_progress;
+          const passedCount = memberProgress.filter((mp: any) => mp.status === 'passed').length;
+          const submittedCount = memberProgress.filter((mp: any) => mp.status === 'submitted').length;
+          const inProgressCount = memberProgress.filter((mp: any) => mp.status === 'in_progress').length;
+          
+          memberProgressInfo = (
+            <div className="absolute -top-2 -right-2 z-50">
+              <div
+                className="rounded-full p-1 text-xs font-bold shadow-lg bg-blue-500 text-white"
+                title={`Team progress: ${passedCount} passed, ${submittedCount} submitted, ${inProgressCount} in progress`}
+              >
+                {memberProgress.length}
+              </div>
+            </div>
+          );
+        } else {
+          // Count submissions for individual progress
+          const nodeSubmissions = allSubmissions.filter(
+            (sub) => sub.node_assessments?.map_nodes?.id === data.id
+          );
+          submissionCount = nodeSubmissions.length;
+          pendingCount = nodeSubmissions.filter(
+            (sub) => sub.submission_grades.length === 0
+          ).length;
+
+          // Add grading badge if there are submissions
+          if (submissionCount > 0) {
+            gradingIndicator = (
+              <div className="absolute -top-2 -right-2 z-50">
+                <div
+                  className={`rounded-full p-1 text-xs font-bold shadow-lg ${
+                    pendingCount > 0
+                      ? "bg-orange-500 text-white animate-pulse"
+                      : "bg-green-500 text-white"
+                  }`}
+                >
+                  {pendingCount > 0 ? pendingCount : submissionCount}
+                </div>
+              </div>
+            );
+          }
+        }
       }
 
       return (
@@ -412,6 +580,10 @@ export function MapViewer({ map }: MapViewerProps) {
               />
             )}
 
+            {/* Grading Indicator for Instructors/TAs */}
+            {gradingIndicator}
+            {memberProgressInfo}
+
             {/* Sprite Image */}
             <img
               src={spriteUrl}
@@ -486,12 +658,45 @@ export function MapViewer({ map }: MapViewerProps) {
         />
       );
     },
+    comment: ({
+      data,
+      selected,
+    }: {
+      data: MapNode & { node_type?: string };
+      selected?: boolean;
+    }) => {
+      // Comment nodes can be edited by instructors/TAs
+      return (
+        <CommentNode
+          data={data}
+          selected={selected}
+          userRole={userRole}
+          // Allow editing for instructors/TAs, read-only for students
+          allowEdit={isInstructorOrTA}
+          allowDoubleClick={isInstructorOrTA}
+          showHint={true}
+          showEditButton={true}
+          onDataChange={(updatedData) => {
+            // Handle comment node updates
+            if (isInstructorOrTA && updatedData) {
+              // TODO: Persist comment changes to database
+              console.log("Comment node updated:", updatedData);
+            }
+          }}
+        />
+      );
+    },
   };
 
   useEffect(() => {
     const transformedNodes = map.map_nodes.map((node) => {
       // Determine node type - check for node_type property
-      const nodeType = (node as any)?.node_type === "text" ? "text" : "default";
+      let nodeType = "default"; // learning node
+      if ((node as any)?.node_type === "text") {
+        nodeType = "text";
+      } else if ((node as any)?.node_type === "comment") {
+        nodeType = "comment";
+      }
 
       return {
         id: node.id,
@@ -664,7 +869,7 @@ export function MapViewer({ map }: MapViewerProps) {
             {/* Progress Statistics */}
             <div className="mb-4 bg-muted/30 rounded-lg p-3">
               <div className="text-xs text-muted-foreground mb-2 font-medium">
-                Progress Overview
+                {isTeamMap && isInstructorOrTA ? "Team Progress Overview" : "Progress Overview"}
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex items-center gap-2">
@@ -672,7 +877,7 @@ export function MapViewer({ map }: MapViewerProps) {
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) => p.status === "passed"
+                        (p) => p.status === "passed" || (p as any)?.status === "passed"
                       ).length
                     }{" "}
                     Completed
@@ -683,7 +888,7 @@ export function MapViewer({ map }: MapViewerProps) {
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) => p.status === "submitted"
+                        (p) => p.status === "submitted" || (p as any)?.status === "submitted"
                       ).length
                     }{" "}
                     Submitted
@@ -694,7 +899,7 @@ export function MapViewer({ map }: MapViewerProps) {
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) => p.status === "in_progress"
+                        (p) => p.status === "in_progress" || (p as any)?.status === "in_progress"
                       ).length
                     }{" "}
                     In Progress
@@ -791,15 +996,28 @@ export function MapViewer({ map }: MapViewerProps) {
 
         <div className="h-full flex flex-col overflow-hidden">
           {!isPanelMinimized && (
-            <NodeViewPanel
-              key={selectedNode?.id || "no-selection"} // Force remount on node change
-              selectedNode={selectedNode}
-              mapId={map.id}
-              onProgressUpdate={loadAllProgress}
-              isNodeUnlocked={
-                selectedNode ? isNodeUnlocked(selectedNode.id) : true
-              }
-            />
+            isTeamMap && selectedNode ? (
+              <MapGrader
+                key={selectedNode.id}
+                teamId={teamId!}
+                nodeId={selectedNode.id}
+                teamProgress={progressMap}
+                onProgressUpdate={loadAllProgress}
+                userRole={userRole}
+              />
+            ) : (
+              <NodeViewPanel
+                key={selectedNode?.id || "no-selection"} // Force remount on node change
+                selectedNode={selectedNode}
+                mapId={map.id}
+                onProgressUpdate={loadAllProgress}
+                isNodeUnlocked={
+                  selectedNode ? isNodeUnlocked(selectedNode.id) : true
+                }
+                userRole={userRole}
+                isInstructorOrTA={isInstructorOrTA}
+              />
+            )
           )}
         </div>
       </ResizablePanel>
