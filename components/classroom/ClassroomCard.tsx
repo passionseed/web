@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Calendar, BookOpen, TrendingUp, Clock, CheckCircle, AlertCircle, GraduationCap } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ClassroomWithAssignments } from "@/types/classroom";
 
 interface ClassroomCardProps {
@@ -30,6 +30,7 @@ interface ClassroomCardProps {
 }
 
 export function ClassroomCard({ classroom }: ClassroomCardProps) {
+  const router = useRouter();
   const memberCount = classroom.member_count || 0;
   const assignmentCount =
     classroom.assignment_count || classroom.assignments?.length || 0;
@@ -48,8 +49,15 @@ export function ClassroomCard({ classroom }: ClassroomCardProps) {
   const overdueAssignments = classroom.overdue_assignments || 0;
   const progressPercentage = classroom.progress_percentage || 0;
 
+  const handleCardClick = () => {
+    router.push(`/classrooms/${classroom.id}`);
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
+      <Card 
+        className="hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+        onClick={handleCardClick}
+      >
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -215,31 +223,47 @@ export function ClassroomCard({ classroom }: ClassroomCardProps) {
         <div className="flex space-x-2 pt-2">
           {isStudent ? (
             <>
-              <Button asChild className="flex-1">
-                <Link href={`/classrooms/${classroom.id}/assignments`}>
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  View Assignments
-                </Link>
+              <Button 
+                className="flex-1" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/classrooms/${classroom.id}?tab=assignments`);
+                }}
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                View Assignments
               </Button>
-              <Button variant="outline" asChild>
-                <Link href={`/classrooms/${classroom.id}`}>
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Progress
-                </Link>
+              <Button 
+                variant="outline" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/classrooms/${classroom.id}?tab=students`);
+                }}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                My Progress
               </Button>
             </>
           ) : (
             <>
-              <Button asChild className="flex-1">
-                <Link href={`/classrooms/${classroom.id}`}>
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Dashboard
-                </Link>
+              <Button 
+                className="flex-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/classrooms/${classroom.id}`);
+                }}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Dashboard
               </Button>
-              <Button variant="outline" asChild>
-                <Link href={`/classrooms/${classroom.id}/assignments`}>
-                  Assignments
-                </Link>
+              <Button 
+                variant="outline" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/classrooms/${classroom.id}?tab=assignments`);
+                }}
+              >
+                Assignments
               </Button>
             </>
           )}

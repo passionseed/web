@@ -153,7 +153,11 @@ export function NodeEditorPanel({
       console.log(
         "🔧 Assessment change:",
         action,
-        changedAssessment?.assessment_type
+        changedAssessment?.assessment_type,
+        "points_possible:",
+        changedAssessment?.points_possible,
+        "is_graded:",
+        changedAssessment?.is_graded
       );
 
       const newAssessments =
