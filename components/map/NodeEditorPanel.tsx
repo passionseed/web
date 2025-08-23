@@ -501,7 +501,7 @@ export function NodeEditorPanel({
                       <Textarea
                         id="instructions"
                         name="instructions"
-                        placeholder="Instructions for the student..."
+                        placeholder="Add instruction..."
                         value={nodeData.instructions || ""}
                         onChange={handleInputChange("instructions")}
                         className="min-h-[100px]"
