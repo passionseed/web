@@ -611,6 +611,9 @@ export default function EditMapPage() {
           const assessmentToCreate = {
             node_id: node.id,
             assessment_type: currentAssessment.assessment_type,
+            // Add grading fields
+            points_possible: currentAssessment.points_possible,
+            is_graded: currentAssessment.is_graded,
             // Add metadata for checklist assessments
             ...(currentAssessment.metadata && {
               metadata: currentAssessment.metadata,
@@ -653,18 +656,23 @@ export default function EditMapPage() {
           return;
         }
 
-        // Updated assessment type
+        // Updated assessment (type, metadata, or grading fields)
         if (
           initialAssessment &&
           currentAssessment &&
           (initialAssessment.assessment_type !==
             currentAssessment.assessment_type ||
           JSON.stringify(initialAssessment.metadata) !==
-            JSON.stringify(currentAssessment.metadata))
+            JSON.stringify(currentAssessment.metadata) ||
+          initialAssessment.points_possible !== currentAssessment.points_possible ||
+          initialAssessment.is_graded !== currentAssessment.is_graded)
         ) {
           const assessmentToUpdate = {
             id: initialAssessment.id,
             assessment_type: currentAssessment.assessment_type,
+            // Add grading fields
+            points_possible: currentAssessment.points_possible,
+            is_graded: currentAssessment.is_graded,
             // Add metadata for checklist assessments
             ...(currentAssessment.metadata && {
               metadata: currentAssessment.metadata,
