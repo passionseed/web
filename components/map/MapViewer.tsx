@@ -39,7 +39,11 @@ import { CommentNode } from "@/components/map/CommentNode";
 import { SubmissionList } from "./SubmissionList";
 import { InlineGradingForm } from "./InlineGradingForm";
 import { getSubmissionsForMap } from "@/lib/supabase/grading";
-import { getTeamMapClassroomInfo, getUserClassroomRoleClient, getUserTeamForMap } from "@/lib/supabase/maps";
+import {
+  getTeamMapClassroomInfo,
+  getUserClassroomRoleClient,
+  getUserTeamForMap,
+} from "@/lib/supabase/maps";
 import { getTeamProgressForInstructor } from "@/lib/supabase/team-progress";
 import {
   CheckCircle,
@@ -54,6 +58,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import FloatingEdge from "@/components/map/FloatingEdge";
+import { isEditable } from "@/lib/dom/is-editable";
 
 interface MapViewerProps {
   map: FullLearningMap;
@@ -104,9 +109,8 @@ export function MapViewer({ map }: MapViewerProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [progressMap, setProgressMap] = useState<
-    Record<string, StudentProgress>
-  >({});
+  // Allow both individual (Record<string, StudentProgress>) and team summaries
+  const [progressMap, setProgressMap] = useState<Record<string, any>>({});
   const [isNavigationExpanded, setIsNavigationExpanded] = useState(false);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
   const [showGradingOverview, setShowGradingOverview] = useState(false);
@@ -120,16 +124,25 @@ export function MapViewer({ map }: MapViewerProps) {
 
   // Role detection for instructor/TA functionality
   const { user: authUser, userRoles, isAuthenticated } = useAuth();
-  
-  // Default role from global user_roles
-  const globalUserRole = userRoles?.includes("instructor")
+
+  // Use a strict union for roles to satisfy prop typing
+  type UserRole = "instructor" | "TA" | "student";
+  const globalUserRole: UserRole = userRoles?.includes("instructor")
     ? "instructor"
     : userRoles?.includes("TA")
       ? "TA"
       : "student";
-  
+
+  // Normalize classroom role into the union or ignore if unknown
+  const roleFromClassroom =
+    classroomRole === "instructor" ||
+    classroomRole === "TA" ||
+    classroomRole === "student"
+      ? (classroomRole as UserRole)
+      : null;
+
   // Use classroom role if available, otherwise fall back to global role
-  const userRole = classroomRole || globalUserRole;
+  const userRole: UserRole = roleFromClassroom ?? globalUserRole;
   const isInstructorOrTA = userRole === "instructor" || userRole === "TA";
 
   console.log(
@@ -165,37 +178,45 @@ export function MapViewer({ map }: MapViewerProps) {
     }
   }, [isPanelMinimized, selectedNode]);
 
-  // Keyboard navigation
+  // Keyboard navigation (scoped to non-editable contexts)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!reactFlowInstance) return;
 
-      switch (event.key) {
-        case "f":
-        case "F":
-          if (!event.ctrlKey && !event.metaKey) {
-            event.preventDefault();
-            reactFlowInstance.fitView({ duration: 600, padding: 0.1 });
-          }
-          break;
-        case "Escape":
-          setSelectedNode(null);
-          if (rightPanelRef.current && leftPanelRef.current) {
-            leftPanelRef.current.resize(70);
-            rightPanelRef.current.resize(30);
-          }
-          break;
-        case "Tab":
-          if (event.shiftKey) {
-            // Navigate to previous unlocked node
-            event.preventDefault();
-            navigateToAdjacentNode(-1);
-          } else {
-            // Navigate to next unlocked node
-            event.preventDefault();
-            navigateToAdjacentNode(1);
-          }
-          break;
+      // Do not handle when user is typing or during IME composition
+      if (event.isComposing) return;
+      if (isEditable(event.target)) return;
+
+      const key = event.key?.toLowerCase?.() ?? event.key;
+      const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
+
+      // Do not intercept plain character keys like "f" without a modifier
+      if (key && key.length === 1 && !hasModifier) {
+        return;
+      }
+
+      // Escape to clear selection
+      if (key === "escape") {
+        setSelectedNode(null);
+        if (rightPanelRef.current && leftPanelRef.current) {
+          leftPanelRef.current.resize(70);
+          rightPanelRef.current.resize(30);
+        }
+        return;
+      }
+
+      // Only manage Tab-based map navigation outside of editable elements
+      if (key === "tab" && !hasModifier) {
+        event.preventDefault();
+        navigateToAdjacentNode(event.shiftKey ? -1 : 1);
+        return;
+      }
+
+      // Example global shortcut: toggle navigation guide with Cmd/Ctrl+K
+      if ((event.metaKey || event.ctrlKey) && key === "k") {
+        event.preventDefault();
+        setIsNavigationExpanded((v) => !v);
+        return;
       }
     };
 
@@ -263,12 +284,12 @@ export function MapViewer({ map }: MapViewerProps) {
       console.log("🗺️ [MapViewer] Loading progress for map:", map.id);
 
       let progressData;
-      
+
       // For instructors viewing team maps, load team progress instead of individual progress
       if (isTeamMap && isInstructorOrTA && teamId) {
         console.log("👥 [MapViewer] Loading TEAM progress for instructor");
         progressData = await getTeamProgressForInstructor(map.id, teamId);
-        
+
         console.log(
           "✅ [MapViewer] Loaded team progress for",
           Object.keys(progressData).length,
@@ -277,14 +298,14 @@ export function MapViewer({ map }: MapViewerProps) {
       } else {
         // Use the standard individual progress loading
         progressData = await loadMapProgress(map.id);
-        
+
         console.log(
           "✅ [MapViewer] Loaded individual progress for",
           Object.keys(progressData).length,
           "nodes"
         );
       }
-      
+
       setProgressMap(progressData);
     } catch (error) {
       console.error("❌ [MapViewer] Error loading progress:", error);
@@ -335,7 +356,9 @@ export function MapViewer({ map }: MapViewerProps) {
 
         if (teamMapInfo.isTeamMap && teamMapInfo.classroomId) {
           // Get user's role in the classroom
-          const role = await getUserClassroomRoleClient(teamMapInfo.classroomId);
+          const role = await getUserClassroomRoleClient(
+            teamMapInfo.classroomId
+          );
           if (role) {
             setClassroomRole(role);
             console.log(
@@ -347,7 +370,10 @@ export function MapViewer({ map }: MapViewerProps) {
           }
         }
       } catch (error) {
-        console.error("❌ [MapViewer] Error checking team map or classroom role:", error);
+        console.error(
+          "❌ [MapViewer] Error checking team map or classroom role:",
+          error
+        );
       }
     };
 
@@ -415,7 +441,7 @@ export function MapViewer({ map }: MapViewerProps) {
       } else if (progress) {
         // Handle both individual progress (StudentProgress) and team progress (any) structures
         const status = progress.status || (progress as any)?.status;
-        
+
         switch (status) {
           case "passed":
             glowEffect = "drop-shadow-[0_0_12px_rgba(34,197,94,0.6)]";
@@ -461,10 +487,16 @@ export function MapViewer({ map }: MapViewerProps) {
         if (isTeamMap && progress && progress.member_progress) {
           // Show team member progress for team maps
           const memberProgress = progress.member_progress;
-          const passedCount = memberProgress.filter((mp: any) => mp.status === 'passed').length;
-          const submittedCount = memberProgress.filter((mp: any) => mp.status === 'submitted').length;
-          const inProgressCount = memberProgress.filter((mp: any) => mp.status === 'in_progress').length;
-          
+          const passedCount = memberProgress.filter(
+            (mp: any) => mp.status === "passed"
+          ).length;
+          const submittedCount = memberProgress.filter(
+            (mp: any) => mp.status === "submitted"
+          ).length;
+          const inProgressCount = memberProgress.filter(
+            (mp: any) => mp.status === "in_progress"
+          ).length;
+
           memberProgressInfo = (
             <div className="absolute -top-2 -right-2 z-50">
               <div
@@ -869,7 +901,9 @@ export function MapViewer({ map }: MapViewerProps) {
             {/* Progress Statistics */}
             <div className="mb-4 bg-muted/30 rounded-lg p-3">
               <div className="text-xs text-muted-foreground mb-2 font-medium">
-                {isTeamMap && isInstructorOrTA ? "Team Progress Overview" : "Progress Overview"}
+                {isTeamMap && isInstructorOrTA
+                  ? "Team Progress Overview"
+                  : "Progress Overview"}
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex items-center gap-2">
@@ -877,7 +911,9 @@ export function MapViewer({ map }: MapViewerProps) {
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) => p.status === "passed" || (p as any)?.status === "passed"
+                        (p) =>
+                          p.status === "passed" ||
+                          (p as any)?.status === "passed"
                       ).length
                     }{" "}
                     Completed
@@ -888,7 +924,9 @@ export function MapViewer({ map }: MapViewerProps) {
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) => p.status === "submitted" || (p as any)?.status === "submitted"
+                        (p) =>
+                          p.status === "submitted" ||
+                          (p as any)?.status === "submitted"
                       ).length
                     }{" "}
                     Submitted
@@ -899,7 +937,9 @@ export function MapViewer({ map }: MapViewerProps) {
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) => p.status === "in_progress" || (p as any)?.status === "in_progress"
+                        (p) =>
+                          p.status === "in_progress" ||
+                          (p as any)?.status === "in_progress"
                       ).length
                     }{" "}
                     In Progress
