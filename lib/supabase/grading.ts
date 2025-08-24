@@ -37,6 +37,13 @@ export type SubmissionWithDetails = {
       id: string;
       title: string;
       map_id: string;
+      learning_maps?: {
+        id: string;
+        title: string;
+        classroom_maps?: {
+          classroom_id: string;
+        }[];
+      };
     };
   };
   submission_grades: {
@@ -375,6 +382,104 @@ export const getSubmissionGrade = async (
   }
 
   return data || null;
+};
+
+// Get all submissions for a classroom across all linked maps
+export const getSubmissionsForClassroom = async (
+  classroomId: string
+): Promise<SubmissionWithDetails[]> => {
+  const supabase = createClient();
+
+  // First get all maps linked to this classroom
+  const { data: classroomMaps, error: mapsError } = await supabase
+    .from("classroom_maps")
+    .select("map_id")
+    .eq("classroom_id", classroomId)
+    .eq("is_active", true);
+
+  if (mapsError || !classroomMaps || classroomMaps.length === 0) {
+    console.log("No maps found for classroom:", classroomId);
+    return [];
+  }
+
+  const mapIds = classroomMaps.map(cm => cm.map_id);
+
+  // Then get submissions for those maps
+  const { data, error } = await supabase
+    .from("assessment_submissions")
+    .select(
+      `
+      *,
+      student_node_progress (
+        id,
+        status,
+        profiles (
+          id,
+          username,
+          avatar_url
+        )
+      ),
+      node_assessments (
+        id,
+        assessment_type,
+        map_nodes (
+          id,
+          title,
+          map_id
+        )
+      ),
+      submission_grades (
+        id,
+        grade,
+        rating,
+        points_awarded,
+        comments,
+        graded_at,
+        graded_by,
+        profiles (
+          id,
+          username
+        )
+      )
+    `
+    )
+    .in("node_assessments.map_nodes.map_id", mapIds)
+    .order("submitted_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching classroom submissions:", error);
+    throw new Error("Could not fetch submissions for this classroom.");
+  }
+
+  // Add map titles to the results
+  const { data: maps } = await supabase
+    .from("learning_maps")
+    .select("id, title")
+    .in("id", mapIds);
+
+  const mapTitles: Record<string, string> = {};
+  if (maps) {
+    maps.forEach((map: any) => {
+      mapTitles[map.id] = map.title;
+    });
+  }
+
+  // Enhance submissions with map titles
+  const enhancedSubmissions = (data || []).map((submission: any) => ({
+    ...submission,
+    node_assessments: {
+      ...submission.node_assessments,
+      map_nodes: {
+        ...submission.node_assessments.map_nodes,
+        learning_maps: {
+          id: submission.node_assessments.map_nodes.map_id,
+          title: mapTitles[submission.node_assessments.map_nodes.map_id] || "Unknown Map"
+        }
+      }
+    }
+  }));
+
+  return enhancedSubmissions;
 };
 
 // Get submission information for a specific node and user

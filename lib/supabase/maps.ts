@@ -114,15 +114,20 @@ export const getMapsWithStats = async (): Promise<
   let additionalMaps: any[] = [];
 
   if (user) {
-    console.log(`getMapsWithStats: Fetching data for authenticated user ${user.id}`);
-    
+    console.log(
+      `getMapsWithStats: Fetching data for authenticated user ${user.id}`
+    );
+
     // Get user's roles for debugging
     const { data: userRoles } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
-    
-    console.log(`User ${user.id} has roles:`, userRoles?.map(r => r.role) || ['no explicit roles']);
+
+    console.log(
+      `User ${user.id} has roles:`,
+      userRoles?.map((r) => r.role) || ["no explicit roles"]
+    );
 
     // Get user's classrooms (as student or instructor)
     const { data: classroomMemberships } = await supabase
@@ -170,7 +175,10 @@ export const getMapsWithStats = async (): Promise<
       .eq("user_id", user.id);
 
     if (teamMembershipError) {
-      console.error(`Error fetching team memberships for user ${user.id}:`, teamMembershipError);
+      console.error(
+        `Error fetching team memberships for user ${user.id}:`,
+        teamMembershipError
+      );
     }
 
     if (teamMemberships) {
@@ -180,10 +188,12 @@ export const getMapsWithStats = async (): Promise<
         left_at: tm.left_at,
         is_leader: tm.is_leader,
       }));
-      
-      const activeTeams = userTeams.filter(t => !t.left_at);
-      console.log(`User ${user.id} has ${userTeams.length} team memberships (${activeTeams.length} active):`, 
-        activeTeams.map(t => `${t.team_name} (${t.team_id})`));
+
+      const activeTeams = userTeams.filter((t) => !t.left_at);
+      console.log(
+        `User ${user.id} has ${userTeams.length} team memberships (${activeTeams.length} active):`,
+        activeTeams.map((t) => `${t.team_name} (${t.team_id})`)
+      );
     } else {
       console.log(`User ${user.id} has no team memberships`);
     }
@@ -191,8 +201,10 @@ export const getMapsWithStats = async (): Promise<
     // Get team maps (only query if user has teams)
     const userTeamIds = userTeams.map((t) => t.team_id).filter(Boolean);
     if (userTeamIds.length > 0) {
-      console.log(`Fetching team maps for user ${user.id}, team IDs: ${userTeamIds.join(', ')}`);
-      
+      console.log(
+        `Fetching team maps for user ${user.id}, team IDs: ${userTeamIds.join(", ")}`
+      );
+
       const { data: teamMapData, error: teamMapError } = await supabase
         .from("classroom_team_maps")
         .select(
@@ -217,13 +229,14 @@ export const getMapsWithStats = async (): Promise<
           userId: user.id,
           userTeamIds: userTeamIds,
         });
-        
+
         // Try a fallback query with left joins to get partial data
         console.log("Attempting fallback query for team maps...");
-        const { data: fallbackTeamMapData, error: fallbackError } = await supabase
-          .from("classroom_team_maps")
-          .select(
-            `
+        const { data: fallbackTeamMapData, error: fallbackError } =
+          await supabase
+            .from("classroom_team_maps")
+            .select(
+              `
           map_id,
           original_map_id,
           team_id,
@@ -231,14 +244,16 @@ export const getMapsWithStats = async (): Promise<
           learning_maps!map_id_fkey (title),
           original_maps:learning_maps!original_map_id_fkey (title)
         `
-          )
-          .in("team_id", userTeamIds);
+            )
+            .in("team_id", userTeamIds);
 
         if (fallbackError) {
           console.error("Fallback query also failed:", fallbackError);
           teamMaps = []; // Set empty array as final fallback
         } else {
-          console.log(`Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`);
+          console.log(
+            `Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`
+          );
           teamMaps = fallbackTeamMapData || [];
         }
       } else if (teamMapData) {
@@ -696,7 +711,7 @@ export const forkMapForTeam = async (
     const nodeIdMap = new Map<string, string>(); // oldId -> newId
 
     // Insert all nodes at once for better performance
-    const nodesToInsert = oldNodes.map(node => ({
+    const nodesToInsert = oldNodes.map((node) => ({
       map_id: newMapId,
       title: node.title,
       instructions: node.instructions,
@@ -713,7 +728,7 @@ export const forkMapForTeam = async (
         .from("map_nodes")
         .insert(nodesToInsert)
         .select("*");
-      
+
       if (nodeErr || !createdNodes) {
         console.error("Failed to create nodes", nodeErr);
         throw new Error("COPY_FAILED_NODE");
@@ -778,38 +793,38 @@ export const forkMapForTeam = async (
       // assessments + quiz questions
       const assessments = node.node_assessments || [];
       const assessmentIdMap = new Map<string, string>(); // old assessment id -> new assessment id
-      
+
       // Insert all assessments for this node
-      const assessmentsToInsert = assessments.map(a => ({
+      const assessmentsToInsert = assessments.map((a) => ({
         node_id: newNodeId,
         assessment_type: a.assessment_type,
       }));
-      
+
       if (assessmentsToInsert.length > 0) {
         const { data: createdAssessments, error: aErr } = await supabase
           .from("node_assessments")
           .insert(assessmentsToInsert)
           .select("*");
-        
+
         if (aErr || !createdAssessments) {
           console.error("Failed to copy assessments", aErr);
           throw new Error("COPY_FAILED_ASSESSMENT");
         }
-        
+
         // Map old assessment IDs to new ones
         assessments.forEach((a, index) => {
           if (createdAssessments[index]) {
             assessmentIdMap.set(a.id, createdAssessments[index].id);
           }
         });
-        
+
         // Copy quiz questions for all assessments
         const allQuestionsToInsert: any[] = [];
-        
+
         for (const a of assessments) {
           const questions = a.quiz_questions || [];
           const newAssessmentId = assessmentIdMap.get(a.id);
-          
+
           if (newAssessmentId && questions.length > 0) {
             const questionsForThisAssessment = questions.map((q) => ({
               assessment_id: newAssessmentId,
@@ -820,7 +835,7 @@ export const forkMapForTeam = async (
             allQuestionsToInsert.push(...questionsForThisAssessment);
           }
         }
-        
+
         if (allQuestionsToInsert.length > 0) {
           const { error: qErr } = await supabase
             .from("quiz_questions")

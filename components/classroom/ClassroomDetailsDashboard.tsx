@@ -276,6 +276,7 @@ export function ClassroomDetailsDashboard({
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="maps">Learning Maps</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
+          {canManage && <TabsTrigger value="grading">Grading</TabsTrigger>}
           {canManage && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
         </TabsList>
 
@@ -437,6 +438,33 @@ export function ClassroomDetailsDashboard({
             </CardContent>
           </Card>
         </TabsContent>
+
+        {canManage && (
+          <TabsContent value="grading" className="space-y-4">
+            <h3 className="text-lg font-semibold">Grading</h3>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Submission Grading</CardTitle>
+                <CardDescription>
+                  Grade student submissions for assignments and learning maps
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center text-muted-foreground py-8">
+                  <BookOpen className="h-12 w-12 mx-auto mb-4" />
+                  <p className="mb-4">
+                    Navigate to the Learning Maps tab to grade submissions for
+                    specific maps
+                  </p>
+                  <Button onClick={() => handleTabChange("maps")}>
+                    View Learning Maps
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         {canManage && (
           <TabsContent value="analytics" className="space-y-4">
