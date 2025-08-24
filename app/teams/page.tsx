@@ -6,11 +6,10 @@ import { getClassroomTeamMaps } from "@/lib/supabase/teams";
 import { getUserClassrooms } from "@/lib/supabase/classroom-memberships";
 
 export default async function TeamsPage() {
-  const supabase = createClient();
-  
-  const { data } = await supabase.auth.getUser();
-
-  if (!data?.user) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  console.log("🔐 Auth data:xxx", { data, error });
+  if (error || !data?.user) {
     redirect("/login");
   }
 
@@ -19,10 +18,10 @@ export default async function TeamsPage() {
   try {
     // Get user's classrooms using the existing utility function
     const userMemberships = await getUserClassrooms(user.id);
-    
+
     // Check if user has student role in any classroom
-    const isStudent = userMemberships.some(m => m.role === "student");
-    
+    const isStudent = userMemberships.some((m) => m.role === "student");
+
     if (!isStudent) {
       // Redirect instructors/TAs to classrooms page
       redirect("/classrooms");
@@ -30,35 +29,38 @@ export default async function TeamsPage() {
 
     // Get student classrooms only
     const studentClassrooms = userMemberships
-      .filter(m => m.role === "student")
-      .map(m => ({
+      .filter((m) => m.role === "student")
+      .map((m) => ({
         id: m.classroom_id,
         name: m.classrooms?.name || "Unknown Classroom",
-        description: m.classrooms?.description || null
+        description: m.classrooms?.description || null,
       }));
 
     // Get user's teams across all student classrooms
     let userTeams = [];
     let teamMaps = [];
-    
+
     for (const classroom of studentClassrooms) {
       try {
         // Get teams for this classroom
-        const classroomTeams = await getClassroomTeams(classroom.id);
+        const classroomTeams = await getClassroomTeams(classroom.id, supabase);
         const userTeamsInClassroom = classroomTeams.filter(
-          team => team.current_user_membership
+          (team) => team.current_user_membership
         );
         userTeams.push(...userTeamsInClassroom);
 
         // Get team maps for this classroom
         const classroomTeamMaps = await getClassroomTeamMaps(classroom.id);
-        const userTeamIds = userTeamsInClassroom.map(team => team.id);
-        const userTeamMaps = classroomTeamMaps.filter(
-          map => userTeamIds.includes(map.team_id)
+        const userTeamIds = userTeamsInClassroom.map((team) => team.id);
+        const userTeamMaps = classroomTeamMaps.filter((map) =>
+          userTeamIds.includes(map.team_id)
         );
         teamMaps.push(...userTeamMaps);
       } catch (error) {
-        console.error(`Error loading data for classroom ${classroom.id}:`, error);
+        console.error(
+          `Error loading data for classroom ${classroom.id}:`,
+          error
+        );
       }
     }
 
@@ -68,11 +70,12 @@ export default async function TeamsPage() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight">My Teams</h1>
             <p className="text-muted-foreground mt-2">
-              Manage your teams, collaborate on learning maps, and track progress together.
+              Manage your teams, collaborate on learning maps, and track
+              progress together.
             </p>
           </div>
-          
-          <StudentTeamDashboard 
+
+          <StudentTeamDashboard
             userId={user.id}
             userClassrooms={studentClassrooms}
             userTeams={userTeams}
