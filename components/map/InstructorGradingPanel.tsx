@@ -24,6 +24,8 @@ import {
   Eye,
   MessageSquare,
   Users2,
+  Send,
+  MessageCircle,
 } from "lucide-react";
 import { MapNode, SubmissionGrade } from "@/types/map";
 import {
@@ -39,6 +41,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { createClient } from "@/utils/supabase/client";
 
 interface InstructorGradingPanelProps {
   mapId: string;
@@ -58,6 +62,8 @@ export function InstructorGradingPanel({
   const [selectedSubmission, setSelectedSubmission] =
     useState<SubmissionWithDetails | null>(null);
   const [teamFilter, setTeamFilter] = useState<string>("all");
+  const [comment, setComment] = useState<string>("");
+  const [isAddingComment, setIsAddingComment] = useState(false);
   const { toast } = useToast();
 
   // Filter submissions by selected node and team filter
@@ -143,6 +149,58 @@ export function InstructorGradingPanel({
         description: "Could not save the grade. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleAddCommentToSubmission = async (submission: SubmissionWithDetails) => {
+    if (!comment.trim()) return;
+
+    setIsAddingComment(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // Add comment as a new grade entry (update existing or create new)
+      const gradeData = {
+        submission_id: submission.id,
+        grade: submission.submission_grades?.[0]?.grade || "pending", // Keep existing grade or mark as pending
+        feedback: comment.trim(),
+        comments: comment.trim(), // Also add to comments field for backward compatibility
+        graded_by: user.id,
+        graded_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("submission_grades")
+        .upsert(gradeData, { onConflict: "submission_id" });
+
+      if (error) {
+        throw error;
+      }
+
+      // Clear comment and refresh
+      setComment("");
+      await loadSubmissions();
+      onGradingComplete?.();
+
+      toast({
+        title: "Comment added",
+        description: `Comment added to ${submission.student_node_progress.profiles.username}'s submission`,
+      });
+
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast({
+        title: "Comment failed",
+        description: "Could not add comment to submission",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingComment(false);
     }
   };
 
@@ -278,6 +336,38 @@ export function InstructorGradingPanel({
                 )}
               </div>
             )}
+
+            {/* Comment Section */}
+            <div className="border-t pt-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-blue-500" />
+                  <label className="text-sm font-medium">Add Comment:</label>
+                </div>
+                <div className="flex gap-2">
+                  <Textarea
+                    placeholder="Add a comment for this submission..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={2}
+                    className="text-sm flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleAddCommentToSubmission(submission)}
+                    disabled={!comment.trim() || isAddingComment}
+                  >
+                    {isAddingComment ? (
+                      <Clock className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
+                      <Send className="h-3 w-3 mr-1" />
+                    )}
+                    Comment
+                  </Button>
+                </div>
+              </div>
+            </div>
 
             {/* Quick Actions */}
             <div className="flex gap-2 pt-2">

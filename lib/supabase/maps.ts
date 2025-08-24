@@ -14,6 +14,29 @@ import {
   UserMapEnrollment,
 } from "@/types/map";
 
+// Helper: classroom_teams may be returned as an object or an array depending on select syntax
+export const extractClassroomTeamName = (classroomTeams: any): string | null => {
+  if (!classroomTeams) return null;
+  if (Array.isArray(classroomTeams) && classroomTeams.length > 0) {
+    return classroomTeams[0]?.name || null;
+  }
+  if (typeof classroomTeams === "object") {
+    return classroomTeams.name || null;
+  }
+  return null;
+};
+
+export const extractClassroomTeamId = (classroomTeams: any): string | null => {
+  if (!classroomTeams) return null;
+  if (Array.isArray(classroomTeams) && classroomTeams.length > 0) {
+    return classroomTeams[0]?.classroom_id || null;
+  }
+  if (typeof classroomTeams === "object") {
+    return classroomTeams.classroom_id || null;
+  }
+  return null;
+};
+
 // A type for a map that includes its nodes and paths
 export type FullLearningMap = LearningMap & {
   map_nodes: (MapNode & {
@@ -114,15 +137,20 @@ export const getMapsWithStats = async (): Promise<
   let additionalMaps: any[] = [];
 
   if (user) {
-    console.log(`getMapsWithStats: Fetching data for authenticated user ${user.id}`);
-    
+    console.log(
+      `getMapsWithStats: Fetching data for authenticated user ${user.id}`
+    );
+
     // Get user's roles for debugging
     const { data: userRoles } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
-    
-    console.log(`User ${user.id} has roles:`, userRoles?.map(r => r.role) || ['no explicit roles']);
+
+    console.log(
+      `User ${user.id} has roles:`,
+      userRoles?.map((r) => r.role) || ["no explicit roles"]
+    );
 
     // Get user's classrooms (as student or instructor)
     const { data: classroomMemberships } = await supabase
@@ -143,12 +171,11 @@ export const getMapsWithStats = async (): Promise<
       .eq("user_id", user.id);
 
     if (classroomMemberships) {
-      userClassrooms = classroomMemberships.flatMap(
-        (m: any) =>
-          m.classrooms.classroom_maps?.map((cm: any) => ({
-            map_id: cm.map_id,
-            classroom_name: m.classrooms.name,
-          })) || []
+      userClassrooms = classroomMemberships.flatMap((m) =>
+        ((m.classrooms as any).classroom_maps as any[])?.map((cm: any) => ({
+          map_id: cm.map_id,
+          classroom_name: (m.classrooms as any).name,
+        })) || []
       );
     }
 
@@ -170,20 +197,25 @@ export const getMapsWithStats = async (): Promise<
       .eq("user_id", user.id);
 
     if (teamMembershipError) {
-      console.error(`Error fetching team memberships for user ${user.id}:`, teamMembershipError);
+      console.error(
+        `Error fetching team memberships for user ${user.id}:`,
+        teamMembershipError
+      );
     }
 
     if (teamMemberships) {
       userTeams = teamMemberships.map((tm) => ({
         team_id: tm.team_id,
-        team_name: (tm.classroom_teams as any).name,
+  team_name: extractClassroomTeamName(tm.classroom_teams as any) || null,
         left_at: tm.left_at,
         is_leader: tm.is_leader,
       }));
-      
-      const activeTeams = userTeams.filter(t => !t.left_at);
-      console.log(`User ${user.id} has ${userTeams.length} team memberships (${activeTeams.length} active):`, 
-        activeTeams.map(t => `${t.team_name} (${t.team_id})`));
+
+      const activeTeams = userTeams.filter((t) => !t.left_at);
+      console.log(
+        `User ${user.id} has ${userTeams.length} team memberships (${activeTeams.length} active):`,
+        activeTeams.map((t) => `${t.team_name} (${t.team_id})`)
+      );
     } else {
       console.log(`User ${user.id} has no team memberships`);
     }
@@ -191,8 +223,10 @@ export const getMapsWithStats = async (): Promise<
     // Get team maps (only query if user has teams)
     const userTeamIds = userTeams.map((t) => t.team_id).filter(Boolean);
     if (userTeamIds.length > 0) {
-      console.log(`Fetching team maps for user ${user.id}, team IDs: ${userTeamIds.join(', ')}`);
-      
+      console.log(
+        `Fetching team maps for user ${user.id}, team IDs: ${userTeamIds.join(", ")}`
+      );
+
       const { data: teamMapData, error: teamMapError } = await supabase
         .from("classroom_team_maps")
         .select(
@@ -217,13 +251,14 @@ export const getMapsWithStats = async (): Promise<
           userId: user.id,
           userTeamIds: userTeamIds,
         });
-        
+
         // Try a fallback query with left joins to get partial data
         console.log("Attempting fallback query for team maps...");
-        const { data: fallbackTeamMapData, error: fallbackError } = await supabase
-          .from("classroom_team_maps")
-          .select(
-            `
+        const { data: fallbackTeamMapData, error: fallbackError } =
+          await supabase
+            .from("classroom_team_maps")
+            .select(
+              `
           map_id,
           original_map_id,
           team_id,
@@ -231,14 +266,16 @@ export const getMapsWithStats = async (): Promise<
           learning_maps!map_id_fkey (title),
           original_maps:learning_maps!original_map_id_fkey (title)
         `
-          )
-          .in("team_id", userTeamIds);
+            )
+            .in("team_id", userTeamIds);
 
         if (fallbackError) {
           console.error("Fallback query also failed:", fallbackError);
           teamMaps = []; // Set empty array as final fallback
         } else {
-          console.log(`Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`);
+          console.log(
+            `Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`
+          );
           teamMaps = fallbackTeamMapData || [];
         }
       } else if (teamMapData) {
@@ -696,7 +733,7 @@ export const forkMapForTeam = async (
     const nodeIdMap = new Map<string, string>(); // oldId -> newId
 
     // Insert all nodes at once for better performance
-    const nodesToInsert = oldNodes.map(node => ({
+    const nodesToInsert = oldNodes.map((node) => ({
       map_id: newMapId,
       title: node.title,
       instructions: node.instructions,
@@ -713,7 +750,7 @@ export const forkMapForTeam = async (
         .from("map_nodes")
         .insert(nodesToInsert)
         .select("*");
-      
+
       if (nodeErr || !createdNodes) {
         console.error("Failed to create nodes", nodeErr);
         throw new Error("COPY_FAILED_NODE");
@@ -778,38 +815,38 @@ export const forkMapForTeam = async (
       // assessments + quiz questions
       const assessments = node.node_assessments || [];
       const assessmentIdMap = new Map<string, string>(); // old assessment id -> new assessment id
-      
+
       // Insert all assessments for this node
-      const assessmentsToInsert = assessments.map(a => ({
+      const assessmentsToInsert = assessments.map((a) => ({
         node_id: newNodeId,
         assessment_type: a.assessment_type,
       }));
-      
+
       if (assessmentsToInsert.length > 0) {
         const { data: createdAssessments, error: aErr } = await supabase
           .from("node_assessments")
           .insert(assessmentsToInsert)
           .select("*");
-        
+
         if (aErr || !createdAssessments) {
           console.error("Failed to copy assessments", aErr);
           throw new Error("COPY_FAILED_ASSESSMENT");
         }
-        
+
         // Map old assessment IDs to new ones
         assessments.forEach((a, index) => {
           if (createdAssessments[index]) {
             assessmentIdMap.set(a.id, createdAssessments[index].id);
           }
         });
-        
+
         // Copy quiz questions for all assessments
         const allQuestionsToInsert: any[] = [];
-        
+
         for (const a of assessments) {
           const questions = a.quiz_questions || [];
           const newAssessmentId = assessmentIdMap.get(a.id);
-          
+
           if (newAssessmentId && questions.length > 0) {
             const questionsForThisAssessment = questions.map((q) => ({
               assessment_id: newAssessmentId,
@@ -820,7 +857,7 @@ export const forkMapForTeam = async (
             allQuestionsToInsert.push(...questionsForThisAssessment);
           }
         }
-        
+
         if (allQuestionsToInsert.length > 0) {
           const { error: qErr } = await supabase
             .from("quiz_questions")
@@ -1735,10 +1772,16 @@ export const batchUpdateMap = async (
 
 /**
  * Check if a map is a team map and get classroom information
+ * Also checks if the current user is a member of a team that has access to this map
+ * or if the user is an instructor/TA for the classroom
  */
 export const getTeamMapClassroomInfo = async (
   mapId: string
-): Promise<{ isTeamMap: boolean; classroomId?: string; teamId?: string }> => {
+): Promise<{
+  isTeamMap: boolean;
+  classroomId?: string;
+  teamId?: string | null;
+}> => {
   const supabase = createClient();
 
   const {
@@ -1749,29 +1792,179 @@ export const getTeamMapClassroomInfo = async (
     return { isTeamMap: false };
   }
 
-  // Check if this map exists in classroom_team_maps
-  const { data: teamMap, error } = await supabase
+  console.log(
+    `🔍 [getTeamMapClassroomInfo] Checking map ${mapId} for user ${user.id}`
+  );
+
+  // First check if this map exists in classroom_team_maps at all
+  const { data: teamMapsRaw, error: teamMapsError } = await supabase
     .from("classroom_team_maps")
     .select(
       `
       team_id,
+      map_id,
       classroom_teams!team_id (
-        classroom_id
+        classroom_id,
+        name
       )
     `
     )
-    .eq("map_id", mapId)
-    .single();
+    .eq("map_id", mapId);
 
-  if (error || !teamMap) {
+  // Strongly type and map the returned rows for safer usage below
+  type TeamMapRow = {
+    team_id: string;
+    map_id: string;
+    classroom_teams?: {
+      classroom_id: string;
+      name: string; // team name (e.g. "bro")
+    } | null;
+  };
+
+  const teamMaps: TeamMapRow[] = (teamMapsRaw || []) as unknown as TeamMapRow[];
+
+  // Helper: classroom_teams may be returned as an object or an array depending on select syntax
+  const extractClassroomTeamName = (
+    classroomTeams: any
+  ): string | undefined => {
+    if (!classroomTeams) return undefined;
+    // If it's an array, take first element
+    if (Array.isArray(classroomTeams) && classroomTeams.length > 0) {
+      return classroomTeams[0]?.name;
+    }
+    // If it's an object with name
+    if (typeof classroomTeams === "object") {
+      return classroomTeams.name;
+    }
+    return undefined;
+  };
+
+  if (teamMapsError) {
+    console.error(
+      `❌ [getTeamMapClassroomInfo] Error querying classroom_team_maps:`,
+      teamMapsError
+    );
     return { isTeamMap: false };
   }
 
+  if (!teamMaps || teamMaps.length === 0) {
+    console.log(`ℹ️ [getTeamMapClassroomInfo] Map ${mapId} is not a team map`);
+    return { isTeamMap: false };
+  }
+
+  console.log(
+    `🔍 [getTeamMapClassroomInfo] Found ${teamMaps.length} teams with access to map ${mapId}`
+  );
+  console.log(teamMaps, "team mapsxxx");
+
+  // Get the classroom ID from the first team map (they should all be the same)
+  const classroomId = teamMaps[0]?.classroom_teams?.classroom_id;
+  if (!classroomId) {
+    console.error(
+      `❌ [getTeamMapClassroomInfo] Could not determine classroom ID for team map ${mapId}`
+    );
+    return { isTeamMap: false };
+  }
+
+  // Check if user is an instructor or TA for this classroom
+  const { data: classroomRoleData, error: classroomRoleError } = await supabase
+    .from("classroom_memberships")
+    .select("role")
+    .eq("classroom_id", classroomId)
+    .eq("user_id", user.id)
+    .single();
+
+  const isClassroomInstructorOrTA =
+    (!classroomRoleError &&
+      classroomRoleData &&
+      (classroomRoleData.role === "instructor" ||
+        classroomRoleData.role === "ta")) ||
+    (await checkIfUserIsClassroomInstructor(classroomId, user.id));
+
+  // If user is an instructor or TA, they have access to all team maps in this classroom
+  if (isClassroomInstructorOrTA) {
+    console.log(
+      `✅ [getTeamMapClassroomInfo] User ${user.id} is an instructor/TA for classroom ${classroomId}`
+    );
+    return {
+      isTeamMap: true,
+      classroomId: classroomId,
+      teamId: null, // Instructors/TAs don't have a specific team ID
+    };
+  }
+
+  // Now check if the current user is a member of any of these teams
+  const teamIds = teamMaps.map((tm) => tm.team_id);
+  const { data: userTeamMembership, error: membershipError } = await supabase
+    .from("team_memberships")
+    .select(
+      `
+      team_id,
+      is_leader,
+      left_at
+    `
+    )
+    .eq("user_id", user.id)
+    .in("team_id", teamIds)
+    .is("left_at", null) // Only active memberships
+    .single();
+
+  if (membershipError || !userTeamMembership) {
+    console.log(
+      `ℹ️ [getTeamMapClassroomInfo] User ${user.id} is not a member of any team with access to map ${mapId}`
+    );
+    return { isTeamMap: false };
+  }
+
+  // Find the team map info for the user's team
+  const userTeamMap = teamMaps.find(
+    (tm) => tm.team_id === userTeamMembership.team_id
+  );
+  if (!userTeamMap) {
+    console.error(
+      `❌ [getTeamMapClassroomInfo] Could not find team map for user's team ${userTeamMembership.team_id}`
+    );
+    return { isTeamMap: false };
+  }
+
+  console.log(
+    `✅ [getTeamMapClassroomInfo] User ${user.id} has access to team map ${mapId} via team ${userTeamMembership.team_id}`
+  );
+
   return {
     isTeamMap: true,
-    classroomId: teamMap.classroom_teams?.classroom_id,
-    teamId: teamMap.team_id,
+    classroomId:
+      extractClassroomTeamId(userTeamMap?.classroom_teams as any) || undefined,
+    teamId: userTeamMembership.team_id,
   };
+};
+
+/**
+ * Helper function to check if a user is the instructor of a classroom
+ */
+const checkIfUserIsClassroomInstructor = async (
+  classroomId: string,
+  userId: string
+): Promise<boolean> => {
+  const supabase = createClient();
+
+  try {
+    const { data: classroom, error } = await supabase
+      .from("classrooms")
+      .select("instructor_id")
+      .eq("id", classroomId)
+      .single();
+
+    if (error) {
+      console.error("Error checking classroom instructor:", error);
+      return false;
+    }
+
+    return classroom?.instructor_id === userId;
+  } catch (error) {
+    console.error("Error in checkIfUserIsClassroomInstructor:", error);
+    return false;
+  }
 };
 
 /**
@@ -1825,123 +2018,10 @@ export const getUserClassroomRoleClient = async (
   return membership.role as "student" | "ta" | "instructor";
 };
 
-/**
- * Get team progress for a specific map
- */
-export const getTeamProgress = async (
-  mapId: string,
-  teamId: string
-): Promise<Record<string, { status: string; completed_at?: string; best_submission_id?: string }>> => {
-  const supabase = createClient();
+// Team progress functions have been moved to @/lib/supabase/team-progress
+// Import from there for: getTeamProgress, getTeamProgressForInstructor, etc.
 
-  const { data: teamProgress, error } = await supabase
-    .from("team_node_progress")
-    .select(
-      `
-      node_id,
-      status,
-      completed_at,
-      best_submission_id
-    `
-    )
-    .eq("team_id", teamId)
-    .in("node_id", (qb) =>
-      qb
-        .from("map_nodes")
-        .select("id")
-        .eq("map_id", mapId)
-    );
-
-  if (error) {
-    console.error("Error fetching team progress:", error);
-    return {};
-  }
-
-  // Convert to record format for easy lookup
-  const progressMap: Record<string, any> = {};
-  teamProgress?.forEach((progress) => {
-    progressMap[progress.node_id] = {
-      status: progress.status,
-      completed_at: progress.completed_at,
-      best_submission_id: progress.best_submission_id,
-    };
-  });
-
-  return progressMap;
-};
-
-/**
- * Get team progress for instructors viewing team maps
- */
-export const getTeamProgressForInstructor = async (
-  mapId: string,
-  teamId: string
-): Promise<Record<string, any>> => {
-  const supabase = createClient();
-
-  // Get team progress with additional details for instructors
-  const { data: teamProgress, error } = await supabase
-    .from("team_node_progress")
-    .select(
-      `
-      node_id,
-      status,
-      completed_at,
-      best_submission_id,
-      assessment_submissions!best_submission_id (
-        id,
-        submitted_at,
-        grade_status,
-        profiles:user_id (username, full_name)
-      )
-    `
-    )
-    .eq("team_id", teamId)
-    .in("node_id", (qb) =>
-      qb
-        .from("map_nodes")
-        .select("id")
-        .eq("map_id", mapId)
-    );
-
-  if (error) {
-    console.error("Error fetching team progress for instructor:", error);
-    return {};
-  }
-
-  // Convert to record format and add member progress details
-  const progressMap: Record<string, any> = {};
-  
-  for (const progress of teamProgress || []) {
-    // Get individual member progress for this node
-    const { data: memberProgress } = await supabase
-      .from("student_node_progress")
-      .select(
-        `
-        status,
-        submitted_at,
-        profiles:user_id (username, full_name)
-      `
-      )
-      .eq("node_id", progress.node_id)
-      .in("user_id", (qb) =>
-        qb
-          .from("team_memberships")
-          .select("user_id")
-          .eq("team_id", teamId)
-          .is("left_at", null)
-      );
-
-    progressMap[progress.node_id] = {
-      status: progress.status,
-      completed_at: progress.completed_at,
-      best_submission: progress.assessment_submissions?.[0],
-      member_progress: memberProgress || [],
-    };
-  }
-
-  return progressMap;
-};
+// getTeamProgressForInstructor has been moved to @/lib/supabase/team-progress
 
 /**
  * Get team ID for a user in a specific map
@@ -1985,63 +2065,9 @@ export const getUserTeamForMap = async (
   return teamMap.team_id;
 };
 
-/**
- * Assign a team member to a node
- */
-export const assignTeamMemberToNode = async (
-  teamId: string,
-  nodeId: string,
-  userId: string
-): Promise<void> => {
-  const supabase = createClient();
+// assignTeamMemberToNode has been moved to @/lib/supabase/team-progress
 
-  const { error } = await supabase
-    .from("team_node_progress")
-    .upsert(
-      {
-        team_id: teamId,
-        node_id: nodeId,
-        assigned_to: userId,
-        status: "assigned",
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "team_id,node_id" }
-    );
-
-  if (error) {
-    console.error("Error assigning team member to node:", error);
-    throw new Error(`Failed to assign team member: ${error.message}`);
-  }
-};
-
-/**
- * Request help for a team node
- */
-export const requestHelpForTeamNode = async (
-  teamId: string,
-  nodeId: string,
-  message: string
-): Promise<void> => {
-  const supabase = createClient();
-
-  const { error } = await supabase
-    .from("team_node_progress")
-    .upsert(
-      {
-        team_id: teamId,
-        node_id: nodeId,
-        help_requested: true,
-        help_request_message: message,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "team_id,node_id" }
-    );
-
-  if (error) {
-    console.error("Error requesting help for team node:", error);
-    throw new Error(`Failed to request help: ${error.message}`);
-  }
-};
+// requestHelpForTeamNode has been moved to @/lib/supabase/team-progress
 
 /**
  * Schedule a meeting for team help
@@ -2080,24 +2106,21 @@ export const scheduleTeamMeeting = async (
 
   // If meeting is for a specific node, link it to the node progress
   if (nodeId) {
-    await supabase
-      .from("team_node_progress")
-      .upsert(
-        {
-          team_id: teamId,
-          node_id: nodeId,
-          scheduled_meeting_id: meeting.id,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "team_id,node_id" }
-      );
+    await supabase.from("team_node_progress").upsert(
+      {
+        team_id: teamId,
+        node_id: nodeId,
+        scheduled_meeting_id: meeting.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "team_id,node_id" }
+    );
   }
 
   return meeting;
 };
 
 /**
- * Get team meetings
  */
 export const getTeamMeetings = async (
   teamId: string,
@@ -2131,43 +2154,4 @@ export const getTeamMeetings = async (
   return meetings || [];
 };
 
-/**
- * Update team node status with enhanced grading options
- */
-export const updateTeamNodeStatus = async (
-  teamId: string,
-  nodeId: string,
-  status: "not_started" | "assigned" | "in_progress" | "submitted" | "passed" | "passed_late" | "passed_zero_grade" | "failed",
-  bestSubmissionId?: string
-): Promise<void> => {
-  const supabase = createClient();
-
-  const updateData: any = {
-    status,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (bestSubmissionId) {
-    updateData.best_submission_id = bestSubmissionId;
-  }
-
-  if (status === "passed" || status === "passed_late" || status === "passed_zero_grade" || status === "failed") {
-    updateData.completed_at = new Date().toISOString();
-  }
-
-  const { error } = await supabase
-    .from("team_node_progress")
-    .upsert(
-      {
-        team_id: teamId,
-        node_id: nodeId,
-        ...updateData,
-      },
-      { onConflict: "team_id,node_id" }
-    );
-
-  if (error) {
-    console.error("Error updating team node status:", error);
-    throw new Error(`Failed to update team node status: ${error.message}`);
-  }
-};
+// updateTeamNodeStatus has been moved to @/lib/supabase/team-progress
