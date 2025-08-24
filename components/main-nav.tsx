@@ -47,6 +47,13 @@ export function MainNav() {
                 Classroom
               </Link>
               <Link
+                href="/teams"
+                className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
+                onClick={() => setMenuOpen(false)}
+              >
+                Teams
+              </Link>
+              <Link
                 href="/me"
                 className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
                 onClick={() => setMenuOpen(false)}
@@ -89,6 +96,12 @@ export function MainNav() {
           className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
         >
           Classrooms
+        </Link>
+        <Link
+          href="/teams"
+          className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+        >
+          Teams
         </Link>
         <Link
           href="/me"
