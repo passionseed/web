@@ -20,6 +20,7 @@ import {
   TeamRole,
   TeamMembershipWithProfile,
 } from "@/types/teams";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Creates a new team in a classroom
@@ -168,14 +169,17 @@ export const createTeam = async (
  * Gets all teams in a classroom with their members
  */
 export const getClassroomTeams = async (
-  classroomId: string
+  classroomId: string,
+  serverClient?: SupabaseClient<any, "public", any>
 ): Promise<TeamWithMembers[]> => {
-  const supabase = createClient();
+  const supabase = serverClient || createClient();
 
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+
+  console.log("🔐 Auth check:", { user: user?.id, authError });
 
   if (authError || !user) {
     throw new TeamError("AUTH_ERROR", "User must be authenticated");
@@ -1188,7 +1192,7 @@ export const getClassroomTeamMaps = async (classroomId: string) => {
 
     const teamIds = userTeams?.map((ut) => ut.team_id) || [];
     console.log("📝 User team IDs:", teamIds);
-    
+
     if (teamIds.length === 0) {
       console.log("ℹ️ User is not in any teams, returning empty array");
       return []; // User is not in any teams, so no team maps to show
@@ -1206,16 +1210,18 @@ export const getClassroomTeamMaps = async (classroomId: string) => {
     { ascending: false }
   );
 
-  console.log("📊 Team maps query result:", { 
-    teamMapsCount: teamMaps?.length || 0, 
+  console.log("📊 Team maps query result:", {
+    teamMapsCount: teamMaps?.length || 0,
     teamMapsError,
-    sampleData: teamMaps?.[0] ? {
-      id: teamMaps[0].id,
-      team_id: teamMaps[0].team_id,
-      map_id: teamMaps[0].map_id,
-      hasLearningMaps: !!teamMaps[0].learning_maps,
-      hasClassroomTeams: !!teamMaps[0].classroom_teams
-    } : null
+    sampleData: teamMaps?.[0]
+      ? {
+          id: teamMaps[0].id,
+          team_id: teamMaps[0].team_id,
+          map_id: teamMaps[0].map_id,
+          hasLearningMaps: !!teamMaps[0].learning_maps,
+          hasClassroomTeams: !!teamMaps[0].classroom_teams,
+        }
+      : null,
   });
 
   if (teamMapsError) {
@@ -1229,10 +1235,10 @@ export const getClassroomTeamMaps = async (classroomId: string) => {
     .from("classroom_team_maps")
     .select("id, team_id, map_id, classroom_teams!team_id(classroom_id)")
     .limit(10);
-  
-  console.log("📊 All team maps in database:", { 
+
+  console.log("📊 All team maps in database:", {
     count: allTeamMaps?.length || 0,
-    data: allTeamMaps 
+    data: allTeamMaps,
   });
 
   // Transform the data to include calculated statistics
@@ -1243,7 +1249,7 @@ export const getClassroomTeamMaps = async (classroomId: string) => {
       map_id: teamMap.map_id,
       hasLearningMaps: !!teamMap.learning_maps,
       hasClassroomTeams: !!teamMap.classroom_teams,
-      hasOriginalMaps: !!teamMap.original_maps
+      hasOriginalMaps: !!teamMap.original_maps,
     });
 
     const map = teamMap.learning_maps;
@@ -1286,6 +1292,8 @@ export const getClassroomTeamMaps = async (classroomId: string) => {
     return transformed;
   });
 
-  console.log("🎉 Returning transformed maps:", { count: transformedMaps.length });
+  console.log("🎉 Returning transformed maps:", {
+    count: transformedMaps.length,
+  });
   return transformedMaps;
 };
