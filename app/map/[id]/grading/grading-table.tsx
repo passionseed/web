@@ -72,6 +72,15 @@ export function GradingTable({
     new Set(validSubmissions.map((s) => s.node_assessments.map_nodes.title))
   );
 
+  // Get unique maps for filtering (when showing classroom-wide submissions)
+  const uniqueMaps = Array.from(
+    new Set(validSubmissions.map((s) => 
+      s.node_assessments?.map_nodes?.learning_maps?.title || "Unknown Map"
+    ))
+  );
+
+  const [mapFilter, setMapFilter] = useState<string>("all");
+
   // Filter submissions
   const filteredSubmissions = validSubmissions.filter((submission) => {
     const matchesSearch = submission.student_node_progress.profiles.username
@@ -94,7 +103,11 @@ export function GradingTable({
         submission.node_assessments.map_nodes &&
         submission.node_assessments.map_nodes.title === nodeFilter);
 
-    return matchesSearch && matchesStatus && matchesNode;
+    const matchesMap =
+      mapFilter === "all" ||
+      (submission.node_assessments?.map_nodes?.learning_maps?.title === mapFilter);
+
+    return matchesSearch && matchesStatus && matchesNode && matchesMap;
   });
 
   const handleRefresh = async () => {
@@ -213,6 +226,22 @@ export function GradingTable({
               ))}
             </SelectContent>
           </Select>
+
+          {!mapId && uniqueMaps.length > 1 && (
+            <Select value={mapFilter} onValueChange={setMapFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="All Maps" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Maps</SelectItem>
+                {uniqueMaps.map((map) => (
+                  <SelectItem key={map} value={map}>
+                    {map}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <Button
@@ -240,6 +269,7 @@ export function GradingTable({
           <TableHeader>
             <TableRow>
               <TableHead>Student</TableHead>
+              {!mapId && <TableHead>Map</TableHead>}
               <TableHead>Node</TableHead>
               <TableHead>Assessment Type</TableHead>
               <TableHead>Submitted</TableHead>
@@ -252,11 +282,11 @@ export function GradingTable({
             {filteredSubmissions.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={!mapId ? 8 : 7}
                   className="text-center py-8 text-muted-foreground"
                 >
                   {submissions.length === 0
-                    ? "No submissions found for this map."
+                    ? "No submissions found for this classroom."
                     : "No submissions match your filters."}
                 </TableCell>
               </TableRow>
@@ -281,6 +311,13 @@ export function GradingTable({
                     <TableCell className="font-medium">
                       {submission.student_node_progress.profiles.username}
                     </TableCell>
+                    {!mapId && (
+                      <TableCell>
+                        <span className="text-sm">
+                          {submission.node_assessments?.map_nodes?.learning_maps?.title || "Unknown Map"}
+                        </span>
+                      </TableCell>
+                    )}
                     <TableCell>
                       {submission.node_assessments?.map_nodes?.title ||
                         "Unknown Node"}

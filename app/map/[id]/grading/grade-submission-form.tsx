@@ -80,7 +80,10 @@ export function GradeSubmissionForm({
         });
         return;
       }
-      if (assessment?.points_possible && pointsAwarded > assessment.points_possible) {
+      if (
+        assessment?.points_possible &&
+        pointsAwarded > assessment.points_possible
+      ) {
         toast({
           title: `Points awarded cannot exceed ${assessment.points_possible}.`,
           variant: "destructive",
@@ -274,7 +277,7 @@ export function GradeSubmissionForm({
                 </span>
               </div>
             </div>
-            
+
             {/* Points Awarded Input - only show if assessment has grading enabled */}
             {assessment?.is_graded && assessment?.points_possible && (
               <div>
@@ -294,7 +297,11 @@ export function GradeSubmissionForm({
                       setPointsAwarded(undefined);
                     } else {
                       const intValue = parseInt(value, 10);
-                      if (!isNaN(intValue) && intValue >= 0 && intValue <= (assessment.points_possible || 0)) {
+                      if (
+                        !isNaN(intValue) &&
+                        intValue >= 0 &&
+                        intValue <= (assessment.points_possible || 0)
+                      ) {
                         setPointsAwarded(intValue);
                       }
                     }
@@ -303,11 +310,12 @@ export function GradeSubmissionForm({
                   className="w-full"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {assessment.points_possible} points possible for this assessment
+                  {assessment.points_possible} points possible for this
+                  assessment
                 </p>
               </div>
             )}
-            
+
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? "Submitting..." : "Submit Grade"}
             </Button>

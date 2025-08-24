@@ -17,11 +17,13 @@ Goal: Allow instructors to mark nodes/assessments as "graded", set `points_possi
 ```
 
 ## Motivation & constraints
+
 - The DB should remain authoritative: points must be integers (>= 0). We'll enforce server-side validation and optional DB check constraints.
 - Existing pass/fail workflow must continue to work. Adding points is an additive feature; if `is_graded` or `points_possible` are not set, behavior remains unchanged.
 - Keep UI minimal and consistent with existing components.
 
 ## Database changes (migration)
+
 Place a SQL migration under `supabase/migrations/` (or your migrations folder). Example migration:
 
 ```sql
@@ -44,13 +46,16 @@ COMMIT;
 ```
 
 Notes:
+
 - We purposely keep `points_possible` nullable so older nodes are unaffected. `is_graded` defaults to false for explicit intent.
 - If you want a hard DB constraint to ensure `points_awarded <= points_possible`, you can add a trigger. That is more complex and can be added later.
 
 ## Types changes
+
 Update `types/map.ts`:
 
 - NodeAssessment:
+
   - add `points_possible?: number | null`
   - (optional) use `is_graded?: boolean` if you prefer optional vs required
 
@@ -58,6 +63,7 @@ Update `types/map.ts`:
   - add `points_awarded?: number | null`
 
 Example diff (conceptual):
+
 ```ts
 export interface NodeAssessment {
   id: string;
@@ -81,12 +87,15 @@ export interface SubmissionGrade {
 ```
 
 ## Server/API changes
+
 Files to update (examples):
+
 - `lib/supabase/grading.ts` — extend `gradeSubmission()` to accept `points_awarded?: number | null` and validate it
 - `lib/supabase/assessment.ts` — when auto-grading quizzes, set `points_awarded` equal to the computed correct count or a scaled value
 - API routes that accept grading JSON (if you have a `/api/grading` route) — ensure they accept `points_awarded`
 
 Server validation rules:
+
 - If `points_awarded` provided:
   - must be an integer (Number.isInteger)
   - must be >= 0
@@ -94,6 +103,7 @@ Server validation rules:
 - If `points_awarded` is omitted, store `NULL` in DB
 
 API contract for grading endpoint (body JSON):
+
 ```json
 {
   "submissionId": "uuid",
@@ -108,13 +118,17 @@ API contract for grading endpoint (body JSON):
 Return shape: existing `SubmissionGrade` object with `points_awarded` populated.
 
 ## UI changes
+
 Where to change
+
 - Node editor (instructor-facing): likely `components/map/NodeEditorPanel.tsx` or similar
+
   - Add a toggle `is_graded` (checkbox)
   - Add a number input `points_possible` (integer >= 1)
   - Persist via existing `batchUpdateMap()` or the node update endpoint
 
 - Grading dialog: `app/map/[id]/grading/grade-submission-form.tsx`
+
   - If `node_assessments.points_possible` or `is_graded` is present, render a number input for `Points awarded`.
   - Validate it client-side: integer, 0 <= points_awarded <= points_possible
   - Send `points_awarded` along with grade/rating/comments to `gradeSubmission()` server call
@@ -124,16 +138,20 @@ Where to change
   - Example render: `Points: 7 / 10` (or `7 points` if points_possible unknown)
 
 Example UI behavior in grading form (small UX notes):
+
 - Show `Points possible: 10` as a read-only label if node defines it
 - Provide input for `Points awarded` defaulted to previous grade.points_awarded or blank
 - If `is_graded === false` but instructor tries to award points, show a gentle warning and allow it (or disallow based on product decision)
 
 ## Auto-grader updates
+
 - `lib/supabase/assessment.ts` already computes integer 1–5 rating for quizzes; extend logic to also compute `points_awarded` as the number of correct answers (or scaled points)
 - Insert `points_awarded` when creating auto-grade entries for quiz submissions
 
 ## Tests
+
 Suggested tests to add/update
+
 - Unit tests for `lib/supabase/grading.ts`:
   - Accept valid points_awarded within 0..points_possible
   - Reject non-integer points (e.g., 3.5) and negative numbers
@@ -142,6 +160,7 @@ Suggested tests to add/update
 - UI tests (React Testing Library) for grade dialog to ensure validation prevents invalid input
 
 ## Rollout plan
+
 1. Add migration and types. Deploy server code that tolerates nullable `points_awarded` (no UI yet). This is safe because it only adds nullable columns.
 2. Deploy server validation and API acceptance for `points_awarded`.
 3. Release Node Editor UI so instructors can set `points_possible` (behind feature flag if desired).
@@ -149,10 +168,12 @@ Suggested tests to add/update
 5. Monitor for errors and database constraint violations.
 
 ## Backwards compatibility & migration notes
+
 - Because `points_possible` and `points_awarded` are nullable and `is_graded` defaults false, no existing data is affected.
 - If you want to backfill `points_possible` for existing nodes, create a follow-up migration with sensible defaults.
 
 ## Developer checklist (deltas & files likely to edit)
+
 - [ ] `supabase/migrations/2025xxxx_add_points.sql` — migration
 - [ ] `types/map.ts` — type updates
 - [ ] `lib/supabase/grading.ts` — signature and validation
@@ -160,22 +181,32 @@ Suggested tests to add/update
 - [ ] `app/map/[id]/grading/grade-submission-form.tsx` — collect and validate `points_awarded`
 - [ ] `components/map/NodeEditorPanel.tsx` — add UI for `is_graded` + `points_possible`
 - [ ] `components/map/SubmissionItem.tsx` — display points (update UI shown in attachments)
-- [ ] tests/* — unit & integration tests
+- [ ] tests/\* — unit & integration tests
 
 ## Example server-side validation pseudo-code
+
 ```ts
-function validatePoints(points: number | null | undefined, pointsPossible?: number | null) {
+function validatePoints(
+  points: number | null | undefined,
+  pointsPossible?: number | null
+) {
   if (points === null || points === undefined) return null;
   const num = Number(points);
-  if (!Number.isInteger(num) || num < 0) throw new Error('points_awarded must be non-negative integer or null');
-  if (typeof pointsPossible === 'number' && pointsPossible !== null && num > pointsPossible) {
-    throw new Error('points_awarded cannot exceed points_possible');
+  if (!Number.isInteger(num) || num < 0)
+    throw new Error("points_awarded must be non-negative integer or null");
+  if (
+    typeof pointsPossible === "number" &&
+    pointsPossible !== null &&
+    num > pointsPossible
+  ) {
+    throw new Error("points_awarded cannot exceed points_possible");
   }
   return num;
 }
 ```
 
 ## UX copy suggestions
+
 - Node Editor: "Graded assessment" toggle with helper text: "Enable grading for this node; instructors can set how many points this assessment is worth."
 - Points input placeholder: "Points possible (integer)"
 - Grader dialog: label `Points awarded (0 - {points_possible})` and validation error `Must be an integer between 0 and {points_possible}`.
