@@ -39,8 +39,8 @@ import { CommentNode } from "@/components/map/CommentNode";
 import { SubmissionList } from "./SubmissionList";
 import { InlineGradingForm } from "./InlineGradingForm";
 import { getSubmissionsForMap } from "@/lib/supabase/grading";
-import { getTeamMapClassroomInfo, getUserClassroomRoleClient, getTeamProgressForInstructor, getUserTeamForMap } from "@/lib/supabase/maps";
-import { MapGrader } from "./MapGrader";
+import { getTeamMapClassroomInfo, getUserClassroomRoleClient, getUserTeamForMap } from "@/lib/supabase/maps";
+import { getTeamProgressForInstructor } from "@/lib/supabase/team-progress";
 import {
   CheckCircle,
   Clock,
@@ -996,28 +996,17 @@ export function MapViewer({ map }: MapViewerProps) {
 
         <div className="h-full flex flex-col overflow-hidden">
           {!isPanelMinimized && (
-            isTeamMap && selectedNode ? (
-              <MapGrader
-                key={selectedNode.id}
-                teamId={teamId!}
-                nodeId={selectedNode.id}
-                teamProgress={progressMap}
-                onProgressUpdate={loadAllProgress}
-                userRole={userRole}
-              />
-            ) : (
-              <NodeViewPanel
-                key={selectedNode?.id || "no-selection"} // Force remount on node change
-                selectedNode={selectedNode}
-                mapId={map.id}
-                onProgressUpdate={loadAllProgress}
-                isNodeUnlocked={
-                  selectedNode ? isNodeUnlocked(selectedNode.id) : true
-                }
-                userRole={userRole}
-                isInstructorOrTA={isInstructorOrTA}
-              />
-            )
+            <NodeViewPanel
+              key={selectedNode?.id || "no-selection"} // Force remount on node change
+              selectedNode={selectedNode}
+              mapId={map.id}
+              onProgressUpdate={loadAllProgress}
+              isNodeUnlocked={
+                selectedNode ? isNodeUnlocked(selectedNode.id) : true
+              }
+              userRole={userRole}
+              isInstructorOrTA={isInstructorOrTA}
+            />
           )}
         </div>
       </ResizablePanel>
