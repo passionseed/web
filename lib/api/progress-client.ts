@@ -3,6 +3,9 @@
  * This bypasses RLS issues by using server-side Supabase client
  */
 
+import { createClient } from "@/utils/supabase/client";
+import { TeamNodeProgress } from "../supabase/team-progress";
+
 export interface StudentProgress {
   id: string;
   user_id: string;
@@ -38,48 +41,61 @@ export interface UpdateProgressResponse {
 }
 
 /**
- * Get all progress for a student in a specific map
+ * Get all progress for a user's team in a specific map.
+ * This function handles authorization for different user roles (student, TA, instructor)
+ * by calling a secure PostgreSQL function in Supabase.
  */
 export async function getMapProgress(
   mapId: string
-): Promise<Record<string, StudentProgress>> {
+): Promise<Record<string, TeamNodeProgress>> {
   try {
     console.log("🔍 [Progress Client] Fetching map progress for:", mapId);
+    const supabase = createClient();
 
-    const response = await fetch(`/api/maps/${mapId}/progress`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+    // Call the PostgreSQL function you created
+    const { data: allProgress, error } = await supabase.rpc(
+      "get_team_map_progress",
+      {
+        map_id_param: mapId,
+      }
+    );
+
+    if (error) {
+      console.error(
+        "❌ [Progress Client] Error fetching map progress via RPC:",
+        error
+      );
+      return {};
+    }
+
+    if (!allProgress) {
+      console.log(
+        "✅ [Progress Client] No progress data returned for map:",
+        mapId
+      );
+      return {};
+    }
+
+    // Create a map of node_id -> progress for easy lookup on the client
+    const progressMap: Record<string, TeamNodeProgress> = {};
+    allProgress.forEach((progress) => {
+      progressMap[progress.node_id] = progress;
     });
-
-    if (!response.ok) {
-      console.error("❌ [Progress Client] API response not ok:", {
-        status: response.status,
-        statusText: response.statusText,
-      });
-      return {};
-    }
-
-    const result: MapProgressResponse = await response.json();
-
-    if (!result.success) {
-      console.error("❌ [Progress Client] API returned error:", result.error);
-      return {};
-    }
 
     console.log("✅ [Progress Client] Map progress fetched:", {
       mapId,
-      progressCount: Object.keys(result.data.progress_map).length,
+      progressCount: allProgress.length,
     });
 
-    return result.data.progress_map;
+    return progressMap;
   } catch (error) {
-    console.error("❌ [Progress Client] Error fetching map progress:", error);
+    console.error(
+      "❌ [Progress Client] Exception when fetching map progress:",
+      error
+    );
     return {};
   }
 }
-
 /**
  * Get progress for a specific node
  */
