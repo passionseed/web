@@ -410,6 +410,63 @@ export function MapViewer({ map }: MapViewerProps) {
     });
   };
 
+  // Get submission requirement for a node (single or all team members)
+  const getSubmissionRequirement = (nodeId: string): "single" | "all" => {
+    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+    return nodeData?.metadata?.submission_requirement || "single";
+  };
+
+  // Check if node is completed based on submission requirements
+  const isNodeCompleted = (nodeId: string, progress: any): boolean => {
+    const requirement = getSubmissionRequirement(nodeId);
+
+    if (requirement === "single") {
+      // Single requirement: any team member completion counts
+      return progress?.status === "passed" || progress?.status === "submitted";
+    } else {
+      // All requirement: check if all team members have submitted
+      if (progress?.member_progress) {
+        return progress.member_progress.every(
+          (member: any) =>
+            member.status === "passed" || member.status === "submitted"
+        );
+      }
+      return progress?.status === "passed" || progress?.status === "submitted";
+    }
+  };
+
+  // Calculate progress statistics by requirement type
+  const getProgressStats = () => {
+    const stats = {
+      singleRequirement: { completed: 0, total: 0 },
+      allRequirement: { completed: 0, total: 0 },
+      totalCompleted: 0,
+      totalNodes: map.map_nodes.filter((n) => (n as any)?.node_type !== "text")
+        .length,
+    };
+
+    map.map_nodes.forEach((node) => {
+      // Skip text nodes
+      if ((node as any)?.node_type === "text") return;
+
+      const requirement = getSubmissionRequirement(node.id);
+      const progress = progressMap[node.id];
+      const completed = isNodeCompleted(node.id, progress);
+
+      if (requirement === "single") {
+        stats.singleRequirement.total++;
+        if (completed) stats.singleRequirement.completed++;
+      } else {
+        stats.allRequirement.total++;
+        if (completed) stats.allRequirement.completed++;
+      }
+
+      if (completed) stats.totalCompleted++;
+    });
+
+    return stats;
+  };
+
   // Custom node component with sprite-based gamified design and floating animations
   const nodeTypes = {
     default: ({
@@ -441,36 +498,42 @@ export function MapViewer({ map }: MapViewerProps) {
       } else if (progress) {
         // Handle both individual progress (StudentProgress) and team progress (any) structures
         const status = progress.status || (progress as any)?.status;
+        const isCompleted = isNodeCompleted(data.id, progress);
 
-        switch (status) {
-          case "passed":
-            glowEffect = "drop-shadow-[0_0_12px_rgba(34,197,94,0.6)]";
-            statusIcon = <CheckCircle className="h-4 w-4 text-green-500" />;
-            animationClass = "animate-float-success";
-            break;
-          case "failed":
-            glowEffect = "drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]";
-            statusIcon = <AlertTriangle className="h-4 w-4 text-red-500" />;
-            animationClass = "animate-float-failed";
-            break;
-          case "submitted":
-            glowEffect = "drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]";
-            statusIcon = <Clock className="h-4 w-4 text-blue-500" />;
-            animationClass = "animate-float-submitted";
-            break;
-          case "in_progress":
-            glowEffect = "drop-shadow-[0_0_12px_rgba(249,115,22,0.6)]";
-            statusIcon = (
-              <Clock className="h-4 w-4 text-orange-500 animate-pulse" />
-            );
-            animationClass = "animate-float-progress";
-            break;
-          case "not_started":
-            if (isUnlocked) {
-              statusIcon = <Play className="h-4 w-4 text-blue-400" />;
-              animationClass = "animate-float";
-            }
-            break;
+        if (isCompleted) {
+          // Node is completed based on submission requirements
+          glowEffect = "drop-shadow-[0_0_12px_rgba(34,197,94,0.6)]";
+          statusIcon = <CheckCircle className="h-4 w-4 text-green-500" />;
+          animationClass = "animate-float-success";
+        } else {
+          switch (status) {
+            case "failed":
+              glowEffect = "drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]";
+              statusIcon = <AlertTriangle className="h-4 w-4 text-red-500" />;
+              animationClass = "animate-float-failed";
+              break;
+            case "submitted":
+              glowEffect = "drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]";
+              statusIcon = <Clock className="h-4 w-4 text-blue-500" />;
+              animationClass = "animate-float-submitted";
+              break;
+            case "in_progress":
+              glowEffect = "drop-shadow-[0_0_12px_rgba(249,115,22,0.6)]";
+              statusIcon = (
+                <Clock className="h-4 w-4 text-orange-500 animate-pulse" />
+              );
+              animationClass = "animate-float-progress";
+              break;
+            case "not_started":
+              if (isUnlocked) {
+                statusIcon = <Play className="h-4 w-4 text-blue-400" />;
+                animationClass = "animate-float";
+              }
+              break;
+            case "passed":
+              // This should be handled by isCompleted above
+              break;
+          }
         }
       } else if (isUnlocked) {
         statusIcon = <Play className="h-4 w-4 text-blue-400" />;
@@ -482,6 +545,27 @@ export function MapViewer({ map }: MapViewerProps) {
       let submissionCount = 0;
       let pendingCount = 0;
       let memberProgressInfo = null;
+
+      // Submission requirement indicator
+      const requirement = getSubmissionRequirement(data.id);
+      let requirementBadge = null;
+
+      if (isTeamMap && isUnlocked) {
+        requirementBadge = (
+          <div className="absolute -top-2 -left-2 z-50">
+            <div
+              className={`rounded-full p-1 text-xs font-bold shadow-lg ${
+                requirement === "all"
+                  ? "bg-purple-500 text-white"
+                  : "bg-blue-500 text-white"
+              }`}
+              title={`Submission requirement: ${requirement === "all" ? "All team members" : "Any team member"}`}
+            >
+              {requirement === "all" ? "👥" : "👤"}
+            </div>
+          </div>
+        );
+      }
 
       if (isInstructorOrTA && data.id) {
         if (isTeamMap && progress && progress.member_progress) {
@@ -543,25 +627,25 @@ export function MapViewer({ map }: MapViewerProps) {
             type="target"
             position={Position.Top}
             className="w-3 h-3 bg-blue-500/20 border-2 border-blue-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: "none", display: "none" }}
           />
           <Handle
             type="source"
             position={Position.Bottom}
             className="w-2 h-2 bg-green-500/20 border-2 border-green-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: "none", display: "none" }}
           />
           <Handle
             type="target"
             position={Position.Left}
             className="w-2 h-2 bg-blue-500/20 border-2 border-blue-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: "none", display: "none" }}
           />
           <Handle
             type="source"
             position={Position.Right}
             className="w-2 h-2 bg-green-500/20 border-2 border-green-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: "none", display: "none" }}
           />
           <div
             className={`relative ${selected ? "scale-110 translate-y-3" : ""} transition-transform duration-300 cursor-pointer ${animationClass}`}
@@ -615,6 +699,9 @@ export function MapViewer({ map }: MapViewerProps) {
             {/* Grading Indicator for Instructors/TAs */}
             {gradingIndicator}
             {memberProgressInfo}
+
+            {/* Submission Requirement Badge */}
+            {requirementBadge}
 
             {/* Sprite Image */}
             <img
@@ -905,19 +992,44 @@ export function MapViewer({ map }: MapViewerProps) {
                   ? "Team Progress Overview"
                   : "Progress Overview"}
               </div>
+
+              {isTeamMap && (
+                <div className="mb-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2">
+                      <span className="text-blue-500">👤</span>
+                      Single requirement
+                    </span>
+                    <span className="font-medium">
+                      {getProgressStats().singleRequirement.completed}/
+                      {getProgressStats().singleRequirement.total}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2">
+                      <span className="text-purple-500">👥</span>
+                      All requirement
+                    </span>
+                    <span className="font-medium">
+                      {getProgressStats().allRequirement.completed}/
+                      {getProgressStats().allRequirement.total}
+                    </span>
+                  </div>
+                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                      style={{
+                        width: `${(getProgressStats().totalCompleted / getProgressStats().totalNodes) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span>
-                    {
-                      Object.values(progressMap).filter(
-                        (p) =>
-                          p.status === "passed" ||
-                          (p as any)?.status === "passed"
-                      ).length
-                    }{" "}
-                    Completed
-                  </span>
+                  <span>{getProgressStats().totalCompleted} Completed</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
@@ -948,7 +1060,7 @@ export function MapViewer({ map }: MapViewerProps) {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-gray-400"></div>
                   <span className="text-muted-foreground">
-                    {map.map_nodes.length} Total
+                    {getProgressStats().totalNodes} Total
                   </span>
                 </div>
               </div>
