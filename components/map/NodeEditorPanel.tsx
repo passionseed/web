@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ContentEditor } from "./ContentEditor";
 import { AssessmentEditor } from "./AssessmentEditor";
 import { SpritePickerDialog } from "./SpritePickerDialog";
@@ -507,6 +508,63 @@ export function NodeEditorPanel({
                         className="min-h-[100px]"
                       />
                     </div>
+
+                    {/* Submission Requirement - Only for learning nodes */}
+                    <div className="space-y-2">
+                      <Label htmlFor="submission_requirement">
+                        Submission Requirement
+                      </Label>
+                      <RadioGroup
+                        id="submission_requirement"
+                        value={
+                          (nodeData.metadata as any)?.submission_requirement ||
+                          "single"
+                        }
+                        onValueChange={(value: "single" | "all") => {
+                          const newMetadata = {
+                            ...(nodeData.metadata || {}),
+                            submission_requirement: value,
+                          };
+                          if (selectedNode) {
+                            onNodeDataChange(selectedNode.id, {
+                              metadata: newMetadata,
+                            });
+                          }
+                        }}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem
+                            value="single"
+                            id="requirement-single"
+                          />
+                          <Label
+                            htmlFor="requirement-single"
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <span className="text-blue-500">👤</span>
+                            Single Member
+                            <span className="text-xs text-muted-foreground">
+                              (Any team member can complete)
+                            </span>
+                          </Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="all" id="requirement-all" />
+                          <Label
+                            htmlFor="requirement-all"
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <span className="text-purple-500">👥</span>
+                            All Members
+                            <span className="text-xs text-muted-foreground">
+                              (All team members must complete)
+                            </span>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="difficulty">
                         Difficulty: {nodeData.difficulty}
