@@ -31,6 +31,8 @@ import { StudentProgressView } from "./StudentProgressView";
 import { ClassroomSettingsModal } from "./ClassroomSettingsModal";
 import { ClassroomMapsManager } from "./ClassroomMapsManager";
 import { ClassroomTeamsManager } from "./ClassroomTeamsManager";
+import { GroupManagement } from "./GroupManagement";
+import { TeamGrading } from "./TeamGrading";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import StudentMapsViewWrapper from "./StudentMapsViewWrapper";
@@ -274,6 +276,7 @@ export function ClassroomDetailsDashboard({
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
+          <TabsTrigger value="groups">Groups</TabsTrigger>
           <TabsTrigger value="maps">Learning Maps</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
           {canManage && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
@@ -328,10 +331,37 @@ export function ClassroomDetailsDashboard({
         </TabsContent>
 
         <TabsContent value="teams" className="space-y-4">
-          <ClassroomTeamsManager
+          <Tabs defaultValue="manage" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="manage">Team Management</TabsTrigger>
+              {canManage && <TabsTrigger value="grading">Team Grading</TabsTrigger>}
+            </TabsList>
+
+            <TabsContent value="manage">
+              <ClassroomTeamsManager
+                classroomId={classroom.id}
+                userRole={userRole}
+                canManage={canManage}
+              />
+            </TabsContent>
+
+            {canManage && (
+              <TabsContent value="grading">
+                <TeamGrading 
+                  classroomId={classroom.id}
+                  onGraded={() => {
+                    // Optionally refresh data
+                  }}
+                />
+              </TabsContent>
+            )}
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="groups" className="space-y-4">
+          <GroupManagement
             classroomId={classroom.id}
-            userRole={userRole}
-            canManage={canManage}
+            userRole={userRole as "instructor" | "ta" | "student"}
           />
         </TabsContent>
 
