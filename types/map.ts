@@ -49,7 +49,7 @@ export interface MapNode {
   difficulty: number;
   sprite_url: string | null;
   metadata: Record<string, any> | null; // jsonb
-  node_type?: "learning" | "text"; // Added node_type field
+  node_type?: "learning" | "text" | "comment"; // Added node_type field with comment support
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
   node_content?: NodeContent[]; // Changed from 'content' to 'node_content'
@@ -122,6 +122,7 @@ export interface NodeAssessment {
   id: string; // uuid
   node_id: string; // uuid
   assessment_type: AssessmentType;
+  metadata?: any; // jsonb column for storing checklist items and other assessment metadata
   quiz_questions?: QuizQuestion[]; // Optional relation for quizzes
   points_possible?: number | null;
   is_graded?: boolean;

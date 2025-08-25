@@ -80,7 +80,7 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
       try {
         const [m, tm] = await Promise.all([
           getClassroomMaps(classroomId),
-          getClassroomTeamMaps(classroomId)
+          getClassroomTeamMaps(classroomId),
         ]);
         setMaps(m || []);
         setTeamMaps(tm || []);
@@ -214,7 +214,8 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
         if (res.status === 409) {
           toast({
             title: "Already forked",
-            description: data?.error || "This map has already been forked by your team",
+            description:
+              data?.error || "This map has already been forked by your team",
             variant: "default",
           });
         } else {
@@ -257,12 +258,11 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
   };
 
   const hasTeamAlreadyForkedMap = (mapId: string) => {
-    return teamMaps?.some(tm => tm.original_map_id === mapId) || false;
+    return teamMaps?.some((tm) => tm.original_map_id === mapId) || false;
   };
 
   return (
     <div className="space-y-8">
-
       {/* Team Forked Maps Section */}
       {teamMaps && teamMaps.length > 0 && (
         <>
@@ -277,7 +277,8 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
               Forked Learning Maps
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              These are maps your team has forked. Click to continue working on them together.
+              These are maps your team has forked. Click to continue working on
+              them together.
             </p>
           </div>
 
@@ -285,14 +286,26 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
             {teamMaps.map((tm) => (
               <Card
                 key={tm.team_map_id}
-                className="group relative overflow-hidden border-2 border-green-200 hover:border-green-300 transition-all duration-200 hover:shadow-lg bg-green-50/30"
+                className="group relative overflow-hidden border-2 
+             border-green-200 dark:border-green-800 
+             hover:border-green-300 dark:hover:border-green-600 
+             transition-all duration-200 hover:shadow-lg 
+             bg-green-50/30 dark:bg-green-900/30"
               >
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-green-100/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                <div
+                  className="absolute inset-0 bg-gradient-to-br 
+                  from-green-100/50 via-black/40 to-black/70 
+                  opacity-0 group-hover:opacity-100 
+                  transition-opacity duration-200"
+                />
 
                 <CardHeader className="relative">
                   <div className="flex items-start justify-between mb-2">
-                    <Badge variant="outline" className="text-xs border-green-300 text-green-700">
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-green-300 text-green-700 dark:border-green-600 dark:text-green-300"
+                    >
                       <Users className="h-3 w-3 mr-1" />
                       {tm.node_count} nodes
                     </Badge>
@@ -303,10 +316,14 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-xs text-green-600 font-medium">
+                    <div className="text-xs text-green-600 dark:text-green-400 font-medium">
                       Team: {tm.team_name}
                     </div>
-                    <CardTitle className="text-xl font-bold leading-tight group-hover:text-green-700 transition-colors">
+                    <CardTitle
+                      className="text-xl font-bold leading-tight 
+                            group-hover:text-green-700 dark:group-hover:text-green-300 
+                            transition-colors"
+                    >
                       {tm.map_title}
                     </CardTitle>
                   </div>
@@ -324,9 +341,11 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
                       Forked from: {tm.original_map_title}
                     </div>
                     <Link href={`/map/${tm.map_id}/edit`}>
-                      <Button 
-                        size="sm" 
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 
+                     dark:bg-green-700 dark:hover:bg-green-600 
+                     text-white"
                       >
                         <BookOpen className="h-4 w-4 mr-1" />
                         Open Team Map
@@ -354,8 +373,8 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
               Fork New Learning Maps
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Fork a learning map to your team to begin working through interactive
-              content, assessments, and collaborative projects.
+              Fork a learning map to your team to begin working through
+              interactive content, assessments, and collaborative projects.
             </p>
           </div>
 
@@ -407,7 +426,10 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
                         <Button
                           size="sm"
                           className="bg-primary hover:bg-primary/90 text-white"
-                          disabled={forkingMapId === m.map_id || hasTeamAlreadyForkedMap(m.map_id)}
+                          disabled={
+                            forkingMapId === m.map_id ||
+                            hasTeamAlreadyForkedMap(m.map_id)
+                          }
                         >
                           {forkingMapId === m.map_id ? (
                             "Forking..."
