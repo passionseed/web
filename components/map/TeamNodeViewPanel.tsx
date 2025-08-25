@@ -729,14 +729,45 @@ export function TeamNodeViewPanel({
             </div>
 
             {/* Assigned to */}
-            {currentProgress?.assigned_to && (
-              <div className="text-xs text-muted-foreground">
-                Assigned to:{" "}
-                {teamMembers.find(
-                  (m) => m.user_id === currentProgress.assigned_to
-                )?.profiles?.username || "Unknown"}
-              </div>
-            )}
+            {(() => {
+              const assignedMember = teamMembers.find(
+                (m) => m.user_id === currentProgress?.assigned_to
+              );
+              if (!assignedMember) return null;
+
+              const initials = (assignedMember.profiles?.full_name || assignedMember.profiles?.username || "")
+                .split(" ")
+                .map(s => s[0])
+                .join("")
+                .slice(0,2)
+                .toUpperCase();
+
+              return (
+                <div className="flex items-center gap-3 mt-2 mb-2">
+                  {assignedMember.profiles?.avatar_url ? (
+                    <img
+                      src={assignedMember.profiles.avatar_url}
+                      alt={assignedMember.profiles?.username || assignedMember.profiles?.full_name || "avatar"}
+                      className="h-8 w-8 rounded-full object-cover border"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700 border">
+                      {initials || "?"}
+                    </div>
+                  )}
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{assignedMember.profiles?.username || assignedMember.profiles?.full_name || "Unknown"}</span>
+                      <Badge variant="secondary" className="text-xs">Assigned</Badge>
+                    </div>
+                    {assignedMember.profiles?.full_name && (
+                      <div className="text-xs text-muted-foreground">{assignedMember.profiles.full_name}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Submitted by (from team progress) */}
             {currentProgress?.submitted_by && (
