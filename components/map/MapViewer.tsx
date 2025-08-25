@@ -428,7 +428,7 @@ export function MapViewer({ map }: MapViewerProps) {
       if (progress?.member_progress) {
         return progress.member_progress.every(
           (member: any) =>
-            member.status === "passed" || member.status === "submitted"
+            member.node_status === "passed" || member.node_status === "submitted"
         );
       }
       return progress?.status === "passed" || progress?.status === "submitted";
@@ -572,22 +572,47 @@ export function MapViewer({ map }: MapViewerProps) {
           // Show team member progress for team maps
           const memberProgress = progress.member_progress;
           const passedCount = memberProgress.filter(
-            (mp: any) => mp.status === "passed"
+            (mp: any) => mp.node_status === "passed"
           ).length;
           const submittedCount = memberProgress.filter(
-            (mp: any) => mp.status === "submitted"
+            (mp: any) => mp.node_status === "submitted"
           ).length;
           const inProgressCount = memberProgress.filter(
-            (mp: any) => mp.status === "in_progress"
+            (mp: any) => mp.node_status === "in_progress"
           ).length;
+          const totalMembers = memberProgress.length;
+          const completedCount = passedCount + submittedCount;
+
+          // Check if this is an "all" requirement node
+          const requiresAll = requirement === "all";
+          
+          let badgeColor = "bg-blue-500";
+          let badgeText = `${totalMembers}`;
+          let title = `Team progress: ${passedCount} passed, ${submittedCount} submitted, ${inProgressCount} in progress`;
+
+          if (requiresAll) {
+            if (completedCount === totalMembers) {
+              badgeColor = "bg-green-500";
+              badgeText = "✓";
+              title = `All members completed: ${passedCount} passed, ${submittedCount} submitted`;
+            } else if (completedCount > 0) {
+              badgeColor = "bg-orange-500";
+              badgeText = `${completedCount}/${totalMembers}`;
+              title = `Partial completion: ${completedCount}/${totalMembers} members submitted (${passedCount} passed, ${submittedCount} submitted)`;
+            } else {
+              badgeColor = "bg-red-500";
+              badgeText = `0/${totalMembers}`;
+              title = `No submissions yet from ${totalMembers} team members`;
+            }
+          }
 
           memberProgressInfo = (
             <div className="absolute -top-2 -right-2 z-50">
               <div
-                className="rounded-full p-1 text-xs font-bold shadow-lg bg-blue-500 text-white"
-                title={`Team progress: ${passedCount} passed, ${submittedCount} submitted, ${inProgressCount} in progress`}
+                className={`rounded-full p-1 text-xs font-bold shadow-lg text-white ${badgeColor} ${completedCount < totalMembers && requiresAll ? 'animate-pulse' : ''}`}
+                title={title}
               >
-                {memberProgress.length}
+                {badgeText}
               </div>
             </div>
           );

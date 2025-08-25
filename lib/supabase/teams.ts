@@ -1092,8 +1092,11 @@ export const transferTeamLeadership = async (
  * Gets all team forked maps for a classroom
  * Instructors can see all team maps, while team members can only see their own team's maps
  */
-export const getClassroomTeamMaps = async (classroomId: string) => {
-  const supabase = createClient();
+export const getClassroomTeamMaps = async (
+  classroomId: string,
+  serverClient?: SupabaseClient<any, "public", any> // Add optional server client parameter
+) => {
+  const supabase = serverClient || createClient();
   console.log("🔍 getClassroomTeamMaps called with classroomId:", classroomId);
 
   const {

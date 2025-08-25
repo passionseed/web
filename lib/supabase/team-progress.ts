@@ -99,7 +99,13 @@ export const getTeamProgress = async (
     if (mapNodesError) {
       console.error(
         "❌ [TeamProgress] Error loading map nodes:",
-        mapNodesError
+        {
+          message: (mapNodesError as any)?.message,
+          code: (mapNodesError as any)?.code,
+          details: (mapNodesError as any)?.details,
+          hint: (mapNodesError as any)?.hint,
+        },
+        JSON.stringify(mapNodesError)
       );
       throw mapNodesError;
     }
@@ -123,7 +129,13 @@ export const getTeamProgress = async (
     if (teamProgressError) {
       console.error(
         "❌ [TeamProgress] Error loading team progress:",
-        teamProgressError
+        {
+          message: (teamProgressError as any)?.message,
+          code: (teamProgressError as any)?.code,
+          details: (teamProgressError as any)?.details,
+          hint: (teamProgressError as any)?.hint,
+        },
+        JSON.stringify(teamProgressError)
       );
       throw teamProgressError;
     }
@@ -161,7 +173,13 @@ export const getTeamProgress = async (
 
     return progressSummary;
   } catch (error) {
-    console.error("❌ [TeamProgress] Error in getTeamProgress:", error);
+    console.error("❌ [TeamProgress] Error in getTeamProgress:", {
+      message: (error as any)?.message,
+      code: (error as any)?.code,
+      details: (error as any)?.details,
+      hint: (error as any)?.hint,
+      stack: (error as any)?.stack,
+    }, JSON.stringify(error));
     throw error;
   }
 };
@@ -202,7 +220,13 @@ export const getTeamProgressForInstructor = async (
     if (teamMembershipsError) {
       console.warn(
         "⚠️ [TeamProgress] Could not load team memberships:",
-        teamMembershipsError
+        {
+          message: (teamMembershipsError as any)?.message,
+          code: (teamMembershipsError as any)?.code,
+          details: (teamMembershipsError as any)?.details,
+          hint: (teamMembershipsError as any)?.hint,
+        },
+        JSON.stringify(teamMembershipsError)
       );
     }
 
@@ -232,7 +256,13 @@ export const getTeamProgressForInstructor = async (
     if (memberProgressError) {
       console.warn(
         "⚠️ [TeamProgress] Could not load member progress:",
-        memberProgressError
+        {
+          message: (memberProgressError as any)?.message,
+          code: (memberProgressError as any)?.code,
+          details: (memberProgressError as any)?.details,
+          hint: (memberProgressError as any)?.hint,
+        },
+        JSON.stringify(memberProgressError)
       );
     } else if (memberProgress) {
       // Group member progress by node
@@ -268,7 +298,14 @@ export const getTeamProgressForInstructor = async (
   } catch (error) {
     console.error(
       "❌ [TeamProgress] Error in getTeamProgressForInstructor:",
-      error
+      {
+        message: (error as any)?.message,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint,
+        stack: (error as any)?.stack,
+      },
+      JSON.stringify(error)
     );
     throw error;
   }
@@ -549,5 +586,246 @@ export const getTeamMembers = async (
       stack: err?.stack,
     });
     throw err instanceof Error ? err : new Error(String(err));
+  }
+};
+
+// ===== MULTIPLE ASSIGNMENT FUNCTIONS =====
+
+/**
+ * Interface for team node assignment
+ */
+export interface TeamNodeAssignment {
+  id: string;
+  team_id: string;
+  node_id: string;
+  user_id: string;
+  assigned_at: string;
+  created_at: string;
+}
+
+/**
+ * Assign multiple team members to a node
+ */
+export const assignMultipleTeamMembersToNode = async (
+  teamId: string,
+  nodeId: string,
+  userIds: string[]
+): Promise<void> => {
+  const supabase = createClient();
+
+  console.log("👥 [TeamProgress] Assigning multiple members to node", {
+    teamId,
+    nodeId,
+    userIds,
+  });
+
+  try {
+    const assignments = userIds.map(userId => ({
+      team_id: teamId,
+      node_id: nodeId,
+      user_id: userId,
+      assigned_at: new Date().toISOString(),
+    }));
+
+    const { error } = await supabase
+      .from("team_node_assignments")
+      .upsert(assignments, { onConflict: "team_id,node_id,user_id" });
+
+    if (error) {
+      console.error("❌ [TeamProgress] Error assigning multiple members:", error);
+      throw error;
+    }
+
+    // Update team node progress to assigned status if not already started
+    const { error: progressError } = await supabase
+      .from("team_node_progress")
+      .upsert(
+        {
+          team_id: teamId,
+          node_id: nodeId,
+          status: "assigned",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "team_id,node_id" }
+      );
+
+    if (progressError) {
+      console.error("❌ [TeamProgress] Error updating progress status:", progressError);
+      throw progressError;
+    }
+
+    console.log("✅ [TeamProgress] Multiple members assigned successfully");
+  } catch (error) {
+    console.error("❌ [TeamProgress] Error in assignMultipleTeamMembersToNode:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get team node assignments for a specific node
+ */
+export const getTeamNodeAssignments = async (
+  teamId: string,
+  nodeId: string
+): Promise<TeamNodeAssignment[]> => {
+  const supabase = createClient();
+
+  console.log("📋 [TeamProgress] Getting team node assignments", {
+    teamId,
+    nodeId,
+  });
+
+  try {
+    const { data, error } = await supabase
+      .from("team_node_assignments")
+      .select("*")
+      .eq("team_id", teamId)
+      .eq("node_id", nodeId)
+      .order("assigned_at", { ascending: false });
+
+    if (error) {
+      console.error("❌ [TeamProgress] Error getting assignments:", error);
+      throw error;
+    }
+
+    console.log("✅ [TeamProgress] Got assignments successfully", { count: data?.length });
+    return data || [];
+  } catch (error) {
+    console.error("❌ [TeamProgress] Error in getTeamNodeAssignments:", error);
+    throw error;
+  }
+};
+
+/**
+ * Remove a team member from node assignment
+ */
+export const removeTeamMemberFromNode = async (
+  teamId: string,
+  nodeId: string,
+  userId: string
+): Promise<void> => {
+  const supabase = createClient();
+
+  console.log("➖ [TeamProgress] Removing member from node", {
+    teamId,
+    nodeId,
+    userId,
+  });
+
+  try {
+    const { error } = await supabase
+      .from("team_node_assignments")
+      .delete()
+      .eq("team_id", teamId)
+      .eq("node_id", nodeId)
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("❌ [TeamProgress] Error removing assignment:", error);
+      throw error;
+    }
+
+    console.log("✅ [TeamProgress] Member removed from assignment successfully");
+  } catch (error) {
+    console.error("❌ [TeamProgress] Error in removeTeamMemberFromNode:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get team node submission status based on submission requirement
+ */
+export const getTeamNodeSubmissionStatus = async (
+  teamId: string,
+  nodeId: string,
+  submissionRequirement: "single" | "all" = "single"
+): Promise<{
+  isComplete: boolean;
+  submissionCount: number;
+  requiredCount: number;
+  memberSubmissions: Array<{
+    userId: string;
+    hasSubmitted: boolean;
+    submissionCount: number;
+    latestSubmission?: any;
+  }>;
+}> => {
+  const supabase = createClient();
+
+  console.log("📊 [TeamProgress] Getting submission status", {
+    teamId,
+    nodeId,
+    submissionRequirement,
+  });
+
+  try {
+    // Get team members
+    const teamMembers = await getTeamMembers(teamId);
+    
+    // Get assignments for this node
+    const assignments = await getTeamNodeAssignments(teamId, nodeId);
+    const assignedUserIds = assignments.map(a => a.user_id);
+
+    // Determine which users need to submit based on requirement
+    const requiredUserIds = submissionRequirement === "all" 
+      ? teamMembers.map(m => m.user_id)
+      : assignedUserIds.length > 0 
+        ? assignedUserIds 
+        : teamMembers.map(m => m.user_id); // fallback to all if no assignments
+
+    // Get submissions for each required user
+    const memberSubmissions = await Promise.all(
+      requiredUserIds.map(async (userId) => {
+        // Get user's progress for this node
+        const { data: progress } = await supabase
+          .from("student_node_progress")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("node_id", nodeId)
+          .limit(1);
+
+        if (!progress || progress.length === 0) {
+          return {
+            userId,
+            hasSubmitted: false,
+            submissionCount: 0,
+          };
+        }
+
+        // Get submissions for this progress
+        const { data: submissions } = await supabase
+          .from("assessment_submissions")
+          .select("*")
+          .eq("progress_id", progress[0].id)
+          .order("submitted_at", { ascending: false });
+
+        return {
+          userId,
+          hasSubmitted: (submissions?.length || 0) > 0,
+          submissionCount: submissions?.length || 0,
+          latestSubmission: submissions?.[0] || null,
+        };
+      })
+    );
+
+    const submissionCount = memberSubmissions.filter(m => m.hasSubmitted).length;
+    const requiredCount = requiredUserIds.length;
+    const isComplete = submissionCount >= requiredCount;
+
+    console.log("✅ [TeamProgress] Got submission status", {
+      submissionCount,
+      requiredCount,
+      isComplete,
+    });
+
+    return {
+      isComplete,
+      submissionCount,
+      requiredCount,
+      memberSubmissions,
+    };
+  } catch (error) {
+    console.error("❌ [TeamProgress] Error in getTeamNodeSubmissionStatus:", error);
+    throw error;
   }
 };

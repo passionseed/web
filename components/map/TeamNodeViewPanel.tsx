@@ -24,6 +24,9 @@ import {
   HelpCircle,
   Crown,
   User,
+  X,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TextNode } from "@/components/map/MapEditor/components/TextNode";
@@ -54,6 +57,11 @@ import {
   assignTeamMemberToNode,
   requestHelpForTeamNode,
   getTeamMembers,
+  assignMultipleTeamMembersToNode,
+  getTeamNodeAssignments,
+  removeTeamMemberFromNode,
+  getTeamNodeSubmissionStatus,
+  type TeamNodeAssignment,
 } from "@/lib/supabase/team-progress";
 import { getProfilesByIds, type MinimalProfile } from "@/lib/supabase/profiles";
 
@@ -111,6 +119,20 @@ export function TeamNodeViewPanel({
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(!!selectedNode);
   const [assignedTo, setAssignedTo] = useState<string>("");
+  const [assignedMembers, setAssignedMembers] = useState<string[]>([]);
+  const [teamAssignments, setTeamAssignments] = useState<TeamNodeAssignment[]>([]);
+  const [submissionsByMember, setSubmissionsByMember] = useState<Record<string, any[]>>({});
+  const [submissionStatus, setSubmissionStatus] = useState<{
+    isComplete: boolean;
+    submissionCount: number;
+    requiredCount: number;
+    memberSubmissions: Array<{
+      userId: string;
+      hasSubmitted: boolean;
+      submissionCount: number;
+      latestSubmission?: any;
+    }>;
+  } | null>(null);
   const [helpMessage, setHelpMessage] = useState<string>("");
   const { toast } = useToast();
 
@@ -119,6 +141,10 @@ export function TeamNodeViewPanel({
     nodeData || null
   );
   const assessment = nodeData?.node_assessments?.[0];
+  
+  // Get submission requirement from node metadata
+  const submissionRequirement: "single" | "all" = 
+    (nodeData?.metadata as any)?.submission_requirement || "single";
 
   // Get current node progress
   const currentProgress = teamProgress[selectedNode?.id || ""];
@@ -143,11 +169,13 @@ export function TeamNodeViewPanel({
   const canResubmit = isFailed;
 
   // Show assessment form for team members
-  const showAssessmentForm =
-    (canResubmit ||
-      (hasStarted && !isSubmittedAndPending && !isPassed) ||
-      isInProgress) &&
-    !isInstructorOrTA;
+  // For "all" submission requirement, show form to all team members
+  // For "single" submission requirement, use existing logic
+  const showAssessmentForm = !isInstructorOrTA && hasStarted && (
+    submissionRequirement === "all" 
+      ? !isPassed // Show to all team members until team passes
+      : (canResubmit || (!isSubmittedAndPending && !isPassed) || isInProgress)
+  );
 
   useEffect(() => {
     const getUser = async () => {
@@ -164,6 +192,10 @@ export function TeamNodeViewPanel({
     setEditableNodeData(nodeData || null);
     setTeamProgress({});
     setSubmissionsWithGrades([]);
+    setSubmissionsByMember({});
+    setSubmissionStatus(null);
+    setTeamAssignments([]);
+    setAssignedMembers([]);
     setAssessmentAnswer("");
     setQuizAnswers({});
 
@@ -206,6 +238,19 @@ export function TeamNodeViewPanel({
       // Load team members using the team-progress library (already returns nested profiles)
       const members = await getTeamMembers(teamId);
       setTeamMembers(members as any);
+
+      // Load team node assignments
+      const assignments = await getTeamNodeAssignments(teamId, selectedNode.id);
+      setTeamAssignments(assignments);
+      setAssignedMembers(assignments.map(a => a.user_id));
+
+      // Load submission status based on submission requirement
+      const submissionStatusData = await getTeamNodeSubmissionStatus(
+        teamId, 
+        selectedNode.id, 
+        submissionRequirement
+      );
+      setSubmissionStatus(submissionStatusData);
 
       // Load team submissions for this node
       const currentNodeProgress = progress[selectedNode.id];
@@ -399,6 +444,7 @@ export function TeamNodeViewPanel({
     if (!assignedTo || !selectedNode) return;
 
     try {
+      // For backward compatibility, still support single assignment
       await assignTeamMemberToNode(teamId, selectedNode.id, assignedTo);
       await loadTeamData();
       onProgressUpdate?.();
@@ -414,6 +460,51 @@ export function TeamNodeViewPanel({
       toast({
         title: "Assignment failed",
         description: "Could not assign team member to this node",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAssignMultipleMembers = async (userIds: string[]) => {
+    if (!selectedNode || userIds.length === 0) return;
+
+    try {
+      await assignMultipleTeamMembersToNode(teamId, selectedNode.id, userIds);
+      await loadTeamData();
+      onProgressUpdate?.();
+
+      toast({
+        title: "Members assigned",
+        description: `${userIds.length} member(s) have been assigned to this node.`,
+      });
+    } catch (error) {
+      console.error("Error assigning multiple members:", error);
+      toast({
+        title: "Assignment failed",
+        description: "Could not assign members to this node",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveMemberAssignment = async (userId: string) => {
+    if (!selectedNode) return;
+
+    try {
+      await removeTeamMemberFromNode(teamId, selectedNode.id, userId);
+      await loadTeamData();
+      onProgressUpdate?.();
+
+      const removedMember = teamMembers.find((m) => m.user_id === userId);
+      toast({
+        title: "Assignment removed",
+        description: `${removedMember?.profiles.username} has been unassigned from this node.`,
+      });
+    } catch (error) {
+      console.error("Error removing member assignment:", error);
+      toast({
+        title: "Removal failed",
+        description: "Could not remove member assignment",
         variant: "destructive",
       });
     }
@@ -575,6 +666,19 @@ export function TeamNodeViewPanel({
   };
 
   const getStatusBadge = (status: string) => {
+    // For "all" submission requirement, show partial completion status
+    if (submissionRequirement === "all" && submissionStatus && status === "in_progress") {
+      const progress = submissionStatus.submissionCount / submissionStatus.requiredCount;
+      if (progress > 0 && progress < 1) {
+        return (
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Partially Complete ({submissionStatus.submissionCount}/{submissionStatus.requiredCount})
+          </Badge>
+        );
+      }
+    }
+
     const statusConfig = {
       not_started: { label: "Not Started", variant: "secondary", icon: Clock },
       assigned: { label: "Assigned", variant: "outline", icon: UserCheck },
@@ -696,6 +800,11 @@ export function TeamNodeViewPanel({
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
             <span className="font-medium text-sm">Team Node</span>
+            {submissionRequirement === "all" && (
+              <Badge variant="outline" className="text-xs">
+                All Members Required
+              </Badge>
+            )}
           </div>
           {getStatusBadge(currentProgress?.status || "not_started")}
         </div>
@@ -751,7 +860,7 @@ export function TeamNodeViewPanel({
                       className="h-8 w-8 rounded-full object-cover border"
                     />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700 border">
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground border border-border">
                       {initials || "?"}
                     </div>
                   )}
@@ -833,39 +942,105 @@ export function TeamNodeViewPanel({
                   <span className="text-sm font-medium text-amber-900">
                     Team Leader Actions
                   </span>
+                  {submissionRequirement === "all" && (
+                    <Badge variant="secondary" className="text-xs">
+                      All Members Required
+                    </Badge>
+                  )}
                 </div>
 
-                {/* Assign Member */}
-                <div className="flex gap-2">
-                  <Select value={assignedTo} onValueChange={setAssignedTo}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Assign team member to this node" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teamMembers.map((member) => (
-                        <SelectItem key={member.user_id} value={member.user_id}>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            {member.profiles?.username ||
-                              member.profiles?.full_name ||
-                              "Unknown"}
-                            {member.is_leader && (
-                              <Crown className="h-3 w-3 text-amber-500" />
-                            )}
+                {/* Current Assignments Display */}
+                {assignedMembers.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-amber-900">Assigned Members:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {assignedMembers.map((userId) => {
+                        const member = teamMembers.find(m => m.user_id === userId);
+                        if (!member) return null;
+                        
+                        return (
+                          <div key={userId} className="flex items-center gap-2 bg-background px-2 py-1 rounded-md border border-border">
+                            <User className="h-3 w-3" />
+                            <span className="text-sm">
+                              {member.profiles?.username || member.profiles?.full_name || "Unknown"}
+                            </span>
+                            <button
+                              onClick={() => handleRemoveMemberAssignment(userId)}
+                              className="text-red-500 hover:text-red-700"
+                              disabled={isLoading}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    onClick={handleAssignMember}
-                    disabled={!assignedTo || isLoading}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <UserCheck className="h-4 w-4 mr-1" />
-                    Assign
-                  </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assignment Interface */}
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-amber-900">
+                    {submissionRequirement === "all" ? "Assign All Members:" : "Assign Member:"}
+                  </div>
+                  
+                  {submissionRequirement === "all" ? (
+                    // Assign all unassigned members button for "all" requirement
+                    <Button
+                      onClick={() => {
+                        const unassignedMembers = teamMembers
+                          .filter(m => !assignedMembers.includes(m.user_id))
+                          .map(m => m.user_id);
+                        if (unassignedMembers.length > 0) {
+                          handleAssignMultipleMembers([...assignedMembers, ...unassignedMembers]);
+                        }
+                      }}
+                      disabled={isLoading || assignedMembers.length === teamMembers.length}
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      {assignedMembers.length === teamMembers.length 
+                        ? "All Members Assigned" 
+                        : `Assign All Members (${teamMembers.length - assignedMembers.length} remaining)`}
+                    </Button>
+                  ) : (
+                    // Individual assignment for "single" requirement
+                    <div className="flex gap-2">
+                      <Select value={assignedTo} onValueChange={setAssignedTo}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select team member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teamMembers
+                            .filter(member => !assignedMembers.includes(member.user_id))
+                            .map((member) => (
+                              <SelectItem key={member.user_id} value={member.user_id}>
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4" />
+                                  {member.profiles?.username ||
+                                    member.profiles?.full_name ||
+                                    "Unknown"}
+                                  {member.is_leader && (
+                                    <Crown className="h-3 w-3 text-amber-500" />
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={handleAssignMember}
+                        disabled={!assignedTo || isLoading}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <UserCheck className="h-4 w-4 mr-1" />
+                        Assign
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -908,6 +1083,103 @@ export function TeamNodeViewPanel({
                 </div>
               )}
             </div>
+
+            {/* Submission Status per Member (for "all" requirement) */}
+            {submissionRequirement === "all" && submissionStatus && (
+              <div className="space-y-4 p-4 border border-blue-200 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">
+                      Team Submission Progress
+                    </span>
+                  </div>
+                  <div className="text-sm text-blue-700">
+                    {submissionStatus.submissionCount} / {submissionStatus.requiredCount} submitted
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${Math.round((submissionStatus.submissionCount / submissionStatus.requiredCount) * 100)}%` 
+                    }}
+                  ></div>
+                </div>
+
+                {/* Individual member status */}
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-blue-900">Member Status:</div>
+                  <div className="grid gap-2">
+                    {submissionStatus.memberSubmissions.map((memberSub) => {
+                      const member = teamMembers.find(m => m.user_id === memberSub.userId);
+                      if (!member) return null;
+
+                      return (
+                        <div key={memberSub.userId} className="flex items-center justify-between p-2 bg-background rounded border border-border">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={member.profiles?.avatar_url || ""} />
+                              <AvatarFallback className="text-xs">
+                                {(member.profiles?.username?.[0] || "?").toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="text-sm">
+                              <div className="font-medium">
+                                {member.profiles?.username || member.profiles?.full_name || "Unknown"}
+                              </div>
+                              {member.is_leader && (
+                                <div className="text-xs text-amber-600 flex items-center gap-1">
+                                  <Crown className="h-3 w-3" />
+                                  Leader
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {memberSub.hasSubmitted ? (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span className="text-xs">
+                                  {memberSub.submissionCount} submission{memberSub.submissionCount !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-red-500">
+                                <AlertCircle className="h-4 w-4" />
+                                <span className="text-xs">Not submitted</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Overall status */}
+                <div className={`p-3 rounded-md text-sm ${
+                  submissionStatus.isComplete 
+                    ? 'bg-green-100 text-green-800 border border-green-200'
+                    : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                }`}>
+                  {submissionStatus.isComplete ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      All required team members have submitted their work!
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Waiting for {submissionStatus.requiredCount - submissionStatus.submissionCount} more submission(s)
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Team Activity: Submissions with submitter profile details */}
             {submissionsWithGrades.length > 0 && (
