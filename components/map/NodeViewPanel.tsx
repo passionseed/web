@@ -30,6 +30,16 @@ import {
   getAssessmentSubmissions,
 } from "@/lib/supabase/assessment";
 import { getSubmissionGrade } from "@/lib/supabase/grading";
+import { InstructorGradingPanel } from "./InstructorGradingPanel";
+import { CommentNode } from "./CommentNode";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TeamNodeViewPanel } from "./TeamNodeViewPanel";
+import { InstructorTeamGradingPanel } from "./InstructorTeamGradingPanel";
+import {
+  getTeamMapClassroomInfo,
+  getUserClassroomRoleClient,
+} from "@/lib/supabase/maps";
+import { getClassroomTeams } from "@/lib/supabase/teams";
 
 interface NodeViewPanelProps {
   // React Flow Node requires a generic that extends Record<string, unknown>
@@ -38,6 +48,8 @@ interface NodeViewPanelProps {
   mapId: string;
   onProgressUpdate?: () => void;
   isNodeUnlocked?: boolean;
+  userRole?: "instructor" | "TA" | "student";
+  isInstructorOrTA?: boolean;
 }
 
 interface SubmissionWithGrade {
@@ -50,6 +62,8 @@ export function NodeViewPanel({
   mapId,
   onProgressUpdate,
   isNodeUnlocked = true,
+  userRole = "student",
+  isInstructorOrTA = false,
 }: NodeViewPanelProps) {
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [submissionsWithGrades, setSubmissionsWithGrades] = useState<
@@ -61,6 +75,9 @@ export function NodeViewPanel({
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(!!selectedNode); // Start loading if we have a selectedNode
+  const [isTeamMap, setIsTeamMap] = useState(false);
+  const [teamId, setTeamId] = useState<string | null>(null);
+  const [classroomRole, setClassroomRole] = useState<string | null>(null);
   const { toast } = useToast();
 
   const nodeData = selectedNode?.data;
@@ -105,6 +122,62 @@ export function NodeViewPanel({
     };
     getUser();
   }, []);
+
+  // Check if this is a team map
+  useEffect(() => {
+    const checkTeamMap = async () => {
+      if (!mapId || !currentUser) return;
+
+      try {
+        // Check if this map is associated with a team
+        const teamMapInfo = await getTeamMapClassroomInfo(mapId);
+        console.log("Team map info:", teamMapInfo);
+
+        if (teamMapInfo.isTeamMap && teamMapInfo.classroomId) {
+          setIsTeamMap(true);
+
+          // Get user's role in the classroom
+          const role = await getUserClassroomRoleClient(
+            teamMapInfo.classroomId,
+            currentUser.id
+          );
+          setClassroomRole(role);
+
+          // For instructors/TAs, get the first available team to view
+          // For students, use their specific team
+          if (teamMapInfo.teamId) {
+            setTeamId(teamMapInfo.teamId);
+          } else if (role === 'instructor' || role === 'ta') {
+            try {
+              const teams = await getClassroomTeams(teamMapInfo.classroomId);
+              if (teams.length > 0) {
+                setTeamId(teams[0].id); // Use first team for instructor view
+              } else {
+                setTeamId(null);
+              }
+            } catch (error) {
+              console.error("Error fetching classroom teams:", error);
+              setTeamId(null);
+            }
+          } else {
+            setTeamId(null);
+          }
+        } else {
+          setIsTeamMap(false);
+          setTeamId(null);
+          setClassroomRole(null);
+        }
+      } catch (error) {
+        console.error("Error checking team map status:", error);
+        // Default to individual map behavior on error
+        setIsTeamMap(false);
+        setTeamId(null);
+        setClassroomRole(null);
+      }
+    };
+
+    checkTeamMap();
+  }, [mapId, currentUser]);
 
   useEffect(() => {
     // sync editable copy when selection changes
@@ -638,6 +711,93 @@ export function NodeViewPanel({
     return <NoNodeSelectedView />;
   }
 
+  // Render team-specific components for team maps
+  console.log({ isTeamMap, teamId, classroomRole }, "teaxx");
+  if (isTeamMap) {
+    console.log("Rendering team-specific components");
+    const isInstructorOrTAForTeam =
+      classroomRole === "instructor" || classroomRole === "ta";
+
+    if (
+      isInstructorOrTAForTeam &&
+      selectedNode &&
+      nodeData?.node_type !== "text" &&
+      nodeData?.node_type !== "comment" &&
+      teamId // Only render if we have a valid teamId
+    ) {
+      // Show team grading interface for instructors/TAs
+      return (
+        <div className="h-full flex flex-col bg-background overflow-hidden">
+          <Tabs defaultValue="student-view" className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-2 mx-4 mt-4 mb-0">
+              <TabsTrigger value="student-view">Team View</TabsTrigger>
+              <TabsTrigger value="grading">Grade Team</TabsTrigger>
+            </TabsList>
+
+            <TabsContent
+              value="student-view"
+              className="flex-1 overflow-hidden mt-0"
+            >
+              <TeamNodeViewPanel
+                selectedNode={selectedNode}
+                mapId={mapId}
+                teamId={teamId}
+                onProgressUpdate={onProgressUpdate}
+                isNodeUnlocked={isNodeUnlocked}
+                userRole={classroomRole as any}
+                isInstructorOrTA={isInstructorOrTAForTeam}
+              />
+            </TabsContent>
+
+            <TabsContent
+              value="grading"
+              className="flex-1 overflow-hidden mt-0"
+            >
+              <InstructorTeamGradingPanel
+                selectedNode={selectedNode}
+                mapId={mapId}
+                teamId={teamId}
+                onGradingComplete={onProgressUpdate}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      );
+    }
+
+    // Show fallback UI for instructors when no teams are available
+    if (isInstructorOrTAForTeam && !teamId) {
+      return (
+        <div className="h-full flex flex-col bg-background overflow-hidden">
+          <div className="p-8 text-center flex flex-col justify-center min-h-full">
+            <div className="text-muted-foreground mb-4">
+              <p className="text-lg font-medium mb-2">No Teams Available</p>
+              <p className="text-sm">
+                There are no teams in this classroom yet. Students need to create teams first.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show team view for students/team members (only if teamId is available)
+    console.log(teamId, "idtxx");
+    if (teamId) {
+      return (
+        <TeamNodeViewPanel
+          selectedNode={selectedNode}
+          mapId={mapId}
+          teamId={teamId}
+          onProgressUpdate={onProgressUpdate}
+          isNodeUnlocked={isNodeUnlocked}
+          userRole={(classroomRole as any) || "student"}
+          isInstructorOrTA={isInstructorOrTAForTeam}
+        />
+      );
+    }
+  }
+
   // Show loading skeleton while data is being fetched
   if (isLoading) {
     return (
@@ -679,6 +839,84 @@ export function NodeViewPanel({
     );
   }
 
+  // For instructors/TAs viewing nodes, show grading interface for learning nodes
+  if (
+    isInstructorOrTA &&
+    selectedNode &&
+    nodeData?.node_type !== "text" &&
+    nodeData?.node_type !== "comment"
+  ) {
+    return (
+      <div className="h-full flex flex-col bg-background overflow-hidden">
+        <Tabs defaultValue="student-view" className="h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-2 mx-4 mt-4 mb-0">
+            <TabsTrigger value="student-view">Student View</TabsTrigger>
+            <TabsTrigger value="grading">
+              Grading ({selectedNode?.id ? "?" : "0"})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent
+            value="student-view"
+            className="flex-1 overflow-hidden mt-0"
+          >
+            <div className="h-full flex flex-col bg-background overflow-hidden">
+              {/* Header Section - Fixed */}
+              <div className="flex-shrink-0 border-b">
+                <NodeHeaderView
+                  nodeData={nodeData}
+                  progress={progress as any}
+                  currentUser={currentUser}
+                  hasStarted={!!hasStarted}
+                  isStarting={isStarting}
+                  onStartNode={handleStartNode}
+                />
+              </div>
+
+              {/* Content Section - Scrollable */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <div className="p-4 space-y-6 min-h-full">
+                  {/* Learning Content */}
+                  <LearningContentView
+                    nodeContent={nodeData?.node_content || []}
+                  />
+
+                  {/* Assessment Section */}
+                  {assessment && (
+                    <AssessmentSection
+                      nodeId={selectedNode.id}
+                      assessment={assessment}
+                      canResubmit={canResubmit}
+                      showAssessmentForm={false} // Instructors don't submit
+                      assessmentAnswer={assessmentAnswer}
+                      setAssessmentAnswer={setAssessmentAnswer}
+                      quizAnswers={quizAnswers}
+                      setQuizAnswers={setQuizAnswers}
+                      isSubmitting={isSubmitting}
+                      onSubmit={handleSubmitAssessment}
+                      submissionsWithGrades={submissionsWithGrades}
+                      progressStatus={progress?.status}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="grading" className="flex-1 overflow-hidden mt-0">
+            <InstructorGradingPanel
+              mapId={mapId}
+              selectedNode={selectedNode}
+              userId={currentUser?.id || ""}
+              onGradingComplete={onProgressUpdate}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
+  // Regular student view (or text/comment nodes for instructors)
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Header Section - Fixed */}
@@ -695,7 +933,9 @@ export function NodeViewPanel({
 
       {/* Content Section - Scrollable */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-        {hasStarted || nodeData?.node_type === "text" ? (
+        {hasStarted ||
+        nodeData?.node_type === "text" ||
+        nodeData?.node_type === "comment" ? (
           <div className="p-4 space-y-6 min-h-full">
             {nodeData?.node_type === "text" ? (
               <div className="p-4">
@@ -706,6 +946,26 @@ export function NodeViewPanel({
                   allowDoubleClick={false}
                   showHint={false}
                   showEditButton={false}
+                  onDataChange={(d) => {
+                    // Optimistic update
+                    setEditableNodeData((prev) =>
+                      prev ? { ...prev, ...d } : (nodeData as MapNode)
+                    );
+                    // Persist to DB
+                    persistTextNodeEdit(d as Partial<MapNode>);
+                  }}
+                />
+              </div>
+            ) : nodeData?.node_type === "comment" ? (
+              <div className="p-4">
+                <CommentNode
+                  data={editableNodeData || nodeData}
+                  selected
+                  userRole={userRole}
+                  allowEdit={isInstructorOrTA}
+                  allowDoubleClick={false}
+                  showHint={false}
+                  showEditButton={true}
                   onDataChange={(d) => {
                     // Optimistic update
                     setEditableNodeData((prev) =>

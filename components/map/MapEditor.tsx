@@ -43,6 +43,7 @@ import {
 import { ImperativePanelHandle } from "react-resizable-panels";
 import { NodeEditorPanel } from "./NodeEditorPanel";
 import FloatingEdge, { FloatingEdgeEdit } from "./FloatingEdge";
+import { isEditable } from "@/lib/dom/is-editable";
 
 // Type definitions
 type AppNode = Node<any, "default" | "text">;
@@ -326,10 +327,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
     // Clear the system text clipboard to ensure only island can be pasted
     try {
-      await navigator.clipboard.writeText('');
+      await navigator.clipboard.writeText("");
     } catch (error) {
       // Fallback for browsers that don't support clipboard API
-      console.log('Clipboard API not available');
+      console.log("Clipboard API not available");
     }
 
     toast({
@@ -437,43 +438,30 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     toast,
   ]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (respect editable contexts)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing) return;
+      if (isEditable(event.target)) return;
+
       // Check for modifier key (Ctrl on Windows/Linux, Cmd on Mac)
       const isModifierPressed = event.ctrlKey || event.metaKey;
-
       if (!isModifierPressed) return;
 
-      switch (event.key.toLowerCase()) {
+      const key = event.key?.toLowerCase?.() ?? event.key;
+
+      switch (key) {
         case "c":
-          // Only prevent default for node copy, let text copy work normally
-          const activeElement = document.activeElement;
-          const isTypingInInput = activeElement && (
-            activeElement.tagName === 'INPUT' ||
-            activeElement.tagName === 'TEXTAREA' ||
-            (activeElement as HTMLElement).contentEditable === 'true' ||
-            activeElement.getAttribute('role') === 'textbox'
-          );
-          
-          if (!isTypingInInput) {
-            event.preventDefault();
-            copyNode();
-          } else {
-            // User is copying text, clear the island clipboard
-            setCopiedNode(null);
-          }
+          // Copy node when not typing
+          event.preventDefault();
+          copyNode();
           break;
         case "v":
-          // Check if we have a copied node in our clipboard
-          const hasNodeToPaste = !!copiedNode;
-          
-          // If we have a copied node, always paste it (even in input fields)
-          if (hasNodeToPaste) {
+          // Paste node only if we have one in clipboard; otherwise allow normal paste
+          if (copiedNode) {
             event.preventDefault();
             pasteNode();
           }
-          // Otherwise, let normal text paste work in input fields
           break;
       }
     };
@@ -806,7 +794,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
         const oldPos = target.metadata?.position;
         // avoid no-op if position didn't actually change
-        if (oldPos && oldPos.x === node.position.x && oldPos.y === node.position.y) {
+        if (
+          oldPos &&
+          oldPos.x === node.position.x &&
+          oldPos.y === node.position.y
+        ) {
           return prev;
         }
 

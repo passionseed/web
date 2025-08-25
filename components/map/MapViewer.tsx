@@ -33,7 +33,18 @@ import {
 } from "@/lib/supabase/progresses";
 import { MapNode } from "@/types/map";
 import { createClient } from "@/utils/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { TextNode } from "@/components/map/MapEditor/components/TextNode";
+import { CommentNode } from "@/components/map/CommentNode";
+import { SubmissionList } from "./SubmissionList";
+import { InlineGradingForm } from "./InlineGradingForm";
+import { getSubmissionsForMap } from "@/lib/supabase/grading";
+import {
+  getTeamMapClassroomInfo,
+  getUserClassroomRoleClient,
+  getUserTeamForMap,
+} from "@/lib/supabase/maps";
+import { getTeamProgressForInstructor } from "@/lib/supabase/team-progress";
 import {
   CheckCircle,
   Clock,
@@ -47,6 +58,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import FloatingEdge from "@/components/map/FloatingEdge";
+import { isEditable } from "@/lib/dom/is-editable";
 
 interface MapViewerProps {
   map: FullLearningMap;
@@ -97,13 +109,50 @@ export function MapViewer({ map }: MapViewerProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [progressMap, setProgressMap] = useState<
-    Record<string, StudentProgress>
-  >({});
+  // Allow both individual (Record<string, StudentProgress>) and team summaries
+  const [progressMap, setProgressMap] = useState<Record<string, any>>({});
   const [isNavigationExpanded, setIsNavigationExpanded] = useState(false);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
+  const [showGradingOverview, setShowGradingOverview] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [allSubmissions, setAllSubmissions] = useState<any[]>([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+  const [classroomRole, setClassroomRole] = useState<string | null>(null);
+  const [isTeamMap, setIsTeamMap] = useState(false);
+  const [teamId, setTeamId] = useState<string | null>(null);
   const reactFlowInstance = useReactFlow();
 
+  // Role detection for instructor/TA functionality
+  const { user: authUser, userRoles, isAuthenticated } = useAuth();
+
+  // Use a strict union for roles to satisfy prop typing
+  type UserRole = "instructor" | "TA" | "student";
+  const globalUserRole: UserRole = userRoles?.includes("instructor")
+    ? "instructor"
+    : userRoles?.includes("TA")
+      ? "TA"
+      : "student";
+
+  // Normalize classroom role into the union or ignore if unknown
+  const roleFromClassroom =
+    classroomRole === "instructor" ||
+    classroomRole === "TA" ||
+    classroomRole === "student"
+      ? (classroomRole as UserRole)
+      : null;
+
+  // Use classroom role if available, otherwise fall back to global role
+  const userRole: UserRole = roleFromClassroom ?? globalUserRole;
+  const isInstructorOrTA = userRole === "instructor" || userRole === "TA";
+
+  console.log(
+    "🗺️ [MapViewer] Rendering map:",
+    map.title,
+    "for user:",
+    authUser?.email,
+    "as",
+    userRole
+  );
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
 
@@ -129,37 +178,45 @@ export function MapViewer({ map }: MapViewerProps) {
     }
   }, [isPanelMinimized, selectedNode]);
 
-  // Keyboard navigation
+  // Keyboard navigation (scoped to non-editable contexts)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!reactFlowInstance) return;
 
-      switch (event.key) {
-        case "f":
-        case "F":
-          if (!event.ctrlKey && !event.metaKey) {
-            event.preventDefault();
-            reactFlowInstance.fitView({ duration: 600, padding: 0.1 });
-          }
-          break;
-        case "Escape":
-          setSelectedNode(null);
-          if (rightPanelRef.current && leftPanelRef.current) {
-            leftPanelRef.current.resize(70);
-            rightPanelRef.current.resize(30);
-          }
-          break;
-        case "Tab":
-          if (event.shiftKey) {
-            // Navigate to previous unlocked node
-            event.preventDefault();
-            navigateToAdjacentNode(-1);
-          } else {
-            // Navigate to next unlocked node
-            event.preventDefault();
-            navigateToAdjacentNode(1);
-          }
-          break;
+      // Do not handle when user is typing or during IME composition
+      if (event.isComposing) return;
+      if (isEditable(event.target)) return;
+
+      const key = event.key?.toLowerCase?.() ?? event.key;
+      const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
+
+      // Do not intercept plain character keys like "f" without a modifier
+      if (key && key.length === 1 && !hasModifier) {
+        return;
+      }
+
+      // Escape to clear selection
+      if (key === "escape") {
+        setSelectedNode(null);
+        if (rightPanelRef.current && leftPanelRef.current) {
+          leftPanelRef.current.resize(70);
+          rightPanelRef.current.resize(30);
+        }
+        return;
+      }
+
+      // Only manage Tab-based map navigation outside of editable elements
+      if (key === "tab" && !hasModifier) {
+        event.preventDefault();
+        navigateToAdjacentNode(event.shiftKey ? -1 : 1);
+        return;
+      }
+
+      // Example global shortcut: toggle navigation guide with Cmd/Ctrl+K
+      if ((event.metaKey || event.ctrlKey) && key === "k") {
+        event.preventDefault();
+        setIsNavigationExpanded((v) => !v);
+        return;
       }
     };
 
@@ -224,28 +281,104 @@ export function MapViewer({ map }: MapViewerProps) {
     if (!currentUser) return;
 
     try {
-      console.log("🗺️ [MapViewer] Loading all progress for map:", map.id);
+      console.log("🗺️ [MapViewer] Loading progress for map:", map.id);
 
-      // Use the new API-based approach to load all progress at once
-      const progressData = await loadMapProgress(map.id);
+      let progressData;
 
-      console.log(
-        "✅ [MapViewer] Loaded progress for",
-        Object.keys(progressData).length,
-        "nodes"
-      );
+      // For instructors viewing team maps, load team progress instead of individual progress
+      if (isTeamMap && isInstructorOrTA && teamId) {
+        console.log("👥 [MapViewer] Loading TEAM progress for instructor");
+        progressData = await getTeamProgressForInstructor(map.id, teamId);
+
+        console.log(
+          "✅ [MapViewer] Loaded team progress for",
+          Object.keys(progressData).length,
+          "nodes"
+        );
+      } else {
+        // Use the standard individual progress loading
+        progressData = await loadMapProgress(map.id);
+
+        console.log(
+          "✅ [MapViewer] Loaded individual progress for",
+          Object.keys(progressData).length,
+          "nodes"
+        );
+      }
+
       setProgressMap(progressData);
     } catch (error) {
-      console.error("❌ [MapViewer] Error loading all progress:", error);
+      console.error("❌ [MapViewer] Error loading progress:", error);
       setProgressMap({}); // Fallback to empty progress
+    }
+  };
+
+  const loadAllSubmissions = async () => {
+    if (!isInstructorOrTA) return;
+
+    setIsLoadingSubmissions(true);
+    try {
+      const submissions = await getSubmissionsForMap(map.id);
+      setAllSubmissions(submissions);
+    } catch (error) {
+      console.error("Error loading submissions:", error);
+    } finally {
+      setIsLoadingSubmissions(false);
     }
   };
 
   useEffect(() => {
     if (currentUser) {
       loadAllProgress();
+      if (isInstructorOrTA) {
+        loadAllSubmissions();
+
+        // Set up periodic refresh for real-time updates (every 30 seconds)
+        const interval = setInterval(() => {
+          loadAllSubmissions();
+        }, 30000);
+
+        return () => clearInterval(interval);
+      }
     }
-  }, [currentUser, map]);
+  }, [currentUser, map, isInstructorOrTA]);
+
+  // Check if map is a team map and get classroom role
+  useEffect(() => {
+    const checkTeamMapAndRole = async () => {
+      if (!currentUser) return;
+
+      try {
+        // Check if this map is a team map
+        const teamMapInfo = await getTeamMapClassroomInfo(map.id);
+        setIsTeamMap(teamMapInfo.isTeamMap);
+        setTeamId(teamMapInfo.teamId || null);
+
+        if (teamMapInfo.isTeamMap && teamMapInfo.classroomId) {
+          // Get user's role in the classroom
+          const role = await getUserClassroomRoleClient(
+            teamMapInfo.classroomId
+          );
+          if (role) {
+            setClassroomRole(role);
+            console.log(
+              "👥 [MapViewer] User role in classroom:",
+              role,
+              "for classroom:",
+              teamMapInfo.classroomId
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "❌ [MapViewer] Error checking team map or classroom role:",
+          error
+        );
+      }
+    };
+
+    checkTeamMapAndRole();
+  }, [currentUser, map.id]);
 
   // Check if node is unlocked based on prerequisites
   const isNodeUnlocked = (nodeId: string): boolean => {
@@ -254,6 +387,11 @@ export function MapViewer({ map }: MapViewerProps) {
 
     // Text nodes are always "unlocked" (visible) since they're just annotations
     if ((nodeData as any)?.node_type === "text") {
+      return true;
+    }
+
+    // Instructors can see all nodes in team maps
+    if (isTeamMap && isInstructorOrTA) {
       return true;
     }
 
@@ -272,13 +410,70 @@ export function MapViewer({ map }: MapViewerProps) {
     });
   };
 
+  // Get submission requirement for a node (single or all team members)
+  const getSubmissionRequirement = (nodeId: string): "single" | "all" => {
+    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+    return nodeData?.metadata?.submission_requirement || "single";
+  };
+
+  // Check if node is completed based on submission requirements
+  const isNodeCompleted = (nodeId: string, progress: any): boolean => {
+    const requirement = getSubmissionRequirement(nodeId);
+
+    if (requirement === "single") {
+      // Single requirement: any team member completion counts
+      return progress?.status === "passed" || progress?.status === "submitted";
+    } else {
+      // All requirement: check if all team members have submitted
+      if (progress?.member_progress) {
+        return progress.member_progress.every(
+          (member: any) =>
+            member.node_status === "passed" || member.node_status === "submitted"
+        );
+      }
+      return progress?.status === "passed" || progress?.status === "submitted";
+    }
+  };
+
+  // Calculate progress statistics by requirement type
+  const getProgressStats = () => {
+    const stats = {
+      singleRequirement: { completed: 0, total: 0 },
+      allRequirement: { completed: 0, total: 0 },
+      totalCompleted: 0,
+      totalNodes: map.map_nodes.filter((n) => (n as any)?.node_type !== "text")
+        .length,
+    };
+
+    map.map_nodes.forEach((node) => {
+      // Skip text nodes
+      if ((node as any)?.node_type === "text") return;
+
+      const requirement = getSubmissionRequirement(node.id);
+      const progress = progressMap[node.id];
+      const completed = isNodeCompleted(node.id, progress);
+
+      if (requirement === "single") {
+        stats.singleRequirement.total++;
+        if (completed) stats.singleRequirement.completed++;
+      } else {
+        stats.allRequirement.total++;
+        if (completed) stats.allRequirement.completed++;
+      }
+
+      if (completed) stats.totalCompleted++;
+    });
+
+    return stats;
+  };
+
   // Custom node component with sprite-based gamified design and floating animations
   const nodeTypes = {
     default: ({
       data,
       selected,
     }: {
-      data: MapNode & { progress?: StudentProgress };
+      data: MapNode & { progress?: StudentProgress | any };
       selected?: boolean;
     }) => {
       const progress = data.progress;
@@ -301,39 +496,153 @@ export function MapViewer({ map }: MapViewerProps) {
         brightness = "brightness(0.3) grayscale(1)";
         statusIcon = null;
       } else if (progress) {
-        switch (progress.status) {
-          case "passed":
-            glowEffect = "drop-shadow-[0_0_12px_rgba(34,197,94,0.6)]";
-            statusIcon = <CheckCircle className="h-4 w-4 text-green-500" />;
-            animationClass = "animate-float-success";
-            break;
-          case "failed":
-            glowEffect = "drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]";
-            statusIcon = <AlertTriangle className="h-4 w-4 text-red-500" />;
-            animationClass = "animate-float-failed";
-            break;
-          case "submitted":
-            glowEffect = "drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]";
-            statusIcon = <Clock className="h-4 w-4 text-blue-500" />;
-            animationClass = "animate-float-submitted";
-            break;
-          case "in_progress":
-            glowEffect = "drop-shadow-[0_0_12px_rgba(249,115,22,0.6)]";
-            statusIcon = (
-              <Clock className="h-4 w-4 text-orange-500 animate-pulse" />
-            );
-            animationClass = "animate-float-progress";
-            break;
-          case "not_started":
-            if (isUnlocked) {
-              statusIcon = <Play className="h-4 w-4 text-blue-400" />;
-              animationClass = "animate-float";
-            }
-            break;
+        // Handle both individual progress (StudentProgress) and team progress (any) structures
+        const status = progress.status || (progress as any)?.status;
+        const isCompleted = isNodeCompleted(data.id, progress);
+
+        if (isCompleted) {
+          // Node is completed based on submission requirements
+          glowEffect = "drop-shadow-[0_0_12px_rgba(34,197,94,0.6)]";
+          statusIcon = <CheckCircle className="h-4 w-4 text-green-500" />;
+          animationClass = "animate-float-success";
+        } else {
+          switch (status) {
+            case "failed":
+              glowEffect = "drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]";
+              statusIcon = <AlertTriangle className="h-4 w-4 text-red-500" />;
+              animationClass = "animate-float-failed";
+              break;
+            case "submitted":
+              glowEffect = "drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]";
+              statusIcon = <Clock className="h-4 w-4 text-blue-500" />;
+              animationClass = "animate-float-submitted";
+              break;
+            case "in_progress":
+              glowEffect = "drop-shadow-[0_0_12px_rgba(249,115,22,0.6)]";
+              statusIcon = (
+                <Clock className="h-4 w-4 text-orange-500 animate-pulse" />
+              );
+              animationClass = "animate-float-progress";
+              break;
+            case "not_started":
+              if (isUnlocked) {
+                statusIcon = <Play className="h-4 w-4 text-blue-400" />;
+                animationClass = "animate-float";
+              }
+              break;
+            case "passed":
+              // This should be handled by isCompleted above
+              break;
+          }
         }
       } else if (isUnlocked) {
         statusIcon = <Play className="h-4 w-4 text-blue-400" />;
         animationClass = "animate-float";
+      }
+
+      // Add grading indicators for instructors/TAs
+      let gradingIndicator = null;
+      let submissionCount = 0;
+      let pendingCount = 0;
+      let memberProgressInfo = null;
+
+      // Submission requirement indicator
+      const requirement = getSubmissionRequirement(data.id);
+      let requirementBadge = null;
+
+      if (isTeamMap && isUnlocked) {
+        requirementBadge = (
+          <div className="absolute -top-2 -left-2 z-50">
+            <div
+              className={`rounded-full p-1 text-xs font-bold shadow-lg ${
+                requirement === "all"
+                  ? "bg-purple-500 text-white"
+                  : "bg-blue-500 text-white"
+              }`}
+              title={`Submission requirement: ${requirement === "all" ? "All team members" : "Any team member"}`}
+            >
+              {requirement === "all" ? "👥" : "👤"}
+            </div>
+          </div>
+        );
+      }
+
+      if (isInstructorOrTA && data.id) {
+        if (isTeamMap && progress && progress.member_progress) {
+          // Show team member progress for team maps
+          const memberProgress = progress.member_progress;
+          const passedCount = memberProgress.filter(
+            (mp: any) => mp.node_status === "passed"
+          ).length;
+          const submittedCount = memberProgress.filter(
+            (mp: any) => mp.node_status === "submitted"
+          ).length;
+          const inProgressCount = memberProgress.filter(
+            (mp: any) => mp.node_status === "in_progress"
+          ).length;
+          const totalMembers = memberProgress.length;
+          const completedCount = passedCount + submittedCount;
+
+          // Check if this is an "all" requirement node
+          const requiresAll = requirement === "all";
+          
+          let badgeColor = "bg-blue-500";
+          let badgeText = `${totalMembers}`;
+          let title = `Team progress: ${passedCount} passed, ${submittedCount} submitted, ${inProgressCount} in progress`;
+
+          if (requiresAll) {
+            if (completedCount === totalMembers) {
+              badgeColor = "bg-green-500";
+              badgeText = "✓";
+              title = `All members completed: ${passedCount} passed, ${submittedCount} submitted`;
+            } else if (completedCount > 0) {
+              badgeColor = "bg-orange-500";
+              badgeText = `${completedCount}/${totalMembers}`;
+              title = `Partial completion: ${completedCount}/${totalMembers} members submitted (${passedCount} passed, ${submittedCount} submitted)`;
+            } else {
+              badgeColor = "bg-red-500";
+              badgeText = `0/${totalMembers}`;
+              title = `No submissions yet from ${totalMembers} team members`;
+            }
+          }
+
+          memberProgressInfo = (
+            <div className="absolute -top-2 -right-2 z-50">
+              <div
+                className={`rounded-full p-1 text-xs font-bold shadow-lg text-white ${badgeColor} ${completedCount < totalMembers && requiresAll ? 'animate-pulse' : ''}`}
+                title={title}
+              >
+                {badgeText}
+              </div>
+            </div>
+          );
+        } else {
+          // Count submissions for individual progress
+          const nodeSubmissions = allSubmissions.filter(
+            (sub) => sub.node_assessments?.map_nodes?.id === data.id
+          );
+          submissionCount = nodeSubmissions.length;
+          pendingCount = nodeSubmissions.filter(
+            (sub) => sub.submission_grades.length === 0
+          ).length;
+
+          // Add grading badge if there are submissions
+          if (submissionCount > 0) {
+            gradingIndicator = (
+              <div className="absolute -top-2 -right-2 z-50">
+                <div
+                  className={`rounded-full p-1 text-xs font-bold shadow-lg ${
+                    pendingCount > 0
+                      ? "bg-orange-500 text-white animate-pulse"
+                      : "bg-green-500 text-white"
+                  }`}
+                >
+                  {pendingCount > 0 ? pendingCount : submissionCount}
+                </div>
+              </div>
+            );
+          }
+        }
       }
 
       return (
@@ -343,25 +652,25 @@ export function MapViewer({ map }: MapViewerProps) {
             type="target"
             position={Position.Top}
             className="w-3 h-3 bg-blue-500/20 border-2 border-blue-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: "none", display: "none" }}
           />
           <Handle
             type="source"
             position={Position.Bottom}
             className="w-2 h-2 bg-green-500/20 border-2 border-green-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: "none", display: "none" }}
           />
           <Handle
             type="target"
             position={Position.Left}
             className="w-2 h-2 bg-blue-500/20 border-2 border-blue-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: "none", display: "none" }}
           />
           <Handle
             type="source"
             position={Position.Right}
             className="w-2 h-2 bg-green-500/20 border-2 border-green-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: "none", display: "none" }}
           />
           <div
             className={`relative ${selected ? "scale-110 translate-y-3" : ""} transition-transform duration-300 cursor-pointer ${animationClass}`}
@@ -411,6 +720,13 @@ export function MapViewer({ map }: MapViewerProps) {
                 className={`absolute inset-0 ${glowEffect} rounded-full animate-pulse-slow`}
               />
             )}
+
+            {/* Grading Indicator for Instructors/TAs */}
+            {gradingIndicator}
+            {memberProgressInfo}
+
+            {/* Submission Requirement Badge */}
+            {requirementBadge}
 
             {/* Sprite Image */}
             <img
@@ -486,12 +802,45 @@ export function MapViewer({ map }: MapViewerProps) {
         />
       );
     },
+    comment: ({
+      data,
+      selected,
+    }: {
+      data: MapNode & { node_type?: string };
+      selected?: boolean;
+    }) => {
+      // Comment nodes can be edited by instructors/TAs
+      return (
+        <CommentNode
+          data={data}
+          selected={selected}
+          userRole={userRole}
+          // Allow editing for instructors/TAs, read-only for students
+          allowEdit={isInstructorOrTA}
+          allowDoubleClick={isInstructorOrTA}
+          showHint={true}
+          showEditButton={true}
+          onDataChange={(updatedData) => {
+            // Handle comment node updates
+            if (isInstructorOrTA && updatedData) {
+              // TODO: Persist comment changes to database
+              console.log("Comment node updated:", updatedData);
+            }
+          }}
+        />
+      );
+    },
   };
 
   useEffect(() => {
     const transformedNodes = map.map_nodes.map((node) => {
       // Determine node type - check for node_type property
-      const nodeType = (node as any)?.node_type === "text" ? "text" : "default";
+      let nodeType = "default"; // learning node
+      if ((node as any)?.node_type === "text") {
+        nodeType = "text";
+      } else if ((node as any)?.node_type === "comment") {
+        nodeType = "comment";
+      }
 
       return {
         id: node.id,
@@ -664,26 +1013,57 @@ export function MapViewer({ map }: MapViewerProps) {
             {/* Progress Statistics */}
             <div className="mb-4 bg-muted/30 rounded-lg p-3">
               <div className="text-xs text-muted-foreground mb-2 font-medium">
-                Progress Overview
+                {isTeamMap && isInstructorOrTA
+                  ? "Team Progress Overview"
+                  : "Progress Overview"}
               </div>
+
+              {isTeamMap && (
+                <div className="mb-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2">
+                      <span className="text-blue-500">👤</span>
+                      Single requirement
+                    </span>
+                    <span className="font-medium">
+                      {getProgressStats().singleRequirement.completed}/
+                      {getProgressStats().singleRequirement.total}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2">
+                      <span className="text-purple-500">👥</span>
+                      All requirement
+                    </span>
+                    <span className="font-medium">
+                      {getProgressStats().allRequirement.completed}/
+                      {getProgressStats().allRequirement.total}
+                    </span>
+                  </div>
+                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                      style={{
+                        width: `${(getProgressStats().totalCompleted / getProgressStats().totalNodes) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span>
-                    {
-                      Object.values(progressMap).filter(
-                        (p) => p.status === "passed"
-                      ).length
-                    }{" "}
-                    Completed
-                  </span>
+                  <span>{getProgressStats().totalCompleted} Completed</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) => p.status === "submitted"
+                        (p) =>
+                          p.status === "submitted" ||
+                          (p as any)?.status === "submitted"
                       ).length
                     }{" "}
                     Submitted
@@ -694,7 +1074,9 @@ export function MapViewer({ map }: MapViewerProps) {
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) => p.status === "in_progress"
+                        (p) =>
+                          p.status === "in_progress" ||
+                          (p as any)?.status === "in_progress"
                       ).length
                     }{" "}
                     In Progress
@@ -703,7 +1085,7 @@ export function MapViewer({ map }: MapViewerProps) {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-gray-400"></div>
                   <span className="text-muted-foreground">
-                    {map.map_nodes.length} Total
+                    {getProgressStats().totalNodes} Total
                   </span>
                 </div>
               </div>
@@ -799,6 +1181,8 @@ export function MapViewer({ map }: MapViewerProps) {
               isNodeUnlocked={
                 selectedNode ? isNodeUnlocked(selectedNode.id) : true
               }
+              userRole={userRole}
+              isInstructorOrTA={isInstructorOrTA}
             />
           )}
         </div>
