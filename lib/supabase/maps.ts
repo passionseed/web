@@ -171,11 +171,12 @@ export const getMapsWithStats = async (): Promise<
       .eq("user_id", user.id);
 
     if (classroomMemberships) {
-      userClassrooms = classroomMemberships.flatMap((m) =>
-        ((m.classrooms as any).classroom_maps as any[])?.map((cm: any) => ({
-          map_id: cm.map_id,
-          classroom_name: (m.classrooms as any).name,
-        })) || []
+      userClassrooms = classroomMemberships.flatMap(
+        (m: any) =>
+          m.classrooms.classroom_maps?.map((cm: any) => ({
+            map_id: cm.map_id,
+            classroom_name: m.classrooms.name,
+          })) || []
       );
     }
 
