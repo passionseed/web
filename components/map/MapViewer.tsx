@@ -406,7 +406,9 @@ export function MapViewer({ map }: MapViewerProps) {
     // Check if ALL prerequisites are passed OR submitted (pending grade)
     return prerequisites.every((prereq) => {
       const progress = progressMap[prereq.id];
-      return progress?.status === "passed" || progress?.status === "submitted";
+      // Handle both individual progress (StudentProgress) and team progress (TeamNodeProgress)
+      const status = progress?.status || (progress as any)?.status;
+      return status === "passed" || status === "submitted";
     });
   };
 
@@ -418,11 +420,20 @@ export function MapViewer({ map }: MapViewerProps) {
 
   // Check if node is completed based on submission requirements
   const isNodeCompleted = (nodeId: string, progress: any): boolean => {
-    const requirement = getSubmissionRequirement(nodeId);
+    if (!progress) return false;
 
+    const requirement = getSubmissionRequirement(nodeId);
+    const status = progress.status || (progress as any)?.status;
+
+    // For individual maps (non-team maps), always use single requirement logic
+    if (!isTeamMap || !isInstructorOrTA) {
+      return status === "passed" || status === "submitted";
+    }
+
+    // For team maps, check submission requirements
     if (requirement === "single") {
       // Single requirement: any team member completion counts
-      return progress?.status === "passed" || progress?.status === "submitted";
+      return status === "passed" || status === "submitted";
     } else {
       // All requirement: check if all team members have submitted
       if (progress?.member_progress) {
@@ -431,7 +442,7 @@ export function MapViewer({ map }: MapViewerProps) {
             member.node_status === "passed" || member.node_status === "submitted"
         );
       }
-      return progress?.status === "passed" || progress?.status === "submitted";
+      return status === "passed" || status === "submitted";
     }
   };
 
@@ -1061,9 +1072,10 @@ export function MapViewer({ map }: MapViewerProps) {
                   <span>
                     {
                       Object.values(progressMap).filter(
-                        (p) =>
-                          p.status === "submitted" ||
-                          (p as any)?.status === "submitted"
+                        (p) => {
+                          const status = p.status || (p as any)?.status;
+                          return status === "submitted";
+                        }
                       ).length
                     }{" "}
                     Submitted
