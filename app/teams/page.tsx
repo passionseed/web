@@ -50,7 +50,10 @@ export default async function TeamsPage() {
         userTeams.push(...userTeamsInClassroom);
 
         // Get team maps for this classroom
-        const classroomTeamMaps = await getClassroomTeamMaps(classroom.id);
+        const classroomTeamMaps = await getClassroomTeamMaps(
+          classroom.id,
+          supabase
+        );
         const userTeamIds = userTeamsInClassroom.map((team) => team.id);
         const userTeamMaps = classroomTeamMaps.filter((map) =>
           userTeamIds.includes(map.team_id)

@@ -56,11 +56,11 @@ interface StudentTeamDashboardProps {
   teamMaps: TeamMap[];
 }
 
-export function StudentTeamDashboard({ 
-  userId, 
-  userClassrooms, 
-  userTeams, 
-  teamMaps 
+export function StudentTeamDashboard({
+  userId,
+  userClassrooms,
+  userTeams,
+  teamMaps,
 }: StudentTeamDashboardProps) {
   const [loading, setLoading] = useState(false);
   const [createTeamOpen, setCreateTeamOpen] = useState(false);
@@ -92,11 +92,10 @@ export function StudentTeamDashboard({
     });
   };
 
-
   const currentTeam = userTeams[0]; // Assume one team per user for now
   const isLeader = currentTeam?.current_user_membership?.is_leader;
   const teamMapsForCurrentTeam = teamMaps.filter(
-    map => map.team_id === currentTeam?.id
+    (map) => map.team_id === currentTeam?.id
   );
 
   return (
@@ -112,21 +111,15 @@ export function StudentTeamDashboard({
               <Plus className="h-4 w-4 mr-2" />
               Create Team
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setJoinTeamOpen(true)}
-            >
+            <Button variant="outline" onClick={() => setJoinTeamOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
               Join Team
             </Button>
           </>
         )}
-        
+
         {currentTeam && isLeader && (
-          <Button
-            variant="outline"
-            onClick={() => setCreateTeamOpen(true)}
-          >
+          <Button variant="outline" onClick={() => setCreateTeamOpen(true)}>
             <Settings className="h-4 w-4 mr-2" />
             Team Settings
           </Button>
@@ -142,11 +135,11 @@ export function StudentTeamDashboard({
               team={currentTeam}
               onTeamUpdated={handleTeamUpdated}
             />
-            
+
             {teamMapsForCurrentTeam.length > 0 && (
               <TeamMapsPanel
                 teamMaps={teamMapsForCurrentTeam}
-                onMapsUpdated={loadTeamMaps}
+                onMapsUpdated={() => {}}
               />
             )}
           </div>
@@ -169,7 +162,8 @@ export function StudentTeamDashboard({
               </div>
               <CardTitle className="text-2xl">No Team Yet</CardTitle>
               <p className="text-muted-foreground text-base mt-2">
-                You're not part of any team yet. Create a new team or join an existing one to start collaborating on learning maps.
+                You're not part of any team yet. Create a new team or join an
+                existing one to start collaborating on learning maps.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -181,16 +175,14 @@ export function StudentTeamDashboard({
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Team
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setJoinTeamOpen(true)}
-                >
+                <Button variant="outline" onClick={() => setJoinTeamOpen(true)}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Join Existing Team
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Teams allow you to collaborate on learning maps, share progress, and work together on assessments.
+                Teams allow you to collaborate on learning maps, share progress,
+                and work together on assessments.
               </p>
             </CardContent>
           </Card>
