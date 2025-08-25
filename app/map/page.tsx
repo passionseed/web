@@ -48,7 +48,7 @@ type MapWithStats = LearningMap & {
   total_assessments: number;
   isEnrolled?: boolean;
   hasStarted?: boolean;
-  map_type: 'personal' | 'classroom' | 'team' | 'forked' | 'public';
+  map_type: "personal" | "classroom" | "team" | "forked" | "public";
   source_info?: {
     classroom_name?: string;
     team_name?: string;
@@ -83,10 +83,14 @@ export default function MapsPage() {
             // Only check enrollment if user is authenticated
             if (isAuthenticated && !authLoading) {
               try {
-                const { isEnrolled, hasStarted } = await checkUserEnrollmentStatus(map.id);
+                const { isEnrolled, hasStarted } =
+                  await checkUserEnrollmentStatus(map.id);
                 return { ...map, isEnrolled, hasStarted };
               } catch (err) {
-                console.warn(`Failed to check enrollment for map ${map.id}:`, err);
+                console.warn(
+                  `Failed to check enrollment for map ${map.id}:`,
+                  err
+                );
                 // If there's an error checking enrollment, assume not enrolled
                 return { ...map, isEnrolled: false, hasStarted: false };
               }
@@ -205,69 +209,74 @@ export default function MapsPage() {
 
   const getMapTypeInfo = (mapType: string) => {
     switch (mapType) {
-      case 'personal':
+      case "personal":
         return {
-          title: 'My Maps',
+          title: "My Maps",
           icon: User,
-          description: 'Maps you created',
-          bgColor: 'from-blue-900/50 to-indigo-900/50',
-          borderColor: 'border-blue-600/30',
-          iconColor: 'text-blue-400'
+          description: "Maps you created",
+          bgColor: "from-blue-900/50 to-indigo-900/50",
+          borderColor: "border-blue-600/30",
+          iconColor: "text-blue-400",
         };
-      case 'classroom':
+      case "classroom":
         return {
-          title: 'Classroom Maps',
+          title: "Classroom Maps",
           icon: School,
-          description: 'Learning maps assigned by instructors',
-          bgColor: 'from-green-900/50 to-emerald-900/50',
-          borderColor: 'border-green-600/30',
-          iconColor: 'text-green-400'
+          description: "Learning maps assigned by instructors",
+          bgColor: "from-green-900/50 to-emerald-900/50",
+          borderColor: "border-green-600/30",
+          iconColor: "text-green-400",
         };
-      case 'team':
+      case "team":
         return {
-          title: 'Team Maps',
+          title: "Team Maps",
           icon: Users,
-          description: 'Collaborative maps for your team',
-          bgColor: 'from-purple-900/50 to-violet-900/50',
-          borderColor: 'border-purple-600/30',
-          iconColor: 'text-purple-400'
+          description: "Collaborative maps for your team",
+          bgColor: "from-purple-900/50 to-violet-900/50",
+          borderColor: "border-purple-600/30",
+          iconColor: "text-purple-400",
         };
-      case 'forked':
+      case "forked":
         return {
-          title: 'Forked Maps',
+          title: "Forked Maps",
           icon: GitBranch,
-          description: 'Maps you forked and customized',
-          bgColor: 'from-orange-900/50 to-amber-900/50',
-          borderColor: 'border-orange-600/30',
-          iconColor: 'text-orange-400'
+          description: "Maps you forked and customized",
+          bgColor: "from-orange-900/50 to-amber-900/50",
+          borderColor: "border-orange-600/30",
+          iconColor: "text-orange-400",
         };
       default:
         return {
-          title: 'Public Maps',
+          title: "Public Maps",
           icon: Globe,
-          description: 'Community learning maps',
-          bgColor: 'from-slate-900/50 to-gray-900/50',
-          borderColor: 'border-slate-600/30',
-          iconColor: 'text-slate-400'
+          description: "Community learning maps",
+          bgColor: "from-slate-900/50 to-gray-900/50",
+          borderColor: "border-slate-600/30",
+          iconColor: "text-slate-400",
         };
     }
   };
 
   const groupMapsByType = (maps: MapWithStats[]) => {
-    const grouped = maps.reduce((acc, map) => {
-      const type = map.map_type || 'public';
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(map);
-      return acc;
-    }, {} as Record<string, MapWithStats[]>);
+    const grouped = maps.reduce(
+      (acc, map) => {
+        const type = map.map_type || "public";
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(map);
+        return acc;
+      },
+      {} as Record<string, MapWithStats[]>
+    );
 
     // Order the sections
-    const orderedTypes = ['personal', 'classroom', 'team', 'forked', 'public'];
-    return orderedTypes.filter(type => grouped[type]?.length > 0).map(type => ({
-      type,
-      maps: grouped[type],
-      ...getMapTypeInfo(type)
-    }));
+    const orderedTypes = ["personal", "classroom", "team", "forked", "public"];
+    return orderedTypes
+      .filter((type) => grouped[type]?.length > 0)
+      .map((type) => ({
+        type,
+        maps: grouped[type],
+        ...getMapTypeInfo(type),
+      }));
   };
 
   const renderMapCard = (map: MapWithStats) => {
@@ -412,10 +421,7 @@ export default function MapsPage() {
                   {completionRate}%
                 </span>
               </div>
-              <Progress
-                value={completionRate}
-                className="h-2 bg-slate-700"
-              />
+              <Progress value={completionRate} className="h-2 bg-slate-700" />
             </div>
           )}
 
@@ -481,15 +487,19 @@ export default function MapsPage() {
 
   const renderMapsSections = () => {
     const sections = groupMapsByType(maps);
-    
+
     if (sections.length === 0) return null;
 
-    return sections.map(section => (
+    return sections.map((section) => (
       <div key={section.type} className="space-y-6">
         {/* Section Header */}
-        <div className={`bg-gradient-to-r ${section.bgColor} rounded-lg border ${section.borderColor} p-6`}>
+        <div
+          className={`bg-gradient-to-r ${section.bgColor} rounded-lg border ${section.borderColor} p-6`}
+        >
           <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border ${section.borderColor}`}>
+            <div
+              className={`w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border ${section.borderColor}`}
+            >
               <section.icon className={`h-6 w-6 ${section.iconColor}`} />
             </div>
             <div>

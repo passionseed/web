@@ -32,6 +32,8 @@ export function AssessmentEditor({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         quiz_questions: [],
+        points_possible: null,
+        is_graded: false,
       };
 
       console.log("➕ Creating new assessment:", newAssessment);
