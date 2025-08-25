@@ -144,8 +144,8 @@ export const getMapsWithStats = async (): Promise<
 
     if (classroomMemberships) {
       userClassrooms = classroomMemberships.flatMap(
-        (m) =>
-          m.classrooms.classroom_maps?.map((cm) => ({
+        (m: any) =>
+          m.classrooms.classroom_maps?.map((cm: any) => ({
             map_id: cm.map_id,
             classroom_name: m.classrooms.name,
           })) || []
@@ -1509,7 +1509,7 @@ export const batchUpdateMap = async (
         .select("*");
 
       if (error) {
-        console.error("❌ Assessment creation failed:", error);
+        console.error("❌ Assessment creation failed:", JSON.stringify(error, null, 2));
         throw new Error(`Assessment creation failed: ${error.message}`);
       }
 
