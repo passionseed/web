@@ -68,6 +68,18 @@ ALTER TABLE public.assignment_group_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assignment_group_assignments ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for assignment_groups
+-- RLS Policies for assignment_groups
+
+-- Ensure idempotency: drop policies if they exist
+DO $$
+BEGIN
+   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'assignment_groups' AND policyname = 'Instructors can manage assignment groups') THEN
+       EXECUTE 'DROP POLICY "Instructors can manage assignment groups" ON public.assignment_groups';
+   END IF;
+   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'assignment_groups' AND policyname = 'Students can view assignment groups') THEN
+       EXECUTE 'DROP POLICY "Students can view assignment groups" ON public.assignment_groups';
+   END IF;
+END$$;
 
 -- Instructors and TAs can manage groups in their classrooms
 CREATE POLICY "Instructors can manage assignment groups" ON public.assignment_groups
@@ -93,6 +105,21 @@ FOR SELECT USING (
 );
 
 -- RLS Policies for assignment_group_members
+-- RLS Policies for assignment_group_members
+
+-- Ensure idempotency: drop policies if they exist
+DO $$
+BEGIN
+   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'assignment_group_members' AND policyname = 'Group members can view group membership') THEN
+       EXECUTE 'DROP POLICY "Group members can view group membership" ON public.assignment_group_members';
+   END IF;
+   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'assignment_group_members' AND policyname = 'Instructors can manage group membership') THEN
+       EXECUTE 'DROP POLICY "Instructors can manage group membership" ON public.assignment_group_members';
+   END IF;
+   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'assignment_group_members' AND policyname = 'Students can join assignment groups') THEN
+       EXECUTE 'DROP POLICY "Students can join assignment groups" ON public.assignment_group_members';
+   END IF;
+END$$;
 
 -- Group members can view other members in their groups
 CREATE POLICY "Group members can view group membership" ON public.assignment_group_members
@@ -142,6 +169,18 @@ FOR INSERT WITH CHECK (
 );
 
 -- RLS Policies for assignment_group_assignments
+-- RLS Policies for assignment_group_assignments
+
+-- Ensure idempotency: drop policies if they exist
+DO $$
+BEGIN
+   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'assignment_group_assignments' AND policyname = 'Instructors can manage group assignments') THEN
+       EXECUTE 'DROP POLICY "Instructors can manage group assignments" ON public.assignment_group_assignments';
+   END IF;
+   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'assignment_group_assignments' AND policyname = 'Group members can view group assignments') THEN
+       EXECUTE 'DROP POLICY "Group members can view group assignments" ON public.assignment_group_assignments';
+   END IF;
+END$$;
 
 -- Instructors and TAs can manage group assignments
 CREATE POLICY "Instructors can manage group assignments" ON public.assignment_group_assignments
@@ -199,6 +238,14 @@ END;
 $$;
 
 -- Create trigger for automatic enrollment
+-- Ensure idempotency for triggers: drop if they exist
+DO $$
+BEGIN
+   IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_assign_group_assignment_to_members') THEN
+       EXECUTE 'DROP TRIGGER "trigger_assign_group_assignment_to_members" ON public.assignment_group_assignments';
+   END IF;
+END$$;
+
 CREATE TRIGGER trigger_assign_group_assignment_to_members
     AFTER INSERT ON public.assignment_group_assignments
     FOR EACH ROW
@@ -227,6 +274,14 @@ END;
 $$;
 
 -- Create trigger for new member enrollment
+-- Ensure idempotency for triggers: drop if they exist
+DO $$
+BEGIN
+   IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_enroll_new_group_member_in_assignments') THEN
+       EXECUTE 'DROP TRIGGER "trigger_enroll_new_group_member_in_assignments" ON public.assignment_group_members';
+   END IF;
+END$$;
+
 CREATE TRIGGER trigger_enroll_new_group_member_in_assignments
     AFTER INSERT ON public.assignment_group_members
     FOR EACH ROW

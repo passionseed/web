@@ -41,53 +41,115 @@ export interface UpdateProgressResponse {
 }
 
 /**
- * Get all progress for a user's team in a specific map.
- * This function handles authorization for different user roles (student, TA, instructor)
- * by calling a secure PostgreSQL function in Supabase.
+ * Check if a map is a team map by checking if it exists in classroom_team_maps
+ */
+async function isTeamMap(mapId: string): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    
+    const { data, error } = await supabase
+      .from("classroom_team_maps")
+      .select("map_id")
+      .eq("map_id", mapId)
+      .limit(1);
+
+    if (error) {
+      console.error("❌ [Progress Client] Error checking if team map:", error);
+      return false;
+    }
+
+    return data && data.length > 0;
+  } catch (error) {
+    console.error("❌ [Progress Client] Exception checking if team map:", error);
+    return false;
+  }
+}
+
+/**
+ * Get all progress for a user in a specific map.
+ * This function handles both team maps and individual maps automatically.
  */
 export async function getMapProgress(
   mapId: string
-): Promise<Record<string, TeamNodeProgress>> {
+): Promise<Record<string, TeamNodeProgress | StudentProgress>> {
   try {
     console.log("🔍 [Progress Client] Fetching map progress for:", mapId);
     const supabase = createClient();
 
-    // Call the PostgreSQL function you created
-    const { data: allProgress, error } = await supabase.rpc(
-      "get_team_map_progress",
-      {
-        map_id_param: mapId,
+    // First check if this is a team map
+    const isTeam = await isTeamMap(mapId);
+    console.log("📊 [Progress Client] Map type:", isTeam ? "team" : "individual");
+
+    if (isTeam) {
+      // Use the RPC function for team progress
+      const { data: allProgress, error } = await supabase.rpc(
+        "get_team_map_progress",
+        {
+          map_id_param: mapId,
+        }
+      );
+
+      if (error) {
+        console.error(
+          "❌ [Progress Client] Error fetching team progress via RPC:",
+          error
+        );
+        return {};
       }
-    );
 
-    if (error) {
-      console.error(
-        "❌ [Progress Client] Error fetching map progress via RPC:",
-        error
-      );
-      return {};
+      if (!allProgress) {
+        console.log(
+          "✅ [Progress Client] No team progress data returned for map:",
+          mapId
+        );
+        return {};
+      }
+
+      // Create a map of node_id -> progress for easy lookup on the client
+      const progressMap: Record<string, TeamNodeProgress> = {};
+      allProgress.forEach((progress: any) => {
+        progressMap[progress.node_id] = progress;
+      });
+
+      console.log("✅ [Progress Client] Team progress fetched:", {
+        mapId,
+        progressCount: allProgress.length,
+      });
+
+      return progressMap;
+    } else {
+      // Use the API endpoint for individual progress
+      console.log("📊 [Progress Client] Fetching individual progress via API");
+      
+      const response = await fetch(`/api/maps/${mapId}/progress`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        console.error("❌ [Progress Client] API response not ok:", {
+          status: response.status,
+          statusText: response.statusText,
+        });
+        return {};
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        console.error("❌ [Progress Client] API returned error:", result.error);
+        return {};
+      }
+
+      console.log("✅ [Progress Client] Individual progress fetched:", {
+        mapId,
+        progressCount: Object.keys(result.data.progress_map).length,
+      });
+
+      return result.data.progress_map;
     }
-
-    if (!allProgress) {
-      console.log(
-        "✅ [Progress Client] No progress data returned for map:",
-        mapId
-      );
-      return {};
-    }
-
-    // Create a map of node_id -> progress for easy lookup on the client
-    const progressMap: Record<string, TeamNodeProgress> = {};
-    allProgress.forEach((progress) => {
-      progressMap[progress.node_id] = progress;
-    });
-
-    console.log("✅ [Progress Client] Map progress fetched:", {
-      mapId,
-      progressCount: allProgress.length,
-    });
-
-    return progressMap;
   } catch (error) {
     console.error(
       "❌ [Progress Client] Exception when fetching map progress:",
