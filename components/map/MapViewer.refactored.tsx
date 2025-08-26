@@ -3,4 +3,4 @@
  * This maintains backwards compatibility while using the new modular structure
  */
 
-export { MapViewer as MapViewerWithProvider } from "./MapViewer/";
+export { MapViewer as MapViewerWithProvider } from "./MapViewer";
