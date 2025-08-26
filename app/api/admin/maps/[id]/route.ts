@@ -4,7 +4,7 @@ import { deleteMap } from "@/lib/supabase/maps";
 
 async function checkAdminAccess() {
   const supabase = await createClient();
-  
+
   const {
     data: { user },
     error,
@@ -29,7 +29,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const user = await checkAdminAccess();
-  
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -41,7 +41,8 @@ export async function GET(
     // Get specific map with full details
     const { data: map, error } = await supabase
       .from("learning_maps")
-      .select(`
+      .select(
+        `
         *,
         profiles!creator_id (
           username,
@@ -54,7 +55,8 @@ export async function GET(
           difficulty,
           node_assessments (id)
         )
-      `)
+      `
+      )
       .eq("id", id)
       .single();
 
@@ -72,14 +74,24 @@ export async function GET(
     // Calculate additional statistics
     const nodes = map.map_nodes || [];
     const nodeCount = nodes.length;
-    const avgDifficulty = nodeCount > 0
-      ? Math.round(nodes.reduce((sum: number, node: any) => sum + (node.difficulty || 1), 0) / nodeCount)
-      : 1;
-    const totalAssessments = nodes.reduce((sum: number, node: any) => sum + (node.node_assessments?.length || 0), 0);
+    const avgDifficulty =
+      nodeCount > 0
+        ? Math.round(
+            nodes.reduce(
+              (sum: number, node: any) => sum + (node.difficulty || 1),
+              0
+            ) / nodeCount
+          )
+        : 1;
+    const totalAssessments = nodes.reduce(
+      (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
+      0
+    );
 
     const mapWithStats = {
       ...map,
-      creator_name: map.profiles?.full_name || map.profiles?.username || "Unknown",
+      creator_name:
+        map.profiles?.full_name || map.profiles?.username || "Unknown",
       creator_email: map.profiles?.email,
       node_count: nodeCount,
       avg_difficulty: avgDifficulty,
@@ -98,16 +110,16 @@ export async function GET(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await checkAdminAccess();
-  
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Verify the map exists before attempting deletion
     const supabase = await createClient();
@@ -132,13 +144,13 @@ export async function DELETE(
     // This handles all the cascade deletion properly
     await deleteMap(id);
 
-    return NextResponse.json({ 
-      success: true, 
-      message: `Map "${existingMap.title}" has been deleted successfully` 
+    return NextResponse.json({
+      success: true,
+      message: `Map "${existingMap.title}" has been deleted successfully`,
     });
   } catch (error) {
     console.error("Error deleting map:", error);
-    
+
     // Handle specific error messages from deleteMap function
     if (error instanceof Error) {
       if (error.message.includes("Could not delete the map")) {
