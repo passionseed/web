@@ -28,3 +28,9 @@ next-env.d.ts
 .env*.local
 /supabase/seed.sql
 supabase/seed.sql
+
+# kilocode configuration (contains sensitive keys)
+.kilocode/
+.kilocode/*
+!.kilocode/*.template
+!.kilocode/README.md
