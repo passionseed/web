@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "postgrest": {
+      "command": "node",
+      "args": [
+        "/dist/index.js"
+      ],
+      "env": {
+        "POSTGREST_API_URL": "http://127.0.0.1:54321/rest/v1",
+        "POSTGREST_API_KEY": "$SUPABASE_SERVICE_ROLE_KEY",
+        "POSTGREST_SCHEMA": "public"
+      }
+    }
+  }
+}
