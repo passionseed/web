@@ -28,6 +28,8 @@ import { CreateGroupModal } from "./CreateGroupModal";
 import { AddStudentToGroupModal } from "./AddStudentToGroupModal";
 import { AssignGroupAssignmentModal } from "./AssignGroupAssignmentModal";
 import { GroupMapGrading } from "./GroupMapGrading";
+import { createClient } from "@/utils/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { AssignmentGroupWithMembers } from "@/types/classroom";
 import {
   Users,
@@ -56,6 +58,8 @@ export function GroupManagement({ classroomId, userRole }: GroupManagementProps)
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [showGrading, setShowGrading] = useState(false);
   const [selectedGroupForGrading, setSelectedGroupForGrading] = useState<AssignmentGroupWithMembers | null>(null);
+  const [selectedMapId, setSelectedMapId] = useState<string>("");
+  const [classroomMaps, setClassroomMaps] = useState<any[]>([]);
   const { toast } = useToast();
 
   const canManageGroups = userRole === "instructor" || userRole === "ta";
@@ -77,8 +81,38 @@ export function GroupManagement({ classroomId, userRole }: GroupManagementProps)
     }
   };
 
+  const fetchClassroomMaps = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("classroom_maps")
+        .select(`
+          map_id,
+          learning_maps (id, title)
+        `)
+        .eq("classroom_id", classroomId);
+
+      if (error) throw error;
+      
+      const maps = data?.map((cm: any) => ({
+        id: cm.learning_maps?.id,
+        title: cm.learning_maps?.title
+      })).filter((map: any) => map.id && map.title) || [];
+      
+      setClassroomMaps(maps);
+      
+      // Auto-select first map if available
+      if (maps.length > 0 && !selectedMapId) {
+        setSelectedMapId(maps[0].id);
+      }
+    } catch (error) {
+      console.error("Error fetching classroom maps:", error);
+    }
+  };
+
   useEffect(() => {
     fetchGroups();
+    fetchClassroomMaps();
   }, [classroomId]);
 
   const handleGroupCreated = (newGroup: any) => {
@@ -416,13 +450,32 @@ export function GroupManagement({ classroomId, userRole }: GroupManagementProps)
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-slate-900 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-slate-700">
-              <div>
+              <div className="flex-1">
                 <h2 className="text-xl font-semibold text-white">
                   Grade: {selectedGroupForGrading.name}
                 </h2>
                 <p className="text-sm text-gray-400 mt-1">
                   Grade submissions from group members
                 </p>
+                
+                {/* Map Selector */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Select Learning Map
+                  </label>
+                  <Select value={selectedMapId} onValueChange={setSelectedMapId}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white w-80">
+                      <SelectValue placeholder="Choose a map to grade..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classroomMaps.map((map) => (
+                        <SelectItem key={map.id} value={map.id}>
+                          {map.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <Button
                 variant="ghost"
@@ -436,15 +489,21 @@ export function GroupManagement({ classroomId, userRole }: GroupManagementProps)
               </Button>
             </div>
             <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-              <GroupMapGrading
-                groupId={selectedGroupForGrading.id}
-                mapId={""}
-                groupName={selectedGroupForGrading.name}
-                onGraded={() => {
-                  // Optionally refresh data
-                  fetchGroups();
-                }}
-              />
+              {selectedMapId ? (
+                <GroupMapGrading
+                  groupId={selectedGroupForGrading.id}
+                  mapId={selectedMapId}
+                  groupName={selectedGroupForGrading.name}
+                  onGraded={() => {
+                    // Optionally refresh data
+                    fetchGroups();
+                  }}
+                />
+              ) : (
+                <div className="p-8 text-center text-gray-400">
+                  <p>Please select a learning map to grade submissions.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

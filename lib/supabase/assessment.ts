@@ -20,6 +20,14 @@ export const createNodeAssessment = async (
   assessmentData: Partial<NodeAssessment>
 ): Promise<NodeAssessment> => {
   const supabase = createClient();
+  
+  // Enhanced debugging
+  console.log("📝 Assessment data being inserted:", assessmentData);
+  
+  // Check authentication
+  const { data: user, error: authError } = await supabase.auth.getUser();
+  console.log("👤 Current user:", user?.user?.id || "Not authenticated", authError);
+  
   const { data, error } = await supabase
     .from("node_assessments")
     .insert([{ ...assessmentData }])
@@ -27,9 +35,16 @@ export const createNodeAssessment = async (
     .single();
 
   if (error) {
-    console.error("Error creating assessment:", error);
-    throw new Error("Could not create assessment.");
+    console.error("❌ Error creating assessment:", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    });
+    console.error("❌ Full error object:", error);
+    throw new Error(`Could not create assessment: ${error.message}`);
   }
+  console.log("✅ Assessment created successfully:", data);
   return data;
 };
 

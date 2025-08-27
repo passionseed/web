@@ -24,6 +24,8 @@ interface GroupMapGradingProps {
 }
 
 export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMapGradingProps) {
+  console.log("🔍 GroupMapGrading props:", { groupId, mapId, groupName });
+  
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [grading, setGrading] = useState(false);
@@ -47,7 +49,7 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
     setLoading(true);
     try {
       // Use getGroupAllSubmissions since we're grading all submissions for a group
-      const data = await getGroupAllSubmissions(groupId);
+      const data = await getGroupAllSubmissions(groupId, mapId);
       setSubmissions(data);
       
       // Initialize individual grades

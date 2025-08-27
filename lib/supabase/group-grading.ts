@@ -275,132 +275,104 @@ export const getGroupMapSubmissions = async (
 };
 
 /**
- * Gets all submissions for a specific group across all maps
+ * Gets all submissions for a specific group and map using the database function
  */
 export const getGroupAllSubmissions = async (
-  groupId: string
+  groupId: string,
+  mapId: string
 ): Promise<any[]> => {
   const supabase = createClient();
 
   try {
-    console.log("Fetching submissions for group:", groupId);
+    console.log("🔍 RADICAL DEBUG - Fetching submissions for group:", groupId, "map:", mapId);
     
-    // Get group members first
+    if (!mapId || mapId.trim() === '') {
+      console.error("❌ EMPTY MAP ID - Component passed empty/undefined mapId!");
+      return [];
+    }
+    
+    // STEP 1: Get group members
     const { data: members, error: membersError } = await supabase
       .from("assignment_group_members")
-      .select("user_id")
+      .select("*")
       .eq("group_id", groupId);
 
-    console.log("Group members query:", { data: members, error: membersError });
+    console.log("📋 GROUP MEMBERS:", { members, membersError, count: members?.length });
 
-    if (membersError || !members || members.length === 0) {
-      console.log("No members found or error:", membersError);
+    if (membersError || !members?.length) {
+      console.log("❌ STOP: No group members found");
       return [];
     }
 
     const memberIds = members.map(m => m.user_id);
-    console.log("Found group members:", memberIds.length);
+    console.log("👥 MEMBER IDS:", memberIds);
 
-    // Try to use the exact same query pattern as TeamGrading which works
-    const { data: submissionsData, error: submissionsError } = await supabase
+    // STEP 2: Get ALL submissions from ANY group member (ignore map for now)
+    const { data: allSubmissions, error: allSubmissionsError } = await supabase
       .from("assessment_submissions")
-      .select(`
-        id,
-        user_id,
-        node_id,
-        assessment_type,
-        text_answer,
-        submitted_at,
-        student_node_progress!inner (
-          id,
-          user_id,
-          node_id,
-          map_nodes!inner (
-            title,
-            map_id,
-            learning_maps (
-              title
-            )
-          ),
-          profiles (
-            username,
-            full_name
-          )
-        ),
-        submission_grades (
-          grade,
-          points_awarded,
-          comments
-        )
-      `)
-      .in("user_id", memberIds)
-      .order("submitted_at", { ascending: false });
+      .select("*")
+      .in("user_id", memberIds);
 
-    console.log("Submissions query result:", { 
-      dataLength: submissionsData?.length || 0, 
-      error: submissionsError 
+    console.log("📝 ALL SUBMISSIONS FROM GROUP MEMBERS:", { 
+      allSubmissions, 
+      allSubmissionsError, 
+      count: allSubmissions?.length 
     });
 
-    if (submissionsError) {
-      console.error("Error fetching submissions with joins:", submissionsError);
-      
-      // Fallback to simple query without joins
-      console.log("Trying fallback simple query...");
-      const { data: simpleSubmissions, error: simpleError } = await supabase
-        .from("assessment_submissions")
-        .select("id, user_id, node_id, assessment_type, text_answer, submitted_at")
-        .in("user_id", memberIds)
-        .order("submitted_at", { ascending: false });
+    // STEP 3: Get ALL progress records from group members
+    const { data: allProgress, error: allProgressError } = await supabase
+      .from("student_node_progress")
+      .select("*")
+      .in("user_id", memberIds);
 
-      if (simpleError) {
-        console.error("Simple query also failed:", simpleError);
-        return [];
-      }
+    console.log("📊 ALL PROGRESS RECORDS:", { 
+      allProgress, 
+      allProgressError, 
+      count: allProgress?.length 
+    });
 
-      console.log("Simple query succeeded, found:", simpleSubmissions?.length || 0);
-      
-      // Return minimal data for now
-      return (simpleSubmissions || []).map(sub => ({
+    // STEP 4: Get map nodes for this specific map
+    const { data: mapNodes, error: mapNodesError } = await supabase
+      .from("map_nodes")
+      .select("*")
+      .eq("map_id", mapId);
+
+    console.log("🗺️ MAP NODES:", { mapNodes, mapNodesError, count: mapNodes?.length });
+
+    // STEP 5: Show what we have and try to connect them
+    console.log("🔗 TRYING TO CONNECT DATA:");
+    console.log("- Group members:", memberIds);
+    console.log("- Total submissions:", allSubmissions?.length || 0);
+    console.log("- Total progress records:", allProgress?.length || 0);
+    console.log("- Map nodes:", mapNodes?.length || 0);
+
+    // Just return ALL submissions for now to see if anything shows up
+    if (allSubmissions?.length) {
+      console.log("✅ RETURNING ALL SUBMISSIONS TO SEE WHAT HAPPENS");
+      return allSubmissions.map(sub => ({
         submission_id: sub.id,
         user_id: sub.user_id,
-        username: "Unknown",
-        full_name: "",
-        node_id: sub.node_id,
-        node_title: "Unknown Node",
-        map_title: "Unknown Map",
+        username: "DEBUG USER",
+        full_name: "DEBUG NAME", 
+        node_id: "DEBUG NODE",
+        node_title: "DEBUG TITLE",
         assessment_type: sub.assessment_type,
         submitted_at: sub.submitted_at,
         text_answer: sub.text_answer,
+        file_urls: [],
+        quiz_answers: null,
         grade: null,
         points_awarded: null,
         comments: null,
-        progress_id: null
+        graded_at: null
       }));
     }
 
-    // Format the submissions using the same pattern as TeamGrading
-    const formattedSubmissions = (submissionsData || []).map(sub => ({
-      submission_id: sub.id,
-      user_id: sub.user_id,
-      username: (sub.student_node_progress as any)?.profiles?.username || "Unknown",
-      full_name: (sub.student_node_progress as any)?.profiles?.full_name || "",
-      node_id: sub.node_id,
-      node_title: (sub.student_node_progress as any)?.map_nodes?.title || "Unknown Node",
-      map_title: (sub.student_node_progress as any)?.map_nodes?.learning_maps?.title || "Unknown Map",
-      assessment_type: sub.assessment_type,
-      submitted_at: sub.submitted_at,
-      text_answer: sub.text_answer,
-      grade: sub.submission_grades?.[0]?.grade,
-      points_awarded: sub.submission_grades?.[0]?.points_awarded,
-      comments: sub.submission_grades?.[0]?.comments,
-      progress_id: (sub.student_node_progress as any)?.id
-    }));
+    console.log("❌ NO SUBMISSIONS FOUND AT ALL");
+    return [];
 
-    console.log("Formatted submissions:", formattedSubmissions.length);
-    return formattedSubmissions;
-    
   } catch (error) {
-    console.error("Error fetching group submissions:", error);
+    console.error("💥 RADICAL ERROR:", error);
     return [];
   }
 };

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { NodeAssessment, AssessmentType, QuizQuestion } from "@/types/map";
 import { Trash2 } from "lucide-react";
+import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion } from "@/lib/supabase/assessment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -24,28 +25,47 @@ export function AssessmentEditor({
   // The useEffect causing the infinite loop has been removed.
 
   const handleAddAssessment = useCallback(
-    (type: AssessmentType) => {
-      const newAssessment: NodeAssessment = {
-        id: `temp_assessment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        node_id: nodeId,
-        assessment_type: type,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        quiz_questions: [],
-        points_possible: null,
-        is_graded: false,
-      };
+    async (type: AssessmentType) => {
+      try {
+        // Check if this is a temporary node that hasn't been saved yet
+        if (nodeId.startsWith("temp_node_") || nodeId.startsWith("temp_text_")) {
+          toast({ 
+            title: "Save node first", 
+            description: "Please save this node before adding assessments.",
+            variant: "destructive"
+          });
+          return;
+        }
 
-      console.log("➕ Creating new assessment:", newAssessment);
-      // Only one state update is needed.
-      onAssessmentChange(newAssessment, "add");
+        console.log("➕ Creating new assessment in database for node:", nodeId);
+        
+        // Create assessment directly in database
+        const newAssessment = await createNodeAssessment({
+          node_id: nodeId,
+          assessment_type: type,
+          points_possible: null,
+          is_graded: false,
+        });
 
-      toast({ title: "Assessment added (Save map to persist)" });
+        console.log("✅ Assessment created in database:", newAssessment);
+        
+        // Update local state with real database record
+        onAssessmentChange(newAssessment, "add");
+
+        toast({ title: "Assessment created successfully!" });
+      } catch (error) {
+        console.error("❌ Failed to create assessment:", error);
+        toast({ 
+          title: "Failed to create assessment", 
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive" 
+        });
+      }
     },
     [nodeId, onAssessmentChange, toast]
   );
 
-  const handleDeleteAssessment = useCallback(() => {
+  const handleDeleteAssessment = useCallback(async () => {
     if (!assessment) return;
 
     if (
@@ -53,9 +73,26 @@ export function AssessmentEditor({
         "Are you sure you want to delete this assessment? This will also remove all questions."
       )
     ) {
-      console.log("🗑️ Deleting assessment:", assessment.id);
-      onAssessmentChange(null, "delete");
-      toast({ title: "Assessment removed (Save map to persist)" });
+      try {
+        console.log("🗑️ Deleting assessment from database:", assessment.id);
+        
+        // Delete from database if it's a real assessment (not temp)
+        if (!assessment.id.startsWith('temp_')) {
+          await deleteNodeAssessment(assessment.id);
+          console.log("✅ Assessment deleted from database");
+        }
+        
+        // Update local state
+        onAssessmentChange(null, "delete");
+        toast({ title: "Assessment deleted successfully!" });
+      } catch (error) {
+        console.error("❌ Failed to delete assessment:", error);
+        toast({ 
+          title: "Failed to delete assessment", 
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive" 
+        });
+      }
     }
   }, [assessment, onAssessmentChange, toast]);
 
@@ -71,7 +108,7 @@ export function AssessmentEditor({
   );
 
   const handleQuestionChange = useCallback(
-    (changedQuestion: QuizQuestion, action: "add" | "update" | "delete") => {
+    async (changedQuestion: QuizQuestion, action: "add" | "update" | "delete") => {
       if (!assessment) return;
 
       console.log(
@@ -80,26 +117,78 @@ export function AssessmentEditor({
         changedQuestion.question_text?.substring(0, 50)
       );
 
-      let newQuestions: QuizQuestion[];
-      if (action === "add") {
-        newQuestions = [...(assessment.quiz_questions || []), changedQuestion];
-      } else if (action === "update") {
-        newQuestions = (assessment.quiz_questions || []).map((q) =>
-          q.id === changedQuestion.id ? changedQuestion : q
-        );
-      } else {
-        newQuestions = (assessment.quiz_questions || []).filter(
-          (q) => q.id !== changedQuestion.id
-        );
+      try {
+        let updatedQuestion: QuizQuestion;
+        
+        if (action === "add") {
+          // Create question in database
+          console.log("➕ Creating quiz question in database...");
+          updatedQuestion = await createQuizQuestion({
+            assessment_id: assessment.id,
+            question_text: changedQuestion.question_text,
+            options: changedQuestion.options,
+            correct_option: changedQuestion.correct_option,
+          });
+          console.log("✅ Quiz question created in database:", updatedQuestion);
+        } else if (action === "update") {
+          // Update question in database if it's not a temp ID
+          if (!changedQuestion.id.startsWith('temp_')) {
+            console.log("✏️ Updating quiz question in database...");
+            updatedQuestion = await updateQuizQuestion(changedQuestion.id, {
+              question_text: changedQuestion.question_text,
+              options: changedQuestion.options,
+              correct_option: changedQuestion.correct_option,
+            });
+            console.log("✅ Quiz question updated in database:", updatedQuestion);
+          } else {
+            updatedQuestion = changedQuestion;
+          }
+        } else {
+          // Delete question from database if it's not a temp ID
+          if (!changedQuestion.id.startsWith('temp_')) {
+            console.log("🗑️ Deleting quiz question from database...");
+            await deleteQuizQuestion(changedQuestion.id);
+            console.log("✅ Quiz question deleted from database");
+          }
+          updatedQuestion = changedQuestion;
+        }
+
+        // Update local state
+        let newQuestions: QuizQuestion[];
+        if (action === "add") {
+          newQuestions = [...(assessment.quiz_questions || []), updatedQuestion];
+        } else if (action === "update") {
+          newQuestions = (assessment.quiz_questions || []).map((q) =>
+            q.id === changedQuestion.id ? updatedQuestion : q
+          );
+        } else {
+          newQuestions = (assessment.quiz_questions || []).filter(
+            (q) => q.id !== changedQuestion.id
+          );
+        }
+
+        const updatedAssessment = { ...assessment, quiz_questions: newQuestions };
+        console.log("📊 Updated assessment with questions:", updatedAssessment);
+        
+        onAssessmentChange(updatedAssessment, "add");
+        
+        if (action === "add") {
+          toast({ title: "Quiz question created successfully!" });
+        } else if (action === "update") {
+          toast({ title: "Quiz question updated successfully!" });
+        } else {
+          toast({ title: "Quiz question deleted successfully!" });
+        }
+      } catch (error) {
+        console.error(`❌ Failed to ${action} quiz question:`, error);
+        toast({ 
+          title: `Failed to ${action} quiz question`, 
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive" 
+        });
       }
-
-      const updatedAssessment = { ...assessment, quiz_questions: newQuestions };
-      console.log("📊 Updated assessment with questions:", updatedAssessment);
-
-      // We now only call the single handler with the complete, updated assessment object.
-      onAssessmentChange(updatedAssessment, "add");
     },
-    [assessment, onAssessmentChange]
+    [assessment, onAssessmentChange, toast]
   );
 
   if (!assessment) {
