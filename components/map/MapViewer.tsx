@@ -125,9 +125,20 @@ export function MapViewer({ map }: MapViewerProps) {
   // Role detection for instructor/TA functionality
   const { user: authUser, userRoles, isAuthenticated } = useAuth();
 
+  // RADICAL DEBUG: Log raw userRoles from useAuth hook
+  console.log("🔍 RADICAL DEBUG - RAW USEAUTH DATA:", {
+    email: authUser?.email,
+    userRoles,
+    isAuthenticated,
+    userRolesType: typeof userRoles,
+    userRolesArray: Array.isArray(userRoles) ? userRoles : 'not array'
+  });
+
   // Use a strict union for roles to satisfy prop typing
-  type UserRole = "instructor" | "TA" | "student";
-  const globalUserRole: UserRole = userRoles?.includes("instructor")
+  type UserRole = "instructor" | "TA" | "student" | "admin";
+  const globalUserRole: UserRole = userRoles?.includes("admin")
+    ? "admin"
+    : userRoles?.includes("instructor")
     ? "instructor"
     : userRoles?.includes("TA")
       ? "TA"
@@ -143,7 +154,18 @@ export function MapViewer({ map }: MapViewerProps) {
 
   // Use classroom role if available, otherwise fall back to global role
   const userRole: UserRole = roleFromClassroom ?? globalUserRole;
-  const isInstructorOrTA = userRole === "instructor" || userRole === "TA";
+  const isInstructorOrTA = userRole === "instructor" || userRole === "TA" || userRole === "admin";
+
+  // RADICAL DEBUG: Log all role information
+  console.log("🔍 RADICAL DEBUG - USER ROLES:", {
+    email: currentUser?.email,
+    globalUserRole,
+    roleFromClassroom, 
+    classroomRole,
+    finalUserRole: userRole,
+    isInstructorOrTA,
+    canSeeGrading: isInstructorOrTA
+  });
 
   console.log(
     "🗺️ [MapViewer] Rendering map:",

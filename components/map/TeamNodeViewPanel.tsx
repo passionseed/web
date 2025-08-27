@@ -63,7 +63,7 @@ interface TeamNodeViewPanelProps {
   teamId: string;
   onProgressUpdate?: () => void;
   isNodeUnlocked?: boolean;
-  userRole?: "instructor" | "TA" | "student";
+  userRole?: "instructor" | "TA" | "student" | "admin";
   isInstructorOrTA?: boolean;
 }
 

@@ -17,7 +17,7 @@ interface CommentNodeProps {
   /** Show the small explicit Edit button when double-click is disabled. Defaults to true. */
   showEditButton?: boolean;
   /** User role for permission checking */
-  userRole?: "instructor" | "TA" | "student";
+  userRole?: "instructor" | "TA" | "student" | "admin";
 }
 
 export function CommentNode({
@@ -35,7 +35,7 @@ export function CommentNode({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Only instructors and TAs can edit comment nodes
-  const canEdit = allowEdit && (userRole === "instructor" || userRole === "TA");
+  const canEdit = allowEdit && (userRole === "instructor" || userRole === "TA" || userRole === "admin");
 
   // Handle double-click to edit (only if enabled and editing is allowed)
   const handleDoubleClick = () => {
