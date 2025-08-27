@@ -384,7 +384,7 @@ export function TeamGrading({ classroomId, onGraded }: TeamGradingProps) {
                       {submission.text_answer && (
                         <div className="mb-4">
                           <Label>Answer</Label>
-                          <div className="p-3 bg-gray-50 rounded text-sm mt-1">
+                          <div className="p-3 bg-gray-50 rounded text-sm mt-1 text-gray-900 dark:bg-gray-800 dark:text-gray-100">
                             {submission.text_answer}
                           </div>
                         </div>

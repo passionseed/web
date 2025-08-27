@@ -307,69 +307,114 @@ export const getGroupAllSubmissions = async (
     const memberIds = members.map(m => m.user_id);
     console.log("👥 MEMBER IDS:", memberIds);
 
-    // STEP 2: Get ALL submissions from ANY group member (ignore map for now)
-    const { data: allSubmissions, error: allSubmissionsError } = await supabase
-      .from("assessment_submissions")
-      .select("*")
-      .in("user_id", memberIds);
-
-    console.log("📝 ALL SUBMISSIONS FROM GROUP MEMBERS:", { 
-      allSubmissions, 
-      allSubmissionsError, 
-      count: allSubmissions?.length 
-    });
-
-    // STEP 3: Get ALL progress records from group members
+    // STEP 2: Get progress records from group members  
     const { data: allProgress, error: allProgressError } = await supabase
       .from("student_node_progress")
       .select("*")
       .in("user_id", memberIds);
 
-    console.log("📊 ALL PROGRESS RECORDS:", { 
+    console.log("📊 PROGRESS RECORDS:", { 
       allProgress, 
       allProgressError, 
       count: allProgress?.length 
     });
-
-    // STEP 4: Get map nodes for this specific map
+    
+    if (allProgressError || !allProgress?.length) {
+      console.log("❌ STOP: No progress records found for group members");
+      return [];
+    }
+    
+    // STEP 3: Get map nodes for this specific map
     const { data: mapNodes, error: mapNodesError } = await supabase
       .from("map_nodes")
       .select("*")
       .eq("map_id", mapId);
-
     console.log("🗺️ MAP NODES:", { mapNodes, mapNodesError, count: mapNodes?.length });
-
-    // STEP 5: Show what we have and try to connect them
-    console.log("🔗 TRYING TO CONNECT DATA:");
-    console.log("- Group members:", memberIds);
-    console.log("- Total submissions:", allSubmissions?.length || 0);
-    console.log("- Total progress records:", allProgress?.length || 0);
-    console.log("- Map nodes:", mapNodes?.length || 0);
-
-    // Just return ALL submissions for now to see if anything shows up
-    if (allSubmissions?.length) {
-      console.log("✅ RETURNING ALL SUBMISSIONS TO SEE WHAT HAPPENS");
-      return allSubmissions.map(sub => ({
+    
+    if (mapNodesError || !mapNodes?.length) {
+      console.log("❌ STOP: No nodes found in the specified map");
+      return [];
+    }
+    
+    // STEP 4: Filter progress records for this map's nodes
+    const mapNodeIds = mapNodes.map(n => n.id);
+    const relevantProgress = allProgress.filter(p => mapNodeIds.includes(p.node_id));
+    console.log("🎯 RELEVANT PROGRESS FOR MAP:", { 
+      count: relevantProgress.length,
+      progressIds: relevantProgress.map(p => p.id)
+    });
+    
+    if (!relevantProgress.length) {
+      console.log("❌ STOP: No progress records for this map");
+      return [];
+    }
+    
+    // STEP 5: Get submissions using progress IDs
+    const progressIds = relevantProgress.map(p => p.id);
+    const { data: submissions, error: submissionsError } = await supabase
+      .from("assessment_submissions")
+      .select(`
+        *,
+        node_assessments (
+          node_id,
+          assessment_type,
+          is_graded
+        ),
+        submission_grades (
+          grade,
+          points_awarded,
+          comments,
+          graded_at
+        )
+      `)
+      .in("progress_id", progressIds);
+    console.log("📝 SUBMISSIONS FOR GROUP:", { 
+      submissions, 
+      submissionsError, 
+      count: submissions?.length 
+    });
+    
+    if (submissionsError || !submissions?.length) {
+      console.log("❌ NO SUBMISSIONS FOUND");
+      return [];
+    }
+    
+    // STEP 6: Get user profiles for enrichment
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, username, full_name")
+      .in("id", memberIds);
+    console.log("👤 USER PROFILES:", { profiles, profilesError, count: profiles?.length });
+    
+    // STEP 7: Enrich submissions with user and node info
+    const enrichedSubmissions = submissions.map(sub => {
+      const progress = relevantProgress.find(p => p.id === sub.progress_id);
+      const profile = profiles?.find(p => p.id === progress?.user_id);
+      const node = mapNodes.find(n => n.id === sub.node_assessments?.node_id);
+      
+      return {
         submission_id: sub.id,
-        user_id: sub.user_id,
-        username: "DEBUG USER",
-        full_name: "DEBUG NAME", 
-        node_id: "DEBUG NODE",
-        node_title: "DEBUG TITLE",
-        assessment_type: sub.assessment_type,
+        progress_id: sub.progress_id,
+        user_id: progress?.user_id,
+        username: profile?.username || "Unknown User",
+        full_name: profile?.full_name || "Unknown Name",
+        node_id: sub.node_assessments?.node_id,
+        node_title: node?.title || "Unknown Node",
+        assessment_type: sub.node_assessments?.assessment_type || "unknown",
+        is_graded: sub.node_assessments?.is_graded || false,
         submitted_at: sub.submitted_at,
         text_answer: sub.text_answer,
-        file_urls: [],
-        quiz_answers: null,
-        grade: null,
-        points_awarded: null,
-        comments: null,
-        graded_at: null
-      }));
-    }
-
-    console.log("❌ NO SUBMISSIONS FOUND AT ALL");
-    return [];
+        file_urls: sub.file_urls || [],
+        quiz_answers: sub.quiz_answers,
+        grade: sub.submission_grades?.[0]?.grade || null,
+        points_awarded: sub.submission_grades?.[0]?.points_awarded || null,
+        comments: sub.submission_grades?.[0]?.comments || null,
+        graded_at: sub.submission_grades?.[0]?.graded_at || null
+      };
+    });
+    
+    console.log("✅ RETURNING ENRICHED SUBMISSIONS:", enrichedSubmissions);
+    return enrichedSubmissions;
 
   } catch (error) {
     console.error("💥 RADICAL ERROR:", error);
@@ -563,18 +608,72 @@ export const gradeSubmission = async (
 ): Promise<void> => {
   const supabase = createClient();
 
-  const { error } = await supabase.rpc("grade_individual_submission", {
-    p_submission_id: submissionId,
-    p_grade: grade,
-    p_comments: comments,
-    p_grader_id: graderId,
-    p_progress_id: progressId,
-    p_points_awarded: pointsAwarded || null
-  });
+  try {
+    // First, try to delete any existing grade for this submission
+    await supabase
+      .from("submission_grades")
+      .delete()
+      .eq("submission_id", submissionId);
 
-  if (error) {
-    console.error("Error grading individual submission:", error);
-    throw new Error("Could not grade submission");
+    // Insert the new grade
+    const { error: gradeError } = await supabase
+      .from("submission_grades")
+      .insert([{
+        submission_id: submissionId,
+        graded_by: graderId,
+        grade: grade,
+        points_awarded: pointsAwarded || null,
+        comments: comments || null,
+        graded_at: new Date().toISOString()
+      }]);
+
+    if (gradeError) {
+      console.error("Error inserting grade:", {
+        message: gradeError.message,
+        details: gradeError.details,
+        hint: gradeError.hint,
+        code: gradeError.code
+      });
+      console.error("Grade data:", {
+        submission_id: submissionId,
+        graded_by: graderId,
+        grade: grade,
+        points_awarded: pointsAwarded || null,
+        comments: comments || null
+      });
+      throw new Error(`Could not create grade: ${gradeError.message}`);
+    }
+
+    // Update the student progress status based on the grade (optional - don't fail if this doesn't work)
+    try {
+      const newStatus = grade === "pass" ? "passed" : "failed";
+      
+      console.log("🔄 Attempting to update progress status:", {
+        progressId: progressId,
+        newStatus: newStatus
+      });
+      
+      const { error: progressError } = await supabase
+        .from("student_node_progress")
+        .update({ status: newStatus })
+        .eq("id", progressId);
+
+      if (progressError) {
+        // This is likely an RLS policy issue - log it but don't fail the grading
+        console.warn("⚠️ Could not update progress status (likely RLS policy):", progressError);
+        console.warn("💡 Grade was created successfully - progress update is optional");
+      } else {
+        console.log("✅ Progress status updated successfully");
+      }
+    } catch (progressUpdateError) {
+      console.warn("⚠️ Progress update failed:", progressUpdateError);
+      console.warn("💡 This doesn't affect the grade - grading was successful");
+    }
+
+    console.log("✅ Successfully graded submission:", submissionId);
+  } catch (error: any) {
+    console.error("Error in gradeSubmission:", error);
+    throw error;
   }
 };
 

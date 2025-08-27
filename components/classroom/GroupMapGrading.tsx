@@ -15,6 +15,7 @@ import {
   gradeSubmission 
 } from "@/lib/supabase/group-grading";
 import { createClient } from "@/utils/supabase/client";
+import { Eye } from "lucide-react";
 
 interface GroupMapGradingProps {
   groupId: string;
@@ -28,10 +29,6 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
   
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [grading, setGrading] = useState(false);
-  const [bulkGrade, setBulkGrade] = useState<"pass" | "fail">("pass");
-  const [bulkPoints, setBulkPoints] = useState<number>(100);
-  const [bulkComments, setBulkComments] = useState<string>("Good work!");
   const [individualGrades, setIndividualGrades] = useState<Record<string, {
     grade: "pass" | "fail";
     points: number;
@@ -76,59 +73,17 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
     }
   };
 
-  const handleBulkGrade = async () => {
-    setGrading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
 
-      // Grade all ungraded submissions individually
-      const ungradedSubs = submissions.filter(s => !s.grade);
-      let gradedCount = 0;
-
-      for (const submission of ungradedSubs) {
-        try {
-          await gradeSubmission(
-            submission.submission_id,
-            bulkGrade,
-            bulkComments,
-            null,
-            user.id,
-            submission.progress_id,
-            bulkPoints
-          );
-          gradedCount++;
-        } catch (error) {
-          console.error(`Failed to grade submission ${submission.submission_id}:`, error);
-        }
-      }
-
-      toast({
-        title: "Success",
-        description: `Graded ${gradedCount} submissions`
-      });
-
-      onGraded?.();
-      loadSubmissions();
-    } catch (error: any) {
-      console.error("Error bulk grading:", error);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setGrading(false);
-    }
-  };
-
-  const handleIndividualGrade = async (submissionId: string, progressId: string) => {
+  const handleIndividualGrade = async (submissionId: string, progressId: string, submission: any) => {
     const gradeData = individualGrades[submissionId];
     if (!gradeData) return;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      // Only pass points if the assessment is gradeable
+      const pointsToAward = submission.is_graded ? gradeData.points : null;
 
       await gradeSubmission(
         submissionId,
@@ -137,7 +92,7 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
         null,
         user.id,
         progressId,
-        gradeData.points
+        pointsToAward
       );
 
       toast({
@@ -193,66 +148,6 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
         </p>
       </div>
 
-      {/* Bulk Grading Section */}
-      {ungradedSubmissions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Bulk Grading</CardTitle>
-            <CardDescription>
-              Grade all {ungradedSubmissions.length} ungraded submissions at once
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Grade</Label>
-                <RadioGroup 
-                  value={bulkGrade} 
-                  onValueChange={(v: "pass" | "fail") => setBulkGrade(v)}
-                  className="flex space-x-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="pass" id="pass" />
-                    <Label htmlFor="pass" className="cursor-pointer">Pass</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="fail" id="fail" />
-                    <Label htmlFor="fail" className="cursor-pointer">Fail</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Points</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={bulkPoints}
-                  onChange={(e) => setBulkPoints(Number(e.target.value))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Comments</Label>
-                <Input
-                  value={bulkComments}
-                  onChange={(e) => setBulkComments(e.target.value)}
-                  placeholder="Group feedback"
-                />
-              </div>
-            </div>
-
-            <Button 
-              onClick={handleBulkGrade} 
-              disabled={grading}
-              className="w-full"
-            >
-              {grading ? "Grading..." : `Grade All ${ungradedSubmissions.length} Submissions`}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Individual Submissions */}
       <Card>
@@ -278,10 +173,15 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
                           <div className="font-medium">
                             {submission.full_name || submission.username}
                           </div>
-                          <div className="text-sm text-gray-600">
-                            {submission.node_title} • {submission.assessment_type}
+                          <div className="text-sm text-gray-600 flex items-center gap-2">
+                            <span>{submission.node_title} • {submission.assessment_type}</span>
+                            {submission.is_graded && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                Gradeable
+                              </Badge>
+                            )}
                             {(submission as any).map_title && (
-                              <span className="text-xs text-gray-500 ml-2">
+                              <span className="text-xs text-gray-500">
                                 from {(submission as any).map_title}
                               </span>
                             )}
@@ -298,13 +198,36 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
                       {submission.text_answer && (
                         <div className="mb-4">
                           <Label>Answer</Label>
-                          <div className="p-3 bg-gray-50 rounded text-sm">
+                          <div className="p-3 bg-gray-50 rounded text-sm text-gray-900 dark:bg-gray-800 dark:text-gray-100">
                             {submission.text_answer}
                           </div>
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      {submission.file_urls && submission.file_urls.length > 0 && (
+                        <div className="mb-4">
+                          <Label>File Submissions</Label>
+                          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded">
+                            <p className="text-sm font-medium mb-2">Files ({submission.file_urls.length}):</p>
+                            <div className="space-y-1">
+                              {submission.file_urls.map((url: string, fileIndex: number) => (
+                                <a
+                                  key={fileIndex}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:underline flex items-center gap-1 dark:text-blue-400"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  File {fileIndex + 1}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className={`grid grid-cols-1 ${submission.is_graded ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 mb-4`}>
                         <div className="space-y-2">
                           <Label>Grade</Label>
                           <RadioGroup 
@@ -328,18 +251,20 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
                           </RadioGroup>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label>Points</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={individualGrades[submission.submission_id]?.points || 100}
-                            onChange={(e) => 
-                              updateIndividualGrade(submission.submission_id, "points", Number(e.target.value))
-                            }
-                          />
-                        </div>
+                        {submission.is_graded && (
+                          <div className="space-y-2">
+                            <Label>Points</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={individualGrades[submission.submission_id]?.points || 100}
+                              onChange={(e) => 
+                                updateIndividualGrade(submission.submission_id, "points", Number(e.target.value))
+                              }
+                            />
+                          </div>
+                        )}
 
                         <div className="space-y-2">
                           <Label>Comments</Label>
@@ -354,7 +279,7 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
                       </div>
 
                       <Button
-                        onClick={() => handleIndividualGrade(submission.submission_id, submission.progress_id)}
+                        onClick={() => handleIndividualGrade(submission.submission_id, submission.progress_id, submission)}
                         className="w-full"
                       >
                         Grade This Submission
@@ -402,6 +327,37 @@ export function GroupMapGrading({ groupId, mapId, groupName, onGraded }: GroupMa
                           </div>
                         </div>
                       </div>
+
+                      {submission.text_answer && (
+                        <div className="mt-2">
+                          <div className="text-xs text-gray-500 mb-1">Answer:</div>
+                          <div className="p-2 bg-gray-50 rounded text-xs text-gray-900 dark:bg-gray-800 dark:text-gray-100 max-h-20 overflow-y-auto">
+                            {submission.text_answer}
+                          </div>
+                        </div>
+                      )}
+
+                      {submission.file_urls && submission.file_urls.length > 0 && (
+                        <div className="mt-2">
+                          <div className="text-xs text-gray-500 mb-1">Files ({submission.file_urls.length}):</div>
+                          <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                            <div className="space-y-1">
+                              {submission.file_urls.map((url: string, fileIndex: number) => (
+                                <a
+                                  key={fileIndex}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-600 hover:underline flex items-center gap-1 dark:text-blue-400"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  File {fileIndex + 1}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       
                       {submission.comments && (
                         <div className="mt-2 text-sm text-gray-600">

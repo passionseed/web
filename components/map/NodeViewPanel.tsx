@@ -457,8 +457,18 @@ export function NodeViewPanel({
     fileNames?: string[],
     checklistData?: Record<string, boolean>
   ) => {
+    // Check if user is not logged in
+    if (!currentUser) {
+      toast({
+        title: "Login required",
+        description: "Please log in to submit assessments and track your progress.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Comprehensive validation
-    if (!selectedNode || !currentUser || !progress) {
+    if (!selectedNode || !progress) {
       console.error("Cannot submit assessment: missing required data", {
         hasSelectedNode: !!selectedNode,
         hasCurrentUser: !!currentUser,

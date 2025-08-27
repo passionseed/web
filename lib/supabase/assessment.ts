@@ -132,8 +132,14 @@ export const createAssessmentSubmission = async (
     .single();
 
   if (error) {
-    console.error("❌ Error creating assessment submission:", error);
-    throw new Error("Could not create assessment submission.");
+    console.error("❌ Error creating assessment submission:", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    });
+    console.error("❌ Full error object:", error);
+    throw new Error(`Could not create assessment submission: ${error.message}`);
   }
 
   console.log("✅ Assessment submission created:", data);
