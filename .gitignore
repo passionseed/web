@@ -29,4 +29,6 @@ next-env.d.ts
 /supabase/seed.sql
 supabase/seed.sql
 
-.kilocode
+.kilocode/
+.kilocode/*
+!.kilocode/*.template
