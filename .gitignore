@@ -32,3 +32,9 @@ supabase/seed.sql
 .kilocode/
 .kilocode/*
 !.kilocode/*.template
+
+# kilocode configuration (contains sensitive keys)
+.kilocode/
+.kilocode/*
+!.kilocode/*.template
+!.kilocode/README.md

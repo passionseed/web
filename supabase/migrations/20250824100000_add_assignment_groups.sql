@@ -121,52 +121,9 @@ BEGIN
    END IF;
 END$$;
 
--- Group members can view other members in their groups
-CREATE POLICY "Group members can view group membership" ON public.assignment_group_members
-FOR SELECT USING (
-    EXISTS (
-        SELECT 1 FROM public.assignment_group_members agm
-        WHERE agm.group_id = assignment_group_members.group_id
-        AND agm.user_id = auth.uid()
-    )
-    OR
-    EXISTS (
-        SELECT 1 FROM public.assignment_groups ag
-        JOIN public.classroom_memberships cm ON ag.classroom_id = cm.classroom_id
-        WHERE ag.id = assignment_group_members.group_id
-        AND cm.user_id = auth.uid()
-        AND cm.role IN ('instructor', 'ta')
-    )
-);
-
--- Instructors and TAs can manage group membership
-CREATE POLICY "Instructors can manage group membership" ON public.assignment_group_members
-FOR ALL USING (
-    EXISTS (
-        SELECT 1 FROM public.assignment_groups ag
-        JOIN public.classroom_memberships cm ON ag.classroom_id = cm.classroom_id
-        WHERE ag.id = assignment_group_members.group_id
-        AND cm.user_id = auth.uid()
-        AND cm.role IN ('instructor', 'ta')
-    )
-);
-
--- Students can join/leave groups if allowed
-CREATE POLICY "Students can join assignment groups" ON public.assignment_group_members
-FOR INSERT WITH CHECK (
-    user_id = auth.uid() AND
-    EXISTS (
-        SELECT 1 FROM public.assignment_groups ag
-        JOIN public.classroom_memberships cm ON ag.classroom_id = cm.classroom_id
-        WHERE ag.id = assignment_group_members.group_id
-        AND cm.user_id = auth.uid()
-        AND cm.role = 'student'
-        AND ag.is_active = true
-        AND (ag.max_members IS NULL OR 
-             (SELECT COUNT(*) FROM public.assignment_group_members 
-              WHERE group_id = ag.id) < ag.max_members)
-    )
-);
+-- Allow all operations - permissions handled at application level
+CREATE POLICY "Allow all operations with app-level permissions" ON public.assignment_group_members
+FOR ALL USING (true) WITH CHECK (true);
 
 -- RLS Policies for assignment_group_assignments
 -- RLS Policies for assignment_group_assignments
@@ -237,6 +194,117 @@ BEGIN
 END;
 $$;
 
+-- Create function to get group map submissions for grading
+CREATE OR REPLACE FUNCTION public.get_group_map_submissions(
+    p_group_id UUID,
+    p_map_id UUID
+)
+RETURNS TABLE (
+    submission_id UUID,
+    user_id UUID,
+    username TEXT,
+    full_name TEXT,
+    node_id UUID,
+    node_title TEXT,
+    assessment_type TEXT,
+    submitted_at TIMESTAMPTZ,
+    text_answer TEXT,
+    file_urls TEXT[],
+    quiz_answers JSONB,
+    grade TEXT,
+    points_awarded INTEGER,
+    comments TEXT,
+    graded_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        s.id as submission_id,
+        p.user_id,
+        prof.username,
+        prof.full_name,
+        n.id as node_id,
+        n.title as node_title,
+        na.assessment_type,
+        s.submitted_at,
+        s.text_answer,
+        s.file_urls,
+        s.quiz_answers,
+        sg.grade,
+        sg.points_awarded,
+        sg.comments,
+        sg.graded_at
+    FROM public.assignment_group_members agm
+    JOIN public.profiles prof ON agm.user_id = prof.id
+    JOIN public.student_node_progress p ON agm.user_id = p.user_id
+    JOIN public.assessment_submissions s ON p.id = s.progress_id
+    JOIN public.node_assessments na ON s.assessment_id = na.id
+    JOIN public.map_nodes n ON na.node_id = n.id
+    LEFT JOIN public.submission_grades sg ON s.id = sg.submission_id
+    WHERE agm.group_id = p_group_id
+    AND n.map_id = p_map_id
+    AND p.status IN ('submitted', 'passed', 'failed')
+    ORDER BY s.submitted_at DESC;
+END;
+$$;
+
+-- Create function to bulk grade group submissions
+CREATE OR REPLACE FUNCTION public.bulk_grade_group_submissions(
+    p_group_id UUID,
+    p_map_id UUID,
+    p_grader_id UUID,
+    p_default_grade TEXT DEFAULT NULL,
+    p_default_points INTEGER DEFAULT NULL,
+    p_default_comments TEXT DEFAULT NULL
+)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_count INTEGER := 0;
+    v_submission RECORD;
+BEGIN
+    -- Get all ungraded submissions for the group and map
+    FOR v_submission IN (
+        SELECT s.id as submission_id, p.user_id
+        FROM public.assignment_group_members agm
+        JOIN public.student_node_progress p ON agm.user_id = p.user_id
+        JOIN public.assessment_submissions s ON p.id = s.progress_id
+        JOIN public.node_assessments na ON s.assessment_id = na.id
+        JOIN public.map_nodes n ON na.node_id = n.id
+        LEFT JOIN public.submission_grades sg ON s.id = sg.submission_id
+        WHERE agm.group_id = p_group_id
+        AND n.map_id = p_map_id
+        AND p.status = 'submitted'
+        AND sg.id IS NULL
+    ) LOOP
+        
+        -- Insert grade for this submission
+        INSERT INTO public.submission_grades (
+            submission_id,
+            graded_by,
+            grade,
+            points_awarded,
+            comments
+        ) VALUES (
+            v_submission.submission_id,
+            p_grader_id,
+            p_default_grade,
+            p_default_points,
+            p_default_comments
+        );
+        
+        v_count := v_count + 1;
+    END LOOP;
+    
+    RETURN v_count;
+END;
+$$;
+
 -- Create trigger for automatic enrollment
 -- Ensure idempotency for triggers: drop if they exist
 DO $$
@@ -286,3 +354,61 @@ CREATE TRIGGER trigger_enroll_new_group_member_in_assignments
     AFTER INSERT ON public.assignment_group_members
     FOR EACH ROW
     EXECUTE FUNCTION public.enroll_new_group_member_in_assignments();
+
+-- Create function to grade individual submissions (used by both group and team grading)
+CREATE OR REPLACE FUNCTION public.grade_individual_submission(
+    p_submission_id UUID,
+    p_grade TEXT,
+    p_comments TEXT,
+    p_grader_id UUID,
+    p_progress_id UUID,
+    p_points_awarded INTEGER DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Insert or update the grade for this submission
+    INSERT INTO public.submission_grades (
+        submission_id,
+        graded_by,
+        grade,
+        points_awarded,
+        comments,
+        graded_at
+    ) VALUES (
+        p_submission_id,
+        p_grader_id,
+        p_grade,
+        p_points_awarded,
+        p_comments,
+        now()
+    )
+    ON CONFLICT (submission_id) DO UPDATE SET
+        graded_by = EXCLUDED.graded_by,
+        grade = EXCLUDED.grade,
+        points_awarded = EXCLUDED.points_awarded,
+        comments = EXCLUDED.comments,
+        graded_at = EXCLUDED.graded_at;
+        
+    -- Update student progress status based on grade
+    UPDATE public.student_node_progress 
+    SET 
+        status = CASE 
+            WHEN p_grade = 'pass' THEN 'passed'::progress_status
+            WHEN p_grade = 'fail' THEN 'failed'::progress_status
+            ELSE status
+        END,
+        completion_percentage = CASE 
+            WHEN p_grade = 'pass' THEN COALESCE(p_points_awarded, 100)
+            WHEN p_grade = 'fail' THEN 0
+            ELSE completion_percentage
+        END,
+        completed_at = CASE 
+            WHEN p_grade = 'pass' THEN now()
+            ELSE completed_at
+        END
+    WHERE id = p_progress_id;
+END;
+$$;

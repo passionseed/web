@@ -49,6 +49,130 @@ export interface AssignmentNode {
   created_at: string; // timestamp with time zone
 }
 
+export interface AssignmentGroup {
+  id: string; // uuid
+  classroom_id: string; // uuid
+  name: string;
+  description: string | null;
+  color: string; // hex color code
+  max_members: number | null; // null means unlimited
+  created_by: string; // uuid
+  created_at: string; // timestamp with time zone
+  updated_at: string; // timestamp with time zone
+  is_active: boolean;
+}
+
+export interface AssignmentGroupMember {
+  id: string; // uuid
+  group_id: string; // uuid
+  user_id: string; // uuid
+  role: GroupMemberRole;
+  joined_at: string; // timestamp with time zone
+  added_by: string | null; // uuid
+}
+
+export type GroupMemberRole = "leader" | "member";
+
+export interface AssignmentGroupAssignment {
+  id: string; // uuid
+  assignment_id: string; // uuid
+  group_id: string; // uuid
+  due_date: string | null; // timestamp with time zone
+  instructions: string | null; // group-specific instructions
+  created_at: string; // timestamp with time zone
+  created_by: string; // uuid
+}
+
+export interface AssignmentGroupWithMembers extends AssignmentGroup {
+  members: (AssignmentGroupMember & {
+    profiles: {
+      full_name: string | null;
+      username: string | null;
+      email: string;
+    }
+  })[];
+  member_count: number;
+}
+
+export interface AssignmentGroupWithAssignments extends AssignmentGroup {
+  assignments: (AssignmentGroupAssignment & {
+    classroom_assignments: ClassroomAssignment;
+  })[];
+}
+
+export interface AssignmentGroupWithProgress extends AssignmentGroup {
+  members: (AssignmentGroupMember & {
+    profiles: {
+      full_name: string | null;
+      username: string | null;
+      email: string;
+    };
+    progress?: {
+      completion_percentage: number;
+      status: AssignmentStatus;
+      completed_nodes: number;
+      total_nodes: number;
+      last_activity?: string;
+    };
+  })[];
+  overall_progress: {
+    completion_percentage: number;
+    average_score: number | null;
+    submitted_assignments: number;
+    total_assignments: number;
+    active_members: number;
+  };
+  recent_activity?: {
+    user_id: string;
+    username: string;
+    action: string;
+    timestamp: string;
+  }[];
+}
+
+export interface GroupGradingSummary {
+  group_id: string;
+  group_name: string;
+  assignment_id: string;
+  assignment_title: string;
+  average_score: number | null;
+  submission_count: number;
+  total_members: number;
+  grading_status: "not_started" | "in_progress" | "completed";
+  graded_submissions: number;
+  due_date: string | null;
+  members: Array<{
+    user_id: string;
+    username: string;
+    full_name: string | null;
+    submission_status: "not_started" | "in_progress" | "submitted" | "graded";
+    score: number | null;
+    last_activity: string | null;
+  }>;
+}
+
+export interface GroupMapProgress {
+  group_id: string;
+  map_id: string;
+  total_nodes: number;
+  completed_nodes: number;
+  average_completion: number;
+  member_progress: Array<{
+    user_id: string;
+    username: string;
+    completed_nodes: number;
+    completion_percentage: number;
+    last_activity: string | null;
+  }>;
+  recent_completions: Array<{
+    node_id: string;
+    node_title: string;
+    completed_by: string;
+    completed_at: string;
+    username: string;
+  }>;
+}
+
 export interface AssignmentEnrollment {
   id: string; // uuid
   assignment_id: string; // uuid

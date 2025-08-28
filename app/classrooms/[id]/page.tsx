@@ -38,15 +38,23 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
     notFound();
   }
 
-  // Check if user is instructor or TA
+  // Check if user is instructor, TA, or admin
   const userRole = classroom.classroom_memberships[0]?.role;
-  const canManage = userRole === "instructor" || userRole === "ta";
+  
+  // Check for global admin role
+  const { data: userRoles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id);
+    
+  const isAdmin = userRoles?.some(r => r.role === "admin") || false;
+  const canManage = userRole === "instructor" || userRole === "ta" || isAdmin;
 
   return (
     <div className="container mx-auto p-6">
       <ClassroomDetailsDashboard
         classroom={classroom}
-        userRole={userRole}
+        userRole={userRole || (isAdmin ? "admin" : "student")}
         canManage={canManage}
       />
     </div>

@@ -37,8 +37,8 @@ export default async function TeamsPage() {
       }));
 
     // Get user's teams across all student classrooms
-    let userTeams = [];
-    let teamMaps = [];
+    const userTeams = [];
+    const teamMaps = [];
 
     for (const classroom of studentClassrooms) {
       try {
@@ -50,10 +50,7 @@ export default async function TeamsPage() {
         userTeams.push(...userTeamsInClassroom);
 
         // Get team maps for this classroom
-        const classroomTeamMaps = await getClassroomTeamMaps(
-          classroom.id,
-          supabase
-        );
+        const classroomTeamMaps = await getClassroomTeamMaps(classroom.id);
         const userTeamIds = userTeamsInClassroom.map((team) => team.id);
         const userTeamMaps = classroomTeamMaps.filter((map) =>
           userTeamIds.includes(map.team_id)

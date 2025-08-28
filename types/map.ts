@@ -2,7 +2,7 @@
 
 // From 20250725075742_add_user_roles.sql
 
-export type UserRoleType = "student" | "TA" | "instructor";
+export type UserRoleType = "student" | "TA" | "instructor" | "admin";
 
 export interface UserRole {
   id: string; // uuid
