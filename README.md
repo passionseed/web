@@ -16,6 +16,13 @@ pnpm install
 pnpm dev
 ```
 
+- **Setup Local Environment Securely**
+
+```bash
+# Run the setup script to configure secrets safely
+./scripts/setup-local-secrets.sh
+```
+
 - Run Supabase Locally
 
 ```bash

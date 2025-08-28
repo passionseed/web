@@ -36,20 +36,22 @@ export const checkClientAuth = async (
       };
     }
 
-    // If no role required, return basic auth result
-    if (!requiredRole) {
-      return {
-        user,
-        isAuthenticated: true,
-        hasRole: true,
-      };
-    }
-
-    // Check user roles
+    // Always fetch user roles regardless of whether a specific role is required
     const { data: roles, error: roleError } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
+
+    // RADICAL DEBUG: Log role query results
+    console.log("🔍 RADICAL DEBUG - ROLE QUERY:", {
+      email: user.email,
+      userId: user.id,
+      roles: roles,
+      roleError: roleError,
+      requiredRole,
+      rawRolesData: JSON.stringify(roles),
+      rolesLength: roles?.length || 0
+    });
 
     if (roleError) {
       console.error("Error checking user roles:", roleError);
@@ -62,7 +64,15 @@ export const checkClientAuth = async (
     }
 
     const userRoles = roles?.map((r) => r.role as UserRole) || [];
-    const hasRole = userRoles.includes(requiredRole);
+    const hasRole = requiredRole ? userRoles.includes(requiredRole) : true;
+
+    // RADICAL DEBUG: Log final role calculation
+    console.log("🔍 RADICAL DEBUG - FINAL ROLES:", {
+      email: user.email,
+      userRoles,
+      requiredRole,
+      hasRole
+    });
 
     return {
       user,

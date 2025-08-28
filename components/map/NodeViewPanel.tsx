@@ -39,7 +39,6 @@ import {
   getTeamMapClassroomInfo,
   getUserClassroomRoleClient,
 } from "@/lib/supabase/maps";
-import { getClassroomTeams } from "@/lib/supabase/teams";
 
 interface NodeViewPanelProps {
   // React Flow Node requires a generic that extends Record<string, unknown>
@@ -48,7 +47,7 @@ interface NodeViewPanelProps {
   mapId: string;
   onProgressUpdate?: () => void;
   isNodeUnlocked?: boolean;
-  userRole?: "instructor" | "TA" | "student";
+  userRole?: "instructor" | "TA" | "student" | "admin";
   isInstructorOrTA?: boolean;
 }
 
@@ -135,6 +134,7 @@ export function NodeViewPanel({
 
         if (teamMapInfo.isTeamMap && teamMapInfo.classroomId) {
           setIsTeamMap(true);
+          setTeamId(teamMapInfo.teamId || null); // This will be null for instructors/TAs or if undefined
 
           // Get user's role in the classroom
           const role = await getUserClassroomRoleClient(
@@ -142,26 +142,6 @@ export function NodeViewPanel({
             currentUser.id
           );
           setClassroomRole(role);
-
-          // For instructors/TAs, get the first available team to view
-          // For students, use their specific team
-          if (teamMapInfo.teamId) {
-            setTeamId(teamMapInfo.teamId);
-          } else if (role === 'instructor' || role === 'ta') {
-            try {
-              const teams = await getClassroomTeams(teamMapInfo.classroomId);
-              if (teams.length > 0) {
-                setTeamId(teams[0].id); // Use first team for instructor view
-              } else {
-                setTeamId(null);
-              }
-            } catch (error) {
-              console.error("Error fetching classroom teams:", error);
-              setTeamId(null);
-            }
-          } else {
-            setTeamId(null);
-          }
         } else {
           setIsTeamMap(false);
           setTeamId(null);
@@ -477,8 +457,18 @@ export function NodeViewPanel({
     fileNames?: string[],
     checklistData?: Record<string, boolean>
   ) => {
+    // Check if user is not logged in
+    if (!currentUser) {
+      toast({
+        title: "Login required",
+        description: "Please log in to submit assessments and track your progress.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Comprehensive validation
-    if (!selectedNode || !currentUser || !progress) {
+    if (!selectedNode || !progress) {
       console.error("Cannot submit assessment: missing required data", {
         hasSelectedNode: !!selectedNode,
         hasCurrentUser: !!currentUser,
@@ -722,10 +712,13 @@ export function NodeViewPanel({
       isInstructorOrTAForTeam &&
       selectedNode &&
       nodeData?.node_type !== "text" &&
-      nodeData?.node_type !== "comment" &&
-      teamId // Only render if we have a valid teamId
+      nodeData?.node_type !== "comment"
     ) {
       // Show team grading interface for instructors/TAs
+      // For instructors/TAs, we can pass any valid teamId from the classroom
+      // or use a placeholder if needed by the component
+      const effectiveTeamId = teamId || "placeholder"; // Placeholder for now
+
       return (
         <div className="h-full flex flex-col bg-background overflow-hidden">
           <Tabs defaultValue="student-view" className="h-full flex flex-col">
@@ -741,7 +734,7 @@ export function NodeViewPanel({
               <TeamNodeViewPanel
                 selectedNode={selectedNode}
                 mapId={mapId}
-                teamId={teamId}
+                teamId={effectiveTeamId}
                 onProgressUpdate={onProgressUpdate}
                 isNodeUnlocked={isNodeUnlocked}
                 userRole={classroomRole as any}
@@ -756,27 +749,11 @@ export function NodeViewPanel({
               <InstructorTeamGradingPanel
                 selectedNode={selectedNode}
                 mapId={mapId}
-                teamId={teamId}
+                teamId={effectiveTeamId}
                 onGradingComplete={onProgressUpdate}
               />
             </TabsContent>
           </Tabs>
-        </div>
-      );
-    }
-
-    // Show fallback UI for instructors when no teams are available
-    if (isInstructorOrTAForTeam && !teamId) {
-      return (
-        <div className="h-full flex flex-col bg-background overflow-hidden">
-          <div className="p-8 text-center flex flex-col justify-center min-h-full">
-            <div className="text-muted-foreground mb-4">
-              <p className="text-lg font-medium mb-2">No Teams Available</p>
-              <p className="text-sm">
-                There are no teams in this classroom yet. Students need to create teams first.
-              </p>
-            </div>
-          </div>
         </div>
       );
     }

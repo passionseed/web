@@ -139,34 +139,6 @@ export function InstructorTeamGradingPanel({
     try {
       const supabase = createClient();
       
-      // First, get team member user IDs
-      const { data: teamMembers } = await supabase
-        .from("team_memberships")
-        .select("user_id")
-        .eq("team_id", teamId)
-        .is("left_at", null);
-
-      if (!teamMembers || teamMembers.length === 0) {
-        setTeamSubmissions([]);
-        return;
-      }
-
-      const userIds = teamMembers.map(tm => tm.user_id);
-
-      // Get progress IDs for these users on the selected node
-      const { data: progresses } = await supabase
-        .from("student_node_progress")
-        .select("id")
-        .eq("node_id", selectedNode!.id)
-        .in("user_id", userIds);
-
-      if (!progresses || progresses.length === 0) {
-        setTeamSubmissions([]);
-        return;
-      }
-
-      const progressIds = progresses.map(p => p.id);
-
       // Get all submissions from team members for this assessment
       const { data: submissions } = await supabase
         .from("assessment_submissions")
@@ -189,7 +161,21 @@ export function InstructorTeamGradingPanel({
           )
         `)
         .eq("assessment_id", assessment.id)
-        .in("progress_id", progressIds)
+        .in(
+          "progress_id",
+          supabase
+            .from("student_node_progress")
+            .select("id")
+            .eq("node_id", selectedNode!.id)
+            .in(
+              "user_id",
+              supabase
+                .from("team_memberships")
+                .select("user_id")
+                .eq("team_id", teamId)
+                .is("left_at", null)
+            )
+        )
         .order("submitted_at", { ascending: false });
 
       const processedSubmissions = submissions?.map((sub: any) => ({
@@ -428,44 +414,11 @@ export function InstructorTeamGradingPanel({
               )}
             </div>
 
-            {(() => {
-              const assignedMember = teamMembers.find(m => m.user_id === currentProgress?.assigned_to);
-              if (!assignedMember) return null;
-
-              const initials = (assignedMember.profiles?.full_name || assignedMember.profiles?.username || "")
-                .split(" ")
-                .map(s => s[0])
-                .join("")
-                .slice(0,2)
-                .toUpperCase();
-
-              return (
-                <div className="flex items-center gap-3 mb-3">
-                  {/* Avatar or initials fallback */}
-                  {assignedMember.profiles?.avatar_url ? (
-                    <img
-                      src={assignedMember.profiles.avatar_url}
-                      alt={assignedMember.profiles?.username || assignedMember.profiles?.full_name || "avatar"}
-                      className="h-10 w-10 rounded-full object-cover border"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700 border">
-                      {initials || "?"}
-                    </div>
-                  )}
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">{assignedMember.profiles?.username || assignedMember.profiles?.full_name || "Unknown"}</span>
-                      <Badge variant="secondary" className="text-xs">Assigned</Badge>
-                    </div>
-                    {assignedMember.profiles?.full_name && (
-                      <div className="text-sm text-muted-foreground">{assignedMember.profiles.full_name}</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+            {currentProgress?.assigned_to && (
+              <div className="text-sm text-muted-foreground mb-2">
+                Assigned to: {teamMembers.find(m => m.user_id === currentProgress.assigned_to)?.profiles?.username || "Unknown"}
+              </div>
+            )}
 
             {currentProgress?.help_request_message && (
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
@@ -495,74 +448,37 @@ export function InstructorTeamGradingPanel({
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {teamMembers.map((member) => {
-                const isAssigned = member.user_id === currentProgress?.assigned_to;
-                const initials = (member.profiles?.full_name || member.profiles?.username || "")
-                  .split(" ")
-                  .map(s => s[0])
-                  .join("")
-                  .slice(0,2)
-                  .toUpperCase();
-
-                return (
-                  <div
-                    key={member.user_id}
-                    className={`flex items-center justify-between p-2 rounded ${isAssigned ? 'border-2 border-primary bg-primary/5' : 'border'} `}
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* Avatar or initials */}
-                      {member.profiles?.avatar_url ? (
-                        <img
-                          src={member.profiles.avatar_url}
-                          alt={member.profiles?.username || member.profiles?.full_name || "avatar"}
-                          className="h-8 w-8 rounded-full object-cover border"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700 border">
-                          {initials || "?"}
-                        </div>
-                      )}
-
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`font-medium ${isAssigned ? 'text-primary' : ''}`}>{member.profiles?.username || member.profiles?.full_name || "Unknown"}</span>
-                          {member.is_leader && (
-                            <Crown className="h-4 w-4 text-amber-500" />
-                          )}
-                          {isAssigned && (
-                            <Badge variant="destructive" className="text-xs">
-                              Assigned
-                            </Badge>
-                          )}
-                        </div>
-                        {member.profiles?.full_name && (
-                          <div className="text-sm text-muted-foreground">{member.profiles.full_name}</div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Individual member progress for this node */}
-                    {currentProgress?.member_progress && (
-                      <div>
-                        {(() => {
-                          const memberProgress = currentProgress.member_progress.find(
-                            (mp: any) => mp.profiles?.username === member.profiles?.username
-                          );
-                          return memberProgress ? (
-                            <Badge variant="outline" className="text-xs">
-                              {memberProgress.status}
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-xs">
-                              Not Started
-                            </Badge>
-                          );
-                        })()}
-                      </div>
+              {teamMembers.map((member) => (
+                <div key={member.user_id} className="flex items-center justify-between p-2 border rounded">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>{member.profiles?.username || member.profiles?.full_name || "Unknown"}</span>
+                    {member.is_leader && (
+                      <Crown className="h-4 w-4 text-amber-500" title="Team Leader" />
                     )}
                   </div>
-                );
-              })}
+                  
+                  {/* Individual member progress for this node */}
+                  {currentProgress?.member_progress && (
+                    <div>
+                      {(() => {
+                        const memberProgress = currentProgress.member_progress.find(
+                          (mp: any) => mp.profiles?.username === member.profiles?.username
+                        );
+                        return memberProgress ? (
+                          <Badge variant="outline" className="text-xs">
+                            {memberProgress.status}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            Not Started
+                          </Badge>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
