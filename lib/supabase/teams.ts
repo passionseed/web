@@ -1097,7 +1097,6 @@ export const getClassroomTeamMaps = async (
   serverClient?: SupabaseClient<any, "public", any> // Add optional server client parameter
 ) => {
   const supabase = serverClient || createClient();
-  console.log("🔍 getClassroomTeamMaps called with classroomId:", classroomId);
 
   const {
     data: { user },
@@ -1170,7 +1169,6 @@ export const getClassroomTeamMaps = async (
 
   // If not an instructor, only show maps for teams the user is in
   if (!isInstructor) {
-    console.log("🔍 Non-instructor: Getting user's teams in classroom");
     // Get user's team IDs in this classroom
     const { data: userTeams, error: userTeamsError } = await supabase
       .from("team_memberships")
@@ -1186,7 +1184,6 @@ export const getClassroomTeamMaps = async (
       .eq("classroom_teams.classroom_id", classroomId)
       .is("left_at", null);
 
-    console.log("🔍 User teams query result:", { userTeams, userTeamsError });
 
     if (userTeamsError) {
       console.error("❌ User teams fetch error:", userTeamsError);
@@ -1202,12 +1199,10 @@ export const getClassroomTeamMaps = async (
     }
 
     query = query.in("team_id", teamIds);
-    console.log("🔍 Filtered query to user's teams:", teamIds);
   } else {
     console.log("👨‍🏫 Instructor: Will see all team maps in classroom");
   }
 
-  console.log("🔍 Executing team maps query...");
   const { data: teamMaps, error: teamMapsError } = await query.order(
     "created_at",
     { ascending: false }
@@ -1233,7 +1228,6 @@ export const getClassroomTeamMaps = async (
   }
 
   // Check if there are any team maps at all for debugging
-  console.log("🔍 Checking total team maps in database...");
   const { data: allTeamMaps, error: allTeamMapsError } = await supabase
     .from("classroom_team_maps")
     .select("id, team_id, map_id, classroom_teams!team_id(classroom_id)")

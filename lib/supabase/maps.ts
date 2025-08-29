@@ -531,7 +531,6 @@ export const createMap = async (
     full_name: profile.full_name,
     username: profile.username,
   });
-  console.log("🔍 DEBUG: Available profile properties:", Object.keys(profile));
 
   // Step 3: Attempt to create the map with detailed error reporting
   console.log("🗺️ Step 3: Creating map in database...");
@@ -670,14 +669,12 @@ export const forkMapForTeam = async (
       .eq("id", teamId)
       .single();
 
-    console.log("🔍 Team lookup:", { team: teamFromDb, teamError });
     if (teamError || !teamFromDb) {
       console.error("Team lookup failed", teamError);
       throw new Error("TEAM_NOT_FOUND_OR_NOT_IN_CLASSROOM");
     }
     team = teamFromDb;
   } else {
-    console.log("🔍 Using provided team data:", { team });
   }
 
   // 3) Prevent duplicate fork for same original map and team

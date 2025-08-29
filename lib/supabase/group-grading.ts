@@ -284,7 +284,6 @@ export const getGroupAllSubmissions = async (
   const supabase = createClient();
 
   try {
-    console.log("🔍 RADICAL DEBUG - Fetching submissions for group:", groupId, "map:", mapId);
     
     if (!mapId || mapId.trim() === '') {
       console.error("❌ EMPTY MAP ID - Component passed empty/undefined mapId!");

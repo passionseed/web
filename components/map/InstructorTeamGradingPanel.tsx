@@ -26,7 +26,6 @@ import {
   User,
   Crown,
   FileText,
-  Eye,
   Send,
   MessageCircle
 } from "lucide-react";
