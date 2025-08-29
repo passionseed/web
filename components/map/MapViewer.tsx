@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Controls,
   ReactFlow,
@@ -125,47 +125,34 @@ export function MapViewer({ map }: MapViewerProps) {
   // Role detection for instructor/TA functionality
   const { user: authUser, userRoles, isAuthenticated } = useAuth();
 
-  // RADICAL DEBUG: Log raw userRoles from useAuth hook
-  console.log("🔍 RADICAL DEBUG - RAW USEAUTH DATA:", {
-    email: authUser?.email,
-    userRoles,
-    isAuthenticated,
-    userRolesType: typeof userRoles,
-    userRolesArray: Array.isArray(userRoles) ? userRoles : 'not array'
-  });
 
   // Use a strict union for roles to satisfy prop typing
   type UserRole = "instructor" | "TA" | "student" | "admin";
-  const globalUserRole: UserRole = userRoles?.includes("admin")
-    ? "admin"
-    : userRoles?.includes("instructor")
-    ? "instructor"
-    : userRoles?.includes("TA")
-      ? "TA"
-      : "student";
+  const globalUserRole: UserRole = useMemo(() => {
+    return userRoles?.includes("admin")
+      ? "admin"
+      : userRoles?.includes("instructor")
+      ? "instructor"
+      : userRoles?.includes("TA")
+        ? "TA"
+        : "student";
+  }, [userRoles]);
 
   // Normalize classroom role into the union or ignore if unknown
-  const roleFromClassroom =
-    classroomRole === "instructor" ||
-    classroomRole === "TA" ||
-    classroomRole === "student"
-      ? (classroomRole as UserRole)
-      : null;
+  const roleFromClassroom = useMemo(() => {
+    return classroomRole === "instructor" ||
+      classroomRole === "TA" ||
+      classroomRole === "student"
+        ? (classroomRole as UserRole)
+        : null;
+  }, [classroomRole]);
 
   // Use classroom role if available, otherwise fall back to global role
   const userRole: UserRole = roleFromClassroom ?? globalUserRole;
-  const isInstructorOrTA = userRole === "instructor" || userRole === "TA" || userRole === "admin";
+  const isInstructorOrTA = useMemo(() => {
+    return userRole === "instructor" || userRole === "TA" || userRole === "admin";
+  }, [userRole]);
 
-  // RADICAL DEBUG: Log all role information
-  console.log("🔍 RADICAL DEBUG - USER ROLES:", {
-    email: currentUser?.email,
-    globalUserRole,
-    roleFromClassroom, 
-    classroomRole,
-    finalUserRole: userRole,
-    isInstructorOrTA,
-    canSeeGrading: isInstructorOrTA
-  });
 
   console.log(
     "🗺️ [MapViewer] Rendering map:",
@@ -299,7 +286,7 @@ export function MapViewer({ map }: MapViewerProps) {
     getUser();
   }, []);
 
-  const loadAllProgress = async () => {
+  const loadAllProgress = useCallback(async () => {
     if (!currentUser) return;
 
     try {
@@ -333,9 +320,9 @@ export function MapViewer({ map }: MapViewerProps) {
       console.error("❌ [MapViewer] Error loading progress:", error);
       setProgressMap({}); // Fallback to empty progress
     }
-  };
+  }, [currentUser, map.id, isTeamMap, isInstructorOrTA, teamId]);
 
-  const loadAllSubmissions = async () => {
+  const loadAllSubmissions = useCallback(async () => {
     if (!isInstructorOrTA) return;
 
     setIsLoadingSubmissions(true);
@@ -347,7 +334,7 @@ export function MapViewer({ map }: MapViewerProps) {
     } finally {
       setIsLoadingSubmissions(false);
     }
-  };
+  }, [isInstructorOrTA, map.id]);
 
   useEffect(() => {
     if (currentUser) {

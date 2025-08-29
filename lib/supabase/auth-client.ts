@@ -42,16 +42,6 @@ export const checkClientAuth = async (
       .select("role")
       .eq("user_id", user.id);
 
-    // RADICAL DEBUG: Log role query results
-    console.log("🔍 RADICAL DEBUG - ROLE QUERY:", {
-      email: user.email,
-      userId: user.id,
-      roles: roles,
-      roleError: roleError,
-      requiredRole,
-      rawRolesData: JSON.stringify(roles),
-      rolesLength: roles?.length || 0
-    });
 
     if (roleError) {
       console.error("Error checking user roles:", roleError);
@@ -66,13 +56,6 @@ export const checkClientAuth = async (
     const userRoles = roles?.map((r) => r.role as UserRole) || [];
     const hasRole = requiredRole ? userRoles.includes(requiredRole) : true;
 
-    // RADICAL DEBUG: Log final role calculation
-    console.log("🔍 RADICAL DEBUG - FINAL ROLES:", {
-      email: user.email,
-      userRoles,
-      requiredRole,
-      hasRole
-    });
 
     return {
       user,

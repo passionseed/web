@@ -8,7 +8,6 @@ import { getUserClassrooms } from "@/lib/supabase/classroom-memberships";
 export default async function TeamsPage() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
-  console.log("🔐 Auth data:xxx", { data, error });
   if (error || !data?.user) {
     redirect("/login");
   }
@@ -36,33 +35,43 @@ export default async function TeamsPage() {
         description: m.classrooms?.description || null,
       }));
 
-    // Get user's teams across all student classrooms
-    const userTeams = [];
-    const teamMaps = [];
-
-    for (const classroom of studentClassrooms) {
+    // Get user's teams across all student classrooms in parallel
+    const classroomDataPromises = studentClassrooms.map(async (classroom) => {
       try {
-        // Get teams for this classroom
-        const classroomTeams = await getClassroomTeams(classroom.id, supabase);
+        // Run both queries in parallel for each classroom
+        const [classroomTeams, classroomTeamMaps] = await Promise.all([
+          getClassroomTeams(classroom.id, supabase),
+          getClassroomTeamMaps(classroom.id)
+        ]);
+
         const userTeamsInClassroom = classroomTeams.filter(
           (team) => team.current_user_membership
         );
-        userTeams.push(...userTeamsInClassroom);
-
-        // Get team maps for this classroom
-        const classroomTeamMaps = await getClassroomTeamMaps(classroom.id);
+        
         const userTeamIds = userTeamsInClassroom.map((team) => team.id);
         const userTeamMaps = classroomTeamMaps.filter((map) =>
           userTeamIds.includes(map.team_id)
         );
-        teamMaps.push(...userTeamMaps);
+
+        return {
+          userTeams: userTeamsInClassroom,
+          teamMaps: userTeamMaps
+        };
       } catch (error) {
         console.error(
           `Error loading data for classroom ${classroom.id}:`,
           error
         );
+        return { userTeams: [], teamMaps: [] };
       }
-    }
+    });
+
+    // Wait for all classroom data to load in parallel
+    const classroomResults = await Promise.all(classroomDataPromises);
+
+    // Flatten results
+    const userTeams = classroomResults.flatMap(result => result.userTeams);
+    const teamMaps = classroomResults.flatMap(result => result.teamMaps);
 
     return (
       <div className="container mx-auto py-8 px-4">
