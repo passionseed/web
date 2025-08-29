@@ -38,6 +38,7 @@ import {
   getTeamMembers,
   clearHelpRequest,
 } from "@/lib/supabase/team-progress";
+import { FileSubmissionViewer } from "./FileSubmissionViewer";
 
 interface InstructorTeamGradingPanelProps {
   selectedNode: Node<Record<string, unknown> & MapNode> | null;
@@ -607,21 +608,7 @@ export function InstructorTeamGradingPanel({
 
                       {submission.file_urls && submission.file_urls.length > 0 && (
                         <div className="bg-green-50 p-3 rounded">
-                          <p className="text-sm font-medium mb-2">Files:</p>
-                          <div className="space-y-1">
-                            {submission.file_urls.map((url, fileIndex) => (
-                              <a
-                                key={fileIndex}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                              >
-                                <Eye className="h-3 w-3" />
-                                File {fileIndex + 1}
-                              </a>
-                            ))}
-                          </div>
+                          <FileSubmissionViewer fileUrls={submission.file_urls} />
                         </div>
                       )}
 

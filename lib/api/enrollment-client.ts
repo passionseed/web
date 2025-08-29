@@ -99,9 +99,18 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
     });
 
     if (!response.ok) {
+      let errorDetails = {};
+      try {
+        errorDetails = await response.json();
+      } catch (e) {
+        errorDetails = { message: "Could not parse error response" };
+      }
+      
       console.error("❌ [Enrollment Client] API response not ok:", {
         status: response.status,
         statusText: response.statusText,
+        errorDetails,
+        url: `/api/maps/${mapId}/enroll`,
       });
       return false;
     }

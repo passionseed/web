@@ -16,6 +16,7 @@ export async function POST(
 
     // Initialize Supabase client and authenticate
     const supabase = await createClient();
+    console.log("🔑 [Enroll API] Supabase client created");
     const {
       data: { user },
       error: authError,
