@@ -43,6 +43,7 @@ import {
 } from "../ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/utils/supabase/client";
+import { FileSubmissionViewer } from "./FileSubmissionViewer";
 
 interface InstructorGradingPanelProps {
   mapId: string;
@@ -289,7 +290,7 @@ export function InstructorGradingPanel({
             </div>
 
             {/* Submission Content Preview */}
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 space-y-3">
               {submission.text_answer && (
                 <div>
                   <strong>Answer:</strong>{" "}
@@ -298,12 +299,11 @@ export function InstructorGradingPanel({
                     : submission.text_answer}
                 </div>
               )}
+              
               {submission.file_urls && submission.file_urls.length > 0 && (
-                <div>
-                  <strong>Files:</strong> {submission.file_urls.length} file(s)
-                  uploaded
-                </div>
+                <FileSubmissionViewer fileUrls={submission.file_urls} />
               )}
+              
               {submission.quiz_answers && (
                 <div>
                   <strong>Quiz:</strong>{" "}
