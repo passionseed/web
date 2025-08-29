@@ -36,7 +36,7 @@ export async function GET(
 
     const teams = await getClassroomTeams(params.id);
 
-    let response: any = { teams };
+    const response: any = { teams };
     console.log("Teams fetched: sdf", teams.length);
     if (includeStats) {
       const stats = await getClassroomTeamStats(params.id);

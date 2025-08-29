@@ -365,7 +365,7 @@ export const getMapsWithStats = async (): Promise<
       // Determine map type and source info
       let mapType: "personal" | "classroom" | "team" | "forked" | "public" =
         "public";
-      let sourceInfo: any = {};
+      const sourceInfo: any = {};
 
       if (user) {
         // Check if it's the user's own map

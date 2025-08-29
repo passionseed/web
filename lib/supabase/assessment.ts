@@ -215,7 +215,7 @@ const autoGradeQuizSubmission = async (submission: any) => {
 
     // Calculate score
     let correctAnswers = 0;
-    let totalQuestions = quizQuestions.length;
+    const totalQuestions = quizQuestions.length;
 
     for (const question of quizQuestions) {
       const studentAnswer = studentAnswers[question.id];

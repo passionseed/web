@@ -134,8 +134,8 @@ export const getClassroomGroups = async (
   const groupIds = groups.map(group => group.id);
 
   // Try to get member counts only (avoiding the RLS recursion issue)
-  let memberCounts: { [key: string]: number } = {};
-  let allMembers: any[] = [];
+  const memberCounts: { [key: string]: number } = {};
+  const allMembers: any[] = [];
 
   // First, try to get just counts to avoid the recursion issue
   for (const groupId of groupIds) {

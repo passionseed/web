@@ -122,11 +122,10 @@ export interface NodeAssessment {
   id: string; // uuid
   node_id: string; // uuid
   assessment_type: AssessmentType;
-  metadata?: any; // jsonb column for storing checklist items and other assessment metadata
+  metadata?: Record<string, any> | null; // jsonb for checklist items and other metadata
   quiz_questions?: QuizQuestion[]; // Optional relation for quizzes
   points_possible?: number | null;
   is_graded?: boolean;
-  metadata?: Record<string, any> | null; // jsonb for checklist items and other metadata
 }
 
 export interface QuizQuestion {
