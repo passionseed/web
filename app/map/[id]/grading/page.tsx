@@ -50,7 +50,7 @@ export default async function GradingPage({
   }
 
   // Filter submissions by assignment if specified
-  let filteredSubmissions = submissions;
+  const filteredSubmissions = submissions;
   if (assignmentId) {
     // TODO: Add assignment filtering logic here
     // For now, we'll show all submissions but could filter by assignment_enrollments

@@ -139,6 +139,34 @@ export function InstructorTeamGradingPanel({
     try {
       const supabase = createClient();
       
+      // First get team member user IDs
+      const { data: teamMemberIds } = await supabase
+        .from("team_memberships")
+        .select("user_id")
+        .eq("team_id", teamId)
+        .is("left_at", null);
+
+      if (!teamMemberIds || teamMemberIds.length === 0) {
+        setTeamSubmissions([]);
+        return;
+      }
+
+      const userIds = teamMemberIds.map(tm => tm.user_id);
+
+      // Get progress IDs for team members on this node
+      const { data: progressIds } = await supabase
+        .from("student_node_progress")
+        .select("id")
+        .eq("node_id", selectedNode!.id)
+        .in("user_id", userIds);
+
+      if (!progressIds || progressIds.length === 0) {
+        setTeamSubmissions([]);
+        return;
+      }
+
+      const progressIdsList = progressIds.map(p => p.id);
+
       // Get all submissions from team members for this assessment
       const { data: submissions } = await supabase
         .from("assessment_submissions")
@@ -161,21 +189,7 @@ export function InstructorTeamGradingPanel({
           )
         `)
         .eq("assessment_id", assessment.id)
-        .in(
-          "progress_id",
-          supabase
-            .from("student_node_progress")
-            .select("id")
-            .eq("node_id", selectedNode!.id)
-            .in(
-              "user_id",
-              supabase
-                .from("team_memberships")
-                .select("user_id")
-                .eq("team_id", teamId)
-                .is("left_at", null)
-            )
-        )
+        .in("progress_id", progressIdsList)
         .order("submitted_at", { ascending: false });
 
       const processedSubmissions = submissions?.map((sub: any) => ({
@@ -361,7 +375,16 @@ export function InstructorTeamGradingPanel({
     
     if (!question) return answer;
     
-    const options = question.options as string[];
+    // Handle different quiz option formats
+    let options: string[] = [];
+    if (Array.isArray(question.options)) {
+      if (typeof question.options[0] === 'string') {
+        options = question.options as unknown as string[];
+      } else if (question.options[0] && typeof question.options[0] === 'object' && 'text' in question.options[0]) {
+        options = (question.options as unknown as Array<{text: string}>).map(opt => opt.text);
+      }
+    }
+    
     const optionIndex = parseInt(answer);
     return options[optionIndex] || answer;
   };
@@ -454,7 +477,7 @@ export function InstructorTeamGradingPanel({
                     <User className="h-4 w-4" />
                     <span>{member.profiles?.username || member.profiles?.full_name || "Unknown"}</span>
                     {member.is_leader && (
-                      <Crown className="h-4 w-4 text-amber-500" title="Team Leader" />
+                      <Crown className="h-4 w-4 text-amber-500" />
                     )}
                   </div>
                   

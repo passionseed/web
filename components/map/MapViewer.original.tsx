@@ -492,7 +492,7 @@ export function MapViewer({ map }: MapViewerProps) {
       const spriteUrl = data.sprite_url || "/islands/crystal.png";
 
       // Determine node state and styling
-      let overlayColor = "";
+      const overlayColor = "";
       let statusIcon = null;
       let glowEffect = "";
       let brightness = "brightness(1)";

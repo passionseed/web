@@ -257,10 +257,10 @@ export async function getUserDashboardData(supabase: SupabaseClient) {
     );
     const uniqueDates = [...new Set(reflectionDates)];
 
-    let today = new Date();
+    const today = new Date();
     if (uniqueDates.includes(today.toDateString())) {
       streak = 1;
-      let yesterday = new Date();
+      const yesterday = new Date();
       yesterday.setDate(today.getDate() - 1);
       while (uniqueDates.includes(yesterday.toDateString())) {
         streak++;

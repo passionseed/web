@@ -146,7 +146,10 @@ export function StudentTeamDashboard({
             {teamMapsForCurrentTeam.length > 0 && (
               <TeamMapsPanel
                 teamMaps={teamMapsForCurrentTeam}
-                onMapsUpdated={loadTeamMaps}
+                onMapsUpdated={() => {
+                  // TODO: Implement team maps refresh logic
+                  console.log("Team maps updated - refresh needed");
+                }}
               />
             )}
           </div>

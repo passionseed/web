@@ -151,122 +151,120 @@ export function MapEnrollmentDialog({
   const categoryIcon = getCategoryIcon(map.category);
 
   const renderWelcomeContent = () => (
-    <>
-      <DialogHeader className="text-center space-y-4">
-        <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-full flex items-center justify-center text-4xl border-2 border-blue-600/30 animate-pulse">
+    <div className="space-y-4 sm:space-y-6">
+      <DialogHeader className="text-center space-y-3 sm:space-y-4">
+        <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-full flex items-center justify-center text-3xl sm:text-4xl border-2 border-blue-600/30 animate-pulse">
           {categoryIcon}
         </div>
-        <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+        <DialogTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
           Ready to Start Your Adventure?
         </DialogTitle>
-        <DialogDescription className="text-lg text-gray-300">
+        <DialogDescription className="text-base sm:text-lg text-gray-300">
           You're about to embark on an exciting learning journey through{" "}
-          <span className="font-semibold text-blue-400">{map.title}</span>
+          <span className="font-semibold text-blue-400 break-words">{map.title}</span>
         </DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-6">
-        {/* Map Preview Card */}
-        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-          <h3 className="font-semibold text-lg mb-2 text-gray-100">
-            {map.title}
-          </h3>
-          <p className="text-gray-400 text-sm mb-4">
-            {map.description ||
-              "Embark on an exciting learning journey through interactive islands"}
-          </p>
+      {/* Map Preview Card */}
+      <div className="bg-slate-800/50 rounded-lg p-3 sm:p-4 border border-slate-700">
+        <h3 className="font-semibold text-base sm:text-lg mb-2 text-gray-100 break-words hyphens-auto">
+          {map.title}
+        </h3>
+        <p className="text-gray-400 text-sm mb-3 sm:mb-4 break-words hyphens-auto">
+          {map.description ||
+            "Embark on an exciting learning journey through interactive islands"}
+        </p>
 
-          {/* Difficulty and Stats */}
-          <div className="flex items-center gap-3 mb-4">
-            <Badge
-              className={`${difficultyInfo.bgColor} ${difficultyInfo.color} ${difficultyInfo.borderColor} border`}
-            >
-              <Star className="h-3 w-3 mr-1" />
-              {difficultyInfo.label}
+        {/* Difficulty and Stats */}
+        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 flex-wrap">
+          <Badge
+            className={`${difficultyInfo.bgColor} ${difficultyInfo.color} ${difficultyInfo.borderColor} border`}
+          >
+            <Star className="h-3 w-3 mr-1" />
+            {difficultyInfo.label}
+          </Badge>
+          {map.node_count > 10 && (
+            <Badge className="bg-yellow-900/20 text-yellow-400 border-yellow-500/50 border">
+              <Crown className="h-3 w-3 mr-1" />
+              Epic Journey
             </Badge>
-            {map.node_count > 10 && (
-              <Badge className="bg-yellow-900/20 text-yellow-400 border-yellow-500/50 border">
-                <Crown className="h-3 w-3 mr-1" />
-                Epic Journey
-              </Badge>
-            )}
-          </div>
-
-          <div className="text-sm text-gray-400 mb-4">
-            {difficultyInfo.description}
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-3 text-sm">
-            <div className="text-center">
-              <Map className="h-5 w-5 mx-auto mb-1 text-blue-400" />
-              <div className="font-medium text-blue-200">{map.node_count}</div>
-              <div className="text-blue-400 text-xs">Islands</div>
-            </div>
-            <div className="text-center">
-              <Target className="h-5 w-5 mx-auto mb-1 text-green-400" />
-              <div className="font-medium text-green-200">
-                {map.total_assessments}
-              </div>
-              <div className="text-green-400 text-xs">Quests</div>
-            </div>
-            <div className="text-center">
-              <Users className="h-5 w-5 mx-auto mb-1 text-purple-400" />
-              <div className="font-medium text-purple-200">
-                {map.total_students || 0}
-              </div>
-              <div className="text-purple-400 text-xs">Explorers</div>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* What to expect */}
-        <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg p-4 border border-blue-700/30">
-          <h4 className="font-semibold text-blue-300 mb-3 flex items-center gap-2">
-            <Compass className="h-4 w-4" />
-            What to Expect
-          </h4>
-          <ul className="space-y-2 text-sm text-gray-300">
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
-              Interactive learning through gamified islands
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
-              Hands-on quests and assessments
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-              Progress tracking and achievements
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
-              Community leaderboards and recognition
-            </li>
-          </ul>
+        <div className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">
+          {difficultyInfo.description}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-4">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="flex-1 border-slate-600 hover:bg-slate-700 text-gray-200"
-          >
-            Maybe Later
-          </Button>
-          <Button
-            onClick={handleEnroll}
-            disabled={isEnrolling}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-lg shadow-blue-900/50"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Start Adventure
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
+          <div className="text-center">
+            <Map className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-1 text-blue-400" />
+            <div className="font-medium text-blue-200">{map.node_count}</div>
+            <div className="text-blue-400 text-xs">Islands</div>
+          </div>
+          <div className="text-center">
+            <Target className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-1 text-green-400" />
+            <div className="font-medium text-green-200">
+              {map.total_assessments}
+            </div>
+            <div className="text-green-400 text-xs">Quests</div>
+          </div>
+          <div className="text-center">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-1 text-purple-400" />
+            <div className="font-medium text-purple-200">
+              {map.total_students || 0}
+            </div>
+            <div className="text-purple-400 text-xs">Explorers</div>
+          </div>
         </div>
       </div>
-    </>
+
+      {/* What to expect */}
+      <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg p-3 sm:p-4 border border-blue-700/30">
+        <h4 className="font-semibold text-blue-300 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+          <Compass className="h-4 w-4" />
+          What to Expect
+        </h4>
+        <ul className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-300">
+          <li className="flex items-start gap-2">
+            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-1.5 flex-shrink-0"></div>
+            <span className="break-words">Interactive learning through gamified islands</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-1.5 flex-shrink-0"></div>
+            <span className="break-words">Hands-on quests and assessments</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full mt-1.5 flex-shrink-0"></div>
+            <span className="break-words">Progress tracking and achievements</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full mt-1.5 flex-shrink-0"></div>
+            <span className="break-words">Community leaderboards and recognition</span>
+          </li>
+        </ul>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 sm:gap-3 pt-4 sm:pt-6 mt-3 sm:mt-4 border-t border-slate-700/50">
+        <Button
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          className="flex-1 border-slate-600 hover:bg-slate-700 text-gray-200 text-sm sm:text-base py-2 sm:py-3"
+        >
+          Maybe Later
+        </Button>
+        <Button
+          onClick={handleEnroll}
+          disabled={isEnrolling}
+          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-lg shadow-blue-900/50 font-semibold text-sm sm:text-base py-2 sm:py-3"
+        >
+          <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          Start Adventure
+          <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+        </Button>
+      </div>
+    </div>
   );
 
   const renderEnrollingContent = () => (
@@ -313,7 +311,9 @@ export function MapEnrollmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-slate-900 border-slate-700 text-white">
+      <DialogContent 
+        className="max-w-lg w-[95vw] sm:w-full bg-slate-900 border-slate-700 text-white max-h-[90vh] overflow-hidden p-4 sm:p-6"
+      >
         {enrollmentStep === "welcome" && renderWelcomeContent()}
         {enrollmentStep === "enrolling" && renderEnrollingContent()}
         {enrollmentStep === "success" && renderSuccessContent()}
