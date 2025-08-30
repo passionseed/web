@@ -11,6 +11,7 @@ import {
   submitNodeProgress as apiSubmitNodeProgress,
   type StudentProgress,
 } from "@/lib/api/progress-client";
+import { dedupeRequest, createCacheKey } from "@/lib/utils/request-deduplication";
 
 import {
   LearningMap,
@@ -74,20 +75,24 @@ export async function getStudentProgress(
 export async function loadAllProgress(
   mapId: string
 ): Promise<Record<string, StudentProgress>> {
-  console.log("🗺️ [Progress] Loading all progress for map:", mapId);
+  const cacheKey = createCacheKey('map-progress', mapId);
+  
+  return dedupeRequest(cacheKey, async () => {
+    console.log("🗺️ [Progress] Loading all progress for map:", mapId);
 
-  try {
-    const result = await getMapProgress(mapId);
-    console.log(
-      "✅ [Progress] Successfully loaded progress for",
-      Object.keys(result).length,
-      "nodes"
-    );
-    return result;
-  } catch (error) {
-    console.error("❌ [Progress] Error loading all progress:", error);
-    return {};
-  }
+    try {
+      const result = await getMapProgress(mapId);
+      console.log(
+        "✅ [Progress] Successfully loaded progress for",
+        Object.keys(result).length,
+        "nodes"
+      );
+      return result;
+    } catch (error) {
+      console.error("❌ [Progress] Error loading all progress:", error);
+      return {};
+    }
+  });
 }
 
 /**

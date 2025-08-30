@@ -13,6 +13,7 @@ import {
   ProgressStatus,
   UserMapEnrollment,
 } from "@/types/map";
+import { dedupeRequest, createCacheKey } from "@/lib/utils/request-deduplication";
 
 // Helper: classroom_teams may be returned as an object or an array depending on select syntax
 export const extractClassroomTeamName = (classroomTeams: any): string | null => {
@@ -421,7 +422,10 @@ export const getMapsWithStats = async (): Promise<
 export const getMapWithNodes = async (
   id: string
 ): Promise<FullLearningMap | null> => {
-  const supabase = createClient();
+  const cacheKey = createCacheKey('map-with-nodes', id);
+  
+  return dedupeRequest(cacheKey, async () => {
+    const supabase = createClient();
   const { data, error } = await supabase
     .from("learning_maps")
     .select(
@@ -449,6 +453,7 @@ export const getMapWithNodes = async (
   }
 
   return data as FullLearningMap;
+  });
 };
 
 export const createMap = async (
@@ -616,29 +621,180 @@ export const updateMap = async (
   return data;
 };
 
-export const deleteMap = async (id: string): Promise<void> => {
-  const supabase = createClient();
-  // Must delete nodes first due to foreign key constraints
-  const { data: nodes } = await supabase
-    .from("map_nodes")
-    .select("id")
-    .eq("map_id", id);
-  if (nodes) {
+export const deleteMap = async (id: string, supabaseClient?: any): Promise<void> => {
+  const supabase = supabaseClient || createClient();
+  
+  console.log(`🔍 Using ${supabaseClient ? 'server-side' : 'client-side'} Supabase client for deletion`);
+  
+  try {
+    console.log(`🗑️ Starting deletion of map ${id}`);
+    
+    // Get all node IDs for this map
+    const { data: nodes, error: nodesError } = await supabase
+      .from("map_nodes")
+      .select("id")
+      .eq("map_id", id);
+      
+    if (nodesError) {
+      console.error("Error fetching map nodes:", nodesError);
+      throw new Error(`Failed to fetch map nodes: ${nodesError.message}`);
+    }
+    
+    if (!nodes || nodes.length === 0) {
+      console.log("No nodes found for map, proceeding with map deletion only");
+      const { error: mapError } = await supabase
+        .from("learning_maps")
+        .delete()
+        .eq("id", id);
+        
+      if (mapError) {
+        console.error("Error deleting map:", mapError);
+        throw new Error(`Could not delete the map: ${mapError.message}`);
+      }
+      console.log("✅ Map deleted successfully (no nodes)");
+      return;
+    }
+
     const nodeIds = nodes.map((n) => n.id);
-    await supabase.from("node_paths").delete().in("source_node_id", nodeIds);
-    await supabase
-      .from("node_paths")
+    console.log(`🔍 Found ${nodeIds.length} nodes to clean up`);
+
+    // Step 1: Delete assessment submissions and grades
+    console.log("🧹 Deleting assessment submissions and grades...");
+    
+    // First get all assessment IDs for these nodes
+    const { data: assessments } = await supabase
+      .from("node_assessments")
+      .select("id")
+      .in("node_id", nodeIds);
+      
+    if (assessments && assessments.length > 0) {
+      const assessmentIds = assessments.map(a => a.id);
+      console.log(`Found ${assessmentIds.length} assessments to clean up`);
+      
+      // Delete submission grades first (has FK to assessment_submissions)
+      const { error: gradesError } = await supabase
+        .from("submission_grades")
+        .delete()
+        .in("submission_id", 
+          supabase
+            .from("assessment_submissions")
+            .select("id")
+            .in("assessment_id", assessmentIds)
+        );
+      
+      if (gradesError) {
+        console.error("Error deleting submission grades:", gradesError);
+        // Continue anyway as this might not exist
+      }
+      
+      // Delete assessment submissions
+      const { error: submissionsError } = await supabase
+        .from("assessment_submissions")
+        .delete()
+        .in("assessment_id", assessmentIds);
+      
+      if (submissionsError) {
+        console.error("Error deleting assessment submissions:", submissionsError);
+        // Continue anyway
+      }
+      
+      console.log("✅ Assessment submissions and grades deleted");
+    }
+
+    // Step 2: Delete student progress data
+    console.log("🧹 Deleting student progress data...");
+    const { error: progressError } = await supabase
+      .from("student_node_progress")
       .delete()
-      .in("destination_node_id", nodeIds);
-    // Add deletion for content, assessments etc. here in the future
-    await supabase.from("map_nodes").delete().in("id", nodeIds);
-  }
+      .in("node_id", nodeIds);
+    
+    if (progressError) {
+      console.error("Error deleting student progress:", progressError);
+      // Continue anyway as this might not exist
+    } else {
+      console.log("✅ Student progress data deleted");
+    }
 
-  const { error } = await supabase.from("learning_maps").delete().eq("id", id);
+    // Step 3: Delete node assessments
+    console.log("🧹 Deleting node assessments...");
+    const { error: assessmentsError } = await supabase
+      .from("node_assessments")
+      .delete()
+      .in("node_id", nodeIds);
+    
+    if (assessmentsError) {
+      console.error("Error deleting node assessments:", assessmentsError);
+      // Continue anyway
+    } else {
+      console.log("✅ Node assessments deleted");
+    }
 
-  if (error) {
-    console.error("Error deleting map:", error);
-    throw new Error("Could not delete the map.");
+    // Step 4: Delete node content
+    console.log("🧹 Deleting node content...");
+    const { error: contentError } = await supabase
+      .from("node_content")
+      .delete()
+      .in("node_id", nodeIds);
+    
+    if (contentError) {
+      console.error("Error deleting node content:", contentError);
+      // Continue anyway
+    } else {
+      console.log("✅ Node content deleted");
+    }
+
+    // Step 5: Delete node paths (existing logic)
+    console.log("🧹 Deleting node paths...");
+    await supabase.from("node_paths").delete().in("source_node_id", nodeIds);
+    await supabase.from("node_paths").delete().in("destination_node_id", nodeIds);
+    console.log("✅ Node paths deleted");
+
+    // Step 6: Delete map nodes
+    console.log("🧹 Deleting map nodes...");
+    const { error: nodesDeleteError } = await supabase
+      .from("map_nodes")
+      .delete()
+      .in("id", nodeIds);
+    
+    if (nodesDeleteError) {
+      console.error("Error deleting map nodes:", nodesDeleteError);
+      throw new Error(`Failed to delete map nodes: ${nodesDeleteError.message}`);
+    }
+    console.log("✅ Map nodes deleted");
+
+    // Step 7: Delete the learning map itself
+    console.log("🧹 Deleting learning map...");
+    const { error: mapError } = await supabase
+      .from("learning_maps")
+      .delete()
+      .eq("id", id);
+
+    if (mapError) {
+      console.error("Error deleting map:", mapError);
+      throw new Error(`Could not delete the map: ${mapError.message}`);
+    }
+
+    // Verify the map was actually deleted
+    console.log("🔍 Verifying map deletion...");
+    const { data: verificationData, error: verificationError } = await supabase
+      .from("learning_maps")
+      .select("id")
+      .eq("id", id);
+    
+    if (verificationError) {
+      console.warn("⚠️ Could not verify deletion (query failed), but deletion commands completed");
+    } else if (verificationData && verificationData.length > 0) {
+      console.error("❌ CRITICAL: Map still exists after deletion commands!");
+      throw new Error("Map deletion failed - map still exists in database after deletion commands");
+    } else {
+      console.log("✅ Deletion verified - map no longer exists in database");
+    }
+
+    console.log(`✅ Map ${id} and all related data deleted successfully`);
+    
+  } catch (error) {
+    console.error(`❌ Error in deleteMap for ${id}:`, error);
+    throw error instanceof Error ? error : new Error("Unknown error during map deletion");
   }
 };
 

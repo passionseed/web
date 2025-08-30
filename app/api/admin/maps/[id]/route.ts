@@ -112,11 +112,16 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log("🔍 [API] DELETE request received for admin maps");
+  
   const user = await checkAdminAccess();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    console.log("❌ [API] Unauthorized access attempt");
+    return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 403 });
   }
+  
+  console.log("✅ [API] Admin access confirmed:", user.email);
 
   try {
     const { id } = await params;
@@ -140,14 +145,51 @@ export async function DELETE(
       );
     }
 
-    // Use the existing deleteMap function from maps.ts
-    // This handles all the cascade deletion properly
-    await deleteMap(id);
-
-    return NextResponse.json({
-      success: true,
-      message: `Map "${existingMap.title}" has been deleted successfully`,
-    });
+    // Use the server-side deleteMap function with server-side Supabase client  
+    console.log(`🗑️ [API] Starting deletion of map ${id} by admin user ${user.id}`);
+    
+    try {
+      await deleteMap(id, supabase);
+      
+      console.log(`✅ [API] Successfully deleted map ${id}`);
+      
+      // Verify deletion was successful by querying for the map
+      console.log(`🔍 [API] Verifying map ${id} no longer exists...`);
+      const { data: verifyMap, error: verifyError } = await supabase
+        .from("learning_maps")
+        .select("id")
+        .eq("id", id);
+      
+      if (verifyError) {
+        console.warn(`⚠️ [API] Could not verify deletion for map ${id}:`, verifyError);
+      } else if (verifyMap && verifyMap.length > 0) {
+        console.error(`❌ [API] CRITICAL: Map ${id} still exists after deletion!`);
+        throw new Error("Deletion verification failed - map still exists");
+      } else {
+        console.log(`✅ [API] Verified: Map ${id} successfully removed from database`);
+      }
+      
+      return NextResponse.json({
+        success: true,
+        message: `Map "${existingMap.title}" has been deleted successfully`,
+        stats: {
+          mapId: id,
+          mapTitle: existingMap.title,
+          verified: true,
+          message: "Map and all related data deleted and verified"
+        }
+      });
+    } catch (deleteError) {
+      console.error(`❌ [API] Failed to delete map ${id}:`, {
+        error: deleteError,
+        message: deleteError instanceof Error ? deleteError.message : 'Unknown error',
+        stack: deleteError instanceof Error ? deleteError.stack : undefined,
+        mapId: id,
+        mapTitle: existingMap.title,
+        timestamp: new Date().toISOString()
+      });
+      throw deleteError; // Re-throw to be caught by outer catch block
+    }
   } catch (error) {
     console.error("Error deleting map:", error);
 

@@ -5,6 +5,12 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
+    "build:production": "./scripts/build-production.sh",
+    "build:production:analyze": "./scripts/build-production.sh --analyze",
+    "optimize:images": "node scripts/optimize-images.js",
+    "migrate:logs": "node scripts/migrate-console-logs.js",
+    "migrate:logs:dry": "node scripts/migrate-console-logs.js --dry-run",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -76,6 +82,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
@@ -86,9 +93,11 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
+    "glob": "^11.0.3",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "postcss": "^8",
+    "sharp": "^0.34.3",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",

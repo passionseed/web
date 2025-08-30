@@ -21,6 +21,7 @@ import {
   TeamMembershipWithProfile,
 } from "@/types/teams";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { dedupeRequest, createCacheKey } from "@/lib/utils/request-deduplication";
 
 /**
  * Creates a new team in a classroom
@@ -1096,7 +1097,10 @@ export const getClassroomTeamMaps = async (
   classroomId: string,
   serverClient?: SupabaseClient<any, "public", any> // Add optional server client parameter
 ) => {
-  const supabase = serverClient || createClient();
+  const cacheKey = createCacheKey('classroom-team-maps', classroomId);
+  
+  return dedupeRequest(cacheKey, async () => {
+    const supabase = serverClient || createClient();
 
   const {
     data: { user },
@@ -1293,4 +1297,5 @@ export const getClassroomTeamMaps = async (
     count: transformedMaps.length,
   });
   return transformedMaps;
+  });
 };
