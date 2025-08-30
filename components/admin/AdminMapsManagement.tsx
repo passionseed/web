@@ -111,31 +111,66 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
   const confirmDelete = async () => {
     if (!mapToDelete) return;
 
+    // Capture the ID early to avoid race conditions
+    const deletingMapId = mapToDelete.id;
+    const deletingMapTitle = mapToDelete.title;
+
     try {
-      setDeleting(mapToDelete.id);
+      console.log("🗑️ [Admin] Starting map deletion:", deletingMapId, deletingMapTitle);
+      setDeleting(deletingMapId);
       
-      const response = await fetch(`/api/admin/maps/${mapToDelete.id}`, {
+      const response = await fetch(`/api/admin/maps/${deletingMapId}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
+      
+      console.log("🔍 [Admin] Delete response status:", response.status, response.statusText);
       
       if (response.ok) {
         const result = await response.json();
+        console.log("✅ [Admin] Delete successful:", result);
+        
+        // Show detailed success message with statistics
+        const statsMessage = result.stats?.message || "Map and related data deleted";
+        
         toast({
-          title: "Success",
-          description: result.message || "Map deleted successfully",
+          title: "Map Deleted Successfully",
+          description: (
+            <div className="space-y-1">
+              <p>{result.message}</p>
+              <p className="text-xs text-muted-foreground">{statsMessage}</p>
+            </div>
+          ),
         });
         
-        // Remove the deleted map from the list
-        setMaps(prevMaps => prevMaps.filter(m => m.id !== mapToDelete.id));
+        // Remove the deleted map from the list using captured ID
+        console.log("🔄 [Admin] Updating maps state, removing:", deletingMapId);
+        setMaps(prevMaps => {
+          const filteredMaps = prevMaps.filter(m => m.id !== deletingMapId);
+          console.log("📊 [Admin] Maps count before/after:", prevMaps.length, "→", filteredMaps.length);
+          return filteredMaps;
+        });
         onDataReload?.();
       } else {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete map");
+        const errorText = await response.text();
+        let errorMessage = "Failed to delete map";
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        console.error("❌ [Admin] Delete failed:", response.status, errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error("Error deleting map:", error);
       toast({
-        title: "Error",
+        title: "Deletion Failed",
         description: error instanceof Error ? error.message : "Failed to delete map",
         variant: "destructive",
       });
@@ -379,16 +414,26 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
             <AlertDialogTitle>Delete Learning Map</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
-                <p>
+                <p className="mb-3">
                   Are you sure you want to delete the map &quot;{mapToDelete?.title}&quot;? 
                   This action cannot be undone and will permanently delete:
                 </p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>The map and all its nodes ({mapToDelete?.node_count || 0} nodes)</li>
-                  <li>All student progress data</li>
-                  <li>All assessments and submissions</li>
-                  <li>Any team assignments related to this map</li>
-                </ul>
+                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-3">
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li className="font-medium">
+                      The learning map and all {mapToDelete?.node_count || 0} nodes
+                    </li>
+                    <li>All node content (text, images, resources)</li>
+                    <li>All assessments and quiz questions</li>
+                    <li>All student progress and completion data</li>
+                    <li>All assessment submissions and grades</li>
+                    <li>All node connections and learning paths</li>
+                  </ul>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                  <span>This will affect all students who have interacted with this map</span>
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

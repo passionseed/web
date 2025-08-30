@@ -1,0 +1,84 @@
+{
+  "name": "Passion Seed",
+  "short_name": "PSeed",
+  "description": "Interactive learning maps and educational content platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5b21b6",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.webp", 
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.webp",
+      "sizes": "180x180",
+      "type": "image/webp"
+    },
+    {
+      "src": "/favicon-32x32.webp",
+      "sizes": "32x32", 
+      "type": "image/webp"
+    },
+    {
+      "src": "/favicon-16x16.webp",
+      "sizes": "16x16",
+      "type": "image/webp"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/islands/desert.webp",
+      "sizes": "1024x768",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Learning map interface"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Maps",
+      "short_name": "Maps",
+      "description": "View your learning maps",
+      "url": "/map",
+      "icons": [{ "src": "/favicon-32x32.webp", "sizes": "32x32" }]
+    },
+    {
+      "name": "Teams",
+      "short_name": "Teams", 
+      "description": "Manage your teams",
+      "url": "/teams",
+      "icons": [{ "src": "/favicon-32x32.webp", "sizes": "32x32" }]
+    },
+    {
+      "name": "Classrooms",
+      "short_name": "Classrooms",
+      "description": "Access your classrooms", 
+      "url": "/classrooms",
+      "icons": [{ "src": "/favicon-32x32.webp", "sizes": "32x32" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "prefer_related_applications": false
+}

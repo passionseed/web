@@ -6,6 +6,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { createClient } from "@/utils/supabase/server";
 import { Layout } from "@/components/layout";
+import ServiceWorkerRegistration from "@/components/service-worker";
+import ErrorBoundary from "@/components/error-boundary";
+import { DevHealthCheck } from "@/components/dev-health-check";
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],
@@ -22,6 +25,27 @@ const libreFranklin = Libre_Franklin({
 export const metadata: Metadata = {
   title: "Passion Seed",
   description: "Discover and nurture your passions",
+  manifest: "/manifest.json",
+  themeColor: "#5b21b6",
+  viewport: "width=device-width, initial-scale=1",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Passion Seed"
+  },
+  icons: {
+    icon: [
+      { url: '/favicon-16x16.webp', sizes: '16x16', type: 'image/webp' },
+      { url: '/favicon-32x32.webp', sizes: '32x32', type: 'image/webp' }
+    ],
+    apple: [
+      { url: '/apple-touch-icon.webp', sizes: '180x180', type: 'image/webp' }
+    ],
+    other: [
+      { url: '/android-chrome-192x192.webp', sizes: '192x192', type: 'image/webp' },
+      { url: '/android-chrome-512x512.webp', sizes: '512x512', type: 'image/webp' }
+    ]
+  }
 };
 
 export default async function RootLayout({
@@ -43,8 +67,13 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Layout>{children}</Layout>
-          <Toaster />
+          <ErrorBoundary>
+            <Layout>{children}</Layout>
+            <Toaster />
+            <DevHealthCheck />
+            {/* ServiceWorker temporarily disabled to fix localhost errors */}
+            {/* <ServiceWorkerRegistration /> */}
+          </ErrorBoundary>
         </ThemeProvider>
       </body>
     </html>
