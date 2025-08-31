@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { deleteMap } from "@/lib/supabase/maps";
+
+// Increase timeout for bulk operations
+export const maxDuration = 60; // 60 seconds
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -45,19 +49,24 @@ export async function DELETE(request: NextRequest) {
 
     for (const mapId of mapIds) {
       try {
-        // Delete the map - this will cascade to related data
-        const { error: deleteError } = await supabase
+        // Verify map exists first
+        const { data: existingMap, error: fetchError } = await supabase
           .from("learning_maps")
-          .delete()
-          .eq("id", mapId);
+          .select("id, title")
+          .eq("id", mapId)
+          .single();
 
-        if (deleteError) {
-          console.error(`❌ [Admin] Failed to delete map ${mapId}:`, deleteError);
-          errors.push(`Failed to delete map ${mapId}: ${deleteError.message}`);
-        } else {
-          deletedCount++;
-          console.log(`✅ [Admin] Successfully deleted map ${mapId}`);
+        if (fetchError) {
+          console.error(`❌ [Admin] Map ${mapId} not found:`, fetchError);
+          errors.push(`Map ${mapId} not found`);
+          continue;
         }
+
+        // Use the same deleteMap function as individual delete
+        await deleteMap(mapId, supabase);
+        
+        deletedCount++;
+        console.log(`✅ [Admin] Successfully deleted map ${mapId} (${existingMap.title})`);
       } catch (error) {
         console.error(`❌ [Admin] Error deleting map ${mapId}:`, error);
         errors.push(`Error deleting map ${mapId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
