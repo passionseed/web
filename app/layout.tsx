@@ -26,8 +26,6 @@ export const metadata: Metadata = {
   title: "Passion Seed",
   description: "Discover and nurture your passions",
   manifest: "/manifest.json",
-  themeColor: "#5b21b6",
-  viewport: "width=device-width, initial-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -46,6 +44,12 @@ export const metadata: Metadata = {
       { url: '/android-chrome-512x512.webp', sizes: '512x512', type: 'image/webp' }
     ]
   }
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#5b21b6',
 };
 
 export default async function RootLayout({

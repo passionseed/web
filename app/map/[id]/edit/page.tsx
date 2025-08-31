@@ -54,6 +54,8 @@ import {
 import Loading from "./loading";
 import { MapEditorWithProvider as MapEditor } from "@/components/map/MapEditor";
 import { RawDataView } from "@/components/map/RawDataView";
+import Image from "next/image";
+import { Upload, X } from "lucide-react";
 
 export default function EditMapPage() {
   const router = useRouter();
@@ -68,6 +70,8 @@ export default function EditMapPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRefreshing, startRefreshTransition] = useTransition();
   const [isSavingAll, setIsSavingAll] = useState(false);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
 
   const fetchMap = useCallback(async () => {
     try {
@@ -75,6 +79,10 @@ export default function EditMapPage() {
       if (fetchedMap) {
         setInitialMap(JSON.parse(JSON.stringify(fetchedMap))); // Deep copy for initial state
         setMap(fetchedMap);
+        // Initialize cover image preview from metadata
+        if (fetchedMap.metadata?.coverImage) {
+          setCoverImagePreview(fetchedMap.metadata.coverImage);
+        }
       } else {
         toast({ title: "Map not found", variant: "destructive" });
         router.push("/map");
@@ -109,11 +117,71 @@ export default function EditMapPage() {
   const handleReset = () => {
     if (initialMap) {
       setMap(JSON.parse(JSON.stringify(initialMap)));
+      // Reset cover image to initial state
+      setCoverImagePreview(initialMap.metadata?.coverImage || null);
+      setCoverImageFile(null);
       toast({
         title: "Changes Reset",
         description: "All local changes have been discarded.",
       });
     }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setCoverImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        setCoverImagePreview(result);
+        
+        // Update map metadata immediately
+        setMap((prev) => prev ? {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            coverImage: result
+          }
+        } : null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeCoverImage = () => {
+    setCoverImageFile(null);
+    setCoverImagePreview(null);
+    // Update map metadata
+    setMap((prev) => prev ? {
+      ...prev,
+      metadata: {
+        ...prev.metadata,
+        coverImage: undefined
+      }
+    } : null);
   };
 
   // Check if there are unsaved changes
@@ -309,6 +377,10 @@ export default function EditMapPage() {
           from: initialMap.category,
           to: map.category,
         });
+      }
+      if (JSON.stringify(map.metadata) !== JSON.stringify(initialMap.metadata)) {
+        mapChanges.metadata = map.metadata;
+        console.log("📝 Map metadata changed");
       }
       batchUpdate.map = mapChanges;
 
@@ -1001,6 +1073,52 @@ export default function EditMapPage() {
                             disabled={isSubmitting}
                             placeholder="Describe what students will learn in this map..."
                           />
+                        </div>
+
+                        <div className="space-y-2 lg:col-span-2">
+                          <Label htmlFor="cover-image">Cover Image (Optional)</Label>
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            {coverImagePreview ? (
+                              <div className="relative inline-block">
+                                <Image
+                                  src={coverImagePreview}
+                                  alt="Cover preview"
+                                  width={300}
+                                  height={200}
+                                  className="rounded-lg object-cover"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2"
+                                  onClick={removeCoverImage}
+                                  disabled={isSubmitting}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <Upload className="h-8 w-8 mx-auto text-gray-400" />
+                                <div className="text-sm text-gray-600">
+                                  <label htmlFor="cover-image" className="cursor-pointer text-blue-600 hover:text-blue-500">
+                                    Click to upload
+                                  </label>
+                                  {" or drag and drop"}
+                                </div>
+                                <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                              </div>
+                            )}
+                            <input
+                              id="cover-image"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="hidden"
+                              disabled={isSubmitting}
+                            />
+                          </div>
                         </div>
 
                         <div className="space-y-4 lg:col-span-2">

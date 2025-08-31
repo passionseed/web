@@ -22,9 +22,23 @@ interface FileSubmissionViewerProps {
 const getFileExtension = (url: string): string => {
   try {
     const pathname = new URL(url).pathname;
-    return pathname.split('.').pop()?.toLowerCase() || '';
+    const extension = pathname.split('.').pop()?.toLowerCase() || '';
+    
+    // If no extension found from pathname, try to detect from content-type or URL patterns
+    if (!extension && url.includes('image')) {
+      return 'jpg'; // Default for images without extension
+    }
+    
+    return extension;
   } catch {
-    return url.split('.').pop()?.toLowerCase() || '';
+    const extension = url.split('.').pop()?.toLowerCase() || '';
+    
+    // If no extension found, try to detect from URL patterns
+    if (!extension && url.includes('image')) {
+      return 'jpg'; // Default for images without extension
+    }
+    
+    return extension;
   }
 };
 
@@ -64,14 +78,20 @@ const getFileTypeColor = (extension: string) => {
 };
 
 const FilePreview = ({ url, fileName, extension }: { url: string, fileName: string, extension: string }) => {
-  const [showPreview, setShowPreview] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  
   const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
   const pdfExtensions = ['pdf'];
   
   const isImage = imageExtensions.includes(extension);
   const isPdf = pdfExtensions.includes(extension);
+  
+  // Debug logging
+  console.log(`File: ${fileName}, Extension: ${extension}, IsImage: ${isImage}`);
+  
+  // Show images by default, but keep PDFs hidden by default
+  // Use a function to ensure proper initialization
+  // For now, show all files by default for testing
+  const [showPreview, setShowPreview] = useState(() => true);
+  const [imageError, setImageError] = useState(false);
   
   return (
     <div className="border rounded-lg p-3 bg-white">
@@ -93,6 +113,7 @@ const FilePreview = ({ url, fileName, extension }: { url: string, fileName: stri
               variant="outline"
               onClick={() => setShowPreview(!showPreview)}
               className="h-7 px-2"
+              title={showPreview ? (isImage ? "Hide Image" : "Hide Preview") : (isImage ? "Show Image" : "Show Preview")}
             >
               {showPreview ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
             </Button>
@@ -124,27 +145,42 @@ const FilePreview = ({ url, fileName, extension }: { url: string, fileName: stri
       {/* File Preview */}
       {showPreview && (
         <div className="mt-3 border-t pt-3">
-          {isImage && !imageError && (
+          {/* Try to display as image first, regardless of extension */}
+          {!imageError && (
             <div className="max-w-full">
               <img
                 src={url}
                 alt={fileName}
-                className="max-w-full max-h-96 object-contain rounded border"
+                className="max-w-full max-h-80 object-contain rounded border shadow-sm bg-gray-50 cursor-pointer hover:shadow-md transition-shadow"
                 onError={() => setImageError(true)}
                 onLoad={() => setImageError(false)}
+                onClick={() => window.open(url, '_blank')}
+                title="Click to open full size in new tab"
               />
-              {imageError && (
-                <div className="flex items-center justify-center h-32 bg-gray-50 border rounded text-gray-500">
-                  <div className="text-center">
-                    <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Failed to load image</p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
           
-          {isPdf && (
+          {/* Show error state for failed images */}
+          {imageError && !isPdf && (
+            <div className="flex items-center justify-center h-32 bg-gray-50 border rounded text-gray-500">
+              <div className="text-center">
+                <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Unable to display as image</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(url, '_blank')}
+                  className="mt-2"
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Open File
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* PDF preview for PDF files that failed as images */}
+          {imageError && isPdf && (
             <div className="w-full">
               <iframe
                 src={`${url}#view=FitH`}

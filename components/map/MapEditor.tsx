@@ -34,7 +34,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { FullLearningMap } from "@/lib/supabase/maps";
 import { MapNode, QuizQuestion } from "@/types/map";
-import { Plus, Copy, Clipboard, Type } from "lucide-react";
+import { Plus, Copy, Clipboard, Type, Save, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -84,20 +84,48 @@ const getRandomPosition = () => ({
   y: Math.random() * 400,
 });
 
-// Custom node component
-const CustomNode = ({
+// Debounce utility function
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
+// Auto-save status enum
+enum AutoSaveStatus {
+  SAVED = 'saved',
+  SAVING = 'saving',
+  PENDING = 'pending',
+  ERROR = 'error'
+}
+
+// Custom node component - memoized for better performance
+const CustomNode = React.memo(({
   data,
   selected,
+  id,
+  onClick,
 }: {
   data: MapNode;
   selected?: boolean;
+  id?: string;
+  onClick?: (nodeId: string) => void;
 }) => {
-  const spriteUrl = data.sprite_url || "/islands/crystal.png";
-
-  const nodeClassName = `relative ${selected ? "scale-110" : ""} transition-transform duration-200`;
-  const imageFilter = selected
-    ? "brightness(1.1) saturate(1.2)"
-    : "brightness(1)";
+  // Memoize sprite URL to prevent recalculation
+  const spriteUrl = useMemo(() => data.sprite_url || "/islands/crystal.png", [data.sprite_url]);
+  
+  // Memoize click handler
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (id && onClick) {
+      onClick(id);
+    }
+  }, [id, onClick]);
 
   return (
     <>
@@ -134,22 +162,31 @@ const CustomNode = ({
         className="w-3 h-3 bg-green-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
       />
 
-      <div className={nodeClassName}>
+      <div 
+        className={`relative transition-transform duration-200 cursor-pointer ${
+          selected ? 'scale-110' : ''
+        }`}
+        onClick={handleClick}
+      >
+        {/* Selection indicator */}
         {selected && (
           <div className="absolute -inset-2 rounded-full border-4 border-blue-400 animate-pulse" />
         )}
 
+        {/* Node image with stable styling */}
         <img
           src={spriteUrl}
           alt={data.title}
-          className="w-max h-max object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200"
-          style={{ filter: imageFilter }}
+          loading="lazy" // Improve performance
+          className={`w-max h-max object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200 ${
+            selected ? 'brightness-110 saturate-120' : 'brightness-100'
+          }`}
         />
 
         {/* Node label */}
-        <div
-          className={`absolute -top-8 -right-10 transform ${selected ? "scale-105" : ""} transition-all duration-200`}
-        >
+        <div className={`absolute -top-8 -right-10 transform transition-all duration-200 ${
+          selected ? 'scale-105' : ''
+        }`}>
           <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1 shadow-lg">
             <div className="text-xs font-bold text-gray-800 text-center whitespace-normal max-w-24 truncate">
               {data.title}
@@ -162,19 +199,24 @@ const CustomNode = ({
       </div>
     </>
   );
-};
+});
 
-// Text Node component for text-only elements
-const TextNode = ({
+// Set display name for debugging
+CustomNode.displayName = 'CustomNode';
+
+// Text Node component for text-only elements - memoized for better performance
+const TextNode = React.memo(({
   data,
   selected,
   id,
   onDataChange,
+  onClick,
 }: {
   data: MapNode & { node_type?: string };
   selected?: boolean;
   id: string;
   onDataChange?: (nodeId: string, data: Partial<MapNode>) => void;
+  onClick?: (nodeId: string) => void;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.title || "Double-click to edit");
@@ -247,6 +289,12 @@ const TextNode = ({
     <div
       className={containerClassName}
       onDoubleClick={handleDoubleClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (onClick) {
+          onClick(id);
+        }
+      }}
       style={{ backgroundColor: textStyle.backgroundColor }}
     >
       {/* Selection indicator */}
@@ -289,7 +337,10 @@ const TextNode = ({
       )}
     </div>
   );
-};
+});
+
+// Set display name for debugging
+TextNode.displayName = 'TextNode';
 
 export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(
@@ -297,6 +348,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const [selectedNode, setSelectedNode] = useState<AppNode | null>(null);
+  const [selectedNodes, setSelectedNodes] = useState<AppNode[]>([]);
   const { toast } = useToast();
   const reactFlowInstance = useReactFlow();
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
@@ -308,24 +360,164 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   >({});
 
   // Clipboard functionality
-  const [copiedNode, setCopiedNode] = useState<MapNode | null>(null);
+  const [copiedNodes, setCopiedNodes] = useState<MapNode[] | null>(null);
+
+  // Auto-save state management
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>(AutoSaveStatus.SAVED);
+  const [lastSavedVersion, setLastSavedVersion] = useState<string>('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Generate a hash of the current map state for change detection
+  const generateMapHash = useCallback((currentMap: FullLearningMap) => {
+    // Create a stable string representation of the map for comparison
+    const mapString = JSON.stringify({
+      nodes: currentMap.map_nodes.map(node => ({
+        id: node.id,
+        title: node.title,
+        instructions: node.instructions,
+        difficulty: node.difficulty,
+        sprite_url: node.sprite_url,
+        position: node.metadata?.position,
+        node_type: (node as any).node_type,
+      })),
+      paths: currentMap.map_nodes.flatMap(node => 
+        (node.node_paths_source || []).map(path => ({
+          id: path.id,
+          source: path.source_node_id,
+          target: path.destination_node_id,
+        }))
+      ),
+    });
+    return btoa(mapString);
+  }, []);
+
+  // Auto-save function with error handling
+  const performAutoSave = useCallback(async (mapToSave: FullLearningMap) => {
+    try {
+      setAutoSaveStatus(AutoSaveStatus.SAVING);
+      
+      // Call the auto-save API endpoint
+      const response = await fetch(`/api/maps/${mapToSave.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(mapToSave),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Save failed: ${response.statusText} - ${errorText}`);
+      }
+
+      const savedResponse = await response.json();
+      
+      // Update tracking state - use the original map since we know it was saved
+      const newHash = generateMapHash(mapToSave);
+      setLastSavedVersion(newHash);
+      setHasUnsavedChanges(false);
+      setAutoSaveStatus(AutoSaveStatus.SAVED);
+      
+      console.log('🔄 Map auto-saved successfully');
+      
+    } catch (error) {
+      console.error('❌ Auto-save failed:', error);
+      setAutoSaveStatus(AutoSaveStatus.ERROR);
+      
+      // Show user-friendly error message
+      toast({
+        title: "Auto-save failed",
+        description: "Your changes are safe locally. Will retry automatically.",
+        variant: "destructive",
+      });
+      
+      // Retry after 10 seconds on error
+      setTimeout(() => {
+        if (hasUnsavedChanges) {
+          setAutoSaveStatus(AutoSaveStatus.PENDING);
+          // Re-trigger auto-save using the current map state
+          performAutoSave(mapToSave);
+        }
+      }, 10000);
+    }
+  }, [generateMapHash, hasUnsavedChanges, toast]);
+
+  // Debounced auto-save (3 seconds after last change)
+  const debouncedAutoSave = useCallback(
+    debounce((mapToSave: FullLearningMap) => {
+      if (hasUnsavedChanges && autoSaveStatus !== AutoSaveStatus.SAVING) {
+        performAutoSave(mapToSave);
+      }
+    }, 3000),
+    [performAutoSave, hasUnsavedChanges, autoSaveStatus]
+  );
+
+  // Trigger auto-save when map changes
+  const triggerAutoSave = useCallback((newMap: FullLearningMap) => {
+    const newHash = generateMapHash(newMap);
+    console.log('🔍 triggerAutoSave called:', { 
+      newHash: newHash.substring(0, 10) + '...', 
+      lastSaved: lastSavedVersion.substring(0, 10) + '...', 
+      hasChanged: newHash !== lastSavedVersion 
+    });
+    
+    // Only trigger if there are actual changes
+    if (newHash !== lastSavedVersion) {
+      console.log('📝 Changes detected - triggering auto-save');
+      setHasUnsavedChanges(true);
+      setAutoSaveStatus(AutoSaveStatus.PENDING);
+      
+      // Cancel any existing save timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      // Schedule new save
+      debouncedAutoSave(newMap);
+    } else {
+      console.log('⏭️ No changes detected - skipping auto-save');
+    }
+  }, [generateMapHash, lastSavedVersion, debouncedAutoSave]);
+
+  // Initialize last saved version on mount
+  useEffect(() => {
+    const initialHash = generateMapHash(map);
+    setLastSavedVersion(initialHash);
+  }, []); // Only run once on mount
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Wrapper function for map changes that triggers auto-save
+  const handleMapChange = useCallback((newMap: FullLearningMap) => {
+    console.log('🔄 handleMapChange called');
+    onMapChange(newMap);
+    triggerAutoSave(newMap);
+  }, [onMapChange, triggerAutoSave]);
 
   // Copy/Paste functionality
   const copyNode = useCallback(async () => {
-    if (!selectedNode) {
+    if (selectedNodes.length === 0) {
       toast({
-        title: "No node selected",
-        description: "Please select a node to copy",
+        title: "No nodes selected",
+        description: "Please select one or more nodes to copy",
         variant: "destructive",
       });
       return;
     }
 
     // Deep clone the node data to avoid reference issues
-    const nodeToCopy = JSON.parse(JSON.stringify(selectedNode.data));
-    setCopiedNode(nodeToCopy);
+    const nodesToCopy = selectedNodes.map(node => JSON.parse(JSON.stringify(node.data)));
+    setCopiedNodes(nodesToCopy);
 
-    // Clear the system text clipboard to ensure only island can be pasted
+    // Clear the system text clipboard to ensure only islands can be pasted
     try {
       await navigator.clipboard.writeText("");
     } catch (error) {
@@ -333,108 +525,146 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       console.log("Clipboard API not available");
     }
 
+    const nodeCount = nodesToCopy.length;
     toast({
-      title: "Node copied!",
-      description: `"${nodeToCopy.title}" copied to clipboard`,
+      title: `${nodeCount} node${nodeCount > 1 ? 's' : ''} copied!`,
+      description: nodeCount === 1 
+        ? `"${nodesToCopy[0].title}" copied to clipboard`
+        : `${nodeCount} nodes copied to clipboard`,
     });
-  }, [selectedNode, toast]);
+  }, [selectedNodes, toast]);
 
   const pasteNode = useCallback(() => {
-    if (!copiedNode) {
+    if (!copiedNodes || copiedNodes.length === 0) {
       toast({
         title: "Nothing to paste",
-        description: "Copy a node first using Ctrl+C",
+        description: "Copy one or more nodes first using Ctrl+C",
         variant: "destructive",
       });
       return;
     }
 
-    const tempId = generateTempId("temp_node");
-
-    // Calculate paste position (offset from original or center if no original position)
-    let pastePosition = { x: 150, y: 150 }; // Default fallback
+    // Calculate base paste position (center of visible viewport)
+    let basePastePosition = { x: 150, y: 150 }; // Default fallback
 
     if (reactFlowInstance) {
       const viewport = reactFlowInstance.getViewport();
-      // Calculate center of visible viewport
       const panelOffset = selectedNode ? 0.35 : 0; // Account for right panel
       const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
 
-      pastePosition = {
+      basePastePosition = {
         x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
         y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
       };
-
-      // Add small offset if pasting near the copied node's position
-      if (copiedNode.metadata?.position) {
-        const originalPos = copiedNode.metadata.position;
-        const distance = Math.sqrt(
-          Math.pow(pastePosition.x - originalPos.x, 2) +
-            Math.pow(pastePosition.y - originalPos.y, 2)
-        );
-
-        // If too close to original, add offset
-        if (distance < 100) {
-          pastePosition.x += 80;
-          pastePosition.y += 80;
-        }
-      }
     }
 
-    // Create new node data with new ID and position
-    const newNodeData: MapNode & {
+    // Create new nodes with proper spacing
+    const newNodes: AppNode[] = [];
+    const newNodeData: (MapNode & {
       node_paths_source: any[];
       node_paths_destination: any[];
       node_content: any[];
       node_assessments: any[];
-    } = {
-      ...copiedNode,
-      id: tempId,
-      title: `${copiedNode.title} (Copy)`,
-      metadata: {
-        position: pastePosition,
-        temp_id: tempId,
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      node_paths_source: [], // Don't copy connections
-      node_paths_destination: [], // Don't copy connections
-      node_content: copiedNode.node_content || [], // Preserve content
-      node_assessments: copiedNode.node_assessments || [], // Preserve assessments
-    };
+    })[] = [];
 
-    const newNode: AppNode = {
-      id: tempId,
-      position: pastePosition,
-      data: newNodeData,
-      type: "default",
-      draggable: true,
-      connectable: true,
-      selectable: true,
-    };
+    copiedNodes.forEach((copiedNode, index) => {
+      const tempId = generateTempId("temp_node");
+      
+      // Calculate position with offset for multiple nodes
+      const offset = index * 120; // 120px spacing between nodes
+      let nodePosition = {
+        x: basePastePosition.x + (offset % 240), // Wrap every 2 nodes horizontally
+        y: basePastePosition.y + Math.floor(offset / 240) * 120, // Stack vertically after 2 nodes
+      };
 
-    setNodes((nds) => [...nds, newNode as Node]);
+      // Add small offset if pasting near the original node's position
+      if (copiedNode.metadata?.position) {
+        const originalPos = copiedNode.metadata.position;
+        const distance = Math.sqrt(
+          Math.pow(nodePosition.x - originalPos.x, 2) +
+            Math.pow(nodePosition.y - originalPos.y, 2)
+        );
 
+        // If too close to original, add offset
+        if (distance < 100) {
+          nodePosition.x += 80;
+          nodePosition.y += 80;
+        }
+      }
+
+      // Create new node data
+      const nodeData: MapNode & {
+        node_paths_source: any[];
+        node_paths_destination: any[];
+        node_content: any[];
+        node_assessments: any[];
+      } = {
+        ...copiedNode,
+        id: tempId,
+        title: copiedNodes.length === 1 
+          ? `${copiedNode.title} (Copy)`
+          : `${copiedNode.title} (Copy ${index + 1})`,
+        metadata: {
+          ...copiedNode.metadata,
+          position: nodePosition,
+          temp_id: tempId,
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        node_paths_source: [], // Don't copy connections
+        node_paths_destination: [], // Don't copy connections
+        node_content: copiedNode.node_content || [],
+        node_assessments: copiedNode.node_assessments || [],
+      };
+
+      const newNode: AppNode = {
+        id: tempId,
+        position: nodePosition,
+        data: nodeData,
+        type: (copiedNode as any).node_type === "text" ? "text" : "default",
+        draggable: true,
+        connectable: (copiedNode as any).node_type !== "text",
+        selectable: true,
+      };
+
+      newNodes.push(newNode);
+      newNodeData.push(nodeData);
+    });
+
+    // Update React Flow state
+    setNodes((nds) => [...nds, ...newNodes as Node[]]);
+
+    // Update map state
     const updatedMap = {
       ...map,
-      map_nodes: [...map.map_nodes, newNodeData],
+      map_nodes: [...map.map_nodes, ...newNodeData],
     };
-    onMapChange(updatedMap);
+    handleMapChange(updatedMap);
 
-    // Select the newly pasted node
-    setSelectedNode(newNode);
+    // Select the newly pasted nodes
+    setSelectedNodes(newNodes);
+    if (newNodes.length === 1) {
+      setSelectedNode(newNodes[0]);
+    } else {
+      setSelectedNode(null); // Clear single selection for multiple nodes
+    }
 
+    const nodeCount = copiedNodes.length;
     toast({
-      title: "Node pasted!",
-      description: `"${newNodeData.title}" added to map`,
+      title: `${nodeCount} node${nodeCount > 1 ? 's' : ''} pasted!`,
+      description: nodeCount === 1
+        ? `"${newNodeData[0].title}" added to map`
+        : `${nodeCount} nodes added to map`,
     });
   }, [
-    copiedNode,
+    copiedNodes,
     reactFlowInstance,
     selectedNode,
     map,
     onMapChange,
     setNodes,
+    setSelectedNodes,
+    setSelectedNode,
     toast,
   ]);
 
@@ -457,8 +687,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           copyNode();
           break;
         case "v":
-          // Paste node only if we have one in clipboard; otherwise allow normal paste
-          if (copiedNode) {
+          // Paste nodes only if we have some in clipboard; otherwise allow normal paste
+          if (copiedNodes && copiedNodes.length > 0) {
             event.preventDefault();
             pasteNode();
           }
@@ -468,7 +698,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [copyNode, pasteNode, copiedNode]);
+  }, [copyNode, pasteNode, copiedNodes]);
 
   // Transform map data to React Flow format
   useEffect(() => {
@@ -483,7 +713,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         draggable: true,
         connectable: nodeType !== "text", // Text nodes can't be connected
         selectable: true,
-        selected: selectedNode?.id === node.id,
+        // Remove selected property - let ReactFlow handle selection state internally
         style: NODE_STYLE,
       };
     });
@@ -504,7 +734,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
     setNodes(transformedNodes as Node[]);
     setEdges(transformedEdges);
-  }, [map, selectedNode, setNodes, setEdges]);
+  }, [map, setNodes, setEdges]); // Removed selectedNodes dependency
 
   // Add node handler
   const handleAddNode = useCallback(() => {
@@ -568,9 +798,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       ...map,
       map_nodes: [...map.map_nodes, newNodeData],
     };
-    onMapChange(updatedMap as any);
+    handleMapChange(updatedMap as any);
+    triggerAutoSave(updatedMap);
 
-    toast({ title: "Node Added! (Save to persist)" });
+    toast({ title: "Node Added!" });
   }, [map, onMapChange, setNodes, toast, reactFlowInstance, selectedNode]);
 
   // Add text node handler
@@ -638,9 +869,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       ...map,
       map_nodes: [...map.map_nodes, newTextData],
     };
-    onMapChange(updatedMap as any);
+    handleMapChange(updatedMap as any);
 
-    toast({ title: "Text Added! (Save to persist)" });
+    toast({ title: "Text Added!" });
   }, [map, onMapChange, setNodes, toast, reactFlowInstance, selectedNode]);
 
   // Connection handler
@@ -705,8 +936,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         source: params.source,
         target: params.target,
       });
-      onMapChange(updatedMap);
-      toast({ title: "Path created! (Save to persist)" });
+      handleMapChange(updatedMap);
+      toast({ title: "Path created!" });
     },
     [setEdges, edges, toast, map, onMapChange]
   );
@@ -731,10 +962,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           })),
       };
 
-      onMapChange(updatedMap);
+      handleMapChange(updatedMap);
 
       deleted.forEach((node) => {
-        toast({ title: `Node "${node.data.title}" deleted (Save to persist)` });
+        toast({ title: `Node "${node.data.title}" deleted (Auto-saving)` });
       });
     },
     [toast, map, onMapChange]
@@ -758,8 +989,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         })),
       };
 
-      onMapChange(updatedMap);
-      toast({ title: "Path deleted (Save to persist)" });
+      handleMapChange(updatedMap);
+      toast({ title: "Path deleted (Auto-saving)" });
     },
     [toast, map, onMapChange]
   );
@@ -779,87 +1010,178 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   //         return mapNode;
   //       }),
   //     };
-  //     onMapChange(updatedMap);
+  //     handleMapChange(updatedMap);
   //   },
   //   [map, onMapChange]
   // );
 
   const onNodeDragStop: OnNodeDrag = useCallback(
-    (_, node) => {
+    (_, draggedNode) => {
+      // Get the current node positions from React Flow
+      const currentNodes = reactFlowInstance?.getNodes() || [];
+      
+      // Update the map and get the result
+      let finalUpdatedMap: FullLearningMap | null = null;
       onMapChange((prev: FullLearningMap | null) => {
         if (!prev) return null;
 
-        const target = prev.map_nodes.find((m) => m.id === node.id);
-        if (!target) return prev;
+        let hasChanges = false;
+        let newMap: FullLearningMap;
 
-        const oldPos = target.metadata?.position;
-        // avoid no-op if position didn't actually change
-        if (
-          oldPos &&
-          oldPos.x === node.position.x &&
-          oldPos.y === node.position.y
-        ) {
-          return prev;
+        // If multiple nodes are selected, update all selected nodes' positions
+        if (selectedNodes.length > 1) {
+          const updatedMapNodes = prev.map_nodes.map((mapNode) => {
+            // Find if this map node is in the selected nodes
+            const selectedNode = selectedNodes.find(sn => sn.id === mapNode.id);
+            if (selectedNode) {
+              // Get the current position from React Flow
+              const currentNode = currentNodes.find(cn => cn.id === mapNode.id);
+              if (currentNode) {
+                const oldPos = mapNode.metadata?.position;
+                // Only update if position actually changed
+                if (
+                  !oldPos ||
+                  oldPos.x !== currentNode.position.x ||
+                  oldPos.y !== currentNode.position.y
+                ) {
+                  hasChanges = true;
+                  return {
+                    ...mapNode,
+                    metadata: { ...mapNode.metadata, position: currentNode.position },
+                  };
+                }
+              }
+            }
+            return mapNode;
+          });
+
+          newMap = {
+            ...prev,
+            map_nodes: updatedMapNodes,
+          };
+        } else {
+          // Single node drag - original logic
+          const target = prev.map_nodes.find((m) => m.id === draggedNode.id);
+          if (!target) return prev;
+
+          const oldPos = target.metadata?.position;
+          // avoid no-op if position didn't actually change
+          if (
+            oldPos &&
+            oldPos.x === draggedNode.position.x &&
+            oldPos.y === draggedNode.position.y
+          ) {
+            return prev;
+          }
+
+          hasChanges = true;
+          newMap = {
+            ...prev,
+            map_nodes: prev.map_nodes.map((m) =>
+              m.id === draggedNode.id
+                ? {
+                    ...m,
+                    metadata: { ...m.metadata, position: draggedNode.position },
+                  }
+                : m
+            ),
+          };
         }
 
-        return {
-          ...prev,
-          map_nodes: prev.map_nodes.map((m) =>
-            m.id === node.id
-              ? {
-                  ...m,
-                  metadata: { ...m.metadata, position: node.position },
-                }
-              : m
-          ),
-        };
+        // Store the final map for auto-save trigger
+        finalUpdatedMap = newMap;
+        return newMap;
       });
+
+      // Trigger auto-save if changes were made
+      if (finalUpdatedMap) {
+        triggerAutoSave(finalUpdatedMap);
+      }
     },
-    [onMapChange]
+    [onMapChange, selectedNodes, reactFlowInstance, triggerAutoSave]
+  );
+
+  // Handle node click when multiple nodes are selected
+  const handleNodeClick = useCallback(
+    (nodeId: string, event?: any) => {
+      console.log('Node clicked:', nodeId, 'Selected nodes count:', selectedNodes.length);
+      
+      // Only handle this if we're in multi-selection mode
+      if (selectedNodes.length > 1) {
+        const clickedNode = selectedNodes.find(node => node.id === nodeId);
+        console.log('Clicked node found:', clickedNode?.data.title);
+        
+        if (clickedNode) {
+          console.log('Switching to single selection mode for node:', clickedNode.data.title);
+          
+          // Use setTimeout to ensure this happens after ReactFlow's internal processing
+          setTimeout(() => {
+            // Force update the ReactFlow nodes to only select this one
+            if (reactFlowInstance) {
+              // Get all current nodes and update their selected state
+              const currentNodes = reactFlowInstance.getNodes();
+              const updatedNodes = currentNodes.map(node => ({
+                ...node,
+                selected: node.id === nodeId
+              }));
+              
+              // Set the nodes with updated selection
+              reactFlowInstance.setNodes(updatedNodes);
+            }
+            
+            // Set this node as the single selected node and open editor
+            setSelectedNode(clickedNode);
+            setSelectedNodes([clickedNode]);
+            
+            // Expand right panel to show node editor
+            if (rightPanelRef.current && leftPanelRef.current) {
+              rightPanelRef.current.resize(35);
+              leftPanelRef.current.resize(65);
+            }
+          }, 0); // Execute on next tick
+        }
+      }
+    },
+    [selectedNodes, setSelectedNode, setSelectedNodes, rightPanelRef, leftPanelRef, reactFlowInstance]
   );
 
   // Selection change handler with dynamic panel resizing and node centering
   const onSelectionChange = useCallback(
     (params: OnSelectionChangeParams) => {
+      console.log('Selection changed:', params.nodes.length, 'nodes', params.edges.length, 'edges');
+      const selectedNodesList = params.nodes as AppNode[];
+      setSelectedNodes(selectedNodesList);
+      
+      // Handle multiple node selection
+      if (params.nodes.length > 1) {
+        // Multiple nodes selected - show multi-selection state
+        setSelectedNode(null); // Clear single selection
+        console.log(`Selected ${params.nodes.length} nodes:`, selectedNodesList.map(n => n.data.title || n.id));
+        
+        // Collapse right panel when multiple nodes are selected
+        if (rightPanelRef.current && leftPanelRef.current) {
+          rightPanelRef.current.resize(0);
+          leftPanelRef.current.resize(100);
+        }
+        return;
+      }
+      
       const node = params.nodes[0];
       const newSelectedNode = (node as unknown as AppNode) || null;
 
       setSelectedNode(newSelectedNode);
+      // Ensure selectedNodes is also updated for single selection
+      if (newSelectedNode) {
+        setSelectedNodes([newSelectedNode]);
+      } else {
+        setSelectedNodes([]);
+      }
 
       // Animate panel resize based on selection
       if (newSelectedNode && rightPanelRef.current && leftPanelRef.current) {
         // Node selected: expand right panel to 35%, shrink left to 65% (matching default)
         rightPanelRef.current.resize(35);
         leftPanelRef.current.resize(65);
-
-        // Center the selected node accounting for the expanded panel
-        setTimeout(() => {
-          if (reactFlowInstance && newSelectedNode) {
-            // Get the current viewport
-            const viewport = reactFlowInstance.getViewport();
-
-            // Calculate the center position accounting for the 65/35 panel split
-            // We want to center in the left panel (65% of total width) but shift slightly left for visual balance
-            const containerRect = document
-              .querySelector(".react-flow")
-              ?.getBoundingClientRect();
-            if (containerRect) {
-              const leftPanelWidth = containerRect.width * 0.65; // 65% for left panel after resize
-              const targetX = leftPanelWidth * 0.5; // Center in the left panel
-              const targetY = containerRect.height * 0.5; // Center vertically
-
-              // Use fitView to center on the selected node with padding
-              reactFlowInstance.fitView({
-                nodes: [{ id: newSelectedNode.id }],
-                duration: 500,
-                padding: 0.1,
-                // Custom center point accounting for panel layout
-                minZoom: viewport.zoom,
-                maxZoom: viewport.zoom,
-              });
-            }
-          }
-        }, 350); // Wait for panel animation to complete
       } else if (!newSelectedNode) {
         // Node deselected: panel will disappear automatically due to conditional rendering
         // No manual resize needed since right panel is conditionally rendered
@@ -925,20 +1247,22 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         }),
       };
 
-      onMapChange(updatedMap as any);
+      handleMapChange(updatedMap as any);
     },
-    [map, onMapChange, selectedNode, setNodes]
+    [map, handleMapChange, selectedNode, setNodes]
   );
 
   // Memoized node types
   const nodeTypes = useMemo(
     () => ({
-      default: CustomNode,
+      default: (props: any) => (
+        <CustomNode {...props} onClick={handleNodeClick} />
+      ),
       text: (props: any) => (
-        <TextNode {...props} onDataChange={handleNodeDataChange} />
+        <TextNode {...props} onDataChange={handleNodeDataChange} onClick={handleNodeClick} />
       ),
     }),
-    [handleNodeDataChange]
+    [handleNodeDataChange, handleNodeClick]
   );
 
   // Node delete handler
@@ -969,15 +1293,19 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           })),
       };
 
-      onMapChange(updatedMap);
+      handleMapChange(updatedMap);
 
       // Clear selection if deleted node was selected
       if (selectedNode?.id === nodeId) {
         setSelectedNode(null);
       }
+      // Clear from multi-selection if it was selected
+      if (selectedNodes.some(node => node.id === nodeId)) {
+        setSelectedNodes(prev => prev.filter(node => node.id !== nodeId));
+      }
 
       toast({
-        title: `Node "${nodeToDelete.data.title}" deleted (Save to persist)`,
+        title: `Node "${nodeToDelete.data.title}" deleted (Auto-saving)`,
       });
     },
     [nodes, selectedNode, setNodes, setEdges, map, onMapChange, toast]
@@ -1018,27 +1346,62 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 size="sm"
                 variant="outline"
                 className="gap-2"
-                disabled={!selectedNode}
-                title="Copy selected node (Ctrl+C)"
+                disabled={selectedNodes.length === 0}
+                title={`Copy ${selectedNodes.length} selected node${selectedNodes.length !== 1 ? 's' : ''} (Ctrl+C)`}
               >
                 <Copy className="h-4 w-4" />
-                Copy
+                Copy{selectedNodes.length > 1 ? ` (${selectedNodes.length})` : ''}
               </Button>
               <Button
                 onClick={pasteNode}
                 size="sm"
                 variant="outline"
                 className="gap-2"
-                disabled={!copiedNode}
-                title="Paste node (Ctrl+V)"
+                disabled={!copiedNodes || copiedNodes.length === 0}
+                title={`Paste ${copiedNodes?.length || 0} node${(copiedNodes?.length || 0) !== 1 ? 's' : ''} (Ctrl+V)`}
               >
                 <Clipboard className="h-4 w-4" />
-                Paste
+                Paste{copiedNodes && copiedNodes.length > 1 ? ` (${copiedNodes.length})` : ''}
               </Button>
+
+              <div className="h-4 w-px bg-border" />
+              
+              {/* Auto-save status indicator */}
+              <div className="flex items-center gap-1 px-2">
+                {autoSaveStatus === AutoSaveStatus.SAVED && (
+                  <>
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    <span className="text-xs text-green-600">Saved</span>
+                  </>
+                )}
+                {autoSaveStatus === AutoSaveStatus.SAVING && (
+                  <>
+                    <Save className="h-3 w-3 text-blue-500 animate-pulse" />
+                    <span className="text-xs text-blue-600">Saving...</span>
+                  </>
+                )}
+                {autoSaveStatus === AutoSaveStatus.PENDING && (
+                  <>
+                    <Clock className="h-3 w-3 text-amber-500" />
+                    <span className="text-xs text-amber-600">Pending</span>
+                  </>
+                )}
+                {autoSaveStatus === AutoSaveStatus.ERROR && (
+                  <>
+                    <AlertCircle className="h-3 w-3 text-red-500" />
+                    <span className="text-xs text-red-600">Error</span>
+                  </>
+                )}
+              </div>
 
               <div className="h-4 w-px bg-border" />
               <div className="text-xs text-muted-foreground px-2">
                 {nodes.length} nodes • {edges.length} paths
+                {selectedNodes.length > 1 && (
+                  <span className="text-blue-500 font-medium ml-2">
+                    • {selectedNodes.length} selected
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1069,6 +1432,12 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   </kbd>
                 </div>
                 <div className="flex justify-between">
+                  <span>Multi-Select</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                    Ctrl + Click/Drag
+                  </kbd>
+                </div>
+                <div className="flex justify-between">
                   <span>Pan Canvas</span>
                   <span className="text-xs">Space + Drag</span>
                 </div>
@@ -1089,6 +1458,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               onNodeDragStop={onNodeDragStop}
               onConnect={onConnect}
               onSelectionChange={onSelectionChange}
+              onNodeClick={(event, node) => handleNodeClick(node.id, event)}
               nodeTypes={nodeTypes}
               edgeTypes={EDGE_TYPES}
               snapToGrid={true}
@@ -1096,8 +1466,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               fitView
               attributionPosition="bottom-left"
               panOnScroll
-              selectionOnDrag
-              panOnDrag={[1, 2]}
+              selectionOnDrag={true}
+              multiSelectionKeyCode={["Meta", "Control"]}
+              selectNodesOnDrag={true}
+              panOnDrag={[2]}
+              selectionKeyCode={["Meta", "Control"]}
               connectionMode={ConnectionMode.Loose}
               deleteKeyCode={["Delete", "Backspace"]}
             >

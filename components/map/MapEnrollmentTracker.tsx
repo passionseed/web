@@ -30,25 +30,43 @@ export function MapEnrollmentTracker({
   useEffect(() => {
     const checkAndEnrollUser = async () => {
       try {
+        console.log("🔍 [MapEnrollmentTracker] Checking enrollment for map:", map.id);
+        
         // Check if user is already enrolled
         const isEnrolled = await isUserEnrolledInMap(map.id);
+        console.log("✅ [MapEnrollmentTracker] Enrollment check result:", isEnrolled);
 
         if (!isEnrolled) {
+          console.log("🎯 [MapEnrollmentTracker] User not enrolled, attempting auto-enrollment");
+          
           // Automatically enroll the user
-          await enrollUserInMap(map.id);
+          const enrollmentSuccess = await enrollUserInMap(map.id);
+          
+          if (enrollmentSuccess) {
+            console.log("✅ [MapEnrollmentTracker] Auto-enrollment successful");
+            setJustEnrolled(true);
+            setShowWelcomeDialog(true);
 
-          setJustEnrolled(true);
-          setShowWelcomeDialog(true);
-
-          toast({
-            title: "🎉 Welcome to Your Adventure!",
-            description: `You've been enrolled in ${map.title}. Let the learning begin!`,
-          });
+            toast({
+              title: "🎉 Welcome to Your Adventure!",
+              description: `You've been enrolled in ${map.title}. Let the learning begin!`,
+            });
+          } else {
+            console.warn("⚠️ [MapEnrollmentTracker] Auto-enrollment failed, but continuing");
+            // Don't show error to user, just continue - they can still view the map
+          }
+        } else {
+          console.log("✅ [MapEnrollmentTracker] User already enrolled, no action needed");
         }
       } catch (error) {
         // If there's an error (e.g., user not logged in), silently continue
         // The enrollment will be handled through the proper flow
-        console.log("Auto-enrollment not available:", error);
+        console.warn("⚠️ [MapEnrollmentTracker] Auto-enrollment error:", error);
+        
+        // Check if it's an authentication error
+        if (error instanceof Error && error.message.includes('401')) {
+          console.log("🔐 [MapEnrollmentTracker] Authentication required - user needs to log in");
+        }
       } finally {
         setIsCheckingEnrollment(false);
       }
