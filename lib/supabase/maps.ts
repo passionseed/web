@@ -457,7 +457,7 @@ export const getMapWithNodes = async (
 };
 
 export const createMap = async (
-  mapData: Pick<LearningMap, "title" | "description">
+  mapData: Pick<LearningMap, "title" | "description"> & { metadata?: any }
 ): Promise<LearningMap> => {
   const supabase = createClient();
 

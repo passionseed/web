@@ -100,16 +100,23 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
 
     if (!response.ok) {
       let errorDetails = {};
+      let responseText = "";
       try {
-        errorDetails = await response.json();
+        responseText = await response.text();
+        try {
+          errorDetails = JSON.parse(responseText);
+        } catch (e) {
+          errorDetails = { message: responseText || "Could not parse error response" };
+        }
       } catch (e) {
-        errorDetails = { message: "Could not parse error response" };
+        errorDetails = { message: "Could not read error response" };
       }
       
       console.error("❌ [Enrollment Client] API response not ok:", {
         status: response.status,
         statusText: response.statusText,
         errorDetails,
+        responseText,
         url: `/api/maps/${mapId}/enroll`,
       });
       return false;

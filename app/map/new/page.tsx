@@ -8,14 +8,56 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { createMap } from "@/lib/supabase/maps";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
+import Image from "next/image";
 
 export default function NewMapPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setCoverImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCoverImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeCoverImage = () => {
+    setCoverImage(null);
+    setCoverImagePreview(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +71,16 @@ export default function NewMapPage() {
     setIsSubmitting(true);
 
     try {
-      const newMap = await createMap({ title, description });
+      const mapData: any = { title, description };
+      
+      // If there's a cover image, add it to metadata
+      if (coverImage && coverImagePreview) {
+        mapData.metadata = {
+          coverImage: coverImagePreview
+        };
+      }
+      
+      const newMap = await createMap(mapData);
       toast({
         title: "Map Created!",
         description: `The map "${newMap.title}" has been successfully created.`,
@@ -107,6 +158,52 @@ export default function NewMapPage() {
                 className="min-h-[120px]"
                 disabled={isSubmitting}
               />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="cover-image">Cover Image (Optional)</label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                {coverImagePreview ? (
+                  <div className="relative">
+                    <Image
+                      src={coverImagePreview}
+                      alt="Cover preview"
+                      width={200}
+                      height={200}
+                      className="mx-auto rounded-lg object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2"
+                      onClick={removeCoverImage}
+                      disabled={isSubmitting}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="h-8 w-8 mx-auto text-gray-400" />
+                    <div className="text-sm text-gray-600">
+                      <label htmlFor="cover-image" className="cursor-pointer text-blue-600 hover:text-blue-500">
+                        Click to upload
+                      </label>
+                      {" or drag and drop"}
+                    </div>
+                    <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                  </div>
+                )}
+                <input
+                  id="cover-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  disabled={isSubmitting}
+                />
+              </div>
             </div>
             <div className="flex justify-end">
               <Button type="submit" disabled={isSubmitting}>

@@ -24,11 +24,18 @@ export async function POST(
 
     if (authError || !user) {
       console.error("❌ [Enroll API] Authentication failed:", {
-        authError,
+        authError: authError?.message || authError,
         hasUser: !!user,
+        userAgent: request.headers.get('user-agent'),
+        origin: request.headers.get('origin'),
       });
       return NextResponse.json(
-        { error: "Authentication required" },
+        { 
+          success: false,
+          error: "Authentication required", 
+          message: "Please log in to enroll in maps",
+          details: authError?.message || "No user session found"
+        },
         { status: 401 }
       );
     }
@@ -49,10 +56,21 @@ export async function POST(
     if (checkError) {
       console.error(
         "❌ [Enroll API] Error checking existing enrollment:",
-        checkError
+        {
+          error: checkError,
+          message: checkError.message,
+          code: checkError.code,
+          details: checkError.details,
+          hint: checkError.hint,
+        }
       );
       return NextResponse.json(
-        { error: "Failed to check enrollment status" },
+        { 
+          success: false,
+          error: "Failed to check enrollment status",
+          message: "Database error while checking enrollment",
+          details: checkError.message || "Unknown database error"
+        },
         { status: 500 }
       );
     }
@@ -81,10 +99,23 @@ export async function POST(
     if (enrollError || !enrollment) {
       console.error(
         "❌ [Enroll API] Failed to create enrollment:",
-        enrollError
+        {
+          error: enrollError,
+          message: enrollError?.message,
+          code: enrollError?.code,
+          details: enrollError?.details,
+          hint: enrollError?.hint,
+          mapId,
+          userId: user.id,
+        }
       );
       return NextResponse.json(
-        { error: "Failed to enroll in map" },
+        { 
+          success: false,
+          error: "Failed to enroll in map",
+          message: "Database error while creating enrollment",
+          details: enrollError?.message || "Could not create enrollment record"
+        },
         { status: 500 }
       );
     }

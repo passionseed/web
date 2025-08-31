@@ -20,6 +20,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { MapEnrollmentDialog } from "@/components/map/MapEnrollmentDialog";
 import { useAuth } from "@/hooks/use-auth";
 import Loading from "./loading";
+import Image from "next/image";
 import {
   Map,
   Users,
@@ -279,209 +280,262 @@ export default function MapsPage() {
       }));
   };
 
-  const renderMapCard = (map: MapWithStats) => {
-    const difficultyInfo = getDifficultyBadge(map.avg_difficulty);
-    const completionRate = getCompletionRate(map);
-    const categoryIcon = getCategoryIcon(map.category);
+  const extractColorsFromImage = (coverImage: string): Promise<Array<{r: number, g: number, b: number, luminance: number}>> => {
+    return new Promise((resolve) => {
+      // Check if we're running on the client side
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        // Return fallback colors for SSR
+        resolve([
+          { r: 100, g: 100, b: 100, luminance: 100 },
+          { r: 60, g: 60, b: 60, luminance: 60 },
+          { r: 30, g: 30, b: 30, luminance: 30 }
+        ]);
+        return;
+      }
+      
+      const img = document.createElement('img') as HTMLImageElement;
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve([
+              { r: 100, g: 100, b: 100, luminance: 100 },
+              { r: 60, g: 60, b: 60, luminance: 60 },
+              { r: 30, g: 30, b: 30, luminance: 30 }
+            ]);
+            return;
+          }
+          
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          ctx.drawImage(img, 0, 0);
+        
+        // Sample colors from different areas of the image
+        const colors = [];
+        const samplePoints = [
+          { x: 0.2, y: 0.2 }, { x: 0.5, y: 0.2 }, { x: 0.8, y: 0.2 },
+          { x: 0.2, y: 0.5 }, { x: 0.5, y: 0.5 }, { x: 0.8, y: 0.5 },
+          { x: 0.2, y: 0.8 }, { x: 0.5, y: 0.8 }, { x: 0.8, y: 0.8 }
+        ];
+        
+        for (const point of samplePoints) {
+          const x = Math.floor(point.x * canvas.width);
+          const y = Math.floor(point.y * canvas.height);
+          const pixelData = ctx?.getImageData(x, y, 1, 1).data;
+          
+          if (pixelData) {
+            const [r, g, b, a] = pixelData;
+            if (a > 0) { // Only non-transparent pixels
+              colors.push({ r, g, b, luminance: (r * 0.299 + g * 0.587 + b * 0.114) });
+            }
+          }
+        }
+        
+        // Sort by luminance and pick diverse colors
+        colors.sort((a, b) => a.luminance - b.luminance);
+        
+        const selectedColors = [];
+        if (colors.length >= 3) {
+          selectedColors.push(colors[0]); // Darkest
+          selectedColors.push(colors[Math.floor(colors.length / 2)]); // Medium
+          selectedColors.push(colors[colors.length - 1]); // Brightest
+        } else if (colors.length > 0) {
+          selectedColors.push(...colors);
+        }
+        
+        resolve(selectedColors);
+        } catch (error) {
+          // If any canvas operations fail, return fallback colors
+          resolve([
+            { r: 100, g: 100, b: 100, luminance: 100 },
+            { r: 60, g: 60, b: 60, luminance: 60 },
+            { r: 30, g: 30, b: 30, luminance: 30 }
+          ]);
+        }
+      };
+      
+      img.onerror = () => {
+        // Fallback colors if image loading fails
+        resolve([
+          { r: 100, g: 100, b: 100, luminance: 100 },
+          { r: 60, g: 60, b: 60, luminance: 60 },
+          { r: 30, g: 30, b: 30, luminance: 30 }
+        ]);
+      };
+      
+      img.src = coverImage;
+    });
+  };
+
+  const getVinylColorsFromCover = async (coverImage: string) => {
+    try {
+      const colors = await extractColorsFromImage(coverImage);
+      
+      // Ensure we have at least 3 colors
+      const fallbackColors = [
+        { r: 100, g: 100, b: 100 },
+        { r: 60, g: 60, b: 60 },
+        { r: 30, g: 30, b: 30 }
+      ];
+      
+      const selectedColors = colors.length >= 3 ? colors : fallbackColors;
+      
+      // Create a vinyl-appropriate gradient with 3 colors from the cover
+      const color1 = selectedColors[0];
+      const color2 = selectedColors[Math.floor(selectedColors.length / 2)];
+      const color3 = selectedColors[selectedColors.length - 1];
+      
+      const bg = `linear-gradient(135deg, rgba(${color1.r}, ${color1.g}, ${color1.b}, 0.9), rgba(${color2.r}, ${color2.g}, ${color2.b}, 0.8), rgba(${color3.r}, ${color3.g}, ${color3.b}, 0.9))`;
+      
+      // Use the brightest color for grooves and label
+      const brightColor = selectedColors[selectedColors.length - 1];
+      const grooveColor = `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.6)`;
+      
+      return {
+        bg,
+        grooveStyle: { borderColor: grooveColor },
+        labelStyle: { 
+          background: `linear-gradient(135deg, rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.8), rgba(${Math.max(0, brightColor.r-50)}, ${Math.max(0, brightColor.g-50)}, ${Math.max(0, brightColor.b-50)}, 0.9))`,
+          borderColor: `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.7)`
+        }
+      };
+    } catch (error) {
+      console.error('Color extraction failed:', error);
+      // Fallback
+      return {
+        bg: 'linear-gradient(135deg, rgba(100, 100, 100, 0.8), rgba(60, 60, 60, 0.9), rgba(30, 30, 30, 1))',
+        grooveStyle: { borderColor: 'rgba(156, 163, 175, 0.6)' },
+        labelStyle: { 
+          background: 'linear-gradient(135deg, #991b1b, #7f1d1d)',
+          borderColor: '#b91c1c'
+        }
+      };
+    }
+  };
+
+  const MapCard = ({ map }: { map: MapWithStats }) => {
+    const [vinylColors, setVinylColors] = useState<any>(null);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+      setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+      if (isMounted && map.metadata?.coverImage) {
+        getVinylColorsFromCover(map.metadata.coverImage).then(setVinylColors);
+      }
+    }, [isMounted, map.metadata?.coverImage]);
 
     return (
-      <Card
-        key={map.id}
-        className="group relative overflow-hidden hover:shadow-2xl hover:shadow-blue-900/50 transition-all duration-500 hover:scale-105 bg-slate-800/80 backdrop-blur-sm border-2 border-slate-700 hover:border-blue-500/50"
-      >
-        {/* Floating Islands Background Effect */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-          <div className="absolute top-4 right-4 w-8 h-8 bg-blue-400/20 rounded-full animate-float" />
-          <div className="absolute bottom-8 left-6 w-6 h-6 bg-purple-400/20 rounded-full animate-float-particle-1" />
-          <div className="absolute top-1/2 left-2 w-4 h-4 bg-indigo-400/20 rounded-full animate-float-particle-2" />
+      <Link href={`/map/${map.id}`} className="block group">
+        <div className="relative w-80 h-80 cursor-pointer perspective-1000">
+          {/* Vinyl Record - Behind Cover */}
+          <div className="absolute left-1/2 -translate-x-1/2 -top-16 w-72 h-72 transition-all duration-700 group-hover:-translate-y-20" style={{ zIndex: 1 }}>
+            <div className="relative w-full h-full">
+              {/* Vinyl Record */}
+              <div className={`vinyl-record w-full h-full rounded-full shadow-2xl border-4 relative overflow-hidden ${
+                !map.metadata?.coverImage ? 'bg-gradient-to-br from-gray-900 via-black to-gray-800 border-gray-700' : 'border-opacity-70'
+              }`} style={vinylColors ? {
+                background: vinylColors.bg
+              } : {}}>
+                
+                {/* Vinyl Grooves */}
+                <div className="absolute inset-4 rounded-full border opacity-40" style={
+                  vinylColors?.grooveStyle ? vinylColors.grooveStyle : { borderColor: 'rgba(156, 163, 175, 0.5)' }
+                } />
+                <div className="absolute inset-8 rounded-full border opacity-25" style={
+                  vinylColors?.grooveStyle ? vinylColors.grooveStyle : { borderColor: 'rgba(156, 163, 175, 0.3)' }
+                } />
+                <div className="absolute inset-12 rounded-full border opacity-15" style={
+                  vinylColors?.grooveStyle ? vinylColors.grooveStyle : { borderColor: 'rgba(156, 163, 175, 0.2)' }
+                } />
+                <div className="absolute inset-16 rounded-full border opacity-10" style={
+                  vinylColors?.grooveStyle ? vinylColors.grooveStyle : { borderColor: 'rgba(156, 163, 175, 0.1)' }
+                } />
+                
+                {/* Center Label */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-2 flex items-center justify-center shadow-lg" style={
+                  vinylColors?.labelStyle ? vinylColors.labelStyle : { 
+                    background: 'linear-gradient(135deg, #991b1b, #7f1d1d)',
+                    borderColor: '#b91c1c'
+                  }
+                }>
+                  <div className="w-6 h-6 bg-black rounded-full shadow-inner" />
+                </div>
+
+                {/* Vinyl Reflection */}
+                <div className="absolute top-4 left-4 w-16 h-16 bg-gradient-to-br from-white/20 to-transparent rounded-full blur-sm" />
+                
+                {/* Curved "Click to Play" text that appears on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <svg className="w-full h-full" viewBox="0 0 288 288">
+                    <defs>
+                      <path id="circle-path" d="M 144,144 m -128,0 a 128,128 0 1,1 256,0 a 128,128 0 1,1 -256,0" />
+                    </defs>
+                    <text className="text-white/60 text-sm font-thin tracking-widest uppercase fill-white/60">
+                      <textPath href="#circle-path" startOffset="0%">
+                        click to play • click to play • click to play • click to play • click to play • click to play • 
+                      </textPath>
+                    </text>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Album Cover */}
+          <div className="relative w-full h-full transform-style-preserve-3d transition-all duration-700" style={{ zIndex: 10 }}>
+            <div className="album-cover absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-lg shadow-2xl border border-slate-600 overflow-hidden transform-gpu">
+              
+              {/* Cover Image or Default Background */}
+              {map.metadata?.coverImage ? (
+                <div className="absolute inset-0 rounded-lg overflow-hidden">
+                  <Image
+                    src={map.metadata.coverImage}
+                    alt={map.title}
+                    fill
+                    className="object-cover"
+                  />
+                  {/* Dark gradient overlay at bottom for text */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                </div>
+              ) : (
+                <div className="absolute inset-0 opacity-20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-indigo-500/30" />
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                                    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+                    backgroundSize: '20px 20px'
+                  }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                </div>
+              )}
+
+              {/* Cover Content - Reference Image Style */}
+              <div className="relative z-10 h-full flex flex-col">
+                
+                {/* Title at bottom - League Gothic font */}
+                <div className="mt-auto p-6">
+                  <h3 style={{ fontFamily: 'League Gothic' }} className="text-6xl font-black text-white leading-none mb-2 tracking-wider uppercase">
+                    {map.title}
+                  </h3>
+                  <div className={`text-gray-300 font-medium ${
+                    (map.description || "Learning adventure awaits").length > 50 
+                      ? 'text-sm' 
+                      : 'text-lg'
+                  }`}>
+                    {map.description || "Learning adventure awaits"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <CardHeader className="relative">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-full flex items-center justify-center text-2xl border border-blue-600/30">
-                {categoryIcon}
-              </div>
-              <div>
-                <CardTitle className="text-xl group-hover:text-blue-300 transition-colors text-gray-100">
-                  {map.title}
-                </CardTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge className={`text-xs ${difficultyInfo.className}`}>
-                    {difficultyInfo.label}
-                  </Badge>
-                  {map.isEnrolled && !map.hasStarted && (
-                    <Badge
-                      variant="secondary"
-                      className="text-xs bg-green-900/20 text-green-400 border-green-500/50"
-                    >
-                      <BookOpen className="h-3 w-3 mr-1" />
-                      Enrolled
-                    </Badge>
-                  )}
-                  {map.isEnrolled && map.hasStarted && (
-                    <Badge
-                      variant="secondary"
-                      className="text-xs bg-blue-900/20 text-blue-400 border-blue-500/50"
-                    >
-                      <Zap className="h-3 w-3 mr-1" />
-                      Started
-                    </Badge>
-                  )}
-                  {map.node_count > 10 && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs border-yellow-500/50 text-yellow-400 bg-yellow-900/20"
-                    >
-                      <Crown className="h-3 w-3 mr-1" />
-                      Epic
-                    </Badge>
-                  )}
-                  {map.source_info?.classroom_name && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs border-green-500/50 text-green-300 bg-green-900/20"
-                    >
-                      {map.source_info.classroom_name}
-                    </Badge>
-                  )}
-                  {map.source_info?.team_name && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs border-purple-500/50 text-purple-300 bg-purple-900/20"
-                    >
-                      {map.source_info.team_name}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-          <CardDescription className="text-sm leading-relaxed text-gray-400">
-            {map.description ||
-              "Embark on an exciting learning journey through interactive islands"}
-            {map.source_info?.original_title && (
-              <span className="block text-xs text-amber-400 mt-1">
-                Forked from: {map.source_info.original_title}
-              </span>
-            )}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2 p-2 bg-blue-900/30 rounded-lg border border-blue-700/30">
-              <Map className="h-4 w-4 text-blue-400" />
-              <div>
-                <div className="font-medium text-blue-200">
-                  {map.node_count}
-                </div>
-                <div className="text-blue-400 text-xs">Islands</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 p-2 bg-green-900/30 rounded-lg border border-green-700/30">
-              <Target className="h-4 w-4 text-green-400" />
-              <div>
-                <div className="font-medium text-green-200">
-                  {map.total_assessments}
-                </div>
-                <div className="text-green-400 text-xs">Quests</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 p-2 bg-purple-900/30 rounded-lg border border-purple-700/30">
-              <Star className="h-4 w-4 text-purple-400" />
-              <div>
-                <div className="font-medium text-purple-200">
-                  {map.avg_difficulty}/10
-                </div>
-                <div className="text-purple-400 text-xs">Challenge</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 p-2 bg-orange-900/30 rounded-lg border border-orange-700/30">
-              <Users className="h-4 w-4 text-orange-400" />
-              <div>
-                <div className="font-medium text-orange-200">
-                  {map.total_students || 0}
-                </div>
-                <div className="text-orange-400 text-xs">Explorers</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Completion Rate */}
-          {map.total_students && map.total_students > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-400 flex items-center gap-1">
-                  <Trophy className="h-3 w-3" />
-                  Completion Rate
-                </span>
-                <span className="font-medium text-gray-200">
-                  {completionRate}%
-                </span>
-              </div>
-              <Progress value={completionRate} className="h-2 bg-slate-700" />
-            </div>
-          )}
-
-          {/* Action Button */}
-          <div className="relative">
-            {map.isEnrolled ? (
-              <Link href={`/map/${map.id}`} className="block">
-                <Button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 group-hover:shadow-xl group-hover:shadow-green-900/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] border border-green-500/30 hover:border-green-400/50">
-                  {map.hasStarted ? (
-                    <>
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Continue Adventure
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Start Adventure
-                    </>
-                  )}
-                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            ) : isAuthenticated ? (
-              <Button
-                onClick={(e) => handleStartAdventure(map, e)}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 group-hover:shadow-xl group-hover:shadow-blue-900/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] border border-blue-500/30 hover:border-blue-400/50"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Start Adventure
-                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            ) : (
-              <Button
-                onClick={(e) => handleStartAdventure(map, e)}
-                variant="outline"
-                className="w-full border-slate-600 hover:bg-slate-700/50 text-slate-300 hover:text-slate-200 group-hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Login to Start Adventure
-                <Lock className="h-4 w-4 ml-2" />
-              </Button>
-            )}
-
-            {/* Backup Link - for those who prefer direct navigation */}
-            <Link
-              href={`/map/${map.id}`}
-              className="absolute inset-0 opacity-0 pointer-events-none"
-            >
-              <span className="sr-only">Go to {map.title}</span>
-            </Link>
-          </div>
-        </CardContent>
-
-        {/* Floating Achievement Badge */}
-        {completionRate >= 80 && (
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-            <Crown className="h-4 w-4 text-white" />
-          </div>
-        )}
-      </Card>
+      </Link>
     );
   };
 
@@ -513,9 +567,11 @@ export default function MapsPage() {
           </div>
         </div>
 
-        {/* Maps Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {section.maps.map(renderMapCard)}
+        {/* Maps Grid - Adjusted for vinyl records */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-y-20 justify-items-center" style={{marginTop: '5rem'}}>
+          {section.maps.map((map) => (
+            <MapCard key={map.id} map={map} />
+          ))}
         </div>
       </div>
     ));
@@ -560,7 +616,7 @@ export default function MapsPage() {
       <div className="bg-gradient-to-r from-slate-800 via-blue-900 to-indigo-900 text-white border-b border-blue-800/50">
         <div className="container mx-auto px-6 py-16">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex items-center justify-center gap-4 mb-4">
               <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-blue-400/30">
                 <Compass className="h-8 w-8 text-blue-300" />
               </div>
