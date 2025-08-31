@@ -36,6 +36,7 @@ export function ClassroomSettingsModal({
     description: classroom.description || "",
     max_students: classroom.max_students,
     is_active: classroom.is_active,
+    enable_assignments: classroom.enable_assignments ?? true,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,8 +124,8 @@ export function ClassroomSettingsModal({
           Settings
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center space-x-2">
             <Settings className="h-5 w-5" />
             <span>Classroom Settings</span>
@@ -134,7 +135,8 @@ export function ClassroomSettingsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <form onSubmit={handleSubmit} className="space-y-6 pb-2">
           {/* Basic Settings */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -189,10 +191,47 @@ export function ClassroomSettingsModal({
                 }
               />
             </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="enable_assignments">Assignment System</Label>
+                <div className="text-sm text-muted-foreground">
+                  Enable assignment creation and tracking features
+                </div>
+              </div>
+              <Switch
+                id="enable_assignments"
+                checked={formData.enable_assignments}
+                onCheckedChange={(checked) =>
+                  handleInputChange("enable_assignments", checked)
+                }
+              />
+            </div>
+
+            {/* Progress System Info */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-blue-900">Progress Tracking</p>
+                  <p className="text-sm text-blue-700">
+                    Student progress is calculated based on completion of linked learning maps. 
+                    {formData.enable_assignments 
+                      ? " Assignments provide additional organization and tracking tools."
+                      : " With assignments disabled, progress is purely map-based."
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Join Code Section */}
-          <div className="border-t pt-4 space-y-4">
+          <div className="border-t pt-6 space-y-4">
             <div className="space-y-2">
               <Label>Join Code</Label>
               <div className="flex items-center space-x-2">
@@ -229,7 +268,7 @@ export function ClassroomSettingsModal({
           </div>
 
           {/* Danger Zone */}
-          <div className="border-t pt-4 space-y-4">
+          <div className="border-t pt-6 space-y-4">
             <div className="space-y-2">
               <Label className="text-destructive">Danger Zone</Label>
               <div className="space-y-2">
@@ -253,21 +292,26 @@ export function ClassroomSettingsModal({
               </div>
             </div>
           </div>
+          </form>
+        </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !formData.name.trim()}>
-              {loading ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </form>
+        <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={loading || !formData.name.trim()}
+            onClick={handleSubmit}
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

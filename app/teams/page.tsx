@@ -41,7 +41,7 @@ export default async function TeamsPage() {
         // Run both queries in parallel for each classroom
         const [classroomTeams, classroomTeamMaps] = await Promise.all([
           getClassroomTeams(classroom.id, supabase),
-          getClassroomTeamMaps(classroom.id)
+          getClassroomTeamMaps(classroom.id, supabase)
         ]);
 
         const userTeamsInClassroom = classroomTeams.filter(

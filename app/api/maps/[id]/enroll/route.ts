@@ -45,6 +45,52 @@ export async function POST(
       email: user.email,
     });
 
+    // Verify user profile exists (required for foreign key)
+    const { data: profileExists, error: profileError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profileExists) {
+      console.error("❌ [Enroll API] User profile not found:", {
+        userId: user.id,
+        error: profileError
+      });
+      return NextResponse.json(
+        { 
+          success: false,
+          error: "User profile not found",
+          message: "User profile must exist to enroll in maps",
+          details: profileError?.message || "Profile not found in database"
+        },
+        { status: 400 }
+      );
+    }
+
+    // Verify the map exists first
+    const { data: mapExists, error: mapError } = await supabase
+      .from("learning_maps")
+      .select("id")
+      .eq("id", mapId)
+      .single();
+
+    if (mapError || !mapExists) {
+      console.error("❌ [Enroll API] Map not found:", {
+        mapId,
+        error: mapError
+      });
+      return NextResponse.json(
+        { 
+          success: false,
+          error: "Map not found",
+          message: "The specified learning map does not exist",
+          details: mapError?.message || "Map ID not found"
+        },
+        { status: 404 }
+      );
+    }
+
     // Check if user is already enrolled
     const { data: existingEnrollment, error: checkError } = await supabase
       .from("user_map_enrollments")
@@ -84,15 +130,27 @@ export async function POST(
       });
     }
 
+    // Debug: Check current authentication context
+    const { data: debugAuth } = await supabase.auth.getUser();
+    console.log("🔍 [Enroll API] Authentication context check:", {
+      authUserId: debugAuth.user?.id,
+      requestUserId: user.id,
+      isMatch: debugAuth.user?.id === user.id
+    });
+
     // Create new enrollment
+    const enrollmentData = {
+      user_id: user.id,
+      map_id: mapId,
+      status: "active",
+      enrolled_at: new Date().toISOString(),
+    };
+
+    console.log("📝 [Enroll API] Attempting to insert enrollment:", enrollmentData);
+
     const { data: enrollment, error: enrollError } = await supabase
       .from("user_map_enrollments")
-      .insert({
-        user_id: user.id,
-        map_id: mapId,
-        status: "active",
-        enrolled_at: new Date().toISOString(),
-      })
+      .insert(enrollmentData)
       .select("*")
       .single();
 
@@ -137,7 +195,12 @@ export async function POST(
     });
 
     return NextResponse.json(
-      { error: "Failed to enroll in map" },
+      { 
+        success: false,
+        error: "Failed to enroll in map",
+        message: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown server error"
+      },
       { status: 500 }
     );
   }

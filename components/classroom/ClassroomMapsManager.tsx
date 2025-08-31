@@ -56,10 +56,16 @@ interface LinkedMap {
 
 interface ClassroomMapsManagerProps {
   classroomId: string;
+  canManage?: boolean;
+  enableAssignments?: boolean;
+  onMapsUpdated?: () => void;
 }
 
 export function ClassroomMapsManager({
   classroomId,
+  canManage = false,
+  enableAssignments = true,
+  onMapsUpdated,
 }: ClassroomMapsManagerProps) {
   const [linkedMaps, setLinkedMaps] = useState<LinkedMap[]>([]);
   const [teamForkedMaps, setTeamForkedMaps] = useState<any[]>([]);
@@ -286,14 +292,16 @@ export function ClassroomMapsManager({
 
                 {/* Actions */}
                 <div className="flex items-center space-x-2">
-                  <CreateAssignmentFromMapModal
-                    classroomId={classroomId}
-                    mapId={map.map_id}
-                    mapTitle={map.map_title}
-                    onAssignmentCreated={() => {
-                      // Optionally refresh parent component
-                    }}
-                  />
+                  {enableAssignments && canManage && (
+                    <CreateAssignmentFromMapModal
+                      classroomId={classroomId}
+                      mapId={map.map_id}
+                      mapTitle={map.map_title}
+                      onAssignmentCreated={() => {
+                        onMapsUpdated?.();
+                      }}
+                    />
+                  )}
 
                   {/* Quick edit link to map editor */}
                   <Link href={`/map/${map.map_id}/edit`}>

@@ -31,30 +31,32 @@ interface Student {
     avatar_url?: string;
   };
   joined_at: string;
-  assignment_progress?: {
-    assignment_id: string;
-    status: "not_started" | "in_progress" | "submitted" | "completed";
+  map_progress?: {
+    map_id: string;
+    map_title: string;
     progress_percentage: number;
-    due_date?: string;
-    completed_at?: string;
+    completed_nodes: number;
+    total_nodes: number;
+    status: "not_started" | "in_progress" | "completed";
   }[];
 }
 
-interface Assignment {
+interface ClassroomMap {
   id: string;
-  title: string;
-  default_due_date?: string;
+  map_id: string;
+  map_title: string;
+  display_order: number;
 }
 
 interface StudentProgressTableProps {
   students: Student[];
-  assignments: Assignment[];
+  classroomMaps: ClassroomMap[];
   canManage: boolean;
 }
 
 export function StudentProgressTable({
   students,
-  assignments,
+  classroomMaps,
   canManage,
 }: StudentProgressTableProps) {
   const getStudentName = (student: Student) => {
@@ -83,12 +85,6 @@ export function StudentProgressTable({
             Completed
           </Badge>
         );
-      case "submitted":
-        return (
-          <Badge variant="default" className="bg-blue-500">
-            Submitted
-          </Badge>
-        );
       case "in_progress":
         return (
           <Badge
@@ -106,18 +102,18 @@ export function StudentProgressTable({
   };
 
   const getOverallProgress = (student: Student) => {
-    if (!student.assignment_progress || assignments.length === 0) {
+    if (!student.map_progress || classroomMaps.length === 0) {
       return 0;
     }
 
-    const totalProgress = student.assignment_progress.reduce(
+    const totalProgress = student.map_progress.reduce(
       (sum, progress) => {
         return sum + progress.progress_percentage;
       },
       0
     );
 
-    return Math.round(totalProgress / assignments.length);
+    return Math.round(totalProgress / classroomMaps.length);
   };
 
   const formatDate = (dateString: string) => {
@@ -146,13 +142,13 @@ export function StudentProgressTable({
             <TableRow>
               <TableHead>Student</TableHead>
               <TableHead>Overall Progress</TableHead>
-              {assignments.slice(0, 3).map((assignment) => (
-                <TableHead key={assignment.id} className="min-w-[120px]">
-                  {assignment.title}
+              {classroomMaps.slice(0, 3).map((map) => (
+                <TableHead key={map.map_id} className="min-w-[120px]">
+                  {map.map_title}
                 </TableHead>
               ))}
-              {assignments.length > 3 && (
-                <TableHead>+{assignments.length - 3} more</TableHead>
+              {classroomMaps.length > 3 && (
+                <TableHead>+{classroomMaps.length - 3} more</TableHead>
               )}
               <TableHead>Joined</TableHead>
               {canManage && <TableHead className="w-[50px]"></TableHead>}
@@ -164,9 +160,9 @@ export function StudentProgressTable({
                 <TableCell
                   colSpan={
                     5 +
-                    (assignments.length > 3
+                    (classroomMaps.length > 3
                       ? 1
-                      : Math.min(assignments.length, 3)) +
+                      : Math.min(classroomMaps.length, 3)) +
                     (canManage ? 1 : 0)
                   }
                   className="text-center py-8 text-muted-foreground"
@@ -210,27 +206,27 @@ export function StudentProgressTable({
                     </div>
                   </TableCell>
 
-                  {assignments.slice(0, 3).map((assignment) => {
-                    const progress = student.assignment_progress?.find(
-                      (p) => p.assignment_id === assignment.id
+                  {classroomMaps.slice(0, 3).map((map) => {
+                    const progress = student.map_progress?.find(
+                      (p) => p.map_id === map.map_id
                     );
                     return (
-                      <TableCell key={assignment.id}>
+                      <TableCell key={map.map_id}>
                         {progress ? (
                           <div className="space-y-1">
                             {getStatusBadge(progress.status)}
                             <div className="text-xs text-muted-foreground">
-                              {progress.progress_percentage}%
+                              {progress.progress_percentage}% ({progress.completed_nodes}/{progress.total_nodes} nodes)
                             </div>
                           </div>
                         ) : (
-                          <Badge variant="secondary">Not Enrolled</Badge>
+                          <Badge variant="secondary">Not Started</Badge>
                         )}
                       </TableCell>
                     );
                   })}
 
-                  {assignments.length > 3 && (
+                  {classroomMaps.length > 3 && (
                     <TableCell>
                       <Button
                         variant="ghost"

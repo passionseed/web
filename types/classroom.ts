@@ -9,6 +9,8 @@ export interface Classroom {
   join_code: string; // 6-8 character unique code
   max_students: number;
   is_active: boolean;
+  enable_assignments?: boolean; // toggle for assignment features
+  settings?: Record<string, any>; // additional settings as JSONB
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
 }

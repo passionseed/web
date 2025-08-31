@@ -501,7 +501,7 @@ export default function MapsPage() {
                     className="object-cover"
                   />
                   {/* Dark gradient overlay at bottom for text */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 via-black/10 to-transparent" />
                 </div>
               ) : (
                 <div className="absolute inset-0 opacity-20">
@@ -520,7 +520,17 @@ export default function MapsPage() {
                 
                 {/* Title at bottom - League Gothic font */}
                 <div className="mt-auto p-6">
-                  <h3 style={{ fontFamily: 'League Gothic' }} className="text-6xl font-black text-white leading-none mb-2 tracking-wider uppercase">
+                  <h3 style={{ fontFamily: 'League Gothic' }} className={`font-black text-white leading-none mb-2 tracking-wider uppercase ${
+                    map.title.length > 20 
+                      ? 'text-2xl' 
+                      : map.title.length > 16 
+                        ? 'text-3xl' 
+                        : map.title.length > 12
+                          ? 'text-4xl'
+                          : map.title.length > 8
+                            ? 'text-5xl'
+                            : 'text-6xl'
+                  }`}>
                     {map.title}
                   </h3>
                   <div className={`text-gray-300 font-medium ${

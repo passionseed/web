@@ -26,6 +26,8 @@ import {
   Trash2,
   Users,
   Calendar,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 
 interface AdminMap {
@@ -57,6 +59,9 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [mapToDelete, setMapToDelete] = useState<AdminMap | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedMaps, setSelectedMaps] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredMaps = maps.filter(map => {
@@ -181,6 +186,90 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
     }
   };
 
+  const toggleMapSelection = (mapId: string) => {
+    setSelectedMaps(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(mapId)) {
+        newSelection.delete(mapId);
+      } else {
+        newSelection.add(mapId);
+      }
+      return newSelection;
+    });
+  };
+
+  const toggleAllMaps = () => {
+    if (selectedMaps.size === filteredMaps.length) {
+      // If all filtered maps are selected, deselect all
+      setSelectedMaps(new Set());
+    } else {
+      // Select all filtered maps
+      setSelectedMaps(new Set(filteredMaps.map(map => map.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedMaps.size === 0) return;
+    setBulkDeleteDialogOpen(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedMaps.size === 0) return;
+
+    try {
+      setBulkDeleting(true);
+      const mapIds = Array.from(selectedMaps);
+      
+      console.log("🗑️ [Admin] Starting bulk deletion:", mapIds);
+      
+      const response = await fetch("/api/admin/maps/bulk-delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mapIds }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ [Admin] Bulk delete successful:", result);
+        
+        toast({
+          title: "Maps Deleted Successfully",
+          description: `Successfully deleted ${result.deletedCount} maps`,
+        });
+        
+        // Remove deleted maps from the list
+        setMaps(prevMaps => prevMaps.filter(m => !selectedMaps.has(m.id)));
+        setSelectedMaps(new Set());
+        onDataReload?.();
+      } else {
+        const errorText = await response.text();
+        let errorMessage = "Failed to delete maps";
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        console.error("❌ [Admin] Bulk delete failed:", response.status, errorMessage);
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error("Error bulk deleting maps:", error);
+      toast({
+        title: "Bulk Deletion Failed",
+        description: error instanceof Error ? error.message : "Failed to delete maps",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteDialogOpen(false);
+    }
+  };
+
   const getVisibilityBadgeVariant = (visibility: string) => {
     switch (visibility) {
       case "public": return "default";
@@ -283,14 +372,27 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
             </div>
           </div>
           
-          {/* Results summary */}
-          <div className="mb-4">
+          {/* Results summary and bulk actions */}
+          <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               Showing {filteredMaps.length} of {maps.length} maps
               {searchTerm && ` matching "${searchTerm}"`}
               {selectedVisibility !== "all" && ` with visibility "${selectedVisibility}"`}
               {selectedDifficulty !== "all" && ` with difficulty ${selectedDifficulty}`}
+              {selectedMaps.size > 0 && ` • ${selectedMaps.size} selected`}
             </p>
+            {selectedMaps.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                className="ml-4"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {bulkDeleting ? "Deleting..." : `Delete ${selectedMaps.size} Maps`}
+              </Button>
+            )}
           </div>
 
           {/* Maps Table */}
@@ -298,6 +400,20 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={toggleAllMaps}
+                    >
+                      {selectedMaps.size === filteredMaps.length && filteredMaps.length > 0 ? (
+                        <CheckSquare className="h-4 w-4" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Creator</TableHead>
                   <TableHead>Visibility</TableHead>
@@ -310,6 +426,20 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
               <TableBody>
                 {filteredMaps.map((map) => (
                   <TableRow key={map.id}>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => toggleMapSelection(map.id)}
+                      >
+                        {selectedMaps.has(map.id) ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{map.title}</div>
@@ -396,7 +526,7 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
                 ))}
                 {filteredMaps.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No maps found matching your criteria
                     </TableCell>
                   </TableRow>
@@ -445,6 +575,49 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
               disabled={deleting !== null}
             >
               {deleting ? "Deleting..." : "Delete Map"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Multiple Learning Maps</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p className="mb-3">
+                  Are you sure you want to delete {selectedMaps.size} selected maps? 
+                  This action cannot be undone and will permanently delete:
+                </p>
+                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-3">
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li className="font-medium">
+                      All {selectedMaps.size} learning maps and their nodes
+                    </li>
+                    <li>All node content (text, images, resources)</li>
+                    <li>All assessments and quiz questions</li>
+                    <li>All student progress and completion data</li>
+                    <li>All assessment submissions and grades</li>
+                    <li>All node connections and learning paths</li>
+                  </ul>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                  <span>This will affect all students who have interacted with these maps</span>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={bulkDeleting}
+            >
+              {bulkDeleting ? "Deleting..." : `Delete ${selectedMaps.size} Maps`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
