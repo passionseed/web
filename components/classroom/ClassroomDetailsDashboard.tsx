@@ -105,36 +105,9 @@ export function ClassroomDetailsDashboard({
         ? await studentsResponse.json()
         : [];
 
-      console.log("xx studentsData", studentsData);
-
-      // Log errors for debugging
-      if (!statsResponse.ok) {
-        console.error("Failed to load stats:", await statsResponse.text());
-      }
-      if (!assignmentsResponse.ok) {
-        console.error(
-          "Failed to load assignments:",
-          await assignmentsResponse.text()
-        );
-      }
-      if (!studentsResponse.ok) {
-        console.error(
-          "Failed to load students:",
-          await studentsResponse.text()
-        );
-      }
-
       setStats(statsData);
       setAssignments(assignmentsData);
       setStudents(studentsData);
-
-      // Debug logging
-      console.log("📊 Classroom Data Loaded:", {
-        classroom: classroom.id,
-        stats: statsData,
-        assignments: assignmentsData,
-        students: studentsData,
-      });
     } catch (error) {
       console.error("Failed to load classroom data:", error);
       // Set default values on error
@@ -164,7 +137,8 @@ export function ClassroomDetailsDashboard({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentTab = searchParams?.get("tab") ?? "assignments";
+  const defaultTab = classroom.enable_assignments === false ? "maps" : "assignments";
+  const currentTab = searchParams?.get("tab") ?? defaultTab;
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams?.toString() || "");
@@ -172,6 +146,14 @@ export function ClassroomDetailsDashboard({
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   };
+
+  // Redirect to maps tab if currently on assignments tab but assignments are disabled
+  useEffect(() => {
+    if (classroom.enable_assignments === false && currentTab === "assignments") {
+      handleTabChange("maps");
+    }
+  }, [classroom.enable_assignments]);
+
 
   return (
     <div className="space-y-6">
@@ -197,13 +179,18 @@ export function ClassroomDetailsDashboard({
 
         {canManage && (
           <div className="flex items-center space-x-2">
-            <CreateAssignmentModal
-              classroomId={classroom.id}
-              onAssignmentCreated={loadClassroomData}
-            />
+            {classroom.enable_assignments !== false && (
+              <CreateAssignmentModal
+                classroomId={classroom.id}
+                onAssignmentCreated={loadClassroomData}
+              />
+            )}
             <ClassroomSettingsModal
               classroom={classroom}
-              onSettingsUpdated={loadClassroomData}
+              onSettingsUpdated={() => {
+                // Refresh the entire page to get updated classroom data
+                router.refresh();
+              }}
             />
           </div>
         )}
@@ -273,7 +260,9 @@ export function ClassroomDetailsDashboard({
         className="space-y-4"
       >
         <TabsList>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          {classroom.enable_assignments !== false && (
+            <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          )}
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="groups">Groups</TabsTrigger>
@@ -282,10 +271,13 @@ export function ClassroomDetailsDashboard({
           {canManage && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="assignments" className="space-y-4">
+        {classroom.enable_assignments !== false && (
+          <TabsContent value="assignments" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Assignments</h3>
-            {canManage && (
+            <h3 className="text-lg font-semibold">
+              {classroom.enable_assignments === false ? "Learning Maps" : "Assignments"}
+            </h3>
+            {canManage && classroom.enable_assignments !== false && (
               <CreateAssignmentModal
                 classroomId={classroom.id}
                 onAssignmentCreated={loadClassroomData}
@@ -294,7 +286,32 @@ export function ClassroomDetailsDashboard({
             )}
           </div>
 
-          {loading ? (
+          {classroom.enable_assignments === false ? (
+            // Show learning maps when assignments are disabled
+            <div className="space-y-4">
+              <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
+                    <BookOpen className="w-3 h-3 text-white" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-blue-900">Map-Based Progress Tracking</p>
+                    <p className="text-sm text-blue-700">
+                      Assignment system is disabled. Student progress is tracked through completion of linked learning maps. 
+                      Students work directly with maps and their progress is calculated based on node completion.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <ClassroomMapsManager 
+                classroomId={classroom.id}
+                canManage={canManage}
+                enableAssignments={classroom.enable_assignments !== false}
+                onMapsUpdated={loadClassroomData}
+              />
+            </div>
+          ) : loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="h-48 animate-pulse bg-muted" />
@@ -329,6 +346,7 @@ export function ClassroomDetailsDashboard({
             </Card>
           )}
         </TabsContent>
+        )}
 
         <TabsContent value="teams" className="space-y-4">
           <Tabs defaultValue="manage" className="space-y-6">
@@ -371,11 +389,19 @@ export function ClassroomDetailsDashboard({
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Learning Maps</h3>
                 <p className="text-sm text-muted-foreground">
-                  Link learning maps to create assignments from their nodes
+                  {classroom.enable_assignments === false 
+                    ? "Link learning maps for student progress tracking"
+                    : "Link learning maps to create assignments from their nodes"
+                  }
                 </p>
               </div>
 
-              <ClassroomMapsManager classroomId={classroom.id} />
+              <ClassroomMapsManager 
+                classroomId={classroom.id}
+                canManage={canManage}
+                enableAssignments={classroom.enable_assignments !== false}
+                onMapsUpdated={loadClassroomData}
+              />
             </>
           ) : (
             // Student-focused, emphasized view
