@@ -77,14 +77,28 @@ export async function DELETE(request: NextRequest) {
       message: `Bulk deletion completed`,
       deletedCount,
       requestedCount: mapIds.length,
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : undefined,
+      details: {
+        attempted: mapIds.length,
+        succeeded: deletedCount,
+        failed: errors.length,
+        failureReasons: errors
+      }
     };
 
     console.log("📊 [Admin] Bulk deletion summary:", response);
 
     if (errors.length > 0 && deletedCount === 0) {
       return NextResponse.json(
-        { ...response, error: "All deletions failed" },
+        { 
+          ...response, 
+          error: "All deletions failed",
+          debugInfo: {
+            mapIds,
+            errorDetails: errors,
+            timestamp: new Date().toISOString()
+          }
+        },
         { status: 500 }
       );
     }
