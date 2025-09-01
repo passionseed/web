@@ -55,7 +55,7 @@ export function InlineGradingForm({
         rating,
         userId,
         submission.student_node_progress.id,
-        pointsAwarded
+        submission.node_assessments.is_graded ? pointsAwarded : null
       );
 
       toast({
@@ -154,19 +154,23 @@ export function InlineGradingForm({
 
       {/* Points (optional) */}
       <div className="space-y-2">
-        <Label className="flex items-center gap-1">
-          <Award className="h-4 w-4" />
-          Points Awarded (optional)
-        </Label>
-        <Input
-          type="number"
-          min="0"
-          placeholder="Enter points"
-          value={pointsAwarded ?? ""}
-          onChange={(e) =>
-            setPointsAwarded(e.target.value ? parseInt(e.target.value) : null)
-          }
-        />
+        {submission.node_assessments.is_graded && (
+          <>
+            <Label className="flex items-center gap-1">
+              <Award className="h-4 w-4" />
+              Points Awarded (optional)
+            </Label>
+            <Input
+              type="number"
+              min="0"
+              placeholder="Enter points"
+              value={pointsAwarded ?? ""}
+              onChange={(e) =>
+                setPointsAwarded(e.target.value ? parseInt(e.target.value) : null)
+              }
+            />
+          </>
+        )}
       </div>
 
       {/* Comments */}

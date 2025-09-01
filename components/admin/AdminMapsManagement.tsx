@@ -246,15 +246,25 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
       } else {
         const errorText = await response.text();
         let errorMessage = "Failed to delete maps";
+        let debugInfo = null;
         
         try {
           const errorJson = JSON.parse(errorText);
           errorMessage = errorJson.error || errorMessage;
+          debugInfo = errorJson.debugInfo || errorJson.details;
+          
+          // Log detailed error information for debugging
+          console.error("❌ [Admin] Bulk delete failed:", {
+            status: response.status,
+            error: errorMessage,
+            debugInfo,
+            fullResponse: errorJson
+          });
         } catch {
+          console.error("❌ [Admin] Bulk delete failed:", response.status, errorText);
           errorMessage = errorText || errorMessage;
         }
         
-        console.error("❌ [Admin] Bulk delete failed:", response.status, errorMessage);
         throw new Error(errorMessage);
       }
     } catch (error) {

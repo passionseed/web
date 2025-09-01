@@ -35,12 +35,14 @@ interface NodeEditorPanelProps {
   selectedNode: Node<MapNode> | null;
   onNodeDataChange: (nodeId: string, data: Partial<MapNode>) => void;
   onNodeDelete?: (nodeId: string) => void;
+  onEditingStateChange?: (isEditing: boolean) => void;
 }
 
 export function NodeEditorPanel({
   selectedNode,
   onNodeDataChange,
   onNodeDelete,
+  onEditingStateChange,
 }: NodeEditorPanelProps) {
   const [nodeData, setNodeData] = useState<Partial<MapNode>>({});
   // Track quiz questions separately for batch operations
@@ -53,6 +55,8 @@ export function NodeEditorPanel({
 
   // For text nodes, we want immediate UI updates with debounced data changes
   const [localText, setLocalText] = useState("");
+  // For regular nodes, we also need local state for title to prevent deselection on every keystroke
+  const [localTitle, setLocalTitle] = useState("");
 
   // Sync local text with selected node data
   useEffect(() => {
@@ -61,21 +65,45 @@ export function NodeEditorPanel({
     }
   }, [selectedNode, isTextNode]);
 
-  // Debounced update for text nodes
+  // Sync local title with selected node data for regular nodes
   useEffect(() => {
-    if (!isTextNode || !selectedNode) return;
+    if (selectedNode && !isTextNode) {
+      setLocalTitle(selectedNode.data.title || "");
+    }
+  }, [selectedNode, isTextNode]);
 
-    const timeoutId = setTimeout(() => {
-      if (localText !== selectedNode.data.title) {
-        onNodeDataChange(selectedNode.id, { title: localText });
-      }
-    }, 150); // 150ms debounce
+  // Remove the debounced updates - we'll only update on blur to prevent refreshing
+  // The visual updates are handled by local state, data persistence happens on blur
 
-    return () => clearTimeout(timeoutId);
-  }, [localText, isTextNode, selectedNode, onNodeDataChange]);
+  // Handle blur events to sync React Flow nodes when editing is complete
+  const handleTitleBlur = useCallback(() => {
+    onEditingStateChange?.(false);
+    
+    // Force sync React Flow nodes when editing is complete
+    // This ensures visual consistency without flashing during typing
+    if (selectedNode && !isTextNode && localTitle !== selectedNode.data.title) {
+      // Trigger a non-title update to force React Flow sync
+      onNodeDataChange(selectedNode.id, { 
+        title: localTitle,
+        updated_at: new Date().toISOString() // Add timestamp to force update
+      });
+    } else if (selectedNode && isTextNode && localText !== selectedNode.data.title) {
+      // For text nodes, also ensure sync
+      onNodeDataChange(selectedNode.id, { 
+        title: localText,
+        updated_at: new Date().toISOString() // Add timestamp to force update
+      });
+    }
+  }, [selectedNode, isTextNode, localTitle, localText, onNodeDataChange, onEditingStateChange]);
+
+  const handleTitleFocus = useCallback(() => {
+    onEditingStateChange?.(true);
+  }, [onEditingStateChange]);
 
   useEffect(() => {
     if (selectedNode) {
+      console.log("📋 NodeEditorPanel: selectedNode changed, updating local state");
+      console.log("📊 New node assessments:", selectedNode.data.node_assessments);
       setNodeData(selectedNode.data);
       // Initialize quiz questions from existing assessment
       const assessment = selectedNode.data.node_assessments?.[0];
@@ -85,6 +113,9 @@ export function NodeEditorPanel({
           "📋 Loaded existing quiz questions:",
           assessment.quiz_questions?.length || 0
         );
+      } else {
+        // Clear quiz questions if no quiz assessment
+        setQuizQuestions([]);
       }
     }
   }, [selectedNode]);
@@ -100,6 +131,12 @@ export function NodeEditorPanel({
           return;
         }
 
+        // For regular nodes title field, use local state for immediate UI updates
+        if (!isTextNode && field === "title") {
+          setLocalTitle(value);
+          return;
+        }
+
         // For other fields, use normal update flow
         const newData = { ...nodeData, [field]: value };
         setNodeData(newData);
@@ -108,7 +145,7 @@ export function NodeEditorPanel({
           onNodeDataChange(selectedNode.id, { [field]: value });
         }
       },
-    [nodeData, selectedNode, onNodeDataChange]
+    [nodeData, selectedNode, onNodeDataChange, isTextNode]
   );
 
   const handleSliderChange = useCallback(
@@ -163,8 +200,13 @@ export function NodeEditorPanel({
 
       const newAssessments =
         action === "add" && changedAssessment ? [changedAssessment] : [];
+      
+      console.log("📊 New assessments array:", newAssessments, "Length:", newAssessments.length);
+      
       const updatedNodeData = { ...nodeData, node_assessments: newAssessments };
 
+      console.log("📝 Updated node data:", updatedNodeData);
+      
       setNodeData(updatedNodeData);
       onNodeDataChange(selectedNode.id, {
         node_assessments: newAssessments,
@@ -237,7 +279,7 @@ export function NodeEditorPanel({
   }
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
+    <div className="h-full flex flex-col bg-background overflow-hidden node-editor-panel">
       {/* Header - Fixed */}
       <div className="flex-shrink-0 p-4 border-b bg-background">
         <div className="flex items-center justify-between">
@@ -293,8 +335,10 @@ export function NodeEditorPanel({
                   <Input
                     id="title"
                     name="title"
-                    value={isTextNode ? localText : nodeData.title || ""}
+                    value={isTextNode ? localText : localTitle}
                     onChange={handleInputChange("title")}
+                    onFocus={handleTitleFocus}
+                    onBlur={handleTitleBlur}
                     placeholder={
                       isTextNode ? "Enter your text..." : "Node title..."
                     }

@@ -22,6 +22,7 @@ import {
   CheckCircle,
   AlertCircle,
   User,
+  GraduationCap,
 } from "lucide-react";
 import { Classroom } from "@/types/classroom";
 import { CreateAssignmentModal } from "./CreateAssignmentModal";
@@ -33,6 +34,7 @@ import { ClassroomMapsManager } from "./ClassroomMapsManager";
 import { ClassroomTeamsManager } from "./ClassroomTeamsManager";
 import { GroupManagement } from "./GroupManagement";
 import { TeamGrading } from "./TeamGrading";
+import { ClassroomGrading } from "./ClassroomGrading";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import StudentMapsViewWrapper from "./StudentMapsViewWrapper";
@@ -268,6 +270,12 @@ export function ClassroomDetailsDashboard({
           <TabsTrigger value="groups">Groups</TabsTrigger>
           <TabsTrigger value="maps">Learning Maps</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
+          {canManage && (
+            <TabsTrigger value="grading" className="flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Grading
+            </TabsTrigger>
+          )}
           {canManage && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
         </TabsList>
 
@@ -493,6 +501,15 @@ export function ClassroomDetailsDashboard({
             </CardContent>
           </Card>
         </TabsContent>
+
+        {canManage && (
+          <TabsContent value="grading" className="space-y-4">
+            <ClassroomGrading
+              classroomId={classroom.id}
+              canManage={canManage}
+            />
+          </TabsContent>
+        )}
 
         {canManage && (
           <TabsContent value="analytics" className="space-y-4">

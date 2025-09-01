@@ -115,9 +115,10 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
       console.error("❌ [Enrollment Client] API response not ok:", {
         status: response.status,
         statusText: response.statusText,
-        errorDetails,
-        responseText,
         url: `/api/maps/${mapId}/enroll`,
+        mapId,
+        errorDetails,
+        responseText: responseText ? responseText.substring(0, 500) : "No response text"
       });
       return false;
     }

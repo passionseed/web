@@ -33,6 +33,7 @@ export type SubmissionWithDetails = {
   };
   node_assessments: {
     assessment_type: string;
+    is_graded: boolean;
     map_nodes: {
       id: string;
       title: string;
@@ -70,6 +71,7 @@ export const getSubmissionsForMap = async (
       node_assessments (
         id,
         assessment_type,
+        is_graded,
         map_nodes (
           id,
           title,
@@ -453,4 +455,235 @@ export const getNodeSubmission = async (
   }
 
   return submission as unknown as SubmissionWithDetails;
+};
+
+// Bulk grading utilities
+export interface BulkGradeOptions {
+  submissionIds: string[];
+  grade: Grade;
+  comments?: string;
+  rating?: number;
+  pointsAwarded?: number;
+  userId: string;
+}
+
+export interface BulkGradeResult {
+  successful: number;
+  failed: number;
+  errors: Array<{ submissionId: string; error: string }>;
+  totalProcessed: number;
+}
+
+export const bulkGradeSubmissions = async (
+  options: BulkGradeOptions
+): Promise<BulkGradeResult> => {
+  const { submissionIds, grade, comments, rating, pointsAwarded, userId } = options;
+  
+  const result: BulkGradeResult = {
+    successful: 0,
+    failed: 0,
+    errors: [],
+    totalProcessed: 0
+  };
+
+  if (!submissionIds || submissionIds.length === 0) {
+    throw new Error("No submission IDs provided for bulk grading");
+  }
+
+  // Validate common parameters
+  if (grade !== "pass" && grade !== "fail") {
+    throw new Error("Invalid grade value. Must be 'pass' or 'fail'");
+  }
+
+  const supabase = createClient();
+
+  // Get all submissions with their progress IDs in one query
+  const { data: submissions, error: fetchError } = await supabase
+    .from("assessment_submissions")
+    .select("id, progress_id")
+    .in("id", submissionIds);
+
+  if (fetchError) {
+    throw new Error(`Failed to fetch submissions: ${fetchError.message}`);
+  }
+
+  // Create a map for quick lookup
+  const submissionMap = new Map();
+  (submissions || []).forEach(sub => {
+    submissionMap.set(sub.id, sub.progress_id);
+  });
+
+  // Process each submission
+  for (const submissionId of submissionIds) {
+    try {
+      result.totalProcessed++;
+      
+      const progressId = submissionMap.get(submissionId);
+      if (!progressId) {
+        result.failed++;
+        result.errors.push({
+          submissionId,
+          error: "Submission not found"
+        });
+        continue;
+      }
+
+      // Use the existing gradeSubmission function
+      await gradeSubmission(
+        submissionId,
+        grade,
+        comments || null,
+        rating || null,
+        userId,
+        progressId,
+        pointsAwarded || null
+      );
+
+      result.successful++;
+    } catch (error) {
+      result.failed++;
+      result.errors.push({
+        submissionId,
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }
+
+  return result;
+};
+
+// Get submissions for a classroom for grading interface
+export const getClassroomSubmissions = async (
+  classroomId: string
+): Promise<{
+  submissions: any[];
+  students: any[];
+}> => {
+  const supabase = createClient();
+
+  // Get all submissions for maps linked to this classroom
+  const { data: submissions, error: submissionsError } = await supabase
+    .from("assessment_submissions")
+    .select(`
+      id,
+      submitted_at,
+      text_answer,
+      file_urls,
+      image_url,
+      quiz_answers,
+      student_node_progress!inner (
+        user_id,
+        profiles!inner (
+          username,
+          full_name,
+          email,
+          avatar_url
+        )
+      ),
+      node_assessments!inner (
+        id,
+        assessment_type,
+        map_nodes!inner (
+          id,
+          title,
+          learning_maps!inner (
+            id,
+            title,
+            classroom_maps!inner (
+              classroom_id
+            )
+          )
+        )
+      ),
+      submission_grades (
+        id,
+        grade,
+        points_awarded,
+        comments,
+        graded_at,
+        graded_by
+      )
+    `)
+    .eq("node_assessments.map_nodes.learning_maps.classroom_maps.classroom_id", classroomId)
+    .order("submitted_at", { ascending: false });
+
+  if (submissionsError) {
+    throw new Error(`Failed to fetch classroom submissions: ${submissionsError.message}`);
+  }
+
+  // Transform and aggregate data
+  const transformedSubmissions = (submissions || []).map((submission: any) => {
+    const grade = submission.submission_grades[0];
+    const student = submission.student_node_progress.profiles;
+    const node = submission.node_assessments.map_nodes;
+    const map = node.learning_maps;
+
+    return {
+      id: submission.id,
+      student_user_id: submission.student_node_progress.user_id,
+      student_name: student.full_name || student.username,
+      student_email: student.email,
+      map_title: map.title,
+      node_title: node.title,
+      assessment_type: submission.node_assessments.assessment_type,
+      text_answer: submission.text_answer,
+      file_urls: submission.file_urls,
+      image_url: submission.image_url,
+      quiz_answers: submission.quiz_answers,
+      submitted_at: submission.submitted_at,
+      grade: grade?.grade || null,
+      points_awarded: grade?.points_awarded || null,
+      comments: grade?.comments || null,
+      graded_at: grade?.graded_at || null,
+      graded_by: grade?.graded_by || null,
+      status: grade ? "graded" : "ungraded"
+    };
+  });
+
+  // Aggregate student data
+  const studentMap = new Map();
+  
+  transformedSubmissions.forEach((submission: any) => {
+    const studentId = submission.student_user_id;
+    if (!studentMap.has(studentId)) {
+      studentMap.set(studentId, {
+        user_id: studentId,
+        username: submission.student_name.split(" ")[0],
+        full_name: submission.student_name,
+        email: submission.student_email,
+        avatar_url: null,
+        submissions: [],
+        total_submissions: 0,
+        graded_submissions: 0,
+        pending_submissions: 0,
+        total_points: 0,
+        graded_count: 0
+      });
+    }
+    
+    const student = studentMap.get(studentId);
+    student.submissions.push(submission);
+    student.total_submissions++;
+    
+    if (submission.status === "graded") {
+      student.graded_submissions++;
+      if (submission.points_awarded !== null) {
+        student.total_points += submission.points_awarded;
+        student.graded_count++;
+      }
+    } else {
+      student.pending_submissions++;
+    }
+  });
+
+  // Calculate average grades
+  const students = Array.from(studentMap.values()).map((student: any) => ({
+    ...student,
+    average_grade: student.graded_count > 0 ? Math.round(student.total_points / student.graded_count) : null
+  }));
+
+  return {
+    submissions: transformedSubmissions,
+    students
+  };
 };

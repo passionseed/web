@@ -234,16 +234,22 @@ const TextNode = React.memo(({
     setIsEditing(true);
   };
 
-  // Handle text change
+  // Handle text change - only update local state, no immediate data changes
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setText(e.target.value);
+    // Note: We don't call onDataChange here to prevent node refreshing
+    // Changes are saved only on blur/enter via handleSave
   };
 
   // Handle text save (on Enter or blur)
   const handleSave = () => {
     setIsEditing(false);
     if (onDataChange && text !== data.title) {
-      onDataChange(id, { title: text });
+      // Include updated_at to signal that editing is complete and visual sync is needed
+      onDataChange(id, { 
+        title: text,
+        updated_at: new Date().toISOString()
+      });
     }
   };
 
@@ -342,6 +348,16 @@ const TextNode = React.memo(({
 // Set display name for debugging
 TextNode.displayName = 'TextNode';
 
+// Define node types outside component to prevent recreation warnings
+const createNodeTypes = (handleNodeClick: (nodeId: string, event?: any) => void, handleNodeDataChange: (nodeId: string, data: Partial<MapNode>) => void) => ({
+  default: (props: any) => (
+    <CustomNode {...props} onClick={handleNodeClick} />
+  ),
+  text: (props: any) => (
+    <TextNode {...props} onDataChange={handleNodeDataChange} onClick={handleNodeClick} />
+  ),
+});
+
 export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(
     INITIAL_NODES as Node[]
@@ -349,6 +365,12 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const [selectedNode, setSelectedNode] = useState<AppNode | null>(null);
   const [selectedNodes, setSelectedNodes] = useState<AppNode[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUpdatingNodeData, setIsUpdatingNodeData] = useState(false);
+  const [isUpdatingAssessment, setIsUpdatingAssessment] = useState(false);
+  const [isEditingNode, setIsEditingNode] = useState(false);
+  const [pendingNodeUpdates, setPendingNodeUpdates] = useState<Record<string, Partial<MapNode>>>({});
+  const [selectionBeforeDrag, setSelectionBeforeDrag] = useState<string[]>([]);
   const { toast } = useToast();
   const reactFlowInstance = useReactFlow();
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
@@ -700,8 +722,21 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [copyNode, pasteNode, copiedNodes]);
 
-  // Transform map data to React Flow format
+  // Transform map data to React Flow format - but NOT during operations that would cause deselection
   useEffect(() => {
+    // CRITICAL: Don't regenerate nodes during operations that would cause deselection/flashing
+    if (isDragging || selectionBeforeDrag.length > 0 || isUpdatingNodeData || isUpdatingAssessment) {
+      console.log('⏭️ Skipping node transformation during operation:', {
+        isDragging,
+        selectionBeforeDrag: selectionBeforeDrag.length,
+        isUpdatingNodeData,
+        isUpdatingAssessment
+      });
+      return;
+    }
+    
+    console.log('🔄 Transforming map nodes to React Flow format');
+    console.log('🗂️ Map nodes being transformed:', map.map_nodes.map(n => ({id: n.id, assessments: n.node_assessments?.length || 0})));
     const transformedNodes: AppNode[] = map.map_nodes.map((node) => {
       const nodeType = (node as any).node_type === "text" ? "text" : "default";
 
@@ -734,7 +769,47 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
     setNodes(transformedNodes as Node[]);
     setEdges(transformedEdges);
-  }, [map, setNodes, setEdges]); // Removed selectedNodes dependency
+    
+    // Debug: Check if the selected node is being affected by the transform
+    if (selectedNode) {
+      const transformedSelectedNode = transformedNodes.find(n => n.id === selectedNode.id);
+      if (transformedSelectedNode) {
+        console.log('🔍 Transform: selectedNode assessments after transform:', transformedSelectedNode.data.node_assessments?.length || 0);
+        // Update selectedNode if it was affected by the transform
+        if (JSON.stringify(selectedNode.data) !== JSON.stringify(transformedSelectedNode.data)) {
+          console.log('📝 Transform: Updating selectedNode to match transformed data');
+          setSelectedNode(transformedSelectedNode as AppNode);
+        }
+      }
+    }
+  }, [map, setNodes, setEdges]); // Keep original dependencies to avoid size changes
+
+  // Trigger transform when drag operations complete
+  useEffect(() => {
+    if (!isDragging && selectionBeforeDrag.length === 0) {
+      // Drag operation completed, allow normal transforms
+      console.log('✅ Drag operation completed, transforms re-enabled');
+    }
+  }, [isDragging, selectionBeforeDrag.length]);
+
+  // Trigger manual transform when assessment updates complete
+  useEffect(() => {
+    if (!isUpdatingAssessment && selectedNode) {
+      // Assessment update completed, ensure selectedNode is in sync
+      console.log('✅ Assessment update completed, checking selectedNode sync');
+      const mapNode = map.map_nodes.find(n => n.id === selectedNode.id);
+      if (mapNode && JSON.stringify(selectedNode.data.node_assessments) !== JSON.stringify(mapNode.node_assessments)) {
+        console.log('🔄 Syncing selectedNode with updated map data');
+        setSelectedNode(prev => prev ? {
+          ...prev,
+          data: {
+            ...prev.data,
+            node_assessments: mapNode.node_assessments
+          }
+        } : null);
+      }
+    }
+  }, [isUpdatingAssessment, selectedNode, map.map_nodes]);
 
   // Add node handler
   const handleAddNode = useCallback(() => {
@@ -1015,141 +1090,262 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   //   [map, onMapChange]
   // );
 
+  // Node drag start handler
+  const onNodeDragStart: OnNodeDrag = useCallback((_, node) => {
+    console.log('🚀 Drag started for node:', node.id, 'Currently selected nodes:', selectedNodes.map(n => n.id));
+    setIsDragging(true);
+    
+    // If dragging a node that's not currently selected, select it first
+    const isDraggedNodeSelected = selectedNodes.some(n => n.id === node.id);
+    
+    if (!isDraggedNodeSelected) {
+      console.log('🎯 Dragged node not selected - auto-selecting it:', node.data.title);
+      
+      // Convert ReactFlow node to AppNode and select it
+      const draggedAppNode = node as AppNode;
+      setSelectedNode(draggedAppNode);
+      setSelectedNodes([draggedAppNode]);
+      
+      // Update ReactFlow visual state
+      if (reactFlowInstance) {
+        const currentNodes = reactFlowInstance.getNodes();
+        const updatedNodes = currentNodes.map(n => ({
+          ...n,
+          selected: n.id === node.id
+        }));
+        reactFlowInstance.setNodes(updatedNodes);
+      }
+      
+      // Store the new selection for drag restoration
+      setSelectionBeforeDrag([node.id]);
+    } else {
+      // Store the current selection state before drag starts
+      if (reactFlowInstance) {
+        const currentNodes = reactFlowInstance.getNodes();
+        const selectedNodeIds = currentNodes.filter(n => n.selected).map(n => n.id);
+        console.log('📝 Storing selected nodes before drag:', selectedNodeIds);
+        setSelectionBeforeDrag(selectedNodeIds);
+      }
+    }
+  }, [selectedNodes, reactFlowInstance, setSelectedNode, setSelectedNodes]);
+
   const onNodeDragStop: OnNodeDrag = useCallback(
     (_, draggedNode) => {
+      console.log('🎯 Drag stopped for node:', draggedNode.id);
+      
+      // CRITICAL: Don't clear isDragging immediately - wait for selection to be restored first
+      
       // Get the current node positions from React Flow
       const currentNodes = reactFlowInstance?.getNodes() || [];
       
-      // Update the map and get the result
+      // Update ONLY the map state for persistence - do NOT trigger React Flow re-renders
       let finalUpdatedMap: FullLearningMap | null = null;
-      onMapChange((prev: FullLearningMap | null) => {
-        if (!prev) return null;
-
-        let hasChanges = false;
-        let newMap: FullLearningMap;
-
-        // If multiple nodes are selected, update all selected nodes' positions
-        if (selectedNodes.length > 1) {
-          const updatedMapNodes = prev.map_nodes.map((mapNode) => {
-            // Find if this map node is in the selected nodes
-            const selectedNode = selectedNodes.find(sn => sn.id === mapNode.id);
-            if (selectedNode) {
-              // Get the current position from React Flow
-              const currentNode = currentNodes.find(cn => cn.id === mapNode.id);
-              if (currentNode) {
-                const oldPos = mapNode.metadata?.position;
-                // Only update if position actually changed
-                if (
-                  !oldPos ||
-                  oldPos.x !== currentNode.position.x ||
-                  oldPos.y !== currentNode.position.y
-                ) {
-                  hasChanges = true;
-                  return {
-                    ...mapNode,
-                    metadata: { ...mapNode.metadata, position: currentNode.position },
-                  };
-                }
-              }
+      const newMap = {
+        ...map,
+        map_nodes: map.map_nodes.map((mapNode) => {
+          // Check if this node was moved during drag
+          const currentNode = currentNodes.find(cn => cn.id === mapNode.id);
+          if (currentNode) {
+            const oldPos = mapNode.metadata?.position;
+            // Only update if position actually changed
+            if (
+              !oldPos ||
+              Math.abs(oldPos.x - currentNode.position.x) > 1 ||
+              Math.abs(oldPos.y - currentNode.position.y) > 1
+            ) {
+              return {
+                ...mapNode,
+                metadata: { ...mapNode.metadata, position: currentNode.position },
+              };
             }
-            return mapNode;
-          });
-
-          newMap = {
-            ...prev,
-            map_nodes: updatedMapNodes,
-          };
-        } else {
-          // Single node drag - original logic
-          const target = prev.map_nodes.find((m) => m.id === draggedNode.id);
-          if (!target) return prev;
-
-          const oldPos = target.metadata?.position;
-          // avoid no-op if position didn't actually change
-          if (
-            oldPos &&
-            oldPos.x === draggedNode.position.x &&
-            oldPos.y === draggedNode.position.y
-          ) {
-            return prev;
           }
-
-          hasChanges = true;
-          newMap = {
-            ...prev,
-            map_nodes: prev.map_nodes.map((m) =>
-              m.id === draggedNode.id
-                ? {
-                    ...m,
-                    metadata: { ...m.metadata, position: draggedNode.position },
-                  }
-                : m
-            ),
-          };
+          return mapNode;
+        }),
+      };
+      
+      // Update map state directly without triggering re-render
+      finalUpdatedMap = newMap;
+      onMapChange(newMap);
+      
+      // Restore selection IMMEDIATELY and aggressively
+      const restoreSelection = () => {
+        if (reactFlowInstance && selectionBeforeDrag.length > 0) {
+          console.log('🔧 Restoring node selection after drag:', selectionBeforeDrag);
+          const nodes = reactFlowInstance.getNodes();
+          const updatedNodes = nodes.map(node => ({
+            ...node,
+            selected: selectionBeforeDrag.includes(node.id)
+          }));
+          reactFlowInstance.setNodes(updatedNodes);
         }
-
-        // Store the final map for auto-save trigger
-        finalUpdatedMap = newMap;
-        return newMap;
-      });
-
-      // Trigger auto-save if changes were made
-      if (finalUpdatedMap) {
-        triggerAutoSave(finalUpdatedMap);
-      }
+      };
+      
+      // Immediate restoration
+      restoreSelection();
+      
+      // Additional restoration attempts
+      setTimeout(restoreSelection, 1);
+      setTimeout(restoreSelection, 10);
+      setTimeout(restoreSelection, 50);
+      
+      // Now clear isDragging and stored selection after selection is restored
+      setTimeout(() => {
+        setIsDragging(false);
+        setSelectionBeforeDrag([]);
+        
+        // Trigger auto-save after all updates are complete
+        if (finalUpdatedMap) {
+          triggerAutoSave(finalUpdatedMap);
+        }
+      }, 100);
     },
-    [onMapChange, selectedNodes, reactFlowInstance, triggerAutoSave]
+    [map, onMapChange, reactFlowInstance, triggerAutoSave, selectionBeforeDrag]
   );
+
+  // Track the last clicked node to prevent ReactFlow from overriding our selection
+  const [lastClickedNodeId, setLastClickedNodeId] = useState<string | null>(null);
 
   // Handle node click when multiple nodes are selected
   const handleNodeClick = useCallback(
     (nodeId: string, event?: any) => {
-      console.log('Node clicked:', nodeId, 'Selected nodes count:', selectedNodes.length);
+      console.log('🖱️ Node clicked:', nodeId, 'Current selected node:', selectedNode?.id, 'Last clicked:', lastClickedNodeId);
       
-      // Only handle this if we're in multi-selection mode
-      if (selectedNodes.length > 1) {
-        const clickedNode = selectedNodes.find(node => node.id === nodeId);
-        console.log('Clicked node found:', clickedNode?.data.title);
-        
-        if (clickedNode) {
-          console.log('Switching to single selection mode for node:', clickedNode.data.title);
-          
-          // Use setTimeout to ensure this happens after ReactFlow's internal processing
-          setTimeout(() => {
-            // Force update the ReactFlow nodes to only select this one
-            if (reactFlowInstance) {
-              // Get all current nodes and update their selected state
-              const currentNodes = reactFlowInstance.getNodes();
-              const updatedNodes = currentNodes.map(node => ({
-                ...node,
-                selected: node.id === nodeId
-              }));
-              
-              // Set the nodes with updated selection
-              reactFlowInstance.setNodes(updatedNodes);
-            }
-            
-            // Set this node as the single selected node and open editor
-            setSelectedNode(clickedNode);
-            setSelectedNodes([clickedNode]);
-            
-            // Expand right panel to show node editor
-            if (rightPanelRef.current && leftPanelRef.current) {
-              rightPanelRef.current.resize(35);
-              leftPanelRef.current.resize(65);
-            }
-          }, 0); // Execute on next tick
-        }
+      // Prevent the default ReactFlow behavior
+      if (event) {
+        event.stopPropagation();
       }
+      
+      // Set the last clicked node immediately to prevent ReactFlow interference
+      setLastClickedNodeId(nodeId);
+      
+      // Find the clicked node from current nodes
+      const clickedReactFlowNode = reactFlowInstance?.getNodes()?.find(node => node.id === nodeId);
+      
+      if (!clickedReactFlowNode) {
+        console.log('❌ Could not find clicked node in ReactFlow nodes');
+        return;
+      }
+      
+      const nodeAsAppNode = clickedReactFlowNode as AppNode;
+      
+      // If clicking the same node that's already selected, don't do anything
+      if (selectedNode?.id === nodeId && selectedNodes.length === 1) {
+        console.log('✅ Same node already selected, no change needed');
+        return;
+      }
+      
+      console.log('🎯 Selecting new node:', nodeAsAppNode.data.title);
+      
+      // Block ReactFlow's onSelectionChange temporarily
+      setIsUpdatingNodeData(true);
+      
+      // Immediately update our state
+      setSelectedNode(nodeAsAppNode);
+      setSelectedNodes([nodeAsAppNode]);
+      
+      // Update ReactFlow state and clear the block
+      if (reactFlowInstance) {
+        const currentNodes = reactFlowInstance.getNodes();
+        const updatedNodes = currentNodes.map(node => ({
+          ...node,
+          selected: node.id === nodeId
+        }));
+        reactFlowInstance.setNodes(updatedNodes);
+        
+        // Clear the block after ReactFlow processes the change
+        setTimeout(() => {
+          setIsUpdatingNodeData(false);
+        }, 50);
+      } else {
+        setIsUpdatingNodeData(false);
+      }
+      
+      // Open editor panel
+      if (rightPanelRef.current && leftPanelRef.current) {
+        rightPanelRef.current.resize(35);
+        leftPanelRef.current.resize(65);
+      }
+      
+      // Clear the last clicked node after a brief delay
+      setTimeout(() => {
+        setLastClickedNodeId(null);
+      }, 100);
     },
-    [selectedNodes, setSelectedNode, setSelectedNodes, rightPanelRef, leftPanelRef, reactFlowInstance]
+    [selectedNode, selectedNodes, setSelectedNode, setSelectedNodes, rightPanelRef, leftPanelRef, reactFlowInstance, lastClickedNodeId]
   );
 
   // Selection change handler with dynamic panel resizing and node centering
   const onSelectionChange = useCallback(
     (params: OnSelectionChangeParams) => {
-      console.log('Selection changed:', params.nodes.length, 'nodes', params.edges.length, 'edges');
+      const selectedNodeIds = params.nodes.map(n => n.id);
+      console.log('🔍 onSelectionChange called:', {
+        nodeIds: selectedNodeIds,
+        nodeCount: params.nodes.length,
+        currentSelectedNode: selectedNode?.id,
+        lastClickedNodeId,
+        isDragging,
+        isUpdatingNodeData,
+        isEditingNode,
+        selectionBeforeDragLength: selectionBeforeDrag.length
+      });
+      
+      // CRITICAL: Block if we just manually clicked a node - don't let ReactFlow override our selection
+      if (lastClickedNodeId) {
+        console.log('⏭️ Blocking selection change - manual node click in progress for:', lastClickedNodeId);
+        return;
+      }
+      
+      // Block during active drag operations
+      if (isDragging) {
+        console.log('⏭️ Blocking selection change - drag in progress');
+        return;
+      }
+      
+      // Block during node data updates (our manual selection changes)
+      if (isUpdatingNodeData || isUpdatingAssessment) {
+        console.log('⏭️ Blocking selection change - node data update in progress');
+        return;
+      }
+      
+      // Block if we have a pending drag selection restore
+      if (selectionBeforeDrag.length > 0) {
+        console.log('⏭️ Blocking selection change - pending drag restore');
+        return;
+      }
+      
+      // Only block input focus for actual text editing in the editor panel
+      const activeElement = document.activeElement;
+      if (activeElement && 
+          (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') &&
+          activeElement.closest('.node-editor-panel')) {
+        console.log('⏭️ Blocking selection change - input focused in editor panel');
+        return;
+      }
+      
+      // Block if actively editing node title to prevent deselection during typing
+      if (isEditingNode) {
+        console.log('⏭️ Blocking selection change - actively editing node');
+        return;
+      }
+      
+      console.log('✅ Processing ReactFlow selection change:', selectedNodeIds);
       const selectedNodesList = params.nodes as AppNode[];
+      
+      // Only allow ReactFlow to drive selection changes if we haven't manually set one
+      if (selectedNodesList.length === 1) {
+        const newSelectedNode = selectedNodesList[0];
+        // Only update if it's actually a different node and we haven't manually selected something else
+        if (selectedNode?.id !== newSelectedNode.id) {
+          console.log('🔄 ReactFlow updating selection to:', newSelectedNode.id, newSelectedNode.data.title);
+          setSelectedNode(newSelectedNode);
+        } else {
+          console.log('✅ Same node, no update needed');
+        }
+      } else {
+        // Multiple nodes or no nodes selected
+        setSelectedNode(params.nodes.length === 1 ? (selectedNodesList[0] || null) : null);
+      }
+      
       setSelectedNodes(selectedNodesList);
       
       // Handle multiple node selection
@@ -1187,7 +1383,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         // No manual resize needed since right panel is conditionally rendered
       }
     },
-    [reactFlowInstance]
+    [isDragging, isUpdatingNodeData, isUpdatingAssessment, isEditingNode, reactFlowInstance, selectionBeforeDrag, lastClickedNodeId]
   );
 
   // Enhanced node data change handler to capture quiz questions
@@ -1218,51 +1414,91 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         }
       }
 
-      // Update React Flow state
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            const newData = { ...node.data, ...data };
-            return { ...node, data: newData };
-          }
-          return node;
-        })
-      );
+      // Prevent React Flow visual updates for operations that don't need them
+      const isTitleOnlyUpdate = Object.keys(data).length === 1 && data.title !== undefined;
+      const isEditingComplete = data.updated_at !== undefined; // Signal from blur handler
+      const isAssessmentUpdate = data.node_assessments !== undefined;
+      const isContentUpdate = data.node_content !== undefined;
 
-      // Update selected node if it's the one being changed
-      if (selectedNode?.id === nodeId) {
-        setSelectedNode((prev) =>
-          prev ? { ...prev, data: { ...prev.data, ...data } } : null
+      // Set flag to prevent selection changes during node data updates
+      if (isAssessmentUpdate) {
+        setIsUpdatingAssessment(true);
+      } else {
+        setIsUpdatingNodeData(true);
+      }
+      
+      // Only update React Flow visual nodes for specific cases to prevent flashing
+      // ALWAYS allow assessment updates to show in UI (both add and delete)
+      const shouldUpdateVisuals = isEditingComplete || 
+                                 isAssessmentUpdate ||
+                                 (!isTitleOnlyUpdate && !isContentUpdate);
+      
+      if (shouldUpdateVisuals) {
+        console.log("🔄 Updating React Flow nodes:", Object.keys(data), "Assessment update:", isAssessmentUpdate);
+        if (isAssessmentUpdate) {
+          console.log("📊 Assessment data being applied:", data.node_assessments);
+        }
+        setNodes((nds) =>
+          nds.map((node) => {
+            if (node.id === nodeId) {
+              const newData = { ...node.data, ...data };
+              return { ...node, data: newData };
+            }
+            return node;
+          })
         );
+      } else {
+        console.log("⏭️ Skipping React Flow visual update for:", Object.keys(data), "to prevent flashing");
       }
 
-      // Update map state
+      // Clear the flag after a short delay to allow React Flow to process the update
+      if (isAssessmentUpdate) {
+        setTimeout(() => {
+          console.log("🔓 Clearing isUpdatingAssessment - allowing transform to run");
+          setIsUpdatingAssessment(false);
+        }, 100); // Longer delay for assessment updates to ensure map state is updated first
+      } else {
+        setTimeout(() => {
+          setIsUpdatingNodeData(false);
+        }, 50);
+      }
+
+      // Update selected node if it's the one being changed (but don't trigger re-renders)
+      if (selectedNode?.id === nodeId) {
+        console.log("🔄 Updating selectedNode data:", { nodeId, data });
+        setSelectedNode((prev) => {
+          if (!prev) return null;
+          const updatedNode = { ...prev, data: { ...prev.data, ...data } };
+          console.log("✅ Updated selectedNode:", updatedNode.data.node_assessments);
+          return updatedNode;
+        });
+      }
+
+      // Always update map state (this is needed for persistence)
       const updatedMap = {
         ...map,
         map_nodes: map.map_nodes.map((node) => {
           if (node.id === nodeId) {
-            return { ...node, ...data };
+            const updatedNode = { ...node, ...data };
+            if (isAssessmentUpdate) {
+              console.log("📊 Updating map node with assessment data:", updatedNode.node_assessments);
+            }
+            return updatedNode;
           }
           return node;
         }),
       };
 
+      console.log("📝 Calling handleMapChange with updated map");
       handleMapChange(updatedMap as any);
     },
     [map, handleMapChange, selectedNode, setNodes]
   );
 
-  // Memoized node types
+  // Stable node types to prevent React Flow warnings
   const nodeTypes = useMemo(
-    () => ({
-      default: (props: any) => (
-        <CustomNode {...props} onClick={handleNodeClick} />
-      ),
-      text: (props: any) => (
-        <TextNode {...props} onDataChange={handleNodeDataChange} onClick={handleNodeClick} />
-      ),
-    }),
-    [handleNodeDataChange, handleNodeClick]
+    () => createNodeTypes(handleNodeClick, handleNodeDataChange),
+    [handleNodeClick, handleNodeDataChange]
   );
 
   // Node delete handler
@@ -1270,6 +1506,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     (nodeId: string) => {
       const nodeToDelete = nodes.find((node) => node.id === nodeId);
       if (!nodeToDelete) return;
+
+      console.log('🗑️ Deleting node:', nodeId);
+      
+      // Block selection changes during deletion to prevent flashing
+      setIsUpdatingNodeData(true);
 
       // Remove from React Flow state
       setNodes((nds) => nds.filter((node) => node.id !== nodeId));
@@ -1304,11 +1545,16 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         setSelectedNodes(prev => prev.filter(node => node.id !== nodeId));
       }
 
+      // Clear the blocking flag after deletion is complete
+      setTimeout(() => {
+        setIsUpdatingNodeData(false);
+      }, 100);
+
       toast({
         title: `Node "${nodeToDelete.data.title}" deleted (Auto-saving)`,
       });
     },
-    [nodes, selectedNode, setNodes, setEdges, map, onMapChange, toast]
+    [nodes, selectedNode, selectedNodes, setNodes, setEdges, map, handleMapChange, toast]
   );
 
   return (
@@ -1455,6 +1701,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               onEdgesChange={onEdgesChange}
               onNodesDelete={onNodesDelete}
               onEdgesDelete={onEdgesDelete}
+              onNodeDragStart={onNodeDragStart}
               onNodeDragStop={onNodeDragStop}
               onConnect={onConnect}
               onSelectionChange={onSelectionChange}
@@ -1466,9 +1713,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               fitView
               attributionPosition="bottom-left"
               panOnScroll
-              selectionOnDrag={true}
+              selectionOnDrag={!isDragging} // Disable selection during drag
               multiSelectionKeyCode={["Meta", "Control"]}
-              selectNodesOnDrag={true}
+              selectNodesOnDrag={!isDragging} // Disable node selection during drag
               panOnDrag={[2]}
               selectionKeyCode={["Meta", "Control"]}
               connectionMode={ConnectionMode.Loose}
@@ -1528,6 +1775,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   selectedNode={selectedNode}
                   onNodeDataChange={handleNodeDataChange}
                   onNodeDelete={handleDeleteNode}
+                  onEditingStateChange={setIsEditingNode}
                 />
               </div>
             </ResizablePanel>
