@@ -414,7 +414,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         }))
       ),
     });
-    return btoa(mapString);
+    return btoa(encodeURIComponent(mapString));
   }, []);
 
   // Auto-save function with error handling
