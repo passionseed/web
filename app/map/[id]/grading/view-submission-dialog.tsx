@@ -248,55 +248,75 @@ export function ViewSubmissionDialog({
                   </div>
                 )}
 
-                {submission.file_urls && submission.file_urls.length > 0 && (
+                {/* Unified File Display - Show all files with smart grouping */}
+                {((submission.file_urls && submission.file_urls.length > 0) || submission.image_url) && (
                   <div className="space-y-2">
                     <h4 className="font-medium text-sm text-muted-foreground">
-                      File Uploads ({submission.file_urls.length}):
+                      Uploaded Files ({(submission.file_urls?.length || 0) + (submission.image_url ? 1 : 0)}):
                     </h4>
                     <div className="p-4 bg-muted/50 rounded-lg border space-y-4">
-                      {submission.file_urls.map((url, index) => (
-                        <div key={index} className="space-y-2">
+                      {/* Display files from file_urls array */}
+                      {submission.file_urls?.map((url, index) => {
+                        // Skip if this URL is the same as image_url to avoid duplicates
+                        if (submission.image_url && url === submission.image_url) {
+                          return null;
+                        }
+
+                        return (
+                          <div key={`file-${index}`} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              {getFileIcon(url)}
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                              >
+                                {isImageFile(url) ? `Image ${index + 1}` : `File ${index + 1}`} - View Attachment
+                              </a>
+                            </div>
+
+                            {/* Image thumbnail */}
+                            {isImageFile(url) && (
+                              <div className="ml-6">
+                                <img
+                                  src={url}
+                                  alt={`File ${index + 1}`}
+                                  className="max-w-64 max-h-40 object-cover rounded border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                                  onClick={() => setExpandedImage(url)}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Display legacy image_url if it exists and isn't already shown in file_urls */}
+                      {submission.image_url && 
+                       (!submission.file_urls || !submission.file_urls.includes(submission.image_url)) && (
+                        <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            {getFileIcon(url)}
+                            <ImageIcon className="h-4 w-4 text-blue-600" />
                             <a
-                              href={url}
+                              href={submission.image_url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
                             >
-                              File {index + 1} - View Attachment
+                              Image Upload - View Attachment
                             </a>
                           </div>
 
-                          {/* Image thumbnail */}
-                          {isImageFile(url) && (
-                            <div className="ml-6">
-                              <img
-                                src={url}
-                                alt={`File ${index + 1}`}
-                                className="max-w-64 max-h-40 object-cover rounded border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                                onClick={() => setExpandedImage(url)}
-                              />
-                            </div>
-                          )}
+                          <div className="ml-6">
+                            <img
+                              src={submission.image_url}
+                              alt="Submission Image"
+                              className="max-w-64 max-h-40 object-cover rounded border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                              onClick={() => setExpandedImage(submission.image_url!)}
+                            />
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {submission.image_url && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm text-muted-foreground">
-                      Image Upload:
-                    </h4>
-                    <div className="p-4 bg-muted/50 rounded-lg border">
-                      <img
-                        src={submission.image_url}
-                        alt="Submission Image"
-                        className="max-w-full h-auto rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => setExpandedImage(submission.image_url!)}
-                      />
+                      )}
                     </div>
                   </div>
                 )}

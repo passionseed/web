@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getMapWithNodes } from "@/lib/supabase/maps";
+import { getMapWithNodesServer } from "@/lib/supabase/maps-server";
 import { createClient } from "@/utils/supabase/server";
 import { isInstructor } from "@/lib/supabase/roles";
 import { MapViewerWithProvider as MapViewer } from "@/components/map/MapViewer";
@@ -18,7 +18,7 @@ export default async function MapViewerPage(props: {
   } = await supabase.auth.getUser();
 
   const [map, userIsInstructor] = await Promise.all([
-    getMapWithNodes(params.id),
+    getMapWithNodesServer(params.id),
     user ? isInstructor(user.id) : false,
   ]);
 
