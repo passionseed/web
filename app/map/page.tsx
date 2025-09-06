@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { getMapsWithStats } from "@/lib/supabase/maps";
-import { checkUserEnrollmentStatus } from "@/lib/api/enrollment-client";
 import { LearningMap } from "@/types/map";
 import { useToast } from "@/components/ui/use-toast";
 import { MapEnrollmentDialog } from "@/components/map/MapEnrollmentDialog";
@@ -48,8 +47,8 @@ type MapWithStats = LearningMap & {
   node_count: number;
   avg_difficulty: number;
   total_assessments: number;
-  isEnrolled?: boolean;
-  hasStarted?: boolean;
+  isEnrolled: boolean;
+  hasStarted: boolean;
   map_type: "personal" | "classroom" | "team" | "forked" | "public";
   source_info?: {
     classroom_name?: string;
@@ -81,31 +80,8 @@ export default function MapsPage() {
           (map) => map && map.id && map.title
         );
 
-        // Check enrollment status for each map (only for authenticated users)
-        const mapsWithEnrollment = await Promise.all(
-          validMaps.map(async (map) => {
-            // Only check enrollment if user is authenticated
-            if (isAuthenticated && !authLoading) {
-              try {
-                const { isEnrolled, hasStarted } =
-                  await checkUserEnrollmentStatus(map.id);
-                return { ...map, isEnrolled, hasStarted };
-              } catch (err) {
-                console.warn(
-                  `Failed to check enrollment for map ${map.id}:`,
-                  err
-                );
-                // If there's an error checking enrollment, assume not enrolled
-                return { ...map, isEnrolled: false, hasStarted: false };
-              }
-            } else {
-              // For unauthenticated users, set enrollment to false
-              return { ...map, isEnrolled: false, hasStarted: false };
-            }
-          })
-        );
-
-        setMaps(mapsWithEnrollment);
+        // Maps now include enrollment status from the server
+        setMaps(validMaps);
       } catch (err) {
         console.error("Error fetching maps:", err);
         toast({
@@ -124,8 +100,8 @@ export default function MapsPage() {
     }
   }, [toast, isAuthenticated, authLoading]);
 
-  const handleStartAdventure = (map: MapWithStats, event: React.MouseEvent) => {
-    event.preventDefault(); // Prevent Link navigation
+  const handleStartAdventure = (map: MapWithStats, event?: React.MouseEvent) => {
+    event?.preventDefault(); // Prevent Link navigation
 
     // Check authentication before allowing enrollment
     if (!isAuthenticated) {
