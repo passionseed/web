@@ -10,6 +10,14 @@ type MapWithStats = LearningMap & {
   node_count: number;
   avg_difficulty: number;
   total_assessments: number;
+  isEnrolled: boolean;
+  hasStarted: boolean;
+  map_type: "personal" | "classroom" | "team" | "forked" | "public";
+  source_info?: {
+    classroom_name?: string;
+    team_name?: string;
+    original_title?: string;
+  };
 };
 
 type EnrolledMapWithProgress = MapWithStats & {

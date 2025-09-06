@@ -86,6 +86,8 @@ export const getMapsWithStats = async (): Promise<
     avg_difficulty: number;
     total_assessments: number;
     map_type: "personal" | "classroom" | "team" | "forked" | "public";
+    isEnrolled: boolean;
+    hasStarted: boolean;
     source_info?: {
       classroom_name?: string;
       team_name?: string;
@@ -100,16 +102,26 @@ export const getMapsWithStats = async (): Promise<
     data: { user },
   } = await supabase.auth.getUser();
 
-  let query = supabase.from("learning_maps").select(
-    `
+  let baseQuery = `
       *,
       map_nodes (
         id,
         difficulty,
         node_assessments (id)
-      )
-    `
-  );
+      )`;
+
+  // Add enrollment data only for authenticated users
+  if (user) {
+    baseQuery += `,
+      user_map_enrollments!left (
+        enrolled_at,
+        progress_percentage,
+        completed_at,
+        status
+      )`;
+  }
+
+  let query = supabase.from("learning_maps").select(baseQuery);
 
   // Apply visibility filters based on authentication status
   if (!user) {
@@ -121,7 +133,9 @@ export const getMapsWithStats = async (): Promise<
     // 2. Their own private maps
     // 3. Team maps if they're in the team (handled later in categorization)
     // 4. Classroom maps if they're enrolled (handled later in categorization)
-    query = query.or(`visibility.eq.public,creator_id.eq.${user.id}`);
+    query = query
+      .or(`visibility.eq.public,creator_id.eq.${user.id}`)
+      .eq("user_map_enrollments.user_id", user.id);
   }
 
   const { data, error } = await query.order("created_at", { ascending: false });
@@ -302,11 +316,17 @@ export const getMapsWithStats = async (): Promise<
             id,
             difficulty,
             node_assessments (id)
+          ),
+          user_map_enrollments!left (
+            enrolled_at,
+            progress_percentage,
+            completed_at
           )
         `
         )
         .in("id", teamMapIds)
-        .not("creator_id", "eq", user.id); // Exclude maps the user already owns
+        .not("creator_id", "eq", user.id) // Exclude maps the user already owns
+        .eq("user_map_enrollments.user_id", user.id);
 
       if (additionalTeamMaps) {
         additionalMaps = additionalMaps.concat(additionalTeamMaps);
@@ -325,11 +345,17 @@ export const getMapsWithStats = async (): Promise<
             id,
             difficulty,
             node_assessments (id)
+          ),
+          user_map_enrollments!left (
+            enrolled_at,
+            progress_percentage,
+            completed_at
           )
         `
         )
         .in("id", classroomMapIds)
-        .not("creator_id", "eq", user.id); // Exclude maps the user already owns
+        .not("creator_id", "eq", user.id) // Exclude maps the user already owns
+        .eq("user_map_enrollments.user_id", user.id);
 
       if (classroomMapsData) {
         additionalMaps = additionalMaps.concat(classroomMapsData);
@@ -395,6 +421,17 @@ export const getMapsWithStats = async (): Promise<
         }
       }
 
+      // Extract enrollment information (only available for authenticated users)
+      const enrollment = user && Array.isArray(map.user_map_enrollments) 
+        ? map.user_map_enrollments[0] 
+        : user && map.user_map_enrollments;
+      
+      const isEnrolled = !!enrollment?.enrolled_at;
+      const hasStarted = !!enrollment && (
+        (enrollment.progress_percentage && enrollment.progress_percentage > 0) || 
+        enrollment.status === 'completed'
+      );
+
       return {
         id: map.id,
         title: map.title,
@@ -413,6 +450,8 @@ export const getMapsWithStats = async (): Promise<
         total_assessments: totalAssessments,
         map_type: mapType,
         source_info: sourceInfo,
+        isEnrolled,
+        hasStarted,
       };
     });
 
