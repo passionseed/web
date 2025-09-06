@@ -18,6 +18,7 @@ import { checkUserEnrollmentStatus } from "@/lib/api/enrollment-client";
 import { LearningMap } from "@/types/map";
 import { useToast } from "@/components/ui/use-toast";
 import { MapEnrollmentDialog } from "@/components/map/MapEnrollmentDialog";
+import { AnimatedMapPreview } from "@/components/map/AnimatedMapPreview";
 import { useAuth } from "@/hooks/use-auth";
 import Loading from "./loading";
 import Image from "next/image";
@@ -62,6 +63,8 @@ export default function MapsPage() {
   const [maps, setMaps] = useState<MapWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMapForEnrollment, setSelectedMapForEnrollment] =
+    useState<MapWithStats | null>(null);
+  const [selectedMapForPreview, setSelectedMapForPreview] = 
     useState<MapWithStats | null>(null);
   const { toast } = useToast();
 
@@ -417,6 +420,7 @@ export default function MapsPage() {
   };
 
   const MapCard = ({ map }: { map: MapWithStats }) => {
+    const cardRouter = useRouter();
     const [vinylColors, setVinylColors] = useState<any>(null);
     const [isMounted, setIsMounted] = useState(false);
 
@@ -430,8 +434,17 @@ export default function MapsPage() {
       }
     }, [isMounted, map.metadata?.coverImage]);
 
+    const handleMapClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      // Temporarily navigate directly to map instead of showing preview
+      cardRouter.push(`/map/${map.id}`);
+    };
+
     return (
-      <Link href={`/map/${map.id}`} className="block group">
+      <div 
+        onClick={handleMapClick}
+        className="block group cursor-pointer"
+      >
         <div className="relative w-80 h-80 cursor-pointer perspective-1000">
           {/* Vinyl Record - Behind Cover */}
           <div className="absolute left-1/2 -translate-x-1/2 -top-16 w-72 h-72 transition-all duration-700 group-hover:-translate-y-20" style={{ zIndex: 1 }}>
@@ -545,7 +558,7 @@ export default function MapsPage() {
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     );
   };
 
@@ -698,6 +711,14 @@ export default function MapsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Animated Map Preview */}
+        <AnimatedMapPreview
+          map={selectedMapForPreview}
+          isOpen={!!selectedMapForPreview}
+          onClose={() => setSelectedMapForPreview(null)}
+          onStartAdventure={handleStartAdventure}
+        />
 
         {/* Enrollment Dialog */}
         {selectedMapForEnrollment && (

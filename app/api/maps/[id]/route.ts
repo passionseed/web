@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { batchUpdateMap } from "@/lib/supabase/maps";
 import type { FullLearningMap } from "@/lib/supabase/maps";
+import { createClient } from "@/utils/supabase/server";
 
 export async function PUT(
   request: NextRequest,
@@ -8,6 +9,7 @@ export async function PUT(
 ) {
   try {
     const { id: mapId } = await params;
+    const supabase = await createClient();
 
     if (!mapId) {
       return NextResponse.json(
@@ -103,6 +105,33 @@ export async function PUT(
         });
       }
     });
+
+    // Get current nodes from database to detect deletions
+    const { data: currentNodes, error: fetchError } = await supabase
+      .from("map_nodes")
+      .select("id")
+      .eq("map_id", mapId);
+
+    if (fetchError) {
+      console.error("Error fetching current nodes for comparison:", fetchError);
+      return NextResponse.json(
+        { error: "Failed to fetch current map nodes" },
+        { status: 500 }
+      );
+    }
+
+    // Detect deleted nodes by comparing current nodes with updated nodes
+    const currentNodeIds = (currentNodes || []).map((node: any) => node.id);
+    const updatedNodeIds = updatedMap.map_nodes.map((node) => node.id);
+    const deletedNodeIds = currentNodeIds.filter((id: string) => !updatedNodeIds.includes(id));
+    
+    if (deletedNodeIds.length > 0) {
+      console.log("🗑️ Detected deleted nodes:", deletedNodeIds);
+      updates.nodes.delete = deletedNodeIds;
+    }
+
+    // For paths, we'll let the batch update function handle path deletions
+    // since it's complex to query them efficiently here
 
     // Use the batch update function
     await batchUpdateMap(mapId, updates);

@@ -906,11 +906,9 @@ export default function EditMapPage() {
               <div className="h-6 w-px bg-border" />
               <div>
                 <h1 className="text-xl font-semibold">Map Editor</h1>
-                {hasUnsavedChanges && (
-                  <p className="text-xs text-orange-600 mt-0.5">
-                    ⚠️ Unsaved changes
-                  </p>
-                )}
+                <p className={`text-xs mt-0.5 h-4 ${hasUnsavedChanges ? 'text-orange-600' : 'text-transparent'}`}>
+                  ⚠️ Unsaved changes
+                </p>
               </div>
             </div>
 
