@@ -5,31 +5,38 @@ import { deleteMap } from "@/lib/supabase/maps";
 // Increase timeout for bulk operations
 export const maxDuration = 60; // 60 seconds
 
+// Helper function to check admin access
+async function checkAdminAccess() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  // Check if user has admin role
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("role", "admin");
+
+  return roles && roles.length > 0 ? user : null;
+}
+
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
+    const user = await checkAdminAccess();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Check admin role
-    const { data: userRoles, error: roleError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-
-    if (roleError || !userRoles?.some(r => r.role === "admin")) {
-      return NextResponse.json(
-        { error: "Admin access required" },
-        { status: 403 }
-      );
-    }
+    console.log(`🔐 [Admin] Authenticated user: ${user.id} (${user.email})`);
 
     const body = await request.json();
     const { mapIds } = body;
@@ -49,6 +56,11 @@ export async function DELETE(request: NextRequest) {
 
     for (const mapId of mapIds) {
       try {
+        console.log(`🔍 [Admin] Starting deletion for map ${mapId}`);
+        
+        // Use regular server client for deletion (same as individual delete)
+        const supabase = await createClient();
+        
         // Verify map exists first
         const { data: existingMap, error: fetchError } = await supabase
           .from("learning_maps")
@@ -57,19 +69,35 @@ export async function DELETE(request: NextRequest) {
           .single();
 
         if (fetchError) {
-          console.error(`❌ [Admin] Map ${mapId} not found:`, fetchError);
-          errors.push(`Map ${mapId} not found`);
+          console.error(`❌ [Admin] Map ${mapId} not found:`, {
+            message: fetchError.message,
+            code: fetchError.code,
+            details: fetchError.details,
+            hint: fetchError.hint
+          });
+          errors.push(`Map ${mapId} not found: ${fetchError.message}`);
           continue;
         }
 
-        // Use the same deleteMap function as individual delete
+        console.log(`📋 [Admin] Map ${mapId} verified: "${existingMap.title}"`);
+
+        // Use the deleteMap function with regular server client
+        console.log(`🗑️ [Admin] Calling deleteMap for ${mapId}...`);
         await deleteMap(mapId, supabase);
         
         deletedCount++;
         console.log(`✅ [Admin] Successfully deleted map ${mapId} (${existingMap.title})`);
       } catch (error) {
-        console.error(`❌ [Admin] Error deleting map ${mapId}:`, error);
-        errors.push(`Error deleting map ${mapId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorStack = error instanceof Error ? error.stack : 'No stack trace';
+        
+        console.error(`❌ [Admin] Error deleting map ${mapId}:`, {
+          message: errorMessage,
+          stack: errorStack,
+          error: error
+        });
+        
+        errors.push(`Error deleting map ${mapId}: ${errorMessage}`);
       }
     }
 
@@ -89,6 +117,7 @@ export async function DELETE(request: NextRequest) {
     console.log("📊 [Admin] Bulk deletion summary:", response);
 
     if (errors.length > 0 && deletedCount === 0) {
+      console.error(`❌ [Admin] ALL DELETIONS FAILED. Errors:`, errors);
       return NextResponse.json(
         { 
           ...response, 
@@ -96,7 +125,8 @@ export async function DELETE(request: NextRequest) {
           debugInfo: {
             mapIds,
             errorDetails: errors,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            serverLogs: "Check server console for detailed error logs"
           }
         },
         { status: 500 }
