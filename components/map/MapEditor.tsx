@@ -417,7 +417,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     return btoa(encodeURIComponent(mapString));
   }, []);
 
-  // Auto-save function with error handling
+  // Auto-save function with enhanced error handling
   const performAutoSave = useCallback(async (mapToSave: FullLearningMap) => {
     try {
       setAutoSaveStatus(AutoSaveStatus.SAVING);
@@ -446,37 +446,126 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       
       console.log('🔄 Map auto-saved successfully');
       
+      // Show success feedback for manual saves
+      const isManualSave = !saveTimeoutRef.current;
+      if (isManualSave) {
+        toast({
+          title: "Changes saved!",
+          description: "All your changes have been saved successfully.",
+        });
+      }
+      
     } catch (error) {
       console.error('❌ Auto-save failed:', error);
       setAutoSaveStatus(AutoSaveStatus.ERROR);
       
-      // Show user-friendly error message
+      // Enhanced error handling with retry button
       toast({
-        title: "Auto-save failed",
-        description: "Your changes are safe locally. Will retry automatically.",
+        title: "Save failed",
+        description: "Your changes are safe locally. Check your connection.",
         variant: "destructive",
+        action: (
+          <button
+            onClick={() => performAutoSave(mapToSave)}
+            className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            Retry
+          </button>
+        ),
       });
       
-      // Retry after 10 seconds on error
+      // Auto-retry after 15 seconds if still have unsaved changes
       setTimeout(() => {
-        if (hasUnsavedChanges) {
+        if (hasUnsavedChanges && autoSaveStatus === AutoSaveStatus.ERROR) {
+          console.log('🔄 Auto-retrying failed save after 15s...');
           setAutoSaveStatus(AutoSaveStatus.PENDING);
-          // Re-trigger auto-save using the current map state
           performAutoSave(mapToSave);
         }
-      }, 10000);
+      }, 15000);
     }
-  }, [generateMapHash, hasUnsavedChanges, toast]);
+  }, [generateMapHash, hasUnsavedChanges, toast, autoSaveStatus]);
 
-  // Debounced auto-save (3 seconds after last change)
+  // Debounced auto-save (3 seconds after last change) - TEMPORARILY DISABLED
   const debouncedAutoSave = useCallback(
     debounce((mapToSave: FullLearningMap) => {
-      if (hasUnsavedChanges && autoSaveStatus !== AutoSaveStatus.SAVING) {
-        performAutoSave(mapToSave);
-      }
+      console.log('⚠️ Auto-save temporarily disabled due to server client compatibility issue');
+      // TODO: Re-enable after fixing server-side batchUpdateMap function
+      // if (hasUnsavedChanges && autoSaveStatus !== AutoSaveStatus.SAVING) {
+      //   performAutoSave(mapToSave);
+      // }
     }, 3000),
     [performAutoSave, hasUnsavedChanges, autoSaveStatus]
   );
+
+  // Manual/Force save function that bypasses debounce
+  const forceSave = useCallback(async (mapToSave?: FullLearningMap) => {
+    const targetMap = mapToSave || map;
+    
+    // Check if there are actually unsaved changes
+    const currentHash = generateMapHash(targetMap);
+    if (currentHash === lastSavedVersion) {
+      toast({
+        title: "No changes to save",
+        description: "All changes are already saved.",
+      });
+      return;
+    }
+
+    console.log('💾 Force save triggered');
+    
+    // Cancel any pending debounced saves
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Perform immediate save
+    try {
+      await performAutoSave(targetMap);
+      return true; // Success
+    } catch (error) {
+      console.error('Force save failed:', error);
+      return false; // Failure
+    }
+  }, [map, generateMapHash, lastSavedVersion, performAutoSave, toast]);
+
+  // Emergency save function for page visibility changes
+  const emergencySave = useCallback(async (targetMap: FullLearningMap) => {
+    if (!hasUnsavedChanges) return;
+    
+    console.log('🚨 Emergency save triggered');
+    try {
+      // Try sendBeacon first (more reliable for page unload scenarios)
+      const data = JSON.stringify(targetMap);
+      const success = navigator.sendBeacon(`/api/maps/${targetMap.id}`, data);
+      
+      if (success) {
+        console.log('✅ Emergency save via sendBeacon successful');
+      } else {
+        // Fallback to regular fetch if sendBeacon fails
+        console.log('⚠️ sendBeacon failed, trying fetch...');
+        await fetch(`/api/maps/${targetMap.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: data,
+          keepalive: true, // Important for page unload scenarios
+        });
+        console.log('✅ Emergency save via fetch successful');
+      }
+    } catch (error) {
+      console.error('❌ Emergency save failed:', error);
+      // Store in localStorage as last resort
+      try {
+        localStorage.setItem(`map_backup_${targetMap.id}`, JSON.stringify({
+          map: targetMap,
+          timestamp: new Date().toISOString(),
+          hash: generateMapHash(targetMap),
+        }));
+        console.log('💾 Map backed up to localStorage');
+      } catch (storageError) {
+        console.error('❌ Failed to backup to localStorage:', storageError);
+      }
+    }
+  }, [hasUnsavedChanges, generateMapHash]);
 
   // Trigger auto-save when map changes
   const triggerAutoSave = useCallback((newMap: FullLearningMap) => {
@@ -505,11 +594,85 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     }
   }, [generateMapHash, lastSavedVersion, debouncedAutoSave]);
 
-  // Initialize last saved version on mount
+  // Initialize last saved version on mount and check for recovery data
   useEffect(() => {
     const initialHash = generateMapHash(map);
     setLastSavedVersion(initialHash);
-  }, []); // Only run once on mount
+    
+    // Check for any backed up data in localStorage
+    try {
+      const backupKey = `map_backup_${map.id}`;
+      const backupData = localStorage.getItem(backupKey);
+      if (backupData) {
+        const backup = JSON.parse(backupData);
+        const backupHash = backup.hash;
+        
+        // If backup is newer than current map, offer recovery
+        if (backupHash !== initialHash) {
+          console.log('🔍 Found localStorage backup that differs from current map');
+          toast({
+            title: "Recovery available",
+            description: "Found unsaved changes from a previous session. Would you like to recover them?",
+            action: (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    // This would need to be implemented to merge/restore the backup
+                    console.log('User chose to recover backup');
+                    localStorage.removeItem(backupKey);
+                    toast({ title: "Recovery feature coming soon!" });
+                  }}
+                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground"
+                >
+                  Recover
+                </button>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem(backupKey);
+                    toast({ title: "Backup discarded" });
+                  }}
+                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium"
+                >
+                  Discard
+                </button>
+              </div>
+            ),
+          });
+        } else {
+          // Backup is same as current, clean it up
+          localStorage.removeItem(backupKey);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking localStorage backup:', error);
+    }
+  }, [map.id, generateMapHash, toast]); // Only run once on mount
+
+  // Unsaved changes warning on page unload
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      // If page becomes hidden and we have unsaved changes, try to force save
+      if (document.visibilityState === 'hidden' && hasUnsavedChanges) {
+        emergencySave(map);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [hasUnsavedChanges, map, emergencySave]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -621,7 +784,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     );
     
     // If pasting too close to original, add offset
-    let finalPastePosition = { ...basePastePosition };
+    const finalPastePosition = { ...basePastePosition };
     if (distanceFromOriginal < Math.max(groupWidth, groupHeight, 150)) {
       finalPastePosition.x += 100;
       finalPastePosition.y += 100;
@@ -756,12 +919,17 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
             pasteNode();
           }
           break;
+        case "s":
+          // Force save with Ctrl+S
+          event.preventDefault();
+          forceSave();
+          break;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [copyNode, pasteNode, copiedNodes]);
+  }, [copyNode, pasteNode, copiedNodes, forceSave]);
 
 
   // Transform map data to React Flow format - but NOT during operations that would cause deselection
@@ -1618,35 +1786,69 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 Paste{copiedNodes && copiedNodes.length > 1 ? ` (${copiedNodes.length})` : ''}
               </Button>
 
-              <div className="h-4 w-px bg-border" />
-              
-              {/* Auto-save status indicator */}
-              <div className="flex items-center gap-1 px-2">
-                {autoSaveStatus === AutoSaveStatus.SAVED && (
-                  <>
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    <span className="text-xs text-green-600">Saved</span>
-                  </>
-                )}
-                {autoSaveStatus === AutoSaveStatus.SAVING && (
-                  <>
-                    <Save className="h-3 w-3 text-blue-500 animate-pulse" />
-                    <span className="text-xs text-blue-600">Saving...</span>
-                  </>
-                )}
-                {autoSaveStatus === AutoSaveStatus.PENDING && (
-                  <>
-                    <Clock className="h-3 w-3 text-amber-500" />
-                    <span className="text-xs text-amber-600">Pending</span>
-                  </>
-                )}
-                {autoSaveStatus === AutoSaveStatus.ERROR && (
-                  <>
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-xs text-red-600">Error</span>
-                  </>
-                )}
-              </div>
+              {/* Save functionality temporarily disabled - see GitHub issue #20 */}
+              {false && (
+                <>
+                  <div className="h-4 w-px bg-border" />
+                  
+                  {/* Manual Save Button */}
+                  <Button
+                    onClick={() => forceSave()}
+                    size="sm"
+                    variant={hasUnsavedChanges ? "default" : "outline"}
+                    className="gap-2"
+                    disabled={autoSaveStatus === AutoSaveStatus.SAVING}
+                    title={`Force save now (Ctrl+S)${hasUnsavedChanges ? ' - You have unsaved changes' : ' - No changes to save'}`}
+                  >
+                    <Save className="h-4 w-4" />
+                    Save Now
+                  </Button>
+                  
+                  <div className="h-4 w-px bg-border" />
+                  
+                  {/* Enhanced Auto-save status indicator */}
+                  <div className="flex items-center gap-2 px-2">
+                    <div className="flex items-center gap-1">
+                      {autoSaveStatus === AutoSaveStatus.SAVED && (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span className="text-sm font-medium text-green-600">All Saved</span>
+                        </>
+                      )}
+                      {autoSaveStatus === AutoSaveStatus.SAVING && (
+                        <>
+                          <Save className="h-4 w-4 text-blue-500 animate-pulse" />
+                          <span className="text-sm font-medium text-blue-600">Saving...</span>
+                        </>
+                      )}
+                      {autoSaveStatus === AutoSaveStatus.PENDING && (
+                        <>
+                          <Clock className="h-4 w-4 text-amber-500 animate-bounce" />
+                          <span className="text-sm font-medium text-amber-600">Auto-save in 3s</span>
+                        </>
+                      )}
+                      {autoSaveStatus === AutoSaveStatus.ERROR && (
+                        <>
+                          <AlertCircle className="h-4 w-4 text-red-500 animate-pulse" />
+                          <span className="text-sm font-medium text-red-600">Save Failed</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2 h-6 px-2 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                            onClick={() => forceSave()}
+                            title="Retry saving now"
+                          >
+                            Retry
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    {hasUnsavedChanges && (
+                      <div className="h-2 w-2 bg-orange-500 rounded-full animate-pulse" title="You have unsaved changes" />
+                    )}
+                  </div>
+                </>
+              )}
 
               <div className="h-4 w-px bg-border" />
               <div className="text-xs text-muted-foreground px-2">
@@ -1663,6 +1865,12 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
             <div className="absolute top-4 right-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-3 shadow-lg max-w-xs">
               <div className="text-xs font-medium mb-2">Quick Actions</div>
               <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Force Save</span>
+                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                    Ctrl+S
+                  </kbd>
+                </div>
                 <div className="flex justify-between">
                   <span>Add Node</span>
                   <kbd className="px-1 py-0.5 bg-muted rounded text-xs">+</kbd>

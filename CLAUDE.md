@@ -35,7 +35,10 @@ supabase db push --local
 
 ## Architecture Overview
 
+**Very important**: Every code must follow the patterns and conventions defined in this document. Do not write big chunks of code without breaking them down into smaller, reusable functions or components. Make sure the code is deep, modular and easy to read. Follow best software engineering practices.
+
 ### Tech Stack
+
 - **Framework**: Next.js 15.4.5 with App Router
 - **Styling**: TailwindCSS with Shadcn/ui components
 - **Database**: Supabase with PostgreSQL
@@ -44,6 +47,7 @@ supabase db push --local
 - **Testing**: Jest with React Testing Library
 
 ### Key Directories
+
 - `app/` - Next.js App Router pages and API routes
 - `components/` - Reusable React components
 - `components/ui/` - Shadcn/ui component library
@@ -62,20 +66,26 @@ supabase db push --local
 - NEVER use `@supabase/auth-helpers-nextjs`
 
 Server client pattern (`utils/supabase/server.ts`):
+
 ```typescript
 const supabase = createServerClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   {
     cookies: {
-      getAll() { return cookieStore.getAll() },
-      setAll(cookiesToSet) { /* implementation */ }
-    }
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        /* implementation */
+      },
+    },
   }
 );
 ```
 
 ### Data Flow
+
 1. **Server Components**: Fetch data in `app/` page components using server clients
 2. **Client Components**: Receive data as props, use client clients for mutations
 3. **API Routes**: Handle form submissions and mutations in `app/api/` routes
@@ -83,6 +93,7 @@ const supabase = createServerClient(
 ### Database Schema Highlights
 
 **Core Entities**:
+
 - `classrooms` - Learning environments with join codes
 - `classroom_memberships` - User enrollment in classrooms
 - `classroom_teams` - Student collaboration groups
@@ -91,30 +102,36 @@ const supabase = createServerClient(
 - `team_memberships` - Team participant relationships
 
 **Team System**:
+
 - Teams belong to classrooms
 - Students can be in one team per classroom
 - Team leaders have management permissions
 - Teams can fork learning maps for collaboration
 
 ### Testing Approach
+
 - Manual integration tests in `lib/supabase/__tests__/`
 - Jest configured for component testing
 - Focus on Supabase operation validation
 
 ### Styling Guidelines
+
 - Use TailwindCSS utility classes
 - Follow Shadcn/ui component patterns
 - Maintain consistent spacing and typography
 - Use existing color palette from Tailwind config
 
 ### Environment Variables
+
 Required Supabase environment variables:
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ### Common Patterns
 
 **Data Fetching in Server Components**:
+
 ```typescript
 export default async function Page() {
   const supabase = createClient();
@@ -124,12 +141,14 @@ export default async function Page() {
 ```
 
 **Authentication Checking**:
+
 ```typescript
 const { data } = await supabase.auth.getUser();
 if (!data?.user) redirect("/login");
 ```
 
 **Error Handling**:
+
 ```typescript
 try {
   // Supabase operations
@@ -140,6 +159,7 @@ try {
 ```
 
 ### File Naming Conventions
+
 - Components: `PascalCase.tsx`
 - Utilities: `camelCase.ts`
 - Types: `PascalCase.ts`
@@ -147,12 +167,15 @@ try {
 - Pages: `page.tsx`
 
 ### Middleware
+
 Authentication middleware in `middleware.ts` handles:
+
 - Session management
 - Route protection
 - Admin route validation
 
 ### Supabase Features Used
+
 - Row Level Security (RLS) policies
 - Database triggers
 - PostgreSQL functions
@@ -160,12 +183,14 @@ Authentication middleware in `middleware.ts` handles:
 - Storage buckets
 
 ### Performance Considerations
+
 - Use server components for data fetching
 - Implement proper loading states
 - Optimize database queries with indexes
 - Use Supabase's real-time features sparingly
 
 ### Security Practices
+
 - Always implement RLS policies
 - Validate user input in API routes
 - Use proper error handling to avoid information leakage
