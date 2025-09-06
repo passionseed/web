@@ -1,9 +1,6 @@
 import { notFound } from "next/navigation";
-import { getMapWithNodes } from "@/lib/supabase/maps";
-import {
-  getSubmissionsForMap,
-  SubmissionWithDetails,
-} from "@/lib/supabase/grading";
+import { getMapWithNodesServer } from "@/lib/supabase/maps-server";
+import { getSubmissionsForMapServer } from "@/lib/supabase/grading-server";
 import { createClient } from "@/utils/supabase/server";
 import { isInstructor } from "@/lib/supabase/roles";
 import { GradingTable } from "./grading-table";
@@ -41,8 +38,8 @@ export default async function GradingPage({
   const assignmentId = searchParamsResolved.assignment as string | undefined;
 
   const [submissions, map] = await Promise.all([
-    getSubmissionsForMap(mapId),
-    getMapWithNodes(mapId),
+    getSubmissionsForMapServer(mapId),
+    getMapWithNodesServer(mapId),
   ]);
 
   if (!map) {
