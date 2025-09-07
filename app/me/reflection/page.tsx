@@ -1,377 +1,462 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
-import { getGraphData } from "@/lib/supabase/reflection";
-import { Project } from "@/types/project";
-import { ReflectionWithMetrics } from "@/types/reflection";
-import { useToast } from "@/components/ui/use-toast";
-import { Toaster } from "@/components/ui/toaster";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getEmojiForEmotion } from "@/lib/emotions";
-import { ExpandedReflectionCard } from "@/components/reflection/ExpandedReflectionCard";
-import dynamic from "next/dynamic";
-import {
-  ForceGraphMethods,
-  LinkObject,
-  NodeObject,
-} from "react-force-graph-2d";
+import { getMindMapNodes, createMindMapNode, updateMindMapNode, deleteMindMapNode, getDailyEntry, createOrUpdateDailyEntry, type MindMapNode as DBMindMapNode, type MindMapDailyEntry } from "@/lib/supabase/mindmap";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
-// --- GRAPH TYPE DEFINITIONS ---
-type GraphNode = NodeObject & {
+interface MindMapNode {
   id: string;
-  type: "project" | "tag" | "reflection";
-  label: string;
-  color: string;
-  emotion?: string;
-};
-type GraphLink = LinkObject;
-type GraphData = { nodes: GraphNode[]; links: GraphLink[] };
-
-// --- DYNAMIC IMPORT FOR THE GRAPH ---
-const ForceGraph2D = dynamic(
-  () => import("react-force-graph-2d").then((mod) => mod.default as any),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[500px] flex items-center justify-center">
-        <Skeleton className="w-full h-full" />
-      </div>
-    ),
-  }
-);
-
-const formatDate = (dateString: string) =>
-  new Date(dateString).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+  text: string;
+  x: number;
+  y: number;
+  angle: number;
+}
 
 export default function ReflectionHome() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [reflections, setReflections] = useState<ReflectionWithMetrics[]>([]);
+  const [nodes, setNodes] = useState<MindMapNode[]>([]);
+  const [newNodeText, setNewNodeText] = useState("");
+  const [isAddingNode, setIsAddingNode] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const [loading, setLoading] = useState(true);
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-  const [graphData, setGraphData] = useState<GraphData>({
-    nodes: [],
-    links: [],
-  });
-  const graphRef = useRef<ForceGraphMethods>();
-  const [highlightedNodes, setHighlightedNodes] = useState(new Set<string>());
-  const [highlightedLinks, setHighlightedLinks] = useState(new Set<GraphLink>());
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showDailyEntry, setShowDailyEntry] = useState(false);
+  const [selectedNodeForDaily, setSelectedNodeForDaily] = useState<MindMapNode | null>(null);
+  const [dailyEntryContent, setDailyEntryContent] = useState("");
+  const [currentDailyEntry, setCurrentDailyEntry] = useState<MindMapDailyEntry | null>(null);
+  const router = useRouter();
+  const supabase = createClient();
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { projects, reflections } = await getGraphData();
-      setProjects(projects);
-      setReflections(reflections);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load data.",
-        variant: "destructive",
+  useEffect(() => {
+    const updateDimensions = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight - 100, // Account for header
       });
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  // Check authentication and load mindmap data on component mount
+  useEffect(() => {
+    checkAuthAndLoadData();
+  }, []);
+
+  const checkAuthAndLoadData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      setIsAuthenticated(true);
+      await loadMindMapData();
+    } catch (error) {
+      console.error('Authentication check failed:', error);
+      router.push('/login');
+    }
+  };
+
+  const loadMindMapData = async () => {
+    try {
+      const dbNodes = await getMindMapNodes();
+      const mappedNodes: MindMapNode[] = dbNodes.map(node => ({
+        id: node.id,
+        text: node.text,
+        x: Number(node.x),
+        y: Number(node.y),
+        angle: Number(node.angle)
+      }));
+      setNodes(mappedNodes);
+    } catch (error) {
+      console.error('Failed to load mindmap data:', error);
     } finally {
       setLoading(false);
     }
-  }, [toast]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    if (projects.length > 0) {
-      const nodes: GraphNode[] = [];
-      const links: GraphLink[] = [];
-      const tagMap = new Map<string, GraphNode>();
-
-      projects.forEach((project) => {
-        nodes.push({
-          id: project.id,
-          type: "project",
-          label: project.name,
-          color: "#4FD1C5", // Teal for projects
-        });
-
-        project.tags?.forEach((tag) => {
-          if (!tagMap.has(tag.id)) {
-            const tagNode: GraphNode = {
-              id: tag.id,
-              type: "tag",
-              label: tag.name,
-              color: tag.color || "#FF4136", // Red for tags
-            };
-            tagMap.set(tag.id, tagNode);
-            nodes.push(tagNode);
-          }
-          links.push({ source: project.id, target: tag.id });
-        });
-
-        project.reflections?.forEach((reflection) => {
-          nodes.push({
-            id: reflection.id,
-            type: "reflection",
-            label: formatDate(reflection.created_at),
-            color: "#3182CE", // Blue for reflections
-            emotion: getEmojiForEmotion(reflection.emotion),
-          });
-          links.push({ source: project.id, target: reflection.id });
-        });
-      });
-
-      setGraphData({ nodes, links });
-    }
-  }, [projects]);
-
-  useEffect(() => {
-    if (graphRef.current) {
-      graphRef.current.d3Force("charge")?.strength(-150);
-      graphRef.current.d3Force("link")?.distance(60);
-    }
-  }, []);
-
-  const handleNodeClick = useCallback(
-    (node: GraphNode) => {
-      if (node.type === "reflection") {
-        setExpandedCardId(node.id);
-        clearHighlight();
-        return;
-      }
-
-      const newHighlightedNodes = new Set<string>([node.id]);
-      const newHighlightedLinks = new Set<GraphLink>();
-
-      graphData.links.forEach((link) => {
-        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
-        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
-        
-        if (sourceId === node.id || targetId === node.id) {
-          newHighlightedNodes.add(sourceId as string);
-          newHighlightedNodes.add(targetId as string);
-          newHighlightedLinks.add(link);
-        }
-      });
-      setHighlightedNodes(newHighlightedNodes);
-      setHighlightedLinks(newHighlightedLinks);
-
-      if (graphRef.current) {
-        graphRef.current.centerAt(node.x, node.y, 1000);
-        graphRef.current.zoom(2.5, 1000);
-      }
-    },
-    [graphData.links]
-  );
-
-  const clearHighlight = () => {
-    setHighlightedNodes(new Set());
-    setHighlightedLinks(new Set());
   };
 
-  const nodeCanvasObject = (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const label = node.label || "";
-    const isHighlighted = highlightedNodes.has(node.id as string);
-    const isFaded = highlightedNodes.size > 0 && !isHighlighted;
-    const nodeSize = node.type === "project" ? 12 : node.type === "tag" ? 6 : 8;
+  const centerX = dimensions.width / 2;
+  const centerY = dimensions.height / 2;
+  const radius = Math.min(dimensions.width, dimensions.height) * 0.2;
 
-    ctx.globalAlpha = isFaded ? 0.15 : 1;
+  const addNode = async (text: string) => {
+    if (!text.trim()) return;
 
-    // Draw node circle
-    ctx.beginPath();
-    ctx.arc(node.x!, node.y!, nodeSize, 0, 2 * Math.PI, false);
-    ctx.fillStyle = node.color || "rgba(255,255,255,0.8)";
-    ctx.fill();
+    const angle = nodes.length * (360 / 8); // Distribute evenly, max 8 nodes
+    const radians = (angle * Math.PI) / 180;
+    const x = centerX + radius * Math.cos(radians);
+    const y = centerY + radius * Math.sin(radians);
 
-    // Draw highlight ring for non-faded nodes
-    if (isHighlighted) {
-      ctx.beginPath();
-      ctx.arc(node.x!, node.y!, nodeSize * 1.4, 0, 2 * Math.PI, false);
-      ctx.strokeStyle = "rgba(255, 255, 0, 0.7)";
-      ctx.lineWidth = 1.5 / globalScale;
-      ctx.stroke();
+    try {
+      const newNode = await createMindMapNode({
+        text: text.trim(),
+        x,
+        y,
+        angle,
+      });
+
+      if (newNode) {
+        const mappedNode: MindMapNode = {
+          id: newNode.id,
+          text: newNode.text,
+          x: Number(newNode.x),
+          y: Number(newNode.y),
+          angle: Number(newNode.angle)
+        };
+        setNodes([...nodes, mappedNode]);
+      }
+    } catch (error) {
+      console.error('Failed to create mindmap node:', error);
     }
 
-    // Draw text/emoji
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#ffffff";
+    setNewNodeText("");
+    setIsAddingNode(false);
+  };
 
-    if (node.type === "reflection" && node.emotion) {
-      const emojiSize = nodeSize * 1.5;
-      ctx.font = `${emojiSize}px Sans-Serif`;
-      ctx.fillText(node.emotion, node.x!, node.y!);
+  const removeNode = async (nodeId: string) => {
+    try {
+      const success = await deleteMindMapNode(nodeId);
+      if (success) {
+        setNodes(nodes.filter((node) => node.id !== nodeId));
+      }
+    } catch (error) {
+      console.error('Failed to delete mindmap node:', error);
+    }
+    setSelectedNodeId(null);
+  };
+
+  const updateNodeText = async (nodeId: string, newText: string) => {
+    if (!newText.trim()) {
+      removeNode(nodeId);
+      return;
+    }
+    
+    try {
+      const updatedNode = await updateMindMapNode(nodeId, { text: newText.trim() });
+      if (updatedNode) {
+        setNodes(nodes.map((node) => 
+          node.id === nodeId ? { ...node, text: newText.trim() } : node
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to update mindmap node:', error);
+    }
+    setSelectedNodeId(null);
+  };
+
+  const openDailyEntryModal = async (node: MindMapNode) => {
+    setSelectedNodeForDaily(node);
+    
+    // Load existing daily entry if it exists
+    const existingEntry = await getDailyEntry(node.id);
+    if (existingEntry) {
+      setCurrentDailyEntry(existingEntry);
+      setDailyEntryContent(existingEntry.content);
     } else {
-      const fontSize = 12 / globalScale;
-      ctx.font = `bold ${fontSize}px Sans-Serif`;
-      
-      if (globalScale > 1.5) { // Only show labels when zoomed in
-        ctx.fillText(label, node.x!, node.y! + nodeSize + fontSize);
-      }
+      setCurrentDailyEntry(null);
+      setDailyEntryContent("");
     }
-    ctx.globalAlpha = 1;
+    
+    setShowDailyEntry(true);
   };
 
-  const expandedCard = expandedCardId
-    ? reflections.find((r) => r.id === expandedCardId)
-    : undefined;
+  const closeDailyEntryModal = () => {
+    setShowDailyEntry(false);
+    setSelectedNodeForDaily(null);
+    setDailyEntryContent("");
+    setCurrentDailyEntry(null);
+  };
 
-  if (loading) {
+  const saveDailyEntry = async () => {
+    if (!selectedNodeForDaily || !dailyEntryContent.trim()) return;
+
+    try {
+      const savedEntry = await createOrUpdateDailyEntry(selectedNodeForDaily.id, dailyEntryContent);
+      if (savedEntry) {
+        setCurrentDailyEntry(savedEntry);
+      }
+    } catch (error) {
+      console.error('Failed to save daily entry:', error);
+    }
+
+    closeDailyEntryModal();
+  };
+
+  const getTodayString = () => {
+    return new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  if (loading || !isAuthenticated) {
     return (
-      <div className="p-4">
-        <div className="border-b p-4 flex justify-between items-center sticky top-0 bg-background z-10">
-          <h1 className="text-2xl font-semibold">Reflection Journey</h1>
-          <Button disabled>
-            <Plus className="mr-2 h-4 w-4" /> Add Reflection
-          </Button>
+      <div className="flex flex-col min-h-screen bg-gray-900">
+        <div className="border-b border-gray-700 p-4">
+          <h1 className="text-2xl font-semibold text-white">Reflection</h1>
+          <p className="text-sm text-gray-400">
+            Reflect on what you're doing and learning by adding topics to your mindmap
+          </p>
         </div>
-
-        <main className="flex-1 p-4 space-y-8">
-          <div className="mb-8 p-4 border rounded-lg bg-card shadow-md">
-            <Skeleton className="w-full h-[500px] rounded-md" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-1/4 mt-2" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-[80px] w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </main>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-400">Loading your reflection mindmap...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative">
-      <AnimatePresence>
-        {expandedCard && (
-          <>
+    <div className="flex flex-col min-h-screen bg-gray-900">
+      {/* Header */}
+      <div className="border-b border-gray-700 p-4">
+        <h1 className="text-2xl font-semibold text-white">Reflection</h1>
+        <p className="text-sm text-gray-400">
+          Reflect on what you're doing and learning by adding topics to your mindmap
+        </p>
+      </div>
+
+      {/* Mind Map Container */}
+      <div className="flex-1 relative bg-gray-900 overflow-hidden">
+        <svg width="100%" height="100%" className="absolute inset-0">
+            {/* Center circle */}
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={80}
+              fill="#1f2937"
+              stroke="#60a5fa"
+              strokeWidth={3}
+              className="drop-shadow-lg"
+            />
+            
+            {/* Center text */}
+            <text
+              x={centerX}
+              y={centerY - 8}
+              textAnchor="middle"
+              className="text-lg font-semibold fill-gray-200"
+            >
+              What are you
+            </text>
+            <text
+              x={centerX}
+              y={centerY + 8}
+              textAnchor="middle"
+              className="text-lg font-semibold fill-gray-200"
+            >
+              doing + learning?
+            </text>
+
+            {/* Lines connecting center to nodes */}
+            {nodes.map((node) => (
+              <line
+                key={`line-${node.id}`}
+                x1={centerX}
+                y1={centerY}
+                x2={node.x}
+                y2={node.y}
+                stroke="#6b7280"
+                strokeWidth={2}
+                opacity={0.8}
+              />
+            ))}
+
+            {/* Topic nodes */}
+            {nodes.map((node) => (
+              <g key={node.id}>
+                <ellipse
+                  cx={node.x}
+                  cy={node.y}
+                  rx={60}
+                  ry={30}
+                  fill="#374151"
+                  stroke={selectedNodeId === node.id ? "#f87171" : "#8b5cf6"}
+                  strokeWidth={2}
+                  className="drop-shadow cursor-pointer hover:stroke-purple-400"
+                  onClick={() => openDailyEntryModal(node)}
+                  onDoubleClick={() => setSelectedNodeId(selectedNodeId === node.id ? null : node.id)}
+                />
+                <foreignObject
+                  x={node.x - 55}
+                  y={node.y - 12}
+                  width={110}
+                  height={24}
+                  className="pointer-events-none"
+                >
+                  <div className="flex items-center justify-center h-full">
+                    {selectedNodeId === node.id ? (
+                      <Input
+                        defaultValue={node.text}
+                        className="text-sm p-1 h-6 text-center bg-transparent border-none focus:ring-0 text-white"
+                        onBlur={(e) => updateNodeText(node.id, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateNodeText(node.id, e.currentTarget.value);
+                          }
+                          if (e.key === "Escape") {
+                            setSelectedNodeId(null);
+                          }
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="text-sm font-medium text-gray-200 text-center px-2">
+                        {node.text}
+                      </span>
+                    )}
+                  </div>
+                </foreignObject>
+              </g>
+            ))}
+
+            {/* Add node button */}
+            {nodes.length < 8 && (
+              <g>
+                <circle
+                  cx={centerX + radius * Math.cos((nodes.length * 360 / 8) * Math.PI / 180)}
+                  cy={centerY + radius * Math.sin((nodes.length * 360 / 8) * Math.PI / 180)}
+                  r={25}
+                  fill="#059669"
+                  stroke="#374151"
+                  strokeWidth={3}
+                  className="cursor-pointer hover:fill-emerald-500 drop-shadow"
+                  onClick={() => setIsAddingNode(true)}
+                />
+                <text
+                  x={centerX + radius * Math.cos((nodes.length * 360 / 8) * Math.PI / 180)}
+                  y={centerY + radius * Math.sin((nodes.length * 360 / 8) * Math.PI / 180) + 7}
+                  textAnchor="middle"
+                  className="text-xl font-bold fill-white pointer-events-none"
+                >
+                  +
+                </text>
+              </g>
+            )}
+          </svg>
+
+          {/* Input modal for adding new nodes */}
+          <AnimatePresence>
+            {isAddingNode && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/50 flex items-center justify-center"
+                onClick={() => setIsAddingNode(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  className="bg-gray-800 p-6 rounded-lg shadow-xl border border-gray-600"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-lg font-semibold mb-4 text-white">Add a topic</h3>
+                  <Input
+                    placeholder="Enter topic..."
+                    value={newNodeText}
+                    onChange={(e) => setNewNodeText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        addNode(newNodeText);
+                      }
+                      if (e.key === "Escape") {
+                        setIsAddingNode(false);
+                      }
+                    }}
+                    className="mb-4 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                    autoFocus
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsAddingNode(false)} 
+                      size="sm"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={() => addNode(newNodeText)} size="sm" className="bg-purple-600 hover:bg-purple-700">
+                      Add Topic
+                    </Button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+        {/* Instructions */}
+        <div className="absolute bottom-4 left-4 text-sm text-gray-300 bg-gray-800/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-600">
+          Click + to add topics • Click topics for daily updates • Double-click to edit topic names
+        </div>
+
+        {/* Daily Entry Modal */}
+        <AnimatePresence>
+          {showDailyEntry && selectedNodeForDaily && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-40"
-              onClick={() => setExpandedCardId(null)}
-            />
-            <ExpandedReflectionCard
-              reflection={expandedCard}
-              onClose={() => setExpandedCardId(null)}
-            />
-          </>
-        )}
-      </AnimatePresence>
-
-      <div className="flex flex-col min-h-screen bg-background">
-        <div className="border-b p-4 flex justify-between items-center sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-          <h1 className="text-2xl font-semibold">Reflection Journey</h1>
-          <Button onClick={() => router.push("/me/reflection/new")}>
-            <Plus className="mr-2 h-4 w-4" /> Add Reflection
-          </Button>
-        </div>
-
-        <main className="flex-1 p-4 md:p-6">
-          {loading ? (
-            <>
-              <div className="mb-8 p-4 border rounded-lg bg-card shadow-md">
-                <h2 className="text-lg font-semibold mb-4">Project Connections</h2>
-                <Skeleton className="w-full h-[500px] rounded-md" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(3)].map((_, i) => (
-                  <Card key={i}>
-                    <CardHeader>
-                      <Skeleton className="h-5 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-5/6" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          ) : reflections.length === 0 ? (
-            <div className="text-center mt-16">
-              <FileText className="h-16 w-16 mx-auto text-muted-foreground" />
-              <h2 className="text-xl font-semibold mt-4">No reflections yet</h2>
-              <Button
-                onClick={() => router.push("/me/reflection/new")}
-                className="mt-4"
+              className="absolute inset-0 bg-black/50 flex items-center justify-center"
+              onClick={closeDailyEntryModal}
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="bg-gray-800 p-6 rounded-lg shadow-xl border border-gray-600 max-w-lg w-full mx-4"
+                onClick={(e) => e.stopPropagation()}
               >
-                Add First Reflection
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="mb-8 p-4 border rounded-lg bg-card shadow-md">
-                <h2 className="text-lg font-semibold mb-2">
-                  Project Connections
-                </h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Click on a project or tag to see its connections, or click a reflection to view details.
-                </p>
-                <div className="w-full h-[500px] relative rounded-md overflow-hidden border bg-gray-900/20">
-                  <ForceGraph2D
-                    ref={graphRef}
-                    graphData={graphData}
-                    onNodeClick={handleNodeClick}
-                    onBackgroundClick={clearHighlight}
-                    nodeLabel="label"
-                    nodeCanvasObject={nodeCanvasObject}
-                    linkColor={(link) => highlightedLinks.has(link) ? "rgba(255, 255, 0, 0.9)" : "rgba(255, 255, 255, 0.2)"}
-                    linkWidth={(link) => highlightedLinks.has(link) ? 2 : 0.5}
-                    linkDirectionalParticles={link => highlightedLinks.has(link) ? 4 : 0}
-                    linkDirectionalParticleWidth={2}
-                  />
+                <div className="mb-4">
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    {selectedNodeForDaily.text}
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    What are you doing about this today?
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {getTodayString()}
+                  </p>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {reflections.map((reflection) => (
-                  <motion.div
-                    key={reflection.id}
-                    layoutId={`card-${reflection.id}`}
-                    onClick={() => setExpandedCardId(reflection.id)}
-                    className="cursor-pointer"
+                
+                <Textarea
+                  placeholder="Describe what you're working on or learning about this topic today..."
+                  value={dailyEntryContent}
+                  onChange={(e) => setDailyEntryContent(e.target.value)}
+                  className="mb-4 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 resize-none h-32"
+                  autoFocus
+                />
+                
+                <div className="flex gap-3 justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={closeDailyEntryModal}
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
                   >
-                    <Card className="hover:shadow-lg transition-shadow h-full">
-                      <CardHeader>
-                        <CardTitle className="text-base">
-                          {reflection.project.name}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(reflection.created_at)}
-                        </p>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="line-clamp-3 text-sm">{reflection.content}</p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={saveDailyEntry} 
+                    disabled={!dailyEntryContent.trim()}
+                    className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {currentDailyEntry ? 'Update' : 'Save'} Entry
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
           )}
-        </main>
+        </AnimatePresence>
       </div>
     </div>
   );
