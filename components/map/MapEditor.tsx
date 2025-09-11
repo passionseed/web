@@ -391,6 +391,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [isSelectionDragging, setIsSelectionDragging] = useState(false);
   const [isRestoringSelection, setIsRestoringSelection] = useState(false);
   const [isManuallySelecting, setIsManuallySelecting] = useState(false);
+  const [isDraggingNodes, setIsDraggingNodes] = useState(false);
   const transformTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [pendingNodeUpdates, setPendingNodeUpdates] = useState<
     Record<string, Partial<MapNode>>
@@ -1027,7 +1028,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       isDeletingNode ||
       isSelectionDragging ||
       isRestoringSelection ||
-      isManuallySelecting
+      isManuallySelecting ||
+      isDraggingNodes
     ) {
       console.log("⏭️ Skipping node transformation during operation:", {
         isUpdatingNodeData,
@@ -1037,6 +1039,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         isSelectionDragging,
         isRestoringSelection,
         isManuallySelecting,
+        isDraggingNodes,
       });
       return;
     }
@@ -1063,9 +1066,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     const transformedNodes: AppNode[] = map.map_nodes.map((node) => {
       const nodeType = (node as any).node_type === "text" ? "text" : "default";
       
-      // Preserve existing selection state from current nodes
+      // Preserve existing selection state and position from current nodes
       const existingNode = reactFlowInstance?.getNode(node.id);
       const isSelected = existingNode?.selected || false;
+      // Use current position if node exists in ReactFlow, otherwise use stored metadata position
+      const currentPosition = existingNode?.position || (node.metadata as any)?.position || getRandomPosition();
       
       if (isSelected) {
         console.log(`📌 Preserving selection for node: ${node.id}`);
@@ -1075,7 +1080,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         id: node.id,
         type: nodeType,
         data: { ...node, node_type: (node as any).node_type || "learning" },
-        position: (node.metadata as any)?.position || getRandomPosition(),
+        position: currentPosition,
         draggable: true, // Re-enable dragging for natural ReactFlow behavior
         connectable: nodeType !== "text", // Text nodes can't be connected
         selectable: true,
@@ -1142,7 +1147,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         clearTimeout(transformTimeoutRef.current);
       }
     };
-  }, [map, setNodes, setEdges, isUpdatingNodeData, isUpdatingAssessment, isAddingNode, isDeletingNode, isSelectionDragging, isRestoringSelection, isManuallySelecting, reactFlowInstance]);
+  }, [map, setNodes, setEdges, isUpdatingNodeData, isUpdatingAssessment, isAddingNode, isDeletingNode, isSelectionDragging, isRestoringSelection, isManuallySelecting, isDraggingNodes, reactFlowInstance]);
 
 
   // ReactFlow handles node data and selection internally - no manual sync needed
@@ -1894,6 +1899,29 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 setTimeout(() => {
                   setIsSelectionDragging(false);
                 }, 50);
+              }}
+              onNodeDragStart={(_, node) => {
+                console.log("🚀 Node drag started:", node.id);
+                setIsDraggingNodes(true);
+              }}
+              onNodeDragStop={(_, node, nodes) => {
+                console.log("🛑 Node drag stopped:", node.id);
+                // Update position in metadata for the dragged node
+                const updatedNode = nodes.find(n => n.id === node.id);
+                if (updatedNode) {
+                  console.log("💾 Saving new position:", updatedNode.position);
+                  // Update the node's metadata with the new position
+                  // This will be handled by the existing node update mechanism
+                  handleNodeDataChange(node.id, {
+                    metadata: {
+                      ...(node.data.metadata || {}),
+                      position: updatedNode.position
+                    }
+                  });
+                }
+                setTimeout(() => {
+                  setIsDraggingNodes(false);
+                }, 100);
               }}
               
               onPaneClick={() => {
