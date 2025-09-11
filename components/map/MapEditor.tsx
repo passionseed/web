@@ -392,6 +392,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [isRestoringSelection, setIsRestoringSelection] = useState(false);
   const [isManuallySelecting, setIsManuallySelecting] = useState(false);
   const [isDraggingNodes, setIsDraggingNodes] = useState(false);
+  const [dragDistance, setDragDistance] = useState(0);
+  const [dragStartPos, setDragStartPos] = useState<{x: number, y: number} | null>(null);
   const transformTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [pendingNodeUpdates, setPendingNodeUpdates] = useState<
     Record<string, Partial<MapNode>>
@@ -418,6 +420,49 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [pendingQuizQuestions, setPendingQuizQuestions] = useState<
     Record<string, QuizQuestion[]>
   >({});
+
+  // Unified selection handler for both click and drag-fallback scenarios
+  const handleNodeSelection = useCallback((node: any, isMultiSelect: boolean, source: string = "unknown") => {
+    console.log(`🎯 handleNodeSelection called from: ${source}`, {
+      nodeId: node.id,
+      isMultiSelect,
+      dragDistance: dragDistance,
+      timestamp: new Date().toISOString(),
+    });
+    
+    if (!reactFlowInstance) {
+      console.warn("⚠️ ReactFlow instance not available for selection");
+      return;
+    }
+    
+    // Prevent transforms during manual selection
+    setIsManuallySelecting(true);
+    
+    const currentNodes = reactFlowInstance.getNodes();
+    
+    if (isMultiSelect) {
+      // Multi-select: toggle this node's selection
+      const updatedNodes = currentNodes.map(n => ({
+        ...n,
+        selected: n.id === node.id ? !n.selected : n.selected
+      }));
+      reactFlowInstance.setNodes(updatedNodes);
+      console.log("🔄 Multi-select toggle for node:", node.id);
+    } else {
+      // Single select: clear all others and select this one
+      const updatedNodes = currentNodes.map(n => ({
+        ...n,
+        selected: n.id === node.id
+      }));
+      reactFlowInstance.setNodes(updatedNodes);
+      console.log("✅ Single-select for node:", node.id);
+    }
+    
+    // Clear the manual selection flag after a brief delay
+    setTimeout(() => {
+      setIsManuallySelecting(false);
+    }, 50);
+  }, [reactFlowInstance, dragDistance, setIsManuallySelecting]);
 
   // Enhanced debug effect for selection state tracking
   useEffect(() => {
@@ -1900,25 +1945,52 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   setIsSelectionDragging(false);
                 }, 50);
               }}
-              onNodeDragStart={(_, node) => {
+              onNodeDragStart={(event, node) => {
                 console.log("🚀 Node drag started:", node.id);
+                const startPos = { x: event.clientX, y: event.clientY };
+                setDragStartPos(startPos);
+                setDragDistance(0);
                 setIsDraggingNodes(true);
               }}
-              onNodeDragStop={(_, node, nodes) => {
-                console.log("🛑 Node drag stopped:", node.id);
-                // Update position in metadata for the dragged node
-                const updatedNode = nodes.find(n => n.id === node.id);
-                if (updatedNode) {
-                  console.log("💾 Saving new position:", updatedNode.position);
-                  // Update the node's metadata with the new position
-                  // This will be handled by the existing node update mechanism
-                  handleNodeDataChange(node.id, {
-                    metadata: {
-                      ...(node.data.metadata || {}),
-                      position: updatedNode.position
-                    }
-                  });
+              onNodeDrag={(event, node) => {
+                if (dragStartPos) {
+                  const distance = Math.sqrt(
+                    Math.pow(event.clientX - dragStartPos.x, 2) + 
+                    Math.pow(event.clientY - dragStartPos.y, 2)
+                  );
+                  setDragDistance(distance);
+                  // Only log drag distance at key thresholds to avoid spam
+                  if (distance === 0 || distance % 10 < 1 || distance < 5) {
+                    console.log("📏 Drag distance:", distance.toFixed(2) + "px");
+                  }
                 }
+              }}
+              onNodeDragStop={(event, node, nodes) => {
+                console.log("🛑 Node drag stopped:", node.id, "Distance:", dragDistance.toFixed(2) + "px");
+                
+                // If drag distance is very small, treat as a failed click
+                const CLICK_FALLBACK_THRESHOLD = 5; // pixels
+                if (dragDistance < CLICK_FALLBACK_THRESHOLD) {
+                  console.log("🖱️ Treating minimal drag as click:", node.id, "Distance:", dragDistance.toFixed(2) + "px");
+                  const isMultiSelect = event.ctrlKey || event.metaKey;
+                  handleNodeSelection(node, isMultiSelect, "drag-to-click fallback");
+                } else {
+                  // Genuine drag - update position in metadata
+                  const updatedNode = nodes.find(n => n.id === node.id);
+                  if (updatedNode) {
+                    console.log("💾 Saving new position:", updatedNode.position);
+                    handleNodeDataChange(node.id, {
+                      metadata: {
+                        ...(node.data.metadata || {}),
+                        position: updatedNode.position
+                      }
+                    });
+                  }
+                }
+                
+                // Reset drag tracking
+                setDragStartPos(null);
+                setDragDistance(0);
                 setTimeout(() => {
                   setIsDraggingNodes(false);
                 }, 100);
@@ -1935,52 +2007,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               }}
               onNodeClick={(event, node) => {
                 console.log("🖱️ Node clicked:", node.id, "Ctrl/Cmd:", event.ctrlKey || event.metaKey);
-                if (!reactFlowInstance) return;
-                
-                // Prevent transforms during manual selection
-                setIsManuallySelecting(true);
-                
-                // Manual selection handling
                 const isMultiSelect = event.ctrlKey || event.metaKey;
-                const currentNodes = reactFlowInstance.getNodes();
-                
-                if (isMultiSelect) {
-                  // Multi-select: toggle this node's selection
-                  const updatedNodes = currentNodes.map(n => ({
-                    ...n,
-                    selected: n.id === node.id ? !n.selected : n.selected
-                  }));
-                  reactFlowInstance.setNodes(updatedNodes);
-                  console.log("🔄 Multi-select toggle for node:", node.id);
-                  
-                  // Clear the manual selection flag after a brief delay
-                  setTimeout(() => {
-                    setIsManuallySelecting(false);
-                  }, 50);
-                } else {
-                  // Single select: clear all others and select this one
-                  const updatedNodes = currentNodes.map(n => ({
-                    ...n,
-                    selected: n.id === node.id
-                  }));
-                  reactFlowInstance.setNodes(updatedNodes);
-                  console.log("✅ Single select for node:", node.id);
-                  
-                  // Debug: Check if selection was applied correctly
-                  setTimeout(() => {
-                    const checkNodes = reactFlowInstance.getNodes();
-                    const selectedAfter = checkNodes.filter(n => n.selected);
-                    console.log("🔍 Selection verification:", {
-                      targetNode: node.id,
-                      selectedCount: selectedAfter.length,
-                      selectedIds: selectedAfter.map(n => n.id),
-                      wasApplied: selectedAfter.some(n => n.id === node.id)
-                    });
-                    
-                    // Clear the manual selection flag
-                    setIsManuallySelecting(false);
-                  }, 50);
-                }
+                handleNodeSelection(node, isMultiSelect, "onNodeClick");
               }}
               nodeTypes={NODE_TYPES}
               edgeTypes={EDGE_TYPES}
@@ -1993,7 +2021,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               multiSelectionKeyCode={["Meta", "Control"]} // Only allow multi-select with Ctrl/Cmd  
               selectNodesOnDrag={false} // Handle selection manually to avoid drag conflicts
               panOnDrag={[2]} // Only right mouse button for panning
-              nodeDragThreshold={10} // Increase threshold to prevent accidental drags
+              nodeDragThreshold={15} // Increase threshold to prevent accidental drags
               connectionMode={ConnectionMode.Loose}
               deleteKeyCode={["Delete", "Backspace"]}
             >
