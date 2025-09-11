@@ -6,8 +6,7 @@ import { NODE_STYLE, EDGE_STYLE } from "../constants";
 import { generateTempId, getRandomPosition } from "./helpers";
 
 export function transformMapToReactFlow(
-  map: FullLearningMap,
-  selectedNode: AppNode | null
+  map: FullLearningMap
 ): { transformedNodes: AppNode[]; transformedEdges: AppEdge[] } {
   const transformedNodes: AppNode[] = map.map_nodes.map((node) => {
     const extendedNode: ExtendedMapNode = {
@@ -23,7 +22,6 @@ export function transformMapToReactFlow(
       draggable: true,
       connectable: extendedNode.node_type !== "text", // Text nodes can't be connected
       selectable: true,
-      selected: selectedNode?.id === node.id,
       style: NODE_STYLE,
     };
   });

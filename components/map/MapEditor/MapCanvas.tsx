@@ -126,8 +126,11 @@ export function MapCanvas({
         fitView
         attributionPosition="bottom-left"
         panOnScroll
-        selectionOnDrag
+        selectionOnDrag={false}
         panOnDrag={[1, 2]}
+        multiSelectionKeyCode="Meta"
+        selectionKeyCode="Meta"
+        deleteKeyCode="Delete"
       >
         <Background gap={20} size={1} color="#94a3b8" />
         <MiniMap

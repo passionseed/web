@@ -31,18 +31,15 @@ export function useMapEditor(
 ) {
   const [nodes, setNodes, onNodesChange] = useNodesState<AppNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<AppEdge>([]);
-  const [selectedNode, setSelectedNode] = useState<AppNode | null>(null);
+  const [selectedNodes, setSelectedNodes] = useState<AppNode[]>([]);
   const { toast } = useToast();
 
   // Transform map data to React Flow format
   useEffect(() => {
-    const { transformedNodes, transformedEdges } = transformMapToReactFlow(
-      map,
-      selectedNode
-    );
+    const { transformedNodes, transformedEdges } = transformMapToReactFlow(map);
     setNodes(transformedNodes);
     setEdges(transformedEdges);
-  }, [map, selectedNode, setNodes, setEdges]);
+  }, [map, setNodes, setEdges]);
 
   // Connection handler
   const onConnect = useCallback(
@@ -104,8 +101,7 @@ export function useMapEditor(
 
   // Selection change handler
   const onSelectionChange = useCallback((params: OnSelectionChangeParams) => {
-    const node = params.nodes[0];
-    setSelectedNode((node as AppNode) || null);
+    setSelectedNodes(params.nodes as AppNode[]);
   }, []);
 
   // Add node handler
@@ -137,11 +133,14 @@ export function useMapEditor(
         })
       );
 
-      if (selectedNode?.id === nodeId) {
-        setSelectedNode((prev) =>
-          prev ? { ...prev, data: { ...prev.data, ...data } } : null
-        );
-      }
+      // Update selectedNodes if this node is currently selected
+      setSelectedNodes((prevSelected) =>
+        prevSelected.map((selectedNode) =>
+          selectedNode.id === nodeId
+            ? { ...selectedNode, data: { ...selectedNode.data, ...data } }
+            : selectedNode
+        )
+      );
 
       const updatedMap = {
         ...map,
@@ -171,21 +170,22 @@ export function useMapEditor(
       const updatedMap = updateMapWithDeletedNodes(map, [nodeToDelete]);
       onMapChange(updatedMap);
 
-      if (selectedNode?.id === nodeId) {
-        setSelectedNode(null);
-      }
+      // Remove from selectedNodes if currently selected
+      setSelectedNodes((prevSelected) =>
+        prevSelected.filter((selectedNode) => selectedNode.id !== nodeId)
+      );
 
       toast({
         title: `Node "${nodeToDelete.data.title}" deleted (Save to persist)`,
       });
     },
-    [nodes, selectedNode, setNodes, setEdges, map, onMapChange, toast]
+    [nodes, setNodes, setEdges, map, onMapChange, toast]
   );
 
   return {
     nodes,
     edges,
-    selectedNode,
+    selectedNodes,
     onNodesChange,
     onEdgesChange,
     onConnect,
