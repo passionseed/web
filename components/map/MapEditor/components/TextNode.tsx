@@ -97,6 +97,10 @@ export function TextNode({
     <div
       className={containerClassName}
       onDoubleClick={handleDoubleClick}
+      onClick={(e) => {
+        // Allow click events to bubble to ReactFlow for selection
+        // Only handle double-click for editing
+      }}
       style={{ backgroundColor: textStyle.backgroundColor }}
     >
       {/* Selection indicator */}
