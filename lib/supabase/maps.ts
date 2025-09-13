@@ -722,35 +722,48 @@ export const deleteMap = async (
       const assessmentIds = assessments.map((a) => a.id);
       console.log(`Found ${assessmentIds.length} assessments to clean up`);
 
-      // Delete submission grades first (has FK to assessment_submissions)
-      const { error: gradesError } = await supabase
-        .from("submission_grades")
-        .delete()
-        .in(
-          "submission_id",
-          supabase
-            .from("assessment_submissions")
-            .select("id")
-            .in("assessment_id", assessmentIds)
-        );
+      // First get all submission IDs that need to be deleted
+      const { data: submissionsToDelete, error: submissionFetchError } = await supabase
+        .from("assessment_submissions")
+        .select("id")
+        .in("assessment_id", assessmentIds);
 
-      if (gradesError) {
-        console.error("Error deleting submission grades:", gradesError);
+      if (submissionFetchError) {
+        console.error("Error fetching submissions to delete:", submissionFetchError);
         // Continue anyway as this might not exist
       }
 
-      // Delete assessment submissions
-      const { error: submissionsError } = await supabase
-        .from("assessment_submissions")
-        .delete()
-        .in("assessment_id", assessmentIds);
+      const submissionIds = submissionsToDelete?.map(s => s.id) || [];
+      
+      // Delete submission grades first (has FK to assessment_submissions)
+      if (submissionIds.length > 0) {
+        const { error: gradesError } = await supabase
+          .from("submission_grades")
+          .delete()
+          .in("submission_id", submissionIds);
 
-      if (submissionsError) {
-        console.error(
-          "Error deleting assessment submissions:",
-          submissionsError
-        );
-        // Continue anyway
+        if (gradesError) {
+          console.error("Error deleting submission grades:", gradesError);
+          // Continue anyway as this might not exist
+        }
+      }
+
+      // Delete assessment submissions using the submission IDs we already fetched
+      if (submissionIds.length > 0) {
+        const { error: submissionsError } = await supabase
+          .from("assessment_submissions")
+          .delete()
+          .in("id", submissionIds);
+
+        if (submissionsError) {
+          console.error(
+            "Error deleting assessment submissions:",
+            submissionsError
+          );
+          // Continue anyway
+        } else {
+          console.log("✅ Assessment submissions deleted");
+        }
       }
 
       console.log("✅ Assessment submissions and grades deleted");
@@ -822,7 +835,37 @@ export const deleteMap = async (
     }
     console.log("✅ Map nodes deleted");
 
-    // Step 7: Delete the learning map itself
+    // Step 7: Clean up additional references that might prevent map deletion
+    console.log("🧹 Cleaning up additional references...");
+    
+    const additionalTables = [
+      { table: 'user_map_enrollments', column: 'map_id' },
+      { table: 'classroom_maps', column: 'map_id' },
+      { table: 'classroom_team_maps', column: 'map_id' },
+      { table: 'map_likes', column: 'map_id' },
+      { table: 'map_comments', column: 'map_id' },
+      { table: 'map_views', column: 'map_id' },
+      { table: 'user_favorites', column: 'map_id' }
+    ];
+
+    for (const { table, column } of additionalTables) {
+      try {
+        const { error: cleanupError } = await supabase
+          .from(table)
+          .delete()
+          .eq(column, id);
+
+        if (cleanupError && cleanupError.code !== '42P01') { // Ignore "table doesn't exist" errors
+          console.warn(`⚠️ Error cleaning up ${table}:`, cleanupError.message);
+        } else if (!cleanupError) {
+          console.log(`✅ Cleaned up references from ${table}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Could not clean up ${table} (table may not exist):`, error);
+      }
+    }
+
+    // Step 8: Delete the learning map itself
     console.log("🧹 Deleting learning map...");
     const { error: mapError } = await supabase
       .from("learning_maps")
@@ -830,9 +873,16 @@ export const deleteMap = async (
       .eq("id", id);
 
     if (mapError) {
-      console.error("Error deleting map:", mapError);
-      throw new Error(`Could not delete the map: ${mapError.message}`);
+      console.error("❌ Error deleting map:", {
+        message: mapError.message,
+        code: mapError.code,
+        details: mapError.details,
+        hint: mapError.hint
+      });
+      throw new Error(`Could not delete the map: ${mapError.message} (Code: ${mapError.code})`);
     }
+
+    console.log("✅ Map deletion command completed");
 
     // Verify the map was actually deleted
     console.log("🔍 Verifying map deletion...");
@@ -843,12 +893,43 @@ export const deleteMap = async (
 
     if (verificationError) {
       console.warn(
-        "⚠️ Could not verify deletion (query failed), but deletion commands completed"
+        "⚠️ Could not verify deletion (query failed), but deletion commands completed:",
+        verificationError
       );
     } else if (verificationData && verificationData.length > 0) {
       console.error("❌ CRITICAL: Map still exists after deletion commands!");
+      console.error("❌ This suggests RLS policies or foreign key constraints are preventing deletion");
+      
+      // Let's check what might be referencing this map
+      console.log("🔍 Checking for remaining references to this map...");
+      
+      // Check for any remaining foreign key references
+      const tablesToCheck = [
+        'user_map_enrollments',
+        'classroom_maps', 
+        'classroom_team_maps',
+        'map_likes',
+        'map_comments'
+      ];
+      
+      for (const table of tablesToCheck) {
+        try {
+          const { data: refs, error: refError } = await supabase
+            .from(table)
+            .select("id")
+            .eq("map_id", id)
+            .limit(5);
+          
+          if (!refError && refs && refs.length > 0) {
+            console.error(`❌ Found ${refs.length} references in ${table}:`, refs);
+          }
+        } catch (e) {
+          console.log(`ℹ️ Could not check ${table} (table may not exist)`);
+        }
+      }
+      
       throw new Error(
-        "Map deletion failed - map still exists in database after deletion commands"
+        "Map deletion failed - map still exists in database after deletion commands. Check foreign key constraints and RLS policies."
       );
     } else {
       console.log("✅ Deletion verified - map no longer exists in database");

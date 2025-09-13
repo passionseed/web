@@ -58,19 +58,6 @@ export function NodeEditorPanel({
   // For regular nodes, we also need local state for title to prevent deselection on every keystroke
   const [localTitle, setLocalTitle] = useState("");
 
-  // Sync local text with selected node data
-  useEffect(() => {
-    if (selectedNode && isTextNode) {
-      setLocalText(selectedNode.data.title || "");
-    }
-  }, [selectedNode, isTextNode]);
-
-  // Sync local title with selected node data for regular nodes
-  useEffect(() => {
-    if (selectedNode && !isTextNode) {
-      setLocalTitle(selectedNode.data.title || "");
-    }
-  }, [selectedNode, isTextNode]);
 
   // Remove the debounced updates - we'll only update on blur to prevent refreshing
   // The visual updates are handled by local state, data persistence happens on blur
@@ -100,25 +87,33 @@ export function NodeEditorPanel({
     onEditingStateChange?.(true);
   }, [onEditingStateChange]);
 
+
   useEffect(() => {
     if (selectedNode) {
       console.log("📋 NodeEditorPanel: selectedNode changed, updating local state");
       console.log("📊 New node assessments:", selectedNode.data.node_assessments);
+      
       setNodeData(selectedNode.data);
+      
       // Initialize quiz questions from existing assessment
       const assessment = selectedNode.data.node_assessments?.[0];
       if (assessment?.assessment_type === "quiz") {
-        setQuizQuestions(assessment.quiz_questions || []);
-        console.log(
-          "📋 Loaded existing quiz questions:",
-          assessment.quiz_questions?.length || 0
-        );
+        const newQuestions = assessment.quiz_questions || [];
+        setQuizQuestions(newQuestions);
+        console.log("📋 Loaded existing quiz questions:", newQuestions.length);
       } else {
-        // Clear quiz questions if no quiz assessment
         setQuizQuestions([]);
+        console.log("📋 Cleared quiz questions for new node");
+      }
+      
+      // Update local title states for new node selection
+      if (isTextNode) {
+        setLocalText(selectedNode.data.title || "");
+      } else {
+        setLocalTitle(selectedNode.data.title || "");
       }
     }
-  }, [selectedNode]);
+  }, [selectedNode, isTextNode]);
 
   const handleInputChange = useCallback(
     (field: keyof MapNode) =>
