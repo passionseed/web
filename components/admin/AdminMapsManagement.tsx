@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,10 @@ import {
   Calendar,
   CheckSquare,
   Square,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 interface AdminMap {
@@ -50,9 +55,23 @@ interface AdminMapsManagementProps {
   onDataReload?: () => void;
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface MapsResponse {
+  maps: AdminMap[];
+  pagination: PaginationInfo;
+}
+
 export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) {
+  const router = useRouter();
   const [maps, setMaps] = useState<AdminMap[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVisibility, setSelectedVisibility] = useState<string>("all");
@@ -62,6 +81,13 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
   const [selectedMaps, setSelectedMaps] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState<{current: number, total: number, currentMap: string} | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0
+  });
   const { toast } = useToast();
 
   const filteredMaps = maps.filter(map => {
@@ -84,24 +110,91 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
     loadMaps();
   }, []);
 
-  const loadMaps = async () => {
+  const loadMaps = async (page: number = 1, limit: number = 50) => {
     try {
       setLoading(true);
+      console.log("🔄 [Admin Frontend] Loading maps page", page, "with limit", limit);
       
-      const response = await fetch("/api/admin/maps");
+      const url = `/api/admin/maps?page=${page}&limit=${limit}`;
+      console.log("📡 [Admin Frontend] Fetching:", url);
+      
+      const response = await fetch(url);
+      
+      console.log("📡 [Admin Frontend] Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        contentType: response.headers.get('content-type')
+      });
       
       if (response.ok) {
-        const mapsData = await response.json();
-        setMaps(mapsData);
+        const data: MapsResponse = await response.json();
+        console.log("✅ [Admin Frontend] Successfully loaded data:", {
+          mapsCount: data.maps?.length,
+          pagination: data.pagination
+        });
+        
+        setMaps(data.maps || []);
+        setPagination(data.pagination || {
+          page: 1,
+          limit: 50,
+          total: 0,
+          totalPages: 0
+        });
       } else {
-        throw new Error("Failed to fetch maps");
+        // Get detailed error information
+        let errorData;
+        const contentType = response.headers.get('content-type');
+        
+        try {
+          if (contentType?.includes('application/json')) {
+            errorData = await response.json();
+          } else {
+            errorData = { error: await response.text() };
+          }
+        } catch {
+          errorData = { error: `HTTP ${response.status} ${response.statusText}` };
+        }
+        
+        console.error("❌ [Admin Frontend] API Error:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        
+        const errorMessage = errorData.details || errorData.error || `HTTP ${response.status} ${response.statusText}`;
+        
+        // Handle authentication errors specifically
+        if (response.status === 403) {
+          setAuthError("Authentication required. Please log in as an admin user to access this page.");
+          return; // Don't throw, just set auth error state
+        }
+        
+        throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error("Error loading maps:", error);
+      console.error("❌ [Admin Frontend] Error loading maps:", error);
+      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
       toast({
-        title: "Error",
-        description: "Failed to load learning maps",
+        title: "Failed to Load Maps",
+        description: (
+          <div className="space-y-2">
+            <p>Could not load learning maps from the server.</p>
+            <p className="text-xs text-muted-foreground font-mono">{errorMessage}</p>
+          </div>
+        ),
         variant: "destructive",
+      });
+      
+      // Set empty state instead of leaving in limbo
+      setMaps([]);
+      setPagination({
+        page: 1,
+        limit: 50,
+        total: 0,
+        totalPages: 0
       });
     } finally {
       setLoading(false);
@@ -219,56 +312,93 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
     try {
       setBulkDeleting(true);
       const mapIds = Array.from(selectedMaps);
+      const mapsToDelete = maps.filter(m => selectedMaps.has(m.id));
       
-      console.log("🗑️ [Admin] Starting bulk deletion:", mapIds);
+      console.log("🗑️ [Admin] Starting sequential deletion of", mapIds.length, "maps");
       
-      const response = await fetch("/api/admin/maps/bulk-delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ mapIds }),
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log("✅ [Admin] Bulk delete successful:", result);
-        
-        toast({
-          title: "Maps Deleted Successfully",
-          description: `Successfully deleted ${result.deletedCount} maps`,
+      let successCount = 0;
+      let failureCount = 0;
+      const failures: string[] = [];
+
+      // Process maps one by one for server compatibility
+      for (let i = 0; i < mapsToDelete.length; i++) {
+        const map = mapsToDelete[i];
+        setBulkDeleteProgress({
+          current: i + 1,
+          total: mapsToDelete.length,
+          currentMap: map.title
         });
-        
-        // Remove deleted maps from the list
-        setMaps(prevMaps => prevMaps.filter(m => !selectedMaps.has(m.id)));
-        setSelectedMaps(new Set());
-        onDataReload?.();
-      } else {
-        const errorText = await response.text();
-        let errorMessage = "Failed to delete maps";
-        let debugInfo = null;
-        
+
         try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorMessage;
-          debugInfo = errorJson.debugInfo || errorJson.details;
+          console.log(`🗑️ [${i + 1}/${mapsToDelete.length}] Deleting map:`, map.title);
           
-          // Log detailed error information for debugging
-          console.error("❌ [Admin] Bulk delete failed:", {
-            status: response.status,
-            error: errorMessage,
-            debugInfo,
-            fullResponse: errorJson
+          const response = await fetch(`/api/admin/maps/${map.id}`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
           });
-        } catch {
-          console.error("❌ [Admin] Bulk delete failed:", response.status, errorText);
-          errorMessage = errorText || errorMessage;
+          
+          if (response.ok) {
+            successCount++;
+            // Remove from local state immediately for better UX
+            setMaps(prevMaps => prevMaps.filter(m => m.id !== map.id));
+            console.log(`✅ [${i + 1}/${mapsToDelete.length}] Successfully deleted:`, map.title);
+          } else {
+            failureCount++;
+            failures.push(map.title);
+            const errorText = await response.text();
+            console.error(`❌ [${i + 1}/${mapsToDelete.length}] Failed to delete ${map.title}:`, errorText);
+          }
+        } catch (error) {
+          failureCount++;
+          failures.push(map.title);
+          console.error(`❌ [${i + 1}/${mapsToDelete.length}] Error deleting ${map.title}:`, error);
         }
-        
-        throw new Error(errorMessage);
+
+        // Small delay to be nice to the server
+        if (i < mapsToDelete.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
+
+      // Show comprehensive results
+      if (successCount > 0 && failureCount === 0) {
+        toast({
+          title: "All Maps Deleted Successfully",
+          description: `Successfully deleted all ${successCount} selected maps`,
+        });
+      } else if (successCount > 0 && failureCount > 0) {
+        toast({
+          title: "Partial Success",
+          description: (
+            <div className="space-y-1">
+              <p>Successfully deleted {successCount} of {successCount + failureCount} maps</p>
+              <p className="text-xs text-muted-foreground">
+                Failed: {failures.slice(0, 3).join(', ')}{failures.length > 3 ? ` +${failures.length - 3} more` : ''}
+              </p>
+            </div>
+          ),
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Deletion Failed",
+          description: `Failed to delete any of the ${failureCount} selected maps`,
+          variant: "destructive",
+        });
+      }
+      
+      // Clear selection and reload if needed
+      setSelectedMaps(new Set());
+      if (successCount > 0) {
+        onDataReload?.();
+        // Reload current page to refresh counts
+        loadMaps(pagination.page, pagination.limit);
+      }
+      
     } catch (error) {
-      console.error("Error bulk deleting maps:", error);
+      console.error("Error in sequential bulk delete:", error);
       toast({
         title: "Bulk Deletion Failed",
         description: error instanceof Error ? error.message : "Failed to delete maps",
@@ -277,6 +407,7 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
     } finally {
       setBulkDeleting(false);
       setBulkDeleteDialogOpen(false);
+      setBulkDeleteProgress(null);
     }
   };
 
@@ -301,7 +432,183 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
     return "Hard";
   };
 
-  if (loading) {
+  // Pagination helpers
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      loadMaps(newPage, pagination.limit);
+    }
+  };
+
+  const renderPaginationControls = () => {
+    if (pagination.totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="text-sm text-muted-foreground">
+          Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+          {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+          {pagination.total} maps
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(1)}
+            disabled={pagination.page === 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(pagination.page - 1)}
+            disabled={pagination.page === 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {/* Show page numbers around current page */}
+            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+              let pageNum;
+              if (pagination.totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (pagination.page <= 3) {
+                pageNum = i + 1;
+              } else if (pagination.page >= pagination.totalPages - 2) {
+                pageNum = pagination.totalPages - 4 + i;
+              } else {
+                pageNum = pagination.page - 2 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={pagination.page === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(pageNum)}
+                  className="h-8 w-8 p-0"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(pagination.page + 1)}
+            disabled={pagination.page === pagination.totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(pagination.totalPages)}
+            disabled={pagination.page === pagination.totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Skeleton UI for better loading experience
+  const renderSkeleton = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-5 w-5" />
+          Maps Management
+        </CardTitle>
+        <CardDescription>
+          Loading learning maps...
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Search and Filter Skeleton */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <div className="h-4 bg-muted rounded w-20 mb-2"></div>
+            <div className="h-10 bg-muted rounded"></div>
+          </div>
+          <div className="md:w-40">
+            <div className="h-4 bg-muted rounded w-16 mb-2"></div>
+            <div className="h-10 bg-muted rounded"></div>
+          </div>
+          <div className="md:w-40">
+            <div className="h-4 bg-muted rounded w-16 mb-2"></div>
+            <div className="h-10 bg-muted rounded"></div>
+          </div>
+        </div>
+
+        {/* Stats Skeleton */}
+        <div className="mb-4">
+          <div className="h-4 bg-muted rounded w-64"></div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="rounded-md border">
+          <div className="p-4 border-b">
+            <div className="flex gap-4">
+              <div className="h-4 bg-muted rounded w-8"></div>
+              <div className="h-4 bg-muted rounded w-32"></div>
+              <div className="h-4 bg-muted rounded w-24"></div>
+              <div className="h-4 bg-muted rounded w-20"></div>
+              <div className="h-4 bg-muted rounded w-20"></div>
+              <div className="h-4 bg-muted rounded w-16"></div>
+              <div className="h-4 bg-muted rounded w-24"></div>
+              <div className="h-4 bg-muted rounded w-20"></div>
+            </div>
+          </div>
+          {/* Skeleton rows */}
+          {Array.from({ length: 10 }, (_, i) => (
+            <div key={i} className="p-4 border-b">
+              <div className="flex gap-4 items-center">
+                <div className="h-4 w-4 bg-muted rounded"></div>
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 bg-muted rounded w-48"></div>
+                  <div className="h-3 bg-muted/70 rounded w-32"></div>
+                </div>
+                <div className="h-4 bg-muted rounded w-24"></div>
+                <div className="h-6 bg-muted rounded w-16"></div>
+                <div className="h-6 bg-muted rounded w-20"></div>
+                <div className="h-4 bg-muted rounded w-16"></div>
+                <div className="h-4 bg-muted rounded w-20"></div>
+                <div className="flex gap-2">
+                  <div className="h-8 w-16 bg-muted rounded"></div>
+                  <div className="h-8 w-16 bg-muted rounded"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pagination Skeleton */}
+        <div className="flex items-center justify-between px-2 py-4">
+          <div className="h-4 bg-muted rounded w-48"></div>
+          <div className="flex items-center space-x-2">
+            {Array.from({ length: 7 }, (_, i) => (
+              <div key={i} className="h-8 w-8 bg-muted rounded"></div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Show authentication error state
+  if (authError) {
     return (
       <Card>
         <CardHeader>
@@ -310,16 +617,43 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
             Maps Management
           </CardTitle>
           <CardDescription>
-            Loading learning maps...
+            Administrative access to learning maps
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="text-muted-foreground">Loading maps...</div>
+          <div className="flex flex-col items-center justify-center p-8 space-y-4">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+                <Users className="h-8 w-8 text-destructive" />
+              </div>
+              <h3 className="text-lg font-semibold">Authentication Required</h3>
+              <p className="text-muted-foreground max-w-md">
+                {authError}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => router.push('/auth/signin')}
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Sign In
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
     );
+  }
+
+  if (loading) {
+    return renderSkeleton();
   }
 
   return (
@@ -544,6 +878,9 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
               </TableBody>
             </Table>
           </div>
+          
+          {/* Pagination Controls */}
+          {renderPaginationControls()}
         </CardContent>
       </Card>
 
@@ -597,37 +934,77 @@ export function AdminMapsManagement({ onDataReload }: AdminMapsManagementProps) 
             <AlertDialogTitle>Delete Multiple Learning Maps</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
-                <p className="mb-3">
-                  Are you sure you want to delete {selectedMaps.size} selected maps? 
-                  This action cannot be undone and will permanently delete:
-                </p>
-                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-3">
-                  <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li className="font-medium">
-                      All {selectedMaps.size} learning maps and their nodes
-                    </li>
-                    <li>All node content (text, images, resources)</li>
-                    <li>All assessments and quiz questions</li>
-                    <li>All student progress and completion data</li>
-                    <li>All assessment submissions and grades</li>
-                    <li>All node connections and learning paths</li>
-                  </ul>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
-                  <span>This will affect all students who have interacted with these maps</span>
-                </div>
+                {bulkDeleteProgress ? (
+                  // Show progress during deletion
+                  <div className="space-y-4">
+                    <p className="font-medium">
+                      Deleting maps ({bulkDeleteProgress.current} of {bulkDeleteProgress.total})
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Current: {bulkDeleteProgress.currentMap}</span>
+                        <span>{Math.round((bulkDeleteProgress.current / bulkDeleteProgress.total) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${(bulkDeleteProgress.current / bulkDeleteProgress.total) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Please wait while maps are being deleted one by one...
+                    </div>
+                  </div>
+                ) : (
+                  // Show confirmation before deletion
+                  <div>
+                    <p className="mb-3">
+                      Are you sure you want to delete {selectedMaps.size} selected maps? 
+                      This action cannot be undone and will permanently delete:
+                    </p>
+                    <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-3">
+                      <ul className="list-disc list-inside space-y-1 text-sm">
+                        <li className="font-medium">
+                          All {selectedMaps.size} learning maps and their nodes
+                        </li>
+                        <li>All node content (text, images, resources)</li>
+                        <li>All assessments and quiz questions</li>
+                        <li>All student progress and completion data</li>
+                        <li>All assessment submissions and grades</li>
+                        <li>All node connections and learning paths</li>
+                      </ul>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                      <div className="flex items-center gap-2 text-sm text-blue-800">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        <span>Maps will be deleted one by one for server compatibility</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                      <span>This will affect all students who have interacted with these maps</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            {!bulkDeleting && (
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+            )}
             <AlertDialogAction
               onClick={confirmBulkDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={bulkDeleting}
             >
-              {bulkDeleting ? "Deleting..." : `Delete ${selectedMaps.size} Maps`}
+              {bulkDeleting 
+                ? (bulkDeleteProgress 
+                    ? `Deleting ${bulkDeleteProgress.current}/${bulkDeleteProgress.total}...` 
+                    : "Starting...")
+                : `Delete ${selectedMaps.size} Maps`
+              }
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

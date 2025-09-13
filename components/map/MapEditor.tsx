@@ -33,6 +33,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { FullLearningMap } from "@/lib/supabase/maps";
 import { MapNode, QuizQuestion } from "@/types/map";
+import { createNode } from "@/lib/supabase/nodes";
 import {
   Plus,
   Copy,
@@ -42,6 +43,7 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import {
   ResizableHandle,
@@ -1197,183 +1199,202 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
   // ReactFlow handles node data and selection internally - no manual sync needed
 
-  // Add node handler
-  const handleAddNode = useCallback(() => {
-    console.log("🆕 Adding new node - preventing full refresh");
+  // Add node handler - immediately saves to database
+  const handleAddNode = useCallback(async () => {
+    console.log("🆕 Adding new node - saving to database immediately");
     setIsAddingNode(true);
 
-    const tempId = generateTempId("temp_node");
+    try {
+      // Get center of current viewport
+      let nodePosition = { x: 100, y: 100 }; // Default position
 
-    // Get center of current viewport
-    let nodePosition = { x: 100, y: 100 }; // Default position
+      if (reactFlowInstance) {
+        const viewport = reactFlowInstance.getViewport();
+        
+        // Calculate the center of the visible viewport
+        // Account for the right panel if a node is selected
+        const currentSelectedNode = getSelectedNode();
+        const panelOffset = currentSelectedNode ? 0.35 : 0; // 35% for right panel
+        const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
 
-    if (reactFlowInstance) {
-      const viewport = reactFlowInstance.getViewport();
+        nodePosition = {
+          x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
+          y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+        };
+      }
 
-      // Calculate the center of the visible viewport
-      // Account for the right panel if a node is selected
-      const currentSelectedNode = getSelectedNode();
-      const panelOffset = currentSelectedNode ? 0.35 : 0; // 35% for right panel
-      const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
+      // Save node directly to database
+      const savedNode = await createNode({
+        map_id: map.id,
+        title: "New Node",
+        instructions: "",
+        difficulty: 1,
+        sprite_url: null,
+        metadata: {
+          position: nodePosition,
+        },
+        node_type: "learning"
+      });
 
-      nodePosition = {
-        x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
-        y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+      console.log("✅ Node saved to database with ID:", savedNode.id);
+
+      // Create the full node data structure for local state
+      const newNodeData: MapNode & {
+        node_paths_source: any[];
+        node_paths_destination: any[];
+        node_content: any[];
+        node_assessments: any[];
+      } = {
+        ...savedNode,
+        node_paths_source: [],
+        node_paths_destination: [],
+        node_content: [],
+        node_assessments: [],
       };
-    }
 
-    const newNodeData: MapNode & {
-      node_paths_source: any[];
-      node_paths_destination: any[];
-      node_content: any[];
-      node_assessments: any[];
-    } = {
-      id: tempId,
-      map_id: map.id,
-      title: "New Node",
-      instructions: "",
-      difficulty: 1,
-      sprite_url: null,
-      metadata: {
+      const newNode: AppNode = {
+        id: savedNode.id,
         position: nodePosition,
-        temp_id: tempId, // FIXED: Include temp ID in metadata for reliable mapping
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      node_paths_source: [],
-      node_paths_destination: [],
-      node_content: [],
-      node_assessments: [],
-    };
+        data: newNodeData,
+        type: "default",
+        draggable: true,
+        connectable: true,
+        selectable: true,
+        selected: true, // Auto-select the new node
+        style: NODE_STYLE,
+      };
 
-    const newNode: AppNode = {
-      id: tempId,
-      position: nodePosition,
-      data: newNodeData,
-      type: "default",
-      draggable: true,
-      connectable: true,
-      selectable: true,
-      style: NODE_STYLE,
-    };
+      // Add node to React Flow
+      setNodes((nds) => [...nds, newNode as Node]);
 
-    // Add node to React Flow immediately (no refresh)
-    setNodes((nds) => [...nds, newNode as Node]);
+      // Update map state
+      const updatedMap = {
+        ...map,
+        map_nodes: [...map.map_nodes, newNodeData],
+      };
 
-    // Update map state
-    const updatedMap = {
-      ...map,
-      map_nodes: [...map.map_nodes, newNodeData],
-    };
+      handleMapChange(updatedMap as any);
 
-    // Update map state without triggering full node refresh
-    handleMapChange(updatedMap as any);
-    // triggerAutoSave(updatedMap);
+      toast({ 
+        title: "Node Created!", 
+        description: "Node was saved to the database and is ready for use."
+      });
 
-    // Clear the flag after a short delay to allow map state to update
-    setTimeout(() => {
+    } catch (error) {
+      console.error("❌ Failed to create node:", error);
+      toast({
+        title: "Failed to create node",
+        description: "Could not save the node to the database. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsAddingNode(false);
-      console.log("✅ Node add operation complete - full refresh re-enabled");
-    }, 100);
-
-    toast({ title: "Node Added!" });
+    }
   }, [
     map,
-    onMapChange,
     setNodes,
     toast,
     reactFlowInstance,
     getSelectedNode,
     handleMapChange,
-    triggerAutoSave,
   ]);
 
-  // Add text node handler
-  const handleAddTextNode = useCallback(() => {
-    console.log("🆕 Adding new text node - preventing full refresh");
+  // Add text node handler - immediately saves to database
+  const handleAddTextNode = useCallback(async () => {
+    console.log("🆕 Adding new text node - saving to database immediately");
     setIsAddingNode(true);
 
-    const tempId = generateTempId("temp_text");
+    try {
+      // Get center of current viewport
+      let nodePosition = { x: 150, y: 150 }; // Default position
 
-    // Get center of current viewport
-    let nodePosition = { x: 150, y: 150 }; // Default position
+      if (reactFlowInstance) {
+        const viewport = reactFlowInstance.getViewport();
+        const currentSelectedNode = getSelectedNode();
+        const panelOffset = currentSelectedNode ? 0.35 : 0; // 35% for right panel
+        const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
 
-    if (reactFlowInstance) {
-      const viewport = reactFlowInstance.getViewport();
-      const currentSelectedNode = getSelectedNode();
-      const panelOffset = currentSelectedNode ? 0.35 : 0; // 35% for right panel
-      const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
+        nodePosition = {
+          x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
+          y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+        };
+      }
 
-      nodePosition = {
-        x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
-        y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+      // Save text node directly to database
+      const savedNode = await createNode({
+        map_id: map.id,
+        title: "Double-click to edit",
+        instructions: null,
+        difficulty: 1,
+        sprite_url: null,
+        metadata: {
+          position: nodePosition,
+          fontSize: "16px",
+          textColor: "#374151",
+          backgroundColor: "transparent",
+          fontWeight: "normal",
+          textAlign: "center",
+        },
+        node_type: "text"
+      });
+
+      console.log("✅ Text node saved to database with ID:", savedNode.id);
+
+      // Create the full node data structure for local state
+      const newTextData: MapNode & {
+        node_paths_source: any[];
+        node_paths_destination: any[];
+        node_content: any[];
+        node_assessments: any[];
+        node_type: string;
+      } = {
+        ...savedNode,
+        node_type: "text",
+        node_paths_source: [],
+        node_paths_destination: [],
+        node_content: [],
+        node_assessments: [],
       };
-    }
 
-    const newTextData: MapNode & {
-      node_paths_source: any[];
-      node_paths_destination: any[];
-      node_content: any[];
-      node_assessments: any[];
-      node_type: string;
-    } = {
-      id: tempId,
-      map_id: map.id,
-      title: "Double-click to edit",
-      instructions: null,
-      difficulty: 1,
-      sprite_url: null,
-      metadata: {
+      const newNode: AppNode = {
+        id: savedNode.id,
         position: nodePosition,
-        fontSize: "16px",
-        textColor: "#374151",
-        backgroundColor: "transparent",
-        fontWeight: "normal",
-        textAlign: "center",
-        temp_id: tempId,
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      node_type: "text",
-      node_paths_source: [],
-      node_paths_destination: [],
-      node_content: [],
-      node_assessments: [],
-    };
+        data: newTextData,
+        type: "text",
+        draggable: true,
+        connectable: false, // Text nodes shouldn't connect
+        selectable: true,
+        selected: true, // Auto-select the new text node
+        style: NODE_STYLE,
+      };
 
-    const newNode: AppNode = {
-      id: tempId,
-      position: nodePosition,
-      data: newTextData,
-      type: "text",
-      draggable: true,
-      connectable: false, // Text nodes shouldn't connect
-      selectable: true,
-      style: NODE_STYLE,
-    };
+      // Add node to React Flow
+      setNodes((nds) => [...nds, newNode as Node]);
 
-    // Add node to React Flow immediately (no refresh)
-    setNodes((nds) => [...nds, newNode as Node]);
+      // Update map state
+      const updatedMap = {
+        ...map,
+        map_nodes: [...map.map_nodes, newTextData],
+      };
+      handleMapChange(updatedMap as any);
 
-    // Update map state
-    const updatedMap = {
-      ...map,
-      map_nodes: [...map.map_nodes, newTextData],
-    };
-    handleMapChange(updatedMap as any);
+      toast({ 
+        title: "Text Node Created!", 
+        description: "Text node was saved to the database and is ready for editing."
+      });
 
-    // Clear the flag after a short delay to allow map state to update
-    setTimeout(() => {
+    } catch (error) {
+      console.error("❌ Failed to create text node:", error);
+      toast({
+        title: "Failed to create text node",
+        description: "Could not save the text node to the database. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsAddingNode(false);
-      console.log(
-        "✅ Text node add operation complete - full refresh re-enabled"
-      );
-    }, 100);
-
-    toast({ title: "Text Added!" });
+    }
   }, [
     map,
-    onMapChange,
     setNodes,
     toast,
     reactFlowInstance,
@@ -1740,6 +1761,71 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     ]
   );
 
+  // Handle node saving when a temporary node gets a real ID
+  const handleNodeSaved = useCallback((oldNodeId: string, newNodeId: string) => {
+    console.log("💾 Node saved, updating ID from", oldNodeId, "to", newNodeId);
+
+    // Set flags to prevent transforms during the ID update process
+    setIsUpdatingNodeData(true);
+    
+    // Preserve current selection state before any updates
+    const currentNodes = reactFlowInstance?.getNodes() || [];
+    const wasSelected = currentNodes.find(n => n.id === oldNodeId)?.selected || false;
+    
+    console.log("🔍 Selection state before update:", {
+      oldNodeId,
+      newNodeId, 
+      wasSelected,
+      totalNodes: currentNodes.length
+    });
+
+    // Update React Flow nodes with preserved selection
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === oldNodeId) {
+          return { 
+            ...node, 
+            id: newNodeId,
+            selected: wasSelected // Preserve selection state
+          };
+        }
+        return node;
+      })
+    );
+
+    // Update React Flow edges
+    setEdges((eds) =>
+      eds.map((edge) => ({
+        ...edge,
+        source: edge.source === oldNodeId ? newNodeId : edge.source,
+        target: edge.target === oldNodeId ? newNodeId : edge.target,
+      }))
+    );
+
+    // Update map state WITHOUT triggering handleMapChange (which causes refresh)
+    // We'll update the map state directly to avoid triggering transforms
+    const updatedMapState = {
+      ...map,
+      map_nodes: map.map_nodes.map((node) =>
+        node.id === oldNodeId ? { ...node, id: newNodeId } : node
+      ),
+    };
+    
+    // Update the map state directly without triggering auto-save or transforms
+    onMapChange(updatedMapState);
+
+    // Clear the update flag after a brief delay
+    setTimeout(() => {
+      setIsUpdatingNodeData(false);
+      console.log("✅ Node ID update complete, transforms re-enabled");
+    }, 100);
+
+    toast({
+      title: "Node saved",
+      description: "The node is now available for assessments.",
+    });
+  }, [setNodes, setEdges, map, onMapChange, reactFlowInstance, toast]);
+
   return (
     <div className="h-full w-full">
       <ResizablePanelGroup direction="horizontal" className="h-full">
@@ -1754,18 +1840,32 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           <div className="h-full w-full bg-slate-50 dark:bg-slate-950 relative">
             {/* Enhanced Floating Toolbar */}
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg">
-              <Button onClick={handleAddNode} size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Node
+              <Button 
+                onClick={handleAddNode} 
+                size="sm" 
+                className="gap-2" 
+                disabled={isAddingNode}
+              >
+                {isAddingNode ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                {isAddingNode ? "Creating..." : "Add Node"}
               </Button>
               <Button
                 onClick={handleAddTextNode}
                 size="sm"
                 variant="outline"
                 className="gap-2"
+                disabled={isAddingNode}
               >
-                <Type className="h-4 w-4" />
-                Add Text
+                {isAddingNode ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Type className="h-4 w-4" />
+                )}
+                {isAddingNode ? "Creating..." : "Add Text"}
               </Button>
 
               {/* Copy/Paste buttons */}
@@ -2080,6 +2180,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   onNodeDataChange={handleNodeDataChange}
                   onNodeDelete={handleDeleteNode}
                   onEditingStateChange={setIsEditingNode}
+                  mapId={map.id}
+                  onNodeSaved={handleNodeSaved}
                 />
               </div>
             </ResizablePanel>

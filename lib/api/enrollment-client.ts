@@ -99,17 +99,32 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
     });
 
     if (!response.ok) {
-      let errorDetails = {};
+      let errorDetails: any = {};
       let responseText = "";
+      let parseError: any = null;
+      
       try {
         responseText = await response.text();
-        try {
-          errorDetails = JSON.parse(responseText);
-        } catch (e) {
-          errorDetails = { message: responseText || "Could not parse error response" };
+        console.log("🔍 [Enrollment Client] Raw response text:", responseText);
+        
+        if (responseText) {
+          try {
+            errorDetails = JSON.parse(responseText);
+          } catch (parseErr) {
+            parseError = parseErr;
+            errorDetails = { 
+              message: responseText || "Could not parse error response",
+              parseError: parseErr instanceof Error ? parseErr.message : String(parseErr)
+            };
+          }
+        } else {
+          errorDetails = { message: "Empty response body" };
         }
-      } catch (e) {
-        errorDetails = { message: "Could not read error response" };
+      } catch (readErr) {
+        errorDetails = { 
+          message: "Could not read error response",
+          readError: readErr instanceof Error ? readErr.message : String(readErr)
+        };
       }
       
       console.error("❌ [Enrollment Client] API response not ok:", {
@@ -118,7 +133,8 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
         url: `/api/maps/${mapId}/enroll`,
         mapId,
         errorDetails,
-        responseText: responseText ? responseText.substring(0, 500) : "No response text"
+        responseText: responseText ? responseText.substring(0, 500) : "No response text",
+        parseError: parseError ? (parseError instanceof Error ? parseError.message : String(parseError)) : null
       });
       return false;
     }

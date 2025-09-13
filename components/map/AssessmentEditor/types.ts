@@ -17,6 +17,10 @@ export interface AssessmentEditorProps {
     action: "add" | "delete"
   ) => void;
   onQuizQuestionsChange?: (questions: QuizQuestion[]) => void;
+  // Optional props to support auto-saving temporary nodes
+  nodeData?: any;
+  mapId?: string;
+  onNodeSaved?: (oldNodeId: string, newNodeId: string) => void;
 }
 
 export interface QuestionFormProps {

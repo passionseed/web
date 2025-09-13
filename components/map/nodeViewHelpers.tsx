@@ -1,19 +1,22 @@
 // app/components/NodeViewPanel/nodeViewHelpers.ts
+import { memo, useMemo } from "react";
 import { NodeContent } from "@/types/map";
 import { ImageIcon, PlayCircle, ExternalLink } from "lucide-react";
 import { Button } from "../ui/button";
 import Embed, { defaultProviders } from "react-tiny-oembed";
+import { CanvaEmbed } from "./CanvaEmbed";
 
-// Custom fallback components for better UX
-const LoadingFallback = ({ url }: { url: string }) => (
+// Custom fallback components for better UX - memoized to prevent unnecessary re-renders
+const LoadingFallback = memo(({ url }: { url: string }) => (
   <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex flex-col items-center justify-center text-center p-6 animate-pulse">
     <PlayCircle className="h-12 w-12 text-slate-400 mb-4" />
     <h3 className="font-semibold text-slate-600 mb-2">Loading content...</h3>
     <p className="text-sm text-slate-500">Preparing your media for viewing</p>
   </div>
-);
+));
+LoadingFallback.displayName = "LoadingFallback";
 
-const ErrorFallback = ({ url }: { url: string }) => (
+const ErrorFallback = memo(({ url }: { url: string }) => (
   <div className="aspect-video bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center text-center p-6">
     <ExternalLink className="h-12 w-12 text-red-400 mb-4" />
     <h3 className="font-semibold text-red-700 mb-2">Content unavailable</h3>
@@ -36,10 +39,11 @@ const ErrorFallback = ({ url }: { url: string }) => (
       </Button>
     </a>
   </div>
-);
+));
+ErrorFallback.displayName = "ErrorFallback";
 
-// Custom image component for better styling
-const CustomImageComponent = ({ responce }: { responce?: any }) => {
+// Custom image component for better styling - memoized
+const CustomImageComponent = memo(({ responce }: { responce?: any }) => {
   if (!responce?.url) return null;
 
   return (
@@ -62,77 +66,113 @@ const CustomImageComponent = ({ responce }: { responce?: any }) => {
       )}
     </div>
   );
-};
+});
+CustomImageComponent.displayName = "CustomImageComponent";
 
-// Move renderContent here if it's not made a component
+// Video Embed Component - memoized to prevent re-renders
+const VideoEmbed = memo(({ contentUrl }: { contentUrl: string }) => {
+  console.log("🎥 VideoEmbed rendering for URL:", contentUrl);
+  
+  const embedOptions = useMemo(() => ({
+    maxwidth: 800,
+    maxheight: 450,
+    align: "center" as const,
+  }), []);
+
+  const embedStyle = useMemo(() => ({
+    width: "100%",
+    maxWidth: "100%",
+    borderRadius: "8px",
+    overflow: "hidden",
+  }), []);
+
+  const embedKey = useMemo(() => {
+    return `video-${contentUrl.split('/').pop()?.split('?')[0] || 'embed'}`;
+  }, [contentUrl]);
+
+  return (
+    <div className="w-full" key={embedKey}>
+      <Embed
+        url={contentUrl}
+        options={embedOptions}
+        style={embedStyle}
+        LoadingFallbackElement={<LoadingFallback url={contentUrl} />}
+        FallbackElement={<ErrorFallback url={contentUrl} />}
+        ImgComponent={CustomImageComponent}
+      />
+    </div>
+  );
+});
+VideoEmbed.displayName = "VideoEmbed";
+
+// Image Component - memoized
+const ImageContent = memo(({ contentUrl }: { contentUrl: string }) => {
+  console.log("🖼️ ImageContent rendering for URL:", contentUrl);
+  
+  return (
+    <div className="w-full">
+      <div className="relative rounded-lg shadow-lg bg-white overflow-hidden">
+        <img
+          src={contentUrl}
+          alt="Uploaded image content"
+          className="w-full h-auto object-contain"
+          style={{ maxWidth: "100%" }}
+        />
+      </div>
+    </div>
+  );
+});
+ImageContent.displayName = "ImageContent";
+
+// Text Content Component - memoized
+const TextContent = memo(({ contentBody }: { contentBody: string }) => {
+  console.log("📝 TextContent rendering, content length:", contentBody?.length || 0);
+  
+  return (
+    <div
+      className="prose prose-sm dark:prose-invert max-w-none"
+      dangerouslySetInnerHTML={{ __html: contentBody || "" }}
+    />
+  );
+});
+TextContent.displayName = "TextContent";
+
+// Move renderContent here and optimize it
 export const renderContent = (content: NodeContent) => {
   const contentUrl = content.content_url;
   const contentType = content.content_type;
+  
+  // Create a stable key based on content ID to prevent unnecessary remounts
+  const contentKey = `content-${content.id}-${contentType}`;
 
   // Handle backward compatibility for old content type
   if (contentType === "text_with_images" as any) {
     return (
-      <div
-        className="prose prose-sm dark:prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: content.content_body || "" }}
-      />
+      <div key={contentKey}>
+        <TextContent contentBody={content.content_body || ""} />
+      </div>
     );
   }
 
   switch (contentType) {
     case "video":
-      // Use React Tiny Oembed for video content - supports YouTube, Vimeo, etc.
       if (!contentUrl) {
-        return <ErrorFallback url="#" />;
+        return <ErrorFallback url="#" key={contentKey} />;
       }
-
-      return (
-        <div className="w-full">
-          <Embed
-            url={contentUrl}
-            options={{
-              maxwidth: 800,
-              maxheight: 450,
-              align: "center",
-            }}
-            style={{
-              width: "100%",
-              maxWidth: "100%",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
-            LoadingFallbackElement={<LoadingFallback url={contentUrl} />}
-            FallbackElement={<ErrorFallback url={contentUrl} />}
-            ImgComponent={CustomImageComponent}
-          />
-        </div>
-      );
+      return <VideoEmbed contentUrl={contentUrl} key={contentKey} />;
 
     case "text":
       return (
-        <div
-          className="prose prose-sm dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: content.content_body || "" }}
-        />
+        <div key={contentKey}>
+          <TextContent contentBody={content.content_body || ""} />
+        </div>
       );
 
     case "image":
       if (!contentUrl) {
-        return <ErrorFallback url="#" />;
+        return <ErrorFallback url="#" key={contentKey} />;
       }
-      
-      return (
-        <div className="w-full">
-          <div className="relative rounded-lg shadow-lg bg-white overflow-hidden">
-            <img
-              src={contentUrl}
-              alt="Uploaded image content"
-              className="w-full h-auto object-contain"
-              style={{ maxWidth: "100%" }}
-            />
-          </div>
-        </div>
-      );
+      return <ImageContent contentUrl={contentUrl} key={contentKey} />;
 
     case "pdf":
       if (!contentUrl) {
@@ -261,99 +301,9 @@ export const renderContent = (content: NodeContent) => {
 
     case "canva_slide":
       if (!contentUrl) {
-        return <ErrorFallback url="#" />;
+        return <ErrorFallback url="#" key={contentKey} />;
       }
-
-      const isValidCanvaUrl = contentUrl.includes("canva.com/design/");
-
-      if (!isValidCanvaUrl) {
-        return (
-          <div className="aspect-video bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg flex flex-col items-center justify-center text-center p-6">
-            <ImageIcon className="h-12 w-12 text-orange-400 mb-4" />
-            <h3 className="font-semibold text-orange-700 mb-2">
-              Invalid Canva URL
-            </h3>
-            <p className="text-sm text-orange-600 mb-4">
-              Please provide a valid Canva design URL
-            </p>
-            <a href={contentUrl} target="_blank" rel="noopener noreferrer">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-orange-300 hover:bg-orange-50"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Check Link
-              </Button>
-            </a>
-          </div>
-        );
-      }
-
-      // Custom fallback for Canva that uses iframe embedding
-      const CanvaFallback = ({ url }: { url: string }) => (
-        <div
-          className="relative w-full overflow-hidden rounded-lg shadow-lg"
-          style={{
-            height: 0,
-            paddingTop: "56.25%", // 16:9 aspect ratio
-            boxShadow: "0 2px 8px 0 rgba(63,69,81,0.16)",
-            marginTop: "0.5em",
-            marginBottom: "0.5em",
-          }}
-        >
-          <iframe
-            loading="lazy"
-            className="absolute top-0 left-0 w-full h-full border-none"
-            style={{ padding: 0, margin: 0 }}
-            src={url}
-            allowFullScreen
-            allow="fullscreen"
-            title="Canva Presentation"
-          />
-        </div>
-      );
-
-      // Try oembed first, fallback to direct iframe
-      return (
-        <div className="w-full">
-          <Embed
-            url={contentUrl + "?embed"}
-            options={{
-              maxwidth: 800,
-              maxheight: 450,
-              align: "center",
-            }}
-            style={{
-              width: "100%",
-              maxWidth: "100%",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
-            providers={[
-              {
-                provider_name: "Canva",
-                provider_url: "https://www.canva.com",
-                endpoints: [
-                  {
-                    schemes: [
-                      ...defaultProviders,
-                      "https://www.canva.com/design/*/view",
-                    ],
-                    url: "https://www.canva.com/_oembed",
-                    discovery: true,
-                  },
-                ],
-              },
-            ]}
-            LoadingFallbackElement={
-              <LoadingFallback url={contentUrl + "?embed"} />
-            }
-            FallbackElement={<CanvaFallback url={contentUrl + "?embed"} />}
-            ImgComponent={CustomImageComponent}
-          />
-        </div>
-      );
+      return <CanvaEmbed contentUrl={contentUrl} key={contentKey} />;
 
     case "resource_link":
       if (!contentUrl) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Node } from "@xyflow/react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,11 @@ export function NodeViewPanel({
   );
   const assessment = nodeData?.node_assessments?.[0];
 
+  // Memoize nodeContent to prevent unnecessary re-renders of LearningContentView
+  const memoizedNodeContent = useMemo(() => {
+    return nodeData?.node_content || [];
+  }, [nodeData?.node_content]);
+
   // Handle progress state more comprehensively
   const hasStarted = progress !== null && progress?.status !== "not_started";
   const isNotStarted = progress === null || progress?.status === "not_started";
@@ -160,6 +165,8 @@ export function NodeViewPanel({
   }, [mapId, currentUser]);
 
   useEffect(() => {
+    console.log("🔄 NodeViewPanel: selectedNode changed, ID:", selectedNode?.id);
+    
     // sync editable copy when selection changes
     setEditableNodeData(nodeData || null);
     // Immediately clear state when selectedNode changes to prevent stale data
@@ -177,17 +184,18 @@ export function NodeViewPanel({
       // Clear loading state if no selectedNode or currentUser
       setIsLoading(false);
     }
-  }, [selectedNode?.id, currentUser]);
+  }, [selectedNode?.id, currentUser?.id]); // Use specific ID instead of whole object
 
-  // Separate effect to clear state when no node is selected
+  // Separate effect to clear state when no node is selected - optimize to only fire when needed
   useEffect(() => {
     if (!selectedNode) {
+      console.log("🧹 NodeViewPanel: No node selected, clearing state");
       setProgress(null);
       setSubmissionsWithGrades([]);
       setAssessmentAnswer("");
       setQuizAnswers({});
     }
-  }, [selectedNode]);
+  }, [selectedNode?.id]); // Use ID instead of whole object
 
   const loadProgress = async () => {
     if (!selectedNode || !currentUser || isLoading) return;
@@ -855,7 +863,7 @@ export function NodeViewPanel({
                 <div className="p-4 space-y-6 min-h-full">
                   {/* Learning Content */}
                   <LearningContentView
-                    nodeContent={nodeData?.node_content || []}
+                    nodeContent={memoizedNodeContent}
                   />
 
                   {/* Assessment Section */}
@@ -957,7 +965,7 @@ export function NodeViewPanel({
               <>
                 {/* Learning Content */}
                 <LearningContentView
-                  nodeContent={nodeData?.node_content || []}
+                  nodeContent={memoizedNodeContent}
                 />
 
                 {/* Assessment Section */}

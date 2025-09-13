@@ -19,6 +19,9 @@ export function AssessmentEditor({
   nodeId,
   assessment,
   onAssessmentChange,
+  nodeData,
+  mapId,
+  onNodeSaved,
 }: AssessmentEditorProps) {
   const { toast } = useToast();
 
@@ -27,19 +30,8 @@ export function AssessmentEditor({
   const handleAddAssessment = useCallback(
     async (type: AssessmentType) => {
       try {
-        // Check if this is a temporary node that hasn't been saved yet
-        if (nodeId.startsWith("temp_node_") || nodeId.startsWith("temp_text_")) {
-          toast({ 
-            title: "Save node first", 
-            description: "Please save this node before adding assessments.",
-            variant: "destructive"
-          });
-          return;
-        }
-
         console.log("➕ Creating new assessment in database for node:", nodeId);
         
-        // Create assessment directly in database
         const newAssessment = await createNodeAssessment({
           node_id: nodeId,
           assessment_type: type,
@@ -49,7 +41,6 @@ export function AssessmentEditor({
 
         console.log("✅ Assessment created in database:", newAssessment);
         
-        // Update local state with real database record
         onAssessmentChange(newAssessment, "add");
 
         toast({ title: "Assessment created successfully!" });
