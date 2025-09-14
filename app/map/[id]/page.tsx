@@ -13,25 +13,26 @@ export default async function MapViewerPage(props: {
 }) {
   const params = await props.params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const [map, userIsInstructor] = await Promise.all([
+  // OPTIMIZATION: Execute auth and data fetching concurrently
+  const [userResult, map] = await Promise.all([
+    supabase.auth.getUser(),
     getMapWithNodesServer(params.id),
-    user ? isInstructor(user.id) : false,
   ]);
+
+  const { data: { user } } = userResult;
 
   if (!map) {
     notFound();
   }
+
+  // OPTIMIZATION: Only check instructor status if needed (user exists and isn't creator)
+  const userIsInstructor = user && map.creator_id !== user.id 
+    ? await isInstructor(user.id)
+    : false;
 
   // Simple inline permission check - user can edit if they're the creator OR instructor
   const userCanEdit = user && (map.creator_id === user.id || userIsInstructor);
-
-  if (!map) {
-    notFound();
-  }
 
   return (
     <MapEnrollmentTracker map={map}>

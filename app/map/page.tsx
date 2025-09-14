@@ -20,6 +20,7 @@ import { MapEnrollmentDialog } from "@/components/map/MapEnrollmentDialog";
 import { AnimatedMapPreview } from "@/components/map/AnimatedMapPreview";
 import { useAuth } from "@/hooks/use-auth";
 import Loading from "./loading";
+import { MapSkeleton } from "./map-skeleton";
 import Image from "next/image";
 import {
   Map,
@@ -61,6 +62,7 @@ export default function MapsPage() {
   const router = useRouter();
   const [maps, setMaps] = useState<MapWithStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [selectedMapForEnrollment, setSelectedMapForEnrollment] =
     useState<MapWithStats | null>(null);
   const [selectedMapForPreview, setSelectedMapForPreview] = 
@@ -73,6 +75,7 @@ export default function MapsPage() {
   useEffect(() => {
     const fetchMaps = async () => {
       try {
+        // OPTIMIZATION: Start fetching immediately, don't wait for auth to complete
         const fetchedMaps = await getMapsWithStats();
 
         // Additional safety filter to remove any null or invalid maps
@@ -91,14 +94,13 @@ export default function MapsPage() {
         });
       } finally {
         setLoading(false);
+        setInitialLoad(false);
       }
     };
 
-    // Only fetch maps after auth loading is complete
-    if (!authLoading) {
-      fetchMaps();
-    }
-  }, [toast, isAuthenticated, authLoading]);
+    // OPTIMIZATION: Start fetching maps immediately, concurrent with auth loading
+    fetchMaps();
+  }, [toast]);
 
   const handleStartAdventure = (map: MapWithStats, event?: React.MouseEvent) => {
     event?.preventDefault(); // Prevent Link navigation
@@ -406,7 +408,19 @@ export default function MapsPage() {
 
     useEffect(() => {
       if (isMounted && map.metadata?.coverImage) {
-        getVinylColorsFromCover(map.metadata.coverImage).then(setVinylColors);
+        // OPTIMIZATION: Use requestIdleCallback to defer color extraction
+        const extractColors = () => {
+          if (map.metadata?.coverImage) {
+            getVinylColorsFromCover(map.metadata.coverImage).then(setVinylColors);
+          }
+        };
+
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(extractColors, { timeout: 1000 });
+        } else {
+          // Fallback for browsers without requestIdleCallback
+          setTimeout(extractColors, 100);
+        }
       }
     }, [isMounted, map.metadata?.coverImage]);
 
@@ -568,9 +582,14 @@ export default function MapsPage() {
 
         {/* Maps Grid - Adjusted for vinyl records */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-y-20 justify-items-center" style={{marginTop: '5rem'}}>
-          {section.maps.map((map) => (
-            <MapCard key={map.id} map={map} />
-          ))}
+          {/* OPTIMIZATION: Show skeleton while maps are loading in each section */}
+          {initialLoad && section.maps.length === 0 ? (
+            <MapSkeleton />
+          ) : (
+            section.maps.map((map) => (
+              <MapCard key={map.id} map={map} />
+            ))
+          )}
         </div>
       </div>
     ));

@@ -150,7 +150,7 @@ export const getMapsWithStats = async (): Promise<
     throw new Error("Could not fetch learning maps.");
   }
 
-  // Get additional data for authenticated users
+  // Get additional data for authenticated users - OPTIMIZED with concurrent fetching
   let userClassrooms: any[] = [];
   let userTeams: any[] = [];
   let teamMaps: any[] = [];
@@ -161,34 +161,62 @@ export const getMapsWithStats = async (): Promise<
       `getMapsWithStats: Fetching data for authenticated user ${user.id}`
     );
 
-    // Get user's roles for debugging
-    const { data: userRoles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
+    // OPTIMIZATION: Execute all initial queries concurrently
+    const [
+      userRolesResult,
+      classroomMembershipsResult,
+      teamMembershipsResult
+    ] = await Promise.all([
+      // Get user's roles for debugging
+      supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id),
+      
+      // Get user's classrooms (as student or instructor)
+      supabase
+        .from("classroom_memberships")
+        .select(
+          `
+          classroom_id,
+          classrooms!inner (
+            id,
+            name,
+            classroom_maps (
+              map_id,
+              learning_maps!inner (id, title)
+            )
+          )
+        `
+        )
+        .eq("user_id", user.id),
+      
+      // Get user's teams
+      supabase
+        .from("team_memberships")
+        .select(
+          `
+          team_id,
+          left_at,
+          is_leader,
+          classroom_teams!inner (
+            id,
+            name,
+            classroom_id
+          )
+        `
+        )
+        .eq("user_id", user.id)
+    ]);
+
+    const { data: userRoles } = userRolesResult;
+    const { data: classroomMemberships } = classroomMembershipsResult;
+    const { data: teamMemberships, error: teamMembershipError } = teamMembershipsResult;
 
     console.log(
       `User ${user.id} has roles:`,
       userRoles?.map((r) => r.role) || ["no explicit roles"]
     );
-
-    // Get user's classrooms (as student or instructor)
-    const { data: classroomMemberships } = await supabase
-      .from("classroom_memberships")
-      .select(
-        `
-        classroom_id,
-        classrooms!inner (
-          id,
-          name,
-          classroom_maps (
-            map_id,
-            learning_maps!inner (id, title)
-          )
-        )
-      `
-      )
-      .eq("user_id", user.id);
 
     if (classroomMemberships) {
       userClassrooms = classroomMemberships.flatMap(
@@ -199,23 +227,6 @@ export const getMapsWithStats = async (): Promise<
           })) || []
       );
     }
-
-    // Get user's teams
-    const { data: teamMemberships, error: teamMembershipError } = await supabase
-      .from("team_memberships")
-      .select(
-        `
-        team_id,
-        left_at,
-        is_leader,
-        classroom_teams!inner (
-          id,
-          name,
-          classroom_id
-        )
-      `
-      )
-      .eq("user_id", user.id);
 
     if (teamMembershipError) {
       console.error(
@@ -241,131 +252,158 @@ export const getMapsWithStats = async (): Promise<
       console.log(`User ${user.id} has no team memberships`);
     }
 
-    // Get team maps (only query if user has teams)
+    // OPTIMIZATION: Prepare all remaining queries for concurrent execution
     const userTeamIds = userTeams.map((t) => t.team_id).filter(Boolean);
+    const classroomMapIds = userClassrooms.map((cm) => cm.map_id);
+    
+    const pendingQueries = [];
+
+    // Get team maps (only query if user has teams)
     if (userTeamIds.length > 0) {
       console.log(
         `Fetching team maps for user ${user.id}, team IDs: ${userTeamIds.join(", ")}`
       );
 
-      const { data: teamMapData, error: teamMapError } = await supabase
-        .from("classroom_team_maps")
-        .select(
+      pendingQueries.push(
+        supabase
+          .from("classroom_team_maps")
+          .select(
+            `
+            map_id,
+            original_map_id,
+            team_id,
+            classroom_teams!inner (name),
+            learning_maps!map_id!inner (title),
+            original_maps:learning_maps!original_map_id (title)
           `
-        map_id,
-        original_map_id,
-        team_id,
-        classroom_teams!inner (name),
-        learning_maps!map_id!inner (title),
-        original_maps:learning_maps!original_map_id (title)
-      `
-        )
-        .in("team_id", userTeamIds);
+          )
+          .in("team_id", userTeamIds)
+          .then(({ data: teamMapData, error: teamMapError }) => {
+            if (teamMapError) {
+              console.error("Error fetching classroom_team_maps:", {
+                error: teamMapError,
+                message: teamMapError.message,
+                code: teamMapError.code,
+                details: teamMapError.details,
+                hint: teamMapError.hint,
+                userId: user.id,
+                userTeamIds: userTeamIds,
+              });
 
-      if (teamMapError) {
-        console.error("Error fetching classroom_team_maps:", {
-          error: teamMapError,
-          message: teamMapError.message,
-          code: teamMapError.code,
-          details: teamMapError.details,
-          hint: teamMapError.hint,
-          userId: user.id,
-          userTeamIds: userTeamIds,
-        });
-
-        // Try a fallback query with left joins to get partial data
-        console.log("Attempting fallback query for team maps...");
-        const { data: fallbackTeamMapData, error: fallbackError } =
-          await supabase
-            .from("classroom_team_maps")
-            .select(
-              `
-          map_id,
-          original_map_id,
-          team_id,
-          classroom_teams (name),
-          learning_maps!map_id_fkey (title),
-          original_maps:learning_maps!original_map_id_fkey (title)
-        `
-            )
-            .in("team_id", userTeamIds);
-
-        if (fallbackError) {
-          console.error("Fallback query also failed:", fallbackError);
-          teamMaps = []; // Set empty array as final fallback
-        } else {
-          console.log(
-            `Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`
-          );
-          teamMaps = fallbackTeamMapData || [];
-        }
-      } else if (teamMapData) {
-        console.log(`Successfully fetched ${teamMapData.length} team maps`);
-        teamMaps = teamMapData;
-      }
+              // Try a fallback query with left joins to get partial data
+              console.log("Attempting fallback query for team maps...");
+              return supabase
+                .from("classroom_team_maps")
+                .select(
+                  `
+                  map_id,
+                  original_map_id,
+                  team_id,
+                  classroom_teams (name),
+                  learning_maps!map_id_fkey (title),
+                  original_maps:learning_maps!original_map_id_fkey (title)
+                `
+                )
+                .in("team_id", userTeamIds)
+                .then(({ data: fallbackTeamMapData, error: fallbackError }) => {
+                  if (fallbackError) {
+                    console.error("Fallback query also failed:", fallbackError);
+                    return []; // Set empty array as final fallback
+                  } else {
+                    console.log(
+                      `Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`
+                    );
+                    return fallbackTeamMapData || [];
+                  }
+                });
+            } else if (teamMapData) {
+              console.log(`Successfully fetched ${teamMapData.length} team maps`);
+              return teamMapData;
+            }
+            return [];
+          })
+      );
     } else {
       // No teams for user - nothing to fetch
       console.log(`User ${user.id} has no teams, skipping team map fetch`);
-      teamMaps = [];
+      pendingQueries.push(Promise.resolve([]));
     }
 
-    // Fetch additional team maps that user has access to
-    const teamMapIds = teamMaps.map((tm) => tm.map_id);
-    if (teamMapIds.length > 0) {
-      const { data: additionalTeamMaps } = await supabase
-        .from("learning_maps")
-        .select(
-          `
-          *,
-          map_nodes (
-            id,
-            difficulty,
-            node_assessments (id)
-          ),
-          user_map_enrollments!left (
-            enrolled_at,
-            progress_percentage,
-            completed_at
-          )
-        `
-        )
-        .in("id", teamMapIds)
-        .not("creator_id", "eq", user.id) // Exclude maps the user already owns
-        .eq("user_map_enrollments.user_id", user.id);
+    // Execute team maps query and wait for result to get team map IDs for additional queries
+    const [teamMapResult] = await Promise.all(pendingQueries);
+    teamMaps = teamMapResult;
 
-      if (additionalTeamMaps) {
-        additionalMaps = additionalMaps.concat(additionalTeamMaps);
-      }
+    // OPTIMIZATION: Now execute remaining queries concurrently
+    const teamMapIds = teamMaps.map((tm) => tm.map_id);
+    const additionalQueries = [];
+
+    // Fetch additional team maps that user has access to
+    if (teamMapIds.length > 0) {
+      additionalQueries.push(
+        supabase
+          .from("learning_maps")
+          .select(
+            `
+            *,
+            map_nodes (
+              id,
+              difficulty,
+              node_assessments (id)
+            ),
+            user_map_enrollments!left (
+              enrolled_at,
+              progress_percentage,
+              completed_at
+            )
+          `
+          )
+          .in("id", teamMapIds)
+          .not("creator_id", "eq", user.id) // Exclude maps the user already owns
+          .eq("user_map_enrollments.user_id", user.id)
+          .then(({ data }) => ({ type: 'team', data: data || [] }))
+      );
+    } else {
+      additionalQueries.push(Promise.resolve({ type: 'team', data: [] }));
     }
 
     // Fetch classroom maps that user has access to
-    const classroomMapIds = userClassrooms.map((cm) => cm.map_id);
     if (classroomMapIds.length > 0) {
-      const { data: classroomMapsData } = await supabase
-        .from("learning_maps")
-        .select(
+      additionalQueries.push(
+        supabase
+          .from("learning_maps")
+          .select(
+            `
+            *,
+            map_nodes (
+              id,
+              difficulty,
+              node_assessments (id)
+            ),
+            user_map_enrollments!left (
+              enrolled_at,
+              progress_percentage,
+              completed_at
+            )
           `
-          *,
-          map_nodes (
-            id,
-            difficulty,
-            node_assessments (id)
-          ),
-          user_map_enrollments!left (
-            enrolled_at,
-            progress_percentage,
-            completed_at
           )
-        `
-        )
-        .in("id", classroomMapIds)
-        .not("creator_id", "eq", user.id) // Exclude maps the user already owns
-        .eq("user_map_enrollments.user_id", user.id);
-
-      if (classroomMapsData) {
-        additionalMaps = additionalMaps.concat(classroomMapsData);
-      }
+          .in("id", classroomMapIds)
+          .not("creator_id", "eq", user.id) // Exclude maps the user already owns
+          .eq("user_map_enrollments.user_id", user.id)
+          .then(({ data }) => ({ type: 'classroom', data: data || [] }))
+      );
+    } else {
+      additionalQueries.push(Promise.resolve({ type: 'classroom', data: [] }));
     }
+
+    // Execute additional map queries concurrently
+    const additionalResults = await Promise.all(additionalQueries);
+    
+    // Combine results
+    additionalResults.forEach(result => {
+      if (result.data && result.data.length > 0) {
+        additionalMaps = additionalMaps.concat(result.data);
+      }
+    });
   }
 
   // Combine all maps and remove duplicates
