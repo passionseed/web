@@ -58,13 +58,13 @@ END;
 $$;
 
 -- Add indexes for better query performance
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_learning_maps_created_at 
+CREATE INDEX IF NOT EXISTS idx_learning_maps_created_at 
 ON learning_maps (created_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_map_nodes_map_id_difficulty 
+CREATE INDEX IF NOT EXISTS idx_map_nodes_map_id_difficulty 
 ON map_nodes (map_id, difficulty);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_id_names 
+CREATE INDEX IF NOT EXISTS idx_profiles_id_names 
 ON profiles (id, username, full_name);
 
 -- Grant execute permission to authenticated users (will be restricted by RLS)
