@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMapsPaginated } from "@/lib/supabase/maps";
+import { getPublicMapsPaginated } from "@/lib/supabase/maps";
 
-// 🚀 FAST: Paginated maps API
+// 🚀 ULTRA FAST: Public maps only - no auth required
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -16,9 +16,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await getMapsPaginated(page, limit);
+    const result = await getPublicMapsPaginated(page, limit);
 
-    // Transform to lightweight format for API consumption
+    // Minimal format for public consumption
     const formattedMaps = result.maps.map((map) => ({
       id: map.id,
       title: map.title,
@@ -26,12 +26,8 @@ export async function GET(request: NextRequest) {
       node_count: map.node_count,
       avg_difficulty: map.avg_difficulty,
       total_assessments: map.total_assessments,
-      map_type: map.map_type,
       created_at: map.created_at,
-      metadata: {
-        coverImage: map.metadata?.coverImage,
-        coverColors: map.metadata?.coverColors,
-      },
+      coverImage: map.metadata?.coverImage,
     }));
 
     return NextResponse.json({
@@ -44,9 +40,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching maps:", error);
+    console.error("Error fetching public maps:", error);
     return NextResponse.json(
-      { error: "Failed to fetch maps" },
+      { error: "Failed to fetch public maps" },
       { status: 500 }
     );
   }

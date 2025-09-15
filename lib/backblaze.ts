@@ -40,6 +40,117 @@ class BackblazeB2 {
     });
   }
 
+  async uploadMapCoverImage(
+    file: File,
+    userId: string,
+    mapId: string
+  ): Promise<B2FileUploadResponse> {
+    try {
+      console.log("B2 Map Cover Upload starting:", {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        userId,
+        mapId,
+      });
+
+      // Validate environment variables
+      if (!this.bucketName) {
+        throw new Error("B2_BUCKET_NAME environment variable is not set");
+      }
+
+      // Generate secure filename for map covers
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const sanitizedOriginalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const fileExtension = sanitizedOriginalName.split(".").pop() || "bin";
+      const fileName = `map-covers/${userId}/${mapId}/${timestamp}_${randomString}.${fileExtension}`;
+
+      console.log("Generated map cover filename:", fileName);
+
+      // Convert File to ArrayBuffer then Buffer
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
+
+      console.log("Map cover file converted to buffer, size:", buffer.length);
+
+      // Prepare upload command
+      const uploadCommand = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: fileName,
+        Body: buffer,
+        ContentType: file.type || "application/octet-stream",
+        ContentLength: file.size,
+        CacheControl: "public, max-age=31536000, immutable", // 1 year cache
+        Metadata: {
+          "original-name": sanitizedOriginalName,
+          "user-id": userId,
+          "map-id": mapId,
+          "upload-timestamp": timestamp.toString(),
+          "content-type": "map-cover",
+        },
+      });
+
+      console.log("Executing S3 map cover upload command...");
+
+      // Execute upload
+      const result = await this.s3Client.send(uploadCommand);
+
+      console.log("S3 map cover upload result:", result);
+
+      // Construct public URL
+      const fileUrl = `https://${this.bucketName}.${this.endpoint}/${fileName}`;
+
+      const response = {
+        fileId: result.ETag?.replace(/"/g, "") || timestamp.toString(),
+        fileName: fileName,
+        fileUrl: fileUrl,
+      };
+
+      console.log("B2 map cover upload completed successfully:", response);
+
+      return response;
+    } catch (error) {
+      console.error("Backblaze B2 map cover upload error:", error);
+
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (
+          error.message.includes("credentials") ||
+          error.message.includes("InvalidAccessKeyId")
+        ) {
+          throw new Error(
+            "Invalid Backblaze B2 credentials. Please check your configuration."
+          );
+        }
+        if (
+          error.message.includes("bucket") ||
+          error.message.includes("NoSuchBucket")
+        ) {
+          throw new Error(
+            "Bucket not found. Please verify bucket name and permissions."
+          );
+        }
+        if (
+          error.message.includes("network") ||
+          error.message.includes("fetch") ||
+          error.message.includes("ENOTFOUND")
+        ) {
+          throw new Error(
+            "Network error. Please check your internet connection and try again."
+          );
+        }
+        if (error.message.includes("AccessDenied")) {
+          throw new Error("Access denied. Please check your B2 permissions.");
+        }
+      }
+
+      throw new Error(
+        `Map cover upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
   async uploadFile(
     file: File,
     userId: string,

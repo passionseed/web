@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/utils/supabase/client"; // Import Supabase client
 import type { User } from "@supabase/supabase-js"; // Import Supabase User type
 import { Button } from "@/components/ui/button";
@@ -239,18 +240,18 @@ export default function CommunityPage() {
     <div className="container py-8">
       {/* Community Header */}
       <div className="relative rounded-lg overflow-hidden mb-8">
-        <div
-          className="h-48 bg-gradient-to-r from-blue-500 to-purple-600"
-          style={
-            community.cover_image_url
-              ? {
-                  backgroundImage: `url(${community.cover_image_url})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }
-              : {}
-          }
-        >
+        <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+          {community.cover_image_url && (
+            <Image
+              src={community.cover_image_url}
+              alt={`${community.name} cover`}
+              fill
+              className="object-cover"
+              sizes="100vw"
+              priority={true}
+            />
+          )}
+        </div>
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
         </div>
 

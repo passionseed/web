@@ -97,6 +97,30 @@ const nextConfig = {
           },
         ],
       },
+      // Image optimization headers
+      {
+        source: '/_next/image/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+      // Static assets caching
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
       {
         source: '/:path*',
         headers: [
@@ -111,6 +135,11 @@ const nextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
+          },
+          // DNS prefetch for better performance
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
           },
         ],
       },

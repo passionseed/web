@@ -32,6 +32,16 @@ export function AssessmentEditor({
       try {
         console.log("➕ Creating new assessment in database for node:", nodeId);
         
+        // 🚀 VALIDATION: Check if node is saved before adding assessments
+        if (nodeId.startsWith("temp_")) {
+          toast({ 
+            title: "Save Node First", 
+            description: "Please save the node before adding assessments. Click 'Save Map' to save all changes.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         const newAssessment = await createNodeAssessment({
           node_id: nodeId,
           assessment_type: type,
@@ -183,15 +193,26 @@ export function AssessmentEditor({
   );
 
   if (!assessment) {
+    const isUnsavedNode = nodeId.startsWith("temp_");
+    
     return (
       <div className="p-4 space-y-4 text-center">
         <div className="space-y-2">
           <p className="text-muted-foreground">
             No assessment configured for this node.
           </p>
-          <p className="text-xs text-muted-foreground">
-            Choose an assessment type to get started:
-          </p>
+          {isUnsavedNode ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-800">
+              <p className="text-sm font-medium">Save Required</p>
+              <p className="text-xs">
+                Please save the node first before adding assessments. Click 'Save Map' to save all changes.
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Choose an assessment type to get started:
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -201,6 +222,7 @@ export function AssessmentEditor({
               variant="outline"
               className="h-auto p-3 flex flex-col gap-1"
               onClick={() => handleAddAssessment(type as AssessmentType)}
+              disabled={isUnsavedNode}
             >
               <span className="text-lg">{config.icon}</span>
               <span className="font-medium">{config.label}</span>

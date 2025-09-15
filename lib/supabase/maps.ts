@@ -503,6 +503,306 @@ export const getMapsWithStats = async (): Promise<
   return mapsWithStats;
 };
 
+// ==========================================
+// 🔥 RADICAL NEW PAGINATED FUNCTIONS
+// ==========================================
+
+export interface PaginatedMapsResult {
+  maps: (LearningMap & {
+    node_count: number;
+    avg_difficulty: number;
+    total_assessments: number;
+    map_type: "personal" | "classroom" | "team" | "forked" | "public";
+    isEnrolled: boolean;
+    hasStarted: boolean;
+    source_info?: {
+      classroom_name?: string;
+      team_name?: string;
+      original_title?: string;
+    };
+  })[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
+/**
+ * 🚀 FAST: Get paginated public maps only
+ * Single optimized query, no complex joins
+ */
+export const getPublicMapsPaginated = async (
+  page: number = 1,
+  limit: number = 12
+): Promise<PaginatedMapsResult> => {
+  const supabase = createClient();
+  const offset = (page - 1) * limit;
+
+  // Get total count
+  const { count: total } = await supabase
+    .from("learning_maps")
+    .select("*", { count: "exact", head: true })
+    .eq("visibility", "public");
+
+  // Get paginated maps with basic stats
+  const { data: maps, error } = await supabase
+    .from("learning_maps")
+    .select(`
+      *,
+      map_nodes (
+        id,
+        difficulty,
+        node_assessments (id)
+      )
+    `)
+    .eq("visibility", "public")
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Error fetching public maps:", error);
+    throw new Error("Could not fetch public maps.");
+  }
+
+  const processedMaps = (maps || []).map((map: any) => {
+    const nodes = map.map_nodes || [];
+    const nodeCount = nodes.length;
+    const avgDifficulty = nodeCount > 0
+      ? Math.round(nodes.reduce((sum: number, node: any) => sum + (node.difficulty || 1), 0) / nodeCount)
+      : 1;
+    const totalAssessments = nodes.reduce((sum: number, node: any) => sum + (node.node_assessments?.length || 0), 0);
+
+    return {
+      ...map,
+      node_count: nodeCount,
+      avg_difficulty: avgDifficulty,
+      total_assessments: totalAssessments,
+      map_type: "public" as const,
+      isEnrolled: false,
+      hasStarted: false,
+    };
+  });
+
+  return {
+    maps: processedMaps,
+    total: total || 0,
+    page,
+    limit,
+    hasMore: offset + limit < (total || 0),
+  };
+};
+
+/**
+ * 🚀 FAST: Get user's personal maps only
+ * No complex permission queries, just creator_id filter
+ */
+export const getUserPersonalMaps = async (
+  page: number = 1,
+  limit: number = 12
+): Promise<PaginatedMapsResult> => {
+  const supabase = createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { maps: [], total: 0, page, limit, hasMore: false };
+  }
+
+  const offset = (page - 1) * limit;
+
+  // Get total count
+  const { count: total } = await supabase
+    .from("learning_maps")
+    .select("*", { count: "exact", head: true })
+    .eq("creator_id", user.id);
+
+  // Get paginated personal maps
+  const { data: maps, error } = await supabase
+    .from("learning_maps")
+    .select(`
+      *,
+      map_nodes (
+        id,
+        difficulty,
+        node_assessments (id)
+      )
+    `)
+    .eq("creator_id", user.id)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Error fetching personal maps:", error);
+    throw new Error("Could not fetch personal maps.");
+  }
+
+  const processedMaps = (maps || []).map((map: any) => {
+    const nodes = map.map_nodes || [];
+    const nodeCount = nodes.length;
+    const avgDifficulty = nodeCount > 0
+      ? Math.round(nodes.reduce((sum: number, node: any) => sum + (node.difficulty || 1), 0) / nodeCount)
+      : 1;
+    const totalAssessments = nodes.reduce((sum: number, node: any) => sum + (node.node_assessments?.length || 0), 0);
+
+    const mapType = map.metadata?.forked_from ? "forked" : "personal";
+
+    return {
+      ...map,
+      node_count: nodeCount,
+      avg_difficulty: avgDifficulty,
+      total_assessments: totalAssessments,
+      map_type: mapType as "personal" | "forked",
+      isEnrolled: true, // User owns their maps
+      hasStarted: false,
+      source_info: mapType === "forked" ? { original_title: "Original Map" } : undefined,
+    };
+  });
+
+  return {
+    maps: processedMaps,
+    total: total || 0,
+    page,
+    limit,
+    hasMore: offset + limit < (total || 0),
+  };
+};
+
+/**
+ * 🚀 FAST: Get all maps paginated with lightweight permission check
+ * Replaces the monster getMapsWithStats for /map page
+ */
+export const getMapsPaginated = async (
+  page: number = 1,
+  limit: number = 12
+): Promise<PaginatedMapsResult> => {
+  const supabase = createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  const offset = (page - 1) * limit;
+
+  let query = supabase
+    .from("learning_maps")
+    .select(`
+      *,
+      map_nodes (
+        id,
+        difficulty,
+        node_assessments (id)
+      )
+    `);
+
+  // Basic visibility filter - much simpler than original
+  if (!user) {
+    query = query.eq("visibility", "public");
+  } else {
+    query = query.or(`visibility.eq.public,creator_id.eq.${user.id}`);
+  }
+
+  // Get total count for pagination
+  let countQuery = supabase
+    .from("learning_maps")
+    .select("*", { count: "exact", head: true });
+
+  if (!user) {
+    countQuery = countQuery.eq("visibility", "public");
+  } else {
+    countQuery = countQuery.or(`visibility.eq.public,creator_id.eq.${user.id}`);
+  }
+
+  const [{ count: total }, { data: maps, error }] = await Promise.all([
+    countQuery,
+    query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
+  ]);
+
+  if (error) {
+    console.error("Error fetching paginated maps:", error);
+    throw new Error("Could not fetch maps.");
+  }
+
+  // Lightweight processing - no complex team/classroom queries
+  const processedMaps = (maps || []).map((map: any) => {
+    const nodes = map.map_nodes || [];
+    const nodeCount = nodes.length;
+    const avgDifficulty = nodeCount > 0
+      ? Math.round(nodes.reduce((sum: number, node: any) => sum + (node.difficulty || 1), 0) / nodeCount)
+      : 1;
+    const totalAssessments = nodes.reduce((sum: number, node: any) => sum + (node.node_assessments?.length || 0), 0);
+
+    // Simple type determination
+    let mapType: "personal" | "classroom" | "team" | "forked" | "public" = "public";
+    if (user && map.creator_id === user.id) {
+      mapType = map.metadata?.forked_from ? "forked" : "personal";
+    }
+
+    return {
+      ...map,
+      node_count: nodeCount,
+      avg_difficulty: avgDifficulty,
+      total_assessments: totalAssessments,
+      map_type: mapType,
+      isEnrolled: user ? map.creator_id === user.id : false,
+      hasStarted: false,
+      source_info: mapType === "forked" ? { original_title: "Original Map" } : undefined,
+    };
+  });
+
+  return {
+    maps: processedMaps,
+    total: total || 0,
+    page,
+    limit,
+    hasMore: offset + limit < (total || 0),
+  };
+};
+
+/**
+ * 🚀 ULTRA FAST: Get user dashboard maps (enrolled + recent)
+ * Optimized for dashboard widget - minimal data
+ */
+export const getUserDashboardMaps = async (limit: number = 6): Promise<{
+  enrolled: any[];
+  recent: any[];
+}> => {
+  const supabase = createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { enrolled: [], recent: [] };
+  }
+
+  // Get user's enrolled maps (fast query)
+  const { data: enrolledMaps } = await supabase
+    .from("user_map_enrollments")
+    .select(`
+      enrolled_at,
+      progress_percentage,
+      status,
+      learning_maps (
+        id,
+        title,
+        description,
+        metadata
+      )
+    `)
+    .eq("user_id", user.id)
+    .order("enrolled_at", { ascending: false })
+    .limit(limit);
+
+  // Get recent public maps (super fast)
+  const { data: recentMaps } = await supabase
+    .from("learning_maps")
+    .select("id, title, description, created_at, metadata")
+    .eq("visibility", "public")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return {
+    enrolled: enrolledMaps?.map(e => e.learning_maps).filter(Boolean) || [],
+    recent: recentMaps || [],
+  };
+};
+
 export const getMapWithNodes = async (
   id: string
 ): Promise<FullLearningMap | null> => {
