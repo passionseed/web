@@ -86,31 +86,11 @@ export async function GET(request: Request) {
 
     const supabase = await createClient();
 
-    console.log("🔍 [Admin API] Attempting optimized RPC query first");
+    console.log("🔍 [Admin API] Using reliable fallback query approach");
 
-    // Optimized query using PostgreSQL aggregation functions
-    // This avoids the expensive N+1 query problem and does calculations in the database
-    const { data: maps, error } = await supabase.rpc('get_admin_maps_optimized', {
-      limit_count: limit,
-      offset_count: offset
-    });
-
-    console.log("🔍 [Admin API] RPC query result:", { 
-      success: !error, 
-      errorCode: error?.code, 
-      errorMessage: error?.message,
-      mapsCount: maps?.length 
-    });
-
-    // Fallback to regular query if the RPC function doesn't exist
-    // Handle both PostgreSQL error codes: 42883 (function does not exist) and PGRST202 (PostgREST function not found)
-    if (error && (error.code === '42883' || error.code === 'PGRST202')) {
-      console.log("📊 [Admin API] RPC not found, using fallback query");
-      
-      // Efficient fallback query with minimal data fetching
-      console.log("📊 [Admin API] Executing fallback query for learning_maps");
-      
-      const { data: fallbackMaps, error: fallbackError } = await supabase
+    // Skip RPC function and use reliable fallback query for production stability
+    // This ensures the API works regardless of database migration state
+    const { data: fallbackMaps, error: fallbackError } = await supabase
         .from("learning_maps")
         .select(`
           id,
@@ -210,7 +190,22 @@ export async function GET(request: Request) {
       // Transform data
       console.log("🔄 [Admin API] Transforming map data...");
       
-      const mapsWithStats = (fallbackMaps || []).map((map: any) => {
+      const mapsWithStats = (fallbackMaps || []).map((map: {
+        id: string;
+        title: string;
+        description: string;
+        creator_id: string;
+        difficulty: number;
+        category: string;
+        visibility: string;
+        created_at: string;
+        updated_at: string;
+        metadata: any;
+        profiles?: {
+          username?: string;
+          full_name?: string;
+        };
+      }) => {
         const stats = nodeStats.find(s => s.map_id === map.id);
         
         return {
@@ -259,37 +254,6 @@ export async function GET(request: Request) {
       });
 
       return NextResponse.json(responseData);
-    }
-
-    if (error) {
-      console.error("Error fetching admin maps:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch maps" },
-        { status: 500 }
-      );
-    }
-
-    // Get total count for pagination (when using RPC)
-    const { count: totalCount } = await supabase
-      .from("learning_maps")
-      .select("id", { count: 'exact' });
-
-    console.log("✅ [Admin API] Successfully fetched", maps?.length || 0, "maps");
-
-    const response = NextResponse.json({
-      maps: maps || [],
-      pagination: {
-        page,
-        limit,
-        total: totalCount || 0,
-        totalPages: Math.ceil((totalCount || 0) / limit)
-      }
-    });
-
-    // Add cache headers for better server performance
-    response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=300'); // 5 minute cache
-    
-    return response;
   } catch (error) {
     console.error("❌ [Admin API] Unexpected error in admin maps route:", error);
     
