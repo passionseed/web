@@ -24,6 +24,19 @@ export const createNodeAssessment = async (
   // Enhanced debugging
   console.log("📝 Assessment data being inserted:", assessmentData);
   
+  // 🚀 VALIDATION: Check if node_id is a temporary ID
+  if (assessmentData.node_id && assessmentData.node_id.startsWith("temp_")) {
+    console.error("❌ Cannot create assessment on unsaved node:", assessmentData.node_id);
+    throw new Error("Please save the node first before adding assessments. You cannot add assessments to unsaved nodes.");
+  }
+  
+  // Validate node_id is a valid UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (assessmentData.node_id && !uuidRegex.test(assessmentData.node_id)) {
+    console.error("❌ Invalid node_id format:", assessmentData.node_id);
+    throw new Error("Invalid node ID format. Please save the node first before adding assessments.");
+  }
+  
   // Check authentication
   const { data: user, error: authError } = await supabase.auth.getUser();
   console.log("👤 Current user:", user?.user?.id || "Not authenticated", authError);

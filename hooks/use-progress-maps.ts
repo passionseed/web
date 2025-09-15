@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getMapsWithStats } from "@/lib/supabase/maps";
+import { getUserDashboardMaps } from "@/lib/supabase/maps";
 // TODO: Create API route for enrolled maps with progress
 // import { getUserEnrolledMapsWithProgress } from "@/lib/supabase/enrollment";
 import { LearningMap, UserMapEnrollment } from "@/types/map";
@@ -50,60 +50,47 @@ export function useProgressMaps() {
         setIsLoading(true);
         setError(null);
 
-        // Start both requests in parallel for better performance
-        const [enrolledMapsPromise, availableMapsPromise] =
-          await Promise.allSettled([
-            // TODO: Implement API route for enrolled maps with progress
-            // getUserEnrolledMapsWithProgress(),
-            Promise.resolve([]), // Temporary empty array
-            // Get all available maps (faster)
-            getMapsWithStats(),
-          ]);
+        // 🚀 ULTRA FAST: Use optimized dashboard function
+        const dashboardData = await getUserDashboardMaps(6);
 
         if (!isMounted) return;
 
-        // Handle enrolled maps result
-        let userEnrolledMaps: EnrolledMapWithProgress[] = [];
-        if (enrolledMapsPromise.status === "fulfilled") {
-          userEnrolledMaps = enrolledMapsPromise.value.map(
-            (enrolledMap: any) => ({
-              ...enrolledMap,
-              isEnrolled: true as const,
-            })
-          );
-          setEnrolledMaps(userEnrolledMaps);
-        } else {
-          console.warn(
-            "Could not fetch enrolled maps with progress:",
-            enrolledMapsPromise.reason
-          );
-          // Try fallback without progress calculation
-          try {
-            // This would be the basic getUserEnrolledMaps without progress calculation
-            setEnrolledMaps([]);
-          } catch (fallbackError) {
-            console.log("User may not be logged in:", fallbackError);
-          }
-        }
+        // Map enrolled maps to expected format
+        const userEnrolledMaps: EnrolledMapWithProgress[] = dashboardData.enrolled.map(
+          (map: any) => ({
+            ...map,
+            isEnrolled: true as const,
+            node_count: 0, // Dashboard doesn't need full stats
+            avg_difficulty: 1,
+            total_assessments: 0,
+            map_type: "personal" as const,
+            hasStarted: false,
+            enrollment: {} as UserMapEnrollment,
+            realTimeProgress: {
+              progressPercentage: 0,
+              completedNodes: 0,
+              totalNodes: 0,
+              passedNodes: 0,
+              failedNodes: 0,
+              submittedNodes: 0,
+              inProgressNodes: 0,
+            },
+          })
+        );
 
-        // Handle available maps result
-        if (availableMapsPromise.status === "fulfilled") {
-          const allMaps = availableMapsPromise.value;
+        // Map recent maps to available format  
+        const recentMaps: MapWithStats[] = dashboardData.recent.map((map: any) => ({
+          ...map,
+          node_count: 0, // Dashboard doesn't need full stats for performance
+          avg_difficulty: 1,
+          total_assessments: 0,
+          map_type: "public" as const,
+          isEnrolled: false,
+          hasStarted: false,
+        }));
 
-          // Filter out enrolled maps from available maps
-          const enrolledMapIds = new Set(userEnrolledMaps.map((map) => map.id));
-          const availableNonEnrolledMaps = allMaps.filter(
-            (map) => !enrolledMapIds.has(map.id)
-          );
-
-          setAvailableMaps(availableNonEnrolledMaps.slice(0, 3));
-        } else {
-          console.error(
-            "Error fetching available maps:",
-            availableMapsPromise.reason
-          );
-          throw new Error("Failed to fetch available maps");
-        }
+        setEnrolledMaps(userEnrolledMaps);
+        setAvailableMaps(recentMaps.slice(0, 3));
       } catch (err) {
         if (!isMounted) return;
 

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Community } from '@/types/community';
@@ -13,21 +14,27 @@ type CommunityCardProps = {
 export function CommunityCard({ community, isMember = false, onJoin, onLeave }: CommunityCardProps) {
   return (
     <Card className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <div 
-        className="h-32 bg-gradient-to-r from-blue-500 to-purple-600 relative"
-        style={community.cover_image_url ? { 
-          backgroundImage: `url(${community.cover_image_url})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        } : {}}
-      >
+      <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600 relative overflow-hidden">
+        {community.cover_image_url ? (
+          <Image
+            src={community.cover_image_url}
+            alt={`${community.name} cover`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 300px, 400px"
+            loading="lazy"
+          />
+        ) : null}
         {community.profile_image_url && (
           <div className="absolute -bottom-8 left-4">
             <div className="w-16 h-16 rounded-full border-4 border-background bg-background overflow-hidden">
-              <img 
-                src={community.profile_image_url} 
+              <Image
+                src={community.profile_image_url}
                 alt={community.name}
-                className="w-full h-full object-cover"
+                width={64}
+                height={64}
+                className="object-cover"
+                loading="lazy"
               />
             </div>
           </div>

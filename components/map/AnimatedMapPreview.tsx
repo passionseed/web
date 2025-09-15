@@ -304,12 +304,17 @@ export function AnimatedMapPreview({ map, isOpen, onClose, onStartAdventure }: A
                 
                 {/* Cover Image Background */}
                 {map.metadata?.coverImage && (
-                  <div 
-                    className="absolute inset-0 rounded-full bg-cover bg-center bg-no-repeat opacity-90"
-                    style={{
-                      backgroundImage: `url(${map.metadata.coverImage})`
-                    }}
-                  />
+                  <div className="absolute inset-0 rounded-full overflow-hidden opacity-90">
+                    <Image
+                      src={map.metadata.coverImage}
+                      alt={map.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 300px, 400px"
+                      priority={false}
+                      loading="lazy"
+                    />
+                  </div>
                 )}
                 
                 {/* Semi-transparent overlay for better text readability */}

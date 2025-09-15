@@ -207,10 +207,10 @@ export function LavaFooter() {
         </div>
         <div className="mt-8 border-t border-white/20 pt-8 text-center text-sm text-white/60">
           <p>
-            © {new Date().getFullYear()} Passion Seed. All rights reserved V1.
+            © {new Date().getFullYear()} Passion Seed. All rights reserved v2.
           </p>
         </div>
-      </div>
+      </div>w
     </footer>
   );
 }

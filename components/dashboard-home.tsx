@@ -21,7 +21,7 @@ import {
   Compass,
 } from "lucide-react";
 import Link from "next/link";
-import { getMapsWithStats } from "@/lib/supabase/maps";
+// Removed getMapsWithStats - now using optimized useProgressMaps hook
 import { LearningMap, UserMapEnrollment } from "@/types/map";
 import { useProgressMaps } from "@/hooks/use-progress-maps";
 import { LearningMapsSkeleton } from "@/components/learning-maps-skeleton";
