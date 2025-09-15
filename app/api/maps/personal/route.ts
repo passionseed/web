@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserPersonalMaps } from "@/lib/supabase/maps";
-import { createServerClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 
 // 🚀 FAST: User's personal maps (created by them)
 export async function GET(request: NextRequest) {
@@ -19,27 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check authentication
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch (error) {
-              // Ignore errors from setting cookies during API response
-            }
-          },
-        },
-      }
-    );
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
