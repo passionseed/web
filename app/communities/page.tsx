@@ -252,9 +252,9 @@ export default function CommunityPage() {
               priority={true}
             />
           )}
-        </div>
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
         </div>
+      </div>
 
         <div className="relative px-6 pb-6 -mt-16">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -318,8 +318,8 @@ export default function CommunityPage() {
             </div>
           </div>
         </div>
-      </div>
-
+      
+      {/* Community main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
