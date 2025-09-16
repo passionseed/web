@@ -31,3 +31,7 @@
    Reload env: .env.local
  ✓ Compiled in 343ms
  ✓ Compiled in 251ms
+ ✓ Compiled middleware in 14ms
+   Reload env: .env.local
+   Reload env: .env.local
+ ✓ Compiled middleware in 10ms

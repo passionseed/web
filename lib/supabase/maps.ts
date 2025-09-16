@@ -688,7 +688,18 @@ export const getMapsPaginated = async (
 ): Promise<PaginatedMapsResult> => {
   const supabase = createClient();
   
-  const { data: { user } } = await supabase.auth.getUser();
+  // Handle auth errors gracefully - treat as anonymous user if auth fails
+  let user = null;
+  try {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (!authError) {
+      user = authUser;
+    }
+  } catch (error) {
+    console.warn("Auth check failed in getMapsPaginated, proceeding as anonymous:", error);
+    user = null;
+  }
+  
   const offset = (page - 1) * limit;
   
   // 🚀 CACHE: Create cache key based on page, limit, and user status
