@@ -51,6 +51,7 @@ type MapWithStats = LearningMap & {
   isEnrolled: boolean;
   hasStarted: boolean;
   map_type: "personal" | "classroom" | "team" | "forked" | "public";
+  cover_image_url?: string; // New optimized cover image field
   source_info?: {
     classroom_name?: string;
     team_name?: string;
@@ -307,9 +308,9 @@ export default function MapsPage() {
   };
 
   // 🚀 FAST: Get vinyl colors from stored metadata instead of client-side processing
-  const getVinylColorsFromMetadata = (metadata: any) => {
+  const getVinylColorsFromMetadata = (map: MapWithStats) => {
     // Check if cover colors are pre-stored in metadata
-    const storedColors = metadata?.coverColors;
+    const storedColors = map.metadata?.coverColors;
     
     if (storedColors && storedColors.length >= 3) {
       const [color1, color2, color3] = storedColors;
@@ -340,7 +341,7 @@ export default function MapsPage() {
     const cardRouter = useRouter();
     
     // 🚀 INSTANT: Get colors from metadata, no async processing needed
-    const vinylColors = getVinylColorsFromMetadata(map.metadata);
+    const vinylColors = getVinylColorsFromMetadata(map);
 
     const handleMapClick = (e: React.MouseEvent) => {
       e.preventDefault();
@@ -359,7 +360,7 @@ export default function MapsPage() {
             <div className="relative w-full h-full">
               {/* Vinyl Record */}
               <div className={`vinyl-record w-full h-full rounded-full shadow-2xl border-4 relative overflow-hidden ${
-                !map.metadata?.coverImage ? 'bg-gradient-to-br from-gray-900 via-black to-gray-800 border-gray-700' : 'border-opacity-70'
+                !map.cover_image_url ? 'bg-gradient-to-br from-gray-900 via-black to-gray-800 border-gray-700' : 'border-opacity-70'
               }`} style={{
                 background: vinylColors.bg
               }}>
@@ -400,10 +401,10 @@ export default function MapsPage() {
             <div className="album-cover absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-lg shadow-2xl border border-slate-600 overflow-hidden transform-gpu">
               
               {/* Cover Image or Default Background */}
-              {map.metadata?.coverImage ? (
+              {map.cover_image_url ? (
                 <div className="absolute inset-0 rounded-lg overflow-hidden">
                   <Image
-                    src={map.metadata.coverImage}
+                    src={map.cover_image_url}
                     alt={map.title}
                     fill
                     className="object-cover"

@@ -72,6 +72,7 @@ export function UserNav({ user }: UserNavProps) {
       if (error) {
         if (error.code === 'PGRST116') {
           // Profile doesn't exist, create one
+          console.log('Profile not found, creating...');
           await createProfile();
         } else {
           console.error('Error fetching profile:', error);
