@@ -45,11 +45,13 @@ export const checkClientAuth = async (
 
     if (roleError) {
       console.error("Error checking user roles:", roleError);
+      
+      // Don't fail auth, just proceed without role checking
       return {
         user,
         isAuthenticated: true,
         hasRole: false,
-        error: "Failed to check user roles",
+        error: "Failed to check user roles - using fallback",
       };
     }
 
