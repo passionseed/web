@@ -101,7 +101,6 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
     if (!response.ok) {
       let errorDetails: any = {};
       let responseText = "";
-      let parseError: any = null;
       
       try {
         responseText = await response.text();
@@ -110,17 +109,19 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
         if (responseText) {
           try {
             errorDetails = JSON.parse(responseText);
+            console.error("❌ [Enrollment Client] Parsed error details:", errorDetails);
           } catch (parseErr) {
-            parseError = parseErr;
+            console.error("❌ [Enrollment Client] Could not parse error response:", parseErr);
             errorDetails = { 
-              message: responseText || "Could not parse error response",
-              parseError: parseErr instanceof Error ? parseErr.message : String(parseErr)
+              message: responseText,
+              rawResponse: responseText
             };
           }
         } else {
           errorDetails = { message: "Empty response body" };
         }
       } catch (readErr) {
+        console.error("❌ [Enrollment Client] Could not read response:", readErr);
         errorDetails = { 
           message: "Could not read error response",
           readError: readErr instanceof Error ? readErr.message : String(readErr)
@@ -133,9 +134,17 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
         url: `/api/maps/${mapId}/enroll`,
         mapId,
         errorDetails,
-        responseText: responseText ? responseText.substring(0, 500) : "No response text",
-        parseError: parseError ? (parseError instanceof Error ? parseError.message : String(parseError)) : null
+        hasErrorMessage: !!errorDetails.message,
+        errorMessage: errorDetails.message,
+        errorType: errorDetails.error,
+        fullResponse: responseText ? responseText.substring(0, 1000) : "No response text"
       });
+      
+      // Show user-friendly error message
+      if (errorDetails.message) {
+        console.error("❌ [Enrollment Client] Error message:", errorDetails.message);
+      }
+      
       return false;
     }
 

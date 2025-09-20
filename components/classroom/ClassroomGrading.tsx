@@ -8,25 +8,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { GradeCell } from "./GradeCell";
 import { 
   GraduationCap, 
   Search, 
-  Filter,
   Eye,
   CheckCircle,
   XCircle,
   Clock,
-  FileText,
-  Users,
-  BarChart3,
   Download,
+  BarChart3,
   PieChart,
-  TrendingDown,
   Award,
+  TrendingDown,
   AlertCircle
 } from "lucide-react";
 
@@ -65,6 +62,22 @@ interface Submission {
   is_grading_enabled: boolean;
 }
 
+interface AssignmentNode {
+  id: string;
+  title: string;
+  assignment_title?: string;
+  map_title: string;
+  assessment_type: string;
+  is_grading_enabled: boolean;
+  max_points?: number;
+}
+
+interface GradebookMatrix {
+  [studentId: string]: {
+    [nodeId: string]: Submission | undefined;
+  };
+}
+
 interface ClassroomGradingProps {
   classroomId: string;
   canManage: boolean;
@@ -73,13 +86,17 @@ interface ClassroomGradingProps {
 export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [assignmentNodes, setAssignmentNodes] = useState<AssignmentNode[]>([]);
+  const [allAssessments, setAllAssessments] = useState<AssignmentNode[]>([]);
+  const [gradebookMatrix, setGradebookMatrix] = useState<GradebookMatrix>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "graded" | "ungraded">("all");
-  const [filterAssignment, setFilterAssignment] = useState<string>("all");
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [grading, setGrading] = useState(false);
-  const [viewMode, setViewMode] = useState<"students" | "submissions" | "analytics">("students");
+  const [showGradingModal, setShowGradingModal] = useState(false);
+  const [viewMode, setViewMode] = useState<"gradebook" | "analytics">("gradebook");
+  const [sortBy, setSortBy] = useState<"name" | "id" | "email">("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
 
   // Analytics calculations
@@ -124,18 +141,18 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
     comments: ""
   });
 
-  const [bulkGrading, setBulkGrading] = useState({
-    selectedSubmissions: new Set<string>(),
-    grade: "pass" as "pass" | "fail",
-    points: 100,
-    comments: "Good work!"
-  });
 
   useEffect(() => {
     if (canManage) {
       loadGradingData();
     }
   }, [classroomId, canManage]);
+
+  useEffect(() => {
+    if (students.length > 0 && allAssessments.length > 0) {
+      createGradebookMatrix();
+    }
+  }, [students, submissions, allAssessments]);
 
   const loadGradingData = async () => {
     try {
@@ -145,8 +162,11 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
         const data = await response.json();
         setStudents(data.students || []);
         setSubmissions(data.submissions || []);
+        setAllAssessments(data.all_assessments || []);
       } else {
-        throw new Error("Failed to fetch grading data");
+        const errorData = await response.text();
+        console.error("Grading API error response:", response.status, errorData);
+        throw new Error(`Failed to fetch grading data: ${response.status} - ${errorData}`);
       }
     } catch (error) {
       console.error("Error loading grading data:", error);
@@ -158,6 +178,29 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
     } finally {
       setLoading(false);
     }
+  };
+
+  const createGradebookMatrix = () => {
+    // Use all available assessments instead of just submitted ones
+    const nodes = allAssessments;
+    setAssignmentNodes(nodes);
+
+    // Create matrix: student -> node -> submission
+    const matrix: GradebookMatrix = {};
+    
+    students.forEach(student => {
+      matrix[student.user_id] = {};
+      nodes.forEach(node => {
+        // Find submission for this student and node
+        const submission = submissions.find(sub => 
+          sub.student_user_id === student.user_id && 
+          `${sub.map_title}-${sub.node_title}` === node.id
+        );
+        matrix[student.user_id][node.id] = submission;
+      });
+    });
+
+    setGradebookMatrix(matrix);
   };
 
   const handleGradeSubmission = async (submissionId: string, grade: "pass" | "fail", points: number | null, comments: string) => {
@@ -181,6 +224,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
         });
         loadGradingData(); // Refresh data
         setSelectedSubmission(null);
+        setShowGradingModal(false);
       } else {
         throw new Error("Failed to grade submission");
       }
@@ -196,85 +240,55 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
     }
   };
 
-  const handleBulkGrading = async () => {
-    if (bulkGrading.selectedSubmissions.size === 0) return;
-
-    try {
-      setGrading(true);
-      
-      // Only include points if at least one selected submission has grading enabled
-      const hasGradingEnabled = Array.from(bulkGrading.selectedSubmissions).some(subId => {
-        const submission = submissions.find(s => s.id === subId);
-        return submission?.is_grading_enabled;
-      });
-      
-      const response = await fetch(`/api/classrooms/${classroomId}/grading/bulk`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          submission_ids: Array.from(bulkGrading.selectedSubmissions),
-          grade: bulkGrading.grade,
-          points_awarded: hasGradingEnabled ? bulkGrading.points : null,
-          comments: bulkGrading.comments
-        })
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Bulk Grading Complete",
-          description: `Graded ${bulkGrading.selectedSubmissions.size} submissions`,
-        });
-        setBulkGrading(prev => ({ ...prev, selectedSubmissions: new Set() }));
-        loadGradingData();
-      } else {
-        throw new Error("Failed to perform bulk grading");
-      }
-    } catch (error) {
-      console.error("Error in bulk grading:", error);
-      toast({
-        title: "Bulk Grading Failed",
-        description: "Failed to grade submissions",
-        variant: "destructive",
-      });
-    } finally {
-      setGrading(false);
-    }
-  };
-
-  const filteredSubmissions = submissions.filter(submission => {
-    const matchesSearch = !searchTerm || 
-      submission.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      submission.node_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      submission.map_title.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filterStatus === "all" || submission.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const filteredStudents = students.filter(student => {
-    return !searchTerm || 
-      student.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  const toggleSubmissionSelection = (submissionId: string) => {
-    setBulkGrading(prev => {
-      const newSelected = new Set(prev.selectedSubmissions);
-      if (newSelected.has(submissionId)) {
-        newSelected.delete(submissionId);
-      } else {
-        newSelected.add(submissionId);
-      }
-      return { ...prev, selectedSubmissions: newSelected };
+  const handleCellClick = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setGradingForm({
+      grade: submission.grade || "pass",
+      points: submission.points_awarded || 100,
+      comments: submission.comments || ""
     });
+    setShowGradingModal(true);
   };
+
+  const filteredStudents = students
+    .filter(student => {
+      return !searchTerm || 
+        student.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase());
+    })
+    .sort((a, b) => {
+      let aValue: string, bValue: string;
+      
+      switch (sortBy) {
+        case "name":
+          aValue = (a.full_name || a.username).toLowerCase();
+          bValue = (b.full_name || b.username).toLowerCase();
+          break;
+        case "id":
+          aValue = a.user_id.toLowerCase();
+          bValue = b.user_id.toLowerCase();
+          break;
+        case "email":
+          aValue = a.email.toLowerCase();
+          bValue = b.email.toLowerCase();
+          break;
+        default:
+          aValue = (a.full_name || a.username).toLowerCase();
+          bValue = (b.full_name || b.username).toLowerCase();
+      }
+      
+      if (sortOrder === "asc") {
+        return aValue.localeCompare(bValue);
+      } else {
+        return bValue.localeCompare(aValue);
+      }
+    });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "graded":
-        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Graded</Badge>;
+        return <Badge variant="default" className="bg-green-900 text-green-200"><CheckCircle className="w-3 h-3 mr-1" />Graded</Badge>;
       case "ungraded":
         return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
       default:
@@ -284,7 +298,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
 
   const getGradeBadge = (grade: "pass" | "fail" | null) => {
     if (grade === "pass") {
-      return <Badge variant="default" className="bg-green-100 text-green-800">Pass</Badge>;
+      return <Badge variant="default" className="bg-green-900 text-green-200">Pass</Badge>;
     } else if (grade === "fail") {
       return <Badge variant="destructive">Fail</Badge>;
     }
@@ -320,443 +334,144 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
-            Classroom Grading
+            Classroom Gradebook
           </CardTitle>
           <CardDescription>
-            Grade student submissions and track progress across all assignments and learning maps.
+            Grade student submissions in an interactive gradebook format.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Grading Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold">{submissions.length}</div>
-                <p className="text-sm text-muted-foreground">Total Submissions</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">{submissions.filter(s => s.status === "graded").length}</div>
-                <p className="text-sm text-muted-foreground">Graded</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-orange-600">{submissions.filter(s => s.status === "ungraded").length}</div>
-                <p className="text-sm text-muted-foreground">Pending</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
+          {/* Stats and Filters */}
+          <div className="flex flex-col lg:flex-row gap-4 mb-6">
+            {/* Quick Stats */}
+            <div className="flex gap-4">
+              <div className="text-center">
                 <div className="text-2xl font-bold">{students.length}</div>
                 <p className="text-sm text-muted-foreground">Students</p>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{allAssessments.length}</div>
+                <p className="text-sm text-muted-foreground">Assignments</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {submissions.filter(s => s.status === "ungraded").length}
+                </div>
+                <p className="text-sm text-muted-foreground">Need Grading</p>
+              </div>
+            </div>
 
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            {/* Search */}
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search students, assignments, or nodes..."
+                  placeholder="Search students..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-            <Select value={filterStatus} onValueChange={(value: "all" | "graded" | "ungraded") => setFilterStatus(value)}>
-              <SelectTrigger className="md:w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="ungraded">Ungraded</SelectItem>
-                <SelectItem value="graded">Graded</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* Sorting Controls */}
+            <div className="flex gap-2 items-center">
+              <Select value={sortBy} onValueChange={(value: "name" | "id" | "email") => setSortBy(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="id">User ID</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                className="px-2"
+              >
+                {sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+              </Button>
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === "gradebook" ? "default" : "outline"}
+                onClick={() => setViewMode("gradebook")}
+                size="sm"
+              >
+                Gradebook
+              </Button>
+              <Button
+                variant={viewMode === "analytics" ? "default" : "outline"}
+                onClick={() => setViewMode("analytics")}
+                size="sm"
+              >
+                <BarChart3 className="h-4 w-4 mr-1" />
+                Analytics
+              </Button>
+            </div>
           </div>
 
-          {/* View Mode Toggle */}
-          <Tabs value={viewMode} onValueChange={(value: "students" | "submissions" | "analytics") => setViewMode(value)}>
-            <TabsList>
-              <TabsTrigger value="students" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Students View
-              </TabsTrigger>
-              <TabsTrigger value="submissions" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Submissions View
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Analytics
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Students View */}
-            <TabsContent value="students" className="space-y-4">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Total Submissions</TableHead>
-                      <TableHead>Graded</TableHead>
-                      <TableHead>Pending</TableHead>
-                      <TableHead>Average Grade</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStudents.map((student) => (
-                      <TableRow key={student.user_id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{student.full_name || student.username}</div>
-                            <div className="text-sm text-muted-foreground">{student.email}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{student.total_submissions}</TableCell>
-                        <TableCell>
-                          <Badge variant="default" className="bg-green-100 text-green-800">
-                            {student.graded_submissions}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {student.pending_submissions}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {student.average_grade ? `${student.average_grade}%` : "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setFilterAssignment("all");
-                              setSearchTerm(student.username);
-                              setViewMode("submissions");
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Work
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-
-            {/* Submissions View */}
-            <TabsContent value="submissions" className="space-y-4">
-              {/* Bulk Grading Controls */}
-              {bulkGrading.selectedSubmissions.size > 0 && (
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <span className="font-medium">
-                          {bulkGrading.selectedSubmissions.size} submissions selected
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <Select 
-                            value={bulkGrading.grade} 
-                            onValueChange={(value: "pass" | "fail") => setBulkGrading(prev => ({ ...prev, grade: value }))}
-                          >
-                            <SelectTrigger className="w-24">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pass">Pass</SelectItem>
-                              <SelectItem value="fail">Fail</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {Array.from(bulkGrading.selectedSubmissions).some(subId => {
-                            const submission = submissions.find(s => s.id === subId);
-                            return submission?.is_grading_enabled;
-                          }) && (
-                            <Input
-                              type="number"
-                              placeholder="Points"
-                              value={bulkGrading.points}
-                              onChange={(e) => setBulkGrading(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
-                              className="w-20"
-                            />
+          {/* Main Content */}
+          {viewMode === "gradebook" ? (
+            <div className="space-y-4">
+              {/* Gradebook Grid */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <div className="min-w-full">
+                    {/* Header Row */}
+                    <div className="flex bg-gray-900 border-b border-gray-700 sticky top-0 z-10">
+                      {/* Student Column Header */}
+                      <div className="w-48 p-3 border-r border-gray-700 bg-gray-900 font-semibold text-sm sticky left-0 z-20 text-gray-100">
+                        Student
+                      </div>
+                      {/* Assignment Headers */}
+                      {assignmentNodes.map((node) => (
+                        <div key={node.id} className="min-w-32 p-2 border-r border-gray-700 text-center">
+                          <div className="font-medium text-xs line-clamp-2 text-gray-100">{node.title}</div>
+                          <div className="text-xs text-gray-400 mt-1">{node.map_title}</div>
+                          {node.is_grading_enabled && (
+                            <div className="text-xs text-blue-400">Points</div>
                           )}
-                          <Input
-                            placeholder="Comments"
-                            value={bulkGrading.comments}
-                            onChange={(e) => setBulkGrading(prev => ({ ...prev, comments: e.target.value }))}
-                            className="w-40"
-                          />
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setBulkGrading(prev => ({ ...prev, selectedSubmissions: new Set() }))}
-                        >
-                          Clear Selection
-                        </Button>
-                        <Button
-                          onClick={handleBulkGrading}
-                          disabled={grading}
-                        >
-                          {grading ? "Grading..." : "Grade Selected"}
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <input
-                          type="checkbox"
-                          checked={bulkGrading.selectedSubmissions.size === filteredSubmissions.filter(s => s.status === "ungraded").length}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setBulkGrading(prev => ({
-                                ...prev,
-                                selectedSubmissions: new Set(filteredSubmissions.filter(s => s.status === "ungraded").map(s => s.id))
-                              }));
-                            } else {
-                              setBulkGrading(prev => ({ ...prev, selectedSubmissions: new Set() }));
-                            }
-                          }}
-                        />
-                      </TableHead>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Assignment/Map</TableHead>
-                      <TableHead>Node</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Submitted</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Grade</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredSubmissions.map((submission) => (
-                      <TableRow key={submission.id}>
-                        <TableCell>
-                          {submission.status === "ungraded" && (
-                            <input
-                              type="checkbox"
-                              checked={bulkGrading.selectedSubmissions.has(submission.id)}
-                              onChange={() => toggleSubmissionSelection(submission.id)}
+                    {/* Student Rows */}
+                    {filteredStudents.map((student) => (
+                      <div key={student.user_id} className="flex hover:bg-gray-800 border-b border-gray-700">
+                        {/* Student Info */}
+                        <div className="w-48 p-3 border-r border-gray-700 bg-gray-900 sticky left-0 z-10">
+                          <div className="font-medium text-sm text-gray-100">{student.full_name || student.username}</div>
+                          <div className="text-xs text-gray-400">{student.email}</div>
+                        </div>
+                        {/* Grade Cells */}
+                        {assignmentNodes.map((node) => (
+                          <div key={`${student.user_id}-${node.id}`} className="min-w-32 border-r border-gray-700 h-12">
+                            <GradeCell
+                              submission={gradebookMatrix[student.user_id]?.[node.id]}
+                              onClick={() => {
+                                const submission = gradebookMatrix[student.user_id]?.[node.id];
+                                if (submission) {
+                                  handleCellClick(submission);
+                                }
+                              }}
                             />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{submission.student_name}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            {submission.assignment_title && (
-                              <div className="font-medium text-sm">{submission.assignment_title}</div>
-                            )}
-                            <div className="text-sm text-muted-foreground">{submission.map_title}</div>
                           </div>
-                        </TableCell>
-                        <TableCell>{submission.node_title}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{submission.assessment_type}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">{new Date(submission.submitted_at).toLocaleDateString()}</div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(submission.status)}</TableCell>
-                        <TableCell>{getGradeBadge(submission.grade)}</TableCell>
-                        <TableCell>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedSubmission(submission);
-                                  setGradingForm({
-                                    grade: submission.grade || "pass",
-                                    points: submission.points_awarded || 100,
-                                    comments: submission.comments || ""
-                                  });
-                                }}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                {submission.status === "graded" ? "Review" : "Grade"}
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>
-                                  {submission.status === "graded" ? "Review Submission" : "Grade Submission"}
-                                </DialogTitle>
-                                <DialogDescription>
-                                  {submission.student_name} - {submission.node_title}
-                                </DialogDescription>
-                              </DialogHeader>
-                              
-                              {selectedSubmission && (
-                                <div className="space-y-6">
-                                  {/* Submission Content */}
-                                  <Card>
-                                    <CardHeader>
-                                      <CardTitle className="text-lg">Student Work</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                      {selectedSubmission.text_answer && (
-                                        <div>
-                                          <Label className="font-medium">Text Answer:</Label>
-                                          <div className="mt-2 p-3 bg-gray-50 rounded-md text-gray-900">
-                                            {selectedSubmission.text_answer}
-                                          </div>
-                                        </div>
-                                      )}
-                                      
-                                      {selectedSubmission.file_urls && selectedSubmission.file_urls.length > 0 && (
-                                        <div>
-                                          <Label className="font-medium">File Uploads:</Label>
-                                          <div className="mt-2 space-y-2">
-                                            {selectedSubmission.file_urls.map((url, index) => (
-                                              <a
-                                                key={index}
-                                                href={url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-2 text-blue-600 hover:underline"
-                                              >
-                                                <Download className="h-4 w-4" />
-                                                File {index + 1}
-                                              </a>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {selectedSubmission.quiz_answers && (
-                                        <div>
-                                          <Label className="font-medium">Quiz Answers:</Label>
-                                          <div className="mt-2 space-y-2">
-                                            {Object.entries(selectedSubmission.quiz_answers).map(([question, answer]) => (
-                                              <div key={question} className="p-3 bg-gray-50 rounded-md">
-                                                <div className="font-medium text-sm">{question}</div>
-                                                <div className="text-sm text-muted-foreground mt-1">{answer}</div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-                                    </CardContent>
-                                  </Card>
-
-                                  {/* Grading Form */}
-                                  {submission.status === "ungraded" && (
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="text-lg">Grade Submission</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                          <div>
-                                            <Label>Grade</Label>
-                                            <Select 
-                                              value={gradingForm.grade} 
-                                              onValueChange={(value: "pass" | "fail") => setGradingForm(prev => ({ ...prev, grade: value }))}
-                                            >
-                                              <SelectTrigger>
-                                                <SelectValue />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="pass">Pass</SelectItem>
-                                                <SelectItem value="fail">Fail</SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                          {selectedSubmission?.is_grading_enabled && (
-                                            <div>
-                                              <Label>Points</Label>
-                                              <Input
-                                                type="number"
-                                                value={gradingForm.points}
-                                                onChange={(e) => setGradingForm(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
-                                              />
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div>
-                                          <Label>Comments</Label>
-                                          <Textarea
-                                            value={gradingForm.comments}
-                                            onChange={(e) => setGradingForm(prev => ({ ...prev, comments: e.target.value }))}
-                                            placeholder="Provide feedback to the student..."
-                                          />
-                                        </div>
-                                        <Button
-                                          onClick={() => handleGradeSubmission(
-                                            submission.id,
-                                            gradingForm.grade,
-                                            selectedSubmission?.is_grading_enabled ? gradingForm.points : null,
-                                            gradingForm.comments
-                                          )}
-                                          disabled={grading}
-                                          className="w-full"
-                                        >
-                                          {grading ? "Grading..." : "Submit Grade"}
-                                        </Button>
-                                      </CardContent>
-                                    </Card>
-                                  )}
-
-                                  {/* Existing Grade Display */}
-                                  {submission.status === "graded" && (
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="text-lg">Current Grade</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="space-y-2">
-                                          <div>Grade: {getGradeBadge(submission.grade)}</div>
-                                          <div>Points: {submission.points_awarded}</div>
-                                          {submission.comments && (
-                                            <div>
-                                              <Label className="font-medium">Comments:</Label>
-                                              <div className="mt-1 p-3 bg-gray-50 rounded-md">{submission.comments}</div>
-                                            </div>
-                                          )}
-                                          <div className="text-sm text-muted-foreground">
-                                            Graded on {new Date(submission.graded_at!).toLocaleDateString()}
-                                          </div>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  )}
-                                </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                        </TableCell>
-                      </TableRow>
+                        ))}
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                </div>
               </div>
-            </TabsContent>
-
-            {/* Analytics View */}
-            <TabsContent value="analytics" className="space-y-6">
+            </div>
+          ) : (
+            // Analytics View
+            <div className="space-y-6">
               {/* Overview Analytics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
@@ -772,7 +487,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                         <span>Pass Rate</span>
                         <span className="font-bold text-green-600">{analytics.passRate}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div className="w-full bg-gray-700 rounded-full h-3">
                         <div 
                           className="bg-green-500 h-3 rounded-full" 
                           style={{ width: `${analytics.passRate}%` }}
@@ -782,7 +497,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                         <span>Fail Rate</span>
                         <span className="font-bold text-red-600">{analytics.failRate}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div className="w-full bg-gray-700 rounded-full h-3">
                         <div 
                           className="bg-red-500 h-3 rounded-full" 
                           style={{ width: `${analytics.failRate}%` }}
@@ -805,7 +520,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                         <div className="text-3xl font-bold">{analytics.gradingProgress}%</div>
                         <p className="text-sm text-muted-foreground">Complete</p>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-4">
+                      <div className="w-full bg-gray-700 rounded-full h-4">
                         <div 
                           className="bg-blue-500 h-4 rounded-full transition-all duration-300" 
                           style={{ width: `${analytics.gradingProgress}%` }}
@@ -853,10 +568,10 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                     <div className="space-y-3">
                       {analytics.topPerformers.length > 0 ? (
                         analytics.topPerformers.map((student, index) => (
-                          <div key={student.user_id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div key={student.user_id} className="flex items-center justify-between p-3 bg-green-900 rounded-lg">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                <span className="text-sm font-bold text-green-700">#{index + 1}</span>
+                              <div className="w-8 h-8 bg-green-800 rounded-full flex items-center justify-center">
+                                <span className="text-sm font-bold text-green-200">#{index + 1}</span>
                               </div>
                               <div>
                                 <div className="font-medium">{student.full_name || student.username}</div>
@@ -865,7 +580,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                                 </div>
                               </div>
                             </div>
-                            <div className="text-lg font-bold text-green-600">
+                            <div className="text-lg font-bold text-green-300">
                               {student.average_grade}%
                             </div>
                           </div>
@@ -891,10 +606,10 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                     <div className="space-y-3">
                       {analytics.strugglingStudents.length > 0 ? (
                         analytics.strugglingStudents.map((student, index) => (
-                          <div key={student.user_id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                          <div key={student.user_id} className="flex items-center justify-between p-3 bg-orange-900 rounded-lg">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                <AlertCircle className="h-4 w-4 text-orange-700" />
+                              <div className="w-8 h-8 bg-orange-800 rounded-full flex items-center justify-center">
+                                <AlertCircle className="h-4 w-4 text-orange-200" />
                               </div>
                               <div>
                                 <div className="font-medium">{student.full_name || student.username}</div>
@@ -903,7 +618,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                                 </div>
                               </div>
                             </div>
-                            <div className="text-lg font-bold text-orange-600">
+                            <div className="text-lg font-bold text-orange-300">
                               {student.average_grade ? `${student.average_grade}%` : 'No grades'}
                             </div>
                           </div>
@@ -932,7 +647,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                       <div key={type} className="flex items-center justify-between">
                         <span className="capitalize">{type.replace('_', ' ')}</span>
                         <div className="flex items-center gap-3">
-                          <div className="w-32 bg-gray-200 rounded-full h-2">
+                          <div className="w-32 bg-gray-700 rounded-full h-2">
                             <div 
                               className="bg-blue-500 h-2 rounded-full" 
                               style={{ width: `${(count / analytics.totalSubmissions) * 100}%` }}
@@ -958,7 +673,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                   <div className="space-y-3">
                     {analytics.recentActivity.length > 0 ? (
                       analytics.recentActivity.map((submission) => (
-                        <div key={submission.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div key={submission.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                           <div className="flex items-center gap-3">
                             {getGradeBadge(submission.grade)}
                             <div>
@@ -981,10 +696,161 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Grading Modal */}
+      <Dialog open={showGradingModal} onOpenChange={setShowGradingModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedSubmission?.status === "graded" ? "Review Submission" : "Grade Submission"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedSubmission?.student_name} - {selectedSubmission?.node_title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSubmission && (
+            <div className="space-y-6">
+              {/* Submission Content */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Student Work</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {selectedSubmission.text_answer && (
+                    <div>
+                      <Label className="font-medium">Text Answer:</Label>
+                      <div className="mt-2 p-3 bg-gray-800 rounded-md text-gray-100">
+                        {selectedSubmission.text_answer}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedSubmission.file_urls && selectedSubmission.file_urls.length > 0 && (
+                    <div>
+                      <Label className="font-medium">File Uploads:</Label>
+                      <div className="mt-2 space-y-2">
+                        {selectedSubmission.file_urls.map((url, index) => (
+                          <a
+                            key={index}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-blue-600 hover:underline"
+                          >
+                            <Download className="h-4 w-4" />
+                            File {index + 1}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedSubmission.quiz_answers && (
+                    <div>
+                      <Label className="font-medium">Quiz Answers:</Label>
+                      <div className="mt-2 space-y-2">
+                        {Object.entries(selectedSubmission.quiz_answers).map(([question, answer]) => (
+                          <div key={question} className="p-3 bg-gray-800 rounded-md">
+                            <div className="font-medium text-sm text-gray-100">{question}</div>
+                            <div className="text-sm text-gray-400 mt-1">{answer}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Grading Form */}
+              {selectedSubmission.status === "ungraded" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Grade Submission</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Grade</Label>
+                        <Select 
+                          value={gradingForm.grade} 
+                          onValueChange={(value: "pass" | "fail") => setGradingForm(prev => ({ ...prev, grade: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pass">Pass</SelectItem>
+                            <SelectItem value="fail">Fail</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {selectedSubmission?.is_grading_enabled && (
+                        <div>
+                          <Label>Points</Label>
+                          <Input
+                            type="number"
+                            value={gradingForm.points}
+                            onChange={(e) => setGradingForm(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Comments</Label>
+                      <Textarea
+                        value={gradingForm.comments}
+                        onChange={(e) => setGradingForm(prev => ({ ...prev, comments: e.target.value }))}
+                        placeholder="Provide feedback to the student..."
+                      />
+                    </div>
+                    <Button
+                      onClick={() => handleGradeSubmission(
+                        selectedSubmission.id,
+                        gradingForm.grade,
+                        selectedSubmission?.is_grading_enabled ? gradingForm.points : null,
+                        gradingForm.comments
+                      )}
+                      disabled={grading}
+                      className="w-full"
+                    >
+                      {grading ? "Grading..." : "Submit Grade"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Existing Grade Display */}
+              {selectedSubmission.status === "graded" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Current Grade</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div>Grade: {getGradeBadge(selectedSubmission.grade)}</div>
+                      <div>Points: {selectedSubmission.points_awarded}</div>
+                      {selectedSubmission.comments && (
+                        <div>
+                          <Label className="font-medium">Comments:</Label>
+                          <div className="mt-1 p-3 bg-gray-800 rounded-md text-gray-100">{selectedSubmission.comments}</div>
+                        </div>
+                      )}
+                      <div className="text-sm text-muted-foreground">
+                        Graded on {new Date(selectedSubmission.graded_at!).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

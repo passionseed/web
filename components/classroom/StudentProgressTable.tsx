@@ -26,6 +26,7 @@ interface Student {
   user_id: string;
   user?: {
     id: string;
+    username: string;
     email: string;
     full_name?: string;
     avatar_url?: string;
@@ -60,11 +61,25 @@ export function StudentProgressTable({
   canManage,
 }: StudentProgressTableProps) {
   const getStudentName = (student: Student) => {
-    return (
+    console.log("🎭 [DEBUG] Getting student name for student ID:", student.user_id);
+    console.log("🔍 [DEBUG] Full student object:", JSON.stringify(student, null, 2));
+    console.log("👤 [DEBUG] User object:", JSON.stringify(student.user, null, 2));
+    
+    const name = (
       student.user?.full_name ||
+      student.user?.username ||
       student.user?.email?.split("@")[0] ||
       "Unknown Student"
     );
+    
+    console.log("📝 [DEBUG] Name resolution steps:", {
+      full_name: student.user?.full_name,
+      username: student.user?.username, 
+      email_part: student.user?.email?.split("@")[0],
+      final_name: name
+    });
+    
+    return name;
   };
 
   const getStudentInitials = (student: Student) => {
@@ -102,7 +117,7 @@ export function StudentProgressTable({
   };
 
   const getOverallProgress = (student: Student) => {
-    if (!student.map_progress || classroomMaps.length === 0) {
+    if (!student.map_progress || (classroomMaps || []).length === 0) {
       return 0;
     }
 
@@ -113,7 +128,7 @@ export function StudentProgressTable({
       0
     );
 
-    return Math.round(totalProgress / classroomMaps.length);
+    return Math.round(totalProgress / (classroomMaps || []).length);
   };
 
   const formatDate = (dateString: string) => {
@@ -142,13 +157,13 @@ export function StudentProgressTable({
             <TableRow>
               <TableHead>Student</TableHead>
               <TableHead>Overall Progress</TableHead>
-              {classroomMaps.slice(0, 3).map((map) => (
+              {(classroomMaps || []).slice(0, 3).map((map) => (
                 <TableHead key={map.map_id} className="min-w-[120px]">
                   {map.map_title}
                 </TableHead>
               ))}
-              {classroomMaps.length > 3 && (
-                <TableHead>+{classroomMaps.length - 3} more</TableHead>
+              {(classroomMaps || []).length > 3 && (
+                <TableHead>+{(classroomMaps || []).length - 3} more</TableHead>
               )}
               <TableHead>Joined</TableHead>
               {canManage && <TableHead className="w-[50px]"></TableHead>}
@@ -160,9 +175,9 @@ export function StudentProgressTable({
                 <TableCell
                   colSpan={
                     5 +
-                    (classroomMaps.length > 3
+                    ((classroomMaps || []).length > 3
                       ? 1
-                      : Math.min(classroomMaps.length, 3)) +
+                      : Math.min((classroomMaps || []).length, 3)) +
                     (canManage ? 1 : 0)
                   }
                   className="text-center py-8 text-muted-foreground"
@@ -188,6 +203,26 @@ export function StudentProgressTable({
                         <div className="text-sm text-muted-foreground">
                           {student.user?.email}
                         </div>
+                        <div className="text-xs text-gray-500">
+                          User ID: {student.user_id}
+                        </div>
+                        {(student.user?.email === "No email available" || student.user?.full_name === null) && (
+                          <button 
+                            onClick={async () => {
+                              console.log("🔍 [DEBUG] Checking user data for:", student.user_id);
+                              try {
+                                const response = await fetch(`/api/debug/user/${student.user_id}`);
+                                const data = await response.json();
+                                console.log("🎯 [DEBUG] User diagnostic data:", data);
+                              } catch (error) {
+                                console.error("💥 [DEBUG] Error fetching user debug data:", error);
+                              }
+                            }}
+                            className="text-xs text-yellow-400 hover:text-yellow-300 mt-1 underline cursor-pointer block"
+                          >
+                            🔍 Debug Missing Data
+                          </button>
+                        )}
                       </div>
                     </div>
                   </TableCell>
@@ -206,7 +241,7 @@ export function StudentProgressTable({
                     </div>
                   </TableCell>
 
-                  {classroomMaps.slice(0, 3).map((map) => {
+                  {(classroomMaps || []).slice(0, 3).map((map) => {
                     const progress = student.map_progress?.find(
                       (p) => p.map_id === map.map_id
                     );
@@ -226,7 +261,7 @@ export function StudentProgressTable({
                     );
                   })}
 
-                  {classroomMaps.length > 3 && (
+                  {(classroomMaps || []).length > 3 && (
                     <TableCell>
                       <Button
                         variant="ghost"

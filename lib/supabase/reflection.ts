@@ -221,38 +221,72 @@ export async function getUserDashboardData(supabase: SupabaseClient) {
     throw new Error("User not authenticated");
   }
 
-  const projectsPromise = supabase
-    .from(TABLE_NAMES.PROJECTS)
-    .select("*, tags:project_tags(tags(*))")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  // Initialize default responses
+  let projectsData: any[] = [];
+  let reflectionsData: any[] = [];
+  let workshopsData: any[] = [];
 
-  const reflectionsPromise = supabase
-    .from(TABLE_NAMES.REFLECTIONS)
-    .select("created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  // Try to fetch projects with comprehensive error handling
+  try {
+    const projectsRes = await supabase
+      .from(TABLE_NAMES.PROJECTS)
+      .select("*, tags:project_tags(tags(*))")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
-  const workshopsPromise = supabase
-    .from("user_workshops")
-    .select("workshops(*)")
-    .eq("user_id", user.id)
-    .limit(3);
+    if (projectsRes.error) {
+      console.warn("Projects data not accessible:", projectsRes.error);
+      console.warn("Error code:", projectsRes.error.code);
+      console.warn("Error message:", projectsRes.error.message);
+    } else {
+      projectsData = projectsRes.data || [];
+    }
+  } catch (error) {
+    console.error("Failed to fetch projects:", error);
+  }
 
-  const [projectsRes, reflectionsRes, workshopsRes] = await Promise.all([
-    projectsPromise,
-    reflectionsPromise,
-    workshopsPromise,
-  ]);
+  // Try to fetch reflections with comprehensive error handling
+  try {
+    const reflectionsRes = await supabase
+      .from(TABLE_NAMES.REFLECTIONS)
+      .select("created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
-  if (projectsRes.error) throw projectsRes.error;
-  if (reflectionsRes.error) throw reflectionsRes.error;
-  if (workshopsRes.error) throw workshopsRes.error;
+    if (reflectionsRes.error) {
+      console.warn("Reflections data not accessible:", reflectionsRes.error);
+      console.warn("Error code:", reflectionsRes.error.code);
+      console.warn("Error message:", reflectionsRes.error.message);
+    } else {
+      reflectionsData = reflectionsRes.data || [];
+    }
+  } catch (error) {
+    console.error("Failed to fetch reflections:", error);
+  }
 
-  // Calculate streak
+  // Try to fetch workshops with comprehensive error handling
+  try {
+    const workshopsRes = await supabase
+      .from("user_workshops")
+      .select("workshops(*)")
+      .eq("user_id", user.id)
+      .limit(3);
+
+    if (workshopsRes.error) {
+      console.warn("Workshops data not accessible:", workshopsRes.error);
+      console.warn("Error code:", workshopsRes.error.code);
+      console.warn("Error message:", workshopsRes.error.message);
+    } else {
+      workshopsData = workshopsRes.data || [];
+    }
+  } catch (error) {
+    console.error("Failed to fetch workshops:", error);
+  }
+
+  // Calculate streak using the safe reflectionsData
   let streak = 0;
-  if (reflectionsRes.data && reflectionsRes.data.length > 0) {
-    const reflectionDates = reflectionsRes.data.map((r) =>
+  if (reflectionsData && reflectionsData.length > 0) {
+    const reflectionDates = reflectionsData.map((r) =>
       new Date(r.created_at).toDateString()
     );
     const uniqueDates = [...new Set(reflectionDates)];
@@ -269,13 +303,19 @@ export async function getUserDashboardData(supabase: SupabaseClient) {
     }
   }
 
+  // Process projects data safely
+  const processedProjects = projectsData.map((p) => ({
+    ...p,
+    tags: p.tags ? p.tags.map((t: any) => t.tags) : [],
+  })) as Project[];
+
+  // Process workshops data safely
+  const processedWorkshops = workshopsData ? workshopsData.map((w: any) => w.workshops) : [];
+
   return {
-    projects: projectsRes.data.map((p) => ({
-      ...p,
-      tags: p.tags.map((t: any) => t.tags),
-    })) as Project[],
+    projects: processedProjects,
     reflectionStreak: streak,
-    workshops: workshopsRes.data.map((w: any) => w.workshops),
+    workshops: processedWorkshops,
   };
 }
 

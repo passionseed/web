@@ -17,29 +17,31 @@ export async function GET(request: Request) {
       // This assumes a 'profiles' table with an 'id' column linked to auth.users.id.
       // Using upsert to avoid errors if the profile already exists or to create it.
 
+      // Wait a moment for the trigger to create the profile
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("full_name, username, date_of_birth")
         .eq("id", userId)
         .single();
 
-      if (profileError && profileError.code !== "PGRST116") {
-        // PGRST116 is 'No rows found'
-        console.error("Error fetching profile:", profileError);
-      }
-
       let redirectTo = next;
 
-      // Check if profile data is incomplete
-      if (profileData) {
+      if (profileError && profileError.code === "PGRST116") {
+        // Profile still doesn't exist, something went wrong with the trigger
+        console.error("Profile creation trigger failed for user:", userId);
+        return NextResponse.redirect(`${origin}/auth/auth-code-error?error=profile_creation_failed`);
+      } else if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        return NextResponse.redirect(`${origin}/auth/auth-code-error?error=profile_fetch_failed`);
+      } else if (profileData) {
+        // Check if profile data is incomplete
         const profile = profileData;
         if (!profile.full_name || !profile.username || !profile.date_of_birth) {
           redirectTo = `/auth/finish-profile?next=${encodeURIComponent(next)}`;
         }
         console.log(profile, "profile");
-      } else {
-        // If no profile data is returned, assume it needs to be finished
-        redirectTo = `/auth/finish-profile?next=${encodeURIComponent(next)}`;
       }
 
       console.log(redirectTo, "redirectTo");
