@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -77,6 +77,7 @@ export function ClassroomDetailsDashboard({
     loadClassroomData();
   }, [classroom.id]);
 
+
   const loadClassroomData = async () => {
     try {
       setLoading(true);
@@ -142,7 +143,64 @@ export function ClassroomDetailsDashboard({
   const defaultTab = classroom.enable_assignments === false ? "maps" : "assignments";
   const currentTab = searchParams?.get("tab") ?? defaultTab;
 
+  const loadStudentsData = useCallback(async () => {
+    console.log("🔄 [DEBUG] Loading students data for tab click...");
+    try {
+      // Add cache busting to force fresh API call
+      const cacheBuster = `?t=${Date.now()}`;
+      const studentsResponse = await fetch(`/api/classrooms/${classroom.id}/students${cacheBuster}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      console.log("📡 [DEBUG] API Response status:", studentsResponse.status);
+      console.log("📡 [DEBUG] API Response headers:", Object.fromEntries(studentsResponse.headers.entries()));
+      
+      if (studentsResponse.ok) {
+        const studentsData = await studentsResponse.json();
+        console.log("📋 [DEBUG] Students data received in dashboard:");
+        console.table(studentsData);
+        console.log("🔍 [DEBUG] Full students data:", JSON.stringify(studentsData, null, 2));
+        setStudents(studentsData);
+      } else {
+        console.error("❌ [DEBUG] Failed to fetch students:", studentsResponse.status, studentsResponse.statusText);
+        setStudents([]);
+      }
+    } catch (error) {
+      console.error("💥 [DEBUG] Error loading students:", error);
+      setStudents([]);
+    }
+  }, [classroom.id]);
+
+  const debugUser = async (userId: string) => {
+    console.log("🔍 [DEBUG] Checking user data for:", userId);
+    try {
+      const response = await fetch(`/api/debug/user/${userId}`);
+      const data = await response.json();
+      console.log("🎯 [DEBUG] User diagnostic data:", data);
+    } catch (error) {
+      console.error("💥 [DEBUG] Error fetching user debug data:", error);
+    }
+  };
+
+  // Load students data when students tab is initially active
+  useEffect(() => {
+    if (currentTab === "students") {
+      console.log("🎯 [DEBUG] Students tab is initially active, loading students data...");
+      loadStudentsData();
+    }
+  }, [currentTab, loadStudentsData]);
+
   const handleTabChange = (value: string) => {
+    console.log("🔀 [DEBUG] Tab changed to:", value);
+    
+    // Load students data when students tab is clicked
+    if (value === "students") {
+      loadStudentsData();
+    }
+    
     const params = new URLSearchParams(searchParams?.toString() || "");
     params.set("tab", value);
     const qs = params.toString();

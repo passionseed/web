@@ -1,6 +1,6 @@
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
-import { LavaFooter } from "@/components/lava-footer";
+// import { LavaFooter } from "@/components/lava-footer";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/server";
 
@@ -34,7 +34,7 @@ export async function Layout({ children }: LayoutProps) {
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <LavaFooter />
+      {/* <LavaFooter /> */}
     </div>
   );
 }

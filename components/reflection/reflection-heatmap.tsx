@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-// TODO: Fix reflection system to use client-side API
-// import { getReflectionCalendar } from "@/lib/supabase/reflection";
+// Re-enabled reflection system after fixing permissions
+// Dynamic import used in useEffect to handle client-side only
 import {
   eachDayOfInterval,
   startOfMonth,
@@ -141,15 +141,21 @@ export function ReflectionHeatmap() {
 
   React.useEffect(() => {
     const fetchData = async () => {
-      // TODO: Implement client-side reflection API
-      // const reflections = await getReflectionCalendar(currentYear);
-      const reflections: any[] = []; // Temporary empty array
-      const map = new Map<string, number>();
-      reflections.forEach((r: any) => {
-        const date = format(new Date(r.created_at), "yyyy-MM-dd");
-        map.set(date, (map.get(date) || 0) + 1);
-      });
-      setDataMap(map);
+      try {
+        // Re-enable reflection calendar API now that permissions are restored
+        const { getReflectionCalendar } = await import("@/lib/supabase/reflection");
+        const reflections = await getReflectionCalendar(currentYear);
+        const map = new Map<string, number>();
+        reflections.forEach((r: any) => {
+          const date = format(new Date(r.created_at), "yyyy-MM-dd");
+          map.set(date, (map.get(date) || 0) + 1);
+        });
+        setDataMap(map);
+      } catch (error) {
+        console.error("Error fetching reflection calendar data:", error);
+        // Fall back to empty data if there's still an error
+        setDataMap(new Map());
+      }
     };
     fetchData();
   }, [currentYear]);

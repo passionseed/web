@@ -108,39 +108,92 @@ export async function GET(
       };
     });
 
-    // Get student summary data
+    // Get all classroom members first (simplified query)
+    const { data: classroomMemberships, error: membersError } = await supabase
+      .from("classroom_memberships")
+      .select("user_id")
+      .eq("classroom_id", classroomId)
+      .eq("role", "student");
+
+    if (membersError) {
+      console.error("Error fetching classroom memberships:", membersError);
+      return NextResponse.json({ error: "Failed to fetch classroom members" }, { status: 500 });
+    }
+
+    if (!classroomMemberships || classroomMemberships.length === 0) {
+      console.log("No students found in classroom:", classroomId);
+      return NextResponse.json({
+        submissions: transformedSubmissions,
+        students: []
+      });
+    }
+
+    // Get profiles for these users separately
+    const userIds = classroomMemberships.map(m => m.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, username, full_name, email, avatar_url")
+      .in("id", userIds);
+
+    if (profilesError) {
+      console.error("Error fetching user profiles:", profilesError);
+      // Continue with partial data rather than failing completely
+    }
+
+    // Create a map of user profiles for easy lookup
+    const profilesMap = new Map();
+    if (profiles) {
+      profiles.forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
+    }
+
+    // Initialize student map with all classroom members
     const studentMap = new Map();
     
+    classroomMemberships.forEach((membership: any) => {
+      const studentId = membership.user_id;
+      const profile = profilesMap.get(studentId);
+      
+      // Handle cases where profile might be missing
+      const username = profile?.username || `user_${studentId.slice(-8)}`;
+      const fullName = profile?.full_name || username;
+      const email = profile?.email || "";
+      const avatarUrl = profile?.avatar_url || null;
+      
+      studentMap.set(studentId, {
+        user_id: studentId,
+        username: username,
+        full_name: fullName,
+        email: email,
+        avatar_url: avatarUrl,
+        submissions: [],
+        total_submissions: 0,
+        graded_submissions: 0,
+        pending_submissions: 0,
+        total_points: 0,
+        graded_count: 0
+      });
+    });
+    
+    // Add submission data to existing students
     transformedSubmissions.forEach((submission: any) => {
       const studentId = submission.student_user_id;
-      if (!studentMap.has(studentId)) {
-        studentMap.set(studentId, {
-          user_id: studentId,
-          username: submission.student_name.split(" ")[0], // Simple username extraction
-          full_name: submission.student_name,
-          email: "", // We'd need to fetch this separately if needed
-          avatar_url: null,
-          submissions: [],
-          total_submissions: 0,
-          graded_submissions: 0,
-          pending_submissions: 0,
-          total_points: 0,
-          graded_count: 0
-        });
-      }
-      
       const student = studentMap.get(studentId);
-      student.submissions.push(submission);
-      student.total_submissions++;
       
-      if (submission.status === "graded") {
-        student.graded_submissions++;
-        if (submission.points_awarded !== null) {
-          student.total_points += submission.points_awarded;
-          student.graded_count++;
+      if (student) {
+        student.submissions.push(submission);
+        student.total_submissions++;
+        
+        if (submission.status === "graded") {
+          student.graded_submissions++;
+          if (submission.points_awarded !== null) {
+            student.total_points += submission.points_awarded;
+            student.graded_count++;
+          }
+        } else {
+          student.pending_submissions++;
         }
-      } else {
-        student.pending_submissions++;
       }
     });
 
@@ -150,14 +203,71 @@ export async function GET(
       average_grade: student.graded_count > 0 ? Math.round(student.total_points / student.graded_count) : null
     }));
 
+    // Get all available assessments for this classroom (regardless of submissions)
+    const { data: allAssessments, error: assessmentsError } = await supabase
+      .from("node_assessments")
+      .select(`
+        id,
+        assessment_type,
+        is_graded,
+        map_nodes!inner (
+          id,
+          title,
+          learning_maps!inner (
+            id,
+            title,
+            classroom_maps!inner (
+              classroom_id
+            )
+          )
+        )
+      `)
+      .eq("map_nodes.learning_maps.classroom_maps.classroom_id", classroomId);
+
+    if (assessmentsError) {
+      console.error("Error fetching all assessments:", assessmentsError);
+      // Continue without erroring - we'll just show submitted assessments
+    }
+
+    // Create a complete list of assessments (both submitted and unsubmitted)
+    const allAssessmentNodes = [];
+    if (allAssessments) {
+      allAssessments.forEach((assessment: any) => {
+        const node = assessment.map_nodes;
+        const map = node.learning_maps;
+        const nodeKey = `${map.title}-${node.title}`;
+        
+        // Only add if not already in the list (avoid duplicates)
+        if (!allAssessmentNodes.find(n => n.id === nodeKey)) {
+          allAssessmentNodes.push({
+            id: nodeKey,
+            title: node.title,
+            map_title: map.title,
+            assessment_type: assessment.assessment_type,
+            is_grading_enabled: assessment.is_graded,
+            assessment_id: assessment.id,
+            node_id: node.id
+          });
+        }
+      });
+    }
+
     return NextResponse.json({
       submissions: transformedSubmissions,
-      students: students
+      students: students,
+      all_assessments: allAssessmentNodes
     });
 
   } catch (error) {
     console.error("Error in grading route:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : "No stack trace"
+    });
+    return NextResponse.json({ 
+      error: "Internal server error", 
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 });
   }
 }
 

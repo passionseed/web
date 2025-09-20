@@ -48,48 +48,67 @@ export async function POST(
     // Verify user profile exists (required for foreign key)
     const { data: profileExists, error: profileError } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, username, email")
       .eq("id", user.id)
       .single();
 
     if (profileError || !profileExists) {
       console.error("❌ [Enroll API] User profile not found:", {
         userId: user.id,
-        error: profileError
+        userEmail: user.email,
+        error: profileError,
+        errorCode: profileError?.code,
+        errorMessage: profileError?.message
       });
       return NextResponse.json(
         { 
           success: false,
           error: "User profile not found",
-          message: "User profile must exist to enroll in maps",
-          details: profileError?.message || "Profile not found in database"
+          message: "User profile must exist to enroll in maps. Please complete your profile setup.",
+          details: profileError?.message || "Profile not found in database",
+          userId: user.id
         },
         { status: 400 }
       );
     }
 
+    console.log("✅ [Enroll API] User profile verified:", {
+      userId: user.id,
+      username: profileExists.username,
+      email: profileExists.email
+    });
+
     // Verify the map exists first
     const { data: mapExists, error: mapError } = await supabase
       .from("learning_maps")
-      .select("id")
+      .select("id, title")
       .eq("id", mapId)
       .single();
 
     if (mapError || !mapExists) {
       console.error("❌ [Enroll API] Map not found:", {
         mapId,
-        error: mapError
+        mapIdType: typeof mapId,
+        error: mapError,
+        errorCode: mapError?.code,
+        errorMessage: mapError?.message
       });
       return NextResponse.json(
         { 
           success: false,
           error: "Map not found",
           message: "The specified learning map does not exist",
-          details: mapError?.message || "Map ID not found"
+          details: mapError?.message || "Map ID not found",
+          mapId: mapId
         },
         { status: 404 }
       );
     }
+
+    console.log("✅ [Enroll API] Map verified:", {
+      mapId,
+      mapTitle: mapExists.title
+    });
 
     // Check if user is already enrolled
     const { data: existingEnrollment, error: checkError } = await supabase

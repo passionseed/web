@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 // import { Facebook, Instagram, Github } from "lucide-react";
 import {
@@ -12,8 +12,15 @@ import {
 
 export function LavaFooter() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -49,9 +56,15 @@ export function LavaFooter() {
       });
     }
 
+    let animationId: number;
+    let startTime = Date.now();
+
     function drawLava() {
       if (!canvas || !ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
 
       // Create gradient for lava
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -67,7 +80,7 @@ export function LavaFooter() {
       // Create wavy top
       for (let i = 0; i <= canvas.width; i += 20) {
         const y =
-          canvas.height - 20 + Math.sin(i * 0.01 + Date.now() * 0.001) * 5;
+          canvas.height - 20 + Math.sin(i * 0.01 + elapsed * 0.001) * 5;
         ctx.lineTo(i, y);
       }
 
@@ -103,7 +116,7 @@ export function LavaFooter() {
         ctx.fill();
       });
 
-      requestAnimationFrame(drawLava);
+      animationId = requestAnimationFrame(drawLava);
     }
 
     drawLava();
@@ -113,8 +126,13 @@ export function LavaFooter() {
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [isMounted]);
 
   return (
     <footer className="w-full bg-purple-950 text-white">
@@ -122,6 +140,7 @@ export function LavaFooter() {
         ref={canvasRef}
         className="w-full h-[100px]"
         aria-hidden="true"
+        style={{ opacity: isMounted ? 1 : 0 }}
       ></canvas>
       <div className="container px-4 py-8 md:px-6">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
