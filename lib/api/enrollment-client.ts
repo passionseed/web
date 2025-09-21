@@ -114,7 +114,8 @@ export async function enrollUserInMap(mapId: string): Promise<boolean> {
             console.error("❌ [Enrollment Client] Could not parse error response:", parseErr);
             errorDetails = { 
               message: responseText,
-              rawResponse: responseText
+              rawResponse: responseText,
+              parseError: parseErr instanceof Error ? parseErr.message : String(parseErr)
             };
           }
         } else {
