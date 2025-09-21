@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay \"/Users/bunyasit/Downloads/Claude Noti Sound/Noti$(($RANDOM % 2 + 1)).mp3\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay \"/Users/bunyasit/Downloads/Claude Noti Sound/Noti$(($RANDOM % 2 + 1)).mp3\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay \"/Users/bunyasit/Downloads/Claude Noti Sound/Noti$(($RANDOM % 2 + 1)).mp3\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay \"/Users/bunyasit/Downloads/Claude Noti Sound/Noti$(($RANDOM % 2 + 1)).mp3\""
+          }
+        ]
+      }
+    ]
+  }
+}
