@@ -60,6 +60,8 @@ interface Submission {
   graded_by: string | null;
   status: "ungraded" | "graded";
   is_grading_enabled: boolean;
+  submitted_for_group: boolean;
+  assessment_group_id: string | null;
 }
 
 interface AssignmentNode {
@@ -97,6 +99,11 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
   const [viewMode, setViewMode] = useState<"gradebook" | "analytics">("gradebook");
   const [sortBy, setSortBy] = useState<"name" | "id" | "email">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [selectedMapFilter, setSelectedMapFilter] = useState<string>("all");
+  const [groupMembers, setGroupMembers] = useState<any[]>([]);
+  const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
+  const [fixingGroups, setFixingGroups] = useState(false);
+  const [debuggingGroups, setDebuggingGroups] = useState(false);
   const { toast } = useToast();
 
   // Analytics calculations
@@ -152,7 +159,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
     if (students.length > 0 && allAssessments.length > 0) {
       createGradebookMatrix();
     }
-  }, [students, submissions, allAssessments]);
+  }, [students, submissions, allAssessments, selectedMapFilter]);
 
   const loadGradingData = async () => {
     try {
@@ -181,9 +188,17 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
   };
 
   const createGradebookMatrix = () => {
-    // Use all available assessments instead of just submitted ones
-    const nodes = allAssessments;
+    // Use filtered assessments instead of all assessments
+    const nodes = filteredAssessments;
     setAssignmentNodes(nodes);
+
+    console.log("Creating gradebook matrix:", {
+      studentsCount: students.length,
+      nodesCount: nodes.length,
+      submissionsCount: submissions.length,
+      sampleNode: nodes[0],
+      sampleSubmission: submissions[0]
+    });
 
     // Create matrix: student -> node -> submission
     const matrix: GradebookMatrix = {};
@@ -191,15 +206,16 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
     students.forEach(student => {
       matrix[student.user_id] = {};
       nodes.forEach(node => {
-        // Find submission for this student and node
+        // Find submission for this student and assessment
         const submission = submissions.find(sub => 
           sub.student_user_id === student.user_id && 
-          `${sub.map_title}-${sub.node_title}` === node.id
+          sub.assessment_id === node.assessment_id
         );
         matrix[student.user_id][node.id] = submission;
       });
     });
 
+    console.log("Gradebook matrix created:", matrix);
     setGradebookMatrix(matrix);
   };
 
@@ -226,17 +242,107 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
         setSelectedSubmission(null);
         setShowGradingModal(false);
       } else {
-        throw new Error("Failed to grade submission");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Grading failed:", { 
+          status: response.status, 
+          statusText: response.statusText,
+          errorData 
+        });
+        throw new Error(`Failed to grade submission: ${response.status} ${response.statusText}${errorData.details ? ` - ${errorData.details}` : ''}`);
       }
     } catch (error) {
       console.error("Error grading submission:", error);
       toast({
         title: "Grading Failed",
-        description: "Failed to grade submission",
+        description: error instanceof Error ? error.message : "Failed to grade submission",
         variant: "destructive",
       });
     } finally {
       setGrading(false);
+    }
+  };
+
+  const loadGroupMembers = async (groupId: string) => {
+    try {
+      setLoadingGroupMembers(true);
+      console.log("Loading group members for group:", groupId);
+      const response = await fetch(`/api/classrooms/${classroomId}/grading/group-members?groupId=${groupId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Group members data:", data);
+        setGroupMembers(data.members || []);
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to load group members:", response.status, errorText);
+        setGroupMembers([]);
+      }
+    } catch (error) {
+      console.error("Error loading group members:", error);
+      setGroupMembers([]);
+    } finally {
+      setLoadingGroupMembers(false);
+    }
+  };
+
+  const debugGroupSubmissions = async () => {
+    try {
+      setDebuggingGroups(true);
+      const response = await fetch(`/api/classrooms/${classroomId}/debug-groups`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Debug info:", data);
+        toast({
+          title: "Debug Info",
+          description: `Found ${data.groups?.length || 0} groups and ${data.submissions?.length || 0} submissions`,
+        });
+      } else {
+        const errorData = await response.text();
+        console.error("Debug API Error:", response.status, errorData);
+        throw new Error(`Debug API Error: ${response.status} - ${errorData}`);
+      }
+    } catch (error) {
+      console.error("Error debugging group submissions:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to debug group submissions",
+        variant: "destructive",
+      });
+    } finally {
+      setDebuggingGroups(false);
+    }
+  };
+
+  const fixGroupSubmissions = async () => {
+    try {
+      setFixingGroups(true);
+      const response = await fetch(`/api/classrooms/${classroomId}/debug-groups`, {
+        method: "POST",
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Group Submissions Fixed",
+          description: `Fixed ${data.result?.fixed_submissions || 0} group submissions`,
+        });
+        // Reload grading data to see the changes
+        loadGradingData();
+      } else {
+        // Get the actual error message from the response
+        const errorData = await response.text();
+        console.error("API Error:", response.status, errorData);
+        throw new Error(`API Error: ${response.status} - ${errorData}`);
+      }
+    } catch (error) {
+      console.error("Error fixing group submissions:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fix group submissions",
+        variant: "destructive",
+      });
+    } finally {
+      setFixingGroups(false);
     }
   };
 
@@ -247,8 +353,24 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
       points: submission.points_awarded || 100,
       comments: submission.comments || ""
     });
+    
+    // Load group members if this is a group submission
+    if (submission.submitted_for_group && submission.assessment_group_id) {
+      loadGroupMembers(submission.assessment_group_id);
+    } else {
+      setGroupMembers([]);
+    }
+    
     setShowGradingModal(true);
   };
+
+  // Get unique maps from assessments
+  const availableMaps = Array.from(new Set(allAssessments.map(assessment => assessment.map_title)));
+
+  // Filter assessments by selected map
+  const filteredAssessments = selectedMapFilter === "all" 
+    ? allAssessments 
+    : allAssessments.filter(assessment => assessment.map_title === selectedMapFilter);
 
   const filteredStudents = students
     .filter(student => {
@@ -374,6 +496,23 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
               </div>
             </div>
 
+            {/* Map Filter */}
+            <div className="w-48">
+              <Select value={selectedMapFilter} onValueChange={setSelectedMapFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by map" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Maps</SelectItem>
+                  {availableMaps.map((mapTitle) => (
+                    <SelectItem key={mapTitle} value={mapTitle}>
+                      {mapTitle}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Sorting Controls */}
             <div className="flex gap-2 items-center">
               <Select value={sortBy} onValueChange={(value: "name" | "id" | "email") => setSortBy(value)}>
@@ -413,6 +552,24 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                 <BarChart3 className="h-4 w-4 mr-1" />
                 Analytics
               </Button>
+              <Button
+                variant="outline"
+                onClick={debugGroupSubmissions}
+                disabled={debuggingGroups}
+                size="sm"
+                className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white"
+              >
+                {debuggingGroups ? "Debugging..." : "Debug Groups"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={fixGroupSubmissions}
+                disabled={fixingGroups}
+                size="sm"
+                className="text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-white"
+              >
+                {fixingGroups ? "Fixing..." : "Fix Groups"}
+              </Button>
             </div>
           </div>
 
@@ -450,19 +607,28 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                           <div className="text-xs text-gray-400">{student.email}</div>
                         </div>
                         {/* Grade Cells */}
-                        {assignmentNodes.map((node) => (
-                          <div key={`${student.user_id}-${node.id}`} className="min-w-32 border-r border-gray-700 h-12">
-                            <GradeCell
-                              submission={gradebookMatrix[student.user_id]?.[node.id]}
-                              onClick={() => {
-                                const submission = gradebookMatrix[student.user_id]?.[node.id];
-                                if (submission) {
-                                  handleCellClick(submission);
-                                }
-                              }}
-                            />
-                          </div>
-                        ))}
+                        {assignmentNodes.map((node) => {
+                          const submission = gradebookMatrix[student.user_id]?.[node.id];
+                          return (
+                            <div key={`${student.user_id}-${node.id}`} className="min-w-32 border-r border-gray-700 py-3 relative">
+                              <GradeCell
+                                submission={submission}
+                                onClick={() => {
+                                  if (submission) {
+                                    handleCellClick(submission);
+                                  }
+                                }}
+                              />
+                              {submission?.submitted_for_group && (
+                                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-10">
+                                  <Badge variant="outline" className="px-0.5 py-0 h-2 bg-blue-900 border-blue-600 text-blue-200" style={{ fontSize: '8px' }}>
+                                    {submission.assessment_group_id ? `Group ${submission.assessment_group_id.slice(-1)}` : 'GROUP'}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     ))}
                   </div>
@@ -765,6 +931,48 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                   )}
                 </CardContent>
               </Card>
+
+              {/* Group Information */}
+              {selectedSubmission.submitted_for_group && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Badge variant="secondary">Group Assessment</Badge>
+                      Group Members
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingGroupMembers ? (
+                      <div className="text-center py-4">Loading group members...</div>
+                    ) : groupMembers.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground mb-3">
+                          When you grade this submission, all group members will receive the same grade automatically.
+                        </p>
+                        <div className="space-y-2">
+                          {groupMembers.map((member) => (
+                            <div key={member.user_id} className="flex items-center gap-3 p-2 bg-gray-800 rounded-md">
+                              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                                <span className="text-sm font-bold text-white">
+                                  {member.display_name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="font-medium">{member.display_name}</div>
+                                <div className="text-sm text-muted-foreground">{member.email}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        No group members found
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Grading Form */}
               {selectedSubmission.status === "ungraded" && (

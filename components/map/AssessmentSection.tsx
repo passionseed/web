@@ -12,10 +12,16 @@ import {
   AlertCircle,
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Users,
+  UserCheck,
+  Circle
 } from "lucide-react";
-import { NodeAssessment, QuizQuestion } from "@/types/map";
+import { NodeAssessment, QuizQuestion, AssessmentGroupWithMembers } from "@/types/map";
 import { SubmissionItem } from "./SubmissionItem"; // Assuming component is created
+import { getUserAssessmentGroup, getGroupMembersSubmissionStatus } from "@/lib/supabase/assessment-groups";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AssessmentSectionProps {
   assessment: NodeAssessment;
@@ -95,6 +101,19 @@ export function AssessmentSection({
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
   const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>({});
   const [isUploading, setIsUploading] = useState(false);
+  const [userGroup, setUserGroup] = useState<AssessmentGroupWithMembers | null>(null);
+  const [loadingGroup, setLoadingGroup] = useState(false);
+  const [groupMembersStatus, setGroupMembersStatus] = useState<Array<{
+    user_id: string;
+    full_name: string | null;
+    username: string | null;
+    has_submitted: boolean;
+    submitted_at: string | null;
+  }>>([]);
+  const [groupHasSubmission, setGroupHasSubmission] = useState(false);
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   // Initialize checklist items from assessment metadata
   useEffect(() => {
@@ -106,6 +125,50 @@ export function AssessmentSection({
       setChecklistItems(initialChecklist);
     }
   }, [assessment]);
+
+  // Load user's group if this is a group assessment
+  useEffect(() => {
+    const loadUserGroup = async () => {
+      if (!assessment.is_group_assessment || !user) {
+        setUserGroup(null);
+        setGroupMembersStatus([]);
+        return;
+      }
+
+      setLoadingGroup(true);
+      try {
+        console.log("👥 Loading user's group for assessment:", assessment.id);
+        const group = await getUserAssessmentGroup(assessment.id, user.id);
+        setUserGroup(group);
+        console.log("✅ User group loaded:", group);
+
+        // Load submission status for group members
+        if (group) {
+          console.log("📊 Loading submission status for group members...");
+          const membersStatus = await getGroupMembersSubmissionStatus(assessment.id, group.id);
+          setGroupMembersStatus(membersStatus);
+          
+          // Check if any group member has submitted (for single submission mode)
+          const hasSubmission = membersStatus.some(member => member.has_submitted);
+          setGroupHasSubmission(hasSubmission);
+          
+          console.log("✅ Group members submission status loaded:", membersStatus);
+          console.log("🔍 Group has submission:", hasSubmission);
+        }
+      } catch (error) {
+        console.error("❌ Failed to load user group:", error);
+        toast({
+          title: "Failed to load group information",
+          description: "Could not fetch your group members.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingGroup(false);
+      }
+    };
+
+    loadUserGroup();
+  }, [assessment.id, assessment.is_group_assessment, user, toast]);
 
   // Check if file is required for submission
   const validateSubmission = () => {
@@ -177,6 +240,80 @@ export function AssessmentSection({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Group Members Section */}
+        {assessment.is_group_assessment && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Users className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-medium text-blue-800 mb-2">
+                  Group Assessment
+                </p>
+                <p className="text-sm text-blue-700 mb-3">
+                  This assessment will be completed as a group. Any submission will be shared with all group members.
+                </p>
+                
+                {loadingGroup ? (
+                  <div className="text-sm text-blue-600">
+                    Loading group members...
+                  </div>
+                ) : userGroup ? (
+                  <div>
+                    <p className="text-sm font-medium text-blue-800 mb-2">
+                      Your Group: {userGroup.group_name}
+                    </p>
+                    <div className="space-y-1">
+                      {groupMembersStatus.length > 0 ? (
+                        groupMembersStatus.map((member) => {
+                          const isCurrentUser = member.user_id === user?.id;
+                          return (
+                            <div key={member.user_id} className="flex items-center gap-2 text-sm">
+                              {member.has_submitted ? (
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Circle className="h-3 w-3 text-gray-400" />
+                              )}
+                              <span className={member.has_submitted ? "text-green-700" : "text-blue-700"}>
+                                {member.full_name || member.username || 'Unknown User'}
+                                {isCurrentUser && (
+                                  <span className="text-blue-500 ml-1">(You)</span>
+                                )}
+                                {member.has_submitted && (
+                                  <span className="text-green-600 ml-2 text-xs">
+                                    ✓ Submitted
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        // Fallback to original display if submission status not loaded
+                        userGroup.members.map((member) => (
+                          <div key={member.user_id} className="flex items-center gap-2 text-sm">
+                            <UserCheck className="h-3 w-3 text-blue-600" />
+                            <span className="text-blue-700">
+                              {member.full_name || member.username || 'Unknown User'}
+                              {member.user_id === user?.id && (
+                                <span className="text-blue-500 ml-1">(You)</span>
+                              )}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded p-2">
+                    <AlertTriangle className="h-4 w-4 inline mr-1" />
+                    You are not assigned to a group yet. Contact your instructor.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {canResubmit && (
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-start gap-3">
@@ -194,7 +331,75 @@ export function AssessmentSection({
           </div>
         )}
 
-        {showAssessmentForm && (
+        {/* Single Submission Mode - Already Submitted Warning */}
+        {assessment.is_group_assessment && 
+         assessment.group_submission_mode === 'single_submission' && 
+         groupHasSubmission && (
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-green-800">
+                  Group Assessment Already Submitted
+                </p>
+                <p className="text-sm text-green-700 mt-1">
+                  A member of your group has already submitted this assessment. Since this is set to single submission mode, no additional submissions are needed.
+                </p>
+                {groupMembersStatus.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs text-green-600 font-medium">Submitted by:</p>
+                    {groupMembersStatus
+                      .filter(member => member.has_submitted)
+                      .map(member => (
+                        <p key={member.user_id} className="text-xs text-green-600">
+                          • {member.full_name || member.username || 'Unknown User'}
+                        </p>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Group Assessment - Regular Mode with Group Submission */}
+        {assessment.is_group_assessment && 
+         assessment.group_submission_mode !== 'single_submission' && 
+         groupHasSubmission && 
+         !showAssessmentForm && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-blue-800">
+                  Group Assessment Completed
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  A member of your group has submitted this assessment on behalf of the group. You can now proceed to the next stage.
+                </p>
+                {groupMembersStatus.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs text-blue-600 font-medium">Submitted by:</p>
+                    {groupMembersStatus
+                      .filter(member => member.has_submitted)
+                      .map(member => (
+                        <p key={member.user_id} className="text-xs text-blue-600">
+                          • {member.full_name || member.username || 'Unknown User'}
+                        </p>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showAssessmentForm && 
+         !(assessment.is_group_assessment && 
+           assessment.group_submission_mode === 'single_submission' && 
+           groupHasSubmission) && (
           <div className="space-y-4">
             {assessment.assessment_type === "text_answer" && (
               <div className="space-y-3">

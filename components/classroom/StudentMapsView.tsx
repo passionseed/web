@@ -29,8 +29,10 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { getClassroomMaps } from "@/lib/supabase/classrooms";
+import { getClassroomMaps, getClassroomExclusiveMaps } from "@/lib/supabase/classrooms";
 import { getClassroomTeams, getClassroomTeamMaps } from "@/lib/supabase/teams";
+import { ClassroomExclusiveMap } from "@/types/classroom";
+import { createClient } from "@/utils/supabase/client";
 
 interface LinkedMap {
   link_id: string;
@@ -64,9 +66,64 @@ interface StudentMapsViewProps {
   classroomId: string;
 }
 
+// Fallback function to get classroom exclusive maps using RPC
+const getClassroomExclusiveMapsDirectly = async (classroomId: string): Promise<ClassroomExclusiveMap[]> => {
+  const supabase = createClient();
+  
+  try {
+    // Try the RPC function first (same as main function)
+    const { data, error } = await supabase.rpc("get_classroom_exclusive_maps", {
+      classroom_uuid: classroomId,
+    });
+
+    if (error) {
+      console.warn("RPC function not available in fallback:", error.message);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.warn("RPC fallback failed, trying direct query...");
+    
+    // Fallback to direct query as last resort
+    try {
+      const { data: maps, error: queryError } = await supabase
+        .from("learning_maps")
+        .select(`
+          id,
+          title,
+          description,
+          creator_id,
+          parent_classroom_id,
+          map_type,
+          created_at,
+          updated_at,
+          (SELECT COUNT(*) FROM map_nodes WHERE map_id = learning_maps.id) as node_count
+        `)
+        .eq("map_type", "classroom_exclusive")
+        .eq("parent_classroom_id", classroomId)
+        .order("created_at", { ascending: false });
+
+      if (queryError) {
+        console.error("Failed to fetch classroom exclusive maps with direct query:", queryError);
+        return [];
+      }
+
+      return (maps || []).map(map => ({
+        ...map,
+        features: [] // Will be populated separately if needed
+      }));
+    } catch (directError) {
+      console.error("Error in direct query fallback:", directError);
+      return [];
+    }
+  }
+};
+
 export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
   const [maps, setMaps] = useState<LinkedMap[] | null>(null);
   const [teamMaps, setTeamMaps] = useState<TeamMap[] | null>(null);
+  const [classroomMaps, setClassroomMaps] = useState<ClassroomExclusiveMap[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState<any[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
@@ -78,12 +135,31 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
     const load = async () => {
       setLoading(true);
       try {
-        const [m, tm] = await Promise.all([
+        console.log("🔍 Debug: getClassroomExclusiveMaps function type:", typeof getClassroomExclusiveMaps);
+        
+        // Check if function is available, if not, use direct query fallback
+        let classroomMapsPromise;
+        if (typeof getClassroomExclusiveMaps === 'function') {
+          classroomMapsPromise = getClassroomExclusiveMaps(classroomId);
+        } else {
+          console.warn("⚠️ getClassroomExclusiveMaps not available, using direct query fallback");
+          classroomMapsPromise = getClassroomExclusiveMapsDirectly(classroomId);
+        }
+
+        const [m, tm, cm] = await Promise.all([
           getClassroomMaps(classroomId),
           getClassroomTeamMaps(classroomId),
+          classroomMapsPromise,
         ]);
         setMaps(m || []);
         setTeamMaps(tm || []);
+        setClassroomMaps(cm || []);
+        console.log("📚 Loaded maps for student:", {
+          linkedMaps: m?.length || 0,
+          teamMaps: tm?.length || 0,
+          classroomMaps: cm?.length || 0
+        });
+        console.log("🔍 Classroom maps details:", cm);
       } catch (err) {
         console.error("Failed to load classroom maps for student view", err);
         toast({
@@ -93,6 +169,7 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
         });
         setMaps([]);
         setTeamMaps([]);
+        setClassroomMaps([]);
       } finally {
         setLoading(false);
       }
@@ -141,7 +218,7 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
     );
   }
 
-  if ((!maps || maps.length === 0) && (!teamMaps || teamMaps.length === 0)) {
+  if ((!maps || maps.length === 0) && (!teamMaps || teamMaps.length === 0) && (!classroomMaps || classroomMaps.length === 0)) {
     return (
       <div className="text-center py-16">
         <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent max-w-2xl mx-auto">
@@ -351,6 +428,80 @@ export default function StudentMapsView({ classroomId }: StudentMapsViewProps) {
                         Open Team Map
                       </Button>
                     </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Classroom Exclusive Maps Section */}
+      {classroomMaps && classroomMaps.length > 0 && (
+        <>
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-full">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-700">
+                Classroom Learning Maps
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Exclusive Classroom Content
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              These maps are created specifically for this classroom. Work through them 
+              to complete your assignments and assessments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {classroomMaps.map((cm) => (
+              <Card
+                key={cm.id}
+                className="group relative overflow-hidden border-2 hover:border-blue-300 transition-all duration-200 hover:shadow-lg bg-blue-50/30"
+              >
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+
+                <CardHeader className="relative">
+                  <div className="flex items-start justify-between mb-2">
+                    <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
+                      <Users className="h-3 w-3 mr-1" />
+                      {cm.node_count} nodes
+                    </Badge>
+                    <div className="text-xs text-muted-foreground flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {new Date(cm.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  <CardTitle className="text-xl font-bold leading-tight group-hover:text-blue-600 transition-colors">
+                    {cm.title}
+                  </CardTitle>
+
+                  {cm.description && (
+                    <CardDescription className="text-sm leading-relaxed">
+                      {cm.description}
+                    </CardDescription>
+                  )}
+                </CardHeader>
+
+                <CardContent className="relative pt-0">
+                  <div className="flex items-center justify-between">
+                    <Link href={`/map/${cm.id}`}>
+                      <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                        <BookOpen className="h-4 w-4 mr-1" />
+                        Start Learning
+                      </Button>
+                    </Link>
+                    
+                    {cm.features && cm.features.length > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        {cm.features.length} features
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>
