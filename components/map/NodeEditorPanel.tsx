@@ -120,15 +120,23 @@ export function NodeEditorPanel({
       (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { value } = e.target;
 
-        // For text nodes title field, use local state for immediate UI updates
+        // For text nodes title field, use local state for immediate UI updates AND update the map
         if (isTextNode && field === "title") {
           setLocalText(value);
+          // Also update the map in real-time
+          if (selectedNode) {
+            onNodeDataChange(selectedNode.id, { title: value });
+          }
           return;
         }
 
-        // For regular nodes title field, use local state for immediate UI updates
+        // For regular nodes title field, use local state for immediate UI updates AND update the map
         if (!isTextNode && field === "title") {
           setLocalTitle(value);
+          // Also update the map in real-time
+          if (selectedNode) {
+            onNodeDataChange(selectedNode.id, { title: value });
+          }
           return;
         }
 

@@ -132,6 +132,75 @@ export interface AssignmentGroupWithProgress extends AssignmentGroup {
   }[];
 }
 
+// ========================================
+// CLASSROOM-EXCLUSIVE MAPS TYPES
+// ========================================
+
+export type MapType = 'public' | 'private' | 'classroom_exclusive';
+
+export type ClassroomMapFeatureType = 
+  | 'live_collaboration'
+  | 'auto_assessment'
+  | 'peer_review'
+  | 'progress_tracking'
+  | 'time_boxed_access'
+  | 'custom_branding'
+  | 'advanced_analytics';
+
+export interface ClassroomMapFeature {
+  id: string;
+  map_id: string;
+  feature_type: ClassroomMapFeatureType;
+  feature_config: Record<string, any>;
+  is_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+export interface ClassroomExclusiveMap {
+  id: string;
+  title: string;
+  description: string | null;
+  creator_id: string;
+  parent_classroom_id: string;
+  map_type: 'classroom_exclusive';
+  created_at: string;
+  updated_at: string;
+  node_count: number;
+  features: ClassroomMapFeature[];
+}
+
+export interface CreateClassroomMapRequest {
+  title: string;
+  description?: string;
+  initial_features?: {
+    feature_type: ClassroomMapFeatureType;
+    feature_config: Record<string, any>;
+  }[];
+}
+
+export interface UpdateClassroomMapFeatureRequest {
+  feature_type: ClassroomMapFeatureType;
+  feature_config: Record<string, any>;
+  is_enabled: boolean;
+}
+
+// Extended learning map interface that includes classroom-exclusive properties
+export interface ExtendedLearningMap {
+  id: string;
+  title: string;
+  description: string | null;
+  creator_id: string;
+  map_type: MapType;
+  parent_classroom_id: string | null;
+  visibility: string;
+  created_at: string;
+  updated_at: string;
+  node_count: number;
+  features?: ClassroomMapFeature[];
+}
+
 export interface GroupGradingSummary {
   group_id: string;
   group_name: string;

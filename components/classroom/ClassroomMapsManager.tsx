@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -28,6 +28,9 @@ import {
   GitBranch,
   Eye,
   Edit,
+  Trash,
+  Star,
+  Zap,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -38,8 +41,14 @@ import {
   getClassroomMaps,
   unlinkMapFromClassroom,
   reorderClassroomMaps,
+  getClassroomExclusiveMaps, 
+  deleteClassroomExclusiveMap,
+  convertMapToClassroomExclusive 
 } from "@/lib/supabase/classrooms";
 import { getClassroomTeams, getClassroomTeamMaps } from "@/lib/supabase/teams";
+import { CreateClassroomMapModal } from "./CreateClassroomMapModal";
+import { ClassroomExclusiveMap } from "@/types/classroom";
+import { createClient } from "@/utils/supabase/client";
 
 interface LinkedMap {
   link_id: string;
@@ -61,6 +70,60 @@ interface ClassroomMapsManagerProps {
   onMapsUpdated?: () => void;
 }
 
+// Fallback function to get classroom exclusive maps using RPC
+const getClassroomExclusiveMapsDirectly = async (classroomId: string): Promise<ClassroomExclusiveMap[]> => {
+  const supabase = createClient();
+  
+  try {
+    // Try the RPC function first (same as main function)
+    const { data, error } = await supabase.rpc("get_classroom_exclusive_maps", {
+      classroom_uuid: classroomId,
+    });
+
+    if (error) {
+      console.warn("RPC function not available in ClassroomMapsManager fallback:", error.message);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.warn("RPC fallback failed in ClassroomMapsManager, trying direct query...");
+    
+    // Fallback to direct query as last resort
+    try {
+      const { data: maps, error: queryError } = await supabase
+        .from("learning_maps")
+        .select(`
+          id,
+          title,
+          description,
+          creator_id,
+          parent_classroom_id,
+          map_type,
+          created_at,
+          updated_at,
+          (SELECT COUNT(*) FROM map_nodes WHERE map_id = learning_maps.id) as node_count
+        `)
+        .eq("map_type", "classroom_exclusive")
+        .eq("parent_classroom_id", classroomId)
+        .order("created_at", { ascending: false });
+
+      if (queryError) {
+        console.error("Failed to fetch classroom exclusive maps with direct query in ClassroomMapsManager:", queryError);
+        return [];
+      }
+
+      return (maps || []).map(map => ({
+        ...map,
+        features: [] // Will be populated separately if needed
+      }));
+    } catch (directError) {
+      console.error("Error in direct query fallback in ClassroomMapsManager:", directError);
+      return [];
+    }
+  }
+};
+
 export function ClassroomMapsManager({
   classroomId,
   canManage = false,
@@ -69,16 +132,19 @@ export function ClassroomMapsManager({
 }: ClassroomMapsManagerProps) {
   const [linkedMaps, setLinkedMaps] = useState<LinkedMap[]>([]);
   const [teamForkedMaps, setTeamForkedMaps] = useState<any[]>([]);
+  const [classroomExclusiveMaps, setClassroomExclusiveMaps] = useState<ClassroomExclusiveMap[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [teamMapsLoading, setTeamMapsLoading] = useState(true);
+  const [classroomMapsLoading, setClassroomMapsLoading] = useState(true);
   const [unlinkingMapId, setUnlinkingMapId] = useState<string>("");
+  const [deletingMapId, setDeletingMapId] = useState<string>("");
   const [teams, setTeams] = useState<any[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
   const [forkingMapId, setForkingMapId] = useState<string>("");
   const router = useRouter();
   const { toast } = useToast();
 
-  const loadLinkedMaps = async () => {
+  const loadLinkedMaps = useCallback(async () => {
     setIsLoading(true);
     try {
       const maps = await getClassroomMaps(classroomId);
@@ -93,9 +159,9 @@ export function ClassroomMapsManager({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [classroomId, toast]);
 
-  const loadTeamForkedMaps = async () => {
+  const loadTeamForkedMaps = useCallback(async () => {
     console.log("🔄 ClassroomMapsManager: Loading team forked maps for classroom:", classroomId);
     setTeamMapsLoading(true);
     try {
@@ -112,12 +178,44 @@ export function ClassroomMapsManager({
     } finally {
       setTeamMapsLoading(false);
     }
-  };
+  }, [classroomId, toast]);
+
+  const loadClassroomExclusiveMaps = useCallback(async () => {
+    console.log("🔄 ClassroomMapsManager: Loading classroom-exclusive maps for classroom:", classroomId);
+    console.log("🔍 Debug: getClassroomExclusiveMaps function type:", typeof getClassroomExclusiveMaps);
+    
+    if (typeof getClassroomExclusiveMaps !== 'function') {
+      console.warn("⚠️ getClassroomExclusiveMaps is not a function, using fallback:", getClassroomExclusiveMaps);
+    }
+    
+    setClassroomMapsLoading(true);
+    try {
+      // Use fallback if main function is not available
+      let exclusiveMaps;
+      if (typeof getClassroomExclusiveMaps === 'function') {
+        exclusiveMaps = await getClassroomExclusiveMaps(classroomId);
+      } else {
+        exclusiveMaps = await getClassroomExclusiveMapsDirectly(classroomId);
+      }
+      console.log("✅ ClassroomMapsManager: Received classroom-exclusive maps:", exclusiveMaps);
+      setClassroomExclusiveMaps(exclusiveMaps);
+    } catch (error) {
+      console.error("❌ ClassroomMapsManager: Failed to load classroom-exclusive maps:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load classroom-exclusive maps",
+        variant: "destructive",
+      });
+    } finally {
+      setClassroomMapsLoading(false);
+    }
+  }, [classroomId, toast]);
 
   useEffect(() => {
     loadLinkedMaps();
     loadTeamForkedMaps();
-  }, [classroomId]);
+    loadClassroomExclusiveMaps();
+  }, [loadLinkedMaps, loadTeamForkedMaps, loadClassroomExclusiveMaps]);
 
   useEffect(() => {
     const loadTeams = async () => {
@@ -165,7 +263,37 @@ export function ClassroomMapsManager({
     }
   };
 
-  if (isLoading) {
+  const handleDeleteClassroomMap = async (mapId: string, mapTitle: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete the classroom map "${mapTitle}"? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingMapId(mapId);
+    try {
+      await deleteClassroomExclusiveMap(mapId);
+      toast({
+        title: "Success",
+        description: `Classroom map "${mapTitle}" has been deleted`,
+      });
+      loadClassroomExclusiveMaps(); // Reload the list
+    } catch (error) {
+      console.error("Failed to delete classroom map:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to delete classroom map",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingMapId("");
+    }
+  };
+
+  if (isLoading || classroomMapsLoading) {
     return (
       <Card>
         <CardHeader>
@@ -433,6 +561,178 @@ export function ClassroomMapsManager({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    {/* Classroom-Exclusive Maps Section */}
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center space-x-2">
+              <Star className="h-5 w-5 text-blue-600" />
+              <span>Classroom-Exclusive Maps</span>
+              <Badge variant="secondary">{classroomExclusiveMaps.length}</Badge>
+            </CardTitle>
+            <CardDescription>
+              Special maps created exclusively for this classroom with advanced features
+            </CardDescription>
+          </div>
+          {canManage && (
+            <CreateClassroomMapModal
+              classroomId={classroomId}
+              onMapCreated={loadClassroomExclusiveMaps}
+            />
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {classroomMapsLoading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-4 border rounded-lg"
+              >
+                <Skeleton className="h-8 w-8" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-48 mb-2" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-8 w-8" />
+              </div>
+            ))}
+          </div>
+        ) : classroomExclusiveMaps.length === 0 ? (
+          <div className="text-center py-12">
+            <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Classroom Maps Yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Create special maps exclusively for this classroom with advanced features like live collaboration and auto-assessment
+            </p>
+            {canManage && (
+              <CreateClassroomMapModal
+                classroomId={classroomId}
+                onMapCreated={loadClassroomExclusiveMaps}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {classroomExclusiveMaps.map((map) => (
+              <div
+                key={map.id}
+                className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                {/* Map Icon with Special Indicator */}
+                <div className="flex-shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center relative">
+                    <BookOpen className="h-5 w-5 text-blue-500" />
+                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Star className="h-2 w-2 text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Map Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <h4 className="font-medium text-sm truncate">
+                      <Link
+                        href={`/map/${map.id}/edit`}
+                        className="hover:underline"
+                      >
+                        {map.title}
+                      </Link>
+                    </h4>
+                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      Classroom Exclusive
+                    </Badge>
+                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                      <Users className="h-3 w-3" />
+                      <span>{map.node_count} nodes</span>
+                    </div>
+                  </div>
+
+                  {map.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
+                      {map.description}
+                    </p>
+                  )}
+
+                  {/* Feature Badges */}
+                  {map.features && map.features.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      {map.features.slice(0, 3).map((feature) => (
+                        <Badge
+                          key={feature.id}
+                          variant="secondary"
+                          className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200"
+                        >
+                          <Zap className="h-2 w-2 mr-1" />
+                          {feature.feature_type.replace("_", " ")}
+                        </Badge>
+                      ))}
+                      {map.features.length > 3 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{map.features.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>
+                      Created {new Date(map.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center space-x-2">
+                  {/* View link */}
+                  <Link href={`/map/${map.id}`}>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                  </Link>
+
+                  {/* Edit link */}
+                  <Link href={`/map/${map.id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  </Link>
+
+                  {/* Management dropdown - only for instructors */}
+                  {canManage && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClassroomMap(map.id, map.title)}
+                          disabled={deletingMapId === map.id}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash className="h-4 w-4 mr-2" />
+                          Delete Map
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
             ))}

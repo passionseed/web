@@ -126,6 +126,13 @@ export interface NodeAssessment {
   quiz_questions?: QuizQuestion[]; // Optional relation for quizzes
   points_possible?: number | null;
   is_graded?: boolean;
+  // Group assessment fields
+  is_group_assessment?: boolean;
+  group_formation_method?: GroupFormationMethod;
+  group_submission_mode?: GroupSubmissionMode;
+  target_group_size?: number;
+  allow_uneven_groups?: boolean;
+  groups_config?: Record<string, any>;
 }
 
 export interface QuizQuestion {
@@ -163,6 +170,9 @@ export interface AssessmentSubmission {
   quiz_answers: Record<string, string> | null; // jsonb, e.g., {"question_id": "A"}
   submitted_at: string; // timestamp with time zone
   metadata?: Record<string, any> | null; // optional extensible metadata (e.g., checklist completion)
+  // Group assessment fields
+  assessment_group_id?: string | null; // uuid reference to assessment_groups
+  submitted_for_group?: boolean; // whether this submission is for the entire group
 }
 
 export type Grade = "pass" | "fail";
@@ -190,4 +200,89 @@ export interface NodeLeaderboard {
   grade_rating: number | null;
   completion_speed_seconds: number | null; // bigint
   ranked_at: string; // timestamp with time zone
+}
+
+// ========================================
+// ASSESSMENT GROUPS TYPES
+// ========================================
+
+export type GroupFormationMethod = 'manual' | 'shuffle';
+export type GroupSubmissionMode = 'all_members' | 'single_submission';
+
+export interface AssessmentGroupSettings {
+  is_group_assessment: boolean;
+  group_formation_method: GroupFormationMethod;
+  group_submission_mode: GroupSubmissionMode;
+  target_group_size: number;
+  allow_uneven_groups: boolean;
+  groups_config: Record<string, any>;
+}
+
+export interface AssessmentGroup {
+  id: string;
+  assessment_id: string;
+  group_name: string;
+  group_number: number;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface AssessmentGroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  assigned_at: string;
+  assigned_by: string | null;
+}
+
+export interface AssessmentGroupWithMembers extends AssessmentGroup {
+  members: Array<{
+    user_id: string;
+    full_name: string | null;
+    username: string | null;
+    assigned_at: string;
+  }>;
+}
+
+export interface GroupSubmissionData {
+  assessment_group_id: string;
+  submitted_for_group: boolean;
+}
+
+// Extended NodeAssessment interface with group settings
+export interface NodeAssessmentWithGroups extends NodeAssessment {
+  is_group_assessment: boolean;
+  group_formation_method: GroupFormationMethod;
+  group_submission_mode: GroupSubmissionMode;
+  target_group_size: number;
+  allow_uneven_groups: boolean;
+  groups_config: Record<string, any>;
+  groups?: AssessmentGroupWithMembers[];
+}
+
+// Extended AssessmentSubmission interface with group data
+export interface AssessmentSubmissionWithGroup extends AssessmentSubmission {
+  assessment_group_id: string | null;
+  submitted_for_group: boolean;
+}
+
+// Request/Response types for API
+export interface CreateAssessmentGroupsRequest {
+  assessment_id: string;
+  target_group_size: number;
+  allow_uneven_groups: boolean;
+}
+
+export interface UpdateAssessmentGroupsRequest {
+  assessment_id: string;
+  groups: Array<{
+    group_name: string;
+    member_ids: string[];
+  }>;
+}
+
+export interface AssessmentGroupsResponse {
+  groups: AssessmentGroupWithMembers[];
+  total_students: number;
+  total_groups: number;
 }
