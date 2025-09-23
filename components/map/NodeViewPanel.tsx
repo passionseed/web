@@ -111,10 +111,23 @@ export function NodeViewPanel({
   // - Student can resubmit (failed previous attempt)
   // - Student has started but hasn't submitted yet and hasn't passed
   // - Student is in progress state
-  const showAssessmentForm =
-    canResubmit ||
-    (hasStarted && !isSubmittedAndPending && !isPassed) ||
-    isInProgress;
+  // - BUT: For group assessments, if student is in "submitted" state due to group submission,
+  //   they should NOT see the form (they should be able to proceed)
+  const showAssessmentForm = (() => {
+    // Basic conditions for showing form
+    const basicConditions = 
+      canResubmit ||
+      (hasStarted && !isSubmittedAndPending && !isPassed) ||
+      isInProgress;
+    
+    // For group assessments with submitted status, don't show form if they have submissions
+    // (this means they got auto-submissions from group member)
+    if (assessment?.is_group_assessment && isSubmittedAndPending && submissionsWithGrades.length > 0) {
+      return false; // Don't show form, let them proceed
+    }
+    
+    return basicConditions;
+  })();
 
   useEffect(() => {
     const getUser = async () => {

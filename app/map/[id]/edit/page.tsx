@@ -31,7 +31,7 @@ import {
   BatchMapUpdate,
 } from "@/lib/supabase/maps";
 import { MapCategory } from "@/types/map";
-import { Loader2, Trash2, ArrowLeft, RefreshCw, Save } from "lucide-react";
+import { Loader2, Trash2, ArrowLeft, RefreshCw, Save, FileDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -57,10 +57,23 @@ import { RawDataView } from "@/components/map/RawDataView";
 import { ImageUpload } from "@/components/map/ImageUpload";
 
 export default function EditMapPage() {
+  console.log("🚀🚀🚀 EDITMAP COMPONENT MOUNTING - THIS SHOULD ALWAYS APPEAR 🚀🚀🚀");
+  
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
   const mapId = params.id as string;
+  
+  // Emergency fallback - add a simple button outside all logic
+  if (typeof window !== 'undefined') {
+    console.log("💻 Client-side rendering confirmed");
+  }
+  
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const [initialMap, setInitialMap] = useState<FullLearningMap | null>(null);
   const [map, setMap] = useState<FullLearningMap | null>(null);
@@ -69,19 +82,30 @@ export default function EditMapPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRefreshing, startRefreshTransition] = useTransition();
   const [isSavingAll, setIsSavingAll] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
 
   const fetchMap = useCallback(async () => {
+    console.log("📡 fetchMap called for mapId:", mapId);
     try {
       const fetchedMap = await getMapWithNodes(mapId);
+      console.log("📥 fetchedMap result:", !!fetchedMap);
       if (fetchedMap) {
         setInitialMap(JSON.parse(JSON.stringify(fetchedMap))); // Deep copy for initial state
         setMap(fetchedMap);
+        console.log("✅ Map data set successfully");
+        // Initialize cover image preview from metadata
+        if (fetchedMap.metadata?.coverImage) {
+          setCoverImagePreview(fetchedMap.metadata.coverImage);
+        }
       } else {
+        console.log("❌ Map not found");
         toast({ title: "Map not found", variant: "destructive" });
         router.push("/map");
       }
     } catch (error) {
-      console.error(error);
+      console.error("❌ fetchMap error:", error);
       toast({
         title: "Error",
         description: "Failed to load map data.",
@@ -89,6 +113,7 @@ export default function EditMapPage() {
       });
     } finally {
       setIsLoading(false);
+      console.log("🏁 fetchMap completed, isLoading set to false");
     }
   }, [mapId, router, toast]);
 
@@ -194,6 +219,7 @@ export default function EditMapPage() {
     console.log("📊 Initial map state:", JSON.stringify(initialMap, null, 2));
 
     setIsSavingAll(true);
+    let saveSuccessful = false;
     try {
       const batchUpdate = generateBatchUpdate();
 
@@ -273,6 +299,8 @@ export default function EditMapPage() {
         title: "All Changes Saved Successfully",
         description: "Your map has been updated and refreshed.",
       });
+
+      saveSuccessful = true;
     } catch (error) {
       console.error("❌ Batch save failed:", error);
       console.error("❌ Error details:", {
@@ -312,10 +340,13 @@ export default function EditMapPage() {
 
       // Don't reset the saving state immediately to prevent rapid retry attempts
       setTimeout(() => setIsSavingAll(false), 2000);
-      return;
+    } finally {
+      // For successful saves, clear the saving state immediately
+      // For errors, the setTimeout above will handle it
+      if (saveSuccessful) {
+        setIsSavingAll(false);
+      }
     }
-
-    setIsSavingAll(false);
   };
 
   // Generate batch update object from differences
@@ -678,6 +709,13 @@ export default function EditMapPage() {
             // Add grading fields
             points_possible: currentAssessment.points_possible,
             is_graded: currentAssessment.is_graded,
+            // Add group assessment fields
+            is_group_assessment: currentAssessment.is_group_assessment,
+            group_formation_method: currentAssessment.group_formation_method,
+            group_submission_mode: currentAssessment.group_submission_mode,
+            target_group_size: currentAssessment.target_group_size,
+            allow_uneven_groups: currentAssessment.allow_uneven_groups,
+            groups_config: currentAssessment.groups_config,
             // Add metadata for checklist assessments
             ...(currentAssessment.metadata && {
               metadata: currentAssessment.metadata,
@@ -720,7 +758,7 @@ export default function EditMapPage() {
           return;
         }
 
-        // Updated assessment (type, metadata, or grading fields)
+        // Updated assessment (type, metadata, grading fields, or group settings)
         if (
           initialAssessment &&
           currentAssessment &&
@@ -728,9 +766,14 @@ export default function EditMapPage() {
             currentAssessment.assessment_type ||
             JSON.stringify(initialAssessment.metadata) !==
               JSON.stringify(currentAssessment.metadata) ||
-            initialAssessment.points_possible !==
-              currentAssessment.points_possible ||
-            initialAssessment.is_graded !== currentAssessment.is_graded)
+            initialAssessment.points_possible !== currentAssessment.points_possible ||
+            initialAssessment.is_graded !== currentAssessment.is_graded ||
+            initialAssessment.is_group_assessment !== currentAssessment.is_group_assessment ||
+            initialAssessment.group_formation_method !== currentAssessment.group_formation_method ||
+            initialAssessment.group_submission_mode !== currentAssessment.group_submission_mode ||
+            initialAssessment.target_group_size !== currentAssessment.target_group_size ||
+            initialAssessment.allow_uneven_groups !== currentAssessment.allow_uneven_groups ||
+            JSON.stringify(initialAssessment.groups_config) !== JSON.stringify(currentAssessment.groups_config))
         ) {
           const assessmentToUpdate = {
             id: initialAssessment.id,
@@ -738,6 +781,13 @@ export default function EditMapPage() {
             // Add grading fields
             points_possible: currentAssessment.points_possible,
             is_graded: currentAssessment.is_graded,
+            // Add group assessment fields
+            is_group_assessment: currentAssessment.is_group_assessment,
+            group_formation_method: currentAssessment.group_formation_method,
+            group_submission_mode: currentAssessment.group_submission_mode,
+            target_group_size: currentAssessment.target_group_size,
+            allow_uneven_groups: currentAssessment.allow_uneven_groups,
+            groups_config: currentAssessment.groups_config,
             // Add metadata for checklist assessments
             ...(currentAssessment.metadata && {
               metadata: currentAssessment.metadata,
@@ -875,16 +925,141 @@ export default function EditMapPage() {
     }
   };
 
+  const handleExportAsJson = async () => {
+    console.log("🎬 handleExportAsJson called");
+    if (!map) {
+      console.log("❌ No map data for export");
+      toast({
+        title: "Export Failed",
+        description: "No map data available to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      // Simple export function inline to avoid import issues
+      const exportData = {
+        map: {
+          title: map.title,
+          description: map.description || "",
+          difficulty: map.difficulty || 1,
+          estimatedHours: Math.max(1, Math.round((map.map_nodes?.length || 1) * 30 / 60)),
+          visibility: map.visibility || "public",
+          metadata: {
+            tags: map.metadata?.tags || [],
+            category: map.category || "custom",
+            ...map.metadata
+          }
+        },
+        nodes: map.map_nodes?.map((node, index) => ({
+          id: node.id,
+          title: node.title,
+          description: node.instructions || "",
+          position: node.metadata?.position || {
+            x: 100 + (index % 3) * 200,
+            y: 100 + Math.floor(index / 3) * 150
+          },
+          difficulty: node.difficulty || 1,
+          estimatedMinutes: 30,
+          prerequisites: [],
+          content: {
+            type: "lesson",
+            text: node.instructions || "No content available.",
+            codeBlocks: [],
+            resources: []
+          },
+          assessments: node.node_assessments?.map(assessment => ({
+            type: assessment.assessment_type,
+            isGraded: assessment.is_graded || false,
+            pointsPossible: assessment.points_possible || 10
+          })) || []
+        })) || [],
+        connections: map.map_nodes?.flatMap(node => 
+          node.node_paths_source?.map(path => ({
+            from: path.source_node_id,
+            to: path.destination_node_id,
+            type: "prerequisite"
+          })) || []
+        ) || []
+      };
+
+      // Download the JSON file
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${map.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_export.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Export Successful",
+        description: `"${map.title}" has been exported as JSON.`,
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "Failed to export map.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  console.log("🔍 Render check - isLoading:", isLoading, "map:", !!map, "initialMap:", !!initialMap, "isMounted:", isMounted);
+  
+  // EMERGENCY: Client-side only test button to avoid hydration mismatch
+  const emergencyButton = isMounted ? (
+    <div style={{ position: 'fixed', top: '100px', right: '20px', zIndex: 9999, background: 'red', color: 'white', padding: '10px' }}>
+      EMERGENCY EXPORT BUTTON - Component Mounted!
+    </div>
+  ) : null;
+  
   if (isLoading) {
-    return <Loading />;
+    console.log("⏳ Showing loading component");
+    return (
+      <>
+        {emergencyButton}
+        <Loading />
+      </>
+    );
   }
 
   if (!map || !initialMap) {
-    return null;
+    console.log("❌ No map data, rendering minimal UI with export button");
+    return (
+      <>
+        {emergencyButton}
+        <div className="container py-8">
+          <div className="flex justify-between items-center">
+            <div>No map data available</div>
+            {isMounted && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={true}
+              >
+                Export as JSON (No Data)
+              </Button>
+            )}
+          </div>
+        </div>
+      </>
+    );
   }
+  
+  console.log("✅ Rendering main component");
 
   return (
     <div className="flex flex-col h-screen bg-background">
+      {emergencyButton}
       {/* Top Navigation Bar */}
       <div className="flex-none border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
         <div className="container max-w-none px-6 py-4">
@@ -1051,7 +1226,53 @@ export default function EditMapPage() {
                         </div>
 
                         <div className="space-y-2 lg:col-span-2">
-                          <Label htmlFor="description">Description</Label>
+                          <div className="flex justify-between items-center">
+                            <Label htmlFor="description">Description</Label>
+                            <Button
+                              type="button"
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                // Simple inline export
+                                if (map) {
+                                  const exportData = {
+                                    map: {
+                                      title: map.title,
+                                      description: map.description || "",
+                                      difficulty: map.difficulty || 1,
+                                      estimatedHours: 2,
+                                      visibility: map.visibility || "public",
+                                      metadata: { tags: [], category: map.category || "custom" }
+                                    },
+                                    nodes: map.map_nodes?.map((node, i) => ({
+                                      id: node.id,
+                                      title: node.title,
+                                      description: node.instructions || "",
+                                      position: { x: 100 + i * 200, y: 100 },
+                                      difficulty: 1,
+                                      estimatedMinutes: 30,
+                                      prerequisites: [],
+                                      content: { type: "lesson", text: node.instructions || "", codeBlocks: [], resources: [] },
+                                      assessments: []
+                                    })) || [],
+                                    connections: []
+                                  };
+                                  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+                                  const url = URL.createObjectURL(blob);
+                                  const link = document.createElement("a");
+                                  link.href = url;
+                                  link.download = `${map.title.replace(/[^a-z0-9]/gi, "_")}_export.json`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  URL.revokeObjectURL(url);
+                                  toast({ title: "Exported!", description: "Map exported as JSON" });
+                                }
+                              }}
+                            >
+                              📤 Export JSON
+                            </Button>
+                          </div>
                           <Textarea
                             id="description"
                             value={map.description || ""}
@@ -1131,41 +1352,56 @@ export default function EditMapPage() {
                       </div>
 
                       <div className="flex justify-between items-center pt-6 border-t">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                        {(() => { console.log("🎯 Rendering button section"); return null; })()}
+                        <div className="flex gap-2">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                type="button"
+                                disabled={isDeleting}
+                              >
+                                {isDeleting ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                )}
+                                Delete Map
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Are you absolutely sure?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will
+                                  permanently delete the learning map "{map.title}
+                                  " and all of its associated data including
+                                  nodes, paths, content, and student progress.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete}>
+                                  Delete Permanently
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+
+                          {(() => { console.log("📤 Rendering export button"); return null; })()}
+                          {isMounted && (
                             <Button
-                              variant="destructive"
                               type="button"
-                              disabled={isDeleting}
+                              variant="outline"
+                              onClick={handleExportAsJson}
+                              disabled={isExporting || isSubmitting || !map}
                             >
-                              {isDeleting ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="mr-2 h-4 w-4" />
-                              )}
-                              Delete Map
+                              {!map ? "Loading..." : "Export as JSON"}
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Are you absolutely sure?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will
-                                permanently delete the learning map "{map.title}
-                                " and all of its associated data including
-                                nodes, paths, content, and student progress.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDelete}>
-                                Delete Permanently
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          )}
+                        </div>
 
                         <Button type="submit" disabled={isSubmitting}>
                           {isSubmitting ? (

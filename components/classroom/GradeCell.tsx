@@ -26,7 +26,7 @@ export function GradeCell({ submission, onClick, className }: GradeCellProps) {
     return (
       <div 
         className={cn(
-          "h-12 border border-gray-700 bg-gray-800 flex items-center justify-center text-xs text-gray-400",
+          "w-full h-full bg-gray-800 flex items-center justify-center text-xs text-gray-400 absolute inset-0",
           className
         )}
       >
@@ -40,7 +40,7 @@ export function GradeCell({ submission, onClick, className }: GradeCellProps) {
       return (
         <button
           onClick={onClick}
-          className="w-full h-full flex items-center justify-center bg-orange-900 hover:bg-orange-800 border-orange-700 text-orange-200 font-medium text-xs transition-colors"
+          className="absolute inset-0 w-full h-full flex items-center justify-center bg-orange-900 hover:bg-orange-800 border-orange-700 text-orange-200 font-medium text-xs transition-colors"
         >
           Need Grading
         </button>
@@ -58,7 +58,7 @@ export function GradeCell({ submission, onClick, className }: GradeCellProps) {
         <button
           onClick={onClick}
           className={cn(
-            "w-full h-full flex items-center justify-center font-bold text-sm transition-colors",
+            "absolute inset-0 w-full h-full flex items-center justify-center font-bold text-sm transition-colors",
             bgColor,
             textColor,
             borderColor,
@@ -79,7 +79,7 @@ export function GradeCell({ submission, onClick, className }: GradeCellProps) {
         <button
           onClick={onClick}
           className={cn(
-            "w-full h-full flex items-center justify-center font-medium text-xs transition-colors",
+            "absolute inset-0 w-full h-full flex items-center justify-center font-medium text-xs transition-colors",
             bgColor,
             hoverColor,
             textColor,
