@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { NodeAssessment, AssessmentType, QuizQuestion } from "@/types/map";
-import { Trash2 } from "lucide-react";
+import { NodeAssessment, AssessmentType, QuizQuestion, GroupFormationMethod, GroupSubmissionMode } from "@/types/map";
+import { Trash2, Users, Shuffle, Settings } from "lucide-react";
 import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion } from "@/lib/supabase/assessment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { updateAssessmentGroupSettings } from "@/lib/supabase/assessment-groups";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { QuizEditor } from "./AssessmentEditor/QuizEditor";
 import { ChecklistEditor } from "./AssessmentEditor/ChecklistEditor";
+import { GroupManagementModal } from "./AssessmentEditor/GroupManagementModal";
 import { ASSESSMENT_TYPE_CONFIG } from "./AssessmentEditor/constants";
 import { AssessmentEditorProps } from "./AssessmentEditor/types";
 
@@ -24,6 +28,7 @@ export function AssessmentEditor({
   onNodeSaved,
 }: AssessmentEditorProps) {
   const { toast } = useToast();
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
   // The useEffect causing the infinite loop has been removed.
 
@@ -96,6 +101,39 @@ export function AssessmentEditor({
       onAssessmentChange(updatedAssessment, "add");
     },
     [assessment, onAssessmentChange]
+  );
+
+  const handleGroupSettingsChange = useCallback(
+    async (field: string, value: any) => {
+      if (!assessment) return;
+
+      try {
+        console.log(`👥 Updating group setting ${field}:`, value);
+        
+        // Update the database
+        await updateAssessmentGroupSettings(assessment.id, {
+          is_group_assessment: field === 'is_group_assessment' ? value : assessment.is_group_assessment || false,
+          group_formation_method: field === 'group_formation_method' ? value : assessment.group_formation_method || 'manual',
+          group_submission_mode: field === 'group_submission_mode' ? value : assessment.group_submission_mode || 'all_members',
+          target_group_size: field === 'target_group_size' ? value : assessment.target_group_size || 3,
+          allow_uneven_groups: field === 'allow_uneven_groups' ? value : assessment.allow_uneven_groups || true,
+        });
+
+        // Update local state
+        const updatedAssessment = { ...assessment, [field]: value };
+        onAssessmentChange(updatedAssessment, "add");
+
+        toast({ title: "Group settings updated successfully!" });
+      } catch (error) {
+        console.error("❌ Failed to update group settings:", error);
+        toast({
+          title: "Failed to update group settings",
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive"
+        });
+      }
+    },
+    [assessment, onAssessmentChange, toast]
   );
 
   const handleQuestionChange = useCallback(
@@ -292,6 +330,83 @@ export function AssessmentEditor({
             </div>
           </div>
 
+          {/* Group Assessment Configuration */}
+          <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+            <h4 className="font-medium text-sm flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Group Assessment Settings
+            </h4>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_group_assessment"
+                  checked={assessment.is_group_assessment || false}
+                  onCheckedChange={(checked) => 
+                    handleGroupSettingsChange('is_group_assessment', checked as boolean)
+                  }
+                />
+                <Label htmlFor="is_group_assessment" className="text-sm">
+                  Enable group assessment
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground ml-6">
+                When enabled, students will work in groups and submissions will be shared among group members
+              </p>
+
+              {assessment.is_group_assessment && (
+                <div className="ml-6 space-y-4">
+
+                  {/* Group Submission Mode */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Group Submission Mode</Label>
+                    <RadioGroup
+                      value={assessment.group_submission_mode || 'all_members'}
+                      onValueChange={(value) => 
+                        handleGroupSettingsChange('group_submission_mode', value as GroupSubmissionMode)
+                      }
+                      className="space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="all_members" id="all_members" />
+                        <Label htmlFor="all_members" className="text-sm flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          All Members Submit
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="single_submission" id="single_submission" />
+                        <Label htmlFor="single_submission" className="text-sm flex items-center gap-1">
+                          <Settings className="h-3 w-3" />
+                          Single Submission
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                    <p className="text-xs text-muted-foreground">
+                      All Members: Each group member must submit individually. Single Submission: Only one group member needs to submit for the entire group.
+                    </p>
+                  </div>
+
+
+                  {/* Manage Groups Button */}
+                  <div className="pt-2 border-t">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={() => setIsGroupModalOpen(true)}
+                    >
+                      <Users className="h-4 w-4" />
+                      Manage Groups
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Create, edit, and assign students to groups
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {assessment.assessment_type === "quiz" && (
             <QuizEditor
               assessment={assessment}
@@ -324,6 +439,21 @@ export function AssessmentEditor({
           )}
         </CardContent>
       </Card>
+
+      {/* Group Management Modal */}
+      {assessment && (
+        <GroupManagementModal
+          isOpen={isGroupModalOpen}
+          onClose={() => setIsGroupModalOpen(false)}
+          assessment={assessment}
+          onAssessmentChange={(updatedAssessment) => onAssessmentChange(updatedAssessment, "add")}
+          onGroupsUpdated={() => {
+            // Refresh assessment data or trigger parent update
+            console.log("🔄 Groups updated, refreshing data...");
+            // You might want to call a parent function here to refresh the assessment data
+          }}
+        />
+      )}
     </div>
   );
 }

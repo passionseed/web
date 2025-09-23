@@ -327,7 +327,6 @@ export function ClassroomDetailsDashboard({
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="groups">Groups</TabsTrigger>
           <TabsTrigger value="maps">Learning Maps</TabsTrigger>
-          <TabsTrigger value="progress">Progress</TabsTrigger>
           {canManage && (
             <TabsTrigger value="grading" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
@@ -541,24 +540,6 @@ export function ClassroomDetailsDashboard({
           )}
         </TabsContent>
 
-        <TabsContent value="progress" className="space-y-4">
-          <h3 className="text-lg font-semibold">Overall Progress</h3>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Progress Overview</CardTitle>
-              <CardDescription>
-                Real-time progress tracking across all assignments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center text-muted-foreground py-8">
-                <TrendingUp className="h-12 w-12 mx-auto mb-4" />
-                <p>Progress visualization coming soon</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {canManage && (
           <TabsContent value="grading" className="space-y-4">

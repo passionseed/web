@@ -117,9 +117,59 @@ export const createAssessmentSubmission = async (
 
   console.log("📝 Creating assessment submission:", submissionData);
 
+  // Get current user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    throw new Error("User must be authenticated to submit assessment");
+  }
+
+  // Enhanced submission data with group handling
+  let enhancedSubmissionData = { ...submissionData };
+
+  // Check if this is a group assessment and handle accordingly
+  if (submissionData.assessment_id) {
+    try {
+      console.log("🔍 Checking if assessment is a group assessment...");
+      
+      // Get assessment details to check if it's a group assessment
+      const { data: assessment, error: assessmentError } = await supabase
+        .from("node_assessments")
+        .select("id, is_group_assessment")
+        .eq("id", submissionData.assessment_id)
+        .single();
+
+      if (assessmentError) {
+        console.warn("⚠️ Could not fetch assessment details:", assessmentError);
+      } else if (assessment?.is_group_assessment) {
+        console.log("👥 This is a group assessment, checking user's group...");
+        
+        // Get the user's group for this assessment
+        const { getUserAssessmentGroup } = await import("./assessment-groups");
+        const userGroup = await getUserAssessmentGroup(assessment.id, user.id);
+        
+        if (userGroup) {
+          console.log("✅ User is in group:", userGroup.group_name);
+          enhancedSubmissionData = {
+            ...enhancedSubmissionData,
+            assessment_group_id: userGroup.id,
+            submitted_for_group: true,
+          };
+          console.log("🔄 Enhanced submission data for group:", enhancedSubmissionData);
+        } else {
+          console.warn("⚠️ User is not assigned to a group for this assessment");
+        }
+      } else {
+        console.log("📝 This is an individual assessment");
+      }
+    } catch (groupError) {
+      console.error("❌ Error checking group status:", groupError);
+      // Continue with individual submission if group check fails
+    }
+  }
+
   const { data, error } = await supabase
     .from("assessment_submissions")
-    .insert([submissionData])
+    .insert([enhancedSubmissionData])
     .select(
       `
       *,
@@ -143,6 +193,11 @@ export const createAssessmentSubmission = async (
   }
 
   console.log("✅ Assessment submission created:", data);
+  
+  // Log group submission details
+  if (data.submitted_for_group && data.assessment_group_id) {
+    console.log("🎉 Group submission created! The database trigger will automatically create submissions for other group members.");
+  }
 
   // Update progress status based on assessment type
   try {
