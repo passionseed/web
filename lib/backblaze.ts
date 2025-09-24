@@ -12,6 +12,14 @@ interface B2FileUploadResponse {
   fileUrl: string;
 }
 
+interface B2ImageUploadResponse extends B2FileUploadResponse {
+  blurhash?: string;
+  width?: number;
+  height?: number;
+  size: number;
+  format: string;
+}
+
 class BackblazeB2 {
   private s3Client: S3Client;
   private bucketName: string;
@@ -145,6 +153,126 @@ class BackblazeB2 {
 
       throw new Error(
         `File upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  // New method for uploading processed image buffers (for cover images)
+  async uploadImageBuffer(
+    buffer: Buffer,
+    fileName: string,
+    contentType: string,
+    metadata: {
+      blurhash?: string;
+      width?: number;
+      height?: number;
+      originalName?: string;
+      userId?: string;
+      mapId?: string;
+      [key: string]: string | number | undefined;
+    } = {}
+  ): Promise<B2ImageUploadResponse> {
+    try {
+      console.log("B2 Image Upload starting:", {
+        fileName,
+        bufferSize: buffer.length,
+        contentType,
+        metadata,
+      });
+
+      // Validate environment variables
+      if (!this.bucketName) {
+        throw new Error("B2_BUCKET_NAME environment variable is not set");
+      }
+
+      // Generate secure path for images
+      const timestamp = Date.now();
+      const imagePath = `images/maps/${timestamp}_${fileName}`;
+
+      console.log("Generated image path:", imagePath);
+
+      // Prepare upload command with image-specific metadata
+      const uploadCommand = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: imagePath,
+        Body: buffer,
+        ContentType: contentType,
+        ContentLength: buffer.length,
+        Metadata: {
+          "upload-timestamp": timestamp.toString(),
+          "upload-type": "cover-image",
+          ...(metadata.originalName && { "original-name": metadata.originalName }),
+          ...(metadata.userId && { "user-id": metadata.userId }),
+          ...(metadata.mapId && { "map-id": metadata.mapId }),
+          ...(metadata.blurhash && { "blurhash": metadata.blurhash }),
+          ...(metadata.width && { "width": metadata.width.toString() }),
+          ...(metadata.height && { "height": metadata.height.toString() }),
+        },
+        // Add cache control for images
+        CacheControl: "public, max-age=31536000", // 1 year cache
+      });
+
+      console.log("Executing S3 image upload command...");
+
+      // Execute upload
+      const result = await this.s3Client.send(uploadCommand);
+
+      console.log("S3 image upload result:", result);
+
+      // Construct public URL
+      const fileUrl = `https://${this.bucketName}.${this.endpoint}/${imagePath}`;
+
+      const response: B2ImageUploadResponse = {
+        fileId: result.ETag?.replace(/"/g, "") || timestamp.toString(),
+        fileName: imagePath,
+        fileUrl: fileUrl,
+        blurhash: metadata.blurhash,
+        width: metadata.width,
+        height: metadata.height,
+        size: buffer.length,
+        format: contentType.split('/')[1] || 'unknown',
+      };
+
+      console.log("B2 image upload completed successfully:", response);
+
+      return response;
+    } catch (error) {
+      console.error("Backblaze B2 image upload error:", error);
+
+      // Use same error handling as the original method
+      if (error instanceof Error) {
+        if (
+          error.message.includes("credentials") ||
+          error.message.includes("InvalidAccessKeyId")
+        ) {
+          throw new Error(
+            "Invalid Backblaze B2 credentials. Please check your configuration."
+          );
+        }
+        if (
+          error.message.includes("bucket") ||
+          error.message.includes("NoSuchBucket")
+        ) {
+          throw new Error(
+            "Bucket not found. Please verify bucket name and permissions."
+          );
+        }
+        if (
+          error.message.includes("network") ||
+          error.message.includes("fetch") ||
+          error.message.includes("ENOTFOUND")
+        ) {
+          throw new Error(
+            "Network error. Please check your internet connection and try again."
+          );
+        }
+        if (error.message.includes("AccessDenied")) {
+          throw new Error("Access denied. Please check your B2 permissions.");
+        }
+      }
+
+      throw new Error(
+        `Image upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }

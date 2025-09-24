@@ -367,6 +367,15 @@
   transform-style: preserve-3d;
 }
 
+/* Additional 3D transform utilities */
+.rotate-y-12 {
+  transform: rotateY(12deg);
+}
+
+.rotate-x-2 {
+  transform: rotateX(2deg);
+}
+
 /* Vinyl Record Animations */
 @keyframes vinyl-emerge {
   0% {

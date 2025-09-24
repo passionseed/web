@@ -39,6 +39,11 @@ type MapWithStats = LearningMap & {
     team_name?: string;
     original_title?: string;
   };
+  // New image storage fields
+  cover_image_url?: string;
+  cover_image_blurhash?: string;
+  cover_image_key?: string;
+  cover_image_updated_at?: string;
 };
 
 interface AnimatedMapPreviewProps {

@@ -1,13 +1,13 @@
-import bundleAnalyzer from '@next/bundle-analyzer'
+import bundleAnalyzer from "@next/bundle-analyzer";
 
 const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-})
+  enabled: process.env.ANALYZE === "true",
+});
 
-let userConfig = undefined
+let userConfig = undefined;
 try {
   // try to import ESM first
-  userConfig = await import('./v0-user-next.config.mjs')
+  userConfig = await import("./v0-user-next.config.mjs");
 } catch (e) {
   try {
     // fallback to CJS import
@@ -22,23 +22,24 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  turbopack: {},
   typescript: {
     ignoreBuildErrors: true,
   },
   // Enable image optimization for production
   images: {
-    unoptimized: process.env.NODE_ENV === 'development',
-    domains: ['localhost', '127.0.0.1'],
-    formats: ['image/webp', 'image/avif'],
+    unoptimized: process.env.NODE_ENV === "development",
+    domains: ["localhost", "127.0.0.1"],
+    formats: ["image/webp", "image/avif"],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '*.supabase.co',
+        protocol: "https",
+        hostname: "*.supabase.co",
       },
       {
-        protocol: 'https',
-        hostname: '*.backblazeb2.com',
-      }
+        protocol: "https",
+        hostname: "*.backblazeb2.com",
+      },
     ],
   },
   // Production optimizations
@@ -60,81 +61,81 @@ const nextConfig = {
           ...config.optimization.splitChunks.cacheGroups,
           vendor: {
             test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
+            name: "vendors",
             priority: 10,
-            chunks: 'all',
+            chunks: "all",
             reuseExistingChunk: true,
           },
           common: {
-            name: 'common',
+            name: "common",
             minChunks: 2,
             priority: 5,
-            chunks: 'all',
+            chunks: "all",
             reuseExistingChunk: true,
           },
           // Separate React into its own chunk
           react: {
             test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
-            name: 'react',
+            name: "react",
             priority: 20,
-            chunks: 'all',
+            chunks: "all",
             reuseExistingChunk: true,
           },
-        }
+        };
       }
     }
-    return config
+    return config;
   },
   // Headers for caching
   async headers() {
     return [
       {
-        source: '/islands/:path*',
+        source: "/islands/:path*",
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
       {
-        source: '/:path*',
+        source: "/:path*",
         headers: [
           {
-            key: 'X-Frame-Options',
-            value: 'DENY',
+            key: "X-Frame-Options",
+            value: "DENY",
           },
           {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            key: "X-Content-Type-Options",
+            value: "nosniff",
           },
           {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
+            key: "Referrer-Policy",
+            value: "origin-when-cross-origin",
           },
         ],
       },
-    ]
+    ];
   },
-}
+};
 
 if (userConfig) {
   // ESM imports will have a "default" property
-  const config = userConfig.default || userConfig
+  const config = userConfig.default || userConfig;
 
   for (const key in config) {
     if (
-      typeof nextConfig[key] === 'object' &&
+      typeof nextConfig[key] === "object" &&
       !Array.isArray(nextConfig[key])
     ) {
       nextConfig[key] = {
         ...nextConfig[key],
         ...config[key],
-      }
+      };
     } else {
-      nextConfig[key] = config[key]
+      nextConfig[key] = config[key];
     }
   }
 }
 
-export default withBundleAnalyzer(nextConfig)
+export default withBundleAnalyzer(nextConfig);
