@@ -9,13 +9,19 @@ const uploadRateLimit = new Map<string, { count: number; resetTime: number }>();
 const MAX_UPLOADS_PER_HOUR = 10;
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
 
-function checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number } {
+function checkRateLimit(userId: string): {
+  allowed: boolean;
+  retryAfter?: number;
+} {
   const now = Date.now();
   const userLimit = uploadRateLimit.get(userId);
 
   if (!userLimit || now > userLimit.resetTime) {
     // Reset or initialize rate limit
-    uploadRateLimit.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    uploadRateLimit.set(userId, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW,
+    });
     return { allowed: true };
   }
 
@@ -50,13 +56,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Rate limit exceeded. Too many uploads in the past hour.",
-          retryAfter: rateLimitResult.retryAfter
+          retryAfter: rateLimitResult.retryAfter,
         },
         {
           status: 429,
           headers: rateLimitResult.retryAfter
-            ? { 'Retry-After': rateLimitResult.retryAfter.toString() }
-            : {}
+            ? { "Retry-After": rateLimitResult.retryAfter.toString() }
+            : {},
         }
       );
     }
@@ -114,7 +120,9 @@ export async function POST(request: NextRequest) {
 
       const { data: map, error: mapError } = await supabase
         .from("learning_maps")
-        .select("id, title, created_by, cover_image_key, cover_image_url, metadata")
+        .select(
+          "id, title, creator_id, cover_image_key, cover_image_url, metadata"
+        )
         .eq("id", mapId)
         .single();
 
@@ -125,15 +133,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error: "Map not found or access denied",
-            details: process.env.NODE_ENV === "development" ? mapError?.message : undefined
+            details:
+              process.env.NODE_ENV === "development"
+                ? mapError?.message
+                : undefined,
           },
           { status: 404 }
         );
       }
 
       // Simple ownership check - for now just check if user created the map
-      if (map.created_by !== user.id) {
-        console.error("User does not own map:", { mapCreatedBy: map.created_by, userId: user.id });
+      if (map.creator_id !== user.id) {
+        console.error("User does not own map:", {
+          mapCreatedBy: map.creator_id,
+          userId: user.id,
+        });
         return NextResponse.json(
           { error: "You don't have permission to edit this map" },
           { status: 403 }
@@ -147,7 +161,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Unable to validate map access",
-          details: process.env.NODE_ENV === "development" ? String(error) : undefined
+          details:
+            process.env.NODE_ENV === "development" ? String(error) : undefined,
         },
         { status: 500 }
       );
@@ -156,7 +171,12 @@ export async function POST(request: NextRequest) {
     // Upload and process image
     let uploadResult;
     try {
-      console.log("Starting cover image upload for map:", mapId, "by user:", user.id);
+      console.log(
+        "Starting cover image upload for map:",
+        mapId,
+        "by user:",
+        user.id
+      );
 
       uploadResult = await storageManager.uploadImage(
         fileBuffer,
@@ -166,12 +186,12 @@ export async function POST(request: NextRequest) {
           maxWidth,
           maxHeight,
           quality,
-          format: 'webp', // Force WebP for better compression
+          format: "webp", // Force WebP for better compression
           metadata: {
             userId: user.id,
             mapId: mapId,
-            uploadType: 'cover-image'
-          }
+            uploadType: "cover-image",
+          },
         }
       );
 
@@ -179,16 +199,18 @@ export async function POST(request: NextRequest) {
     } catch (uploadError) {
       console.error("Cover image upload failed:", uploadError);
 
-      const errorMessage = uploadError instanceof Error
-        ? uploadError.message
-        : "Image upload service unavailable";
+      const errorMessage =
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Image upload service unavailable";
 
       return NextResponse.json(
         {
           error: `Image upload failed: ${errorMessage}`,
-          details: process.env.NODE_ENV === "development"
-            ? String(uploadError)
-            : undefined,
+          details:
+            process.env.NODE_ENV === "development"
+              ? String(uploadError)
+              : undefined,
         },
         { status: 500 }
       );
@@ -206,7 +228,7 @@ export async function POST(request: NextRequest) {
           // Clear old metadata.coverImage if it exists
           metadata: mapData.metadata
             ? { ...mapData.metadata, coverImage: undefined }
-            : null
+            : null,
         })
         .eq("id", mapId);
 
@@ -217,7 +239,10 @@ export async function POST(request: NextRequest) {
         try {
           await storageManager.deleteImage(uploadResult.key);
         } catch (cleanupError) {
-          console.error("Failed to cleanup uploaded file after DB error:", cleanupError);
+          console.error(
+            "Failed to cleanup uploaded file after DB error:",
+            cleanupError
+          );
         }
 
         return NextResponse.json(
@@ -227,7 +252,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Clean up old cover image if it exists
-      if (mapData.cover_image_key && mapData.cover_image_key !== uploadResult.key) {
+      if (
+        mapData.cover_image_key &&
+        mapData.cover_image_key !== uploadResult.key
+      ) {
         try {
           await storageManager.deleteImage(mapData.cover_image_key);
           console.log("Cleaned up old cover image:", mapData.cover_image_key);
@@ -236,7 +264,6 @@ export async function POST(request: NextRequest) {
           // Don't fail the request for cleanup errors
         }
       }
-
     } catch (error) {
       console.error("Database update error:", error);
       return NextResponse.json(
@@ -262,16 +289,14 @@ export async function POST(request: NextRequest) {
       originalName: file.name,
       uploadedAt: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error("Cover image upload API error:", error);
 
     return NextResponse.json(
       {
         error: "Internal server error. Please try again later.",
-        details: process.env.NODE_ENV === "development"
-          ? String(error)
-          : undefined,
+        details:
+          process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
       { status: 500 }
     );
@@ -293,11 +318,11 @@ export async function GET() {
         blurhashGeneration: true,
         automaticOptimization: true,
         webpConversion: true,
-        oldImageCleanup: true
+        oldImageCleanup: true,
       },
       rateLimit: {
         maxUploadsPerHour: MAX_UPLOADS_PER_HOUR,
-        windowMs: RATE_LIMIT_WINDOW
+        windowMs: RATE_LIMIT_WINDOW,
       },
       timestamp: new Date().toISOString(),
     });
@@ -306,7 +331,7 @@ export async function GET() {
       {
         status: "error",
         service: "cover-image-upload",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 503 }
     );
