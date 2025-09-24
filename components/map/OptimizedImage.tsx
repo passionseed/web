@@ -50,7 +50,7 @@ export function BlurhashCanvas({
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        console.warn('Could not get canvas context');
+        console.warn("Could not get canvas context");
         return;
       }
 
@@ -62,14 +62,17 @@ export function BlurhashCanvas({
       const url = canvas.toDataURL();
       setDataUrl(url);
     } catch (error) {
-      console.error('Error decoding blurhash:', error);
+      console.error("Error decoding blurhash:", error);
       setDataUrl(null);
     }
   }, [hash, width, height]);
 
   if (!hash || !dataUrl) {
     return (
-      <div className={`bg-gray-200 ${className || ""}`} style={{ width, height }} />
+      <div
+        className={`bg-gray-200 ${className || ""}`}
+        style={{ width, height }}
+      />
     );
   }
 
