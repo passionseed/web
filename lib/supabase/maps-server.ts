@@ -91,6 +91,11 @@ export const getMapsWithStatsServer = async (
     map_type: "personal" | "classroom" | "team" | "forked" | "public";
     isEnrolled: boolean;
     hasStarted: boolean;
+    // New image storage fields
+    cover_image_url?: string;
+    cover_image_blurhash?: string;
+    cover_image_key?: string;
+    cover_image_updated_at?: string;
   })[];
   total_count: number;
   has_more: boolean;
@@ -136,6 +141,10 @@ export const getMapsWithStatsServer = async (
       updated_at,
       total_students,
       finished_students,
+      cover_image_url,
+      cover_image_blurhash,
+      cover_image_key,
+      cover_image_updated_at,
       map_nodes (
         id,
         difficulty,
@@ -189,6 +198,11 @@ export const getMapsWithStatsServer = async (
       visibility: map.visibility,
       created_at: map.created_at,
       updated_at: map.updated_at,
+      // New image storage fields
+      cover_image_url: map.cover_image_url,
+      cover_image_blurhash: map.cover_image_blurhash,
+      cover_image_key: map.cover_image_key,
+      cover_image_updated_at: map.cover_image_updated_at,
       node_count: nodeCount,
       avg_difficulty: avgDifficulty,
       total_assessments: totalAssessments,
