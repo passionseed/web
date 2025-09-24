@@ -34,6 +34,11 @@ export interface LearningMap {
   total_students?: number; // cached count
   finished_students?: number; // cached count
   metadata?: Record<string, any>; // jsonb extensible data
+  // New optimized image storage fields
+  cover_image_url?: string | null; // Public URL to optimized image in B2
+  cover_image_blurhash?: string | null; // Blurhash for instant placeholder
+  cover_image_key?: string | null; // B2 file key for deletion
+  cover_image_updated_at?: string | null; // When image was last updated
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
   nodes?: MapNode[]; // Optional relation

@@ -85,20 +85,27 @@ export const getMaps = async (): Promise<LearningMap[]> => {
 };
 
 // Enhanced function to get maps with detailed statistics and categorization
-export const getMapsWithStats = async (): Promise<
-  (LearningMap & {
-    node_count: number;
-    avg_difficulty: number;
-    total_assessments: number;
-    map_type: "personal" | "classroom" | "team" | "forked" | "public";
-    isEnrolled: boolean;
-    hasStarted: boolean;
-    source_info?: {
-      classroom_name?: string;
-      team_name?: string;
-      original_title?: string;
-    };
-  })[]
+export const getMapsWithStats = async (
+  page: number = 0,
+  limit: number = 20
+): Promise<
+  {
+    maps: (LearningMap & {
+      node_count: number;
+      avg_difficulty: number;
+      total_assessments: number;
+      map_type: "personal" | "classroom" | "team" | "forked" | "public";
+      isEnrolled: boolean;
+      hasStarted: boolean;
+      source_info?: {
+        classroom_name?: string;
+        team_name?: string;
+        original_title?: string;
+      };
+    })[];
+    total_count: number;
+    has_more: boolean;
+  }
 > => {
   const supabase = createClient();
 
@@ -107,9 +114,25 @@ export const getMapsWithStats = async (): Promise<
     data: { user },
   } = await supabase.auth.getUser();
 
+  // OPTIMIZATION: Drastically reduce data transfer by selecting only essential columns
   let baseQuery = `
-      *,
-      map_nodes (
+      id,
+      title,
+      description,
+      creator_id,
+      difficulty,
+      category,
+      visibility,
+      metadata,
+      created_at,
+      updated_at,
+      total_students,
+      finished_students,
+      cover_image_url,
+      cover_image_blurhash,
+      cover_image_key,
+      cover_image_updated_at,
+      map_nodes!inner (
         id,
         difficulty,
         node_assessments (id)
@@ -124,6 +147,30 @@ export const getMapsWithStats = async (): Promise<
         completed_at,
         status
       )`;
+  }
+
+  // OPTIMIZATION: Add pagination and count query
+  const offset = page * limit;
+  
+  // First get total count (lightweight query) - simplified to avoid auth issues
+  let countQuery = supabase
+    .from("learning_maps")
+    .select("id", { count: 'exact', head: true });
+
+  // Apply the same visibility filters as the main query
+  if (!user) {
+    countQuery = countQuery.eq("visibility", "public");
+  } else {
+    countQuery = countQuery.or(`visibility.eq.public,creator_id.eq.${user.id}`);
+  }
+
+  const { count: totalCount, error: countError } = await countQuery;
+
+  if (countError) {
+    console.error("Error fetching maps count:", countError);
+    console.error("Count error details:", JSON.stringify(countError, null, 2));
+    // Don't throw error, just set count to 0 and continue
+    console.warn("Continuing without count due to error");
   }
 
   let query = supabase.from("learning_maps").select(baseQuery);
@@ -143,7 +190,10 @@ export const getMapsWithStats = async (): Promise<
       .eq("user_map_enrollments.user_id", user.id);
   }
 
-  const { data, error } = await query.order("created_at", { ascending: false });
+  // OPTIMIZATION: Apply pagination
+  const { data, error } = await query
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) {
     console.error("Error fetching maps with stats:", error);
@@ -490,6 +540,11 @@ export const getMapsWithStats = async (): Promise<
         visibility: map.visibility,
         created_at: map.created_at,
         updated_at: map.updated_at,
+        // New image storage fields
+        cover_image_url: map.cover_image_url,
+        cover_image_blurhash: map.cover_image_blurhash,
+        cover_image_key: map.cover_image_key,
+        cover_image_updated_at: map.cover_image_updated_at,
         node_count: nodeCount,
         avg_difficulty: avgDifficulty,
         total_assessments: totalAssessments,
@@ -500,7 +555,11 @@ export const getMapsWithStats = async (): Promise<
       };
     });
 
-  return mapsWithStats;
+  return {
+    maps: mapsWithStats,
+    total_count: countError ? mapsWithStats.length : (totalCount || 0),
+    has_more: countError ? mapsWithStats.length >= limit : ((offset + limit) < (totalCount || 0))
+  };
 };
 
 export const getMapWithNodes = async (
