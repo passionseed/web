@@ -117,39 +117,61 @@ export default function EditMapPage() {
     }
   };
 
-  const handleImageUploaded = (imageData: { url: string; blurhash?: string; fileName: string }) => {
+  const handleImageUploaded = (imageData: {
+    url: string;
+    blurhash?: string;
+    fileName: string;
+  }) => {
     // Update map with new image data using new columns
-    setMap((prev) => prev ? {
-      ...prev,
-      cover_image_url: imageData.url,
-      cover_image_blurhash: imageData.blurhash,
-      cover_image_key: imageData.fileName,
-      cover_image_updated_at: new Date().toISOString(),
-      // Clear old metadata.coverImage if it exists
-      metadata: prev.metadata ? { ...prev.metadata, coverImage: undefined } : undefined
-    } : null);
+    setMap((prev) =>
+      prev
+        ? {
+            ...prev,
+            cover_image_url: imageData.url,
+            cover_image_blurhash: imageData.blurhash,
+            cover_image_key: imageData.fileName,
+            cover_image_updated_at: new Date().toISOString(),
+            // Clear old metadata.coverImage if it exists
+            metadata: prev.metadata
+              ? { ...prev.metadata, coverImage: undefined }
+              : undefined,
+          }
+        : null
+    );
 
     // Update initial map to reflect the saved state
-    setInitialMap((prev) => prev ? {
-      ...prev,
-      cover_image_url: imageData.url,
-      cover_image_blurhash: imageData.blurhash,
-      cover_image_key: imageData.fileName,
-      cover_image_updated_at: new Date().toISOString(),
-      metadata: prev.metadata ? { ...prev.metadata, coverImage: undefined } : undefined
-    } : null);
+    setInitialMap((prev) =>
+      prev
+        ? {
+            ...prev,
+            cover_image_url: imageData.url,
+            cover_image_blurhash: imageData.blurhash,
+            cover_image_key: imageData.fileName,
+            cover_image_updated_at: new Date().toISOString(),
+            metadata: prev.metadata
+              ? { ...prev.metadata, coverImage: undefined }
+              : undefined,
+          }
+        : null
+    );
   };
 
   const handleImageRemoved = () => {
     // Clear image data from both new columns and old metadata
-    setMap((prev) => prev ? {
-      ...prev,
-      cover_image_url: null,
-      cover_image_blurhash: null,
-      cover_image_key: null,
-      cover_image_updated_at: null,
-      metadata: prev.metadata ? { ...prev.metadata, coverImage: undefined } : undefined
-    } : null);
+    setMap((prev) =>
+      prev
+        ? {
+            ...prev,
+            cover_image_url: null,
+            cover_image_blurhash: null,
+            cover_image_key: null,
+            cover_image_updated_at: null,
+            metadata: prev.metadata
+              ? { ...prev.metadata, coverImage: undefined }
+              : undefined,
+          }
+        : null
+    );
   };
 
   // Check if there are unsaved changes
@@ -346,7 +368,9 @@ export default function EditMapPage() {
           to: map.category,
         });
       }
-      if (JSON.stringify(map.metadata) !== JSON.stringify(initialMap.metadata)) {
+      if (
+        JSON.stringify(map.metadata) !== JSON.stringify(initialMap.metadata)
+      ) {
         mapChanges.metadata = map.metadata;
         console.log("📝 Map metadata changed");
       }
@@ -702,10 +726,11 @@ export default function EditMapPage() {
           currentAssessment &&
           (initialAssessment.assessment_type !==
             currentAssessment.assessment_type ||
-          JSON.stringify(initialAssessment.metadata) !==
-            JSON.stringify(currentAssessment.metadata) ||
-          initialAssessment.points_possible !== currentAssessment.points_possible ||
-          initialAssessment.is_graded !== currentAssessment.is_graded)
+            JSON.stringify(initialAssessment.metadata) !==
+              JSON.stringify(currentAssessment.metadata) ||
+            initialAssessment.points_possible !==
+              currentAssessment.points_possible ||
+            initialAssessment.is_graded !== currentAssessment.is_graded)
         ) {
           const assessmentToUpdate = {
             id: initialAssessment.id,
@@ -874,7 +899,9 @@ export default function EditMapPage() {
               <div className="h-6 w-px bg-border" />
               <div>
                 <h1 className="text-xl font-semibold">Map Editor</h1>
-                <p className={`text-xs mt-0.5 h-4 ${hasUnsavedChanges ? 'text-orange-600' : 'text-transparent'}`}>
+                <p
+                  className={`text-xs mt-0.5 h-4 ${hasUnsavedChanges ? "text-orange-600" : "text-transparent"}`}
+                >
                   ⚠️ Unsaved changes
                 </p>
               </div>
@@ -1044,18 +1071,27 @@ export default function EditMapPage() {
                         <div className="space-y-2 lg:col-span-2">
                           <Label>Cover Image (Optional)</Label>
                           {/* Debug info */}
-                          {process.env.NODE_ENV === 'development' && (
+                          {process.env.NODE_ENV === "development" && (
                             <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
-                              <div>cover_image_url: {map.cover_image_url || 'null'}</div>
-                              <div>cover_image_blurhash: {map.cover_image_blurhash || 'null'}</div>
-                              <div>metadata.coverImage: {map.metadata?.coverImage || 'null'}</div>
+                              <div>
+                                cover_image_url: {map.cover_image_url || "null"}
+                              </div>
+                              <div>
+                                cover_image_blurhash:{" "}
+                                {map.cover_image_blurhash || "null"}
+                              </div>
+                              <div>
+                                metadata.coverImage:{" "}
+                                {map.metadata?.coverImage || "null"}
+                              </div>
                             </div>
                           )}
                           <ImageUpload
                             mapId={mapId}
                             currentImage={{
-                              url: map.cover_image_url || map.metadata?.coverImage,
-                              blurhash: map.cover_image_blurhash || undefined
+                              url:
+                                map.cover_image_url || map.metadata?.coverImage,
+                              blurhash: map.cover_image_blurhash || undefined,
                             }}
                             onImageUploaded={handleImageUploaded}
                             onImageRemoved={handleImageRemoved}

@@ -38,12 +38,12 @@ export function MapCard({ map }: MapCardProps) {
             const vinylScheme: VinylColorScheme = {
               bg: `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 1), rgba(${darkerColor}, 0.95), rgba(${darkestColor}, 1))`,
               grooveStyle: {
-                borderColor: `rgba(${lighterColor}, 0.9)`
+                borderColor: `rgba(${lighterColor}, 0.9)`,
               },
               labelStyle: {
                 background: `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.95), rgba(${darkerColor}, 1))`,
-                borderColor: `rgba(${lighterColor}, 0.95)`
-              }
+                borderColor: `rgba(${lighterColor}, 0.95)`,
+              },
             };
 
             setVinylColors(vinylScheme);
