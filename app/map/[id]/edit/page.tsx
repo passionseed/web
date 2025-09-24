@@ -1043,6 +1043,14 @@ export default function EditMapPage() {
 
                         <div className="space-y-2 lg:col-span-2">
                           <Label>Cover Image (Optional)</Label>
+                          {/* Debug info */}
+                          {process.env.NODE_ENV === 'development' && (
+                            <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+                              <div>cover_image_url: {map.cover_image_url || 'null'}</div>
+                              <div>cover_image_blurhash: {map.cover_image_blurhash || 'null'}</div>
+                              <div>metadata.coverImage: {map.metadata?.coverImage || 'null'}</div>
+                            </div>
+                          )}
                           <ImageUpload
                             mapId={mapId}
                             currentImage={{

@@ -26,23 +26,33 @@ interface BlurhashCanvasProps {
   className?: string;
 }
 
-function BlurhashCanvas({ hash, width, height, className }: BlurhashCanvasProps) {
+export function BlurhashCanvas({
+  hash,
+  width,
+  height,
+  className,
+}: BlurhashCanvasProps) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hash) return;
+    if (!hash) {
+      setDataUrl(null);
+      return;
+    }
 
     try {
-      // Decode blurhash to pixels
       const pixels = decode(hash, width, height);
 
       // Create canvas and draw pixels
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        console.warn('Could not get canvas context');
+        return;
+      }
 
       const imageData = ctx.createImageData(width, height);
       imageData.data.set(pixels);
@@ -52,16 +62,14 @@ function BlurhashCanvas({ hash, width, height, className }: BlurhashCanvasProps)
       const url = canvas.toDataURL();
       setDataUrl(url);
     } catch (error) {
-      console.warn('Failed to decode blurhash:', error);
+      console.error('Error decoding blurhash:', error);
+      setDataUrl(null);
     }
   }, [hash, width, height]);
 
-  if (!dataUrl) {
+  if (!hash || !dataUrl) {
     return (
-      <div
-        className={`bg-gray-200 animate-pulse ${className || ''}`}
-        style={{ width, height }}
-      />
+      <div className={`bg-gray-200 ${className || ""}`} style={{ width, height }} />
     );
   }
 
@@ -71,8 +79,8 @@ function BlurhashCanvas({ hash, width, height, className }: BlurhashCanvasProps)
       alt="Loading..."
       width={width}
       height={height}
-      className={`blur-sm ${className || ''}`}
-      style={{ filter: 'blur(4px)' }}
+      className={`blur-sm ${className || ""}`}
+      style={{ filter: "blur(4px)" }}
     />
   );
 }
@@ -89,7 +97,7 @@ export function OptimizedImage({
   sizes,
   fill = false,
   onLoad,
-  onError
+  onError,
 }: OptimizedImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -144,7 +152,7 @@ export function OptimizedImage({
           <div>Failed to load image</div>
           {currentSrc && (
             <div className="text-xs mt-1 opacity-70 truncate">
-              {currentSrc.split('/').pop()}
+              {currentSrc.split("/").pop()}
             </div>
           )}
         </div>
@@ -153,7 +161,10 @@ export function OptimizedImage({
   }
 
   return (
-    <div className={`relative overflow-hidden ${className}`} style={fill ? {} : { width, height }}>
+    <div
+      className={`relative overflow-hidden ${className}`}
+      style={fill ? {} : { width, height }}
+    >
       {/* Blurhash placeholder - shown while image loads */}
       {blurhash && !imageLoaded && (
         <div className="absolute inset-0 z-10">
@@ -183,7 +194,9 @@ export function OptimizedImage({
       )}
 
       {/* Actual image */}
-      <div className={`transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+      <div
+        className={`transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+      >
         {fill ? (
           <Image
             src={currentSrc}
@@ -227,7 +240,7 @@ export function MapCoverImage({
   alt,
   className = "",
   ...props
-}: Omit<OptimizedImageProps, 'width' | 'height' | 'fill'>) {
+}: Omit<OptimizedImageProps, "width" | "height" | "fill">) {
   return (
     <OptimizedImage
       src={src}
@@ -243,14 +256,16 @@ export function MapCoverImage({
 
 // Hook for preloading images
 export function useImagePreloader(srcs: string[]) {
-  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
+  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     const preloadImage = (src: string) => {
       return new Promise((resolve, reject) => {
         const img = new window.Image();
         img.onload = () => {
-          setPreloadedImages(prev => new Set([...prev, src]));
+          setPreloadedImages((prev) => new Set([...prev, src]));
           resolve(src);
         };
         img.onerror = reject;
@@ -259,8 +274,8 @@ export function useImagePreloader(srcs: string[]) {
     };
 
     // Preload all images
-    const preloadPromises = srcs.map(src =>
-      preloadImage(src).catch(error => {
+    const preloadPromises = srcs.map((src) =>
+      preloadImage(src).catch((error) => {
         console.warn(`Failed to preload image: ${src}`, error);
         return null;
       })
@@ -272,6 +287,6 @@ export function useImagePreloader(srcs: string[]) {
   return {
     isPreloaded: (src: string) => preloadedImages.has(src),
     preloadedCount: preloadedImages.size,
-    totalCount: srcs.length
+    totalCount: srcs.length,
   };
 }

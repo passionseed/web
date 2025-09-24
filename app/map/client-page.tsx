@@ -13,7 +13,6 @@ import { CreateMapCTA } from "@/components/map/CreateMapCTA";
 import Loading from "./loading";
 import { MapSkeleton } from "./map-skeleton";
 
-
 interface MapsClientPageProps {
   initialData: InitialData;
 }
@@ -37,8 +36,10 @@ export function MapsClientPage({ initialData }: MapsClientPageProps) {
     closePreviewDialog,
   } = useMapOperations({ initialData });
 
-
-
+  console.log(
+    "list image_url",
+    maps.map((m) => m.cover_image_url)
+  );
 
   const renderMapsSections = () => {
     const sections = groupMapsByType(maps);

@@ -12,7 +12,7 @@ import {
   RotateCcw,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
 } from "lucide-react";
 
 interface UploadedImage {
@@ -41,11 +41,11 @@ interface ImageUploadProps {
 }
 
 const SUPPORTED_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'image/gif'
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -59,7 +59,7 @@ export function ImageUpload({
   className = "",
   maxWidth = 1200,
   maxHeight = 800,
-  quality = 85
+  quality = 85,
 }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -84,7 +84,7 @@ export function ImageUpload({
     if (!file) return "No file selected";
 
     if (!SUPPORTED_TYPES.includes(file.type)) {
-      return `Unsupported file type. Please use: ${SUPPORTED_TYPES.map(t => t.split('/')[1]).join(', ')}`;
+      return `Unsupported file type. Please use: ${SUPPORTED_TYPES.map((t) => t.split("/")[1]).join(", ")}`;
     }
 
     if (file.size > MAX_FILE_SIZE) {
@@ -98,135 +98,149 @@ export function ImageUpload({
     return null;
   }, []);
 
-  const handleFileSelect = useCallback((file: File) => {
-    const error = validateFile(file);
-    if (error) {
-      setUploadError(error);
-      toast({
-        title: "Invalid file",
-        description: error,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setSelectedFile(file);
-    setUploadError(null);
-
-    // Create preview URL
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    const newPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl(newPreviewUrl);
-  }, [validateFile, previewUrl, toast]);
-
-  const uploadImage = useCallback(async (file: File) => {
-    if (!mapId) {
-      setUploadError("Map ID is required for upload");
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadProgress(0);
-    setUploadError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('mapId', mapId);
-      formData.append('maxWidth', maxWidth.toString());
-      formData.append('maxHeight', maxHeight.toString());
-      formData.append('quality', quality.toString());
-
-      // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 10;
+  const handleFileSelect = useCallback(
+    (file: File) => {
+      const error = validateFile(file);
+      if (error) {
+        setUploadError(error);
+        toast({
+          title: "Invalid file",
+          description: error,
+          variant: "destructive",
         });
-      }, 200);
-
-      const response = await fetch('/api/maps/upload-cover-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      clearInterval(progressInterval);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+        return;
       }
 
-      setUploadProgress(100);
+      setSelectedFile(file);
+      setUploadError(null);
 
-      const result = await response.json();
-
-      // Clean up preview
+      // Create preview URL
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
+      }
+      const newPreviewUrl = URL.createObjectURL(file);
+      setPreviewUrl(newPreviewUrl);
+    },
+    [validateFile, previewUrl, toast]
+  );
+
+  const uploadImage = useCallback(
+    async (file: File) => {
+      if (!mapId) {
+        setUploadError("Map ID is required for upload");
+        return;
       }
 
-      onImageUploaded({
-        url: result.url,
-        blurhash: result.blurhash,
-        fileName: result.fileName,
-        width: result.width,
-        height: result.height,
-        size: result.size,
-        format: result.format
-      });
-
-      setSelectedFile(null);
-
-      toast({
-        title: "Upload successful",
-        description: "Cover image has been updated",
-      });
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setUploadError(errorMessage);
-
-      toast({
-        title: "Upload failed",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setIsUploading(false);
+      setIsUploading(true);
       setUploadProgress(0);
-    }
-  }, [mapId, maxWidth, maxHeight, quality, previewUrl, onImageUploaded, toast]);
+      setUploadError(null);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("mapId", mapId);
+        formData.append("maxWidth", maxWidth.toString());
+        formData.append("maxHeight", maxHeight.toString());
+        formData.append("quality", quality.toString());
 
-    if (disabled || isUploading) return;
+        // Simulate progress for better UX
+        const progressInterval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 90) return prev;
+            return prev + Math.random() * 10;
+          });
+        }, 200);
 
-    const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find(file => file.type.startsWith('image/'));
+        const response = await fetch("/api/maps/upload-cover-image", {
+          method: "POST",
+          body: formData,
+        });
 
-    if (imageFile) {
-      handleFileSelect(imageFile);
-    } else {
-      toast({
-        title: "Invalid file",
-        description: "Please drop an image file",
-        variant: "destructive"
-      });
-    }
-  }, [disabled, isUploading, handleFileSelect, toast]);
+        clearInterval(progressInterval);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (!disabled && !isUploading) {
-      setIsDragging(true);
-    }
-  }, [disabled, isUploading]);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `Upload failed: ${response.statusText}`
+          );
+        }
+
+        setUploadProgress(100);
+
+        const result = await response.json();
+
+        // Clean up preview
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+          setPreviewUrl(null);
+        }
+
+        onImageUploaded({
+          url: result.url,
+          blurhash: result.blurhash,
+          fileName: result.fileName,
+          width: result.width,
+          height: result.height,
+          size: result.size,
+          format: result.format,
+        });
+
+        setSelectedFile(null);
+
+        toast({
+          title: "Upload successful",
+          description: "Cover image has been updated",
+        });
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        setUploadError(errorMessage);
+
+        toast({
+          title: "Upload failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsUploading(false);
+        setUploadProgress(0);
+      }
+    },
+    [mapId, maxWidth, maxHeight, quality, previewUrl, onImageUploaded, toast]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      if (disabled || isUploading) return;
+
+      const files = Array.from(e.dataTransfer.files);
+      const imageFile = files.find((file) => file.type.startsWith("image/"));
+
+      if (imageFile) {
+        handleFileSelect(imageFile);
+      } else {
+        toast({
+          title: "Invalid file",
+          description: "Please drop an image file",
+          variant: "destructive",
+        });
+      }
+    },
+    [disabled, isUploading, handleFileSelect, toast]
+  );
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (!disabled && !isUploading) {
+        setIsDragging(true);
+      }
+    },
+    [disabled, isUploading]
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -236,12 +250,15 @@ export function ImageUpload({
     }
   }, []);
 
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  }, [handleFileSelect]);
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleFileSelect(file);
+      }
+    },
+    [handleFileSelect]
+  );
 
   const handleRemoveImage = useCallback(() => {
     if (previewUrl) {
@@ -263,9 +280,26 @@ export function ImageUpload({
     fileInputRef.current?.click();
   }, []);
 
-  const hasCurrentImage = currentImage?.url;
+  const hasCurrentImage = currentImage?.url && currentImage.url.trim() !== "";
   const hasPreview = previewUrl || selectedFile;
   const showDropZone = !hasCurrentImage && !hasPreview;
+
+  // Debug logging
+  useEffect(() => {
+    console.log("ImageUpload debug:", {
+      hasCurrentImage,
+      currentImageUrl: currentImage?.url,
+      currentImageBlurhash: currentImage?.blurhash,
+      hasPreview,
+      showDropZone,
+    });
+  }, [
+    hasCurrentImage,
+    currentImage?.url,
+    currentImage?.blurhash,
+    hasPreview,
+    showDropZone,
+  ]);
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -273,7 +307,7 @@ export function ImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept={SUPPORTED_TYPES.join(',')}
+        accept={SUPPORTED_TYPES.join(",")}
         onChange={handleFileInputChange}
         className="hidden"
         disabled={disabled || isUploading}
@@ -282,13 +316,13 @@ export function ImageUpload({
       {/* Current image display */}
       {hasCurrentImage && !hasPreview && (
         <div className="relative group">
-          <div className="w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200">
+          <div className="aspect-square w-full rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-100">
             <OptimizedImage
-              src={currentImage.url}
-              blurhash={currentImage.blurhash}
+              src={currentImage!.url!}
+              blurhash={currentImage?.blurhash}
               alt="Current cover image"
               fill
-              className="object-cover"
+              className="object-cover w-full h-full"
             />
           </div>
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -320,9 +354,9 @@ export function ImageUpload({
       {hasPreview && (
         <div className="space-y-3">
           <div className="relative group">
-            <div className="w-full h-48 rounded-lg overflow-hidden border-2 border-blue-200">
+            <div className="aspect-square w-full rounded-lg overflow-hidden border-2 border-blue-200">
               <img
-                src={previewUrl || ''}
+                src={previewUrl || ""}
                 alt="Preview"
                 className="w-full h-full object-cover"
               />
@@ -402,18 +436,20 @@ export function ImageUpload({
         <div
           className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
             isDragging
-              ? 'border-blue-400 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
-          } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              ? "border-blue-400 bg-blue-50"
+              : "border-gray-300 hover:border-gray-400"
+          } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={disabled ? undefined : openFileDialog}
         >
           <div className="flex flex-col items-center gap-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              isDragging ? 'bg-blue-100' : 'bg-gray-100'
-            }`}>
+            <div
+              className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                isDragging ? "bg-blue-100" : "bg-gray-100"
+              }`}
+            >
               {isDragging ? (
                 <Upload className="h-6 w-6 text-blue-600" />
               ) : (
@@ -423,7 +459,7 @@ export function ImageUpload({
 
             <div>
               <p className="text-lg font-medium text-gray-900 mb-1">
-                {isDragging ? 'Drop image here' : 'Add cover image'}
+                {isDragging ? "Drop image here" : "Add cover image"}
               </p>
               <p className="text-sm text-gray-500 mb-4">
                 Drag and drop an image, or click to select
