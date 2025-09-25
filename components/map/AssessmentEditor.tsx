@@ -40,8 +40,8 @@ export function AssessmentEditor({
         const newAssessment = await createNodeAssessment({
           node_id: nodeId,
           assessment_type: type,
-          points_possible: null,
-          is_graded: false,
+          points_possible: 10,
+          is_graded: true,
         });
 
         console.log("✅ Assessment created in database:", newAssessment);
