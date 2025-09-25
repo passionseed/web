@@ -12,9 +12,18 @@ ALTER TABLE public.node_assessments
 ADD COLUMN IF NOT EXISTS group_submission_mode TEXT DEFAULT 'all_members';
 
 -- Add constraint for group submission mode values
-ALTER TABLE public.node_assessments 
-ADD CONSTRAINT node_assessments_group_submission_mode_check 
-CHECK (group_submission_mode IN ('all_members', 'single_submission'));
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'node_assessments_group_submission_mode_check'
+        AND table_name = 'node_assessments'
+    ) THEN
+        ALTER TABLE public.node_assessments
+        ADD CONSTRAINT node_assessments_group_submission_mode_check
+        CHECK (group_submission_mode IN ('all_members', 'single_submission'));
+    END IF;
+END $$;
 
 -- Add index for group submission mode
 CREATE INDEX IF NOT EXISTS idx_node_assessments_group_submission_mode 
