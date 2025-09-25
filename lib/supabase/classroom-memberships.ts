@@ -330,9 +330,10 @@ export const isClassroomMember = async (
  * Get all classrooms a user is a member of (with role info)
  */
 export const getUserClassrooms = async (
-  userId?: string
+  userId?: string,
+  supabaseInstance?: any
 ): Promise<(ClassroomMembership & { classrooms: any })[]> => {
-  const supabase = createClient();
+  const supabase = supabaseInstance || createClient();
 
   let targetUserId = userId;
   if (!targetUserId) {

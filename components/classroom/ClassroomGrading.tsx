@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,8 @@ import {
   PieChart,
   Award,
   TrendingDown,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet
 } from "lucide-react";
 
 interface Student {
@@ -48,6 +49,7 @@ interface Submission {
   map_title: string;
   node_title: string;
   assessment_type: string;
+  assessment_id: string;
   text_answer: string | null;
   file_urls: string[] | null;
   image_url: string | null;
@@ -60,8 +62,11 @@ interface Submission {
   graded_by: string | null;
   status: "ungraded" | "graded";
   is_grading_enabled: boolean;
+  points_possible: number | null;
   submitted_for_group: boolean;
   assessment_group_id: string | null;
+  group_number: number | null;
+  group_name: string | null;
 }
 
 interface AssignmentNode {
@@ -71,7 +76,7 @@ interface AssignmentNode {
   map_title: string;
   assessment_type: string;
   is_grading_enabled: boolean;
-  max_points?: number;
+  points_possible?: number;
 }
 
 interface GradebookMatrix {
@@ -102,8 +107,10 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
   const [selectedMapFilter, setSelectedMapFilter] = useState<string>("all");
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
   const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
+  const [updateTeamGrades, setUpdateTeamGrades] = useState(false);
   const [fixingGroups, setFixingGroups] = useState(false);
   const [debuggingGroups, setDebuggingGroups] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const { toast } = useToast();
 
   // Analytics calculations
@@ -144,7 +151,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
   // Grading form state
   const [gradingForm, setGradingForm] = useState({
     grade: "pass" as "pass" | "fail",
-    points: 100,
+    points: "" as string,
     comments: ""
   });
 
@@ -154,6 +161,23 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
       loadGradingData();
     }
   }, [classroomId, canManage]);
+
+  // Create a mapping of group IDs to sequential numbers
+  const groupIdToNumber = React.useMemo(() => {
+    const groupIds = new Set<string>();
+    submissions.forEach(submission => {
+      if (submission.submitted_for_group && submission.assessment_group_id) {
+        groupIds.add(submission.assessment_group_id);
+      }
+    });
+    
+    const mapping = new Map<string, number>();
+    Array.from(groupIds).sort().forEach((groupId, index) => {
+      mapping.set(groupId, index + 1);
+    });
+    
+    return mapping;
+  }, [submissions]);
 
   useEffect(() => {
     if (students.length > 0 && allAssessments.length > 0) {
@@ -209,7 +233,7 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
         // Find submission for this student and assessment
         const submission = submissions.find(sub => 
           sub.student_user_id === student.user_id && 
-          sub.assessment_id === node.assessment_id
+          sub.assessment_id === node.id
         );
         matrix[student.user_id][node.id] = submission;
       });
@@ -229,14 +253,21 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
           submission_id: submissionId,
           grade,
           points_awarded: points,
-          comments
+          comments,
+          update_team_grades: selectedSubmission?.submitted_for_group ? updateTeamGrades : false
         })
       });
 
       if (response.ok) {
+        const successMessage = selectedSubmission?.submitted_for_group && updateTeamGrades 
+          ? `Grade updated for all ${groupMembers.length} team members`
+          : selectedSubmission?.status === "graded" 
+            ? "Grade updated successfully"
+            : "Submission has been graded";
+            
         toast({
-          title: "Graded Successfully",
-          description: "Submission has been graded",
+          title: selectedSubmission?.status === "graded" ? "Grade Updated" : "Graded Successfully",
+          description: successMessage,
         });
         loadGradingData(); // Refresh data
         setSelectedSubmission(null);
@@ -281,6 +312,97 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
       setGroupMembers([]);
     } finally {
       setLoadingGroupMembers(false);
+    }
+  };
+
+  const exportToExcel = async () => {
+    try {
+      setExportingExcel(true);
+      
+      // Prepare data for export
+      const exportData = filteredStudents.map(student => {
+        const studentData: any = {
+          'Student Name': student.full_name || student.username,
+          'Email': student.email,
+          'Total Submissions': student.total_submissions,
+          'Graded Submissions': student.graded_submissions,
+          'Pending Submissions': student.pending_submissions,
+          'Average Grade': student.average_grade ? `${student.average_grade}%` : 'No grades yet'
+        };
+
+        // Add each assignment as a column
+        assignmentNodes.forEach(node => {
+          const submission = gradebookMatrix[student.user_id]?.[node.id];
+          const columnName = `${node.title} (${node.map_title})`;
+          
+          if (submission) {
+            let cellValue = '';
+            if (submission.is_grading_enabled && submission.points_awarded !== null) {
+              cellValue = `${submission.grade?.toUpperCase() || 'Not Graded'} (${submission.points_awarded}pts)`;
+            } else {
+              cellValue = submission.grade?.toUpperCase() || 'Not Graded';
+            }
+            // Add group info only for submitted group work
+            if (submission.submitted_for_group && submission.group_number) {
+              cellValue += ` [G${submission.group_number}]`;
+            }
+            studentData[columnName] = cellValue;
+          } else {
+            studentData[columnName] = 'Not Submitted';
+          }
+        });
+
+        return studentData;
+      });
+
+      // Convert to CSV (simple Excel-compatible format)
+      if (exportData.length === 0) {
+        toast({
+          title: "No Data",
+          description: "No student data available to export",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const headers = Object.keys(exportData[0]);
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map(row => 
+          headers.map(header => {
+            const value = row[header] || '';
+            // Escape commas and quotes for CSV
+            return `"${String(value).replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `classroom-grades-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      toast({
+        title: "Export Successful",
+        description: "Grades have been exported to CSV file",
+      });
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast({
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "Failed to export grades",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingExcel(false);
     }
   };
 
@@ -350,15 +472,18 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
     setSelectedSubmission(submission);
     setGradingForm({
       grade: submission.grade || "pass",
-      points: submission.points_awarded || 100,
+      points: submission.points_awarded?.toString() || "",
       comments: submission.comments || ""
     });
     
     // Load group members if this is a group submission
     if (submission.submitted_for_group && submission.assessment_group_id) {
       loadGroupMembers(submission.assessment_group_id);
+      // Set default based on whether it's already graded or not
+      setUpdateTeamGrades(submission.status === "ungraded");
     } else {
       setGroupMembers([]);
+      setUpdateTeamGrades(false);
     }
     
     setShowGradingModal(true);
@@ -554,6 +679,16 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
               </Button>
               <Button
                 variant="outline"
+                onClick={exportToExcel}
+                disabled={exportingExcel}
+                size="sm"
+                className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                {exportingExcel ? "Exporting..." : "Export Excel"}
+              </Button>
+              <Button
+                variant="outline"
                 onClick={debugGroupSubmissions}
                 disabled={debuggingGroups}
                 size="sm"
@@ -579,20 +714,22 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
               {/* Gradebook Grid */}
               <div className="border rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
-                  <div className="min-w-full">
+                  <div className="min-w-full" style={{ display: 'table', width: '100%' }}>
                     {/* Header Row */}
-                    <div className="flex bg-gray-900 border-b border-gray-700 sticky top-0 z-10">
+                    <div className="flex bg-gray-900 border-b border-gray-700 sticky top-0 z-10" style={{ minWidth: 'max-content' }}>
                       {/* Student Column Header */}
-                      <div className="w-48 p-3 border-r border-gray-700 bg-gray-900 font-semibold text-sm sticky left-0 z-20 text-gray-100">
+                      <div className="w-48 p-3 border-r border-gray-700 bg-gray-900 font-semibold text-sm sticky left-0 z-20 text-gray-100 flex-shrink-0">
                         Student
                       </div>
                       {/* Assignment Headers */}
                       {assignmentNodes.map((node) => (
-                        <div key={node.id} className="min-w-32 p-2 border-r border-gray-700 text-center">
-                          <div className="font-medium text-xs line-clamp-2 text-gray-100">{node.title}</div>
-                          <div className="text-xs text-gray-400 mt-1">{node.map_title}</div>
+                        <div key={node.id} className="w-32 p-2 border-r border-gray-700 text-center flex-shrink-0">
+                          <div className="font-medium text-xs line-clamp-2 text-gray-100" title={node.title}>{node.title}</div>
+                          <div className="text-xs text-gray-400 mt-1" title={node.map_title}>{node.map_title}</div>
                           {node.is_grading_enabled && (
-                            <div className="text-xs text-blue-400">Points</div>
+                            <div className="text-xs text-blue-400">
+                              Points{node.points_possible ? ` (Max: ${node.points_possible})` : ''}
+                            </div>
                           )}
                         </div>
                       ))}
@@ -600,17 +737,16 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
 
                     {/* Student Rows */}
                     {filteredStudents.map((student) => (
-                      <div key={student.user_id} className="flex hover:bg-gray-800 border-b border-gray-700">
+                      <div key={student.user_id} className="flex hover:bg-gray-800 border-b border-gray-700" style={{ minWidth: 'max-content' }}>
                         {/* Student Info */}
-                        <div className="w-48 p-3 border-r border-gray-700 bg-gray-900 sticky left-0 z-10">
+                        <div className="w-48 p-3 border-r border-gray-700 bg-gray-900 sticky left-0 z-10 flex-shrink-0">
                           <div className="font-medium text-sm text-gray-100">{student.full_name || student.username}</div>
-                          <div className="text-xs text-gray-400">{student.email}</div>
                         </div>
                         {/* Grade Cells */}
                         {assignmentNodes.map((node) => {
                           const submission = gradebookMatrix[student.user_id]?.[node.id];
                           return (
-                            <div key={`${student.user_id}-${node.id}`} className="min-w-32 border-r border-gray-700 py-3 relative">
+                            <div key={`${student.user_id}-${node.id}`} className="w-32 border-r border-gray-700 py-3 relative flex-shrink-0">
                               <GradeCell
                                 submission={submission}
                                 onClick={() => {
@@ -619,10 +755,11 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                                   }
                                 }}
                               />
+                              {/* Show group badge only for submitted group work */}
                               {submission?.submitted_for_group && (
-                                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-10">
-                                  <Badge variant="outline" className="px-0.5 py-0 h-2 bg-blue-900 border-blue-600 text-blue-200" style={{ fontSize: '8px' }}>
-                                    {submission.assessment_group_id ? `Group ${submission.assessment_group_id.slice(-1)}` : 'GROUP'}
+                                <div className="absolute bottom-1 right-1 z-10">
+                                  <Badge variant="secondary" className="px-1 py-0 text-xs bg-blue-600 border-blue-400 text-white font-bold" style={{ fontSize: '8px', lineHeight: '12px' }}>
+                                    {submission.group_number ? `G${submission.group_number}` : (submission.assessment_group_id ? `G${groupIdToNumber.get(submission.assessment_group_id) || '?'}` : 'G')}
                                   </Badge>
                                 </div>
                               )}
@@ -999,12 +1136,20 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                       </div>
                       {selectedSubmission?.is_grading_enabled && (
                         <div>
-                          <Label>Points</Label>
+                          <Label>
+                            Points{selectedSubmission?.points_possible ? ` (Max: ${selectedSubmission.points_possible})` : ''} <span className="text-red-500">*</span>
+                          </Label>
                           <Input
                             type="number"
                             value={gradingForm.points}
-                            onChange={(e) => setGradingForm(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
+                            onChange={(e) => setGradingForm(prev => ({ ...prev, points: e.target.value }))}
+                            max={selectedSubmission?.points_possible || undefined}
+                            placeholder="Enter points"
+                            className={!gradingForm.points.trim() ? "border-red-500" : ""}
                           />
+                          {!gradingForm.points.trim() && (
+                            <p className="text-sm text-red-500 mt-1">Points are required</p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1016,14 +1161,37 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                         placeholder="Provide feedback to the student..."
                       />
                     </div>
+                    
+                    {/* Team Grade Option for Initial Grading */}
+                    {selectedSubmission?.submitted_for_group && groupMembers.length > 0 && (
+                      <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="applyToTeam"
+                            checked={updateTeamGrades}
+                            onChange={(e) => setUpdateTeamGrades(e.target.checked)}
+                            className="rounded"
+                            defaultChecked={true}
+                          />
+                          <Label htmlFor="applyToTeam" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Apply this grade to all team members ({groupMembers.length} members)
+                          </Label>
+                        </div>
+                        <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+                          This is a team submission. By default, all team members will receive this grade.
+                        </p>
+                      </div>
+                    )}
+                    
                     <Button
                       onClick={() => handleGradeSubmission(
                         selectedSubmission.id,
                         gradingForm.grade,
-                        selectedSubmission?.is_grading_enabled ? gradingForm.points : null,
+                        selectedSubmission?.is_grading_enabled ? (gradingForm.points ? parseInt(gradingForm.points) : null) : null,
                         gradingForm.comments
                       )}
-                      disabled={grading}
+                      disabled={grading || (selectedSubmission?.is_grading_enabled && !gradingForm.points.trim())}
                       className="w-full"
                     >
                       {grading ? "Grading..." : "Submit Grade"}
@@ -1032,26 +1200,93 @@ export function ClassroomGrading({ classroomId, canManage }: ClassroomGradingPro
                 </Card>
               )}
 
-              {/* Existing Grade Display */}
+              {/* Edit Grade Form for Already Graded Submissions */}
               {selectedSubmission.status === "graded" && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Current Grade</CardTitle>
+                    <CardTitle className="text-lg">Edit Grade</CardTitle>
+                    <div className="text-sm text-muted-foreground">
+                      Originally graded on {new Date(selectedSubmission.graded_at!).toLocaleDateString()}
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div>Grade: {getGradeBadge(selectedSubmission.grade)}</div>
-                      <div>Points: {selectedSubmission.points_awarded}</div>
-                      {selectedSubmission.comments && (
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Grade</Label>
+                        <Select 
+                          value={gradingForm.grade} 
+                          onValueChange={(value: "pass" | "fail") => setGradingForm(prev => ({ ...prev, grade: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pass">Pass</SelectItem>
+                            <SelectItem value="fail">Fail</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {selectedSubmission?.is_grading_enabled && (
                         <div>
-                          <Label className="font-medium">Comments:</Label>
-                          <div className="mt-1 p-3 bg-gray-800 rounded-md text-gray-100">{selectedSubmission.comments}</div>
+                          <Label>
+                            Points{selectedSubmission?.points_possible ? ` (Max: ${selectedSubmission.points_possible})` : ''} <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            value={gradingForm.points}
+                            onChange={(e) => setGradingForm(prev => ({ ...prev, points: e.target.value }))}
+                            max={selectedSubmission?.points_possible || undefined}
+                            placeholder="Enter points"
+                            className={!gradingForm.points.trim() ? "border-red-500" : ""}
+                          />
+                          {!gradingForm.points.trim() && (
+                            <p className="text-sm text-red-500 mt-1">Points are required</p>
+                          )}
                         </div>
                       )}
-                      <div className="text-sm text-muted-foreground">
-                        Graded on {new Date(selectedSubmission.graded_at!).toLocaleDateString()}
-                      </div>
                     </div>
+                    <div>
+                      <Label>Comments</Label>
+                      <Textarea
+                        value={gradingForm.comments}
+                        onChange={(e) => setGradingForm(prev => ({ ...prev, comments: e.target.value }))}
+                        placeholder="Provide feedback to the student..."
+                      />
+                    </div>
+                    
+                    {/* Team Grade Update Option */}
+                    {selectedSubmission.submitted_for_group && groupMembers.length > 0 && (
+                      <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="updateTeamGrades"
+                            checked={updateTeamGrades}
+                            onChange={(e) => setUpdateTeamGrades(e.target.checked)}
+                            className="rounded"
+                          />
+                          <Label htmlFor="updateTeamGrades" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Update grade for all team members ({groupMembers.length} members)
+                          </Label>
+                        </div>
+                        <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+                          When checked, this grade change will be applied to all members of this group
+                        </p>
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={() => handleGradeSubmission(
+                        selectedSubmission.id,
+                        gradingForm.grade,
+                        selectedSubmission?.is_grading_enabled ? (gradingForm.points ? parseInt(gradingForm.points) : null) : null,
+                        gradingForm.comments
+                      )}
+                      disabled={grading || (selectedSubmission?.is_grading_enabled && !gradingForm.points.trim())}
+                      className="w-full"
+                    >
+                      {grading ? "Updating Grade..." : "Update Grade"}
+                    </Button>
                   </CardContent>
                 </Card>
               )}

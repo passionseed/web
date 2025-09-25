@@ -8,7 +8,8 @@ async function handleGroupGrading(
   grade: "pass" | "fail",
   points_awarded: number | null,
   comments: string,
-  graded_by: string
+  graded_by: string,
+  update_team_grades: boolean = true
 ) {
   try {
     // Check if this submission is for a group
@@ -18,8 +19,8 @@ async function handleGroupGrading(
       .eq("id", submission_id)
       .single();
 
-    if (submissionError || !submission || !submission.submitted_for_group || !submission.assessment_group_id) {
-      // Not a group submission, nothing to do
+    if (submissionError || !submission || !submission.submitted_for_group || !submission.assessment_group_id || !update_team_grades) {
+      // Not a group submission, or team grade update is disabled, nothing to do
       return;
     }
 
@@ -46,7 +47,7 @@ async function handleGroupGrading(
         .eq("submission_id", groupSubmission.id)
         .single();
 
-      const groupComments = comments + " (Group Grade)";
+      const groupComments = comments + " (Team Grade - Updated Together)";
 
       if (gradeCheckError && gradeCheckError.code === 'PGRST116') {
         // No existing grade, insert new one
@@ -158,7 +159,7 @@ export async function GET(
 
     const { data: allAssessments, error: assessmentsError } = await supabase
       .from("node_assessments")
-      .select("id, node_id, assessment_type, is_graded")
+      .select("id, node_id, assessment_type, is_graded, points_possible")
       .in("node_id", nodeIds);
 
     if (assessmentsError) {
@@ -172,10 +173,14 @@ export async function GET(
 
     const assessmentIds = allAssessments.map(a => a.id);
 
-    // Step 3: Get submissions
+    // Step 3: Get submissions with group information
     const { data: submissions, error: submissionsError } = await supabase
       .from("assessment_submissions")
-      .select("id, submitted_at, text_answer, file_urls, image_url, quiz_answers, submitted_for_group, assessment_group_id, progress_id, assessment_id")
+      .select(`
+        id, submitted_at, text_answer, file_urls, image_url, quiz_answers, 
+        submitted_for_group, assessment_group_id, progress_id, assessment_id,
+        assessment_groups(id, group_number, group_name)
+      `)
       .in("assessment_id", assessmentIds)
       .order("submitted_at", { ascending: false });
 
@@ -254,6 +259,7 @@ export async function GET(
       const node = assessment ? nodesMap.get(assessment.node_id) : null;
       const map = node ? mapsMap.get(node.map_id) : null;
 
+
       return {
         id: submission.id,
         student_user_id: progress?.user_id || null,
@@ -274,8 +280,11 @@ export async function GET(
         graded_by: grade?.graded_by || null,
         status: grade ? "graded" : "ungraded",
         is_grading_enabled: assessment?.is_graded || false,
+        points_possible: assessment?.points_possible || null,
         submitted_for_group: submission.submitted_for_group || false,
-        assessment_group_id: submission.assessment_group_id || null
+        assessment_group_id: submission.assessment_group_id || null,
+        group_number: submission.assessment_groups?.group_number || null,
+        group_name: submission.assessment_groups?.group_name || null
       };
     });
 
@@ -343,6 +352,7 @@ export async function GET(
         map_title: map?.title || 'Unknown Map',
         assessment_type: assessment.assessment_type,
         is_grading_enabled: assessment.is_graded,
+        points_possible: assessment.points_possible,
         assessment_id: assessment.id,
         node_id: assessment.node_id
       };
@@ -371,7 +381,7 @@ export async function POST(
     // Step 1: Basic parsing
     const { id: classroomId } = await params;
     const body = await request.json();
-    const { submission_id, grade, points_awarded, comments } = body;
+    const { submission_id, grade, points_awarded, comments, update_team_grades } = body;
     
     // Step 2: Create supabase client
     const supabase = await createClient();
@@ -449,7 +459,7 @@ export async function POST(
     }
 
     // Step 7: Handle group grading in application layer
-    await handleGroupGrading(supabase, submission_id, grade, points_awarded, comments, user.id);
+    await handleGroupGrading(supabase, submission_id, grade, points_awarded, comments, user.id, update_team_grades);
 
     return NextResponse.json({ message: "Grade submitted successfully" });
 
