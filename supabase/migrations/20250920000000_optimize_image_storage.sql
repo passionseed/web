@@ -4,6 +4,8 @@
 -- Add new columns for optimized image storage
 ALTER TABLE learning_maps
 ADD COLUMN IF NOT EXISTS cover_image_url TEXT,
+ADD COLUMN IF NOT EXISTS version INT DEFAULT 1,
+ADD COLUMN IF NOT EXISTS last_modified_by uuid NULL REFERENCES auth.users(id),
 ADD COLUMN IF NOT EXISTS cover_image_blurhash TEXT,
 ADD COLUMN IF NOT EXISTS cover_image_key TEXT,
 ADD COLUMN IF NOT EXISTS cover_image_updated_at TIMESTAMPTZ DEFAULT NOW();

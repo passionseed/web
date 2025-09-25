@@ -80,10 +80,16 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger for group grading
-CREATE TRIGGER trigger_handle_group_grading
-    AFTER INSERT OR UPDATE ON public.submission_grades
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_group_grading();
+DO $$
+BEGIN
+    -- Drop the trigger if it exists to recreate it
+    DROP TRIGGER IF EXISTS trigger_handle_group_grading ON public.submission_grades;
+
+    CREATE TRIGGER trigger_handle_group_grading
+        AFTER INSERT OR UPDATE ON public.submission_grades
+        FOR EACH ROW
+        EXECUTE FUNCTION public.handle_group_grading();
+END $$;
 
 -- Add helpful comments
 COMMENT ON FUNCTION public.handle_group_grading() IS 
