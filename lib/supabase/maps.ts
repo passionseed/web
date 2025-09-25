@@ -90,7 +90,7 @@ export const getMapsWithStats = async (): Promise<
     node_count: number;
     avg_difficulty: number;
     total_assessments: number;
-    map_type: "personal" | "classroom" | "team" | "forked" | "public";
+    map_type: "personal" | "classroom" | "classroom_exclusive" | "team" | "forked" | "public";
     isEnrolled: boolean;
     hasStarted: boolean;
     source_info?: {
@@ -395,6 +395,54 @@ export const getMapsWithStats = async (): Promise<
       additionalQueries.push(Promise.resolve({ type: 'classroom', data: [] }));
     }
 
+    // Fetch classroom-exclusive maps for user's classrooms
+    const userClassroomIds = [...new Set(userClassrooms.map(c => c.classroom_name))];
+    if (userClassroomIds.length > 0) {
+      // Get classroom IDs first
+      const { data: classroomsData } = await supabase
+        .from("classrooms")
+        .select("id, name")
+        .in("name", userClassroomIds);
+
+      if (classroomsData && classroomsData.length > 0) {
+        const classroomIds = classroomsData.map(c => c.id);
+        
+        additionalQueries.push(
+          supabase
+            .from("learning_maps")
+            .select(
+              `
+              *,
+              map_nodes (
+                id,
+                difficulty,
+                node_assessments (id)
+              ),
+              user_map_enrollments!left (
+                enrolled_at,
+                progress_percentage,
+                completed_at
+              )
+            `
+            )
+            .eq("map_type", "classroom_exclusive")
+            .in("parent_classroom_id", classroomIds)
+            .eq("user_map_enrollments.user_id", user.id)
+            .then(({ data }) => ({ 
+              type: 'classroom_exclusive', 
+              data: (data || []).map(map => ({
+                ...map,
+                source_classroom_name: classroomsData.find(c => c.id === map.parent_classroom_id)?.name
+              }))
+            }))
+        );
+      } else {
+        additionalQueries.push(Promise.resolve({ type: 'classroom_exclusive', data: [] }));
+      }
+    } else {
+      additionalQueries.push(Promise.resolve({ type: 'classroom_exclusive', data: [] }));
+    }
+
     // Execute additional map queries concurrently
     const additionalResults = await Promise.all(additionalQueries);
     
@@ -433,13 +481,18 @@ export const getMapsWithStats = async (): Promise<
       );
 
       // Determine map type and source info
-      let mapType: "personal" | "classroom" | "team" | "forked" | "public" =
+      let mapType: "personal" | "classroom" | "classroom_exclusive" | "team" | "forked" | "public" =
         "public";
       const sourceInfo: any = {};
 
       if (user) {
+        // Check if it's a classroom-exclusive map first
+        if (map.map_type === "classroom_exclusive") {
+          mapType = "classroom_exclusive";
+          sourceInfo.classroom_name = map.source_classroom_name;
+        }
         // Check if it's the user's own map
-        if (map.creator_id === user.id) {
+        else if (map.creator_id === user.id) {
           if (map.metadata?.forked_from) {
             mapType = "forked";
             sourceInfo.original_title = "Original Map"; // You might want to fetch this
@@ -1458,22 +1511,8 @@ export const batchUpdateMap = async (
           console.log("✅ Student progress deleted");
         }
 
-        // Delete node leaderboard entries
-        console.log("🗑️ Deleting leaderboard entries...");
-        const { error: leaderboardDeleteError } = await supabase
-          .from("node_leaderboard")
-          .delete()
-          .eq("node_id", nodeId);
-
-        if (leaderboardDeleteError) {
-          console.error(
-            "❌ Leaderboard deletion failed:",
-            leaderboardDeleteError
-          );
-          // Don't throw here, continue with deletion
-        } else {
-          console.log("✅ Leaderboard entries deleted");
-        }
+        // Note: node_leaderboard entries are automatically deleted via CASCADE DELETE constraint
+        console.log("✅ Leaderboard entries will be deleted automatically");
 
         // Delete paths connected to this node
         console.log("🗑️ Deleting paths connected to node...");

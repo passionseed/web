@@ -13,10 +13,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Users, 
   Shuffle, 
@@ -26,7 +32,8 @@ import {
   UserMinus,
   RotateCcw,
   Loader2,
-  Settings
+  Lock,
+  Unlock
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -39,7 +46,6 @@ import {
 import {
   AssessmentGroupWithMembers,
   NodeAssessment,
-  GroupFormationMethod,
 } from "@/types/map";
 
 interface GroupManagementModalProps {
@@ -75,6 +81,8 @@ export function GroupManagementModal({
   const [students, setStudents] = useState<Student[]>([]);
   const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
   const [activeTab, setActiveTab] = useState("groups");
+  const [groupSizeInput, setGroupSizeInput] = useState<string>("");
+  const [lockedGroupNames, setLockedGroupNames] = useState<Set<string>>(new Set());
 
   // Load data when modal opens
   useEffect(() => {
@@ -82,6 +90,11 @@ export function GroupManagementModal({
       loadData();
     }
   }, [isOpen, assessment.id]);
+
+  // Initialize group size input when assessment changes
+  useEffect(() => {
+    setGroupSizeInput((assessment.target_group_size || 3).toString());
+  }, [assessment.target_group_size]);
 
   const loadData = useCallback(async () => {
     if (!assessment.id) return;
@@ -127,30 +140,169 @@ export function GroupManagementModal({
   const handleAutoShuffle = useCallback(async () => {
     if (!assessment.id) return;
 
-    setLoading(true);
-    try {
-      console.log("🔀 Auto-shuffling groups...");
-      
-      await createAssessmentGroupsShuffle({
-        assessment_id: assessment.id,
-        target_group_size: assessment.target_group_size || 3,
-        allow_uneven_groups: assessment.allow_uneven_groups ?? true,
-      });
+    // Check if there are locked groups
+    if (lockedGroupNames.size > 0) {
+      // Custom shuffle that preserves locked groups
+      setLoading(true);
+      try {
+        console.log("🔀 Auto-shuffling groups (preserving locked groups)...");
+        
+        // Get students from unlocked groups + unassigned students
+        const studentsToShuffle: Student[] = [];
+        const preservedGroups: AssessmentGroupWithMembers[] = [];
+        const preservedGroupNames = new Set<string>();
+        
+        groups.forEach(group => {
+          if (lockedGroupNames.has(group.group_name)) {
+            // Keep locked groups as-is
+            preservedGroups.push(group);
+            preservedGroupNames.add(group.group_name);
+          } else {
+            // Add members of unlocked groups to shuffle pool
+            group.members.forEach(member => {
+              const student = students.find(s => s.user_id === member.user_id);
+              if (student) studentsToShuffle.push(student);
+            });
+          }
+        });
+        
+        // Add unassigned students to shuffle pool
+        studentsToShuffle.push(...unassignedStudents);
+        
+        console.log(`💾 Preserving ${preservedGroups.length} locked groups: ${Array.from(preservedGroupNames).join(', ')}`);
+        console.log(`🔄 Shuffling ${studentsToShuffle.length} students from ${groups.length - preservedGroups.length} unlocked groups`);
+        
+        // First, create all groups with both preserved and shuffled
+        const allGroupsData: GroupData[] = [];
+        
+        // Add preserved groups first (they keep their exact composition)
+        preservedGroups.forEach(group => {
+          allGroupsData.push({
+            group_name: group.group_name,
+            member_ids: group.members.map(member => member.user_id),
+          });
+        });
+        
+        // Create shuffled groups for remaining students if any
+        if (studentsToShuffle.length > 0) {
+          // Calculate how many shuffled groups we need
+          const targetSize = assessment.target_group_size || 3;
+          const allowUneven = assessment.allow_uneven_groups ?? true;
+          
+          if (allowUneven) {
+            // Use smart distribution to avoid groups of size 1
+            const remainder = studentsToShuffle.length % targetSize;
+            let shuffledGroups: Student[][];
+            
+            if (remainder === 0) {
+              // Perfect division
+              const numGroups = studentsToShuffle.length / targetSize;
+              shuffledGroups = Array.from({ length: numGroups }, () => [] as Student[]);
+            } else if (remainder === 1) {
+              // Avoid size 1: create groups of (target-1) and target
+              const numFullGroups = Math.floor(studentsToShuffle.length / targetSize) - 1;
+              const numSmallGroups = 2;
+              shuffledGroups = [
+                ...Array.from({ length: numFullGroups }, () => [] as Student[]),
+                ...Array.from({ length: numSmallGroups }, () => [] as Student[])
+              ];
+            } else {
+              // remainder >= 2: normal distribution
+              const numFullGroups = Math.floor(studentsToShuffle.length / targetSize);
+              shuffledGroups = Array.from({ length: numFullGroups + 1 }, () => [] as Student[]);
+            }
+            
+            // Distribute students evenly
+            studentsToShuffle.forEach((student, index) => {
+              const groupIndex = index % shuffledGroups.length;
+              shuffledGroups[groupIndex].push(student);
+            });
+            
+            // Add shuffled groups to the data
+            shuffledGroups.forEach((groupStudents) => {
+              if (groupStudents.length > 0) {
+                allGroupsData.push({
+                  group_name: `Group ${allGroupsData.length + 1}`,
+                  member_ids: groupStudents.map(student => student.user_id),
+                });
+              }
+            });
+          } else {
+            // Strict mode: only full groups
+            const numFullGroups = Math.floor(studentsToShuffle.length / targetSize);
+            const shuffledGroups = Array.from({ length: numFullGroups }, () => [] as Student[]);
+            
+            // Only assign students to full groups
+            for (let i = 0; i < numFullGroups * targetSize; i++) {
+              const groupIndex = Math.floor(i / targetSize);
+              shuffledGroups[groupIndex].push(studentsToShuffle[i]);
+            }
+            
+            shuffledGroups.forEach((groupStudents) => {
+              allGroupsData.push({
+                group_name: `Group ${allGroupsData.length + 1}`,
+                member_ids: groupStudents.map(student => student.user_id),
+              });
+            });
+          }
+        }
+        
+        // Clear all existing groups and create new ones
+        await deleteAssessmentGroups(assessment.id);
+        
+        if (allGroupsData.length > 0) {
+          await updateAssessmentGroupsManual({
+            assessment_id: assessment.id,
+            groups: allGroupsData,
+          });
+        }
 
-      toast({ title: "Groups shuffled successfully!" });
-      await loadData();
-      onGroupsUpdated();
-    } catch (error) {
-      console.error("❌ Failed to shuffle groups:", error);
-      toast({
-        title: "Failed to shuffle groups",
-        description: (error as Error).message || "Unknown error",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+        // Preserve locked group names (they will be applied after data loads)
+        // Don't clear lockedGroupNames since we want to maintain the lock state
+        
+        toast({ 
+          title: "Groups shuffled successfully!", 
+          description: `${preservedGroups.length} groups were preserved, others shuffled` 
+        });
+        await loadData();
+        onGroupsUpdated();
+      } catch (error) {
+        console.error("❌ Failed to shuffle groups:", error);
+        toast({
+          title: "Failed to shuffle groups",
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Normal shuffle (no locked groups)
+      setLoading(true);
+      try {
+        console.log("🔀 Auto-shuffling groups...");
+        
+        await createAssessmentGroupsShuffle({
+          assessment_id: assessment.id,
+          target_group_size: assessment.target_group_size || 3,
+          allow_uneven_groups: assessment.allow_uneven_groups ?? true,
+        });
+
+        toast({ title: "Groups shuffled successfully!" });
+        await loadData();
+        onGroupsUpdated();
+      } catch (error) {
+        console.error("❌ Failed to shuffle groups:", error);
+        toast({
+          title: "Failed to shuffle groups",
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [assessment, toast, loadData, onGroupsUpdated]);
+  }, [assessment, lockedGroupNames, groups, students, unassignedStudents, toast, loadData, onGroupsUpdated]);
 
   const handleResetGroups = useCallback(async () => {
     if (!assessment.id) return;
@@ -254,9 +406,77 @@ export function GroupManagementModal({
     }
   }, [assessment.id, groups, toast, loadData, onGroupsUpdated]);
 
+  const createNewGroup = useCallback(() => {
+    const newGroupNumber = groups.length + 1;
+    const newGroup: AssessmentGroupWithMembers = {
+      id: `temp-${Date.now()}`, // Temporary ID for local state
+      assessment_id: assessment.id || '',
+      group_name: `Group ${newGroupNumber}`,
+      group_number: newGroupNumber,
+      created_at: new Date().toISOString(),
+      created_by: '',
+      members: []
+    };
+    
+    setGroups(prevGroups => [...prevGroups, newGroup]);
+    toast({ title: `Created ${newGroup.group_name}` });
+  }, [groups.length, assessment.id, toast]);
+
+  const deleteGroup = useCallback((groupIndex: number) => {
+    const groupToDelete = groups[groupIndex];
+    if (!groupToDelete) return;
+
+    // Move all members back to unassigned students
+    const membersToUnassign = groupToDelete.members.map(member => {
+      const student = students.find(s => s.user_id === member.user_id);
+      return student;
+    }).filter(Boolean) as Student[];
+
+    // Remove the group from groups array and locked groups
+    const updatedGroups = groups.filter((_, index) => index !== groupIndex);
+    setGroups(updatedGroups);
+    setLockedGroupNames(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(groupToDelete.group_name);
+      return newSet;
+    });
+
+    // Add members back to unassigned students
+    setUnassignedStudents(prev => [...prev, ...membersToUnassign]);
+
+    toast({ 
+      title: `Deleted ${groupToDelete.group_name}`,
+      description: `${membersToUnassign.length} students moved to unassigned`
+    });
+  }, [groups, students, toast]);
+
+  const toggleGroupLock = useCallback((groupId: string, groupName: string) => {
+    setLockedGroupNames(prev => {
+      const newSet = new Set(prev);
+      const wasLocked = newSet.has(groupName);
+      
+      if (wasLocked) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      
+      // Use setTimeout to avoid calling toast during render
+      setTimeout(() => {
+        if (wasLocked) {
+          toast({ title: `Unlocked ${groupName}`, description: "Group will be included in shuffle" });
+        } else {
+          toast({ title: `Locked ${groupName}`, description: "Group will be excluded from shuffle" });
+        }
+      }, 0);
+      
+      return newSet;
+    });
+  }, [toast]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[70vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-screen overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -267,8 +487,16 @@ export function GroupManagementModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
+        <div 
+          className="border" 
+          style={{ 
+            maxHeight: "50vh", 
+            overflowY: "scroll",
+            scrollbarWidth: "auto", // Firefox
+            msOverflowStyle: "scrollbar" // IE/Edge
+          }}
+        >
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
               <TabsTrigger value="groups">
                 Groups ({groups.length})
@@ -278,41 +506,12 @@ export function GroupManagementModal({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="groups" className="mt-4 h-[200px] overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100" style={{overflowY: 'scroll', scrollbarWidth: 'thin'}}>
+            <TabsContent value="groups" className="mt-4">
               <div className="space-y-4">
                 {/* Group Settings */}
                 <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
                   <h4 className="font-medium text-sm">Group Setup</h4>
                   
-                  {/* Group Formation Method */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Group Formation Method</Label>
-                    <RadioGroup
-                      value={assessment.group_formation_method || 'manual'}
-                      onValueChange={(value) => 
-                        onAssessmentChange?.({ ...assessment, group_formation_method: value })
-                      }
-                      className="flex gap-6"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="manual" id="manual" />
-                        <Label htmlFor="manual" className="text-sm flex items-center gap-1">
-                          <Settings className="h-3 w-3" />
-                          Manual Assignment
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="shuffle" id="shuffle" />
-                        <Label htmlFor="shuffle" className="text-sm flex items-center gap-1">
-                          <Shuffle className="h-3 w-3" />
-                          Auto Shuffle
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    <p className="text-xs text-muted-foreground">
-                      Manual: Instructors assign students to groups manually. Auto Shuffle: Students are randomly assigned to groups.
-                    </p>
-                  </div>
 
                   {/* Target Group Size */}
                   <div className="space-y-2">
@@ -324,12 +523,33 @@ export function GroupManagementModal({
                       type="number"
                       min="2"
                       max="20"
-                      value={assessment.target_group_size || 3}
+                      value={groupSizeInput}
                       onChange={(e) => {
-                        const value = parseInt(e.target.value, 10);
-                        if (value >= 2 && value <= 20) {
-                          onAssessmentChange?.({ ...assessment, target_group_size: value });
+                        const inputValue = e.target.value;
+                        setGroupSizeInput(inputValue);
+                        
+                        // Update assessment only if it's a valid number
+                        if (inputValue !== '') {
+                          const value = parseInt(inputValue, 10);
+                          if (!isNaN(value)) {
+                            onAssessmentChange?.({ ...assessment, target_group_size: value });
+                          }
                         }
+                      }}
+                      onBlur={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        let finalValue: number;
+                        
+                        if (isNaN(value) || value < 2) {
+                          finalValue = 2;
+                        } else if (value > 20) {
+                          finalValue = 20;
+                        } else {
+                          finalValue = value;
+                        }
+                        
+                        setGroupSizeInput(finalValue.toString());
+                        onAssessmentChange?.({ ...assessment, target_group_size: finalValue });
                       }}
                       className="w-24"
                     />
@@ -358,6 +578,16 @@ export function GroupManagementModal({
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 flex-wrap">
+                  <Button
+                    onClick={createNewGroup}
+                    disabled={loading}
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Group
+                  </Button>
                   <Button
                     onClick={handleAutoShuffle}
                     disabled={loading}
@@ -406,13 +636,48 @@ export function GroupManagementModal({
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
                     {groups.map((group, groupIndex) => (
-                      <Card key={group.id} className="relative">
+                      <Card 
+                        key={group.id} 
+                        className={`relative ${
+                          lockedGroupNames.has(group.group_name) 
+                            ? "border-orange-200 bg-orange-50/30" 
+                            : ""
+                        }`}
+                      >
                         <CardHeader className="pb-2">
                           <CardTitle className="text-lg flex items-center justify-between">
                             {group.group_name}
-                            <Badge variant="secondary">
-                              {group.members.length} members
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary">
+                                {group.members.length} members
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => toggleGroupLock(group.id, group.group_name)}
+                                className={`h-6 w-6 p-0 ${
+                                  lockedGroupNames.has(group.group_name)
+                                    ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                }`}
+                                title={lockedGroupNames.has(group.group_name) ? "Unlock group" : "Lock group"}
+                              >
+                                {lockedGroupNames.has(group.group_name) ? (
+                                  <Lock className="h-3 w-3" />
+                                ) : (
+                                  <Unlock className="h-3 w-3" />
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => deleteGroup(groupIndex)}
+                                className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Delete group"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -467,17 +732,34 @@ export function GroupManagementModal({
                                 {student.full_name || student.username || student.email}
                               </span>
                               <div className="flex gap-1">
-                                {groups.map((_, groupIndex) => (
-                                  <Button
-                                    key={groupIndex}
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => moveStudentToGroup(student.user_id, groupIndex)}
-                                    className="h-6 px-2 text-xs"
-                                  >
-                                    G{groupIndex + 1}
-                                  </Button>
-                                ))}
+                                {groups.length <= 7 ? (
+                                  // Show buttons for 7 or fewer groups
+                                  groups.map((_, groupIndex) => (
+                                    <Button
+                                      key={groupIndex}
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => moveStudentToGroup(student.user_id, groupIndex)}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      G{groupIndex + 1}
+                                    </Button>
+                                  ))
+                                ) : (
+                                  // Show dropdown for 8 or more groups
+                                  <Select onValueChange={(value) => moveStudentToGroup(student.user_id, parseInt(value))}>
+                                    <SelectTrigger className="h-6 w-24 text-xs">
+                                      <SelectValue placeholder="Group" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {groups.map((group, groupIndex) => (
+                                        <SelectItem key={groupIndex} value={groupIndex.toString()}>
+                                          {group.group_name || `Group ${groupIndex + 1}`}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -488,7 +770,7 @@ export function GroupManagementModal({
               </div>
             </TabsContent>
 
-            <TabsContent value="students" className="mt-4 h-[200px] overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100" style={{overflowY: 'scroll', scrollbarWidth: 'thin'}}>
+            <TabsContent value="students" className="mt-4">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">
@@ -542,7 +824,7 @@ export function GroupManagementModal({
           </Tabs>
         </div>
 
-        <DialogFooter className="mt-4">
+        <DialogFooter className="flex-shrink-0 mt-4">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>

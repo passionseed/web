@@ -50,7 +50,7 @@ type MapWithStats = LearningMap & {
   total_assessments: number;
   isEnrolled: boolean;
   hasStarted: boolean;
-  map_type: "personal" | "classroom" | "team" | "forked" | "public";
+  map_type: "personal" | "classroom" | "classroom_exclusive" | "team" | "forked" | "public";
   source_info?: {
     classroom_name?: string;
     team_name?: string;
@@ -209,6 +209,15 @@ export default function MapsPage() {
           borderColor: "border-green-600/30",
           iconColor: "text-green-400",
         };
+      case "classroom_exclusive":
+        return {
+          title: "Classroom Exclusive Maps",
+          icon: School,
+          description: "Maps created exclusively for classrooms",
+          bgColor: "from-green-900/50 to-emerald-900/50",
+          borderColor: "border-green-600/30",
+          iconColor: "text-green-400",
+        };
       case "team":
         return {
           title: "Team Maps",
@@ -250,15 +259,50 @@ export default function MapsPage() {
       {} as Record<string, MapWithStats[]>
     );
 
-    // Order the sections
-    const orderedTypes = ["personal", "classroom", "team", "forked", "public"];
-    return orderedTypes
+    // Group classroom maps by classroom name (both regular and exclusive)
+    const classroomSections: any[] = [];
+    const allClassroomMaps = [...(grouped["classroom"] || []), ...(grouped["classroom_exclusive"] || [])];
+    
+    if (allClassroomMaps.length > 0) {
+      const classroomGroups = allClassroomMaps.reduce((acc, map) => {
+        const classroomName = map.source_info?.classroom_name || "Unknown Classroom";
+        if (!acc[classroomName]) acc[classroomName] = [];
+        acc[classroomName].push(map);
+        return acc;
+      }, {} as Record<string, MapWithStats[]>);
+
+      Object.entries(classroomGroups).forEach(([classroomName, classroomMaps]) => {
+        const regularMaps = classroomMaps.filter(m => m.map_type === "classroom");
+        const exclusiveMaps = classroomMaps.filter(m => m.map_type === "classroom_exclusive");
+        
+        classroomSections.push({
+          type: "classroom",
+          classroomName,
+          maps: classroomMaps,
+          regularMapsCount: regularMaps.length,
+          exclusiveMapsCount: exclusiveMaps.length,
+          title: `Classroom: ${classroomName}`,
+          icon: School,
+          description: `${regularMaps.length} linked maps, ${exclusiveMaps.length} exclusive maps`,
+          bgColor: "from-green-900/50 to-emerald-900/50",
+          borderColor: "border-green-600/30",
+          iconColor: "text-green-400",
+        });
+      });
+    }
+
+    // Order the sections (excluding classroom since we handle it separately)
+    const orderedTypes = ["personal", "team", "forked", "public"];
+    const regularSections = orderedTypes
       .filter((type) => grouped[type]?.length > 0)
       .map((type) => ({
         type,
         maps: grouped[type],
         ...getMapTypeInfo(type),
       }));
+
+    // Return classroom sections first, then regular sections
+    return [...classroomSections, ...regularSections];
   };
 
   const extractColorsFromImage = (coverImage: string): Promise<Array<{r: number, g: number, b: number, luminance: number}>> => {
@@ -557,8 +601,8 @@ export default function MapsPage() {
 
     if (sections.length === 0) return null;
 
-    return sections.map((section) => (
-      <div key={section.type} className="space-y-6">
+    return sections.map((section, index) => (
+      <div key={section.classroomName ? `${section.type}-${section.classroomName}` : section.type || `section-${index}`} className="space-y-6">
         {/* Section Header */}
         <div
           className={`bg-gradient-to-r ${section.bgColor} rounded-lg border ${section.borderColor} p-6`}

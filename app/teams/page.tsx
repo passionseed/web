@@ -16,7 +16,7 @@ export default async function TeamsPage() {
 
   try {
     // Get user's classrooms using the existing utility function
-    const userMemberships = await getUserClassrooms(user.id);
+    const userMemberships = await getUserClassrooms(user.id, supabase);
 
     // Check if user has student role in any classroom
     const isStudent = userMemberships.some((m) => m.role === "student");
