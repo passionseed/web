@@ -11,7 +11,6 @@ INSERT INTO auth.users (
   id, 
   email, 
   encrypted_password, 
-  email_confirmed_at, 
   created_at, 
   updated_at, 
   raw_app_meta_data, 
@@ -19,14 +18,14 @@ INSERT INTO auth.users (
   aud,
   role
 ) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'alice@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Alice Johnson"}', 'authenticated', 'authenticated'),
-  ('22222222-2222-2222-2222-222222222222', 'bob@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Bob Smith"}', 'authenticated', 'authenticated'),
-  ('33333333-3333-3333-3333-333333333333', 'charlie@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Charlie Brown"}', 'authenticated', 'authenticated'),
-  ('44444444-4444-4444-4444-444444444444', 'diana@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Diana Wilson"}', 'authenticated', 'authenticated'),
-  ('55555555-5555-5555-5555-555555555555', 'eve@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Eve Davis"}', 'authenticated', 'authenticated'),
-  ('66666666-6666-6666-6666-666666666666', 'frank@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Frank Miller"}', 'authenticated', 'authenticated'),
-  ('77777777-7777-7777-7777-777777777777', 'grace@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Grace Lee"}', 'authenticated', 'authenticated'),
-  ('88888888-8888-8888-8888-888888888888', 'henry@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Henry Garcia"}', 'authenticated', 'authenticated')
+  ('11111111-1111-1111-1111-111111111111', 'alice@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Alice Johnson"}', 'authenticated', 'authenticated'),
+  ('22222222-2222-2222-2222-222222222222', 'bob@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Bob Smith"}', 'authenticated', 'authenticated'),
+  ('33333333-3333-3333-3333-333333333333', 'charlie@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Charlie Brown"}', 'authenticated', 'authenticated'),
+  ('44444444-4444-4444-4444-444444444444', 'diana@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Diana Wilson"}', 'authenticated', 'authenticated'),
+  ('55555555-5555-5555-5555-555555555555', 'eve@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Eve Davis"}', 'authenticated', 'authenticated'),
+  ('66666666-6666-6666-6666-666666666666', 'frank@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Frank Miller"}', 'authenticated', 'authenticated'),
+  ('77777777-7777-7777-7777-777777777777', 'grace@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Grace Lee"}', 'authenticated', 'authenticated'),
+  ('88888888-8888-8888-8888-888888888888', 'henry@test.com', '$2a$10$dummypasswordhash.encrypted.password.123456789abcdef', NOW(), NOW(), '{"provider":"email","providers":["email"]}', '{"full_name":"Henry Garcia"}', 'authenticated', 'authenticated')
 ON CONFLICT (id) DO NOTHING;
 
 -- Then insert test profiles (these will be our test students)

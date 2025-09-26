@@ -25,7 +25,6 @@ export function AssessmentEditor({
   onAssessmentChange,
   nodeData,
   mapId,
-  onNodeSaved,
 }: AssessmentEditorProps) {
   const { toast } = useToast();
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);

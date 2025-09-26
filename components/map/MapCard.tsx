@@ -80,8 +80,8 @@ export function MapCard({ map }: MapCardProps) {
   };
 
   return (
-    <div onClick={handleMapClick} className="block group cursor-pointer">
-      <div className="relative w-80 h-80 cursor-pointer perspective-1000 mt-14">
+    <div onClick={handleMapClick} className="block group cursor-pointer" style={{ marginBottom: '90px' }}>
+      <div className="relative w-80 h-80 cursor-pointer perspective-1000 mt-32">
         <VinylRecord
           vinylColors={vinylColors}
           coverImage={map.cover_image_url || map.metadata?.coverImage}

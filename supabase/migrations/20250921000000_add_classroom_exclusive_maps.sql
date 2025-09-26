@@ -8,12 +8,25 @@ BEGIN;
 -- 1. ADD MAP TYPE SYSTEM TO LEARNING_MAPS
 -- ========================================
 
--- Create map type enum
--- CREATE TYPE public.map_type AS ENUM ('public', 'private', 'classroom_exclusive');
+-- Create map type enum if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map_type') THEN
+        CREATE TYPE public.map_type AS ENUM ('public', 'private', 'classroom_exclusive');
+    END IF;
+END $$;
 
--- Add map_type column to learning_maps (defaults to 'public' for backward compatibility)
--- ALTER TABLE public.learning_maps 
--- ADD COLUMN map_type public.map_type DEFAULT 'public' NOT NULL;
+-- Add map_type column to learning_maps if it doesn't exist (defaults to 'public' for backward compatibility)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='learning_maps' AND column_name='map_type'
+    ) THEN
+        ALTER TABLE public.learning_maps 
+        ADD COLUMN map_type public.map_type DEFAULT 'public' NOT NULL;
+    END IF;
+END $$;
 
 -- Check if parent_classroom_id column exists, if not add it
 DO $$
