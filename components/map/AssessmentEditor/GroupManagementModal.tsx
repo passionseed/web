@@ -83,6 +83,7 @@ export function GroupManagementModal({
   const [activeTab, setActiveTab] = useState("groups");
   const [groupSizeInput, setGroupSizeInput] = useState<string>("");
   const [lockedGroupNames, setLockedGroupNames] = useState<Set<string>>(new Set());
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Load data when modal opens
   useEffect(() => {
@@ -122,9 +123,13 @@ export function GroupManagementModal({
       const unassigned = studentsData.filter(
         student => !assignedUserIds.has(student.user_id)
       );
+      
+      console.log("🔍 Assigned user IDs:", Array.from(assignedUserIds));
+      console.log("👥 All students:", studentsData.map(s => ({ id: s.user_id, name: s.full_name })));
+      console.log("📋 Unassigned students:", unassigned.map(s => ({ id: s.user_id, name: s.full_name })));
+      
       setUnassignedStudents(unassigned);
-
-      console.log("📋 Unassigned students:", unassigned);
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error("❌ Failed to load data:", error);
       toast({
@@ -264,6 +269,7 @@ export function GroupManagementModal({
           title: "Groups shuffled successfully!", 
           description: `${preservedGroups.length} groups were preserved, others shuffled` 
         });
+        setHasUnsavedChanges(false);
         await loadData();
         onGroupsUpdated();
       } catch (error) {
@@ -289,6 +295,7 @@ export function GroupManagementModal({
         });
 
         toast({ title: "Groups shuffled successfully!" });
+        setHasUnsavedChanges(false);
         await loadData();
         onGroupsUpdated();
       } catch (error) {
@@ -318,6 +325,7 @@ export function GroupManagementModal({
       await deleteAssessmentGroups(assessment.id);
       
       toast({ title: "All groups deleted successfully!" });
+      setHasUnsavedChanges(false);
       await loadData();
       onGroupsUpdated();
     } catch (error) {
@@ -353,6 +361,7 @@ export function GroupManagementModal({
     }
 
     setGroups(updatedGroups);
+    setHasUnsavedChanges(true);
     
     // Update unassigned students
     setUnassignedStudents(prev => prev.filter(s => s.user_id !== studentId));
@@ -366,6 +375,7 @@ export function GroupManagementModal({
       member => member.user_id !== studentId
     );
     setGroups(updatedGroups);
+    setHasUnsavedChanges(true);
 
     // Add back to unassigned if student still exists
     const student = students.find(s => s.user_id === studentId);
@@ -380,18 +390,27 @@ export function GroupManagementModal({
     setLoading(true);
     try {
       console.log("💾 Saving manual group changes...");
+      console.log("📋 Current groups state:", groups);
       
       const groupsData: GroupData[] = groups.map((group, index) => ({
         group_name: group.group_name || `Group ${index + 1}`,
         member_ids: group.members.map(member => member.user_id),
       }));
 
-      await updateAssessmentGroupsManual({
+      console.log("📤 Sending groups data to API:", groupsData);
+
+      const result = await updateAssessmentGroupsManual({
         assessment_id: assessment.id,
         groups: groupsData,
       });
 
+      console.log("✅ Groups saved successfully, result:", result);
       toast({ title: "Groups saved successfully!" });
+      setHasUnsavedChanges(false);
+
+      // Add a small delay to ensure database operations are complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       await loadData();
       onGroupsUpdated();
     } catch (error) {
@@ -419,6 +438,7 @@ export function GroupManagementModal({
     };
     
     setGroups(prevGroups => [...prevGroups, newGroup]);
+    setHasUnsavedChanges(true);
     toast({ title: `Created ${newGroup.group_name}` });
   }, [groups.length, assessment.id, toast]);
 
@@ -443,6 +463,7 @@ export function GroupManagementModal({
 
     // Add members back to unassigned students
     setUnassignedStudents(prev => [...prev, ...membersToUnassign]);
+    setHasUnsavedChanges(true);
 
     toast({ 
       title: `Deleted ${groupToDelete.group_name}`,
@@ -603,12 +624,21 @@ export function GroupManagementModal({
                   </Button>
                   <Button
                     onClick={saveManualChanges}
-                    disabled={loading}
+                    disabled={loading || !hasUnsavedChanges}
                     size="sm"
-                    variant="outline"
-                    className="flex items-center gap-2"
+                    variant={hasUnsavedChanges ? "default" : "outline"}
+                    className={`flex items-center gap-2 ${
+                      hasUnsavedChanges 
+                        ? "bg-orange-600 hover:bg-orange-700 text-white" 
+                        : ""
+                    }`}
                   >
-                    💾 Save Changes
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "💾"
+                    )}
+                    {hasUnsavedChanges ? "Save Changes*" : "Save Changes"}
                   </Button>
                   <Button
                     onClick={handleResetGroups}

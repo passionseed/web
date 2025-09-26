@@ -10,7 +10,7 @@ interface MapSectionProps {
 
 export function MapSection({ maps, typeInfo }: MapSectionProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-25">
       <div
         className={`bg-gradient-to-r ${typeInfo.bgColor} rounded-lg border ${typeInfo.borderColor} p-6`}
       >
@@ -31,7 +31,7 @@ export function MapSection({ maps, typeInfo }: MapSectionProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3  gap-8 justify-items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-12 justify-items-center mt-24">
         {maps.map((map) => (
           <MapCard key={map.id} map={map} />
         ))}

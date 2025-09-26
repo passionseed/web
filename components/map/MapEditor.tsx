@@ -857,7 +857,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     });
   }, [getSelectedNodes, toast]);
 
-  const pasteNode = useCallback(() => {
+  const pasteNode = useCallback(async () => {
     if (!copiedNodes || copiedNodes.length === 0) {
       toast({
         title: "Nothing to paste",
@@ -866,6 +866,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       });
       return;
     }
+
+    try {
 
     // Calculate base paste position (center of visible viewport)
     let basePastePosition = { x: 150, y: 150 }; // Default fallback
@@ -882,15 +884,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       };
     }
 
-    // Create new nodes with proper spacing
-    const newNodes: AppNode[] = [];
-    const newNodeData: (MapNode & {
-      node_paths_source: any[];
-      node_paths_destination: any[];
-      node_content: any[];
-      node_assessments: any[];
-    })[] = [];
-
+    console.log("💾 Saving pasted nodes to database first to get real UUIDs...");
+    
     // Calculate the bounding box of all copied nodes to preserve relative positioning
     let minX = Infinity,
       minY = Infinity;
@@ -928,9 +923,20 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       finalPastePosition.y += 100;
     }
 
-    copiedNodes.forEach((copiedNode, index) => {
-      const tempId = generateTempId("temp_node");
+    // Save nodes to database first (like handleAddNode does)
+    const savedNodes: MapNode[] = [];
+    const newNodes: AppNode[] = [];
+    const newNodeData: (MapNode & {
+      node_paths_source: any[];
+      node_paths_destination: any[];
+      node_content: any[];
+      node_assessments: any[];
+    })[] = [];
 
+    // Process each node: save to database first, then create UI elements
+    for (let index = 0; index < copiedNodes.length; index++) {
+      const copiedNode = copiedNodes[index];
+      
       // Calculate position preserving relative layout
       let nodePosition;
       if (copiedNode.metadata?.position && copiedNodes.length > 1) {
@@ -949,26 +955,34 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         nodePosition = finalPastePosition;
       }
 
-      // Create new node data
+      // Save node to database first (like handleAddNode does)
+      const savedNode = await createNode({
+        map_id: map.id,
+        title:
+          copiedNodes.length === 1
+            ? `${copiedNode.title} (Copy)`
+            : `${copiedNode.title} (Copy ${index + 1})`,
+        instructions: copiedNode.instructions || "",
+        difficulty: copiedNode.difficulty || 1,
+        sprite_url: copiedNode.sprite_url,
+        metadata: {
+          ...copiedNode.metadata,
+          position: nodePosition,
+        },
+        node_type: copiedNode.node_type || "learning",
+      });
+
+      console.log("✅ Pasted node saved to database with ID:", savedNode.id);
+      savedNodes.push(savedNode);
+
+      // Create the full node data structure for local state
       const nodeData: MapNode & {
         node_paths_source: any[];
         node_paths_destination: any[];
         node_content: any[];
         node_assessments: any[];
       } = {
-        ...copiedNode,
-        id: tempId,
-        title:
-          copiedNodes.length === 1
-            ? `${copiedNode.title} (Copy)`
-            : `${copiedNode.title} (Copy ${index + 1})`,
-        metadata: {
-          ...copiedNode.metadata,
-          position: nodePosition,
-          temp_id: tempId,
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        ...savedNode,
         node_paths_source: [], // Don't copy connections
         node_paths_destination: [], // Don't copy connections
         node_content: copiedNode.node_content || [],
@@ -976,19 +990,19 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       };
 
       const newNode: AppNode = {
-        id: tempId,
+        id: savedNode.id, // Use real UUID from database
         position: nodePosition,
         data: nodeData,
-        type: (copiedNode as any).node_type === "text" ? "text" : "default",
+        type: copiedNode.node_type === "text" ? "text" : "default",
         draggable: true,
-        connectable: (copiedNode as any).node_type !== "text",
+        connectable: copiedNode.node_type !== "text",
         selectable: true,
         style: NODE_STYLE,
       };
 
       newNodes.push(newNode);
       newNodeData.push(nodeData);
-    });
+    }
 
     // Clear ReactFlow's selection state
     if (reactFlowInstance) {
@@ -1003,7 +1017,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     // Update React Flow state with new nodes
     setNodes((nds) => [...nds, ...(newNodes as Node[])]);
 
-    // Update map state
+    // Update map state with nodes that already have real UUIDs
     const updatedMap = {
       ...map,
       map_nodes: [...map.map_nodes, ...newNodeData],
@@ -1018,12 +1032,21 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           ? `"${newNodeData[0].title}" added to map`
           : `${nodeCount} nodes added to map`,
     });
+
+    } catch (error) {
+      console.error("❌ Failed to paste nodes:", error);
+      toast({
+        title: "Failed to paste nodes",
+        description: (error as Error).message || "Unknown error",
+        variant: "destructive",
+      });
+    }
   }, [
     copiedNodes,
     reactFlowInstance,
     getSelectedNode,
     map,
-    onMapChange,
+    handleMapChange,
     setNodes,
     toast,
   ]);
@@ -2181,7 +2204,6 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   onNodeDelete={handleDeleteNode}
                   onEditingStateChange={setIsEditingNode}
                   mapId={map.id}
-                  onNodeSaved={handleNodeSaved}
                 />
               </div>
             </ResizablePanel>

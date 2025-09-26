@@ -77,19 +77,27 @@ export const updateAssessmentGroupsManual = async (
   }
 
   try {
+    console.log("🔄 Starting manual group update for assessment:", request.assessment_id);
+    console.log("📋 Groups to create:", request.groups);
+    
     // Delete existing groups for this assessment
+    console.log("🗑️ Deleting existing groups...");
     const { error: deleteError } = await supabase
       .from("assessment_groups")
       .delete()
       .eq("assessment_id", request.assessment_id);
 
     if (deleteError) {
+      console.error("❌ Failed to delete existing groups:", deleteError);
       throw new Error(`Failed to clear existing groups: ${deleteError.message}`);
     }
+    console.log("✅ Existing groups deleted");
 
     // Create new groups
+    console.log(`➕ Creating ${request.groups.length} new groups...`);
     for (let i = 0; i < request.groups.length; i++) {
       const groupData = request.groups[i];
+      console.log(`Creating group ${i + 1}: ${groupData.group_name} with ${groupData.member_ids.length} members`);
       
       // Create the group
       const { data: newGroup, error: groupError } = await supabase
@@ -104,11 +112,14 @@ export const updateAssessmentGroupsManual = async (
         .single();
 
       if (groupError) {
+        console.error(`❌ Failed to create group ${groupData.group_name}:`, groupError);
         throw new Error(`Failed to create group ${groupData.group_name}: ${groupError.message}`);
       }
+      console.log(`✅ Group created: ${newGroup.id}`);
 
       // Add members to the group
       if (groupData.member_ids.length > 0) {
+        console.log(`👥 Adding ${groupData.member_ids.length} members to group ${groupData.group_name}...`);
         const memberInserts = groupData.member_ids.map(userId => ({
           group_id: newGroup.id,
           user_id: userId,
@@ -120,8 +131,12 @@ export const updateAssessmentGroupsManual = async (
           .insert(memberInserts);
 
         if (membersError) {
+          console.error(`❌ Failed to add members to group ${groupData.group_name}:`, membersError);
           throw new Error(`Failed to add members to group ${groupData.group_name}: ${membersError.message}`);
         }
+        console.log(`✅ Members added to group ${groupData.group_name}`);
+      } else {
+        console.log(`ℹ️ No members to add to group ${groupData.group_name}`);
       }
     }
 

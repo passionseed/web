@@ -20,7 +20,6 @@ export interface AssessmentEditorProps {
   // Optional props to support auto-saving temporary nodes
   nodeData?: any;
   mapId?: string;
-  onNodeSaved?: (oldNodeId: string, newNodeId: string) => void;
 }
 
 export interface QuestionFormProps {

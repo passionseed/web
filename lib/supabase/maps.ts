@@ -107,7 +107,8 @@ export const getMapsWithStats = async (
     has_more: boolean;
   }
 > => {
-  const supabase = createClient();
+  try {
+    const supabase = createClient();
 
   // Check if user is authenticated
   const {
@@ -167,9 +168,21 @@ export const getMapsWithStats = async (
   const { count: totalCount, error: countError } = await countQuery;
 
   if (countError) {
-    console.error("Error fetching maps count:", countError);
-    console.error("Count error details:", JSON.stringify(countError, null, 2));
-    // Don't throw error, just set count to 0 and continue
+    console.error("Error fetching maps count:", {
+      message: countError.message || 'Unknown error',
+      details: countError.details || 'No details available',
+      code: countError.code || 'No error code'
+    });
+    // For permission errors, return empty result
+    if (countError.code === '42501' || countError.message?.includes('permission denied')) {
+      console.error("CLIENT: Database permission issue detected in count query, returning empty result");
+      return {
+        maps: [],
+        total_count: 0,
+        has_more: false
+      };
+    }
+    // Don't throw error for other count issues, just set count to 0 and continue
     console.warn("Continuing without count due to error");
   }
 
@@ -196,7 +209,20 @@ export const getMapsWithStats = async (
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error("Error fetching maps with stats:", error);
+    console.error("Error fetching maps with stats:", {
+      message: error.message || 'Unknown error',
+      details: error.details || 'No details available',
+      code: error.code || 'No error code'
+    });
+    // Return empty result for permission errors instead of throwing
+    if (error.code === '42501' || error.message?.includes('permission denied')) {
+      console.error("CLIENT: Database permission issue detected, returning empty result");
+      return {
+        maps: [],
+        total_count: 0,
+        has_more: false
+      };
+    }
     throw new Error("Could not fetch learning maps.");
   }
 
@@ -613,6 +639,19 @@ export const getMapsWithStats = async (
     total_count: countError ? mapsWithStats.length : (totalCount || 0),
     has_more: countError ? mapsWithStats.length >= limit : ((offset + limit) < (totalCount || 0))
   };
+  } catch (globalError) {
+    console.error("CLIENT: Global error in getMapsWithStats:", {
+      message: globalError instanceof Error ? globalError.message : 'Unknown error',
+      stack: globalError instanceof Error ? globalError.stack : undefined
+    });
+    
+    // Return empty result instead of throwing for any unexpected errors
+    return {
+      maps: [],
+      total_count: 0,
+      has_more: false
+    };
+  }
 };
 
 export const getMapWithNodes = async (

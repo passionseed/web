@@ -100,14 +100,45 @@ export const getMapsWithStatsServer = async (
   total_count: number;
   has_more: boolean;
 }> => {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  // Get authenticated user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Early database connectivity test
+    console.log("SERVER: Testing database connectivity...");
+    try {
+      // Simple connectivity test - try to query the table
+      await Promise.race([
+        supabase.from('learning_maps').select('id').limit(1),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database connection timeout')), 5000)
+        )
+      ]);
+      console.log("SERVER: Database connectivity test passed");
+    } catch (connectivityError) {
+      console.error("SERVER: Database connectivity test failed:", {
+        message: connectivityError instanceof Error ? connectivityError.message : String(connectivityError),
+        type: typeof connectivityError
+      });
+      // Return empty result immediately if we can't connect
+      return {
+        maps: [],
+        total_count: 0,
+        has_more: false
+      };
+    }
 
-  console.log("SERVER: getMapsWithStatsServer called with user:", user?.id || "anonymous");
+    // Get authenticated user with error recovery
+    let user = null;
+    try {
+      const authResult = await supabase.auth.getUser();
+      user = authResult.data?.user || null;
+      console.log("SERVER: getMapsWithStatsServer called with user:", user?.id || "anonymous");
+    } catch (authError) {
+      console.error("SERVER: Auth error, continuing as anonymous:", {
+        message: authError instanceof Error ? authError.message : String(authError)
+      });
+      // Continue as anonymous user
+    }
 
   // Simple query for server-side rendering - focus on public maps and user's own maps
   const offset = page * limit;
@@ -123,9 +154,50 @@ export const getMapsWithStatsServer = async (
     countQuery = countQuery.or(`visibility.eq.public,creator_id.eq.${user.id}`);
   }
 
-  const { count: totalCount } = await countQuery;
+  const { count: totalCount, error: countError } = await countQuery;
 
-  // Get maps data
+  if (countError) {
+    // Enhanced error logging that captures all properties
+    const errorInfo = {
+      message: countError?.message || 'Unknown error',
+      details: countError?.details || 'No details available', 
+      code: countError?.code || 'No error code',
+      hint: countError?.hint || 'No hint',
+      // Capture all enumerable and non-enumerable properties
+      allProperties: {} as Record<string, any>,
+      errorType: typeof countError,
+      isError: countError instanceof Error,
+      stringified: String(countError)
+    };
+    
+    // Try to get all properties including non-enumerable ones
+    try {
+      const propertyNames = Object.getOwnPropertyNames(countError || {});
+      propertyNames.forEach(prop => {
+        try {
+          errorInfo.allProperties[prop] = (countError as any)?.[prop];
+        } catch (e) {
+          errorInfo.allProperties[prop] = `[Cannot access: ${e instanceof Error ? e.message : String(e)}]`;
+        }
+      });
+    } catch (e) {
+      errorInfo.allProperties = `[Error extracting properties: ${e instanceof Error ? e.message : String(e)}]` as any;
+    }
+    
+    console.error("SERVER: Error getting count:", errorInfo);
+    // Return empty result for permission/connection errors
+    if (countError.code === '42501' || countError.message?.includes('permission denied')) {
+      console.error("SERVER: Database permission issue detected, returning empty result");
+      return {
+        maps: [],
+        total_count: 0,
+        has_more: false
+      };
+    }
+  }
+
+  // Get maps data - simplified query without complex joins for better reliability
+  console.log("SERVER: Fetching maps with simplified query...");
   let dataQuery = supabase
     .from("learning_maps")
     .select(`
@@ -144,12 +216,7 @@ export const getMapsWithStatsServer = async (
       cover_image_url,
       cover_image_blurhash,
       cover_image_key,
-      cover_image_updated_at,
-      map_nodes (
-        id,
-        difficulty,
-        node_assessments (id)
-      )
+      cover_image_updated_at
     `);
 
   if (!user) {
@@ -163,21 +230,54 @@ export const getMapsWithStatsServer = async (
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error("SERVER: Error fetching maps:", error);
+    // Enhanced error logging that captures all properties
+    const errorInfo = {
+      message: error?.message || 'Unknown error',
+      details: error?.details || 'No details available',
+      code: error?.code || 'No error code',
+      hint: error?.hint || 'No hint',
+      // Capture all enumerable and non-enumerable properties
+      allProperties: {} as Record<string, any>,
+      errorType: typeof error,
+      isError: error instanceof Error,
+      stringified: String(error)
+    };
+    
+    // Try to get all properties including non-enumerable ones
+    try {
+      const propertyNames = Object.getOwnPropertyNames(error || {});
+      propertyNames.forEach(prop => {
+        try {
+          errorInfo.allProperties[prop] = (error as any)?.[prop];
+        } catch (e) {
+          errorInfo.allProperties[prop] = `[Cannot access: ${e instanceof Error ? e.message : String(e)}]`;
+        }
+      });
+    } catch (e) {
+      errorInfo.allProperties = `[Error extracting properties: ${e instanceof Error ? e.message : String(e)}]` as any;
+    }
+    
+    console.error("SERVER: Error fetching maps:", errorInfo);
+    // Return empty result for permission/connection errors instead of throwing
+    if (error.code === '42501' || error.message?.includes('permission denied')) {
+      console.error("SERVER: Database permission issue detected, returning empty result");
+      return {
+        maps: [],
+        total_count: 0,
+        has_more: false
+      };
+    }
     throw new Error("Could not fetch learning maps.");
   }
 
-  // Transform data (simplified for server-side)
+  // Transform data (simplified for server-side - no complex calculations)
+  console.log("SERVER: Transforming", data?.length || 0, "maps for server-side rendering");
   const mapsWithStats = (data || []).map((map: any) => {
-    const nodes = map.map_nodes || [];
-    const nodeCount = nodes.length;
-    const avgDifficulty = nodeCount > 0
-      ? Math.round(nodes.reduce((sum: number, node: any) => sum + (node.difficulty || 1), 0) / nodeCount)
-      : 1;
-    const totalAssessments = nodes.reduce(
-      (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
-      0
-    );
+    try {
+    // Use simple fallbacks for server-side rendering - client will load full data
+    const nodeCount = 0; // Will be populated client-side
+    const avgDifficulty = map.difficulty || 1; // Use map's difficulty as fallback
+    const totalAssessments = 0; // Will be populated client-side
 
     // Determine map type (simplified for server-side)
     let mapType: "personal" | "classroom" | "team" | "forked" | "public" = "public";
@@ -210,11 +310,78 @@ export const getMapsWithStatsServer = async (
       isEnrolled: false, // Simplified for server-side
       hasStarted: false, // Simplified for server-side
     };
-  });
+    } catch (transformError) {
+      console.error("SERVER: Error transforming map:", map?.id, {
+        message: transformError instanceof Error ? transformError.message : String(transformError)
+      });
+      // Return a minimal safe map object
+      return {
+        id: map?.id || 'unknown',
+        title: map?.title || 'Untitled Map',
+        description: map?.description || '',
+        creator_id: map?.creator_id || '',
+        difficulty: 1,
+        category: map?.category || '',
+        total_students: 0,
+        finished_students: 0,
+        metadata: {},
+        visibility: map?.visibility || 'public',
+        created_at: map?.created_at || new Date().toISOString(),
+        updated_at: map?.updated_at || new Date().toISOString(),
+        cover_image_url: null,
+        cover_image_blurhash: null,
+        cover_image_key: null,
+        cover_image_updated_at: null,
+        node_count: 0,
+        avg_difficulty: 1,
+        total_assessments: 0,
+        map_type: 'public' as const,
+        isEnrolled: false,
+        hasStarted: false,
+      };
+    }
+  }).filter(map => map !== null); // Filter out any null results
 
+  console.log("SERVER: Successfully processed", mapsWithStats?.length || 0, "maps");
   return {
-    maps: mapsWithStats,
+    maps: mapsWithStats || [],
     total_count: totalCount || 0,
     has_more: (offset + limit) < (totalCount || 0)
   };
+  } catch (globalError) {
+    // Enhanced global error logging
+    const errorInfo = {
+      message: globalError instanceof Error ? globalError.message : String(globalError) || 'Unknown error',
+      stack: globalError instanceof Error ? globalError.stack : undefined,
+      name: globalError instanceof Error ? globalError.name : undefined,
+      // Capture all enumerable and non-enumerable properties
+      allProperties: {} as Record<string, any>,
+      errorType: typeof globalError,
+      isError: globalError instanceof Error,
+      stringified: String(globalError)
+    };
+    
+    // Try to get all properties including non-enumerable ones
+    try {
+      const propertyNames = Object.getOwnPropertyNames(globalError || {});
+      propertyNames.forEach(prop => {
+        try {
+          errorInfo.allProperties[prop] = (globalError as any)?.[prop];
+        } catch (e) {
+          errorInfo.allProperties[prop] = `[Cannot access: ${e instanceof Error ? e.message : String(e)}]`;
+        }
+      });
+    } catch (e) {
+      errorInfo.allProperties = `[Error extracting properties: ${e instanceof Error ? e.message : String(e)}]` as any;
+    }
+    
+    console.error("SERVER: Global error in getMapsWithStatsServer:", errorInfo);
+    
+    // Return empty result instead of throwing for any unexpected errors
+    return {
+      maps: [],
+      total_count: 0,
+      has_more: false
+    };
+  }
 };

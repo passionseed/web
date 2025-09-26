@@ -31,7 +31,7 @@ import {
   BatchMapUpdate,
 } from "@/lib/supabase/maps";
 import { MapCategory } from "@/types/map";
-import { Loader2, Trash2, ArrowLeft, RefreshCw, Save, FileDown } from "lucide-react";
+import { Loader2, Trash2, ArrowLeft, RefreshCw, Save } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -83,8 +83,6 @@ export default function EditMapPage() {
   const [isRefreshing, startRefreshTransition] = useTransition();
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
-  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
 
   const fetchMap = useCallback(async () => {
     console.log("📡 fetchMap called for mapId:", mapId);
@@ -95,10 +93,6 @@ export default function EditMapPage() {
         setInitialMap(JSON.parse(JSON.stringify(fetchedMap))); // Deep copy for initial state
         setMap(fetchedMap);
         console.log("✅ Map data set successfully");
-        // Initialize cover image preview from metadata
-        if (fetchedMap.metadata?.coverImage) {
-          setCoverImagePreview(fetchedMap.metadata.coverImage);
-        }
       } else {
         console.log("❌ Map not found");
         toast({ title: "Map not found", variant: "destructive" });
@@ -1015,43 +1009,29 @@ export default function EditMapPage() {
 
   console.log("🔍 Render check - isLoading:", isLoading, "map:", !!map, "initialMap:", !!initialMap, "isMounted:", isMounted);
   
-  // EMERGENCY: Client-side only test button to avoid hydration mismatch
-  const emergencyButton = isMounted ? (
-    <div style={{ position: 'fixed', top: '100px', right: '20px', zIndex: 9999, background: 'red', color: 'white', padding: '10px' }}>
-      EMERGENCY EXPORT BUTTON - Component Mounted!
-    </div>
-  ) : null;
   
   if (isLoading) {
     console.log("⏳ Showing loading component");
-    return (
-      <>
-        {emergencyButton}
-        <Loading />
-      </>
-    );
+    return <Loading />;
   }
 
   if (!map || !initialMap) {
     console.log("❌ No map data, rendering minimal UI with export button");
     return (
-      <>
-        {emergencyButton}
-        <div className="container py-8">
-          <div className="flex justify-between items-center">
-            <div>No map data available</div>
-            {isMounted && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={true}
-              >
-                Export as JSON (No Data)
-              </Button>
-            )}
-          </div>
+      <div className="container py-8">
+        <div className="flex justify-between items-center">
+          <div>No map data available</div>
+          {isMounted && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={true}
+            >
+              Export as JSON (No Data)
+            </Button>
+          )}
         </div>
-      </>
+      </div>
     );
   }
   
@@ -1059,7 +1039,6 @@ export default function EditMapPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {emergencyButton}
       {/* Top Navigation Bar */}
       <div className="flex-none border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
         <div className="container max-w-none px-6 py-4">
