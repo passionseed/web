@@ -104,6 +104,10 @@ export async function PUT(
           }
         });
       }
+
+      // Note: Content and assessments are saved directly to the database
+      // via their respective editor components (ContentEditor, AssessmentEditor)
+      // They don't need to be processed through the map save endpoint
     });
 
     // Get current nodes from database to detect deletions
@@ -124,7 +128,7 @@ export async function PUT(
     const currentNodeIds = (currentNodes || []).map((node: any) => node.id);
     const updatedNodeIds = updatedMap.map_nodes.map((node) => node.id);
     const deletedNodeIds = currentNodeIds.filter((id: string) => !updatedNodeIds.includes(id));
-    
+
     if (deletedNodeIds.length > 0) {
       console.log("🗑️ Detected deleted nodes:", deletedNodeIds);
       updates.nodes.delete = deletedNodeIds;
@@ -133,11 +137,25 @@ export async function PUT(
     // For paths, we'll let the batch update function handle path deletions
     // since it's complex to query them efficiently here
 
-    // Use the batch update function
-    await batchUpdateMap(mapId, updates);
+    // Log the updates being sent
+    console.log("📦 Updates to be applied:", {
+      nodes: {
+        create: updates.nodes.create.length,
+        update: updates.nodes.update.length,
+        delete: updates.nodes.delete.length,
+      },
+      paths: {
+        create: updates.paths.create.length,
+      }
+    });
+
+    // Use the batch update function with server client
+    console.log("🔄 Calling batchUpdateMap with server client...");
+    await batchUpdateMap(mapId, updates, supabase);
+    console.log("✅ batchUpdateMap completed successfully");
 
     // Return the updated map (simplified for auto-save)
-    return NextResponse.json({ 
+    return NextResponse.json({
       id: mapId,
       title: updatedMap.title,
       description: updatedMap.description,
@@ -145,9 +163,12 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error("Error updating map:", error);
+    console.error("❌ Error updating map:", error);
     return NextResponse.json(
-      { error: "Failed to update map" },
+      {
+        error: "Failed to update map",
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

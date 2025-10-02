@@ -1419,12 +1419,13 @@ export interface BatchMapUpdate {
 
 export const batchUpdateMap = async (
   mapId: string,
-  updates: BatchMapUpdate
+  updates: BatchMapUpdate,
+  supabaseClient?: ReturnType<typeof createClient>
 ): Promise<void> => {
   console.log("🔄 Starting batch update for map:", mapId);
   console.log("📦 Updates to apply:", JSON.stringify(updates, null, 2));
 
-  const supabase = createClient();
+  const supabase = supabaseClient || createClient();
 
   try {
     // Validate inputs
