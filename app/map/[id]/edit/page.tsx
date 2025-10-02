@@ -1138,7 +1138,30 @@ export default function EditMapPage() {
           <div className="flex-1 overflow-hidden">
             <TabsContent value="editor" className="h-full m-0 p-0">
               <div className="h-full">
-                <MapEditor map={map} onMapChange={setMap} />
+                <MapEditor map={map} onMapChange={(newMap) => {
+                  setMap(newMap);
+                  // When new nodes are created, also update initialMap to include them
+                  // This ensures generateBatchUpdate can detect subsequent changes to newly created nodes
+                  setInitialMap(prev => {
+                    if (!prev || !newMap) return prev;
+                    
+                    // Find newly created nodes (ones that exist in newMap but not in initialMap)
+                    const initialNodeIds = new Set(prev.map_nodes.map(node => node.id));
+                    const newlyCreatedNodes = newMap.map_nodes.filter(node => 
+                      !initialNodeIds.has(node.id) && !node.id.startsWith("temp_")
+                    );
+                    
+                    if (newlyCreatedNodes.length > 0) {
+                      console.log("🔄 Adding newly created nodes to initialMap:", newlyCreatedNodes.map(n => ({ id: n.id, title: n.title })));
+                      return {
+                        ...prev,
+                        map_nodes: [...prev.map_nodes, ...newlyCreatedNodes]
+                      };
+                    }
+                    
+                    return prev;
+                  });
+                }} />
               </div>
             </TabsContent>
 

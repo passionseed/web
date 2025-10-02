@@ -396,6 +396,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [isDraggingNodes, setIsDraggingNodes] = useState(false);
   const [dragDistance, setDragDistance] = useState(0);
   const [dragStartPos, setDragStartPos] = useState<{x: number, y: number} | null>(null);
+  const [newlyCreatedNodeId, setNewlyCreatedNodeId] = useState<string | null>(null);
   const transformTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [pendingNodeUpdates, setPendingNodeUpdates] = useState<
     Record<string, Partial<MapNode>>
@@ -1139,7 +1140,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       
       // Preserve existing selection state and position from current nodes
       const existingNode = reactFlowInstance?.getNode(node.id);
-      const isSelected = existingNode?.selected || false;
+      // For newly created nodes, only select if it's the newly created node
+      // For existing nodes, preserve their current selection state
+      const isSelected = newlyCreatedNodeId 
+        ? node.id === newlyCreatedNodeId 
+        : (existingNode?.selected || false);
       // Use current position if node exists in ReactFlow, otherwise use stored metadata position
       const currentPosition = existingNode?.position || (node.metadata as any)?.position || getRandomPosition();
       
@@ -1228,6 +1233,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     console.log("🆕 Adding new node - saving to database immediately");
     setIsAddingNode(true);
 
+    // Mark that we're creating a new node to control selection in transform effect
+    setNewlyCreatedNodeId("creating");
+
     try {
       // Get center of current viewport
       let nodePosition = { x: 100, y: 100 }; // Default position
@@ -1261,6 +1269,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       });
 
       console.log("✅ Node saved to database with ID:", savedNode.id);
+      
+      // Set the newly created node ID for selection control
+      setNewlyCreatedNodeId(savedNode.id);
 
       // Create the full node data structure for local state
       const newNodeData: MapNode & {
@@ -1288,7 +1299,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         style: NODE_STYLE,
       };
 
-      // Add node to React Flow
+      // Add the new selected node (existing nodes already cleared above)
       setNodes((nds) => [...nds, newNode as Node]);
 
       // Update map state
@@ -1313,6 +1324,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       });
     } finally {
       setIsAddingNode(false);
+      // Clear the newly created node flag after a delay to allow transform to complete
+      setTimeout(() => {
+        setNewlyCreatedNodeId(null);
+      }, 200);
     }
   }, [
     map,
@@ -1327,6 +1342,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const handleAddTextNode = useCallback(async () => {
     console.log("🆕 Adding new text node - saving to database immediately");
     setIsAddingNode(true);
+
+    // Mark that we're creating a new text node to control selection in transform effect
+    setNewlyCreatedNodeId("creating");
 
     try {
       // Get center of current viewport
@@ -1363,6 +1381,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       });
 
       console.log("✅ Text node saved to database with ID:", savedNode.id);
+      
+      // Set the newly created node ID for selection control
+      setNewlyCreatedNodeId(savedNode.id);
 
       // Create the full node data structure for local state
       const newTextData: MapNode & {
@@ -1392,7 +1413,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         style: NODE_STYLE,
       };
 
-      // Add node to React Flow
+      // Add the new selected text node (existing nodes already cleared above)
       setNodes((nds) => [...nds, newNode as Node]);
 
       // Update map state
@@ -1416,6 +1437,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       });
     } finally {
       setIsAddingNode(false);
+      // Clear the newly created node flag after a delay to allow transform to complete
+      setTimeout(() => {
+        setNewlyCreatedNodeId(null);
+      }, 200);
     }
   }, [
     map,
