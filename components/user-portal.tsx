@@ -8,7 +8,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Flame, Star, Users, BookOpen, Heart } from "lucide-react";
+import { Flame, Star, Users, BookOpen, Heart, Brain } from "lucide-react";
 import Link from "next/link";
 import { Project } from "@/types/project";
 import { ReflectionHeatmap } from "@/components/reflection/reflection-heatmap";
@@ -69,24 +69,46 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/me/reflection/new">
-              <Card className="bg-gradient-to-br from-purple-800 to-violet-700 text-white hover:from-purple-700 hover:to-violet-600 transition-colors cursor-pointer h-full">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center">
-                    <Heart className="mr-2 h-5 w-5 text-red-400" />
-                    Add a Reflection
-                  </CardTitle>
-                  <CardDescription className="text-white/70">
-                    Reflect on your progress
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full bg-red-600 hover:bg-red-700">
-                    Start Reflecting
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/me/reflection/new">
+                <Card className="bg-gradient-to-br from-purple-800 to-violet-700 text-white hover:from-purple-700 hover:to-violet-600 transition-colors cursor-pointer h-full">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center text-sm">
+                      <Heart className="mr-2 h-4 w-4 text-red-400" />
+                      Add a Reflection
+                    </CardTitle>
+                    <CardDescription className="text-white/70 text-xs">
+                      Reflect on your progress
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <Button size="sm" className="w-full bg-red-600 hover:bg-red-700 text-xs">
+                      Start Reflecting
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link href="/me/reflection/mindmap">
+                <Card className="bg-gradient-to-br from-blue-800 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-600 transition-colors cursor-pointer h-full">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center text-sm">
+                      <Brain className="mr-2 h-4 w-4 text-blue-400" />
+                      Mindmap Reflection
+                    </CardTitle>
+                    <CardDescription className="text-white/70 text-xs">
+                      Map your current activities
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-xs">
+                      Create Mindmap
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
           </div>
         </div>
 
