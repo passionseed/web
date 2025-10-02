@@ -811,14 +811,15 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     };
   }, []);
 
-  // Wrapper function for map changes that triggers auto-save
+  // Wrapper function for map changes (manual save only - no auto-save)
   const handleMapChange = useCallback(
     (newMap: FullLearningMap) => {
       console.log("🔄 handleMapChange called");
       onMapChange(newMap);
+      // Auto-save disabled - users will manually save with "Save All" button
       // triggerAutoSave(newMap);
     },
-    [onMapChange, triggerAutoSave]
+    [onMapChange]
   );
 
   // Copy/Paste functionality
@@ -1920,8 +1921,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   : ""}
               </Button>
 
-              {/* Save functionality temporarily disabled - see GitHub issue #20 */}
-              {false && (
+              {/* Save functionality - re-enabled now that content/assessments save directly */}
+              {true && (
                 <>
                   <div className="h-4 w-px bg-border" />
 
@@ -1932,10 +1933,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                     variant={hasUnsavedChanges ? "default" : "outline"}
                     className="gap-2"
                     disabled={autoSaveStatus === AutoSaveStatus.SAVING}
-                    title={`Force save now (Ctrl+S)${hasUnsavedChanges ? " - You have unsaved changes" : " - No changes to save"}`}
+                    title={`Save all node positions and connections (Ctrl+S)${hasUnsavedChanges ? " - You have unsaved changes" : " - No changes to save"}`}
                   >
                     <Save className="h-4 w-4" />
-                    Save Now
+                    Save All Changes
                   </Button>
 
                   <div className="h-4 w-px bg-border" />
@@ -1961,9 +1962,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                       )}
                       {autoSaveStatus === AutoSaveStatus.PENDING && (
                         <>
-                          <Clock className="h-4 w-4 text-amber-500 animate-bounce" />
+                          <Clock className="h-4 w-4 text-amber-500" />
                           <span className="text-sm font-medium text-amber-600">
-                            Auto-save in 3s
+                            Unsaved Changes
                           </span>
                         </>
                       )}

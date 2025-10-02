@@ -30,6 +30,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ContentEditor } from "./ContentEditor";
 import { AssessmentEditor } from "./AssessmentEditor";
 import { SpritePickerDialog } from "./SpritePickerDialog";
+import { updateNode } from "@/lib/supabase/nodes";
+import { useToast } from "@/components/ui/use-toast";
 
 interface NodeEditorPanelProps {
   selectedNode: Node<MapNode> | null;
@@ -44,6 +46,7 @@ export function NodeEditorPanel({
   onNodeDelete,
   onEditingStateChange,
 }: NodeEditorPanelProps) {
+  const { toast } = useToast();
   const [nodeData, setNodeData] = useState<Partial<MapNode>>({});
   // Track quiz questions separately for batch operations
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -58,43 +61,57 @@ export function NodeEditorPanel({
   // For regular nodes, we also need local state for title to prevent deselection on every keystroke
   const [localTitle, setLocalTitle] = useState("");
 
-
   // Remove the debounced updates - we'll only update on blur to prevent refreshing
   // The visual updates are handled by local state, data persistence happens on blur
 
   // Handle blur events to sync React Flow nodes when editing is complete
   const handleTitleBlur = useCallback(() => {
     onEditingStateChange?.(false);
-    
+
     // Force sync React Flow nodes when editing is complete
     // This ensures visual consistency without flashing during typing
     if (selectedNode && !isTextNode && localTitle !== selectedNode.data.title) {
       // Trigger a non-title update to force React Flow sync
-      onNodeDataChange(selectedNode.id, { 
+      onNodeDataChange(selectedNode.id, {
         title: localTitle,
-        updated_at: new Date().toISOString() // Add timestamp to force update
+        updated_at: new Date().toISOString(), // Add timestamp to force update
       });
-    } else if (selectedNode && isTextNode && localText !== selectedNode.data.title) {
+    } else if (
+      selectedNode &&
+      isTextNode &&
+      localText !== selectedNode.data.title
+    ) {
       // For text nodes, also ensure sync
-      onNodeDataChange(selectedNode.id, { 
+      onNodeDataChange(selectedNode.id, {
         title: localText,
-        updated_at: new Date().toISOString() // Add timestamp to force update
+        updated_at: new Date().toISOString(), // Add timestamp to force update
       });
     }
-  }, [selectedNode, isTextNode, localTitle, localText, onNodeDataChange, onEditingStateChange]);
+  }, [
+    selectedNode,
+    isTextNode,
+    localTitle,
+    localText,
+    onNodeDataChange,
+    onEditingStateChange,
+  ]);
 
   const handleTitleFocus = useCallback(() => {
     onEditingStateChange?.(true);
   }, [onEditingStateChange]);
 
-
   useEffect(() => {
     if (selectedNode) {
-      console.log("📋 NodeEditorPanel: selectedNode changed, updating local state");
-      console.log("📊 New node assessments:", selectedNode.data.node_assessments);
-      
+      console.log(
+        "📋 NodeEditorPanel: selectedNode changed, updating local state"
+      );
+      console.log(
+        "📊 New node assessments:",
+        selectedNode.data.node_assessments
+      );
+
       setNodeData(selectedNode.data);
-      
+
       // Initialize quiz questions from existing assessment
       const assessment = selectedNode.data.node_assessments?.[0];
       if (assessment?.assessment_type === "quiz") {
@@ -105,7 +122,7 @@ export function NodeEditorPanel({
         setQuizQuestions([]);
         console.log("📋 Cleared quiz questions for new node");
       }
-      
+
       // Update local title states for new node selection
       if (isTextNode) {
         setLocalText(selectedNode.data.title || "");
@@ -120,23 +137,15 @@ export function NodeEditorPanel({
       (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { value } = e.target;
 
-        // For text nodes title field, use local state for immediate UI updates AND update the map
+        // For text nodes title field, use local state for immediate UI updates only
         if (isTextNode && field === "title") {
           setLocalText(value);
-          // Also update the map in real-time
-          if (selectedNode) {
-            onNodeDataChange(selectedNode.id, { title: value });
-          }
           return;
         }
 
-        // For regular nodes title field, use local state for immediate UI updates AND update the map
+        // For regular nodes title field, use local state for immediate UI updates only
         if (!isTextNode && field === "title") {
           setLocalTitle(value);
-          // Also update the map in real-time
-          if (selectedNode) {
-            onNodeDataChange(selectedNode.id, { title: value });
-          }
           return;
         }
 
@@ -177,12 +186,16 @@ export function NodeEditorPanel({
         return;
       }
 
-      const updatedNodeData = {
-        ...selectedNode.data,
+      // Update local state immediately
+      setNodeData((prev) => ({
+        ...prev,
         node_content: newContent,
-      };
+      }));
 
-      onNodeDataChange(selectedNode.id, updatedNodeData);
+      // Also update the React Flow node data
+      onNodeDataChange(selectedNode.id, {
+        node_content: newContent,
+      });
     },
     [selectedNode, onNodeDataChange]
   );
@@ -203,24 +216,31 @@ export function NodeEditorPanel({
 
       const newAssessments =
         action === "add" && changedAssessment ? [changedAssessment] : [];
-      
-      console.log("📊 New assessments array:", newAssessments, "Length:", newAssessments.length);
-      
-      const updatedNodeData = { ...nodeData, node_assessments: newAssessments };
 
-      console.log("📝 Updated node data:", updatedNodeData);
-      
-      setNodeData(updatedNodeData);
+      console.log(
+        "📊 New assessments array:",
+        newAssessments,
+        "Length:",
+        newAssessments.length
+      );
+
+      // Update local state immediately
+      setNodeData((prev) => ({
+        ...prev,
+        node_assessments: newAssessments,
+      }));
+
+      // Also update the React Flow node data
       onNodeDataChange(selectedNode.id, {
         node_assessments: newAssessments,
-      } as any);
+      });
 
       // Clear quiz questions if deleting assessment
       if (action === "delete") {
         setQuizQuestions([]);
       }
     },
-    [selectedNode, nodeData, onNodeDataChange]
+    [selectedNode, onNodeDataChange]
   );
 
   // NEW: Handle quiz questions changes specifically
@@ -242,13 +262,17 @@ export function NodeEditorPanel({
           quiz_questions: questions,
         };
 
-        const updatedNodeData = {
-          ...selectedNode.data,
+        // Update local state immediately
+        setNodeData((prev) => ({
+          ...prev,
           node_assessments: [updatedAssessment],
-        };
+        }));
 
+        // Also update React Flow node data
         console.log("📊 Updating node with quiz questions:", questions.length);
-        onNodeDataChange(selectedNode.id, updatedNodeData);
+        onNodeDataChange(selectedNode.id, {
+          node_assessments: [updatedAssessment],
+        });
       }
     },
     [selectedNode, nodeData, onNodeDataChange]
@@ -641,15 +665,37 @@ export function NodeEditorPanel({
                         <div className="flex-1">
                           <SpritePickerDialog
                             currentSprite={nodeData.sprite_url || undefined}
-                            onSpriteSelect={(spriteUrl) => {
-                              const newData = {
-                                ...nodeData,
-                                sprite_url: spriteUrl,
-                              };
-                              setNodeData(newData);
-                              if (selectedNode) {
+                            onSpriteSelect={async (spriteUrl) => {
+                              if (!selectedNode) return;
+
+                              try {
+                                // Save sprite to database immediately
+                                console.log("🖼️ Saving sprite to database:", spriteUrl);
+                                await updateNode(selectedNode.id, {
+                                  sprite_url: spriteUrl,
+                                });
+                                console.log("✅ Sprite saved to database");
+
+                                // Update local state
+                                const newData = {
+                                  ...nodeData,
+                                  sprite_url: spriteUrl,
+                                };
+                                setNodeData(newData);
                                 onNodeDataChange(selectedNode.id, {
                                   sprite_url: spriteUrl,
+                                });
+
+                                toast({
+                                  title: "Sprite updated!",
+                                  description: "Node sprite has been saved successfully."
+                                });
+                              } catch (error) {
+                                console.error("❌ Failed to save sprite:", error);
+                                toast({
+                                  title: "Failed to save sprite",
+                                  description: (error as Error).message || "Unknown error",
+                                  variant: "destructive"
                                 });
                               }
                             }}

@@ -17,6 +17,8 @@ import { Trash2, PlusCircle, Edit, Check, X, AlertCircle, Upload } from "lucide-
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileUpload } from "@/components/ui/file-upload";
+import { createNodeContent, updateNodeContent, deleteNodeContent } from "@/lib/supabase/nodes";
+import { useToast } from "@/components/ui/use-toast";
 
 // Content type configurations
 const CONTENT_TYPE_CONFIG = {
@@ -480,46 +482,104 @@ export function ContentEditor({
   content,
   onContentChange,
 }: ContentEditorProps) {
+  const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const isFormActive = isAdding || editingId;
 
   const handleSave = useCallback(
-    (savedContent: NodeContent) => {
+    async (savedContent: NodeContent) => {
       if (
         !savedContent.id ||
         !savedContent.node_id ||
         !savedContent.content_type
       ) {
         console.error("Invalid content data:", savedContent);
+        toast({
+          title: "Invalid content data",
+          description: "Content is missing required fields",
+          variant: "destructive"
+        });
         return;
       }
 
       const existingIndex = content.findIndex((c) => c.id === savedContent.id);
 
-      if (existingIndex >= 0) {
-        // Update existing content
-        const updatedContent = [...content];
-        updatedContent[existingIndex] = savedContent;
-        onContentChange(updatedContent);
-      } else {
-        // Add new content
-        onContentChange([...content, savedContent]);
-      }
+      try {
+        let finalContent: NodeContent;
 
-      // Reset form state
-      setIsAdding(false);
-      setEditingId(null);
+        if (existingIndex >= 0 && !savedContent.id.startsWith('temp_')) {
+          // Update existing content in database
+          console.log("✏️ Updating content in database:", savedContent.id);
+          finalContent = await updateNodeContent(savedContent.id, {
+            content_type: savedContent.content_type,
+            content_url: savedContent.content_url,
+            content_body: savedContent.content_body,
+          });
+          console.log("✅ Content updated in database:", finalContent);
+
+          // Update local state
+          const updatedContent = [...content];
+          updatedContent[existingIndex] = finalContent;
+          onContentChange(updatedContent);
+
+          toast({ title: "Content updated successfully!" });
+        } else {
+          // Create new content in database
+          console.log("➕ Creating content in database for node:", nodeId);
+          finalContent = await createNodeContent({
+            node_id: nodeId,
+            content_type: savedContent.content_type,
+            content_url: savedContent.content_url,
+            content_body: savedContent.content_body,
+          });
+          console.log("✅ Content created in database:", finalContent);
+
+          // Add to local state
+          onContentChange([...content, finalContent]);
+
+          toast({ title: "Content added successfully!" });
+        }
+
+        // Reset form state
+        setIsAdding(false);
+        setEditingId(null);
+      } catch (error) {
+        console.error("❌ Failed to save content:", error);
+        toast({
+          title: "Failed to save content",
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive"
+        });
+      }
     },
-    [content, onContentChange]
+    [content, onContentChange, nodeId, toast]
   );
 
   const handleDelete = useCallback(
-    (id: string) => {
-      onContentChange(content.filter((c) => c.id !== id));
+    async (id: string) => {
+      try {
+        // Delete from database if it's not a temp ID
+        if (!id.startsWith('temp_')) {
+          console.log("🗑️ Deleting content from database:", id);
+          await deleteNodeContent(id);
+          console.log("✅ Content deleted from database");
+        }
+
+        // Update local state
+        onContentChange(content.filter((c) => c.id !== id));
+        toast({ title: "Content deleted successfully!" });
+      } catch (error) {
+        console.error("❌ Failed to delete content:", error);
+        toast({
+          title: "Failed to delete content",
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive"
+        });
+      }
     },
-    [content, onContentChange]
+    [content, onContentChange, toast]
   );
 
   const handleEdit = useCallback((id: string) => {
