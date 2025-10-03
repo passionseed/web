@@ -3,41 +3,42 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { MindmapReflection } from "@/components/reflection/MindmapReflection";
 
-interface Bubble {
+interface Topic {
   id: string;
   text: string;
   x: number;
   y: number;
-  color: string;
+  notes?: string;
 }
 
 export default function MindmapReflectionPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [topics, setTopics] = useState<Topic[]>([]);
 
-  const handleSave = async (bubbles: Bubble[], centralIdea: string) => {
+  const handleSave = async (username: string, savedTopics: Topic[]) => {
     setIsSaving(true);
+    setTopics(savedTopics); // Update local state with saved topics
     
     try {
       // Here you would save to your database
       // For now, we'll just simulate a save
-      console.log("Saving mindmap reflection:", { centralIdea, bubbles });
+      console.log("Saving mindmap reflection:", { username, topics: savedTopics });
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
         title: "Mindmap Reflection Saved!",
-        description: "Your current activities have been mapped and saved.",
+        description: `${username}'s mindmap with ${savedTopics.length} topics has been saved.`,
       });
       
-      // Navigate back to reflection dashboard
-      router.push("/me/reflection");
+      // Stay on the same page after saving
     } catch (error) {
       console.error("Error saving mindmap reflection:", error);
       toast({
@@ -47,6 +48,20 @@ export default function MindmapReflectionPage() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleContinue = () => {
+    // Save topics to session storage to pass to feelings page
+    if (topics.length > 0) {
+      sessionStorage.setItem('mindmap-topics', JSON.stringify(topics));
+      router.push('/me/reflection/mindmap/feelings');
+    } else {
+      toast({
+        title: "No topics found",
+        description: "Please add some topics before continuing.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -72,18 +87,33 @@ export default function MindmapReflectionPage() {
       </div>
 
       {/* Mindmap Component */}
-      <MindmapReflection onSave={handleSave} />
+      <MindmapReflection onSave={handleSave} onTopicsChange={setTopics} />
+      
+      {/* Continue Button */}
+      {topics.length > 0 && (
+        <div className="flex justify-center mt-8">
+          <Button 
+            onClick={handleContinue}
+            size="lg"
+            className="px-8"
+          >
+            Continue to Feelings
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )}
       
       {/* Instructions */}
       <div className="mt-8 max-w-2xl">
         <div className="bg-muted/50 rounded-lg p-6">
           <h3 className="font-semibold mb-4">How to use Mindmap Reflection:</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Start by entering your main focus or project in the text field above</li>
-            <li>• Click the + button to add specific activities as bubbles</li>
-            <li>• Press Enter while typing to quickly add a bubble</li>
-            <li>• Drag bubbles around to organize them visually</li>
-            <li>• Remove bubbles by clicking the X that appears when you hover</li>
+            <li>• The central "username" bubble represents you</li>
+            <li>• Click the + button to add topics you're working on</li>
+            <li>• Press Enter while typing to quickly add items</li>
+            <li>• Drag topic bubbles around to organize them visually</li>
+            <li>• Remove topics by clicking the X that appears when you hover</li>
+            <li>• Topics automatically connect to the central username bubble</li>
             <li>• Save your mindmap to track what you're working on</li>
           </ul>
         </div>
