@@ -3,19 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { NodeAssessment, AssessmentType, QuizQuestion, GroupFormationMethod, GroupSubmissionMode } from "@/types/map";
-import { Trash2, Users, Shuffle, Settings } from "lucide-react";
+import { NodeAssessment, AssessmentType, QuizQuestion } from "@/types/map";
+import { Trash2 } from "lucide-react";
 import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion } from "@/lib/supabase/assessment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateAssessmentGroupSettings } from "@/lib/supabase/assessment-groups";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { QuizEditor } from "./AssessmentEditor/QuizEditor";
 import { ChecklistEditor } from "./AssessmentEditor/ChecklistEditor";
+import { TextAnswerEditor } from "./AssessmentEditor/TextAnswerEditor";
 import { GroupManagementModal } from "./AssessmentEditor/GroupManagementModal";
+import { QuizSettings } from "./AssessmentEditor/QuizSettings";
 import { ASSESSMENT_TYPE_CONFIG } from "./AssessmentEditor/constants";
 import { AssessmentEditorProps } from "./AssessmentEditor/types";
 
@@ -47,7 +44,7 @@ export function AssessmentEditor({
         
         onAssessmentChange(newAssessment, "add");
 
-        toast({ title: "Assessment created successfully!" });
+        toast({ title: "Assessment created ✓" });
       } catch (error) {
         console.error("❌ Failed to create assessment:", error);
         toast({ 
@@ -65,7 +62,7 @@ export function AssessmentEditor({
 
     if (
       window.confirm(
-        "Are you sure you want to delete this assessment? This will also remove all questions."
+        "Delete this assessment? All questions will be removed."
       )
     ) {
       try {
@@ -79,7 +76,7 @@ export function AssessmentEditor({
         
         // Update local state
         onAssessmentChange(null, "delete");
-        toast({ title: "Assessment deleted successfully!" });
+        toast({ title: "Assessment deleted ✓" });
       } catch (error) {
         console.error("❌ Failed to delete assessment:", error);
         toast({ 
@@ -122,7 +119,7 @@ export function AssessmentEditor({
         const updatedAssessment = { ...assessment, [field]: value };
         onAssessmentChange(updatedAssessment, "add");
 
-        toast({ title: "Group settings updated successfully!" });
+        toast({ title: "Group settings updated ✓" });
       } catch (error) {
         console.error("❌ Failed to update group settings:", error);
         toast({
@@ -199,13 +196,13 @@ export function AssessmentEditor({
         console.log("📊 Updated assessment with questions:", updatedAssessment);
         
         onAssessmentChange(updatedAssessment, "add");
-        
+
         if (action === "add") {
-          toast({ title: "Quiz question created successfully!" });
+          toast({ title: "Question added ✓" });
         } else if (action === "update") {
-          toast({ title: "Quiz question updated successfully!" });
+          toast({ title: "Question updated ✓" });
         } else {
-          toast({ title: "Quiz question deleted successfully!" });
+          toast({ title: "Question deleted ✓" });
         }
       } catch (error) {
         console.error(`❌ Failed to ${action} quiz question:`, error);
@@ -224,10 +221,10 @@ export function AssessmentEditor({
       <div className="p-4 space-y-4 text-center">
         <div className="space-y-2">
           <p className="text-muted-foreground">
-            No assessment configured for this node.
+            Add an assessment to test understanding
           </p>
           <p className="text-xs text-muted-foreground">
-            Choose an assessment type to get started:
+            Choose a type to get started:
           </p>
         </div>
 
@@ -262,12 +259,8 @@ export function AssessmentEditor({
                   {ASSESSMENT_TYPE_CONFIG[assessment.assessment_type]?.icon ||
                     "📝"}
                 </span>
-                {assessment.assessment_type.replace("_", " ")} Assessment
+                {assessment.assessment_type.replace("_", " ")}
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Configure your {assessment.assessment_type.replace("_", " ")}{" "}
-                assessment
-              </p>
             </div>
             <Button
               variant="destructive"
@@ -280,147 +273,46 @@ export function AssessmentEditor({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Grading Configuration */}
-          <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
-            <h4 className="font-medium text-sm">Grading Configuration</h4>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_graded"
-                  checked={assessment.is_graded || false}
-                  onCheckedChange={(checked) => 
-                    handleGradingChange('is_graded', checked as boolean)
-                  }
-                />
-                <Label htmlFor="is_graded" className="text-sm">
-                  Enable grading for this assessment
-                </Label>
-              </div>
-              <p className="text-xs text-muted-foreground ml-6">
-                When enabled, instructors can set how many points this assessment is worth
-              </p>
-              
-              {assessment.is_graded && (
-                <div className="ml-6 space-y-2">
-                  <Label htmlFor="points_possible" className="text-sm">
-                    Points possible
-                  </Label>
-                  <Input
-                    id="points_possible"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={assessment.points_possible || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const points = value === "" ? null : parseInt(value, 10);
-                      if (points === null || (points > 0 && Number.isInteger(points))) {
-                        handleGradingChange('points_possible', points);
-                      }
-                    }}
-                    placeholder="Enter points (integer)"
-                    className="w-32"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Maximum points students can earn for this assessment
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Group Assessment Configuration */}
-          <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
-            <h4 className="font-medium text-sm flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Group Assessment Settings
-            </h4>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_group_assessment"
-                  checked={assessment.is_group_assessment || false}
-                  onCheckedChange={(checked) => 
-                    handleGroupSettingsChange('is_group_assessment', checked as boolean)
-                  }
-                />
-                <Label htmlFor="is_group_assessment" className="text-sm">
-                  Enable group assessment
-                </Label>
-              </div>
-              <p className="text-xs text-muted-foreground ml-6">
-                When enabled, students will work in groups and submissions will be shared among group members
-              </p>
-
-              {assessment.is_group_assessment && (
-                <div className="ml-6 space-y-4">
-
-                  {/* Group Submission Mode */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Group Submission Mode</Label>
-                    <RadioGroup
-                      value={assessment.group_submission_mode || 'all_members'}
-                      onValueChange={(value) => 
-                        handleGroupSettingsChange('group_submission_mode', value as GroupSubmissionMode)
-                      }
-                      className="space-y-2"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="all_members" id="all_members" />
-                        <Label htmlFor="all_members" className="text-sm flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          All Members Submit
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="single_submission" id="single_submission" />
-                        <Label htmlFor="single_submission" className="text-sm flex items-center gap-1">
-                          <Settings className="h-3 w-3" />
-                          Single Submission
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    <p className="text-xs text-muted-foreground">
-                      All Members: Each group member must submit individually. Single Submission: Only one group member needs to submit for the entire group.
-                    </p>
-                  </div>
-
-
-                  {/* Manage Groups Button */}
-                  <div className="pt-2 border-t">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="flex items-center gap-2"
-                      onClick={() => setIsGroupModalOpen(true)}
-                    >
-                      <Users className="h-4 w-4" />
-                      Manage Groups
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Create, edit, and assign students to groups
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
+          {/* Quiz Questions - Moved to top */}
           {assessment.assessment_type === "quiz" && (
-            <QuizEditor
-              assessment={assessment}
-              onQuestionChange={handleQuestionChange}
-            />
+            <>
+              <QuizEditor
+                assessment={assessment}
+                onQuestionChange={handleQuestionChange}
+              />
+              <QuizSettings
+                assessment={assessment}
+                onGradingChange={handleGradingChange}
+                onGroupSettingsChange={handleGroupSettingsChange}
+                onManageGroups={() => setIsGroupModalOpen(true)}
+              />
+            </>
           )}
           {assessment.assessment_type === "checklist" && (
             <ChecklistEditor
               assessment={assessment}
-              onAssessmentChange={(updatedAssessment) => 
+              onAssessmentChange={(updatedAssessment) =>
                 onAssessmentChange(updatedAssessment, "add")
               }
             />
           )}
-          {assessment.assessment_type !== "quiz" && assessment.assessment_type !== "checklist" && (
+          {assessment.assessment_type === "text_answer" && (
+            <>
+              <TextAnswerEditor
+                assessment={assessment}
+                onAssessmentChange={onAssessmentChange}
+              />
+              <QuizSettings
+                assessment={assessment}
+                onGradingChange={handleGradingChange}
+                onGroupSettingsChange={handleGroupSettingsChange}
+                onManageGroups={() => setIsGroupModalOpen(true)}
+              />
+            </>
+          )}
+          {assessment.assessment_type !== "quiz" &&
+           assessment.assessment_type !== "checklist" &&
+           assessment.assessment_type !== "text_answer" && (
             <div className="text-center py-8 text-muted-foreground">
               <div className="text-4xl mb-4">
                 {ASSESSMENT_TYPE_CONFIG[assessment.assessment_type]?.icon ||

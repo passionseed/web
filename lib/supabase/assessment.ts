@@ -48,6 +48,25 @@ export const createNodeAssessment = async (
   return data;
 };
 
+export const updateAssessmentMetadata = async (
+  id: string,
+  metadata: Record<string, any>
+): Promise<NodeAssessment> => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("node_assessments")
+    .update({ metadata })
+    .eq("id", id)
+    .select("*, quiz_questions(*)")
+    .single();
+
+  if (error) {
+    console.error("Error updating assessment metadata:", error);
+    throw new Error("Could not update assessment metadata.");
+  }
+  return data;
+};
+
 export const deleteNodeAssessment = async (id: string): Promise<void> => {
   const supabase = createClient();
   // Must delete questions first
