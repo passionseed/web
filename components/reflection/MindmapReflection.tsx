@@ -1,46 +1,117 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Plus, Save, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { X, Plus, Save, Trash2, Edit3 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { createClient } from "@/utils/supabase/client";
 
-interface Bubble {
+interface Topic {
   id: string;
   text: string;
   x: number;
   y: number;
-  color: string;
+  notes?: string;
 }
 
 interface MindmapReflectionProps {
-  onSave?: (bubbles: Bubble[], centralIdea: string) => void;
-  initialCentralIdea?: string;
-  initialBubbles?: Bubble[];
+  onSave?: (username: string, topics: Topic[]) => void;
+  onTopicsChange?: (topics: Topic[]) => void;
+  initialUsername?: string;
+  initialTopics?: Topic[];
 }
 
-const BUBBLE_COLORS = [
-  "bg-blue-100 text-blue-800 border-blue-200",
-  "bg-green-100 text-green-800 border-green-200", 
-  "bg-purple-100 text-purple-800 border-purple-200",
-  "bg-orange-100 text-orange-800 border-orange-200",
-  "bg-pink-100 text-pink-800 border-pink-200",
-  "bg-yellow-100 text-yellow-800 border-yellow-200",
-  "bg-indigo-100 text-indigo-800 border-indigo-200",
-  "bg-red-100 text-red-800 border-red-200",
-];
-
-export function MindmapReflection({ onSave, initialCentralIdea = "", initialBubbles = [] }: MindmapReflectionProps) {
-  const [centralIdea, setCentralIdea] = useState(initialCentralIdea);
-  const [bubbles, setBubbles] = useState<Bubble[]>(initialBubbles);
-  const [newBubbleText, setNewBubbleText] = useState("");
-  const [isAddingBubble, setIsAddingBubble] = useState(false);
-  const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
+export function MindmapReflection({ onSave, onTopicsChange, initialUsername = "", initialTopics = [] }: MindmapReflectionProps) {
+  const [username, setUsername] = useState(initialUsername || "username");
+  const [topics, setTopics] = useState<Topic[]>(initialTopics);
+  const [newTopicText, setNewTopicText] = useState("");
+  const [isAddingTopic, setIsAddingTopic] = useState(false);
+  const [draggedTopic, setDraggedTopic] = useState<string | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [isTopicDialogOpen, setIsTopicDialogOpen] = useState(false);
+  const [topicNotes, setTopicNotes] = useState("");
+  // Canvas is fixed 600px height, width varies but flexbox centers the username bubble
   const canvasRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const supabase = createClient();
+
+  // Fetch user profile to get actual username
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!initialUsername) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, full_name')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile) {
+            setUsername(profile.full_name || profile.username || "username");
+          }
+        }
+      }
+    };
+    
+    fetchUserProfile();
+  }, [initialUsername, supabase]);
+
+  // Notify parent component when topics change
+  useEffect(() => {
+    onTopicsChange?.(topics);
+  }, [topics, onTopicsChange]);
+
+  // Load existing mindmap topics from database
+  useEffect(() => {
+    const loadMindmapTopics = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No user found, skipping topic load');
+          return;
+        }
+
+        console.log('Loading mindmap topics for user:', user.id);
+        const { data, error } = await supabase
+          .from('mindmap_topics')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error('Error loading mindmap topics:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          console.log('Loaded topics from database:', data);
+          const loadedTopics = data.map(topic => ({
+            id: `topic-${topic.id}`, // Use database ID with prefix
+            text: topic.text,
+            x: Number(topic.position_x),
+            y: Number(topic.position_y),
+            notes: topic.notes || undefined
+          }));
+          setTopics(loadedTopics);
+          console.log('Set topics in state:', loadedTopics);
+        } else {
+          console.log('No topics found in database');
+        }
+      } catch (error) {
+        console.error('Exception while loading topics:', error);
+      }
+    };
+
+    // Always try to load topics when component mounts
+    loadMindmapTopics();
+  }, [supabase]); // Removed dependency on initialTopics.length
+
 
   const getRandomPosition = useCallback(() => {
     const canvas = canvasRef.current;
@@ -48,102 +119,194 @@ export function MindmapReflection({ onSave, initialCentralIdea = "", initialBubb
     
     const rect = canvas.getBoundingClientRect();
     const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+    const centerY = 300; // Fixed center Y for 600px height
     
-    // Generate position in a circle around the center
+    // Generate position around the center username bubble
     const angle = Math.random() * 2 * Math.PI;
-    const radius = 100 + Math.random() * 150; // 100-250px from center
+    const radius = 150 + Math.random() * 100; // 150-250px from center
     
     return {
-      x: Math.max(50, Math.min(rect.width - 100, centerX + Math.cos(angle) * radius)),
-      y: Math.max(50, Math.min(rect.height - 50, centerY + Math.sin(angle) * radius))
+      x: Math.max(50, Math.min(rect.width - 150, centerX + Math.cos(angle) * radius)),
+      y: Math.max(25, Math.min(575, centerY + Math.sin(angle) * radius)) // 575 = 600 - 25
     };
   }, []);
 
-  const addBubble = useCallback(() => {
-    if (!newBubbleText.trim()) return;
+  const addTopic = useCallback(() => {
+    if (!newTopicText.trim()) return;
     
-    const newBubble: Bubble = {
-      id: `bubble-${Date.now()}-${Math.random()}`,
-      text: newBubbleText.trim(),
-      ...getRandomPosition(),
-      color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)]
+    const newTopic: Topic = {
+      id: `topic-${Date.now()}-${Math.random()}`,
+      text: newTopicText.trim(),
+      ...getRandomPosition()
     };
     
-    setBubbles(prev => [...prev, newBubble]);
-    setNewBubbleText("");
-    setIsAddingBubble(false);
-  }, [newBubbleText, getRandomPosition]);
+    setTopics(prev => [...prev, newTopic]);
+    setNewTopicText("");
+    setIsAddingTopic(false);
+  }, [newTopicText, getRandomPosition]);
 
-  const removeBubble = useCallback((id: string) => {
-    setBubbles(prev => prev.filter(bubble => bubble.id !== id));
+  const removeTopic = useCallback((id: string) => {
+    setTopics(prev => prev.filter(topic => topic.id !== id));
   }, []);
+
+  const handleTopicClick = useCallback((topic: Topic, event: React.MouseEvent) => {
+    // Don't open dialog if user is dragging
+    if (draggedTopic) return;
+    
+    event.stopPropagation();
+    setSelectedTopic(topic);
+    setTopicNotes(topic.notes || "");
+    setIsTopicDialogOpen(true);
+  }, [draggedTopic]);
+
+  const saveTopicNotes = useCallback(() => {
+    if (!selectedTopic) return;
+    
+    setTopics(prev => prev.map(topic => 
+      topic.id === selectedTopic.id 
+        ? { ...topic, notes: topicNotes }
+        : topic
+    ));
+    
+    setIsTopicDialogOpen(false);
+    setSelectedTopic(null);
+    setTopicNotes("");
+    
+    toast({
+      title: "Notes saved!",
+      description: "Your notes have been updated for this topic"
+    });
+  }, [selectedTopic, topicNotes, toast]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      addBubble();
+      addTopic();
     } else if (e.key === "Escape") {
-      setIsAddingBubble(false);
-      setNewBubbleText("");
+      setIsAddingTopic(false);
+      setNewTopicText("");
     }
-  }, [addBubble]);
+  }, [addTopic]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, bubbleId: string) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent, topicId: string) => {
     e.preventDefault();
-    setDraggedBubble(bubbleId);
+    setDraggedTopic(topicId);
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!draggedBubble || !canvasRef.current) return;
+    if (!draggedTopic || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    setBubbles(prev => prev.map(bubble => 
-      bubble.id === draggedBubble 
-        ? { ...bubble, x: Math.max(0, Math.min(rect.width - 100, x - 50)), y: Math.max(0, Math.min(rect.height - 30, y - 15)) }
-        : bubble
+    setTopics(prev => prev.map(topic => 
+      topic.id === draggedTopic 
+        ? { ...topic, x: Math.max(0, Math.min(rect.width - 120, x - 60)), y: Math.max(0, Math.min(rect.height - 30, y - 15)) }
+        : topic
     ));
-  }, [draggedBubble]);
+  }, [draggedTopic]);
 
   const handleMouseUp = useCallback(() => {
-    setDraggedBubble(null);
+    setDraggedTopic(null);
   }, []);
 
-  const handleSave = useCallback(() => {
-    if (!centralIdea.trim()) {
+  const handleSave = useCallback(async () => {
+    try {
+      // Save to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to save",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Saving topics to database:', topics);
+
+      // First, delete all existing topics for this user to avoid duplicates
+      const { error: deleteError } = await supabase
+        .from('mindmap_topics')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteError) {
+        console.error('Error deleting existing topics:', deleteError);
+        throw deleteError;
+      }
+
+      // Insert all current topics as individual records
+      if (topics.length > 0) {
+        const topicRecords = topics.map(topic => ({
+          user_id: user.id,
+          text: topic.text,
+          position_x: topic.x,
+          position_y: topic.y,
+          notes: topic.notes || null
+        }));
+
+        console.log('Inserting topic records:', topicRecords);
+        const { error: insertError } = await supabase
+          .from('mindmap_topics')
+          .insert(topicRecords);
+
+        if (insertError) {
+          console.error('Error inserting topics:', insertError);
+          throw insertError;
+        }
+        console.log('Successfully saved topics to database');
+      }
+
+      // Call the optional onSave callback
+      onSave?.(username, topics);
+      
       toast({
-        title: "Central idea required",
-        description: "Please enter what you're currently doing",
+        title: "Mindmap saved!",
+        description: `Saved ${topics.length} topics to your database`
+      });
+      
+    } catch (error) {
+      console.error('Error saving mindmap:', error);
+      toast({
+        title: "Error saving mindmap",
+        description: "Please try again",
         variant: "destructive"
       });
-      return;
     }
-    
-    if (bubbles.length === 0) {
+  }, [username, topics, onSave, toast, supabase]);
+
+  const clearAll = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Clear from database
+        await supabase
+          .from('mindmap_topics')
+          .delete()
+          .eq('user_id', user.id);
+      }
+      
+      // Clear from state
+      setTopics([]);
+      setUsername("username");
+      setNewTopicText("");
+      setIsAddingTopic(false);
+      
       toast({
-        title: "Add some activities",
-        description: "Please add at least one activity bubble",
+        title: "Mindmap cleared",
+        description: "All topics have been removed"
+      });
+    } catch (error) {
+      console.error('Error clearing mindmap:', error);
+      toast({
+        title: "Error clearing mindmap",
+        description: "Please try again",
         variant: "destructive"
       });
-      return;
     }
-
-    onSave?.(bubbles, centralIdea);
-    toast({
-      title: "Mindmap saved!",
-      description: "Your reflection has been saved successfully"
-    });
-  }, [bubbles, centralIdea, onSave, toast]);
-
-  const clearAll = useCallback(() => {
-    setBubbles([]);
-    setCentralIdea("");
-    setNewBubbleText("");
-    setIsAddingBubble(false);
-  }, []);
+  }, [supabase, toast]);
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
@@ -157,7 +320,7 @@ export function MindmapReflection({ onSave, initialCentralIdea = "", initialBubb
                 variant="outline" 
                 size="sm" 
                 onClick={clearAll}
-                disabled={bubbles.length === 0 && !centralIdea}
+                disabled={topics.length === 0}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Clear All
@@ -169,14 +332,6 @@ export function MindmapReflection({ onSave, initialCentralIdea = "", initialBubb
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Input
-            placeholder="Enter your main focus (e.g., 'Learning React', 'Building my game', 'Studying for exams')"
-            value={centralIdea}
-            onChange={(e) => setCentralIdea(e.target.value)}
-            className="text-lg"
-          />
-        </CardContent>
       </Card>
 
       {/* Mindmap Canvas */}
@@ -184,81 +339,88 @@ export function MindmapReflection({ onSave, initialCentralIdea = "", initialBubb
         <CardContent className="p-0">
           <div 
             ref={canvasRef}
-            className="relative w-full h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 overflow-hidden rounded-lg"
+            className="relative w-full h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 overflow-hidden rounded-lg flex items-center justify-center"
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
-            {/* Central Idea Circle */}
-            {centralIdea && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full px-6 py-4 text-center font-semibold text-lg shadow-lg border-4 border-white min-w-[200px] max-w-[300px]"
-              >
-                {centralIdea}
-              </motion.div>
-            )}
+            {/* Username Bubble (Central) - Naturally centered with flexbox */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full px-8 py-6 text-center font-bold text-xl shadow-xl border-4 border-white min-w-[250px] max-w-[350px] z-20"
+            >
+              {username}
+            </motion.div>
 
-            {/* Activity Bubbles */}
+            {/* Topic Bubbles */}
             <AnimatePresence>
-              {bubbles.map((bubble) => (
+              {topics.map((topic) => (
                 <motion.div
-                  key={bubble.id}
+                  key={topic.id}
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
-                  className={`absolute cursor-move select-none ${bubble.color} rounded-full px-4 py-2 text-sm font-medium border-2 shadow-lg hover:shadow-xl transition-shadow group max-w-[200px]`}
+                  className="absolute cursor-pointer select-none bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-full px-4 py-2 text-center font-medium text-sm shadow-lg border-2 border-white max-w-[120px] group hover:shadow-xl transition-shadow"
                   style={{ 
-                    left: bubble.x, 
-                    top: bubble.y,
-                    zIndex: draggedBubble === bubble.id ? 10 : 1
+                    left: topic.x, 
+                    top: topic.y,
+                    zIndex: draggedTopic === topic.id ? 10 : 1
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, bubble.id)}
+                  onMouseDown={(e) => handleMouseDown(e, topic.id)}
+                  onClick={(e) => handleTopicClick(topic, e)}
                   whileDrag={{ scale: 1.1 }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="break-words">{bubble.text}</span>
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="break-words text-xs">{topic.text}</span>
+                    {topic.notes && (
+                      <Edit3 className="h-2 w-2 opacity-70" />
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeBubble(bubble.id);
+                        removeTopic(topic.id);
                       }}
                       className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 rounded-full p-1"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-2 w-2 text-red-600" />
                     </button>
                   </div>
                   
-                  {/* Connection line to center */}
-                  {centralIdea && (
-                    <svg 
-                      className="absolute inset-0 pointer-events-none -z-10"
-                      style={{ 
-                        width: '100vw', 
-                        height: '100vh',
-                        left: -bubble.x,
-                        top: -bubble.y
-                      }}
-                    >
-                      <line
-                        x1={bubble.x + 50}
-                        y1={bubble.y + 15}
-                        x2="50%"
-                        y2="50%"
-                        stroke="rgb(148 163 184)"
-                        strokeWidth="2"
-                        strokeDasharray="5,5"
-                        opacity="0.5"
-                      />
-                    </svg>
-                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
 
-            {/* Add Bubble Input */}
-            {isAddingBubble && (
+            {/* Connection Lines */}
+            <svg 
+              className="absolute inset-0 pointer-events-none z-10"
+              style={{ 
+                width: '100%', 
+                height: '100%'
+              }}
+            >
+              {topics.map((topic) => {
+                // Canvas is 600px high, width varies - get actual center X but use fixed center Y
+                const centerX = canvasRef.current ? canvasRef.current.offsetWidth / 2 : 300;
+                const centerY = 300; // Fixed center Y for 600px height
+                return (
+                  <line
+                    key={`line-${topic.id}`}
+                    x1={topic.x + 60}
+                    y1={topic.y + 15}
+                    x2={centerX}
+                    y2={centerY}
+                    stroke="rgb(148 163 184)"
+                    strokeWidth="2"
+                    strokeDasharray="5,5"
+                    opacity="0.6"
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Add Topic Input */}
+            {isAddingTopic && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -267,21 +429,25 @@ export function MindmapReflection({ onSave, initialCentralIdea = "", initialBubb
                 <div className="flex gap-2">
                   <Input
                     autoFocus
-                    placeholder="What activity are you doing? (Press Enter to add)"
-                    value={newBubbleText}
-                    onChange={(e) => setNewBubbleText(e.target.value)}
+                    placeholder="What topic are you working on?"
+                    value={newTopicText}
+                    onChange={(e) => setNewTopicText(e.target.value)}
                     onKeyDown={handleKeyPress}
                     className="flex-1"
                   />
-                  <Button size="sm" onClick={addBubble} disabled={!newBubbleText.trim()}>
+                  <Button 
+                    size="sm" 
+                    onClick={addTopic} 
+                    disabled={!newTopicText.trim()}
+                  >
                     <Plus className="h-4 w-4" />
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline" 
                     onClick={() => {
-                      setIsAddingBubble(false);
-                      setNewBubbleText("");
+                      setIsAddingTopic(false);
+                      setNewTopicText("");
                     }}
                   >
                     <X className="h-4 w-4" />
@@ -293,48 +459,72 @@ export function MindmapReflection({ onSave, initialCentralIdea = "", initialBubb
               </motion.div>
             )}
 
-            {/* Add Button (when not adding) */}
-            {!isAddingBubble && centralIdea && (
+            {/* Add Button */}
+            {!isAddingTopic && (
               <motion.button
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                onClick={() => setIsAddingBubble(true)}
-                className="absolute bottom-6 left-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all"
+                onClick={() => setIsAddingTopic(true)}
+                className="absolute bottom-6 left-6 bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
               >
-                <Plus className="h-6 w-6" />
+                <Plus className="h-4 w-4" />
               </motion.button>
             )}
 
-            {/* Instructions */}
-            {bubbles.length === 0 && centralIdea && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-              >
-                <div className="text-center text-muted-foreground bg-white/80 dark:bg-slate-800/80 rounded-lg p-6 backdrop-blur-sm">
-                  <p className="text-lg font-medium">Click the + button to add activities</p>
-                  <p className="text-sm">Add bubbles for the specific things you're working on</p>
-                </div>
-              </motion.div>
-            )}
 
-            {/* Getting started instructions */}
-            {!centralIdea && (
+            {/* Add topics instructions */}
+            {topics.length === 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                className="absolute top-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
               >
-                <div className="text-center text-muted-foreground">
-                  <p className="text-lg font-medium">Start by entering what you're currently doing above</p>
-                  <p className="text-sm">Then add specific activities as bubbles around your main focus</p>
+                <div className="text-center text-muted-foreground bg-white/80 dark:bg-slate-800/80 rounded-lg p-4 backdrop-blur-sm">
+                  <p className="text-sm">Click the + button to add topics you're working on</p>
                 </div>
               </motion.div>
             )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Topic Notes Dialog */}
+      <Dialog open={isTopicDialogOpen} onOpenChange={setIsTopicDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Topic Notes: {selectedTopic?.text}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="notes" className="text-sm font-medium">
+                What did you work on regarding this topic today?
+              </label>
+              <Textarea
+                id="notes"
+                placeholder="Write your notes here..."
+                value={topicNotes}
+                onChange={(e) => setTopicNotes(e.target.value)}
+                className="mt-2 min-h-[120px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsTopicDialogOpen(false);
+                setSelectedTopic(null);
+                setTopicNotes("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveTopicNotes}>
+              Save Notes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
