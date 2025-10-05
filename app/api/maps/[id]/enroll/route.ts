@@ -110,54 +110,7 @@ export async function POST(
       mapTitle: mapExists.title
     });
 
-    // Check if user is already enrolled
-    const { data: existingEnrollment, error: checkError } = await supabase
-      .from("user_map_enrollments")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("map_id", mapId)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error(
-        "❌ [Enroll API] Error checking existing enrollment:",
-        {
-          error: checkError,
-          message: checkError.message,
-          code: checkError.code,
-          details: checkError.details,
-          hint: checkError.hint,
-        }
-      );
-      return NextResponse.json(
-        { 
-          success: false,
-          error: "Failed to check enrollment status",
-          message: "Database error while checking enrollment",
-          details: checkError.message || "Unknown database error"
-        },
-        { status: 500 }
-      );
-    }
-
-    if (existingEnrollment) {
-      console.log("ℹ️ [Enroll API] User already enrolled");
-      return NextResponse.json({
-        success: true,
-        data: existingEnrollment,
-        message: "Already enrolled in this map",
-      });
-    }
-
-    // Debug: Check current authentication context
-    const { data: debugAuth } = await supabase.auth.getUser();
-    console.log("🔍 [Enroll API] Authentication context check:", {
-      authUserId: debugAuth.user?.id,
-      requestUserId: user.id,
-      isMatch: debugAuth.user?.id === user.id
-    });
-
-    // Create new enrollment
+    // Create or return existing enrollment (using upsert for atomic operation)
     const enrollmentData = {
       user_id: user.id,
       map_id: mapId,
@@ -165,11 +118,14 @@ export async function POST(
       enrolled_at: new Date().toISOString(),
     };
 
-    console.log("📝 [Enroll API] Attempting to insert enrollment:", enrollmentData);
+    console.log("📝 [Enroll API] Attempting to upsert enrollment:", enrollmentData);
 
     const { data: enrollment, error: enrollError } = await supabase
       .from("user_map_enrollments")
-      .insert(enrollmentData)
+      .upsert(enrollmentData, {
+        onConflict: "user_id,map_id",
+        ignoreDuplicates: false,
+      })
       .select("*")
       .single();
 
@@ -197,12 +153,17 @@ export async function POST(
       );
     }
 
-    console.log("✅ [Enroll API] Enrollment created:", enrollment);
+    console.log("✅ [Enroll API] Enrollment created/retrieved:", enrollment);
+
+    // Check if this was a new enrollment or existing one
+    const wasNewEnrollment = new Date(enrollment.enrolled_at).getTime() > Date.now() - 5000;
 
     return NextResponse.json({
       success: true,
       data: enrollment,
-      message: "Successfully enrolled in map",
+      message: wasNewEnrollment
+        ? "Successfully enrolled in map"
+        : "Already enrolled in this map",
     });
   } catch (error) {
     console.error("❌ [Enroll API] Error:", error);
