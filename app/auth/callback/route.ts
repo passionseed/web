@@ -17,36 +17,88 @@ export async function GET(request: Request) {
       // This assumes a 'profiles' table with an 'id' column linked to auth.users.id.
       // Using upsert to avoid errors if the profile already exists or to create it.
 
-      // Wait a moment for the trigger to create the profile
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("full_name, username, date_of_birth")
-        .eq("id", userId)
-        .single();
+      // Enhanced profile creation with retry logic for production
+      let profileData = null;
+      let profileError = null;
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      // Retry logic to handle timing issues in production
+      while (retryCount < maxRetries) {
+        // Wait longer for trigger to complete (production needs more time)
+        const waitTime = 200 + (retryCount * 300); // 200ms, 500ms, 800ms
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        
+        const result = await supabase
+          .from("profiles")
+          .select("full_name, username, date_of_birth, email")
+          .eq("id", userId)
+          .single();
+          
+        profileData = result.data;
+        profileError = result.error;
+        
+        if (!profileError) {
+          console.log(`Profile found on attempt ${retryCount + 1}:`, profileData);
+          break;
+        }
+        
+        if (profileError.code !== "PGRST116") {
+          // Not a "not found" error, break and handle
+          break;
+        }
+        
+        retryCount++;
+        console.log(`Profile not found, retry ${retryCount}/${maxRetries} for user:`, userId);
+      }
 
       let redirectTo = next;
       console.log(profileData, profileError, "profileData, profileError");
 
       if (profileError && profileError.code === "PGRST116") {
-        // Profile still doesn't exist, something went wrong with the trigger
-        console.error("Profile creation trigger failed for user:", userId);
-        return NextResponse.redirect(
-          `${origin}/auth/auth-code-error?error=profile_creation_failed`
-        );
+        // Profile still doesn't exist after retries, try fallback creation
+        console.log("Attempting fallback profile creation for user:", userId);
+        
+        try {
+          const fallbackUsername = data.user.email?.split('@')[0] || `user_${userId.slice(0, 8)}`;
+          
+          const { data: newProfile, error: createError } = await supabase
+            .from("profiles")
+            .insert({
+              id: userId,
+              email: data.user.email,
+              username: fallbackUsername,
+              full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || null,
+              avatar_url: data.user.user_metadata?.avatar_url || null,
+              date_of_birth: null
+            })
+            .select("full_name, username, date_of_birth, email")
+            .single();
+            
+          if (createError) {
+            console.error("Fallback profile creation failed:", createError);
+            return NextResponse.redirect(`${origin}/auth/auth-code-error?error=profile_creation_failed&details=${encodeURIComponent(createError.message)}`);
+          }
+          
+          profileData = newProfile;
+          console.log("Fallback profile created successfully:", profileData);
+          
+        } catch (fallbackError) {
+          console.error("Exception during fallback profile creation:", fallbackError);
+          return NextResponse.redirect(`${origin}/auth/auth-code-error?error=profile_creation_failed&details=fallback_failed`);
+        }
       } else if (profileError) {
         console.error("Error fetching profile:", profileError);
-        return NextResponse.redirect(
-          `${origin}/auth/auth-code-error?error=profile_fetch_failed`
-        );
-      } else if (profileData) {
+        return NextResponse.redirect(`${origin}/auth/auth-code-error?error=profile_fetch_failed&details=${encodeURIComponent(profileError.message)}`);
+      }
+      
+      if (profileData) {
         // Check if profile data is incomplete
         const profile = profileData;
         if (!profile.full_name || !profile.username || !profile.date_of_birth) {
           redirectTo = `/auth/finish-profile?next=${encodeURIComponent(next)}`;
         }
-        console.log(profile, "profile");
+        console.log("Final profile data:", profile);
       }
 
       console.log(redirectTo, "redirectTo");
