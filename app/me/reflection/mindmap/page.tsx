@@ -54,7 +54,18 @@ export default function MindmapReflectionPage() {
   const handleContinue = () => {
     // Save topics to session storage to pass to feelings page
     if (topics.length > 0) {
+      // Clear notes from topics for fresh reflection next time
+      const topicsWithoutNotes = topics.map(topic => ({
+        ...topic,
+        notes: undefined // Clear notes for next reflection
+      }));
+      
+      // Save topics with notes to session storage (for the reflection submission)
       sessionStorage.setItem('mindmap-topics', JSON.stringify(topics));
+      
+      // Update the persistent database storage to clear notes for next time
+      sessionStorage.setItem('clear-topic-notes', 'true');
+      
       router.push('/me/reflection/mindmap/feelings');
     } else {
       toast({
@@ -87,7 +98,7 @@ export default function MindmapReflectionPage() {
       </div>
 
       {/* Mindmap Component */}
-      <MindmapReflection onSave={handleSave} onTopicsChange={setTopics} />
+      <MindmapReflection onSave={handleSave} onTopicsChange={setTopics} isReflectionMode={true} />
       
       {/* Continue Button */}
       {topics.length > 0 && (
