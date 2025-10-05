@@ -90,21 +90,116 @@ export default function MindmapFeelingsPage() {
         </div>
         <div 
           className="relative w-full h-3 bg-gray-200 rounded-full cursor-pointer"
-          onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const percentage = (x / rect.width) * 100;
-            const newValue = Math.min(100, Math.max(1, Math.round(percentage)));
-            onChange(newValue);
+          onMouseDown={(e) => {
+            // Only handle if we clicked on the bar, not the dot
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              
+              const slider = e.currentTarget;
+              const rect = slider.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const percentage = (x / rect.width) * 100;
+              const newValue = Math.min(100, Math.max(1, Math.round(percentage)));
+              
+              console.log('Bar mousedown - setting initial value:', {
+                clickX: e.clientX,
+                rectLeft: rect.left,
+                rectWidth: rect.width,
+                x: x,
+                percentage: percentage,
+                newValue: newValue,
+                previousValue: value
+              });
+              
+              // Set the initial value
+              onChange(newValue);
+              
+              // Start drag from this position
+              const handleMouseMove = (e: MouseEvent) => {
+                const currentX = e.clientX - rect.left;
+                const currentPercentage = (currentX / rect.width) * 100;
+                const currentValue = Math.min(100, Math.max(1, Math.round(currentPercentage)));
+                
+                console.log('Bar drag move:', {
+                  clientX: e.clientX,
+                  rectLeft: rect.left,
+                  rectWidth: rect.width,
+                  currentX: currentX,
+                  currentPercentage: currentPercentage,
+                  currentValue: currentValue
+                });
+                
+                onChange(currentValue);
+              };
+              
+              const handleMouseUp = () => {
+                console.log('Bar drag ended');
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+              };
+              
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', handleMouseUp);
+            }
           }}
         >
           <div 
-            className={`absolute h-full rounded-full transition-all duration-200 ease-out ${
+            className={`absolute h-full rounded-full transition-all duration-200 ease-out cursor-pointer ${
               color === 'bg-pink-500' ? 'bg-pink-500' :
               color === 'bg-blue-500' ? 'bg-blue-500' :
               'bg-orange-500'
             }`}
             style={{ width: `${value}%` }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              const slider = e.currentTarget.parentElement!;
+              const rect = slider.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const percentage = (x / rect.width) * 100;
+              const newValue = Math.min(100, Math.max(1, Math.round(percentage)));
+              
+              console.log('Color bar mousedown - setting initial value:', {
+                clickX: e.clientX,
+                rectLeft: rect.left,
+                rectWidth: rect.width,
+                x: x,
+                percentage: percentage,
+                newValue: newValue,
+                previousValue: value
+              });
+              
+              // Set the initial value
+              onChange(newValue);
+              
+              // Start drag from this position
+              const handleMouseMove = (e: MouseEvent) => {
+                const currentX = e.clientX - rect.left;
+                const currentPercentage = (currentX / rect.width) * 100;
+                const currentValue = Math.min(100, Math.max(1, Math.round(currentPercentage)));
+                
+                console.log('Color bar drag move:', {
+                  clientX: e.clientX,
+                  rectLeft: rect.left,
+                  rectWidth: rect.width,
+                  currentX: currentX,
+                  currentPercentage: currentPercentage,
+                  currentValue: currentValue
+                });
+                
+                onChange(currentValue);
+              };
+              
+              const handleMouseUp = () => {
+                console.log('Color bar drag ended');
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+              };
+              
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', handleMouseUp);
+            }}
           />
           <div 
             className={`absolute top-1/2 w-6 h-6 bg-white border-2 rounded-full shadow-lg cursor-grab active:cursor-grabbing transform -translate-y-1/2 transition-all duration-200 ease-out hover:scale-110 ${
@@ -115,18 +210,37 @@ export default function MindmapFeelingsPage() {
             style={{ left: `calc(${value}% - 12px)` }}
             onMouseDown={(e) => {
               e.preventDefault();
-              const startX = e.clientX;
-              const startValue = value;
-              const rect = e.currentTarget.parentElement!.getBoundingClientRect();
+              e.stopPropagation(); // Prevent triggering the bar's onMouseDown
+              
+              const slider = e.currentTarget.parentElement!;
+              const rect = slider.getBoundingClientRect();
+              
+              console.log('Dot drag started:', {
+                rect,
+                currentValue: value,
+                dotLeft: `calc(${value}% - 12px)`
+              });
               
               const handleMouseMove = (e: MouseEvent) => {
-                const deltaX = e.clientX - startX;
-                const deltaPercentage = (deltaX / rect.width) * 100;
-                const newValue = Math.min(100, Math.max(1, Math.round(startValue + deltaPercentage)));
+                const x = e.clientX - rect.left;
+                const percentage = (x / rect.width) * 100;
+                const newValue = Math.min(100, Math.max(1, Math.round(percentage)));
+                
+                console.log('Dot drag move:', {
+                  clientX: e.clientX,
+                  rectLeft: rect.left,
+                  rectWidth: rect.width,
+                  x: x,
+                  percentage: percentage,
+                  newValue: newValue,
+                  previousValue: value
+                });
+                
                 onChange(newValue);
               };
               
               const handleMouseUp = () => {
+                console.log('Dot drag ended');
                 document.removeEventListener('mousemove', handleMouseMove);
                 document.removeEventListener('mouseup', handleMouseUp);
               };
