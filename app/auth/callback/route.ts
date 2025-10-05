@@ -18,8 +18,8 @@ export async function GET(request: Request) {
       // Using upsert to avoid errors if the profile already exists or to create it.
 
       // Wait a moment for the trigger to create the profile
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("full_name, username, date_of_birth")
@@ -27,14 +27,19 @@ export async function GET(request: Request) {
         .single();
 
       let redirectTo = next;
+      console.log(profileData, profileError, "profileData, profileError");
 
       if (profileError && profileError.code === "PGRST116") {
         // Profile still doesn't exist, something went wrong with the trigger
         console.error("Profile creation trigger failed for user:", userId);
-        return NextResponse.redirect(`${origin}/auth/auth-code-error?error=profile_creation_failed`);
+        return NextResponse.redirect(
+          `${origin}/auth/auth-code-error?error=profile_creation_failed`
+        );
       } else if (profileError) {
         console.error("Error fetching profile:", profileError);
-        return NextResponse.redirect(`${origin}/auth/auth-code-error?error=profile_fetch_failed`);
+        return NextResponse.redirect(
+          `${origin}/auth/auth-code-error?error=profile_fetch_failed`
+        );
       } else if (profileData) {
         // Check if profile data is incomplete
         const profile = profileData;
