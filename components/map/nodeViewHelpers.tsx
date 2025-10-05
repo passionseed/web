@@ -5,6 +5,53 @@ import { ImageIcon, PlayCircle, ExternalLink } from "lucide-react";
 import { Button } from "../ui/button";
 import Embed, { defaultProviders } from "react-tiny-oembed";
 import { CanvaEmbed } from "./CanvaEmbed";
+import { marked } from "marked";
+
+// Configure marked options for security and consistency
+marked.setOptions({
+  gfm: true, // GitHub Flavored Markdown
+  breaks: true, // Convert line breaks to <br> tags
+  sanitizer: undefined, // We'll use our own HTML sanitization if needed
+});
+
+// Utility function to detect if content contains markdown syntax
+const containsMarkdownSyntax = (content: string): boolean => {
+  const markdownPatterns = [
+    /^#{1,6}\s+/m, // Headers (# ## ### etc)
+    /\*\*.*?\*\*/g, // Bold **text**
+    /\*.*?\*/g, // Italic *text*
+    /^[-*+]\s+/m, // Unordered lists
+    /^\d+\.\s+/m, // Ordered lists
+    /\[.*?\]\(.*?\)/g, // Links [text](url)
+    /!\[.*?\]\(.*?\)/g, // Images ![alt](url)
+    /`.*?`/g, // Inline code
+    /^```/m, // Code blocks
+    /^>/m, // Blockquotes
+    /^---$/m, // Horizontal rules
+    /~~.*?~~/g, // Strikethrough
+  ];
+
+  return markdownPatterns.some(pattern => pattern.test(content));
+};
+
+// Utility function to process text content (markdown or HTML)
+const processTextContent = (content: string): string => {
+  if (!content) return "";
+
+  // If content contains markdown syntax, parse as markdown
+  if (containsMarkdownSyntax(content)) {
+    try {
+      return marked.parse(content);
+    } catch (error) {
+      console.error("Error parsing markdown:", error);
+      // Fallback to raw content if markdown parsing fails
+      return content;
+    }
+  }
+
+  // Otherwise, treat as HTML (existing behavior)
+  return content;
+};
 
 // Custom fallback components for better UX - memoized to prevent unnecessary re-renders
 const LoadingFallback = memo(({ url }: { url: string }) => (
@@ -124,14 +171,18 @@ const ImageContent = memo(({ contentUrl }: { contentUrl: string }) => {
 });
 ImageContent.displayName = "ImageContent";
 
-// Text Content Component - memoized
+// Text Content Component - memoized with markdown support
 const TextContent = memo(({ contentBody }: { contentBody: string }) => {
   console.log("📝 TextContent rendering, content length:", contentBody?.length || 0);
   
+  const processedContent = useMemo(() => {
+    return processTextContent(contentBody || "");
+  }, [contentBody]);
+
   return (
     <div
       className="prose prose-sm dark:prose-invert max-w-none"
-      dangerouslySetInnerHTML={{ __html: contentBody || "" }}
+      dangerouslySetInnerHTML={{ __html: processedContent }}
     />
   );
 });
