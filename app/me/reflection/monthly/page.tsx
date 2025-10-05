@@ -419,7 +419,7 @@ export default function MonthlyReviewPage() {
                   </p>
                   <Button 
                     className="mt-4" 
-                    onClick={() => router.push('/me/reflection/new')}
+                    onClick={() => router.push('/me/reflection/mindmap')}
                   >
                     Add Reflection
                   </Button>

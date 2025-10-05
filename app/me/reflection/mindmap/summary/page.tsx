@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Calendar, Clock, Target, CheckCircle, Heart, TrendingUp, Zap } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Heart, TrendingUp, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { saveMindmapReflection, MindmapReflectionData } from "@/lib/supabase/mindmap-reflections";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Topic {
   id: string;
@@ -27,10 +29,13 @@ interface ReflectionAnswers {
 
 export default function MindmapSummaryPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [ratings, setRatings] = useState<FeelingRating>({ satisfaction: 0, progress: 0, challenge: 0 });
   const [reflectionAnswers, setReflectionAnswers] = useState<ReflectionAnswers>({ overallWhy: "" });
   const [currentDate, setCurrentDate] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isFirstView, setIsFirstView] = useState(true);
 
   useEffect(() => {
     // Get topics from session storage
@@ -59,17 +64,62 @@ export default function MindmapSummaryPage() {
       month: 'long',
       day: 'numeric'
     }));
+
+    // Remove first view flag after the glow effect
+    const timer = setTimeout(() => {
+      setIsFirstView(false);
+    }, 3000); // 3 seconds of glow effect
+
+    return () => clearTimeout(timer);
   }, []);
 
   const topicsWithNotes = topics.filter(topic => topic.notes && topic.notes.trim());
   const topicsWithoutNotes = topics.filter(topic => !topic.notes || !topic.notes.trim());
 
-  const handleFinish = () => {
-    // Clear session storage and navigate back to dashboard
-    sessionStorage.removeItem('mindmap-topics');
-    sessionStorage.removeItem('mindmap-ratings');
-    sessionStorage.removeItem('mindmap-reflection');
-    router.push('/me');
+  const handleFinish = async () => {
+    if (!reflectionAnswers.overallWhy.trim()) {
+      toast({
+        title: "Missing reflection",
+        description: "Please complete your reflection before finishing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const reflectionData: MindmapReflectionData = {
+        topics: topics,
+        satisfaction: ratings.satisfaction,
+        progress: ratings.progress,
+        challenge: ratings.challenge,
+        overallReflection: reflectionAnswers.overallWhy
+      };
+
+      await saveMindmapReflection(reflectionData);
+      
+      // Clear session storage after successful save
+      sessionStorage.removeItem('mindmap-topics');
+      sessionStorage.removeItem('mindmap-ratings');
+      sessionStorage.removeItem('mindmap-reflection');
+      
+      toast({
+        title: "Reflection saved!",
+        description: "Your daily reflection has been saved successfully.",
+      });
+      
+      router.push('/me');
+    } catch (error) {
+      console.error('Error saving reflection:', error);
+      toast({
+        title: "Save failed",
+        description: "Failed to save your reflection. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -94,113 +144,7 @@ export default function MindmapSummaryPage() {
         </div>
       </div>
 
-      {/* Feelings Summary */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Heart className="h-5 w-5 text-pink-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Satisfaction</p>
-                <p className="text-2xl font-bold">{ratings.satisfaction}/100</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Progress</p>
-                <p className="text-2xl font-bold">{ratings.progress}/100</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Zap className="h-5 w-5 text-orange-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Challenge</p>
-                <p className="text-2xl font-bold">{ratings.challenge}/100</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Summary Overview */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Target className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Topics</p>
-                <p className="text-2xl font-bold">{topics.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">With Progress</p>
-                <p className="text-2xl font-bold">{topicsWithNotes.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-orange-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Need Attention</p>
-                <p className="text-2xl font-bold">{topicsWithoutNotes.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Progress Details */}
-      {topicsWithNotes.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              Today's Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {topicsWithNotes.map((topic, index) => (
-              <motion.div
-                key={topic.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="border rounded-lg p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20"
-              >
-                <h4 className="font-semibold text-lg mb-2 text-green-800 dark:text-green-200">
-                  {topic.text}
-                </h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {topic.notes}
-                </p>
-              </motion.div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Topics Needing Attention */}
       {topicsWithoutNotes.length > 0 && (
@@ -233,103 +177,173 @@ export default function MindmapSummaryPage() {
         </Card>
       )}
 
-      {/* Reflection Details */}
+      {/* Daily Reflection Card */}
       {reflectionAnswers.overallWhy && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Your Reflection</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-2">
-                  <Heart className="h-5 w-5 text-pink-500" />
-                  <TrendingUp className="h-5 w-5 text-blue-500" />
-                  <Zap className="h-5 w-5 text-orange-500" />
-                </div>
-                <h4 className="font-semibold">
-                  Why you rated your day: {ratings.satisfaction}/100 satisfaction, {ratings.progress}/100 progress, {ratings.challenge}/100 challenge
-                </h4>
+        <div className="flex justify-center mb-8">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className={`relative bg-gradient-to-br from-slate-800 via-slate-900 to-black p-4 rounded-xl border-2 border-amber-500 shadow-xl transition-all duration-1000 ${
+              isFirstView 
+                ? 'shadow-2xl drop-shadow-2xl animate-pulse' 
+                : ''
+            }`}
+            style={{ 
+              width: '40vw', 
+              maxWidth: '480px',
+              ...(isFirstView && {
+                boxShadow: '0 0 50px rgba(245, 158, 11, 0.6), 0 0 100px rgba(245, 158, 11, 0.4), 0 0 150px rgba(245, 158, 11, 0.2)',
+                filter: 'drop-shadow(0 0 20px rgba(245, 158, 11, 0.8))'
+              })
+            }}
+          >
+              
+              {/* Ornate corner decorations */}
+              <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-amber-400 rounded-tl-lg"></div>
+              <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-amber-400 rounded-tr-lg"></div>
+              <div className="absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 border-amber-400 rounded-bl-lg"></div>
+              <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-amber-400 rounded-br-lg"></div>
+              
+              {/* Decorative border elements */}
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1">
+                <div className="w-12 h-3 bg-amber-500 rounded-full shadow-lg"></div>
               </div>
-              <div className="bg-gradient-to-r from-pink-50 via-blue-50 to-orange-50 dark:from-pink-900/20 dark:via-blue-900/20 dark:to-orange-900/20 p-6 rounded-lg border">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {reflectionAnswers.overallWhy}
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1">
+                <div className="w-12 h-3 bg-amber-500 rounded-full shadow-lg"></div>
+              </div>
+              
+              {/* Mystical corner ornaments */}
+              <div className="absolute -top-2 -left-2 text-lg text-amber-400 transform rotate-12">✦</div>
+              <div className="absolute -top-2 -right-2 text-lg text-amber-400 transform -rotate-12">✦</div>
+              <div className="absolute -bottom-2 -left-2 text-lg text-amber-400 transform -rotate-12">✦</div>
+              <div className="absolute -bottom-2 -right-2 text-lg text-amber-400 transform rotate-12">✦</div>
+              
+              {/* Card Header */}
+              <div className="text-center mb-3">
+                <h3 className="text-lg font-bold text-amber-300 mb-1 tracking-wide">
+                  DAILY REFLECTION
+                </h3>
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <div className="w-4 h-0.5 bg-amber-500"></div>
+                  <span className="text-amber-400 text-sm">✦</span>
+                  <div className="w-4 h-0.5 bg-amber-500"></div>
+                </div>
+                <p className="text-xs text-amber-200 font-medium">
+                  {currentDate}
                 </p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              
+              {/* Today's Progress */}
+              <div className="bg-gradient-to-br from-amber-100/20 via-slate-700/80 to-slate-800/80 rounded-lg p-3 mb-3 border border-amber-400/30">
+                <h4 className="font-bold text-center mb-2 text-amber-300 text-sm tracking-wide">
+                  TODAY'S PROGRESS
+                </h4>
+                <div className="space-y-2 max-h-24 overflow-y-auto">
+                  {topicsWithNotes.map((topic, index) => (
+                    <div key={topic.id} className="border-l-2 border-emerald-400 pl-2 py-1 bg-slate-800/50 rounded-r-md">
+                      <div className="flex items-center gap-1 mb-1">
+                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-sm"></span>
+                        <span className="font-bold text-emerald-300 text-xs">{topic.text}</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-tight bg-slate-900/30 p-1.5 rounded">
+                        {topic.notes}
+                      </p>
+                    </div>
+                  ))}
+                  {topicsWithoutNotes.map((topic, index) => (
+                    <div key={topic.id} className="flex items-center gap-1 text-xs opacity-60 py-0.5 border-l-2 border-slate-500 pl-2">
+                      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full"></span>
+                      <span className="text-slate-400">{topic.text}</span>
+                    </div>
+                  ))}
+                  {topics.length === 0 && (
+                    <p className="text-sm text-slate-400 text-center py-4">No topics added today</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Stats/Attributes Section */}
+              <div className="bg-gradient-to-br from-amber-100/20 via-slate-700/80 to-slate-800/80 rounded-lg p-3 mb-3 border border-amber-400/30">
+                <h4 className="font-bold text-center mb-2 text-amber-300 text-sm tracking-wide">
+                  DAILY ATTRIBUTES
+                </h4>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center py-0.5">
+                    <div className="flex items-center gap-1">
+                      <Heart className="h-3 w-3 text-pink-400" />
+                      <span className="text-xs font-bold text-pink-300">Satisfaction</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-16 bg-slate-600 rounded-full h-1.5 shadow-inner">
+                        <div 
+                          className="bg-gradient-to-r from-pink-400 to-pink-500 h-1.5 rounded-full shadow-lg transition-all duration-500"
+                          style={{ width: `${ratings.satisfaction}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-pink-300 w-6 text-right">{ratings.satisfaction}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center py-0.5">
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3 text-blue-400" />
+                      <span className="text-xs font-bold text-blue-300">Progress</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-16 bg-slate-600 rounded-full h-1.5 shadow-inner">
+                        <div 
+                          className="bg-gradient-to-r from-blue-400 to-blue-500 h-1.5 rounded-full shadow-lg transition-all duration-500"
+                          style={{ width: `${ratings.progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-blue-300 w-6 text-right">{ratings.progress}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center py-0.5">
+                    <div className="flex items-center gap-1">
+                      <Zap className="h-3 w-3 text-orange-400" />
+                      <span className="text-xs font-bold text-orange-300">Challenge</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-16 bg-slate-600 rounded-full h-1.5 shadow-inner">
+                        <div 
+                          className="bg-gradient-to-r from-orange-400 to-orange-500 h-1.5 rounded-full shadow-lg transition-all duration-500"
+                          style={{ width: `${ratings.challenge}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-orange-300 w-6 text-right">{ratings.challenge}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Reflection Text */}
+              <div className="bg-gradient-to-br from-amber-100/20 via-slate-700/80 to-slate-800/80 rounded-lg p-3 border border-amber-400/30">
+                <h4 className="font-bold text-center mb-1 text-amber-300 text-sm tracking-wide">
+                  REFLECTION
+                </h4>
+                <div className="text-xs leading-tight text-slate-200 max-h-16 overflow-y-auto bg-slate-900/40 p-2 rounded border border-slate-600/50">
+                  {reflectionAnswers.overallWhy}
+                </div>
+              </div>
+              
+              {/* Card Footer */}
+              <div className="text-center mt-3">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <div className="w-6 h-0.5 bg-amber-500"></div>
+                  <span className="text-amber-400 text-sm">✦</span>
+                  <div className="w-6 h-0.5 bg-amber-500"></div>
+                </div>
+                <p className="text-xs text-amber-200 font-medium italic">
+                  "Every day is a new opportunity to grow"
+                </p>
+                <div className="mt-1 text-amber-400 text-sm">✨</div>
+              </div>
+          </motion.div>
+        </div>
       )}
-
-      {/* Reflection Insights */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Daily Insights</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Feelings-based insights */}
-          {ratings.satisfaction > 0 && (
-            <div className="space-y-3">
-              {ratings.satisfaction >= 70 && (
-                <div className="flex items-start gap-3 p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
-                  <Heart className="h-5 w-5 text-pink-500 mt-1" />
-                  <div>
-                    <p className="font-medium">High Satisfaction!</p>
-                    <p className="text-sm text-muted-foreground">
-                      You're feeling great about today's work. This positive energy will help fuel tomorrow's progress!
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {ratings.progress >= 70 && (
-                <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-blue-500 mt-1" />
-                  <div>
-                    <p className="font-medium">Strong Progress Made!</p>
-                    <p className="text-sm text-muted-foreground">
-                      You made significant progress today on {topicsWithNotes.length} out of {topics.length} topics. 
-                      Keep this momentum going!
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {ratings.challenge >= 70 && (
-                <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                  <Zap className="h-5 w-5 text-orange-500 mt-1" />
-                  <div>
-                    <p className="font-medium">Embracing Challenge!</p>
-                    <p className="text-sm text-muted-foreground">
-                      Today was challenging, which means you're pushing your boundaries and growing. Great job!
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {topicsWithoutNotes.length > 0 && (
-                <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium">Areas for Tomorrow</p>
-                    <p className="text-sm text-muted-foreground">
-                      Consider dedicating time to the {topicsWithoutNotes.length} topics that need attention.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {ratings.satisfaction === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                Complete your feelings rating to see personalized insights!
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Action Buttons */}
       <div className="flex justify-center gap-4">
@@ -341,10 +355,11 @@ export default function MindmapSummaryPage() {
         </Button>
         <Button 
           onClick={handleFinish}
+          disabled={isSaving || !reflectionAnswers.overallWhy.trim()}
           size="lg"
           className="px-8"
         >
-          Complete Reflection
+          {isSaving ? "Saving..." : "Complete Reflection"}
         </Button>
       </div>
     </div>
