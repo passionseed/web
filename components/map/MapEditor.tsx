@@ -1965,22 +1965,6 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               {/* Save functionality - re-enabled now that content/assessments save directly */}
               {true && (
                 <>
-                  <div className="h-4 w-px bg-border" />
-
-                  {/* Manual Save Button */}
-                  <Button
-                    onClick={() => forceSave()}
-                    size="sm"
-                    variant={hasUnsavedChanges ? "default" : "outline"}
-                    className="gap-2"
-                    disabled={autoSaveStatus === AutoSaveStatus.SAVING}
-                    title={`Save all node positions and connections (Ctrl+S)${hasUnsavedChanges ? " - You have unsaved changes" : " - No changes to save"}`}
-                  >
-                    <Save className="h-4 w-4" />
-                    Save All Changes
-                  </Button>
-
-                  <div className="h-4 w-px bg-border" />
 
                   {/* Enhanced Auto-save status indicator */}
                   <div className="flex items-center gap-2 px-2">

@@ -30,30 +30,38 @@ export function AssessmentEditor({
   // The useEffect causing the infinite loop has been removed.
 
   const handleAddAssessment = useCallback(
-    async (type: AssessmentType) => {
-      try {
-        console.log("➕ Creating new assessment in database for node:", nodeId);
-        
-        const newAssessment = await createNodeAssessment({
-          node_id: nodeId,
-          assessment_type: type,
-          points_possible: 10,
-          is_graded: true,
-        });
+    (type: AssessmentType) => {
+      console.log("➕ Creating temporary assessment for node:", nodeId);
+      
+      // Create temporary assessment that will be saved during batch save
+      const tempAssessmentId = `temp_assessment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const newAssessment: NodeAssessment = {
+        id: tempAssessmentId,
+        node_id: nodeId,
+        assessment_type: type,
+        points_possible: 10,
+        is_graded: true,
+        quiz_questions: [],
+        checklist_items: [],
+        metadata: {},
+        group_formation_method: "manual",
+        target_group_size: 3,
+        allow_uneven_groups: true,
+        group_submission_mode: "all_members",
+        is_group_assessment: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-        console.log("✅ Assessment created in database:", newAssessment);
-        
-        onAssessmentChange(newAssessment, "add");
+      console.log("✅ Temporary assessment created:", newAssessment);
+      
+      onAssessmentChange(newAssessment, "add");
 
-        toast({ title: "Assessment created ✓" });
-      } catch (error) {
-        console.error("❌ Failed to create assessment:", error);
-        toast({ 
-          title: "Failed to create assessment", 
-          description: (error as Error).message || "Unknown error",
-          variant: "destructive" 
-        });
-      }
+      toast({ 
+        title: "Assessment added ✓",
+        description: "Assessment will be saved when you click 'Save All'"
+      });
     },
     [nodeId, onAssessmentChange, toast]
   );
@@ -163,15 +171,29 @@ export function AssessmentEditor({
         let updatedQuestion: QuizQuestion;
         
         if (action === "add") {
-          // Create question in database
-          console.log("➕ Creating quiz question in database...");
-          updatedQuestion = await createQuizQuestion({
-            assessment_id: assessment.id,
-            question_text: changedQuestion.question_text,
-            options: changedQuestion.options,
-            correct_option: changedQuestion.correct_option,
-          });
-          console.log("✅ Quiz question created in database:", updatedQuestion);
+          // For temporary assessments, create question with temp ID instead of database
+          if (assessment.id.startsWith('temp_')) {
+            console.log("➕ Creating temporary quiz question for temporary assessment...");
+            const tempQuestionId = `temp_question_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            updatedQuestion = {
+              ...changedQuestion,
+              id: tempQuestionId,
+              assessment_id: assessment.id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            console.log("✅ Temporary quiz question created:", updatedQuestion);
+          } else {
+            // Create question in database for real assessments
+            console.log("➕ Creating quiz question in database...");
+            updatedQuestion = await createQuizQuestion({
+              assessment_id: assessment.id,
+              question_text: changedQuestion.question_text,
+              options: changedQuestion.options,
+              correct_option: changedQuestion.correct_option,
+            });
+            console.log("✅ Quiz question created in database:", updatedQuestion);
+          }
         } else if (action === "update") {
           // Update question in database if it's not a temp ID
           if (!changedQuestion.id.startsWith('temp_')) {
@@ -254,38 +276,32 @@ export function AssessmentEditor({
       console.log(`📁 Batch importing ${questionDataList.length} questions`);
       
       try {
-        // Convert all QuestionFormData to QuizQuestion format
-        const questionsToCreate = questionDataList.map(questionData => 
-          convertFormDataToQuestion(questionData, assessment.id)
-        );
-        
-        console.log("🔧 Converting questions for database insertion...");
-        
-        // Create all questions in database in parallel
-        const createPromises = questionsToCreate.map(async (question) => {
-          console.log("➕ Creating quiz question in database:", question.question_text?.substring(0, 50));
-          return await createQuizQuestion({
-            assessment_id: assessment.id,
-            question_text: question.question_text,
-            options: question.options,
-            correct_option: question.correct_option,
-          });
+        // Convert all QuestionFormData to QuizQuestion format with temporary IDs
+        const questionsToCreate = questionDataList.map(questionData => {
+          const question = convertFormDataToQuestion(questionData, assessment.id);
+          // Create temporary ID for the question
+          const tempQuestionId = `temp_question_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          return {
+            ...question,
+            id: tempQuestionId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
         });
         
-        const createdQuestions = await Promise.all(createPromises);
-        console.log("✅ All questions created in database:", createdQuestions.length);
+        console.log("🔧 Created temporary questions for batch import:", questionsToCreate.length);
         
-        // Update local state with all new questions at once
+        // Update local state with all new temporary questions at once
         const currentQuestions = assessment.quiz_questions || [];
-        const newQuestions = [...currentQuestions, ...createdQuestions];
+        const newQuestions = [...currentQuestions, ...questionsToCreate];
         const updatedAssessment = { ...assessment, quiz_questions: newQuestions };
         
-        console.log("📊 Updated assessment with batch questions:", updatedAssessment);
+        console.log("📊 Updated assessment with batch temporary questions:", updatedAssessment);
         onAssessmentChange(updatedAssessment, "update");
         
         toast({
           title: `${questionDataList.length} questions imported ✓`,
-          description: "All questions have been added to your quiz",
+          description: "Questions will be saved when you click 'Save All'",
         });
         
       } catch (error) {
