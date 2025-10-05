@@ -34,8 +34,8 @@ const CONTENT_TYPE_CONFIG = {
   },
   text: {
     label: "📝 Text Content",
-    placeholder: "Write your text content here... You can use HTML tags like <p>, <h1>, <strong>, etc.",
-    hint: "HTML tags supported: <p>, <h1>, <strong>, <em>, <ul>, <ol>, <li>, etc.",
+    placeholder: "Write your text content here... You can use HTML tags or Markdown syntax.",
+    hint: "Supports both HTML tags and Markdown syntax (headers, bold, italic, lists, links, etc.)",
   },
   image: {
     label: "🖼️ Image Upload",
@@ -418,9 +418,10 @@ const ContentForm = ({
                 it relates to the lesson
               </>
             ) : (
-              <>
-                💡 Tip: Use &lt;p&gt; for paragraphs, &lt;h1&gt; for headings, &lt;strong&gt; for bold text
-              </>
+              <div className="space-y-1">
+                <div>💡 <strong>HTML:</strong> Use &lt;p&gt; for paragraphs, &lt;h1&gt; for headings, &lt;strong&gt; for bold text</div>
+                <div>📝 <strong>Markdown:</strong> Use # for headings, **bold**, *italic*, - for lists</div>
+              </div>
             )}
           </div>
         </div>
