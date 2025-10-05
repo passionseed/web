@@ -44,7 +44,7 @@ interface MapJsonStructure {
       [key: string]: any;
     };
     assessments?: Array<{
-      type: "quiz" | "text_answer" | "image_upload" | "file_upload" | "checklist";
+      type: "quiz" | "text_answer" | "file_upload" | "checklist";
       isGraded?: boolean;
       pointsPossible?: number;
       questions?: Array<{
@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
           // Create the assessment with proper fields
           const assessmentData = {
             node_id: realNodeId,
-            assessment_type: assessment.type as "quiz" | "text_answer" | "image_upload" | "file_upload" | "checklist",
+            assessment_type: assessment.type as "quiz" | "text_answer" | "file_upload" | "checklist",
             points_possible: assessment.pointsPossible || null,
             is_graded: assessment.isGraded !== undefined ? assessment.isGraded : true,
             metadata: assessment.metadata || (assessment.type === "checklist" ? { items: assessment.requirements || [] } : null)
