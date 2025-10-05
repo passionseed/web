@@ -224,12 +224,6 @@ function transformNodeAssessments(node: any) {
           acceptedFileTypes: ["*"]
         };
 
-      case "image_upload":
-        return {
-          ...baseAssessment,
-          prompt: "Upload an image to complete this assessment.",
-          acceptedFileTypes: ["image/*"]
-        };
 
       default:
         return {

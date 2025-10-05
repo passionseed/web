@@ -119,7 +119,6 @@ export interface NodeContent {
 export type AssessmentType =
   | "quiz"
   | "text_answer"
-  | "image_upload"
   | "file_upload"
   | "checklist";
 

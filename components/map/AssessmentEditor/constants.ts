@@ -42,11 +42,6 @@ export const ASSESSMENT_TYPE_CONFIG = {
     description: "Task completion checklist",
     icon: "✅",
   },
-  image_upload: {
-    label: "Image Upload",
-    description: "Submit images",
-    icon: "🖼️",
-  },
   file_upload: {
     label: "File Upload",
     description: "Submit documents",
