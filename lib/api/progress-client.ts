@@ -129,9 +129,13 @@ export async function getMapProgress(
       });
 
       if (!response.ok) {
+        const errorText = await response.text().catch(() => "Could not read response");
         console.error("❌ [Progress Client] API response not ok:", {
           status: response.status,
           statusText: response.statusText,
+          url: response.url,
+          errorText,
+          mapId,
         });
         return {};
       }
@@ -182,10 +186,14 @@ export async function getNodeProgress(
     );
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => "Could not read response");
       console.error("❌ [Progress Client] API response not ok:", {
         status: response.status,
         statusText: response.statusText,
+        url: response.url,
+        errorText,
         nodeId,
+        mapId,
       });
       return null;
     }
@@ -243,11 +251,15 @@ export async function updateNodeProgress(
     });
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => "Could not read response");
       console.error("❌ [Progress Client] API response not ok:", {
         status: response.status,
         statusText: response.statusText,
+        url: response.url,
+        errorText,
         nodeId,
         newStatus: status,
+        mapId,
       });
       return null;
     }

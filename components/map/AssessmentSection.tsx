@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   Users,
   UserCheck,
-  Circle
+  Circle,
+  X
 } from "lucide-react";
 import { NodeAssessment, QuizQuestion, AssessmentGroupWithMembers } from "@/types/map";
 import { SubmissionItem } from "./SubmissionItem"; // Assuming component is created
@@ -284,6 +285,22 @@ export function AssessmentSection({
   };
 
   const handleSubmit = () => {
+    // Check if attempt limit is reached
+    const hasReachedAttemptLimit = !canResubmit && 
+                                   progressStatus === "failed" && 
+                                   (assessment.metadata?.allow_multiple_attempts ?? true) &&
+                                   submissionsWithGrades.length >= (assessment.metadata?.max_attempts || 3);
+    
+    if (hasReachedAttemptLimit) {
+      console.warn("⚠️ Submission blocked: Maximum attempts reached");
+      toast({
+        title: "Maximum Attempts Reached",
+        description: `You have used all ${assessment.metadata?.max_attempts || 3} attempts for this assessment.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (validateSubmission()) {
       if (assessment.assessment_type === "checklist") {
         onSubmit(undefined, undefined, checklistItems);
@@ -690,7 +707,12 @@ export function AssessmentSection({
               disabled={
                 isSubmitting || 
                 isUploading || 
-                (assessment.assessment_type === "checklist" && !Object.values(checklistItems).every(checked => checked))
+                (assessment.assessment_type === "checklist" && !Object.values(checklistItems).every(checked => checked)) ||
+                // Prevent submission if attempt limit is reached
+                (!canResubmit && 
+                 progressStatus === "failed" && 
+                 (assessment.metadata?.allow_multiple_attempts ?? true) &&
+                 submissionsWithGrades.length >= (assessment.metadata?.max_attempts || 3))
               }
               className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md"
               size="lg"
