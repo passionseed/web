@@ -470,6 +470,10 @@ export default function EditMapPage() {
           ...((node as any).node_type && {
             node_type: (node as any).node_type,
           }),
+          // Include temp_id for mapping if the node has a temporary ID
+          ...(node.id.startsWith("temp_") && {
+            temp_id: node.id,
+          }),
         };
         batchUpdate.nodes.create.push(nodeToCreate);
         console.log("➕ Adding node to create:", nodeToCreate);
@@ -708,8 +712,9 @@ export default function EditMapPage() {
         const currentAssessment = node.node_assessments?.[0] || null;
         const initialAssessment = initialNode?.node_assessments?.[0] || null;
 
-        // Created assessment
-        if (!initialAssessment && currentAssessment) {
+        // Created assessment (either truly new OR has temporary ID meaning it's not yet saved)
+        if ((!initialAssessment && currentAssessment) || 
+            (currentAssessment && currentAssessment.id?.startsWith("temp_"))) {
           const assessmentToCreate = {
             node_id: node.id,
             assessment_type: currentAssessment.assessment_type,
@@ -727,12 +732,18 @@ export default function EditMapPage() {
             ...(currentAssessment.metadata && {
               metadata: currentAssessment.metadata,
             }),
+            // Include temp_id for mapping if the currentAssessment has a temporary ID
+            ...(currentAssessment.id?.startsWith("temp_") && {
+              temp_id: currentAssessment.id,
+            }),
           };
           batchUpdate.assessments.create.push(assessmentToCreate);
           console.log("➕ Adding assessment to create:", assessmentToCreate);
 
           if (currentAssessment.assessment_type === "quiz") {
-            (currentAssessment.quiz_questions || []).forEach((q) => {
+            // Only create questions with temp IDs (not already saved individually)
+            const questionsToCreate = (currentAssessment.quiz_questions || []).filter((q) => q.id?.startsWith("temp_"));
+            questionsToCreate.forEach((q) => {
               const questionToCreate = {
                 assessment_id: currentAssessment.id,
                 question_text: q.question_text,
@@ -741,10 +752,11 @@ export default function EditMapPage() {
               };
               batchUpdate.quizQuestions.create.push(questionToCreate);
               console.log(
-                "➕ Adding quiz question to create:",
+                "➕ Adding quiz question to create (new assessment):",
                 questionToCreate
               );
             });
+            console.log(`📊 New assessment - skipping ${(currentAssessment.quiz_questions || []).length - questionsToCreate.length} already saved questions`);
           }
           return;
         }
@@ -766,9 +778,11 @@ export default function EditMapPage() {
         }
 
         // Updated assessment (type, metadata, grading fields, or group settings)
+        // Exclude assessments with temporary IDs as they're handled in the creation case
         if (
           initialAssessment &&
           currentAssessment &&
+          !currentAssessment.id?.startsWith("temp_") &&
           (initialAssessment.assessment_type !==
             currentAssessment.assessment_type ||
             JSON.stringify(initialAssessment.metadata) !==
@@ -811,62 +825,94 @@ export default function EditMapPage() {
           console.log("📝 Adding assessment to update:", assessmentToUpdate);
         }
 
-        // Handle quiz questions if quiz type
+        // Handle quiz questions if quiz type (but only for assessments with real IDs)
+        // Assessments with temporary IDs are handled in the creation case above
         if (
           currentAssessment?.assessment_type === "quiz" &&
-          initialAssessment?.assessment_type === "quiz"
+          initialAssessment?.assessment_type === "quiz" &&
+          !currentAssessment.id?.startsWith("temp_")
         ) {
           const initialQuestions = initialAssessment.quiz_questions || [];
           const currentQuestions = currentAssessment.quiz_questions || [];
 
-          // Created questions
-          currentQuestions
-            .filter((q) => q.id?.startsWith("temp_"))
-            .forEach((q) => {
-              const questionToCreate = {
-                assessment_id: currentAssessment.id,
-                question_text: q.question_text,
-                options: q.options,
-                correct_option: q.correct_option,
-              };
-              batchUpdate.quizQuestions.create.push(questionToCreate);
-              console.log(
-                "➕ Adding quiz question to create:",
-                questionToCreate
-              );
-            });
+          console.log("🔍 Quiz question batch processing:", {
+            initialQuestionsCount: initialQuestions.length,
+            currentQuestionsCount: currentQuestions.length,
+            initialQuestionIds: initialQuestions.map(q => q.id),
+            currentQuestionIds: currentQuestions.map(q => q.id)
+          });
 
-          // Deleted questions
-          initialQuestions
-            .filter((iq) => !currentQuestions.some((cq) => cq.id === iq.id))
-            .forEach((iq) => {
-              if (iq.id && !iq.id.startsWith("temp_")) {
-                batchUpdate.quizQuestions.delete.push(iq.id);
-                console.log("🗑️ Adding quiz question to delete:", iq.id);
-              }
-            });
+          // Only process questions with temp IDs (truly new questions not yet saved)
+          const questionsToCreate = currentQuestions.filter((q) => q.id?.startsWith("temp_"));
+          questionsToCreate.forEach((q) => {
+            const questionToCreate = {
+              assessment_id: currentAssessment.id,
+              question_text: q.question_text,
+              options: q.options,
+              correct_option: q.correct_option,
+            };
+            batchUpdate.quizQuestions.create.push(questionToCreate);
+            console.log("➕ Adding quiz question to create:", questionToCreate);
+          });
 
-          // Updated questions
-          currentQuestions
-            .filter((cq) => {
-              if (!cq.id || cq.id.startsWith("temp_")) return false;
-              const iq = initialQuestions.find((q) => q.id === cq.id);
-              if (!iq) return false;
-              return JSON.stringify(cq) !== JSON.stringify(iq);
-            })
-            .forEach((cq) => {
-              const questionToUpdate = {
-                id: cq.id!,
-                question_text: cq.question_text,
-                options: cq.options,
-                correct_option: cq.correct_option,
-              };
-              batchUpdate.quizQuestions.update.push(questionToUpdate);
-              console.log(
-                "📝 Adding quiz question to update:",
-                questionToUpdate
-              );
-            });
+          // Deleted questions - only real IDs that exist in initial but not current
+          const questionsToDelete = initialQuestions.filter((iq) => {
+            if (!iq.id || iq.id.startsWith("temp_")) return false;
+            const stillExists = currentQuestions.some((cq) => cq.id === iq.id);
+            if (!stillExists) {
+              console.log("🗑️ Question marked for deletion:", iq.id);
+              return true;
+            }
+            return false;
+          });
+          
+          questionsToDelete.forEach((iq) => {
+            batchUpdate.quizQuestions.delete.push(iq.id!);
+            console.log("🗑️ Adding quiz question to delete:", iq.id);
+          });
+
+          // Updated questions - only process questions that exist in both states with changes
+          const questionsToUpdate = currentQuestions.filter((cq) => {
+            if (!cq.id || cq.id.startsWith("temp_")) return false;
+            
+            const iq = initialQuestions.find((q) => q.id === cq.id);
+            if (!iq) {
+              // Question exists in current but not initial - either newly created or state sync issue
+              console.log("⚠️ Question in current but not initial state - skipping update:", cq.id);
+              return false;
+            }
+            
+            // Compare the questions for changes
+            const hasChanges = (
+              cq.question_text !== iq.question_text ||
+              cq.correct_option !== iq.correct_option ||
+              JSON.stringify(cq.options) !== JSON.stringify(iq.options)
+            );
+            
+            if (hasChanges) {
+              console.log("📝 Question has changes:", cq.id);
+              return true;
+            }
+            
+            return false;
+          });
+
+          questionsToUpdate.forEach((cq) => {
+            const questionToUpdate = {
+              id: cq.id!,
+              question_text: cq.question_text,
+              options: cq.options,
+              correct_option: cq.correct_option,
+            };
+            batchUpdate.quizQuestions.update.push(questionToUpdate);
+            console.log("📝 Adding quiz question to update:", questionToUpdate);
+          });
+
+          console.log("📊 Quiz questions batch summary:", {
+            toCreate: questionsToCreate.length,
+            toDelete: questionsToDelete.length,
+            toUpdate: questionsToUpdate.length
+          });
         }
       });
 

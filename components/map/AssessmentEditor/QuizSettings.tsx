@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,13 @@ export function QuizSettings({
   onManageGroups,
 }: QuizSettingsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [questionsInputValue, setQuestionsInputValue] = useState<string>("");
+
+  // Sync local input state with assessment data
+  useEffect(() => {
+    const currentValue = assessment.metadata?.questions_to_show || assessment.quiz_questions?.length || 1;
+    setQuestionsInputValue(currentValue.toString());
+  }, [assessment.metadata?.questions_to_show, assessment.quiz_questions?.length]);
 
   const getSettingsSummary = () => {
     const parts: string[] = [];
@@ -31,6 +38,19 @@ export function QuizSettings({
       parts.push(`${assessment.points_possible || 10} points`);
     } else {
       parts.push('Ungraded');
+    }
+
+    if (assessment.metadata?.randomize_questions) {
+      const questionsToShow = assessment.metadata?.questions_to_show || assessment.quiz_questions?.length || 0;
+      const totalQuestions = assessment.quiz_questions?.length || 0;
+      parts.push(`${questionsToShow}/${totalQuestions} randomized`);
+    }
+
+    if (!(assessment.metadata?.allow_multiple_attempts ?? true)) {
+      parts.push('Single attempt');
+    } else {
+      const maxAttempts = assessment.metadata?.max_attempts || 3;
+      parts.push(`${maxAttempts} attempts`);
     }
 
     if (assessment.is_group_assessment) {
@@ -43,34 +63,33 @@ export function QuizSettings({
   };
 
   return (
-    <div className="border rounded-lg bg-muted/20">
+    <div className="border rounded bg-muted/20">
       {/* Collapsed Header */}
       <Button
         variant="ghost"
-        className="w-full flex items-center justify-between p-4 h-auto hover:bg-muted/40"
+        className="w-full flex items-center justify-between p-2.5 h-auto hover:bg-muted/40"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
-          <Settings className="h-4 w-4" />
-          <span className="font-medium text-sm">Quiz Settings</span>
+          <Settings className="h-3.5 w-3.5" />
+          <span className="font-medium text-xs">Settings</span>
           <span className="text-xs text-muted-foreground">
             {getSettingsSummary()}
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4" />
+          <ChevronUp className="h-3.5 w-3.5" />
         ) : (
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-3.5 w-3.5" />
         )}
       </Button>
 
       {/* Expanded Settings */}
       {isExpanded && (
-        <div className="p-4 pt-0 space-y-6">
-          {/* Grading Configuration */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-sm">Points & Grading</h4>
-            <div className="space-y-3">
+        <div className="p-3 pt-0 space-y-3">
+          {/* Grading Configuration - More compact layout */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is_graded"
@@ -79,15 +98,15 @@ export function QuizSettings({
                     onGradingChange('is_graded', checked as boolean)
                   }
                 />
-                <Label htmlFor="is_graded" className="text-sm font-normal">
+                <Label htmlFor="is_graded" className="text-xs font-normal">
                   Grade this quiz
                 </Label>
               </div>
-
+              
               {assessment.is_graded && (
-                <div className="ml-6 space-y-2">
-                  <Label htmlFor="points_possible" className="text-sm">
-                    Points
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="points_possible" className="text-xs text-muted-foreground">
+                    Points:
                   </Label>
                   <Input
                     id="points_possible"
@@ -102,83 +121,193 @@ export function QuizSettings({
                         onGradingChange('points_possible', points);
                       }
                     }}
-                    placeholder="e.g., 10"
-                    className="w-32"
+                    placeholder="10"
+                    className="w-16 h-7 text-xs"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Max points students can earn
-                  </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Group Assessment Configuration */}
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="font-medium text-sm flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Group Work
-            </h4>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_group_assessment"
-                  checked={assessment.is_group_assessment || false}
-                  onCheckedChange={(checked) =>
-                    onGroupSettingsChange('is_group_assessment', checked as boolean)
-                  }
-                />
-                <Label htmlFor="is_group_assessment" className="text-sm font-normal">
-                  Enable group work
-                </Label>
-              </div>
-
-              {assessment.is_group_assessment && (
-                <div className="ml-6 space-y-4">
-                  {/* Group Submission Mode */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Who submits?</Label>
-                    <RadioGroup
-                      value={assessment.group_submission_mode || 'all_members'}
-                      onValueChange={(value) =>
-                        onGroupSettingsChange('group_submission_mode', value as GroupSubmissionMode)
-                      }
-                      className="space-y-2"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="all_members" id="all_members" />
-                        <Label htmlFor="all_members" className="text-sm font-normal flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          Everyone submits individually
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="single_submission" id="single_submission" />
-                        <Label htmlFor="single_submission" className="text-sm font-normal flex items-center gap-1">
-                          One person submits for the group
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {/* Manage Groups Button */}
-                  <div className="pt-2 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                      onClick={onManageGroups}
-                    >
-                      <Users className="h-4 w-4" />
-                      Manage Groups
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Create and assign students to groups
-                    </p>
-                  </div>
-                </div>
-              )}
+          {/* Question Randomization Configuration */}
+          <div className="space-y-2 pt-2 border-t">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="randomize_questions"
+                checked={assessment.metadata?.randomize_questions || false}
+                onCheckedChange={(checked) =>
+                  onGroupSettingsChange('randomize_questions', checked as boolean)
+                }
+              />
+              <Label htmlFor="randomize_questions" className="text-xs font-normal flex items-center gap-1">
+                🎲 Randomize questions
+              </Label>
             </div>
+
+            {assessment.metadata?.randomize_questions && (
+              <div className="ml-5 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground whitespace-nowrap">
+                    Show:
+                  </Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max={assessment.quiz_questions?.length || 1}
+                    value={questionsInputValue}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      
+                      // Update local state immediately for responsive typing
+                      setQuestionsInputValue(inputValue);
+                      
+                      // Allow empty input for editing
+                      if (inputValue === '') {
+                        return; // Don't save empty value, let user continue typing
+                      }
+                      
+                      const numValue = parseInt(inputValue, 10);
+                      const maxQuestions = assessment.quiz_questions?.length || 1;
+                      
+                      // Only save if the value is a valid number within range
+                      if (!isNaN(numValue) && numValue > 0 && numValue <= maxQuestions) {
+                        onGroupSettingsChange('questions_to_show', numValue);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // Handle the case when user leaves field empty or invalid
+                      const inputValue = e.target.value;
+                      const numValue = parseInt(inputValue, 10);
+                      const maxQuestions = assessment.quiz_questions?.length || 1;
+                      
+                      if (inputValue === '' || isNaN(numValue) || numValue < 1 || numValue > maxQuestions) {
+                        // Set to default value and update both local and global state
+                        const defaultValue = Math.min(3, maxQuestions);
+                        setQuestionsInputValue(defaultValue.toString());
+                        onGroupSettingsChange('questions_to_show', defaultValue);
+                      }
+                    }}
+                    className="w-16 h-6 text-xs"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    of {assessment.quiz_questions?.length || 0} questions
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Students will receive a random subset of questions
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Submission Attempts Configuration */}
+          <div className="space-y-2 pt-2 border-t">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="allow_multiple_attempts"
+                checked={assessment.metadata?.allow_multiple_attempts ?? true}
+                onCheckedChange={(checked) =>
+                  onGroupSettingsChange('allow_multiple_attempts', checked as boolean)
+                }
+              />
+              <Label htmlFor="allow_multiple_attempts" className="text-xs font-normal flex items-center gap-1">
+                🔄 Allow multiple attempts
+              </Label>
+            </div>
+
+            {(assessment.metadata?.allow_multiple_attempts ?? true) && (
+              <div className="ml-5 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground whitespace-nowrap">
+                    Max attempts:
+                  </Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={assessment.metadata?.max_attempts || 3}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value, 10);
+                      if (value > 0 && value <= 10) {
+                        onGroupSettingsChange('max_attempts', value);
+                      }
+                    }}
+                    className="w-16 h-6 text-xs"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    attempts
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Students can resubmit if they fail
+                </p>
+              </div>
+            )}
+
+            {!(assessment.metadata?.allow_multiple_attempts ?? true) && (
+              <div className="ml-5">
+                <p className="text-xs text-muted-foreground">
+                  Students can only submit once
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Group Assessment Configuration - More compact */}
+          <div className="space-y-2 pt-2 border-t">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="is_group_assessment"
+                checked={assessment.is_group_assessment || false}
+                onCheckedChange={(checked) =>
+                  onGroupSettingsChange('is_group_assessment', checked as boolean)
+                }
+              />
+              <Label htmlFor="is_group_assessment" className="text-xs font-normal flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                Group work
+              </Label>
+            </div>
+
+            {assessment.is_group_assessment && (
+              <div className="ml-5 space-y-2">
+                {/* Group Submission Mode - Inline */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Submission:</Label>
+                  <RadioGroup
+                    value={assessment.group_submission_mode || 'all_members'}
+                    onValueChange={(value) =>
+                      onGroupSettingsChange('group_submission_mode', value as GroupSubmissionMode)
+                    }
+                    className="space-y-1"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all_members" id="all_members" className="h-3 w-3" />
+                      <Label htmlFor="all_members" className="text-xs font-normal">
+                        Everyone submits
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="single_submission" id="single_submission" className="h-3 w-3" />
+                      <Label htmlFor="single_submission" className="text-xs font-normal">
+                        One per group
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Manage Groups Button - Smaller */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1 h-7 text-xs"
+                  onClick={onManageGroups}
+                >
+                  <Users className="h-3 w-3" />
+                  Manage Groups
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
