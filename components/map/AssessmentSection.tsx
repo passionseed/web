@@ -285,7 +285,7 @@ export function AssessmentSection({
   };
 
   const handleSubmit = () => {
-    // Check if attempt limit is reached
+    // Check if attempt limit is reached for multiple attempt assessments
     const hasReachedAttemptLimit = !canResubmit && 
                                    progressStatus === "failed" && 
                                    (assessment.metadata?.allow_multiple_attempts ?? true) &&
@@ -296,6 +296,20 @@ export function AssessmentSection({
       toast({
         title: "Maximum Attempts Reached",
         description: `You have used all ${assessment.metadata?.max_attempts || 3} attempts for this assessment.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if single attempt assessment already has a submission
+    const isSingleAttemptWithSubmission = !(assessment.metadata?.allow_multiple_attempts ?? true) && 
+                                          submissionsWithGrades.length > 0;
+    
+    if (isSingleAttemptWithSubmission) {
+      console.warn("⚠️ Submission blocked: Single attempt assessment already submitted");
+      toast({
+        title: "Submission Not Allowed",
+        description: "This assessment allows only one submission attempt and you have already submitted.",
         variant: "destructive",
       });
       return;
@@ -708,11 +722,14 @@ export function AssessmentSection({
                 isSubmitting || 
                 isUploading || 
                 (assessment.assessment_type === "checklist" && !Object.values(checklistItems).every(checked => checked)) ||
-                // Prevent submission if attempt limit is reached
+                // Prevent submission if attempt limit is reached (multiple attempts)
                 (!canResubmit && 
                  progressStatus === "failed" && 
                  (assessment.metadata?.allow_multiple_attempts ?? true) &&
-                 submissionsWithGrades.length >= (assessment.metadata?.max_attempts || 3))
+                 submissionsWithGrades.length >= (assessment.metadata?.max_attempts || 3)) ||
+                // Prevent submission for single attempt assessments that already have a submission
+                (!(assessment.metadata?.allow_multiple_attempts ?? true) && 
+                 submissionsWithGrades.length > 0)
               }
               className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md"
               size="lg"
