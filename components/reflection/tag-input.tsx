@@ -1,108 +1,121 @@
-import { useState, useEffect, useRef } from "react";
-import { X, Plus } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { X, Plus } from "lucide-react";
 import { Tag } from "@/types/reflection";
 
 interface TagInputProps {
   availableTags: Tag[];
   selectedTagIds: string[];
   onTagToggle: (tagId: string) => void;
-  onCreateTag: (name: string) => Promise<void>;
-  className?: string;
+  onCreateTag: (name: string, color: string) => Promise<void>;
 }
 
-export function TagInput({
-  availableTags,
-  selectedTagIds,
-  onTagToggle,
-  onCreateTag,
-  className,
+const TAG_COLORS = [
+  "#ef4444", // red
+  "#f97316", // orange
+  "#eab308", // yellow
+  "#22c55e", // green
+  "#06b6d4", // cyan
+  "#3b82f6", // blue
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+];
+
+export function TagInput({ 
+  availableTags, 
+  selectedTagIds, 
+  onTagToggle, 
+  onCreateTag 
 }: TagInputProps) {
-  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [newTagName, setNewTagName] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedColor, setSelectedColor] = useState(TAG_COLORS[0]);
 
-  const handleCreateNewTag = async () => {
-    if (!newTagName.trim()) {
-      setIsAddingTag(false);
-      return;
-    }
-
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return;
+    
     try {
-      await onCreateTag(newTagName.trim());
+      await onCreateTag(newTagName.trim(), selectedColor);
       setNewTagName("");
+      setIsCreating(false);
+      setSelectedColor(TAG_COLORS[0]);
     } catch (error) {
       console.error("Error creating tag:", error);
-    } finally {
-      setIsAddingTag(false);
     }
   };
 
-  useEffect(() => {
-    if (isAddingTag && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isAddingTag]);
-
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className="space-y-3">
+      {/* Available Tags */}
       <div className="flex flex-wrap gap-2">
         {availableTags.map((tag) => {
           const isSelected = selectedTagIds.includes(tag.id);
           return (
-            <button
+            <Badge
               key={tag.id}
-              type="button"
+              variant={isSelected ? "default" : "outline"}
+              className="cursor-pointer hover:opacity-80"
+              style={{ 
+                backgroundColor: isSelected ? tag.color : undefined,
+                borderColor: tag.color,
+                color: isSelected ? "white" : tag.color
+              }}
               onClick={() => onTagToggle(tag.id)}
-              className={cn(
-                "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors",
-                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                isSelected
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              )}
-              style={isSelected ? { backgroundColor: tag.color } : {}}
             >
               {tag.name}
               {isSelected && <X className="ml-1 h-3 w-3" />}
-            </button>
+            </Badge>
           );
         })}
-
-        {!isAddingTag ? (
-          <button
-            type="button"
-            onClick={() => setIsAddingTag(true)}
-            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
-          >
-            <Plus className="mr-1 h-3 w-3" />
-            New Tag
-          </button>
-        ) : (
-          <div className="flex items-center gap-1">
-            <Input
-              ref={inputRef}
-              type="text"
-              value={newTagName}
-              onChange={(e) => setNewTagName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleCreateNewTag();
-                } else if (e.key === "Escape") {
-                  setIsAddingTag(false);
-                  setNewTagName("");
-                }
-              }}
-              onBlur={handleCreateNewTag}
-              placeholder="Tag name"
-              className="h-8 w-32 text-sm"
-            />
-          </div>
-        )}
       </div>
+
+      {/* Create New Tag */}
+      {isCreating ? (
+        <div className="border rounded-lg p-3 space-y-3">
+          <Input
+            placeholder="Tag name"
+            value={newTagName}
+            onChange={(e) => setNewTagName(e.target.value)}
+          />
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Color</label>
+            <div className="flex gap-2">
+              {TAG_COLORS.map((color) => (
+                <button
+                  key={color}
+                  className={`w-6 h-6 rounded-full border-2 ${
+                    selectedColor === color ? "border-gray-900" : "border-gray-300"
+                  }`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => setSelectedColor(color)}
+                />
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleCreateTag}>
+              Create
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setIsCreating(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setIsCreating(true)}
+          className="w-fit"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Create Tag
+        </Button>
+      )}
     </div>
   );
 }

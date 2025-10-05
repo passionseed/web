@@ -1,378 +1,192 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { getGraphData } from "@/lib/supabase/reflection";
-import { Project } from "@/types/project";
-import { ReflectionWithMetrics } from "@/types/reflection";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Plus, FileText, Brain, Calendar } from "lucide-react";
+import { motion } from "framer-motion";
+import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
 import { useToast } from "@/components/ui/use-toast";
-import { Toaster } from "@/components/ui/toaster";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getEmojiForEmotion } from "@/lib/emotions";
-import { ExpandedReflectionCard } from "@/components/reflection/ExpandedReflectionCard";
-import dynamic from "next/dynamic";
-import {
-  ForceGraphMethods,
-  LinkObject,
-  NodeObject,
-} from "react-force-graph-2d";
 
-// --- GRAPH TYPE DEFINITIONS ---
-type GraphNode = NodeObject & {
+interface MindmapReflection {
   id: string;
-  type: "project" | "tag" | "reflection";
-  label: string;
-  color: string;
-  emotion?: string;
-};
-type GraphLink = LinkObject;
-type GraphData = { nodes: GraphNode[]; links: GraphLink[] };
+  satisfaction_rating: number;
+  progress_rating: number;
+  challenge_rating: number;
+  overall_reflection: string;
+  created_at: string;
+  mindmap_topics: Array<{
+    id: string;
+    text: string;
+    notes: string | null;
+  }>;
+}
 
-// --- DYNAMIC IMPORT FOR THE GRAPH ---
-const ForceGraph2D = dynamic(
-  () => import("react-force-graph-2d").then((mod) => mod.default as any),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[500px] flex items-center justify-center">
-        <Skeleton className="w-full h-full" />
-      </div>
-    ),
-  }
-);
-
-const formatDate = (dateString: string) =>
-  new Date(dateString).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
 
 export default function ReflectionHome() {
   const router = useRouter();
   const { toast } = useToast();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [reflections, setReflections] = useState<ReflectionWithMetrics[]>([]);
+  const [reflections, setReflections] = useState<MindmapReflection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-  const [graphData, setGraphData] = useState<GraphData>({
-    nodes: [],
-    links: [],
-  });
-  const graphRef = useRef<ForceGraphMethods>();
-  const [highlightedNodes, setHighlightedNodes] = useState(new Set<string>());
-  const [highlightedLinks, setHighlightedLinks] = useState(new Set<GraphLink>());
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { projects, reflections } = await getGraphData();
-      setProjects(projects);
-      setReflections(reflections);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load data.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    const fetchReflections = async () => {
+      setLoading(true);
+      try {
+        const data = await getMindmapReflections();
+        setReflections(data);
+      } catch (error) {
+        console.error("Error fetching reflections:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load reflections.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReflections();
   }, [toast]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    if (projects.length > 0) {
-      const nodes: GraphNode[] = [];
-      const links: GraphLink[] = [];
-      const tagMap = new Map<string, GraphNode>();
-
-      projects.forEach((project) => {
-        nodes.push({
-          id: project.id,
-          type: "project",
-          label: project.name,
-          color: "#4FD1C5", // Teal for projects
-        });
-
-        project.tags?.forEach((tag) => {
-          if (!tagMap.has(tag.id)) {
-            const tagNode: GraphNode = {
-              id: tag.id,
-              type: "tag",
-              label: tag.name,
-              color: tag.color || "#FF4136", // Red for tags
-            };
-            tagMap.set(tag.id, tagNode);
-            nodes.push(tagNode);
-          }
-          links.push({ source: project.id, target: tag.id });
-        });
-
-        project.reflections?.forEach((reflection) => {
-          nodes.push({
-            id: reflection.id,
-            type: "reflection",
-            label: formatDate(reflection.created_at),
-            color: "#3182CE", // Blue for reflections
-            emotion: getEmojiForEmotion(reflection.emotion),
-          });
-          links.push({ source: project.id, target: reflection.id });
-        });
-      });
-
-      setGraphData({ nodes, links });
-    }
-  }, [projects]);
-
-  useEffect(() => {
-    if (graphRef.current) {
-      graphRef.current.d3Force("charge")?.strength(-150);
-      graphRef.current.d3Force("link")?.distance(60);
-    }
-  }, []);
-
-  const handleNodeClick = useCallback(
-    (node: GraphNode) => {
-      if (node.type === "reflection") {
-        setExpandedCardId(node.id);
-        clearHighlight();
-        return;
-      }
-
-      const newHighlightedNodes = new Set<string>([node.id]);
-      const newHighlightedLinks = new Set<GraphLink>();
-
-      graphData.links.forEach((link) => {
-        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
-        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
-        
-        if (sourceId === node.id || targetId === node.id) {
-          newHighlightedNodes.add(sourceId as string);
-          newHighlightedNodes.add(targetId as string);
-          newHighlightedLinks.add(link);
-        }
-      });
-      setHighlightedNodes(newHighlightedNodes);
-      setHighlightedLinks(newHighlightedLinks);
-
-      if (graphRef.current) {
-        graphRef.current.centerAt(node.x, node.y, 1000);
-        graphRef.current.zoom(2.5, 1000);
-      }
-    },
-    [graphData.links]
-  );
-
-  const clearHighlight = () => {
-    setHighlightedNodes(new Set());
-    setHighlightedLinks(new Set());
-  };
-
-  const nodeCanvasObject = (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const label = node.label || "";
-    const isHighlighted = highlightedNodes.has(node.id as string);
-    const isFaded = highlightedNodes.size > 0 && !isHighlighted;
-    const nodeSize = node.type === "project" ? 12 : node.type === "tag" ? 6 : 8;
-
-    ctx.globalAlpha = isFaded ? 0.15 : 1;
-
-    // Draw node circle
-    ctx.beginPath();
-    ctx.arc(node.x!, node.y!, nodeSize, 0, 2 * Math.PI, false);
-    ctx.fillStyle = node.color || "rgba(255,255,255,0.8)";
-    ctx.fill();
-
-    // Draw highlight ring for non-faded nodes
-    if (isHighlighted) {
-      ctx.beginPath();
-      ctx.arc(node.x!, node.y!, nodeSize * 1.4, 0, 2 * Math.PI, false);
-      ctx.strokeStyle = "rgba(255, 255, 0, 0.7)";
-      ctx.lineWidth = 1.5 / globalScale;
-      ctx.stroke();
-    }
-
-    // Draw text/emoji
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#ffffff";
-
-    if (node.type === "reflection" && node.emotion) {
-      const emojiSize = nodeSize * 1.5;
-      ctx.font = `${emojiSize}px Sans-Serif`;
-      ctx.fillText(node.emotion, node.x!, node.y!);
-    } else {
-      const fontSize = 12 / globalScale;
-      ctx.font = `bold ${fontSize}px Sans-Serif`;
-      
-      if (globalScale > 1.5) { // Only show labels when zoomed in
-        ctx.fillText(label, node.x!, node.y! + nodeSize + fontSize);
-      }
-    }
-    ctx.globalAlpha = 1;
-  };
-
-  const expandedCard = expandedCardId
-    ? reflections.find((r) => r.id === expandedCardId)
-    : undefined;
 
   if (loading) {
     return (
-      <div className="p-4">
-        <div className="border-b p-4 flex justify-between items-center sticky top-0 bg-background z-10">
-          <h1 className="text-2xl font-semibold">Reflection Journey</h1>
+      <div className="container py-8 max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Daily Reflections</h1>
+            <p className="text-muted-foreground">Track your daily mindmap reflections</p>
+          </div>
           <Button disabled>
-            <Plus className="mr-2 h-4 w-4" /> Add Reflection
+            <Plus className="mr-2 h-4 w-4" /> New Reflection
           </Button>
         </div>
-
-        <main className="flex-1 p-4 space-y-8">
-          <div className="mb-8 p-4 border rounded-lg bg-card shadow-md">
-            <Skeleton className="w-full h-[500px] rounded-md" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-1/4 mt-2" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-[80px] w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </main>
+        <div className="grid gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-6 bg-muted rounded w-1/3 mb-2"></div>
+                <div className="h-4 bg-muted rounded w-1/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-20 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative">
-      <AnimatePresence>
-        {expandedCard && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-40"
-              onClick={() => setExpandedCardId(null)}
-            />
-            <ExpandedReflectionCard
-              reflection={expandedCard}
-              onClose={() => setExpandedCardId(null)}
-            />
-          </>
-        )}
-      </AnimatePresence>
+    <div className="container py-8 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Daily Reflections</h1>
+          <p className="text-muted-foreground">Track your daily mindmap reflections</p>
+        </div>
+        <Button onClick={() => router.push("/me/reflection/mindmap")}>
+          <Plus className="mr-2 h-4 w-4" /> New Reflection
+        </Button>
+      </div>
 
-      <div className="flex flex-col min-h-screen bg-background">
-        <div className="border-b p-4 flex justify-between items-center sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-          <h1 className="text-2xl font-semibold">Reflection Journey</h1>
-          <Button onClick={() => router.push("/me/reflection/new")}>
-            <Plus className="mr-2 h-4 w-4" /> Add Reflection
+      {reflections.length === 0 ? (
+        <div className="text-center mt-16">
+          <Brain className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <h2 className="text-xl font-semibold mb-2">No reflections yet</h2>
+          <p className="text-muted-foreground mb-6">Start your reflection journey with a mindmap</p>
+          <Button onClick={() => router.push("/me/reflection/mindmap")} size="lg">
+            Create Your First Reflection
           </Button>
         </div>
-
-        <main className="flex-1 p-4 md:p-6">
-          {loading ? (
-            <>
-              <div className="mb-8 p-4 border rounded-lg bg-card shadow-md">
-                <h2 className="text-lg font-semibold mb-4">Project Connections</h2>
-                <Skeleton className="w-full h-[500px] rounded-md" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(3)].map((_, i) => (
-                  <Card key={i}>
-                    <CardHeader>
-                      <Skeleton className="h-5 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-5/6" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          ) : reflections.length === 0 ? (
-            <div className="text-center mt-16">
-              <FileText className="h-16 w-16 mx-auto text-muted-foreground" />
-              <h2 className="text-xl font-semibold mt-4">No reflections yet</h2>
-              <Button
-                onClick={() => router.push("/me/reflection/new")}
-                className="mt-4"
+      ) : (
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Recent Reflections
+          </h2>
+          <p className="text-muted-foreground mb-6">Your latest mindmap reflections and insights</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {reflections.map((reflection, index) => (
+              <motion.div
+                key={reflection.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
               >
-                Add First Reflection
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="mb-8 p-4 border rounded-lg bg-card shadow-md">
-                <h2 className="text-lg font-semibold mb-2">
-                  Project Connections
-                </h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Click on a project or tag to see its connections, or click a reflection to view details.
-                </p>
-                <div className="w-full h-[500px] relative rounded-md overflow-hidden border bg-gray-900/20">
-                  <ForceGraph2D
-                    ref={graphRef}
-                    graphData={graphData}
-                    onNodeClick={handleNodeClick}
-                    onBackgroundClick={clearHighlight}
-                    nodeLabel="label"
-                    nodeCanvasObject={nodeCanvasObject}
-                    linkColor={(link) => highlightedLinks.has(link) ? "rgba(255, 255, 0, 0.9)" : "rgba(255, 255, 255, 0.2)"}
-                    linkWidth={(link) => highlightedLinks.has(link) ? 2 : 0.5}
-                    linkDirectionalParticles={link => highlightedLinks.has(link) ? 4 : 0}
-                    linkDirectionalParticleWidth={2}
-                  />
-                </div>
-              </div>
+                <Card className="hover:shadow-md transition-all duration-200 cursor-pointer bg-card/80 backdrop-blur-sm border-border/40">
+                  <CardContent className="p-4">
+                    {/* Header with date */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="h-4 w-4" />
+                      <span className="font-semibold text-sm">
+                        {new Date(reflection.created_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric"
+                        })}
+                      </span>
+                    </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {reflections.map((reflection) => (
-                  <motion.div
-                    key={reflection.id}
-                    layoutId={`card-${reflection.id}`}
-                    onClick={() => setExpandedCardId(reflection.id)}
-                    className="cursor-pointer"
-                  >
-                    <Card className="hover:shadow-lg transition-shadow h-full">
-                      <CardHeader>
-                        <CardTitle className="text-base">
-                          {reflection.project.name}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(reflection.created_at)}
-                        </p>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="line-clamp-3 text-sm">{reflection.content}</p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </>
-          )}
-        </main>
-      </div>
+                    {/* Topics count in top right */}
+                    <div className="text-right mb-4">
+                      <span className="text-xs font-medium">
+                        {reflection.mindmap_topics.length} topics
+                      </span>
+                    </div>
+
+                    {/* Progress bars - compact vertical stack */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-pink-500 text-xs">💝 {reflection.satisfaction_rating}%</span>
+                        <div className="flex-1 mx-2">
+                          <div className="w-full bg-muted/60 rounded-full h-1.5">
+                            <div 
+                              className="bg-pink-500 h-1.5 rounded-full transition-all duration-300"
+                              style={{ width: `${reflection.satisfaction_rating}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-500 text-xs">📈 {reflection.progress_rating}%</span>
+                        <div className="flex-1 mx-2">
+                          <div className="w-full bg-muted/60 rounded-full h-1.5">
+                            <div 
+                              className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                              style={{ width: `${reflection.progress_rating}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-orange-500 text-xs">⚡ {reflection.challenge_rating}%</span>
+                        <div className="flex-1 mx-2">
+                          <div className="w-full bg-muted/60 rounded-full h-1.5">
+                            <div 
+                              className="bg-orange-500 h-1.5 rounded-full transition-all duration-300"
+                              style={{ width: `${reflection.challenge_rating}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Reflection preview */}
+                    <div className="bg-muted/20 rounded p-2 mt-auto">
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                        {reflection.overall_reflection}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
