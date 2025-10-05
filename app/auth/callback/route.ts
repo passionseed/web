@@ -30,11 +30,27 @@ export async function GET(request: Request) {
       console.log(profileData, profileError, "profileData, profileError");
 
       if (profileError && profileError.code === "PGRST116") {
-        // Profile still doesn't exist, something went wrong with the trigger
-        console.error("Profile creation trigger failed for user:", userId);
-        return NextResponse.redirect(
-          `${origin}/auth/auth-code-error?error=profile_creation_failed`
-        );
+        // Profile doesn't exist, create it now as a fallback
+        console.log("Profile not found, creating profile for user:", userId);
+
+        const tempUsername = `user_${userId.slice(0, 8)}`;
+        const { error: createError } = await supabase
+          .from("profiles")
+          .insert({
+            id: userId,
+            username: tempUsername,
+            email: data.user.email,
+          });
+
+        if (createError) {
+          console.error("Failed to create profile:", createError);
+          return NextResponse.redirect(
+            `${origin}/auth/auth-code-error?error=profile_creation_failed`
+          );
+        }
+
+        // Profile created successfully, redirect to finish profile
+        redirectTo = `/auth/finish-profile?next=${encodeURIComponent(next)}`;
       } else if (profileError) {
         console.error("Error fetching profile:", profileError);
         return NextResponse.redirect(
