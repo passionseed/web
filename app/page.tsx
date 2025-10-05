@@ -15,12 +15,27 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Map, ArrowRight, Sparkles, Play } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Check if logged-in user has completed their profile
+  if (user) {
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("full_name, username, date_of_birth")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profileData?.full_name || !profileData?.username || !profileData?.date_of_birth) {
+      // Profile incomplete, redirect to finish profile
+      redirect("/auth/finish-profile");
+    }
+  }
 
   // Learning Maps Preview Component for non-logged-in users
   const LearningMapsPreview = () => (

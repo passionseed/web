@@ -68,14 +68,14 @@ function AuthCodeErrorContent({ searchParams }: { searchParams: { [key: string]:
 
       <div className="space-y-4">
         <Button asChild className="w-full">
-          <Link href="/login">
-            Try Again
+          <Link href="/auth/finish-profile">
+            Complete Profile Setup
           </Link>
         </Button>
-        
+
         <Button variant="outline" asChild className="w-full">
-          <Link href="/">
-            Go Home
+          <Link href="/login">
+            Try Logging In Again
           </Link>
         </Button>
       </div>
