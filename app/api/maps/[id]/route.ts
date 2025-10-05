@@ -105,9 +105,53 @@ export async function PUT(
         });
       }
 
-      // Note: Content and assessments are saved directly to the database
-      // via their respective editor components (ContentEditor, AssessmentEditor)
-      // They don't need to be processed through the map save endpoint
+      // Note: Content is saved directly via ContentEditor and doesn't need processing here
+    });
+
+    // Handle assessments for copied nodes - Process ALL nodes for temp assessments
+    updatedMap.map_nodes.forEach((node) => {
+      if (node.node_assessments) {
+        console.log(`🔍 Processing node ${node.id} with ${node.node_assessments.length} assessments`);
+        node.node_assessments.forEach((assessment) => {
+          console.log(`🔍 Assessment ${assessment.id} - starts with temp: ${assessment.id.startsWith('temp_')}`);
+          if (assessment.id.startsWith('temp_')) {
+            // This is a copied assessment that needs to be created
+            const assessmentToCreate = {
+              temp_id: assessment.id, // Preserve the temp ID for mapping
+              node_id: assessment.node_id,
+              assessment_type: assessment.assessment_type,
+              points_possible: assessment.points_possible,
+              is_graded: assessment.is_graded,
+              is_group_assessment: assessment.is_group_assessment,
+              group_formation_method: assessment.group_formation_method,
+              group_submission_mode: assessment.group_submission_mode,
+              target_group_size: assessment.target_group_size,
+              allow_uneven_groups: assessment.allow_uneven_groups,
+              metadata: assessment.metadata,
+            };
+            console.log(`➕ Adding assessment to create:`, assessmentToCreate);
+            updates.assessments.create.push(assessmentToCreate);
+
+            // Handle quiz questions for copied assessments
+            if (assessment.quiz_questions) {
+              console.log(`🔍 Assessment ${assessment.id} has ${assessment.quiz_questions.length} quiz questions`);
+              assessment.quiz_questions.forEach((question) => {
+                console.log(`🔍 Question ${question.id} - starts with temp: ${question.id.startsWith('temp_')}`);
+                if (question.id.startsWith('temp_')) {
+                  const questionToCreate = {
+                    assessment_id: assessment.id, // This will be mapped to the real assessment ID
+                    question_text: question.question_text,
+                    options: question.options,
+                    correct_option: question.correct_option,
+                  };
+                  console.log(`➕ Adding quiz question to create:`, questionToCreate);
+                  updates.quizQuestions.create.push(questionToCreate);
+                }
+              });
+            }
+          }
+        });
+      }
     });
 
     // Get current nodes from database to detect deletions
@@ -146,6 +190,12 @@ export async function PUT(
       },
       paths: {
         create: updates.paths.create.length,
+      },
+      assessments: {
+        create: updates.assessments.create.length,
+      },
+      quizQuestions: {
+        create: updates.quizQuestions.create.length,
       }
     });
 

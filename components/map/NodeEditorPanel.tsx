@@ -201,7 +201,7 @@ export function NodeEditorPanel({
   );
 
   const handleAssessmentChange = useCallback(
-    (changedAssessment: NodeAssessment | null, action: "add" | "delete") => {
+    (changedAssessment: NodeAssessment | null, action: "add" | "delete" | "update") => {
       if (!selectedNode) return;
 
       console.log(
@@ -214,8 +214,28 @@ export function NodeEditorPanel({
         changedAssessment?.is_graded
       );
 
-      const newAssessments =
-        action === "add" && changedAssessment ? [changedAssessment] : [];
+      let newAssessments: NodeAssessment[];
+      
+      if (action === "delete") {
+        newAssessments = [];
+      } else if (action === "add" && changedAssessment) {
+        // For add, replace the assessment array with the new one
+        newAssessments = [changedAssessment];
+      } else if (action === "update" && changedAssessment) {
+        // For update, update the existing assessment in place
+        const currentAssessments = nodeData.node_assessments || [];
+        const existingIndex = currentAssessments.findIndex(a => a.id === changedAssessment.id);
+        
+        if (existingIndex >= 0) {
+          newAssessments = [...currentAssessments];
+          newAssessments[existingIndex] = changedAssessment;
+        } else {
+          // If not found, add it (fallback case)
+          newAssessments = [changedAssessment];
+        }
+      } else {
+        newAssessments = nodeData.node_assessments || [];
+      }
 
       console.log(
         "📊 New assessments array:",
@@ -240,43 +260,9 @@ export function NodeEditorPanel({
         setQuizQuestions([]);
       }
     },
-    [selectedNode, onNodeDataChange]
+    [selectedNode, onNodeDataChange, nodeData.node_assessments]
   );
 
-  // NEW: Handle quiz questions changes specifically
-  const handleQuizQuestionsChange = useCallback(
-    (questions: QuizQuestion[]) => {
-      console.log(
-        "🔄 NodeEditorPanel: Quiz questions changed:",
-        questions.length
-      );
-      setQuizQuestions(questions);
-
-      if (!selectedNode) return;
-
-      // Update the assessment with new questions
-      const currentAssessment = nodeData.node_assessments?.[0];
-      if (currentAssessment?.assessment_type === "quiz") {
-        const updatedAssessment = {
-          ...currentAssessment,
-          quiz_questions: questions,
-        };
-
-        // Update local state immediately
-        setNodeData((prev) => ({
-          ...prev,
-          node_assessments: [updatedAssessment],
-        }));
-
-        // Also update React Flow node data
-        console.log("📊 Updating node with quiz questions:", questions.length);
-        onNodeDataChange(selectedNode.id, {
-          node_assessments: [updatedAssessment],
-        });
-      }
-    },
-    [selectedNode, nodeData, onNodeDataChange]
-  );
 
   const handleDeleteNode = useCallback(() => {
     if (selectedNode && onNodeDelete) {

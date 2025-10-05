@@ -287,33 +287,49 @@ const autoGradeQuizSubmission = async (submission: any) => {
     console.log("📊 Quiz questions:", quizQuestions.length);
     console.log("📝 Student answers:", studentAnswers);
 
-    // Calculate score
+    // Calculate score based on questions actually shown to student
     let correctAnswers = 0;
-    const totalQuestions = quizQuestions.length;
-
+    let questionsAnswered = 0;
+    
+    // For randomized quizzes, only count questions the student actually answered
+    // For non-randomized quizzes, count all questions
+    const isRandomized = submission.node_assessments.metadata?.randomize_questions;
+    
     for (const question of quizQuestions) {
       const studentAnswer = studentAnswers[question.id];
-      const correctAnswer = question.correct_option;
+      
+      // If this question was answered by the student (meaning it was shown to them)
+      if (studentAnswer !== undefined) {
+        questionsAnswered++;
+        const correctAnswer = question.correct_option;
 
-      if (studentAnswer === correctAnswer) {
-        correctAnswers++;
+        if (studentAnswer === correctAnswer) {
+          correctAnswers++;
+        }
+
+        console.log(
+          `❓ Question ${question.id}: Student: ${studentAnswer}, Correct: ${correctAnswer}, Match: ${studentAnswer === correctAnswer}`
+        );
+      } else if (isRandomized) {
+        // For randomized quizzes, skip questions that weren't shown
+        console.log(`⏭️ Question ${question.id}: Not shown to student (randomized quiz)`);
+      } else {
+        // For non-randomized quizzes, this is an unanswered question
+        console.log(`❌ Question ${question.id}: Not answered by student`);
       }
-
-      console.log(
-        `❓ Question ${question.id}: Student: ${studentAnswer}, Correct: ${correctAnswer}, Match: ${studentAnswer === correctAnswer}`
-      );
     }
 
-    const score =
-      totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+    // Use the number of questions actually answered for scoring
+    const totalQuestionsForScoring = questionsAnswered;
+    const score = totalQuestionsForScoring > 0 ? (correctAnswers / totalQuestionsForScoring) * 100 : 0;
     const grade: Grade = score >= 70 ? "pass" : "fail"; // 70% passing threshold
     const rating = Math.min(Math.max(Math.ceil(score / 20), 1), 5); // Convert percentage to 1-5 rating, ensuring valid range
     const pointsAwarded = correctAnswers; // Award points equal to number of correct answers
 
     console.log(
-      `📊 Quiz Results: ${correctAnswers}/${totalQuestions} (${score.toFixed(
+      `📊 Quiz Results: ${correctAnswers}/${totalQuestionsForScoring} (${score.toFixed(
         1
-      )}%) - ${grade.toUpperCase()}`
+      )}%) - ${grade.toUpperCase()}${isRandomized ? ' (Randomized Quiz)' : ''}`
     );
 
     // FIXED: Improved grade insertion with better error handling
@@ -322,8 +338,8 @@ const autoGradeQuizSubmission = async (submission: any) => {
       graded_by: null,
       grade: grade,
       rating: rating,
-      points_awarded: pointsAwarded,
-      comments: `Auto-graded quiz: ${correctAnswers}/${totalQuestions} correct answers (${score.toFixed(
+      points_awarded: correctAnswers,
+      comments: `Auto-graded quiz: ${correctAnswers}/${totalQuestionsForScoring} correct answers (${score.toFixed(
         1
       )}%). ${grade === "pass" ? "Congratulations!" : "Keep practicing and try again."}`,
       graded_at: new Date().toISOString(),

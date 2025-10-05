@@ -1406,7 +1406,7 @@ export interface BatchMapUpdate {
     delete: string[];
   };
   assessments: {
-    create: Partial<NodeAssessment>[];
+    create: (Partial<NodeAssessment> & { temp_id?: string })[];
     update: (Partial<NodeAssessment> & { id: string })[];
     delete: string[];
   };
@@ -1730,9 +1730,16 @@ export const batchUpdateMap = async (
 
     if (updates.nodes.create.length > 0) {
       console.log("➕ Creating nodes:", updates.nodes.create);
+      
+      // Extract temp_id from nodes before database insert (similar to assessments)
+      const nodesToCreate = updates.nodes.create.map((node) => {
+        const { temp_id, ...nodeData } = node as any; // Remove temp_id from database insert
+        return nodeData;
+      });
+      
       const { data: createdNodes, error } = await supabase
         .from("map_nodes")
-        .insert(updates.nodes.create)
+        .insert(nodesToCreate)
         .select("*");
 
       if (error) {
@@ -1755,6 +1762,15 @@ export const batchUpdateMap = async (
       createdNodes.forEach((createdNode, index) => {
         const originalNodeToCreate = updates.nodes.create[index];
         if (originalNodeToCreate) {
+          // Check for direct temp_id field first (most reliable)
+          if ((originalNodeToCreate as any).temp_id) {
+            createdNodeMap.set((originalNodeToCreate as any).temp_id, createdNode.id);
+            console.log(
+              `🔗 Mapped temp node ${(originalNodeToCreate as any).temp_id} to real node ${createdNode.id} (via temp_id field)`
+            );
+            return; // Early return since we found the direct mapping
+          }
+
           // Find the original temp node from the client state by matching properties
           // This is a more robust approach than relying on titles alone
           const potentialTempIds = [
@@ -1983,15 +1999,18 @@ export const batchUpdateMap = async (
       // Map temp node IDs to real IDs in assessments
       const assessmentsToCreate = updates.assessments.create.map(
         (assessment) => {
+          const { temp_id, ...assessmentData } = assessment; // Remove temp_id from database insert
+          console.log(`🔍 Processing assessment with temp_id: ${temp_id}, node_id: ${assessmentData.node_id}`);
           const mappedAssessment = {
-            ...assessment,
+            ...assessmentData,
             node_id:
-              createdNodeMap.get(assessment.node_id!) || assessment.node_id,
+              createdNodeMap.get(assessmentData.node_id!) || assessmentData.node_id,
           };
           console.log("🔗 Assessment node mapping:", {
             original: assessment,
             mapped: mappedAssessment,
-            nodeIdResolved: mappedAssessment.node_id !== assessment.node_id,
+            nodeIdResolved: mappedAssessment.node_id !== assessmentData.node_id,
+            tempId: temp_id,
           });
           return mappedAssessment;
         }
@@ -2043,42 +2062,26 @@ export const batchUpdateMap = async (
           type: a.assessment_type,
         }))
       );
+      
+      console.log("🔍 Original assessments with temp_ids:", updates.assessments.create.map(a => ({ 
+        temp_id: a.temp_id, 
+        node_id: a.node_id 
+      })));
 
-      // Map temporary assessment IDs to real ones
-      // First, collect all unique temp assessment IDs from quiz questions
-      const tempAssessmentIds = [
-        ...new Set(
-          updates.quizQuestions.create
-            .map((q) => q.assessment_id)
-            .filter((id) => id?.startsWith("temp_assessment_"))
-        ),
-      ].filter(Boolean) as string[];
-
-      console.log(
-        "🔍 Found temp assessment IDs in quiz questions:",
-        tempAssessmentIds
-      );
-
+      // Map temporary assessment IDs to real ones using the preserved temp_id
       createdAssessments.forEach((createdAssessment, index) => {
-        // Map each created assessment to its corresponding temp ID
-        if (tempAssessmentIds[index]) {
-          createdAssessmentMap.set(
-            tempAssessmentIds[index],
-            createdAssessment.id
-          );
+        const originalAssessmentRequest = updates.assessments.create[index];
+        
+        console.log(`🔍 Mapping assessment ${index}: original=`, originalAssessmentRequest, `created=`, createdAssessment);
+        
+        if (originalAssessmentRequest && originalAssessmentRequest.temp_id) {
+          // Use the preserved temp_id for mapping
+          createdAssessmentMap.set(originalAssessmentRequest.temp_id, createdAssessment.id);
           console.log(
-            `🔗 Mapped temp assessment ${tempAssessmentIds[index]} to real assessment ${createdAssessment.id}`
+            `🔗 Mapped temp assessment ${originalAssessmentRequest.temp_id} to real assessment ${createdAssessment.id}`
           );
         } else {
-          // Fallback: create predictable mapping
-          const originalAssessmentToCreate = updates.assessments.create[index];
-          if (originalAssessmentToCreate) {
-            const predictableTempId = `temp_assessment_${originalAssessmentToCreate.node_id}_${index}`;
-            createdAssessmentMap.set(predictableTempId, createdAssessment.id);
-            console.log(
-              `🔗 Mapped predictable temp assessment ${predictableTempId} to real assessment ${createdAssessment.id}`
-            );
-          }
+          console.log(`⚠️ No temp_id found for assessment ${index}:`, originalAssessmentRequest);
         }
       });
 

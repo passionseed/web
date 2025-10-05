@@ -14,7 +14,7 @@ export interface AssessmentEditorProps {
   assessment: NodeAssessment | null;
   onAssessmentChange: (
     newAssessment: NodeAssessment | null,
-    action: "add" | "delete"
+    action: "add" | "delete" | "update"
   ) => void;
   onQuizQuestionsChange?: (questions: QuizQuestion[]) => void;
   // Optional props to support auto-saving temporary nodes
@@ -34,4 +34,5 @@ export interface QuizEditorProps {
     q: QuizQuestion,
     action: "add" | "update" | "delete"
   ) => void;
+  onBatchImportQuestions?: (questions: QuestionFormData[]) => void;
 }

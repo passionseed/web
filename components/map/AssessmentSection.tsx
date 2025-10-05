@@ -1,9 +1,10 @@
 // app/components/NodeViewPanel/AssessmentSection.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -22,6 +23,35 @@ import { SubmissionItem } from "./SubmissionItem"; // Assuming component is crea
 import { getUserAssessmentGroup, getGroupMembersSubmissionStatus } from "@/lib/supabase/assessment-groups";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/components/ui/use-toast";
+
+// Utility function to create a deterministic random number generator
+function createSeededRandom(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  return function() {
+    hash = Math.imul(hash ^ hash >>> 15, hash | 1);
+    hash ^= hash + Math.imul(hash ^ hash >>> 7, hash | 61);
+    return ((hash ^ hash >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// Function to shuffle array with deterministic randomization
+function shuffleArray<T>(array: T[], seed: string): T[] {
+  const shuffled = [...array];
+  const random = createSeededRandom(seed);
+  
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  
+  return shuffled;
+}
 
 interface AssessmentSectionProps {
   assessment: NodeAssessment;
@@ -55,27 +85,46 @@ const renderQuizQuestion = (
         </p>
       </div>
       <div className="space-y-2 ml-9">
-        {question.options?.map((option) => (
-          <label
-            key={option.option}
-            className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-background cursor-pointer transition-colors"
-          >
-            <input
-              type="radio"
-              name={question.id}
-              value={option.option}
-              checked={quizAnswers[question.id] === option.option}
+        {question.options && question.options.length > 0 ? (
+          // Multiple choice or true/false questions with options
+          question.options.map((option) => (
+            <label
+              key={option.option}
+              className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-background cursor-pointer transition-colors"
+            >
+              <input
+                type="radio"
+                name={question.id}
+                value={option.option}
+                checked={quizAnswers[question.id] === option.option}
+                onChange={(e) =>
+                  setQuizAnswers((prev) => ({
+                    ...prev,
+                    [question.id]: e.target.value,
+                  }))
+                }
+                className="w-4 h-4 text-primary"
+              />
+              <span className="text-sm">{option.text}</span>
+            </label>
+          ))
+        ) : (
+          // Single answer questions without options - render text input
+          <div className="p-3 rounded-lg border bg-background">
+            <Input
+              type="text"
+              placeholder="Type your answer here..."
+              value={quizAnswers[question.id] || ""}
               onChange={(e) =>
                 setQuizAnswers((prev) => ({
                   ...prev,
                   [question.id]: e.target.value,
                 }))
               }
-              className="w-4 h-4 text-primary"
+              className="w-full"
             />
-            <span className="text-sm">{option.text}</span>
-          </label>
-        ))}
+          </div>
+        )}
       </div>
     </CardContent>
   </Card>
@@ -114,6 +163,31 @@ export function AssessmentSection({
   
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Generate randomized questions for this user (consistent across page refreshes)
+  const displayQuestions = useMemo(() => {
+    if (!assessment.quiz_questions || assessment.quiz_questions.length === 0) {
+      return [];
+    }
+
+    // If randomization is not enabled, return all questions in order
+    if (!assessment.metadata?.randomize_questions) {
+      return assessment.quiz_questions;
+    }
+
+    // Create a deterministic seed using user ID + assessment ID
+    const seed = `${user?.id || 'anonymous'}-${assessment.id}`;
+    
+    // Shuffle all questions deterministically
+    const shuffledQuestions = shuffleArray(assessment.quiz_questions, seed);
+    
+    // Get the number of questions to show
+    const questionsToShow = assessment.metadata?.questions_to_show || assessment.quiz_questions.length;
+    const actualQuestionsToShow = Math.min(questionsToShow, shuffledQuestions.length);
+    
+    // Return the specified number of shuffled questions
+    return shuffledQuestions.slice(0, actualQuestionsToShow);
+  }, [assessment.quiz_questions, assessment.metadata, assessment.id, user?.id]);
 
   // Initialize checklist items from assessment metadata
   useEffect(() => {
@@ -233,7 +307,14 @@ export function AssessmentSection({
             </Badge>
             {assessment.assessment_type === "quiz" && (
               <Badge variant="secondary">
-                {assessment.quiz_questions?.length || 0} Questions
+                {displayQuestions.length} Question{displayQuestions.length !== 1 ? 's' : ''}
+                {assessment.metadata?.randomize_questions && 
+                  displayQuestions.length !== (assessment.quiz_questions?.length || 0) && (
+                    <span className="text-xs ml-1">
+                      (of {assessment.quiz_questions?.length || 0})
+                    </span>
+                  )
+                }
               </Badge>
             )}
           </div>
@@ -326,6 +407,52 @@ export function AssessmentSection({
                   Your previous submission needs improvement. Please review the
                   feedback and try again.
                 </p>
+                {(assessment.metadata?.allow_multiple_attempts ?? true) && (
+                  <p className="text-xs text-yellow-600 mt-2">
+                    Attempt {submissionsWithGrades.length + 1} of {assessment.metadata?.max_attempts || 3}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Attempt Limit Reached */}
+        {!canResubmit && 
+         progressStatus === "failed" && 
+         (assessment.metadata?.allow_multiple_attempts ?? true) &&
+         submissionsWithGrades.length >= (assessment.metadata?.max_attempts || 3) && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <X className="h-5 w-5 text-red-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-red-800">
+                  Maximum Attempts Reached
+                </p>
+                <p className="text-sm text-red-700 mt-1">
+                  You have used all {assessment.metadata?.max_attempts || 3} attempts for this assessment. 
+                  Contact your instructor if you need additional attempts.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Single Attempt Only - No Resubmission */}
+        {!canResubmit && 
+         progressStatus === "failed" && 
+         !(assessment.metadata?.allow_multiple_attempts ?? true) && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <X className="h-5 w-5 text-red-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-red-800">
+                  Single Attempt Assessment
+                </p>
+                <p className="text-sm text-red-700 mt-1">
+                  This assessment allows only one submission attempt. 
+                  Contact your instructor if you have concerns about your result.
+                </p>
               </div>
             </div>
           </div>
@@ -401,6 +528,21 @@ export function AssessmentSection({
            assessment.group_submission_mode === 'single_submission' && 
            groupHasSubmission) && (
           <div className="space-y-4">
+            {/* Attempt Information */}
+            {submissionsWithGrades.length === 0 && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-blue-700">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  {!(assessment.metadata?.allow_multiple_attempts ?? true) ? (
+                    <span>Single attempt assessment - submit carefully</span>
+                  ) : (
+                    <span>
+                      You have {assessment.metadata?.max_attempts || 3} attempt{(assessment.metadata?.max_attempts || 3) !== 1 ? 's' : ''} to complete this assessment
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
             {assessment.assessment_type === "text_answer" && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">
@@ -415,10 +557,21 @@ export function AssessmentSection({
               </div>
             )}
 
-            {assessment.assessment_type === "quiz" &&
-              assessment.quiz_questions && assessment.quiz_questions.length > 0 && (
+            {assessment.assessment_type === "quiz" && displayQuestions.length > 0 && (
                 <div className="space-y-6">
-                  {assessment.quiz_questions.map((question, index) =>
+                  {/* Randomization indicator */}
+                  {assessment.metadata?.randomize_questions && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>
+                          Showing {displayQuestions.length} of {assessment.quiz_questions?.length || 0} questions (randomized for you)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {displayQuestions.map((question, index) =>
                     renderQuizQuestion(
                       question,
                       index,

@@ -886,7 +886,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       };
     }
 
-    console.log("💾 Saving pasted nodes to database first to get real UUIDs...");
+    console.log("💾 Creating pasted nodes with temporary IDs for later saving...");
     
     // Calculate the bounding box of all copied nodes to preserve relative positioning
     let minX = Infinity,
@@ -925,8 +925,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       finalPastePosition.y += 100;
     }
 
-    // Save nodes to database first (like handleAddNode does)
-    const savedNodes: MapNode[] = [];
+    // Create nodes with temporary IDs (to be saved later with Save All)
     const newNodes: AppNode[] = [];
     const newNodeData: (MapNode & {
       node_paths_source: any[];
@@ -935,7 +934,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       node_assessments: any[];
     })[] = [];
 
-    // Process each node: save to database first, then create UI elements
+    // Process each node: create with temporary IDs for later saving
     for (let index = 0; index < copiedNodes.length; index++) {
       const copiedNode = copiedNodes[index];
       
@@ -957,8 +956,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         nodePosition = finalPastePosition;
       }
 
-      // Save node to database first (like handleAddNode does)
-      const savedNode = await createNode({
+      // Create node with temporary ID
+      const tempId = `temp_node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const nodeData = {
+        id: tempId,
         map_id: map.id,
         title:
           copiedNodes.length === 1
@@ -972,27 +973,42 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           position: nodePosition,
         },
         node_type: copiedNode.node_type || "learning",
-      });
-
-      console.log("✅ Pasted node saved to database with ID:", savedNode.id);
-      savedNodes.push(savedNode);
-
-      // Create the full node data structure for local state
-      const nodeData: MapNode & {
-        node_paths_source: any[];
-        node_paths_destination: any[];
-        node_content: any[];
-        node_assessments: any[];
-      } = {
-        ...savedNode,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        version: 1,
+        last_modified_by: null,
         node_paths_source: [], // Don't copy connections
         node_paths_destination: [], // Don't copy connections
-        node_content: copiedNode.node_content || [],
-        node_assessments: copiedNode.node_assessments || [],
+        node_content: [],
+        node_assessments: [],
       };
 
+      console.log("✅ Created pasted node with temporary ID:", tempId);
+
+      // Create copied assessments with temp IDs for proper saving
+      const copiedAssessments = (copiedNode.node_assessments || []).map((assessment: any) => {
+        const tempAssessmentId = `temp_assessment_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        
+        // Copy quiz questions with temp IDs too
+        const copiedQuizQuestions = (assessment.quiz_questions || []).map((question: any) => ({
+          ...question,
+          id: `temp_question_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          assessment_id: tempAssessmentId,
+        }));
+
+        return {
+          ...assessment,
+          id: tempAssessmentId,
+          node_id: tempId, // Update to the new temporary node ID
+          quiz_questions: copiedQuizQuestions,
+        };
+      });
+
+      // Add assessments to the nodeData
+      nodeData.node_assessments = copiedAssessments;
+
       const newNode: AppNode = {
-        id: savedNode.id, // Use real UUID from database
+        id: tempId, // Use temporary ID
         position: nodePosition,
         data: nodeData,
         type: copiedNode.node_type === "text" ? "text" : "default",
@@ -1019,7 +1035,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     // Update React Flow state with new nodes
     setNodes((nds) => [...nds, ...(newNodes as Node[])]);
 
-    // Update map state with nodes that already have real UUIDs
+    // Update map state with nodes that have temporary IDs (will be saved with Save All)
     const updatedMap = {
       ...map,
       map_nodes: [...map.map_nodes, ...newNodeData],

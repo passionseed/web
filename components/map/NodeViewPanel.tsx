@@ -105,7 +105,24 @@ export function NodeViewPanel({
     isGraded && latestSubmissionWithGrade?.grade?.grade === "fail";
   const isSubmittedAndPending = progress?.status === "submitted" && !isGraded;
   const isInProgress = progress?.status === "in_progress";
-  const canResubmit = isFailed;
+  // Check if student can resubmit based on assessment settings and attempt count
+  const canResubmit = (() => {
+    if (!isFailed) return false; // Only allow resubmit if failed
+    
+    const assessment = selectedNode?.data.node_assessments?.[0];
+    if (!assessment) return false;
+    
+    // If multiple attempts are disabled, no resubmission allowed
+    if (!(assessment.metadata?.allow_multiple_attempts ?? true)) {
+      return false;
+    }
+    
+    // Check if student has exceeded max attempts
+    const maxAttempts = assessment.metadata?.max_attempts || 3;
+    const attemptCount = submissionsWithGrades.length;
+    
+    return attemptCount < maxAttempts;
+  })();
 
   // Show assessment form if:
   // - Student can resubmit (failed previous attempt)
@@ -556,7 +573,7 @@ export function NodeViewPanel({
         submissionData.text_answer = assessmentAnswer.trim();
       } else if (assessment.assessment_type === "quiz") {
         // Validate quiz answers
-        const questions = assessment.quiz_questions || [];
+        const allQuestions = assessment.quiz_questions || [];
         const answeredQuestions = Object.keys(quizAnswers).length;
 
         if (answeredQuestions === 0) {
@@ -568,10 +585,24 @@ export function NodeViewPanel({
           return;
         }
 
-        if (answeredQuestions < questions.length) {
+        // For randomized quizzes, calculate expected number of questions
+        let expectedQuestions = allQuestions.length;
+        if (assessment.metadata?.randomize_questions) {
+          expectedQuestions = Math.min(
+            assessment.metadata?.questions_to_show || allQuestions.length,
+            allQuestions.length
+          );
+        }
+
+        if (answeredQuestions < expectedQuestions) {
+          const isRandomized = assessment.metadata?.randomize_questions;
+          const description = isRandomized 
+            ? `Please answer all ${expectedQuestions} questions shown to you before submitting.`
+            : `Please answer all ${expectedQuestions} questions before submitting.`;
+            
           toast({
             title: "Incomplete quiz",
-            description: `Please answer all ${questions.length} questions before submitting.`,
+            description,
             variant: "destructive",
           });
           return;

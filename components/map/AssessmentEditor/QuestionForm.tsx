@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Check, X, AlertCircle, PlusCircle } from "lucide-react";
@@ -35,6 +35,20 @@ export function QuestionForm({
   );
   const [errors, setErrors] = useState<string[]>([]);
   const errorRef = useRef<HTMLDivElement>(null);
+
+  // Reset form state when component mounts with no existing question (new question form)
+  useEffect(() => {
+    if (!existingQuestion) {
+      // This runs when the component is mounted fresh (due to key change)
+      console.log("🔄 Resetting question form to clean state");
+      setQuestionText("");
+      setQuestionType("multiple_choice");
+      // Create fresh copies of default options to avoid reference issues
+      setOptions(JSON.parse(JSON.stringify(QUESTION_TYPE_CONFIG["multiple_choice"].defaultOptions)));
+      setCorrectOption("");
+      setErrors([]);
+    }
+  }, []); // Empty dependency array means this only runs on mount
 
   // Scroll to errors when they appear
   useEffect(() => {
@@ -112,13 +126,13 @@ export function QuestionForm({
   const config = QUESTION_TYPE_CONFIG[questionType];
 
   return (
-    <div className="max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+    <div>
       <form
         onSubmit={handleSubmit}
         className="space-y-3 p-3 border rounded-lg bg-muted/30 relative"
       >
-        {/* Form content container - scrollable area */}
-        <div className="space-y-3 max-h-[calc(70vh-100px)] overflow-y-auto pr-2">
+        {/* Form content container */}
+        <div className="space-y-3">
           {errors.length > 0 && (
             <Alert ref={errorRef} variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -146,23 +160,25 @@ export function QuestionForm({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Type *</Label>
-            <RadioGroup value={questionType} onValueChange={handleTypeChange}>
-              {Object.entries(QUESTION_TYPE_CONFIG).map(([type, config]) => (
-                <div key={type} className="flex items-start space-x-2">
-                  <RadioGroupItem value={type} id={type} className="mt-0.5" />
-                  <Label htmlFor={type} className="font-normal cursor-pointer flex-1">
+          <div className="space-y-1.5">
+            <Label htmlFor="questionType">Type *</Label>
+            <Select value={questionType} onValueChange={handleTypeChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select question type" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(QUESTION_TYPE_CONFIG).map(([type, config]) => (
+                  <SelectItem key={type} value={type}>
                     <div className="flex flex-col">
                       <span className="font-medium text-sm">{config.label}</span>
                       <span className="text-xs text-muted-foreground">
                         {config.description}
                       </span>
                     </div>
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {questionType === "single_answer" ? (
@@ -179,15 +195,16 @@ export function QuestionForm({
               />
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label>Choices *</Label>
+                <Label className="text-sm">Choices *</Label>
                 {questionType === "multiple_choice" && options.length < 6 && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={addOption}
+                    className="h-7 text-xs"
                   >
                     <PlusCircle className="h-3 w-3 mr-1" />
                     Add Choice
@@ -195,17 +212,17 @@ export function QuestionForm({
                 )}
               </div>
 
-              <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
+              <div className="space-y-1.5">
                 {options.map((option, index) => (
-                  <div key={option.option} className="space-y-1.5 p-2 border rounded-lg bg-muted/20">
+                  <div key={option.option} className="space-y-1 p-1.5 border rounded bg-muted/20">
                     <div className="flex items-center justify-between">
-                      <Badge
-                        variant="outline"
-                        className="text-xs"
-                      >
-                        Choice {option.option.toUpperCase()}
-                      </Badge>
                       <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="text-xs px-1.5 py-0.5"
+                        >
+                          {option.option.toUpperCase()}
+                        </Badge>
                         <div className="flex items-center gap-1">
                           <input
                             type="radio"
@@ -216,25 +233,25 @@ export function QuestionForm({
                               setCorrectOption(e.target.value);
                               clearErrors();
                             }}
-                            className="w-4 h-4 text-green-600"
+                            className="w-3 h-3 text-green-600"
                           />
                           <Label className="text-xs text-muted-foreground">
-                            Right answer
+                            Correct
                           </Label>
                         </div>
-                        {questionType === "multiple_choice" &&
-                          options.length > 2 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeOption(index)}
-                              className="text-red-600 hover:text-red-800 h-6 w-6 p-0"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          )}
                       </div>
+                      {questionType === "multiple_choice" &&
+                        options.length > 2 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeOption(index)}
+                            className="text-red-600 hover:text-red-800 h-5 w-5 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
                     </div>
                     <Textarea
                       value={option.text}
@@ -242,14 +259,14 @@ export function QuestionForm({
                         handleOptionChange(index, e.target.value)
                       }
                       placeholder={`Enter text for choice ${option.option.toUpperCase()}...`}
-                      className="min-h-[50px] resize-none"
+                      className="min-h-[40px] resize-none text-sm"
                     />
                   </div>
                 ))}
               </div>
 
               {correctOption && (
-                <div className="text-xs text-green-600 flex items-center gap-1 mt-2">
+                <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
                   <Check className="h-3 w-3" />
                   Answer: {correctOption.toUpperCase()}
                 </div>

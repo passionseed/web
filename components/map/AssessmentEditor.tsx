@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { NodeAssessment, AssessmentType, QuizQuestion } from "@/types/map";
 import { Trash2 } from "lucide-react";
-import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion } from "@/lib/supabase/assessment";
+import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion, updateAssessmentMetadata } from "@/lib/supabase/assessment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateAssessmentGroupSettings } from "@/lib/supabase/assessment-groups";
 import { QuizEditor } from "./AssessmentEditor/QuizEditor";
@@ -14,7 +14,8 @@ import { TextAnswerEditor } from "./AssessmentEditor/TextAnswerEditor";
 import { GroupManagementModal } from "./AssessmentEditor/GroupManagementModal";
 import { QuizSettings } from "./AssessmentEditor/QuizSettings";
 import { ASSESSMENT_TYPE_CONFIG } from "./AssessmentEditor/constants";
-import { AssessmentEditorProps } from "./AssessmentEditor/types";
+import { AssessmentEditorProps, QuestionFormData } from "./AssessmentEditor/types";
+import { convertFormDataToQuestion } from "./AssessmentEditor/utils";
 
 export function AssessmentEditor({
   nodeId,
@@ -104,26 +105,42 @@ export function AssessmentEditor({
       if (!assessment) return;
 
       try {
-        console.log(`👥 Updating group setting ${field}:`, value);
+        console.log(`⚙️ Updating assessment setting ${field}:`, value);
         
-        // Update the database
-        await updateAssessmentGroupSettings(assessment.id, {
-          is_group_assessment: field === 'is_group_assessment' ? value : assessment.is_group_assessment || false,
-          group_formation_method: field === 'group_formation_method' ? value : assessment.group_formation_method || 'manual',
-          group_submission_mode: field === 'group_submission_mode' ? value : assessment.group_submission_mode || 'all_members',
-          target_group_size: field === 'target_group_size' ? value : assessment.target_group_size || 3,
-          allow_uneven_groups: field === 'allow_uneven_groups' ? value : assessment.allow_uneven_groups || true,
-        });
+        let updatedAssessment: NodeAssessment;
 
+        // Handle metadata fields (randomization and attempt settings)
+        if (field === 'randomize_questions' || field === 'questions_to_show' || field === 'allow_multiple_attempts' || field === 'max_attempts') {
+          const updatedMetadata = {
+            ...assessment.metadata,
+            [field]: value
+          };
+          
+          // Save metadata changes to database
+          console.log("💾 Saving metadata to database:", updatedMetadata);
+          const savedAssessment = await updateAssessmentMetadata(assessment.id, updatedMetadata);
+          updatedAssessment = savedAssessment;
+        } else {
+          // Handle group assessment fields
+          await updateAssessmentGroupSettings(assessment.id, {
+            is_group_assessment: field === 'is_group_assessment' ? value : assessment.is_group_assessment || false,
+            group_formation_method: field === 'group_formation_method' ? value : assessment.group_formation_method || 'manual',
+            group_submission_mode: field === 'group_submission_mode' ? value : assessment.group_submission_mode || 'all_members',
+            target_group_size: field === 'target_group_size' ? value : assessment.target_group_size || 3,
+            allow_uneven_groups: field === 'allow_uneven_groups' ? value : assessment.allow_uneven_groups || true,
+          });
+
+          updatedAssessment = { ...assessment, [field]: value };
+        }
+        
         // Update local state
-        const updatedAssessment = { ...assessment, [field]: value };
-        onAssessmentChange(updatedAssessment, "add");
+        onAssessmentChange(updatedAssessment, "update");
 
-        toast({ title: "Group settings updated ✓" });
+        toast({ title: "Settings updated ✓" });
       } catch (error) {
-        console.error("❌ Failed to update group settings:", error);
+        console.error("❌ Failed to update settings:", error);
         toast({
-          title: "Failed to update group settings",
+          title: "Failed to update settings",
           description: (error as Error).message || "Unknown error",
           variant: "destructive"
         });
@@ -178,16 +195,31 @@ export function AssessmentEditor({
           updatedQuestion = changedQuestion;
         }
 
-        // Update local state
+        // Update local state - use the current assessment state to avoid race conditions
+        const currentQuestions = assessment.quiz_questions || [];
         let newQuestions: QuizQuestion[];
+        
         if (action === "add") {
-          newQuestions = [...(assessment.quiz_questions || []), updatedQuestion];
+          // Check if question already exists to prevent duplicates
+          const existingQuestion = currentQuestions.find(q => 
+            q.id === updatedQuestion.id || 
+            (q.id.startsWith('temp_') && q.question_text === updatedQuestion.question_text)
+          );
+          
+          if (existingQuestion) {
+            console.log("⚠️ Question already exists, updating instead of adding");
+            newQuestions = currentQuestions.map(q => 
+              q.id === existingQuestion.id ? updatedQuestion : q
+            );
+          } else {
+            newQuestions = [...currentQuestions, updatedQuestion];
+          }
         } else if (action === "update") {
-          newQuestions = (assessment.quiz_questions || []).map((q) =>
+          newQuestions = currentQuestions.map((q) =>
             q.id === changedQuestion.id ? updatedQuestion : q
           );
         } else {
-          newQuestions = (assessment.quiz_questions || []).filter(
+          newQuestions = currentQuestions.filter(
             (q) => q.id !== changedQuestion.id
           );
         }
@@ -195,7 +227,7 @@ export function AssessmentEditor({
         const updatedAssessment = { ...assessment, quiz_questions: newQuestions };
         console.log("📊 Updated assessment with questions:", updatedAssessment);
         
-        onAssessmentChange(updatedAssessment, "add");
+        onAssessmentChange(updatedAssessment, "update");
 
         if (action === "add") {
           toast({ title: "Question added ✓" });
@@ -210,6 +242,58 @@ export function AssessmentEditor({
           title: `Failed to ${action} quiz question`, 
           description: (error as Error).message || "Unknown error",
           variant: "destructive" 
+        });
+      }
+    },
+    [assessment, onAssessmentChange, toast]
+  );
+
+  const handleBatchImportQuestions = useCallback(
+    async (questionDataList: QuestionFormData[]) => {
+      if (!assessment) return;
+      console.log(`📁 Batch importing ${questionDataList.length} questions`);
+      
+      try {
+        // Convert all QuestionFormData to QuizQuestion format
+        const questionsToCreate = questionDataList.map(questionData => 
+          convertFormDataToQuestion(questionData, assessment.id)
+        );
+        
+        console.log("🔧 Converting questions for database insertion...");
+        
+        // Create all questions in database in parallel
+        const createPromises = questionsToCreate.map(async (question) => {
+          console.log("➕ Creating quiz question in database:", question.question_text?.substring(0, 50));
+          return await createQuizQuestion({
+            assessment_id: assessment.id,
+            question_text: question.question_text,
+            options: question.options,
+            correct_option: question.correct_option,
+          });
+        });
+        
+        const createdQuestions = await Promise.all(createPromises);
+        console.log("✅ All questions created in database:", createdQuestions.length);
+        
+        // Update local state with all new questions at once
+        const currentQuestions = assessment.quiz_questions || [];
+        const newQuestions = [...currentQuestions, ...createdQuestions];
+        const updatedAssessment = { ...assessment, quiz_questions: newQuestions };
+        
+        console.log("📊 Updated assessment with batch questions:", updatedAssessment);
+        onAssessmentChange(updatedAssessment, "update");
+        
+        toast({
+          title: `${questionDataList.length} questions imported ✓`,
+          description: "All questions have been added to your quiz",
+        });
+        
+      } catch (error) {
+        console.error("❌ Failed to batch import questions:", error);
+        toast({
+          title: "Failed to import questions",
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive"
         });
       }
     },
@@ -279,6 +363,7 @@ export function AssessmentEditor({
               <QuizEditor
                 assessment={assessment}
                 onQuestionChange={handleQuestionChange}
+                onBatchImportQuestions={handleBatchImportQuestions}
               />
               <QuizSettings
                 assessment={assessment}
