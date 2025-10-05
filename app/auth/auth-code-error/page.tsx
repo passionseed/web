@@ -5,13 +5,17 @@ import { AlertCircle } from "lucide-react";
 function AuthCodeErrorContent({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
   const error = searchParams?.error as string;
   const errorDescription = searchParams?.error_description as string;
+  const details = searchParams?.details as string;
   
   const getErrorMessage = () => {
     switch (error) {
       case 'profile_creation_failed':
-        return 'Failed to create user profile. Please try signing in again.';
+        if (details === 'fallback_failed') {
+          return 'Both automatic and manual profile creation failed. This may be a database permissions issue.';
+        }
+        return 'Failed to create user profile. Our system will attempt to create it automatically on retry.';
       case 'profile_fetch_failed':
-        return 'Unable to retrieve user profile information.';
+        return 'Unable to retrieve user profile information. The profile may have been created but cannot be accessed.';
       case 'server_error':
         return errorDescription || 'A server error occurred during authentication.';
       default:
@@ -59,6 +63,9 @@ function AuthCodeErrorContent({ searchParams }: { searchParams: { [key: string]:
                 <li>There was a database connection issue</li>
                 {error === 'profile_creation_failed' && (
                   <li>Database permissions may need to be updated</li>
+                )}
+                {details && (
+                  <li>Technical details: {decodeURIComponent(details)}</li>
                 )}
               </ul>
             </div>
