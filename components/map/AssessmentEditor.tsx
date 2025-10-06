@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { NodeAssessment, AssessmentType, QuizQuestion } from "@/types/map";
 import { Trash2 } from "lucide-react";
-import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion, updateAssessmentMetadata } from "@/lib/supabase/assessment";
+import { deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion, updateAssessmentMetadata } from "@/lib/supabase/assessment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateAssessmentGroupSettings } from "@/lib/supabase/assessment-groups";
 import { QuizEditor } from "./AssessmentEditor/QuizEditor";
@@ -21,7 +21,6 @@ export function AssessmentEditor({
   nodeId,
   assessment,
   onAssessmentChange,
-  nodeData,
   mapId,
 }: AssessmentEditorProps) {
   const { toast } = useToast();
@@ -43,15 +42,12 @@ export function AssessmentEditor({
         points_possible: 10,
         is_graded: false,
         quiz_questions: [],
-        checklist_items: [],
         metadata: {},
         group_formation_method: "manual",
         target_group_size: 3,
         allow_uneven_groups: true,
         group_submission_mode: "all_members",
         is_group_assessment: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
 
       console.log("✅ Temporary assessment created:", newAssessment);
@@ -114,8 +110,9 @@ export function AssessmentEditor({
 
       try {
         console.log(`⚙️ Updating assessment setting ${field}:`, value);
-        
+
         let updatedAssessment: NodeAssessment;
+        const isTemporaryAssessment = assessment.id.startsWith('temp_');
 
         // Handle metadata fields (randomization and attempt settings)
         if (field === 'randomize_questions' || field === 'questions_to_show' || field === 'allow_multiple_attempts' || field === 'max_attempts') {
@@ -123,34 +120,52 @@ export function AssessmentEditor({
             ...assessment.metadata,
             [field]: value
           };
-          
-          // Save metadata changes to database
-          console.log("💾 Saving metadata to database:", updatedMetadata);
-          const savedAssessment = await updateAssessmentMetadata(assessment.id, updatedMetadata);
-          
-          // Preserve current UI state for fields not being updated (especially is_graded)
-          updatedAssessment = {
-            ...savedAssessment,
-            is_graded: assessment.is_graded, // Preserve current grading setting
-            points_possible: assessment.points_possible, // Preserve current points
-          };
+
+          // For temporary assessments, just update local state
+          if (isTemporaryAssessment) {
+            console.log("📝 Temporary assessment - updating metadata locally:", updatedMetadata);
+            updatedAssessment = {
+              ...assessment,
+              metadata: updatedMetadata,
+            };
+          } else {
+            // Save metadata changes to database for real assessments
+            console.log("💾 Saving metadata to database:", updatedMetadata);
+            const savedAssessment = await updateAssessmentMetadata(assessment.id, updatedMetadata);
+
+            // Preserve current UI state for fields not being updated (especially is_graded)
+            updatedAssessment = {
+              ...savedAssessment,
+              is_graded: assessment.is_graded, // Preserve current grading setting
+              points_possible: assessment.points_possible, // Preserve current points
+            };
+          }
         } else {
           // Handle group assessment fields
-          await updateAssessmentGroupSettings(assessment.id, {
-            is_group_assessment: field === 'is_group_assessment' ? value : assessment.is_group_assessment || false,
-            group_formation_method: field === 'group_formation_method' ? value : assessment.group_formation_method || 'manual',
-            group_submission_mode: field === 'group_submission_mode' ? value : assessment.group_submission_mode || 'all_members',
-            target_group_size: field === 'target_group_size' ? value : assessment.target_group_size || 3,
-            allow_uneven_groups: field === 'allow_uneven_groups' ? value : assessment.allow_uneven_groups || true,
-          });
+          if (isTemporaryAssessment) {
+            console.log("📝 Temporary assessment - updating group settings locally");
+            updatedAssessment = { ...assessment, [field]: value };
+          } else {
+            await updateAssessmentGroupSettings(assessment.id, {
+              is_group_assessment: field === 'is_group_assessment' ? value : assessment.is_group_assessment || false,
+              group_formation_method: field === 'group_formation_method' ? value : assessment.group_formation_method || 'manual',
+              group_submission_mode: field === 'group_submission_mode' ? value : assessment.group_submission_mode || 'all_members',
+              target_group_size: field === 'target_group_size' ? value : assessment.target_group_size || 3,
+              allow_uneven_groups: field === 'allow_uneven_groups' ? value : assessment.allow_uneven_groups || true,
+            });
 
-          updatedAssessment = { ...assessment, [field]: value };
+            updatedAssessment = { ...assessment, [field]: value };
+          }
         }
-        
+
         // Update local state
         onAssessmentChange(updatedAssessment, "update");
 
-        toast({ title: "Settings updated ✓" });
+        if (isTemporaryAssessment) {
+          toast({ title: "Settings updated (will save with node) ✓" });
+        } else {
+          toast({ title: "Settings updated ✓" });
+        }
       } catch (error) {
         console.error("❌ Failed to update settings:", error);
         toast({
@@ -185,8 +200,6 @@ export function AssessmentEditor({
               ...changedQuestion,
               id: tempQuestionId,
               assessment_id: assessment.id,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
             };
             console.log("✅ Temporary quiz question created:", updatedQuestion);
           } else {
@@ -290,8 +303,6 @@ export function AssessmentEditor({
           return {
             ...question,
             id: tempQuestionId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
           };
         });
         
