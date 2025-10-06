@@ -718,7 +718,7 @@ export function NodeEditorPanel({
                 <div className="text-xs text-muted-foreground mt-4 p-2 bg-muted rounded">
                   {isTextNode
                     ? "Text nodes are for annotations and labels. Changes are saved automatically to your draft."
-                    : 'Changes are saved automatically to your draft. Use "Save All Changes" to persist to database.'}
+                    : 'Changes are saved automatically to your draft. Use "Save All" to persist to database.'}
                 </div>
               </div>
             </TabsContent>
