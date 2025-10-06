@@ -41,7 +41,7 @@ export function AssessmentEditor({
         node_id: nodeId,
         assessment_type: type,
         points_possible: 10,
-        is_graded: true,
+        is_graded: false,
         quiz_questions: [],
         checklist_items: [],
         metadata: {},
@@ -127,7 +127,13 @@ export function AssessmentEditor({
           // Save metadata changes to database
           console.log("💾 Saving metadata to database:", updatedMetadata);
           const savedAssessment = await updateAssessmentMetadata(assessment.id, updatedMetadata);
-          updatedAssessment = savedAssessment;
+          
+          // Preserve current UI state for fields not being updated (especially is_graded)
+          updatedAssessment = {
+            ...savedAssessment,
+            is_graded: assessment.is_graded, // Preserve current grading setting
+            points_possible: assessment.points_possible, // Preserve current points
+          };
         } else {
           // Handle group assessment fields
           await updateAssessmentGroupSettings(assessment.id, {
