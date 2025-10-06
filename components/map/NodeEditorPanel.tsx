@@ -201,7 +201,10 @@ export function NodeEditorPanel({
   );
 
   const handleAssessmentChange = useCallback(
-    (changedAssessment: NodeAssessment | null, action: "add" | "delete" | "update") => {
+    (
+      changedAssessment: NodeAssessment | null,
+      action: "add" | "delete" | "update"
+    ) => {
       if (!selectedNode) return;
 
       console.log(
@@ -215,7 +218,7 @@ export function NodeEditorPanel({
       );
 
       let newAssessments: NodeAssessment[];
-      
+
       if (action === "delete") {
         newAssessments = [];
       } else if (action === "add" && changedAssessment) {
@@ -224,8 +227,10 @@ export function NodeEditorPanel({
       } else if (action === "update" && changedAssessment) {
         // For update, update the existing assessment in place
         const currentAssessments = nodeData.node_assessments || [];
-        const existingIndex = currentAssessments.findIndex(a => a.id === changedAssessment.id);
-        
+        const existingIndex = currentAssessments.findIndex(
+          (a) => a.id === changedAssessment.id
+        );
+
         if (existingIndex >= 0) {
           newAssessments = [...currentAssessments];
           newAssessments[existingIndex] = changedAssessment;
@@ -262,7 +267,6 @@ export function NodeEditorPanel({
     },
     [selectedNode, onNodeDataChange, nodeData.node_assessments]
   );
-
 
   const handleDeleteNode = useCallback(() => {
     if (selectedNode && onNodeDelete) {
@@ -407,7 +411,7 @@ export function NodeEditorPanel({
                             id="textColor"
                             type="color"
                             value={
-                              (nodeData.metadata as any)?.textColor || "#374151"
+                              (nodeData.metadata as any)?.textColor || "#d5e5ff"
                             }
                             onChange={(e) => {
                               const newMetadata = {
@@ -424,7 +428,7 @@ export function NodeEditorPanel({
                           />
                           <Input
                             value={
-                              (nodeData.metadata as any)?.textColor || "#374151"
+                              (nodeData.metadata as any)?.textColor || "#d5e5ff"
                             }
                             onChange={(e) => {
                               const newMetadata = {
@@ -437,7 +441,7 @@ export function NodeEditorPanel({
                                 });
                               }
                             }}
-                            placeholder="#374151"
+                            placeholder="#d5e5ff"
                             className="flex-1 text-xs"
                           />
                         </div>
@@ -656,7 +660,10 @@ export function NodeEditorPanel({
 
                               try {
                                 // Save sprite to database immediately
-                                console.log("🖼️ Saving sprite to database:", spriteUrl);
+                                console.log(
+                                  "🖼️ Saving sprite to database:",
+                                  spriteUrl
+                                );
                                 await updateNode(selectedNode.id, {
                                   sprite_url: spriteUrl,
                                 });
@@ -674,14 +681,19 @@ export function NodeEditorPanel({
 
                                 toast({
                                   title: "Sprite updated!",
-                                  description: "Node sprite has been saved successfully."
+                                  description:
+                                    "Node sprite has been saved successfully.",
                                 });
                               } catch (error) {
-                                console.error("❌ Failed to save sprite:", error);
+                                console.error(
+                                  "❌ Failed to save sprite:",
+                                  error
+                                );
                                 toast({
                                   title: "Failed to save sprite",
-                                  description: (error as Error).message || "Unknown error",
-                                  variant: "destructive"
+                                  description:
+                                    (error as Error).message || "Unknown error",
+                                  variant: "destructive",
                                 });
                               }
                             }}

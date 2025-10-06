@@ -1388,7 +1388,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         metadata: {
           position: nodePosition,
           fontSize: "16px",
-          textColor: "#374151",
+          textColor: "#d5e5ff",
           backgroundColor: "transparent",
           fontWeight: "normal",
           textAlign: "center",

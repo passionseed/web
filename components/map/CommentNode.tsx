@@ -31,11 +31,15 @@ export function CommentNode({
   userRole = "student",
 }: CommentNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [text, setText] = useState(data.title || "Click to add instructor comment");
+  const [text, setText] = useState(
+    data.title || "Click to add instructor comment"
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Only instructors and TAs can edit comment nodes
-  const canEdit = allowEdit && (userRole === "instructor" || userRole === "TA" || userRole === "admin");
+  const canEdit =
+    allowEdit &&
+    (userRole === "instructor" || userRole === "TA" || userRole === "admin");
 
   // Handle double-click to edit (only if enabled and editing is allowed)
   const handleDoubleClick = () => {
@@ -54,7 +58,7 @@ export function CommentNode({
     setText(e.target.value);
     // Auto-resize textarea
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   };
@@ -85,7 +89,7 @@ export function CommentNode({
       textareaRef.current.focus();
       textareaRef.current.select();
       // Set initial height
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [isEditing]);
@@ -93,7 +97,7 @@ export function CommentNode({
   // Get text styling based on metadata
   const textStyle = {
     fontSize: (data.metadata as any)?.fontSize || "14px",
-    color: (data.metadata as any)?.textColor || "#374151",
+    color: (data.metadata as any)?.textColor || "#d5e5ff",
     fontWeight: (data.metadata as any)?.fontWeight || "normal",
     textAlign: (data.metadata as any)?.textAlign || ("left" as const),
   };
@@ -104,19 +108,16 @@ export function CommentNode({
     ${
       selected
         ? "border-yellow-400 bg-yellow-100/90 shadow-xl scale-105"
-        : canEdit 
-        ? "border-yellow-300 bg-yellow-50/90 hover:bg-yellow-100/90 shadow-md hover:shadow-lg cursor-pointer"
-        : "border-yellow-200 bg-yellow-50/70 shadow-sm"
+        : canEdit
+          ? "border-yellow-300 bg-yellow-50/90 hover:bg-yellow-100/90 shadow-md hover:shadow-lg cursor-pointer"
+          : "border-yellow-200 bg-yellow-50/70 shadow-sm"
     }
     ${isEditing ? "border-yellow-500 shadow-lg" : ""}
     backdrop-blur-sm
   `.trim();
 
   return (
-    <div
-      className={containerClassName}
-      onDoubleClick={handleDoubleClick}
-    >
+    <div className={containerClassName} onDoubleClick={handleDoubleClick}>
       {/* Comment icon header */}
       <div className="flex items-center gap-2 mb-2">
         <MessageSquare className="h-4 w-4 text-yellow-600" />
@@ -145,14 +146,14 @@ export function CommentNode({
             color: textStyle.color,
             fontWeight: textStyle.fontWeight,
             textAlign: textStyle.textAlign,
-            minHeight: '60px',
+            minHeight: "60px",
           }}
           placeholder="Enter instructor comment..."
           rows={3}
         />
       ) : (
         <div
-          className={`select-none whitespace-pre-wrap min-h-[60px] ${canEdit ? 'cursor-pointer' : ''}`}
+          className={`select-none whitespace-pre-wrap min-h-[60px] ${canEdit ? "cursor-pointer" : ""}`}
           style={textStyle}
         >
           {text || "Click to add instructor comment"}
