@@ -12,6 +12,7 @@ import {
   updateQuizQuestion,
   deleteQuizQuestion,
   updateAssessmentMetadata,
+  updateNodeAssessment,
 } from "@/lib/supabase/assessment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateAssessmentGroupSettings } from "@/lib/supabase/assessment-groups";
