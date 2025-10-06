@@ -29,7 +29,7 @@ export function QuizSettings({
   useEffect(() => {
     const currentValue = assessment.metadata?.questions_to_show || assessment.quiz_questions?.length || 1;
     setQuestionsInputValue(currentValue.toString());
-  }, [assessment.metadata?.questions_to_show, assessment.quiz_questions?.length]);
+  }, [assessment.id, assessment.metadata?.questions_to_show, assessment.quiz_questions?.length]);
 
   const getSettingsSummary = () => {
     const parts: string[] = [];
@@ -135,9 +135,39 @@ export function QuizSettings({
               <Checkbox
                 id="randomize_questions"
                 checked={assessment.metadata?.randomize_questions || false}
-                onCheckedChange={(checked) =>
-                  onGroupSettingsChange('randomize_questions', checked as boolean)
-                }
+                onCheckedChange={(checked) => {
+                  // When enabling randomization, also set a sensible default for questions_to_show
+                  if (checked) {
+                    const totalQuestions = assessment.quiz_questions?.length || 1;
+                    const defaultQuestionsToShow = Math.min(3, totalQuestions);
+
+                    // Update both randomize_questions and questions_to_show
+                    const updatedMetadata = {
+                      ...assessment.metadata,
+                      randomize_questions: true,
+                      questions_to_show: assessment.metadata?.questions_to_show || defaultQuestionsToShow
+                    };
+
+                    // Save the complete metadata object
+                    Object.keys(updatedMetadata).forEach(key => {
+                      if (key !== 'randomize_questions') {
+                        // Only need to set randomize_questions once, other fields are already set
+                        return;
+                      }
+                    });
+
+                    onGroupSettingsChange('randomize_questions', checked as boolean);
+
+                    // If questions_to_show wasn't set before, set it now
+                    if (!assessment.metadata?.questions_to_show) {
+                      setTimeout(() => {
+                        onGroupSettingsChange('questions_to_show', defaultQuestionsToShow);
+                      }, 100);
+                    }
+                  } else {
+                    onGroupSettingsChange('randomize_questions', checked as boolean);
+                  }
+                }}
               />
               <Label htmlFor="randomize_questions" className="text-xs font-normal flex items-center gap-1">
                 🎲 Randomize questions

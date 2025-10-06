@@ -48,6 +48,25 @@ export const createNodeAssessment = async (
   return data;
 };
 
+export const updateNodeAssessment = async (
+  id: string,
+  updates: Partial<NodeAssessment>
+): Promise<NodeAssessment> => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("node_assessments")
+    .update(updates)
+    .eq("id", id)
+    .select("*, quiz_questions(*)")
+    .single();
+
+  if (error) {
+    console.error("Error updating assessment:", error);
+    throw new Error("Could not update assessment.");
+  }
+  return data;
+};
+
 export const updateAssessmentMetadata = async (
   id: string,
   metadata: Record<string, any>
