@@ -5,9 +5,10 @@ import { AppNode, AppEdge, ExtendedMapNode } from "../types";
 import { NODE_STYLE, EDGE_STYLE } from "../constants";
 import { generateTempId, getRandomPosition } from "./helpers";
 
-export function transformMapToReactFlow(
-  map: FullLearningMap
-): { transformedNodes: AppNode[]; transformedEdges: AppEdge[] } {
+export function transformMapToReactFlow(map: FullLearningMap): {
+  transformedNodes: AppNode[];
+  transformedEdges: AppEdge[];
+} {
   const transformedNodes: AppNode[] = map.map_nodes.map((node) => {
     const extendedNode: ExtendedMapNode = {
       ...node,
@@ -108,7 +109,7 @@ export function createNewTextNode(map: FullLearningMap): {
     metadata: {
       position: { x: 150, y: 150 },
       fontSize: "16px",
-      textColor: "#374151",
+      textColor: "#d5e5ff",
       backgroundColor: "transparent",
       fontWeight: "normal",
       textAlign: "center",

@@ -76,7 +76,7 @@ export function TextNode({
   // Get text styling based on metadata
   const textStyle = {
     fontSize: (data.metadata as any)?.fontSize || "16px",
-    color: (data.metadata as any)?.textColor || "#374151",
+    color: (data.metadata as any)?.textColor || "#d5e5ff",
     backgroundColor: (data.metadata as any)?.backgroundColor || "transparent",
     fontWeight: (data.metadata as any)?.fontWeight || "normal",
     textAlign: (data.metadata as any)?.textAlign || ("center" as const),
