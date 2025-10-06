@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { NodeAssessment, AssessmentType, QuizQuestion } from "@/types/map";
 import { Trash2 } from "lucide-react";
-import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion, updateAssessmentMetadata } from "@/lib/supabase/assessment";
+import { createNodeAssessment, deleteNodeAssessment, createQuizQuestion, updateQuizQuestion, deleteQuizQuestion, updateAssessmentMetadata, updateNodeAssessment } from "@/lib/supabase/assessment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateAssessmentGroupSettings } from "@/lib/supabase/assessment-groups";
 import { QuizEditor } from "./AssessmentEditor/QuizEditor";
@@ -98,14 +98,33 @@ export function AssessmentEditor({
   }, [assessment, onAssessmentChange, toast]);
 
   const handleGradingChange = useCallback(
-    (field: 'is_graded' | 'points_possible', value: boolean | number | null) => {
+    async (field: 'is_graded' | 'points_possible', value: boolean | number | null) => {
       if (!assessment) return;
 
-      const updatedAssessment = { ...assessment, [field]: value };
-      console.log(`📊 Updating ${field}:`, value);
-      onAssessmentChange(updatedAssessment, "add");
+      try {
+        console.log(`📊 Updating ${field}:`, value);
+
+        // Save to database
+        const updatedAssessment = await updateNodeAssessment(assessment.id, {
+          [field]: value
+        });
+
+        console.log(`✅ ${field} saved to database:`, updatedAssessment[field]);
+
+        // Update local state with fresh data from DB
+        onAssessmentChange(updatedAssessment, "update");
+
+        toast({ title: "Grading settings updated ✓" });
+      } catch (error) {
+        console.error(`❌ Failed to update ${field}:`, error);
+        toast({
+          title: "Failed to update grading settings",
+          description: (error as Error).message || "Unknown error",
+          variant: "destructive"
+        });
+      }
     },
-    [assessment, onAssessmentChange]
+    [assessment, onAssessmentChange, toast]
   );
 
   const handleGroupSettingsChange = useCallback(
@@ -114,7 +133,8 @@ export function AssessmentEditor({
 
       try {
         console.log(`⚙️ Updating assessment setting ${field}:`, value);
-        
+        console.log(`📊 Current assessment metadata:`, assessment.metadata);
+
         let updatedAssessment: NodeAssessment;
 
         // Handle metadata fields (randomization and attempt settings)
@@ -123,10 +143,12 @@ export function AssessmentEditor({
             ...assessment.metadata,
             [field]: value
           };
-          
+
           // Save metadata changes to database
           console.log("💾 Saving metadata to database:", updatedMetadata);
           const savedAssessment = await updateAssessmentMetadata(assessment.id, updatedMetadata);
+          console.log("✅ Metadata saved successfully, returned assessment:", savedAssessment);
+          console.log("📋 New metadata state:", savedAssessment.metadata);
           updatedAssessment = savedAssessment;
         } else {
           // Handle group assessment fields
@@ -140,8 +162,9 @@ export function AssessmentEditor({
 
           updatedAssessment = { ...assessment, [field]: value };
         }
-        
+
         // Update local state
+        console.log("🔄 Updating local state with assessment:", updatedAssessment.id);
         onAssessmentChange(updatedAssessment, "update");
 
         toast({ title: "Settings updated ✓" });
