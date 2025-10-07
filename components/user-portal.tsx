@@ -290,56 +290,68 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                             </Badge>
                           </div>
 
-                          {/* Progress bars - stacked vertically */}
+                          {/* Average ratings summary */}
                           <div className="space-y-2 mb-4">
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1">
-                                <Heart className="h-3 w-3 text-pink-500" />
-                                <span className="text-xs font-medium">Satisfaction</span>
-                              </div>
-                              <span className="text-xs font-bold">{reflection.satisfaction_rating}</span>
+                              <span className="text-pink-500 text-xs">💗 Satisfaction</span>
+                              <span className="text-xs font-medium">{reflection.satisfaction_rating}</span>
                             </div>
-                            <div className="w-full bg-muted rounded-full h-1.5">
+                            <div className="w-full bg-muted/60 rounded-full h-1.5">
                               <div 
                                 className="bg-pink-500 h-1.5 rounded-full transition-all duration-300"
                                 style={{ width: `${reflection.satisfaction_rating}%` }}
                               />
                             </div>
-
+                            
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1">
-                                <TrendingUp className="h-3 w-3 text-blue-500" />
-                                <span className="text-xs font-medium">Progress</span>
-                              </div>
-                              <span className="text-xs font-bold">{reflection.progress_rating}</span>
+                              <span className="text-blue-500 text-xs">📈 Progress</span>
+                              <span className="text-xs font-medium">{reflection.progress_rating}</span>
                             </div>
-                            <div className="w-full bg-muted rounded-full h-1.5">
+                            <div className="w-full bg-muted/60 rounded-full h-1.5">
                               <div 
                                 className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
                                 style={{ width: `${reflection.progress_rating}%` }}
                               />
                             </div>
-
+                            
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1">
-                                <Zap className="h-3 w-3 text-orange-500" />
-                                <span className="text-xs font-medium">Challenge</span>
-                              </div>
-                              <span className="text-xs font-bold">{reflection.challenge_rating}</span>
+                              <span className="text-orange-500 text-xs">⚡ Challenge</span>
+                              <span className="text-xs font-medium">{reflection.challenge_rating}</span>
                             </div>
-                            <div className="w-full bg-muted rounded-full h-1.5">
+                            <div className="w-full bg-muted/60 rounded-full h-1.5">
                               <div 
                                 className="bg-orange-500 h-1.5 rounded-full transition-all duration-300"
                                 style={{ width: `${reflection.challenge_rating}%` }}
                               />
                             </div>
                           </div>
-                          
-                          {/* Preview of reflection text */}
-                          <div className="bg-muted/30 rounded p-2">
-                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                              {reflection.overall_reflection}
-                            </p>
+
+                          {/* Topics with updates preview */}
+                          <div className="bg-muted/20 rounded p-2">
+                            {reflection.mindmap_topics.filter(topic => topic.notes).length > 0 ? (
+                              <div className="space-y-1">
+                                {reflection.mindmap_topics
+                                  .filter(topic => topic.notes)
+                                  .slice(0, 2)
+                                  .map((topic, idx) => (
+                                    <div key={topic.id} className="text-xs">
+                                      <span className="font-medium text-emerald-600">{topic.text}:</span>
+                                      <span className="text-muted-foreground ml-1 line-clamp-1">
+                                        {topic.notes}
+                                      </span>
+                                    </div>
+                                  ))}
+                                {reflection.mindmap_topics.filter(topic => topic.notes).length > 2 && (
+                                  <p className="text-xs text-muted-foreground italic">
+                                    +{reflection.mindmap_topics.filter(topic => topic.notes).length - 2} more topics
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground italic">
+                                No topic updates available
+                              </p>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -353,7 +365,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
 
         {/* Reflection Detail Modal */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             {selectedReflection && (
               <>
                 <DialogHeader>
@@ -363,9 +375,9 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                   </DialogTitle>
                 </DialogHeader>
                 
-                <div className="space-y-6 pt-4">
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4">
+                <div className="pt-6">
+                  {/* Average Ratings Summary */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
                     <div className="text-center p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
                       <Heart className="h-6 w-6 text-pink-500 mx-auto mb-2" />
                       <div className="text-2xl font-bold text-pink-600">{selectedReflection.satisfaction_rating}%</div>
@@ -383,50 +395,67 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                     </div>
                   </div>
 
-                  {/* Topics */}
-                  <div>
-                    <h3 className="font-semibold mb-3">Topics Reflected On</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      {selectedReflection.mindmap_topics.map((topic) => (
-                        <div key={topic.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                          <div className="w-2 h-2 bg-primary rounded-full" />
-                          <span className="text-sm font-medium">{topic.text}</span>
-                          {topic.notes && (
-                            <Badge variant="outline" className="text-xs">
-                              ✓
-                            </Badge>
-                          )}
+                  {/* Individual Topic Cards */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Topics & Reflections</h3>
+                    <div className="grid gap-4">
+                      {selectedReflection.mindmap_topics
+                        .filter(topic => topic.notes)
+                        .map((topic) => (
+                          <Card key={topic.id} className="bg-card/50 border">
+                            <CardContent className="p-4">
+                              {/* Topic Name */}
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                                <h4 className="font-semibold text-emerald-600">{topic.text}</h4>
+                              </div>
+                              
+                              {/* Updates */}
+                              <div className="mb-4">
+                                <h5 className="text-sm font-medium text-muted-foreground mb-2">Updates:</h5>
+                                <div className="bg-muted/30 rounded-lg p-3">
+                                  <p className="text-sm leading-relaxed">{topic.notes}</p>
+                                </div>
+                              </div>
+                              
+                              {/* Individual Ratings (if we stored them - placeholder for now) */}
+                              <div className="grid grid-cols-3 gap-3">
+                                <div className="text-center p-2 bg-pink-50 dark:bg-pink-900/20 rounded">
+                                  <Heart className="h-4 w-4 text-pink-500 mx-auto mb-1" />
+                                  <div className="text-sm font-medium">N/A</div>
+                                  <div className="text-xs text-muted-foreground">Satisfaction</div>
+                                </div>
+                                <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                  <TrendingUp className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                                  <div className="text-sm font-medium">N/A</div>
+                                  <div className="text-xs text-muted-foreground">Progress</div>
+                                </div>
+                                <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
+                                  <Zap className="h-4 w-4 text-orange-500 mx-auto mb-1" />
+                                  <div className="text-sm font-medium">N/A</div>
+                                  <div className="text-xs text-muted-foreground">Challenge</div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                    </div>
+                    
+                    {/* Topics without updates */}
+                    {selectedReflection.mindmap_topics.filter(topic => !topic.notes).length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="font-medium text-muted-foreground mb-2">Topics Added (No Updates)</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedReflection.mindmap_topics
+                            .filter(topic => !topic.notes)
+                            .map((topic) => (
+                              <Badge key={topic.id} variant="outline" className="text-xs">
+                                {topic.text}
+                              </Badge>
+                            ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Progress Made */}
-                  {selectedReflection.mindmap_topics.filter(topic => topic.notes).length > 0 && (
-                    <div>
-                      <h3 className="font-semibold mb-3">Progress Made</h3>
-                      <div className="space-y-3">
-                        {selectedReflection.mindmap_topics
-                          .filter(topic => topic.notes)
-                          .map(topic => (
-                            <div key={topic.id} className="border-l-4 border-emerald-400 pl-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-r-lg">
-                              <div className="font-medium text-emerald-700 dark:text-emerald-300">{topic.text}</div>
-                              <div className="text-sm text-muted-foreground mt-1">{topic.notes}</div>
-                            </div>
-                          ))
-                        }
                       </div>
-                    </div>
-                  )}
-
-                  {/* Full Reflection */}
-                  <div>
-                    <h3 className="font-semibold mb-3">Reflection</h3>
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {selectedReflection.overall_reflection}
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
               </>

@@ -445,16 +445,97 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
     
     const rect = canvas.getBoundingClientRect();
     const centerX = rect.width / 2;
-    const centerY = 300; // Fixed center Y for 600px height
+    const centerY = rect.height / 2;
     
-    // Generate position around the center username bubble
-    const angle = Math.random() * 2 * Math.PI;
-    const radius = 150 + Math.random() * 100; // 150-250px from center
+    const isMobile = rect.width < 640;
     
-    return {
-      x: Math.max(50, Math.min(rect.width - 150, centerX + Math.cos(angle) * radius)),
-      y: Math.max(25, Math.min(575, centerY + Math.sin(angle) * radius)) // 575 = 600 - 25
-    };
+    // For mobile, use extremely tight grid-like positioning
+    if (isMobile) {
+      // Use minimal radius to keep everything super close to center
+      const maxRadius = 15; // Even smaller - basically just around the center bubble
+      
+      // Massive safety margins to prevent any cropping
+      const marginX = 100; // Very large horizontal margins
+      const marginY = 60;  // Very large vertical margins
+      
+      // Conservative topic dimensions (overestimate to be safe)
+      const topicHeight = 40;   // Larger estimate
+      const maxTopicWidth = 150; // Much larger width estimate
+      
+      // Calculate safe area
+      const safeWidth = rect.width - (marginX * 2);
+      const safeHeight = rect.height - (marginY * 2);
+      
+      // If safe area is too small, just stack vertically near center
+      if (safeWidth < maxTopicWidth + 20 || safeHeight < 100) {
+        return {
+          x: Math.max(marginX, centerX - maxTopicWidth / 2),
+          y: Math.max(marginY, centerY + (Math.random() - 0.5) * 30)
+        };
+      }
+      
+      // Try to place within tiny radius, with immediate fallback to center
+      let attempts = 0;
+      let x, y;
+      
+      do {
+        attempts++;
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = Math.random() * maxRadius; // 0-15px from center
+        
+        x = centerX + Math.cos(angle) * radius;
+        y = centerY + Math.sin(angle) * radius;
+        
+        // Immediately fallback to center stacking if any positioning issue
+        if (attempts > 2) {
+          x = centerX - maxTopicWidth / 2 + (Math.random() - 0.5) * 10;
+          y = centerY + (Math.random() - 0.5) * 40;
+          break;
+        }
+      } while (attempts <= 2);
+      
+      // Final absolute bounds check - force within safe area
+      x = Math.max(marginX, Math.min(rect.width - marginX - maxTopicWidth, x));
+      y = Math.max(marginY, Math.min(rect.height - marginY - topicHeight, y));
+      
+      return { x, y };
+    } else {
+      // Desktop positioning (original logic)
+      const baseRadius = 150;
+      const radiusRange = 100;
+      const marginX = 10;
+      const marginY = 10;
+      const maxTopicWidth = 120;
+      const maxTopicHeight = 36;
+      
+      let attempts = 0;
+      let x, y;
+      
+      do {
+        attempts++;
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = baseRadius + Math.random() * radiusRange;
+        
+        x = centerX + Math.cos(angle) * radius;
+        y = centerY + Math.sin(angle) * radius;
+        
+        const maxX = rect.width - maxTopicWidth - marginX;
+        const maxY = rect.height - maxTopicHeight - marginY;
+        
+        x = Math.max(marginX, Math.min(maxX, x));
+        y = Math.max(marginY, Math.min(maxY, y));
+        
+        if (attempts > 15) {
+          x = centerX + Math.cos(angle) * 100;
+          y = centerY + Math.sin(angle) * 100;
+          x = Math.max(marginX, Math.min(rect.width - maxTopicWidth - marginX, x));
+          y = Math.max(marginY, Math.min(rect.height - maxTopicHeight - marginY, y));
+          break;
+        }
+      } while (attempts <= 15);
+      
+      return { x, y };
+    }
   }, []);
 
   const addTopic = useCallback(async () => {
@@ -662,8 +743,8 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
       setTopicNotes("");
       
       toast({
-        title: "Notes saved!",
-        description: "Your notes have been updated for this topic"
+        title: "Updates saved!",
+        description: "Your updates have been saved for this topic"
       });
     } catch (error) {
       console.error(`[${operationId}] Failed to save notes:`, error);
@@ -671,7 +752,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
       await reloadTopicsFromDatabase(operationId, true);
       
       toast({
-        title: "Error saving notes",
+        title: "Error saving updates",
         description: "Please try again",
         variant: "destructive"
       });
@@ -726,10 +807,24 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
     
     // Only update position if we've passed the threshold
     if (hasDraggedBeyondThreshold) {
+      const isMobile = rect.width < 640;
+      const maxTopicWidth = isMobile ? 100 : 120;  // Use conservative estimates
+      const maxTopicHeight = isMobile ? 35 : 36;
+      const halfWidth = maxTopicWidth / 2;
+      const halfHeight = maxTopicHeight / 2;
+      
+      // Very conservative margins for mobile drag bounds
+      const marginX = isMobile ? 40 : 10;  // Increased to match positioning
+      const marginY = isMobile ? 25 : 10;  // Increased to match positioning
+      
       setTopics(prev => {
         const updatedTopics = prev.map(topic => 
           topic.id === draggedTopic 
-            ? { ...topic, x: Math.max(0, Math.min(rect.width - 120, currentX - 60)), y: Math.max(0, Math.min(rect.height - 30, currentY - 15)) }
+            ? { 
+                ...topic, 
+                x: Math.max(marginX, Math.min(rect.width - maxTopicWidth - marginX, currentX - halfWidth)), 
+                y: Math.max(marginY, Math.min(rect.height - maxTopicHeight - marginY, currentY - halfHeight)) 
+              }
             : topic
         );
         // Save to session storage in reflection mode when dragging (for instant feedback)
@@ -879,33 +974,32 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
   }, [saveTopicsToDatabase, reloadTopicsFromDatabase, toast, isReflectionMode, topics, isOperationInProgress]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            What are you currently doing?
-            <div className="ml-auto flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={deleteAllTopics}
-                disabled={topics.length === 0}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete All Topics
-              </Button>
-            </div>
+        <CardHeader className="pb-4">
+          <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <span className="text-base sm:text-lg">What are you currently doing?</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={deleteAllTopics}
+              disabled={topics.length === 0}
+              className="w-full sm:w-auto sm:ml-auto"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete All Topics
+            </Button>
           </CardTitle>
         </CardHeader>
       </Card>
 
       {/* Mindmap Canvas */}
-      <Card className="min-h-[600px]">
+      <Card className="min-h-[400px] sm:min-h-[600px]">
         <CardContent className="p-0">
           <div 
             ref={canvasRef}
-            className="relative w-full h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 overflow-hidden rounded-lg flex items-center justify-center"
+            className="relative w-full h-[400px] sm:h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 overflow-hidden rounded-lg flex items-center justify-center"
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
@@ -914,7 +1008,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full px-8 py-6 text-center font-bold text-xl shadow-xl border-4 border-white min-w-[250px] max-w-[350px] relative z-20"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full px-4 sm:px-8 py-3 sm:py-6 text-center font-bold text-base sm:text-xl shadow-xl border-2 sm:border-4 border-white min-w-[180px] sm:min-w-[250px] max-w-[280px] sm:max-w-[350px] relative z-20"
             >
               {username}
             </motion.div>
@@ -938,7 +1032,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
                       );
                     }
                   }}
-                  className="absolute cursor-pointer select-none bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-full px-4 py-2 text-center font-medium text-sm shadow-lg border-2 border-white max-w-[120px] group hover:shadow-xl transition-shadow"
+                  className="absolute cursor-pointer select-none bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-full px-2 sm:px-4 py-1 sm:py-2 text-center font-medium text-xs sm:text-sm shadow-lg border-1 sm:border-2 border-white max-w-[80px] sm:max-w-[120px] group hover:shadow-xl transition-shadow"
                   style={{ 
                     left: topic.x, 
                     top: topic.y,
@@ -953,16 +1047,16 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
                   <div className="flex items-center justify-center gap-1">
                     <span className="break-words text-xs">{topic.text}</span>
                     {topic.notes && (
-                      <Edit3 className="h-2 w-2 opacity-70" />
+                      <Edit3 className="h-1.5 w-1.5 sm:h-2 sm:w-2 opacity-70" />
                     )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         removeTopic(topic.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 rounded-full p-1"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 rounded-full p-0.5 sm:p-1"
                     >
-                      <X className="h-2 w-2 text-red-600" />
+                      <X className="h-1.5 w-1.5 sm:h-2 sm:w-2 text-red-600" />
                     </button>
                   </div>
                 </motion.div>
@@ -978,17 +1072,16 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
               }}
             >
               {topics.map((topic) => {
-                // Canvas is 600px high, width varies - get actual center X but use fixed center Y
-                const centerX = canvasRef.current ? canvasRef.current.offsetWidth / 2 : 300;
-                const centerY = 300; // Fixed center Y for 600px height
+                const canvas = canvasRef.current;
+                if (!canvas) return null;
                 
-                // Calculate bubble width based on text length more accurately
-                // Using canvas measurement would be ideal, but for now estimate based on text
-                // Each character is approximately 7px in the small font, plus padding
-                const textWidth = topic.text.length * 7; // 7px per character for small font
-                const paddingX = 32; // px-4 = 16px each side
-                const bubbleWidth = Math.max(60, Math.min(120, textWidth + paddingX)); // Min 60px, max 120px
-                const bubbleHeight = 36; // py-2 padding + text height + border
+                const centerX = canvas.offsetWidth / 2;
+                const centerY = canvas.offsetHeight / 2; // Use actual canvas height
+                
+                // Calculate bubble dimensions based on screen size
+                const isMobile = canvas.offsetWidth < 640;
+                const bubbleWidth = isMobile ? 80 : Math.max(60, Math.min(120, topic.text.length * 7 + 32));
+                const bubbleHeight = isMobile ? 30 : 36;
                 
                 const topicCenterX = topic.x + (bubbleWidth / 2);
                 const topicCenterY = topic.y + (bubbleHeight / 2);
@@ -1001,7 +1094,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
                     x2={centerX}
                     y2={centerY}
                     stroke="rgb(148 163 184)"
-                    strokeWidth="2"
+                    strokeWidth={isMobile ? "1" : "2"}
                     strokeDasharray="5,5"
                     opacity="0.6"
                   />
@@ -1014,34 +1107,40 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="absolute bottom-6 left-6 bg-white dark:bg-slate-800 rounded-lg shadow-xl border p-4 min-w-[300px]"
+                className="absolute bottom-4 left-2 right-2 sm:bottom-6 sm:left-6 sm:right-auto bg-white dark:bg-slate-800 rounded-lg shadow-xl border p-3 sm:p-4 sm:min-w-[300px]"
               >
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Input
                     autoFocus
                     placeholder="What topic are you working on?"
                     value={newTopicText}
                     onChange={(e) => setNewTopicText(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    className="flex-1"
+                    className="flex-1 text-sm"
                   />
-                  <Button 
-                    size="sm" 
-                    onClick={addTopic} 
-                    disabled={!newTopicText.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => {
-                      setIsAddingTopic(false);
-                      setNewTopicText("");
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={addTopic} 
+                      disabled={!newTopicText.trim()}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <Plus className="h-4 w-4 sm:mr-0 mr-2" />
+                      <span className="sm:hidden">Add</span>
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsAddingTopic(false);
+                        setNewTopicText("");
+                      }}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <X className="h-4 w-4 sm:mr-0 mr-2" />
+                      <span className="sm:hidden">Cancel</span>
+                    </Button>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Press Enter to add, Escape to cancel
@@ -1055,7 +1154,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 onClick={() => setIsAddingTopic(true)}
-                className="absolute bottom-6 left-6 bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+                className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 bg-green-500 hover:bg-green-600 text-white rounded-full p-2.5 sm:p-3 shadow-lg hover:shadow-xl transition-all"
               >
                 <Plus className="h-4 w-4" />
               </motion.button>
@@ -1067,10 +1166,10 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute top-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
+                className="absolute top-8 sm:top-16 left-1/2 transform -translate-x-1/2 pointer-events-none px-4"
               >
-                <div className="text-center text-muted-foreground bg-white/80 dark:bg-slate-800/80 rounded-lg p-4 backdrop-blur-sm">
-                  <p className="text-sm">Click the + button to add topics you're working on</p>
+                <div className="text-center text-muted-foreground bg-white/80 dark:bg-slate-800/80 rounded-lg p-3 sm:p-4 backdrop-blur-sm max-w-xs sm:max-w-none">
+                  <p className="text-xs sm:text-sm">Click the + button to add topics you're working on</p>
                 </div>
               </motion.div>
             )}
@@ -1078,20 +1177,20 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
         </CardContent>
       </Card>
 
-      {/* Topic Notes Dialog */}
+      {/* Topic Updates Dialog */}
       <Dialog open={isTopicDialogOpen} onOpenChange={setIsTopicDialogOpen}>
         <DialogContent className="sm:max-w-[600px] w-[90vw] max-h-[80vh] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
           <DialogHeader>
-            <DialogTitle>Topic Notes: {selectedTopic?.text}</DialogTitle>
+            <DialogTitle>Topic Updates: {selectedTopic?.text}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label htmlFor="notes" className="text-sm font-medium">
+              <label htmlFor="updates" className="text-sm font-medium">
                 What did you work on regarding this topic today?
               </label>
               <Textarea
-                id="notes"
-                placeholder="Write your notes here..."
+                id="updates"
+                placeholder="Write your updates here..."
                 value={topicNotes}
                 onChange={(e) => setTopicNotes(e.target.value)}
                 className="mt-2 min-h-[200px] text-base"
@@ -1111,7 +1210,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
               Cancel
             </Button>
             <Button onClick={saveTopicNotes}>
-              Save Notes
+              Save Updates
             </Button>
           </DialogFooter>
         </DialogContent>
