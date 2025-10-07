@@ -77,36 +77,40 @@ export default function MindmapReflectionPage() {
   };
 
   return (
-    <div className="container py-8">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => router.back()}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Mindmap Reflection</h1>
-          <p className="text-muted-foreground">
-            Create a visual map of what you're currently working on
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Mobile-optimized Header */}
+      <div className="container px-4 py-4">
+        <div className="flex flex-col space-y-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => router.back()}
+            className="flex items-center gap-2 self-start"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div className="text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold">Mindmap Reflection</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-2">
+              Create a visual map of what you're currently working on
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Mindmap Component */}
-      <MindmapReflection onSave={handleSave} onTopicsChange={setTopics} isReflectionMode={true} />
+      <div className="px-2 sm:px-4">
+        <MindmapReflection onSave={handleSave} onTopicsChange={setTopics} isReflectionMode={true} />
+      </div>
       
       {/* Continue Button */}
       {topics.length > 0 && (
-        <div className="flex justify-center mt-8">
+        <div className="container px-4 py-6">
           <Button 
             onClick={handleContinue}
             size="lg"
-            className="px-8"
+            className="w-full sm:w-auto sm:mx-auto sm:block"
           >
             Continue to Feelings
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -114,19 +118,21 @@ export default function MindmapReflectionPage() {
         </div>
       )}
       
-      {/* Instructions */}
-      <div className="mt-8 max-w-2xl">
-        <div className="bg-muted/50 rounded-lg p-6">
-          <h3 className="font-semibold mb-4">How to use Mindmap Reflection:</h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• The central "username" bubble represents you</li>
-            <li>• Click the + button to add topics you're working on</li>
-            <li>• Press Enter while typing to quickly add items</li>
-            <li>• Drag topic bubbles around to organize them visually</li>
-            <li>• Remove topics by clicking the X that appears when you hover</li>
-            <li>• Topics automatically connect to the central username bubble</li>
-            <li>• Save your mindmap to track what you're working on</li>
-          </ul>
+      {/* Instructions - Hidden on mobile, shown on larger screens */}
+      <div className="hidden sm:block container px-4 pb-8">
+        <div className="mt-8 max-w-2xl mx-auto">
+          <div className="bg-muted/50 rounded-lg p-6">
+            <h3 className="font-semibold mb-4">How to use Mindmap Reflection:</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• The central "username" bubble represents you</li>
+              <li>• Click the + button to add topics you're working on</li>
+              <li>• Press Enter while typing to quickly add items</li>
+              <li>• Drag topic bubbles around to organize them visually</li>
+              <li>• Remove topics by clicking the X that appears when you hover</li>
+              <li>• Topics automatically connect to the central username bubble</li>
+              <li>• Save your mindmap to track what you're working on</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

@@ -17,22 +17,18 @@ interface Topic {
   notes?: string;
 }
 
-interface FeelingRating {
+interface TopicRating {
   satisfaction: number;
   progress: number;
   challenge: number;
-}
-
-interface ReflectionAnswers {
-  overallWhy: string;
+  why?: string;
 }
 
 export default function MindmapSummaryPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [ratings, setRatings] = useState<FeelingRating>({ satisfaction: 0, progress: 0, challenge: 0 });
-  const [reflectionAnswers, setReflectionAnswers] = useState<ReflectionAnswers>({ overallWhy: "" });
+  const [topicRatings, setTopicRatings] = useState<{[topicId: string]: TopicRating}>({});
   const [currentDate, setCurrentDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isFirstView, setIsFirstView] = useState(true);
@@ -44,16 +40,10 @@ export default function MindmapSummaryPage() {
       setTopics(JSON.parse(storedTopics));
     }
 
-    // Get ratings from session storage
-    const storedRatings = sessionStorage.getItem('mindmap-ratings');
-    if (storedRatings) {
-      setRatings(JSON.parse(storedRatings));
-    }
-
-    // Get reflection answers from session storage
-    const storedReflection = sessionStorage.getItem('mindmap-reflection');
-    if (storedReflection) {
-      setReflectionAnswers(JSON.parse(storedReflection));
+    // Get topic ratings from session storage
+    const storedTopicRatings = sessionStorage.getItem('mindmap-topic-ratings');
+    if (storedTopicRatings) {
+      setTopicRatings(JSON.parse(storedTopicRatings));
     }
 
     // Set current date
@@ -76,11 +66,57 @@ export default function MindmapSummaryPage() {
   const topicsWithNotes = topics.filter(topic => topic.notes && topic.notes.trim());
   const topicsWithoutNotes = topics.filter(topic => !topic.notes || !topic.notes.trim());
 
+  // Calculate average ratings from topic ratings
+  const calculateAverageRatings = () => {
+    const topicsWithRatings = topicsWithNotes.filter(topic => topicRatings[topic.id]);
+    if (topicsWithRatings.length === 0) {
+      return { satisfaction: 0, progress: 0, challenge: 0 };
+    }
+
+    const totals = topicsWithRatings.reduce((acc, topic) => {
+      const rating = topicRatings[topic.id];
+      return {
+        satisfaction: acc.satisfaction + rating.satisfaction,
+        progress: acc.progress + rating.progress,
+        challenge: acc.challenge + rating.challenge
+      };
+    }, { satisfaction: 0, progress: 0, challenge: 0 });
+
+    return {
+      satisfaction: Math.round(totals.satisfaction / topicsWithRatings.length),
+      progress: Math.round(totals.progress / topicsWithRatings.length),
+      challenge: Math.round(totals.challenge / topicsWithRatings.length)
+    };
+  };
+
+  const averageRatings = calculateAverageRatings();
+
+  // Combine all topic "why" responses into a single reflection
+  const combinedReflection = topicsWithNotes
+    .map(topic => {
+      const rating = topicRatings[topic.id];
+      if (rating?.why && rating.why.trim()) {
+        return `${topic.text}: ${rating.why.trim()}`;
+      }
+      return null;
+    })
+    .filter(Boolean)
+    .join('\n\n');
+
+  // Debug logging
+  console.log('Debug info:', {
+    topics: topics.length,
+    topicsWithNotes: topicsWithNotes.length,
+    topicRatings: Object.keys(topicRatings).length,
+    combinedReflection: combinedReflection,
+    averageRatings
+  });
+
   const handleFinish = async () => {
-    if (!reflectionAnswers.overallWhy.trim()) {
+    if (!combinedReflection.trim()) {
       toast({
         title: "Missing reflection",
-        description: "Please complete your reflection before finishing.",
+        description: "Please complete your topic reflections before finishing.",
         variant: "destructive",
       });
       return;
@@ -91,18 +127,17 @@ export default function MindmapSummaryPage() {
     try {
       const reflectionData: MindmapReflectionData = {
         topics: topics,
-        satisfaction: ratings.satisfaction,
-        progress: ratings.progress,
-        challenge: ratings.challenge,
-        overallReflection: reflectionAnswers.overallWhy
+        satisfaction: averageRatings.satisfaction,
+        progress: averageRatings.progress,
+        challenge: averageRatings.challenge,
+        overallReflection: combinedReflection
       };
 
       await saveMindmapReflection(reflectionData);
       
       // Clear session storage after successful save
       sessionStorage.removeItem('mindmap-topics');
-      sessionStorage.removeItem('mindmap-ratings');
-      sessionStorage.removeItem('mindmap-reflection');
+      sessionStorage.removeItem('mindmap-topic-ratings');
       
       toast({
         title: "Reflection saved!",
@@ -178,7 +213,7 @@ export default function MindmapSummaryPage() {
       )}
 
       {/* Daily Reflection Card */}
-      {reflectionAnswers.overallWhy && (
+      {combinedReflection && (
         <div className="flex justify-center mb-8">
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
@@ -234,99 +269,116 @@ export default function MindmapSummaryPage() {
                 </p>
               </div>
               
-              {/* Today's Progress */}
-              <div className="bg-gradient-to-br from-amber-100/20 via-slate-700/80 to-slate-800/80 rounded-lg p-3 mb-3 border border-amber-400/30">
-                <h4 className="font-bold text-center mb-2 text-amber-300 text-sm tracking-wide">
-                  TODAY'S PROGRESS
-                </h4>
-                <div className="space-y-2 max-h-24 overflow-y-auto">
-                  {topicsWithNotes.map((topic, index) => (
-                    <div key={topic.id} className="border-l-2 border-emerald-400 pl-2 py-1 bg-slate-800/50 rounded-r-md">
-                      <div className="flex items-center gap-1 mb-1">
-                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-sm"></span>
-                        <span className="font-bold text-emerald-300 text-xs">{topic.text}</span>
+              {/* Individual Topic Sections */}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {topicsWithNotes.map((topic, index) => {
+                  const rating = topicRatings[topic.id];
+                  return (
+                    <div key={topic.id} className="bg-gradient-to-br from-amber-100/20 via-slate-700/80 to-slate-800/80 rounded-lg p-3 border border-amber-400/30">
+                      {/* Topic Name */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-sm"></span>
+                        <h4 className="font-bold text-emerald-300 text-sm tracking-wide">{topic.text}</h4>
                       </div>
-                      <p className="text-xs text-slate-300 leading-tight bg-slate-900/30 p-1.5 rounded">
-                        {topic.notes}
-                      </p>
+                      
+                      {/* Updates */}
+                      {topic.notes && (
+                        <div className="mb-2">
+                          <h5 className="text-xs font-semibold text-amber-300 mb-1">Updates:</h5>
+                          <p className="text-xs text-slate-300 leading-tight bg-slate-900/40 p-2 rounded border border-slate-600/50">
+                            {topic.notes}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Feelings */}
+                      {rating && (
+                        <div className="mb-2">
+                          <h5 className="text-xs font-semibold text-amber-300 mb-2">Feelings:</h5>
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1">
+                                <Heart className="h-2 w-2 text-pink-400" />
+                                <span className="text-xs text-pink-300">Satisfaction</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-12 bg-slate-600 rounded-full h-1 shadow-inner">
+                                  <div 
+                                    className="bg-gradient-to-r from-pink-400 to-pink-500 h-1 rounded-full shadow-sm transition-all duration-500"
+                                    style={{ width: `${rating.satisfaction}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-pink-300 w-6 text-right">{rating.satisfaction}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1">
+                                <TrendingUp className="h-2 w-2 text-blue-400" />
+                                <span className="text-xs text-blue-300">Progress</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-12 bg-slate-600 rounded-full h-1 shadow-inner">
+                                  <div 
+                                    className="bg-gradient-to-r from-blue-400 to-blue-500 h-1 rounded-full shadow-sm transition-all duration-500"
+                                    style={{ width: `${rating.progress}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-blue-300 w-6 text-right">{rating.progress}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1">
+                                <Zap className="h-2 w-2 text-orange-400" />
+                                <span className="text-xs text-orange-300">Challenge</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-12 bg-slate-600 rounded-full h-1 shadow-inner">
+                                  <div 
+                                    className="bg-gradient-to-r from-orange-400 to-orange-500 h-1 rounded-full shadow-sm transition-all duration-500"
+                                    style={{ width: `${rating.challenge}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-orange-300 w-6 text-right">{rating.challenge}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Why (Reflection) */}
+                      {rating?.why && (
+                        <div>
+                          <h5 className="text-xs font-semibold text-amber-300 mb-1">Reflection:</h5>
+                          <p className="text-xs text-slate-200 leading-tight bg-slate-900/40 p-2 rounded border border-slate-600/50">
+                            {rating.why}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                  {topicsWithoutNotes.map((topic, index) => (
-                    <div key={topic.id} className="flex items-center gap-1 text-xs opacity-60 py-0.5 border-l-2 border-slate-500 pl-2">
-                      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full"></span>
-                      <span className="text-slate-400">{topic.text}</span>
-                    </div>
-                  ))}
-                  {topics.length === 0 && (
-                    <p className="text-sm text-slate-400 text-center py-4">No topics added today</p>
-                  )}
-                </div>
-              </div>
-              
-              {/* Stats/Attributes Section */}
-              <div className="bg-gradient-to-br from-amber-100/20 via-slate-700/80 to-slate-800/80 rounded-lg p-3 mb-3 border border-amber-400/30">
-                <h4 className="font-bold text-center mb-2 text-amber-300 text-sm tracking-wide">
-                  DAILY ATTRIBUTES
-                </h4>
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center py-0.5">
-                    <div className="flex items-center gap-1">
-                      <Heart className="h-3 w-3 text-pink-400" />
-                      <span className="text-xs font-bold text-pink-300">Satisfaction</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-16 bg-slate-600 rounded-full h-1.5 shadow-inner">
-                        <div 
-                          className="bg-gradient-to-r from-pink-400 to-pink-500 h-1.5 rounded-full shadow-lg transition-all duration-500"
-                          style={{ width: `${ratings.satisfaction}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-pink-300 w-6 text-right">{ratings.satisfaction}</span>
+                  );
+                })}
+                
+                {/* Topics without updates */}
+                {topicsWithoutNotes.length > 0 && (
+                  <div className="bg-gradient-to-br from-amber-100/20 via-slate-700/80 to-slate-800/80 rounded-lg p-3 border border-amber-400/30">
+                    <h4 className="font-bold text-center mb-2 text-amber-300 text-xs tracking-wide">
+                      TOPICS TO EXPLORE NEXT TIME
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {topicsWithoutNotes.map((topic) => (
+                        <span key={topic.id} className="text-xs text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-slate-600/50">
+                          {topic.text}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                  
-                  <div className="flex justify-between items-center py-0.5">
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3 text-blue-400" />
-                      <span className="text-xs font-bold text-blue-300">Progress</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-16 bg-slate-600 rounded-full h-1.5 shadow-inner">
-                        <div 
-                          className="bg-gradient-to-r from-blue-400 to-blue-500 h-1.5 rounded-full shadow-lg transition-all duration-500"
-                          style={{ width: `${ratings.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-blue-300 w-6 text-right">{ratings.progress}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center py-0.5">
-                    <div className="flex items-center gap-1">
-                      <Zap className="h-3 w-3 text-orange-400" />
-                      <span className="text-xs font-bold text-orange-300">Challenge</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-16 bg-slate-600 rounded-full h-1.5 shadow-inner">
-                        <div 
-                          className="bg-gradient-to-r from-orange-400 to-orange-500 h-1.5 rounded-full shadow-lg transition-all duration-500"
-                          style={{ width: `${ratings.challenge}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-orange-300 w-6 text-right">{ratings.challenge}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Reflection Text */}
-              <div className="bg-gradient-to-br from-amber-100/20 via-slate-700/80 to-slate-800/80 rounded-lg p-3 border border-amber-400/30">
-                <h4 className="font-bold text-center mb-1 text-amber-300 text-sm tracking-wide">
-                  REFLECTION
-                </h4>
-                <div className="text-xs leading-tight text-slate-200 max-h-16 overflow-y-auto bg-slate-900/40 p-2 rounded border border-slate-600/50">
-                  {reflectionAnswers.overallWhy}
-                </div>
+                )}
+                
+                {topics.length === 0 && (
+                  <p className="text-sm text-slate-400 text-center py-4">No topics added today</p>
+                )}
               </div>
               
               {/* Card Footer */}
@@ -355,7 +407,7 @@ export default function MindmapSummaryPage() {
         </Button>
         <Button 
           onClick={handleFinish}
-          disabled={isSaving || !reflectionAnswers.overallWhy.trim()}
+          disabled={isSaving || !combinedReflection.trim()}
           size="lg"
           className="px-8"
         >
