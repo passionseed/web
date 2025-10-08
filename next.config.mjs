@@ -50,6 +50,9 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+    serverActions: {
+      bodySizeLimit: '50mb', // Allow up to 50MB for server actions and streaming
+    },
   },
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {

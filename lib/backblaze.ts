@@ -51,7 +51,8 @@ class BackblazeB2 {
   async uploadFile(
     file: File,
     userId: string,
-    nodeId: string
+    nodeId: string,
+    customPath?: string
   ): Promise<B2FileUploadResponse> {
     try {
       console.log("B2 Upload starting:", {
@@ -72,7 +73,9 @@ class BackblazeB2 {
       const randomString = Math.random().toString(36).substring(2, 15);
       const sanitizedOriginalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
       const fileExtension = sanitizedOriginalName.split(".").pop() || "bin";
-      const fileName = `submissions/${userId}/${nodeId}/${timestamp}_${randomString}.${fileExtension}`;
+
+      // Use custom path if provided, otherwise use default submissions path
+      const fileName = customPath || `submissions/${userId}/${nodeId}/${timestamp}_${randomString}.${fileExtension}`;
 
       console.log("Generated filename:", fileName);
 
@@ -308,6 +311,82 @@ class BackblazeB2 {
       console.error("Backblaze B2 signed URL error:", error);
       throw new Error(
         `Failed to generate signed URL: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  /**
+   * Generate a presigned PUT URL for direct client-to-B2 uploads
+   * This bypasses serverless function payload limits
+   * Note: Using PUT instead of POST for better B2 compatibility
+   */
+  async getPresignedUploadUrl(
+    userId: string,
+    nodeId: string,
+    fileName: string,
+    fileType: string,
+    fileSize: number,
+    uploadType: "submission" | "map-content" = "submission",
+    expiresIn: number = 3600
+  ): Promise<{
+    uploadUrl: string;
+    fileKey: string;
+    method: "PUT";
+  }> {
+    try {
+      // Generate secure filename
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const sanitizedOriginalName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const fileExtension = sanitizedOriginalName.split(".").pop() || "bin";
+
+      // Determine file path based on upload type
+      const fileKey = uploadType === "map-content"
+        ? `maps/${nodeId}/content/${timestamp}_${randomString}.${fileExtension}`
+        : `submissions/${userId}/${nodeId}/${timestamp}_${randomString}.${fileExtension}`;
+
+      console.log("Generating presigned PUT URL:", {
+        userId,
+        nodeId,
+        uploadType,
+        fileKey,
+        fileType,
+        fileSize,
+      });
+
+      // Create presigned PUT command (more compatible with B2)
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: fileKey,
+        ContentType: fileType || "application/octet-stream",
+        ContentLength: fileSize,
+        Metadata: {
+          "original-name": sanitizedOriginalName,
+          "user-id": userId,
+          "node-id": nodeId,
+          "upload-timestamp": timestamp.toString(),
+        },
+      });
+
+      const presignedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn,
+      });
+
+      console.log("Presigned PUT URL generated successfully:", {
+        url: presignedUrl.substring(0, 100) + "...",
+        bucket: this.bucketName,
+        endpoint: this.endpoint,
+      });
+
+      return {
+        uploadUrl: presignedUrl,
+        fileKey,
+        method: "PUT",
+      };
+    } catch (error) {
+      console.error("Backblaze B2 presigned PUT error:", error);
+      throw new Error(
+        `Failed to generate presigned upload URL: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }

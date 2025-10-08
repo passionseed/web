@@ -190,7 +190,7 @@ export function FileUpload({
 
       // Create unique ID for this upload
       const uploadId = `${file.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       // Add to uploading files set
       setUploadingFiles(prev => {
         const newSet = new Set(prev);
@@ -206,107 +206,187 @@ export function FileUpload({
       });
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("nodeId", nodeId);
+        // For large files or documents, use streaming proxy
+        const useStreamingUpload = file.size > 4 * 1024 * 1024 || uploadEndpoint === "documents";
 
-        // Start progress simulation
-        let uploadCompleted = false;
-        simulateProgress(() => {
-          uploadCompleted = true;
-        });
+        if (useStreamingUpload) {
+          console.log("Using streaming upload for large file:", file.name, "size:", file.size);
 
-        // Determine the upload endpoint based on the uploadEndpoint prop
-        const uploadUrl = uploadEndpoint === "images"
-          ? "/api/upload/images"
-          : uploadEndpoint === "documents"
-          ? "/api/upload/documents"
-          : "/api/upload";
+          // Start progress simulation
+          let uploadCompleted = false;
+          simulateProgress(() => {
+            uploadCompleted = true;
+          });
 
-        console.log("Uploading file:", file.name, "for node:", nodeId, "to endpoint:", uploadUrl);
+          // Upload via streaming proxy endpoint
+          console.log("Uploading via streaming proxy...");
 
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          body: formData,
-        });
+          const response = await fetch("/api/upload/stream", {
+            method: "POST",
+            headers: {
+              "x-node-id": nodeId,
+              "x-file-name": file.name,
+              "x-file-type": file.type,
+              "x-file-size": file.size.toString(),
+              "x-upload-type": uploadEndpoint === "documents" ? "map-content" : "submission",
+            },
+            body: file,
+          });
 
-        let result;
-        try {
-          result = await response.json();
-        } catch (parseError) {
-          console.error("Failed to parse response:", parseError);
-          throw new Error("Invalid server response");
-        }
-
-        if (!response.ok) {
-          console.error(
-            "Upload failed with status:",
-            response.status,
-            "Result:",
-            result
-          );
-
-          // More specific error handling
-          let errorMessage =
-            result.error || `Server error (${response.status})`;
-
-          if (response.status === 403) {
-            errorMessage =
-              "Access denied. Please check your permissions or try refreshing the page.";
-          } else if (response.status === 401) {
-            errorMessage = "Authentication required. Please log in again.";
-          } else if (response.status === 400) {
-            errorMessage =
-              result.error ||
-              "Invalid request. Please check your file and try again.";
+          let result;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            console.error("Failed to parse response:", parseError);
+            throw new Error("Invalid server response");
           }
 
-          // Add development details if available
-          if (result.details && process.env.NODE_ENV === "development") {
-            errorMessage += ` (Details: ${result.details})`;
+          if (!response.ok) {
+            console.error("Streaming upload failed:", response.status, result);
+            throw new Error(result.error || `Server error (${response.status})`);
           }
 
-          throw new Error(errorMessage);
-        }
+          // Wait for progress animation if needed
+          if (!uploadCompleted) {
+            await new Promise((resolve) => {
+              const checkCompletion = () => {
+                if (uploadCompleted) {
+                  resolve(void 0);
+                } else {
+                  setTimeout(checkCompletion, 100);
+                }
+              };
+              checkCompletion();
+            });
+          }
 
-        // Wait for progress animation if needed
-        if (!uploadCompleted) {
-          await new Promise((resolve) => {
-            const checkCompletion = () => {
-              if (uploadCompleted) {
-                resolve(void 0);
-              } else {
-                setTimeout(checkCompletion, 100);
-              }
-            };
-            checkCompletion();
+          const uploadedFileData: UploadedFile = {
+            name: result.fileName,
+            originalName: result.originalName,
+            url: result.fileUrl,
+            size: result.size,
+            type: result.type,
+            uploadedAt: result.uploadedAt,
+          };
+
+          // Add to uploaded files array - handle single vs multiple file uploads
+          if (allowMultiple) {
+            setUploadedFiles((prev) => [...prev, uploadedFileData]);
+          } else {
+            setUploadedFiles([uploadedFileData]);
+          }
+
+          // Call parent callback
+          onUploadComplete(result.fileUrl, result.fileName);
+
+          toast({
+            title: "Upload successful!",
+            description: `${file.name} has been uploaded successfully.`,
+          });
+        } else {
+          // Use traditional server upload for smaller files
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("nodeId", nodeId);
+
+          // Start progress simulation
+          let uploadCompleted = false;
+          simulateProgress(() => {
+            uploadCompleted = true;
+          });
+
+          // Determine the upload endpoint based on the uploadEndpoint prop
+          const uploadUrl = uploadEndpoint === "images"
+            ? "/api/upload/images"
+            : uploadEndpoint === "documents"
+            ? "/api/upload/documents"
+            : "/api/upload";
+
+          console.log("Uploading file:", file.name, "for node:", nodeId, "to endpoint:", uploadUrl);
+
+          const response = await fetch(uploadUrl, {
+            method: "POST",
+            body: formData,
+          });
+
+          let result;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            console.error("Failed to parse response:", parseError);
+            throw new Error("Invalid server response");
+          }
+
+          if (!response.ok) {
+            console.error(
+              "Upload failed with status:",
+              response.status,
+              "Result:",
+              result
+            );
+
+            // More specific error handling
+            let errorMessage =
+              result.error || `Server error (${response.status})`;
+
+            if (response.status === 403) {
+              errorMessage =
+                "Access denied. Please check your permissions or try refreshing the page.";
+            } else if (response.status === 401) {
+              errorMessage = "Authentication required. Please log in again.";
+            } else if (response.status === 400) {
+              errorMessage =
+                result.error ||
+                "Invalid request. Please check your file and try again.";
+            }
+
+            // Add development details if available
+            if (result.details && process.env.NODE_ENV === "development") {
+              errorMessage += ` (Details: ${result.details})`;
+            }
+
+            throw new Error(errorMessage);
+          }
+
+          // Wait for progress animation if needed
+          if (!uploadCompleted) {
+            await new Promise((resolve) => {
+              const checkCompletion = () => {
+                if (uploadCompleted) {
+                  resolve(void 0);
+                } else {
+                  setTimeout(checkCompletion, 100);
+                }
+              };
+              checkCompletion();
+            });
+          }
+
+          const uploadedFileData: UploadedFile = {
+            name: result.fileName,
+            originalName: result.originalName,
+            url: result.fileUrl,
+            size: result.size,
+            type: result.type,
+            uploadedAt: result.uploadedAt,
+          };
+
+          // Add to uploaded files array - handle single vs multiple file uploads
+          if (allowMultiple) {
+            setUploadedFiles((prev) => [...prev, uploadedFileData]);
+          } else {
+            // For single file uploads, replace the existing file
+            setUploadedFiles([uploadedFileData]);
+          }
+
+          // Call parent callback
+          onUploadComplete(result.fileUrl, result.fileName);
+
+          toast({
+            title: "Upload successful!",
+            description: `${file.name} has been uploaded successfully.`,
           });
         }
-
-        const uploadedFileData: UploadedFile = {
-          name: result.fileName,
-          originalName: result.originalName,
-          url: result.fileUrl,
-          size: result.size,
-          type: result.type,
-          uploadedAt: result.uploadedAt,
-        };
-
-        // Add to uploaded files array - handle single vs multiple file uploads
-        if (allowMultiple) {
-          setUploadedFiles((prev) => [...prev, uploadedFileData]);
-        } else {
-          // For single file uploads, replace the existing file
-          setUploadedFiles([uploadedFileData]);
-        }
-
-        // Call parent callback
-        onUploadComplete(result.fileUrl, result.fileName);
-
-        toast({
-          title: "Upload successful!",
-          description: `${file.name} has been uploaded successfully.`,
-        });
       } catch (error) {
         console.error("Upload error:", error);
 
@@ -343,7 +423,7 @@ export function FileUpload({
         }, 1000);
       }
     },
-    [nodeId, onUploadComplete, onUploadStateChange, toast, validateFile, simulateProgress, finishUpload]
+    [nodeId, onUploadComplete, onUploadStateChange, toast, validateFile, simulateProgress, finishUpload, uploadEndpoint, allowMultiple]
   );
 
   const handleFileSelect = useCallback(
