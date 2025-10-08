@@ -136,54 +136,105 @@ export function FileUpload({
     [accept, maxSize]
   );
 
-  const simulateProgress = useCallback((onComplete: () => void) => {
-    let progress = 0;
-    const stages: UploadProgress["stage"][] = [
-      "preparing",
-      "uploading",
-      "finalizing",
-    ];
-    let currentStageIndex = 0;
+  // Helper to upload with real progress tracking using XMLHttpRequest
+  const uploadWithProgress = useCallback(
+    (
+      url: string,
+      body: FormData | File,
+      headers: Record<string, string>,
+      signal: AbortSignal
+    ): Promise<Response> => {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-    const updateProgress = () => {
-      progress += Math.random() * 15 + 5; // 5-20% increments
+        // Track upload progress
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const percentage = Math.round((event.loaded / event.total) * 100);
 
-      if (progress >= 100) {
-        setUploadProgress({
-          stage: "complete",
-          percentage: 100,
-          message: "Upload complete!",
+            // Update stage based on progress
+            let stage: UploadProgress["stage"] = "uploading";
+            let message = "Uploading to cloud...";
+
+            if (percentage < 5) {
+              stage = "preparing";
+              message = "Preparing file...";
+            } else if (percentage >= 95) {
+              stage = "finalizing";
+              message = "Finalizing upload...";
+            }
+
+            setUploadProgress({
+              stage,
+              percentage,
+              message,
+            });
+
+            console.log(`Upload progress: ${percentage}% (${event.loaded}/${event.total} bytes)`);
+          }
         });
-        setTimeout(onComplete, 500);
-        return;
-      }
 
-      // Update stage based on progress
-      if (progress > 80 && currentStageIndex < 2) {
-        currentStageIndex = 2;
-      } else if (progress > 30 && currentStageIndex < 1) {
-        currentStageIndex = 1;
-      }
+        // Handle completion
+        xhr.addEventListener("load", () => {
+          setUploadProgress({
+            stage: "complete",
+            percentage: 100,
+            message: "Upload complete!",
+          });
 
-      const messages = {
-        preparing: "Preparing file...",
-        uploading: "Uploading to cloud...",
-        finalizing: "Finalizing upload...",
-        complete: "Upload complete!",
-        error: "Upload failed",
-      };
+          // Convert XHR response to fetch Response format
+          const responseText = xhr.responseText;
 
-      setUploadProgress({
-        stage: stages[currentStageIndex],
-        percentage: Math.min(progress, 95), // Cap at 95% until complete
-        message: messages[stages[currentStageIndex]],
+          // Parse headers from XHR
+          const headersObject: Record<string, string> = {};
+          xhr.getAllResponseHeaders()
+            .split("\r\n")
+            .filter(Boolean)
+            .forEach((line) => {
+              const colonIndex = line.indexOf(": ");
+              if (colonIndex > -1) {
+                const key = line.substring(0, colonIndex);
+                const value = line.substring(colonIndex + 2);
+                headersObject[key] = value;
+              }
+            });
+
+          const response = new Response(responseText, {
+            status: xhr.status,
+            statusText: xhr.statusText,
+            headers: new Headers(headersObject),
+          });
+
+          resolve(response);
+        });
+
+        // Handle errors
+        xhr.addEventListener("error", () => {
+          reject(new Error("Network error during upload"));
+        });
+
+        xhr.addEventListener("abort", () => {
+          reject(new Error("Upload cancelled"));
+        });
+
+        // Handle abort signal
+        signal.addEventListener("abort", () => {
+          xhr.abort();
+        });
+
+        // Open and send request
+        xhr.open("POST", url);
+
+        // Set headers
+        Object.entries(headers).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value);
+        });
+
+        xhr.send(body);
       });
-
-      setTimeout(updateProgress, 200 + Math.random() * 300);
-    };
-
-    updateProgress();
-  }, []);
+    },
+    []
+  );
 
   const handleFileUpload = useCallback(
     async (file: File) => {
@@ -229,27 +280,21 @@ export function FileUpload({
         if (useStreamingUpload) {
           console.log("Using streaming upload for large file:", file.name, "size:", file.size);
 
-          // Start progress simulation
-          let uploadCompleted = false;
-          simulateProgress(() => {
-            uploadCompleted = true;
-          });
-
-          // Upload via streaming proxy endpoint
+          // Upload via streaming proxy endpoint with real progress
           console.log("Uploading via streaming proxy...");
 
-          const response = await fetch("/api/upload/stream", {
-            method: "POST",
-            headers: {
+          const response = await uploadWithProgress(
+            "/api/upload/stream",
+            file,
+            {
               "x-node-id": nodeId,
               "x-file-name": file.name,
               "x-file-type": file.type,
               "x-file-size": file.size.toString(),
               "x-upload-type": uploadEndpoint === "documents" ? "map-content" : "submission",
             },
-            body: file,
-            signal: abortController.signal,
-          });
+            abortController.signal
+          );
 
           let result;
           try {
@@ -262,20 +307,6 @@ export function FileUpload({
           if (!response.ok) {
             console.error("Streaming upload failed:", response.status, result);
             throw new Error(result.error || `Server error (${response.status})`);
-          }
-
-          // Wait for progress animation if needed
-          if (!uploadCompleted) {
-            await new Promise((resolve) => {
-              const checkCompletion = () => {
-                if (uploadCompleted) {
-                  resolve(void 0);
-                } else {
-                  setTimeout(checkCompletion, 100);
-                }
-              };
-              checkCompletion();
-            });
           }
 
           const uploadedFileData: UploadedFile = {
@@ -307,12 +338,6 @@ export function FileUpload({
           formData.append("file", file);
           formData.append("nodeId", nodeId);
 
-          // Start progress simulation
-          let uploadCompleted = false;
-          simulateProgress(() => {
-            uploadCompleted = true;
-          });
-
           // Determine the upload endpoint based on the uploadEndpoint prop
           const uploadUrl = uploadEndpoint === "images"
             ? "/api/upload/images"
@@ -322,11 +347,12 @@ export function FileUpload({
 
           console.log("Uploading file:", file.name, "for node:", nodeId, "to endpoint:", uploadUrl);
 
-          const response = await fetch(uploadUrl, {
-            method: "POST",
-            body: formData,
-            signal: abortController.signal,
-          });
+          const response = await uploadWithProgress(
+            uploadUrl,
+            formData,
+            {},
+            abortController.signal
+          );
 
           let result;
           try {
@@ -365,20 +391,6 @@ export function FileUpload({
             }
 
             throw new Error(errorMessage);
-          }
-
-          // Wait for progress animation if needed
-          if (!uploadCompleted) {
-            await new Promise((resolve) => {
-              const checkCompletion = () => {
-                if (uploadCompleted) {
-                  resolve(void 0);
-                } else {
-                  setTimeout(checkCompletion, 100);
-                }
-              };
-              checkCompletion();
-            });
           }
 
           const uploadedFileData: UploadedFile = {
@@ -446,7 +458,7 @@ export function FileUpload({
         }, 1000);
       }
     },
-    [nodeId, onUploadComplete, onUploadStateChange, toast, validateFile, simulateProgress, finishUpload, uploadEndpoint, allowMultiple]
+    [nodeId, onUploadComplete, toast, validateFile, uploadWithProgress, finishUpload, uploadEndpoint, allowMultiple]
   );
 
   const handleFileSelect = useCallback(
