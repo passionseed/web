@@ -1,63 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { b2 } from "@/lib/backblaze";
-
-// File type validation
-const ALLOWED_MIME_TYPES = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "application/vnd.ms-powerpoint",
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "text/plain",
-  "application/zip",
-  "application/x-zip-compressed",
-  "application/json",
-  "text/csv",
-]);
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+import {
+  validateFile as validateFileShared,
+  ALLOWED_GENERAL_TYPES,
+  MAX_GENERAL_SIZE,
+} from "@/lib/constants/upload";
 
 function validateFile(file: File): { valid: boolean; error?: string } {
-  if (!file) {
-    return { valid: false, error: "No file provided" };
-  }
-
-  if (file.size === 0) {
-    return { valid: false, error: "File is empty" };
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      valid: false,
-      error: `File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
-    };
-  }
-
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    return { valid: false, error: `File type '${file.type}' is not allowed` };
-  }
-
-  // Check file name
-  if (file.name.length > 255) {
-    return { valid: false, error: "File name too long" };
-  }
-
-  // Check for suspicious file extensions
-  const fileName = file.name.toLowerCase();
-  const dangerousExtensions = [".exe", ".bat", ".cmd", ".scr", ".vbs", ".js"];
-  if (dangerousExtensions.some((ext) => fileName.endsWith(ext))) {
-    return {
-      valid: false,
-      error: "File type not allowed for security reasons",
-    };
-  }
-
-  return { valid: true };
+  return validateFileShared(
+    file.name,
+    file.size,
+    file.type,
+    ALLOWED_GENERAL_TYPES,
+    MAX_GENERAL_SIZE
+  );
 }
 
 export async function POST(request: NextRequest) {

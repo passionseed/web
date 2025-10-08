@@ -1,49 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { b2 } from "@/lib/backblaze";
-
-// Document file type validation  
-const ALLOWED_DOCUMENT_TYPES = new Set([
-  "application/pdf",
-]);
-
-const MAX_DOCUMENT_SIZE = 40 * 1024 * 1024; // 40MB
+import {
+  validateFile,
+  ALLOWED_DOCUMENT_TYPES,
+  MAX_DOCUMENT_SIZE,
+} from "@/lib/constants/upload";
 
 function validateDocumentFile(file: File): { valid: boolean; error?: string } {
-  if (!file) {
-    return { valid: false, error: "No file provided" };
-  }
-
-  if (file.size === 0) {
-    return { valid: false, error: "File is empty" };
-  }
-
-  if (file.size > MAX_DOCUMENT_SIZE) {
-    return {
-      valid: false,
-      error: `Document too large. Maximum size is ${MAX_DOCUMENT_SIZE / (1024 * 1024)}MB`,
-    };
-  }
-
-  if (!ALLOWED_DOCUMENT_TYPES.has(file.type)) {
-    return { valid: false, error: `Document type '${file.type}' is not allowed. Please use PDF format` };
-  }
-
-  // Check file name
-  if (file.name.length > 255) {
-    return { valid: false, error: "File name too long" };
-  }
-
-  // Check for valid PDF extension
-  const fileName = file.name.toLowerCase();
-  if (!fileName.endsWith(".pdf")) {
-    return {
-      valid: false,
-      error: "Invalid document file extension. Please use .pdf",
-    };
-  }
-
-  return { valid: true };
+  return validateFile(
+    file.name,
+    file.size,
+    file.type,
+    ALLOWED_DOCUMENT_TYPES,
+    MAX_DOCUMENT_SIZE
+  );
 }
 
 export async function POST(request: NextRequest) {
