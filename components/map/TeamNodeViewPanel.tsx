@@ -24,6 +24,8 @@ import {
   HelpCircle,
   Crown,
   User,
+  CheckSquare,
+  CheckCircle,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TextNode } from "@/components/map/MapEditor/components/TextNode";
@@ -32,6 +34,7 @@ import {
   getStudentProgress,
   startNodeProgress,
   submitNodeProgress,
+  updateNodeProgress,
   type StudentProgress,
 } from "@/lib/supabase/progresses";
 import { createClient } from "@/utils/supabase/client";
@@ -574,6 +577,72 @@ export function TeamNodeViewPanel({
     }
   };
 
+  const handleMarkAsComplete = async () => {
+    if (!selectedNode || !currentUser) {
+      console.error("Cannot mark as complete: missing selectedNode or currentUser");
+      toast({
+        title: "Cannot mark as complete",
+        description: "Missing required information",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Prevent marking complete if already passed
+    if (isPassed) {
+      toast({
+        title: "Already completed",
+        description: "This node has already been marked as complete",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      console.log("✅ Marking team node as complete...");
+      // For nodes without assessments, directly mark as "passed" since no grading is needed
+      const updatedProgress = await updateNodeProgress(
+        mapId,
+        selectedNode.id,
+        "passed",
+        {
+          submitted_at: new Date().toISOString(),
+        }
+      );
+
+      if (!updatedProgress) {
+        throw new Error("Failed to mark node as complete");
+      }
+
+      // Reload team data to update progress
+      await loadTeamData();
+      onProgressUpdate?.();
+
+      toast({
+        title: "Node completed!",
+        description: "Great job! Your team can now continue to the next node.",
+      });
+
+      console.log("✅ Team node marked as complete:", updatedProgress);
+    } catch (error) {
+      console.error("❌ Error marking team node as complete:", error);
+
+      let errorMessage = "Failed to mark node as complete";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Error completing node",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       not_started: { label: "Not Started", variant: "secondary", icon: Clock },
@@ -1009,6 +1078,55 @@ export function TeamNodeViewPanel({
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Mark as Complete Button for team nodes without assessments */}
+            {!assessment && !isPassed && !isInstructorOrTA && (
+              <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckSquare className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-green-900 mb-2">
+                      Ready to Continue?
+                    </h3>
+                    <p className="text-sm text-green-700 max-w-md">
+                      Your team has reviewed the content. Mark this node as complete to unlock the next step in your team's learning journey.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleMarkAsComplete}
+                    disabled={isSubmitting}
+                    className="w-full max-w-md bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md"
+                    size="lg"
+                  >
+                    {isSubmitting ? (
+                      <Clock className="h-5 w-5 mr-2 animate-spin" />
+                    ) : (
+                      <CheckSquare className="h-5 w-5 mr-2" />
+                    )}
+                    {isSubmitting ? "Marking Complete..." : "Mark as Complete"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Completion Badge for already completed team nodes without assessments */}
+            {!assessment && isPassed && !isInstructorOrTA && (
+              <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
+                <div className="flex items-center justify-center space-x-3">
+                  <CheckCircle className="h-8 w-8 text-blue-600" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-900">
+                      Team Node Completed!
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Great job! Your team can now proceed to the next node.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
