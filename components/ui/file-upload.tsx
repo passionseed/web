@@ -71,17 +71,30 @@ export function FileUpload({
   const [isDragging, setIsDragging] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map()); // Track abort controllers for each upload
   const { toast } = useToast();
 
   // Use effect to sync upload state with parent component
   useEffect(() => {
     const isCurrentlyUploading = uploadingFiles.size > 0;
     console.log(`Upload state changed: ${isCurrentlyUploading ? 'uploading' : 'idle'}, active uploads: ${uploadingFiles.size}`);
-    
+
     if (onUploadStateChange) {
       onUploadStateChange(isCurrentlyUploading);
     }
   }, [uploadingFiles.size, onUploadStateChange]);
+
+  // Cleanup: Abort all uploads on component unmount
+  useEffect(() => {
+    return () => {
+      console.log("FileUpload component unmounting, aborting all uploads...");
+      abortControllersRef.current.forEach((controller, uploadId) => {
+        console.log(`Aborting upload: ${uploadId}`);
+        controller.abort();
+      });
+      abortControllersRef.current.clear();
+    };
+  }, []);
 
   // Helper function to remove upload ID
   const finishUpload = useCallback((uploadId: string) => {
@@ -191,6 +204,10 @@ export function FileUpload({
       // Create unique ID for this upload
       const uploadId = `${file.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      // Create abort controller for this upload
+      const abortController = new AbortController();
+      abortControllersRef.current.set(uploadId, abortController);
+
       // Add to uploading files set
       setUploadingFiles(prev => {
         const newSet = new Set(prev);
@@ -231,6 +248,7 @@ export function FileUpload({
               "x-upload-type": uploadEndpoint === "documents" ? "map-content" : "submission",
             },
             body: file,
+            signal: abortController.signal,
           });
 
           let result;
@@ -307,6 +325,7 @@ export function FileUpload({
           const response = await fetch(uploadUrl, {
             method: "POST",
             body: formData,
+            signal: abortController.signal,
           });
 
           let result;
@@ -405,21 +424,25 @@ export function FileUpload({
           variant: "destructive",
         });
 
-        // Immediately remove from uploading set on error, then clear UI after delay
-        finishUpload(uploadId);
+        // Clear UI after delay to show error message
         setTimeout(() => {
           setUploadProgress(null);
         }, 5000);
       } finally {
+        // Always finish upload tracking immediately to prevent race conditions
+        finishUpload(uploadId);
+
+        // Clean up abort controller
+        abortControllersRef.current.delete(uploadId);
+
         // Reset the input so the same file can be uploaded again if needed
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
 
-        // Clear progress after a brief delay to show completion
+        // Clear progress UI if not already cleared (success case)
         setTimeout(() => {
           setUploadProgress(null);
-          finishUpload(uploadId);
         }, 1000);
       }
     },

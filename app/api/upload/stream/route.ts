@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { b2 } from "@/lib/backblaze";
+import {
+  validateFile,
+  ALLOWED_GENERAL_TYPES,
+  ALLOWED_DOCUMENT_TYPES,
+  MAX_FILE_SIZE,
+} from "@/lib/constants/upload";
 
 /**
  * Streaming upload proxy that bypasses Vercel's body parser limits
@@ -45,11 +51,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (max 40MB)
-    const MAX_FILE_SIZE = 40 * 1024 * 1024;
-    if (fileSize > MAX_FILE_SIZE) {
+    // Use shared validation
+    const allowedTypes = uploadType === "map-content" ? ALLOWED_DOCUMENT_TYPES : ALLOWED_GENERAL_TYPES;
+    const validation = validateFile(fileName, fileSize, fileType, allowedTypes, MAX_FILE_SIZE);
+
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: `File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
+        { error: validation.error },
         { status: 400 }
       );
     }
@@ -114,6 +122,13 @@ export async function POST(request: NextRequest) {
         { error: "Failed to read file data" },
         { status: 500 }
       );
+    } finally {
+      // Always release the reader to prevent memory leaks
+      try {
+        reader.releaseLock();
+      } catch (releaseError) {
+        console.warn("Failed to release reader lock:", releaseError);
+      }
     }
 
     // Combine chunks into single buffer
@@ -129,6 +144,21 @@ export async function POST(request: NextRequest) {
       receivedSize: fileBuffer.length,
       expectedSize: fileSize,
     });
+
+    // Validate received size matches expected size
+    if (fileBuffer.length !== fileSize) {
+      console.error("Size mismatch:", {
+        received: fileBuffer.length,
+        expected: fileSize,
+        difference: Math.abs(fileBuffer.length - fileSize),
+      });
+      return NextResponse.json(
+        {
+          error: `Upload incomplete. Expected ${fileSize} bytes but received ${fileBuffer.length} bytes.`,
+        },
+        { status: 400 }
+      );
+    }
 
     // Create a File-like object from the buffer
     const file = new File([fileBuffer], fileName, { type: fileType });
