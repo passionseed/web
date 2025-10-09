@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
 import { useToast } from "./use-toast";
+import { PDFDocument } from "pdf-lib";
 import {
   Upload,
   X,
@@ -77,12 +78,19 @@ export function FileUpload({
   // Use effect to sync upload state with parent component
   useEffect(() => {
     const isCurrentlyUploading = uploadingFiles.size > 0;
-    console.log(`Upload state changed: ${isCurrentlyUploading ? 'uploading' : 'idle'}, active uploads: ${uploadingFiles.size}`);
+    console.log(
+      `Upload state changed: ${isCurrentlyUploading ? "uploading" : "idle"}, active uploads: ${uploadingFiles.size}`
+    );
 
     if (onUploadStateChange) {
       onUploadStateChange(isCurrentlyUploading);
     }
   }, [uploadingFiles.size, onUploadStateChange]);
+
+  // Component mount logging
+  useEffect(() => {
+    console.log("📦 FileUpload component mounted with uploadEndpoint:", uploadEndpoint);
+  }, [uploadEndpoint]);
 
   // Cleanup: Abort all uploads on component unmount
   useEffect(() => {
@@ -98,10 +106,12 @@ export function FileUpload({
 
   // Helper function to remove upload ID
   const finishUpload = useCallback((uploadId: string) => {
-    setUploadingFiles(prev => {
+    setUploadingFiles((prev) => {
       const newSet = new Set(prev);
       newSet.delete(uploadId);
-      console.log(`Upload finished: ${uploadId}, remaining uploads: ${newSet.size}`);
+      console.log(
+        `Upload finished: ${uploadId}, remaining uploads: ${newSet.size}`
+      );
       return newSet;
     });
   }, []);
@@ -135,6 +145,101 @@ export function FileUpload({
     },
     [accept, maxSize]
   );
+  // Helper to compress PDF before upload
+  const compressPDF = useCallback(
+    async (file: File): Promise<File> => {
+      try {
+        console.log(`📄 Starting PDF compression for: ${file.name}`);
+        console.log(`📦 Original size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+
+        setUploadProgress({
+          stage: "preparing",
+          percentage: 10,
+          message: "Compressing PDF...",
+        });
+
+        // Load PDF (with encryption support)
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer, {
+          ignoreEncryption: true, // Handle encrypted PDFs
+        });
+
+        // Get document info
+        const pageCount = pdfDoc.getPageCount();
+        console.log(`PDF has ${pageCount} pages`);
+
+        setUploadProgress({
+          stage: "preparing",
+          percentage: 30,
+          message: `Optimizing ${pageCount} pages...`,
+        });
+
+        // Save with compression (lossless object stream optimization)
+        // Save with compression
+        const compressedBytes = await pdfDoc.save({
+          useObjectStreams: true,
+          addDefaultPage: false,
+          objectsPerTick: 50,
+        });
+
+        // Convert to a true ArrayBuffer for File()
+        const abuf = compressedBytes.buffer.slice(
+          compressedBytes.byteOffset,
+          compressedBytes.byteOffset + compressedBytes.byteLength
+        ) as ArrayBuffer;
+
+        // ✅ Safe browser-only File constructor
+        let compressedFile = file;
+        if (typeof window !== "undefined" && window.File) {
+          compressedFile = new window.File([abuf], file.name, {
+            type: "application/pdf",
+            lastModified: Date.now(),
+          });
+        } else {
+          console.warn("File constructor not available (running on server)");
+        }
+
+        // Calculate compression ratio
+        const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
+        const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2);
+        const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(1);
+
+        console.log(`✅ PDF compression complete!`);
+        console.log(`   Original: ${originalSizeMB}MB`);
+        console.log(`   Compressed: ${compressedSizeMB}MB`);
+        console.log(`   Reduction: ${compressionRatio}%`);
+        console.log(
+          `PDF compressed: ${file.size} → ${compressedFile.size} bytes (${compressionRatio}% reduction)`
+        );
+
+        // Show compression result to user
+        if (compressedFile.size < file.size) {
+          toast({
+            title: "PDF Compressed",
+            description: `File size reduced by ${compressionRatio}% (${(
+              file.size /
+              1024 /
+              1024
+            ).toFixed(
+              1
+            )}MB → ${(compressedFile.size / 1024 / 1024).toFixed(1)}MB)`,
+          });
+        }
+
+        return compressedFile;
+      } catch (error) {
+        console.error("PDF compression failed:", error);
+        toast({
+          title: "Compression skipped",
+          description: "Uploading original file...",
+          variant: "default",
+        });
+        // Return original file if compression fails
+        return file;
+      }
+    },
+    [toast]
+  );
 
   // Helper to upload large files in chunks (bypasses Vercel 4MB limit)
   const uploadInChunks = useCallback(
@@ -148,14 +253,18 @@ export function FileUpload({
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       const sessionId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 
-      console.log(`Uploading ${file.name} in ${totalChunks} chunks (${CHUNK_SIZE / 1024 / 1024}MB each)`);
+      console.log(
+        `Uploading ${file.name} in ${totalChunks} chunks (${CHUNK_SIZE / 1024 / 1024}MB each)`
+      );
 
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
         const start = chunkIndex * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
 
-        console.log(`Uploading chunk ${chunkIndex + 1}/${totalChunks} (${chunk.size} bytes)`);
+        console.log(
+          `Uploading chunk ${chunkIndex + 1}/${totalChunks} (${chunk.size} bytes)`
+        );
 
         // Update progress based on chunks uploaded
         const percentage = Math.round(((chunkIndex + 0.5) / totalChunks) * 100);
@@ -190,7 +299,9 @@ export function FileUpload({
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || `Chunk ${chunkIndex + 1} upload failed`);
+          throw new Error(
+            result.error || `Chunk ${chunkIndex + 1} upload failed`
+          );
         }
 
         // Last chunk - upload complete
@@ -204,7 +315,9 @@ export function FileUpload({
           return result;
         }
 
-        console.log(`Chunk ${chunkIndex + 1}/${totalChunks} uploaded. Progress: ${result.chunksReceived}/${result.totalChunks}`);
+        console.log(
+          `Chunk ${chunkIndex + 1}/${totalChunks} uploaded. Progress: ${result.chunksReceived}/${result.totalChunks}`
+        );
       }
 
       throw new Error("Upload completed but no final result received");
@@ -246,7 +359,9 @@ export function FileUpload({
               message,
             });
 
-            console.log(`Upload progress: ${percentage}% (${event.loaded}/${event.total} bytes)`);
+            console.log(
+              `Upload progress: ${percentage}% (${event.loaded}/${event.total} bytes)`
+            );
           }
         });
 
@@ -263,7 +378,8 @@ export function FileUpload({
 
           // Parse headers from XHR
           const headersObject: Record<string, string> = {};
-          xhr.getAllResponseHeaders()
+          xhr
+            .getAllResponseHeaders()
             .split("\r\n")
             .filter(Boolean)
             .forEach((line) => {
@@ -314,6 +430,8 @@ export function FileUpload({
 
   const handleFileUpload = useCallback(
     async (file: File) => {
+      console.log("🚀 handleFileUpload called with:", file.name, file.size, "bytes, type:", file.type);
+
       const validation = validateFile(file);
       if (!validation.valid) {
         if (onValidationError) {
@@ -336,10 +454,12 @@ export function FileUpload({
       abortControllersRef.current.set(uploadId, abortController);
 
       // Add to uploading files set
-      setUploadingFiles(prev => {
+      setUploadingFiles((prev) => {
         const newSet = new Set(prev);
         newSet.add(uploadId);
-        console.log(`Upload started: ${uploadId}, total uploads: ${newSet.size}`);
+        console.log(
+          `Upload started: ${uploadId}, total uploads: ${newSet.size}`
+        );
         return newSet;
       });
 
@@ -350,14 +470,38 @@ export function FileUpload({
       });
 
       try {
+        // Compress PDF files before upload
+        let fileToUpload = file;
+        console.log("File upload check:", {
+          fileName: file.name,
+          fileType: file.type,
+          uploadEndpoint: uploadEndpoint,
+          isPDF: file.type === "application/pdf",
+          isDocuments: uploadEndpoint === "documents",
+          willCompress: file.type === "application/pdf" && uploadEndpoint === "documents"
+        });
+
+        if (file.type === "application/pdf" && uploadEndpoint === "documents") {
+          console.log("🗜️ Compressing PDF before upload...");
+          fileToUpload = await compressPDF(file);
+          console.log("✅ Compression complete, uploading compressed file");
+        } else {
+          console.log("⏭️ Skipping compression (not a document PDF)");
+        }
+
         // For large files, use chunked upload to bypass Vercel's 4MB limit
-        const useChunkedUpload = file.size > 4 * 1024 * 1024;
+        const useChunkedUpload = fileToUpload.size > 4 * 1024 * 1024;
 
         if (useChunkedUpload) {
-          console.log("Using chunked upload for large file:", file.name, "size:", file.size);
+          console.log(
+            "Using chunked upload for large file:",
+            fileToUpload.name,
+            "size:",
+            fileToUpload.size
+          );
 
           const result = await uploadInChunks(
-            file,
+            fileToUpload,
             nodeId,
             uploadEndpoint === "documents" ? "map-content" : "submission",
             abortController.signal
@@ -389,17 +533,25 @@ export function FileUpload({
         } else {
           // Use traditional server upload for smaller files
           const formData = new FormData();
-          formData.append("file", file);
+          formData.append("file", fileToUpload);
           formData.append("nodeId", nodeId);
 
           // Determine the upload endpoint based on the uploadEndpoint prop
-          const uploadUrl = uploadEndpoint === "images"
-            ? "/api/upload/images"
-            : uploadEndpoint === "documents"
-            ? "/api/upload/documents"
-            : "/api/upload";
+          const uploadUrl =
+            uploadEndpoint === "images"
+              ? "/api/upload/images"
+              : uploadEndpoint === "documents"
+                ? "/api/upload/documents"
+                : "/api/upload";
 
-          console.log("Uploading file:", file.name, "for node:", nodeId, "to endpoint:", uploadUrl);
+          console.log(
+            "Uploading file:",
+            fileToUpload.name,
+            "for node:",
+            nodeId,
+            "to endpoint:",
+            uploadUrl
+          );
 
           const response = await uploadWithProgress(
             uploadUrl,
@@ -512,7 +664,18 @@ export function FileUpload({
         }, 1000);
       }
     },
-    [nodeId, onUploadComplete, toast, validateFile, uploadInChunks, uploadWithProgress, finishUpload, uploadEndpoint, allowMultiple]
+    [
+      nodeId,
+      onUploadComplete,
+      toast,
+      validateFile,
+      compressPDF,
+      uploadInChunks,
+      uploadWithProgress,
+      finishUpload,
+      uploadEndpoint,
+      allowMultiple,
+    ]
   );
 
   const handleFileSelect = useCallback(
@@ -790,7 +953,12 @@ export function FileUpload({
                 >
                   Drag and drop or click to browse
                   <br />
-                  Max {maxSize}MB • {uploadEndpoint === "images" ? "Images only" : uploadEndpoint === "documents" ? "PDF documents only" : "PDF, DOC, Images, and more"}
+                  Max {maxSize}MB •{" "}
+                  {uploadEndpoint === "images"
+                    ? "Images only"
+                    : uploadEndpoint === "documents"
+                      ? "PDF documents only"
+                      : "PDF, DOC, Images, and more"}
                 </p>
               </div>
 
@@ -830,10 +998,11 @@ export function FileUpload({
               MB.
             </p>
           )}
-          
+
           {!allowMultiple && uploadedFiles.length > 0 && (
             <p className="text-xs text-muted-foreground text-center">
-              File uploaded successfully. You can replace it by clicking "Replace File" above.
+              File uploaded successfully. You can replace it by clicking
+              "Replace File" above.
             </p>
           )}
         </div>
