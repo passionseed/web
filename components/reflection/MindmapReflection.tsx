@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Plus, Trash2, Edit3 } from "lucide-react";
+import { X, Plus, Trash2, Edit3, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { createClient } from "@/utils/supabase/client";
 
@@ -41,6 +41,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
   const [isTopicDialogOpen, setIsTopicDialogOpen] = useState(false);
   const [topicNotes, setTopicNotes] = useState("");
   const [isOperationInProgress, setIsOperationInProgress] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   // Performance optimization states
   const [pendingSave, setPendingSave] = useState(false);
   const dragSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -156,6 +157,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
     const loadMindmapTopics = async () => {
       const operationId = `initial-load-${Date.now()}`;
       try {
+        setIsLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           console.log(`[${operationId}] No user found, skipping topic load`);
@@ -187,14 +189,14 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
         if (shouldClearNotes) {
           console.log(`[${operationId}] Clearing topic notes after reflection completion`);
           sessionStorage.removeItem('clear-topic-notes');
-          
+
           // Clear notes from all topics in database
           const { error: updateError } = await supabase
             .from('mindmap_topics')
             .update({ notes: null })
             .eq('user_id', user.id)
             .is('reflection_id', null);
-          
+
           if (updateError) {
             console.error(`[${operationId}] Error clearing notes:`, updateError);
           } else {
@@ -225,13 +227,15 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
             isNew: false // Existing topics from database should not animate
           }));
           setTopics(loadedTopics);
-          console.log(`[${operationId}] COMPLETED database load: Found ${loadedTopics.length} topics:`, 
+          console.log(`[${operationId}] COMPLETED database load: Found ${loadedTopics.length} topics:`,
             loadedTopics.map(t => ({ id: t.id, text: t.text, x: t.x, y: t.y, notes: t.notes })));
         } else {
           console.log(`[${operationId}] COMPLETED database load: No persistent topics found in database`);
         }
       } catch (error) {
         console.error(`[${operationId}] FAILED initial load:`, error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -1073,28 +1077,36 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
       {/* Mindmap Canvas */}
       <Card className="min-h-[400px] sm:min-h-[600px]">
         <CardContent className="p-0">
-          <div 
+          <div
             ref={canvasRef}
             className="relative w-full h-[400px] sm:h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 overflow-hidden rounded-lg flex items-center justify-center"
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
-            {/* Pending Save Indicator */}
-            {pendingSave && (
-              <div className="absolute top-4 right-4 z-50 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg animate-pulse">
-                Saving...
+            {/* Loading Spinner */}
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center gap-4">
+                <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+                <p className="text-sm text-muted-foreground">Loading your mindmap...</p>
               </div>
-            )}
-            
-            {/* Username Bubble (Central) - Naturally centered with flexbox */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full px-4 sm:px-8 py-3 sm:py-6 text-center font-bold text-base sm:text-xl shadow-xl border-2 sm:border-4 border-white min-w-[180px] sm:min-w-[250px] max-w-[280px] sm:max-w-[350px] relative z-20"
-            >
-              {username}
-            </motion.div>
+            ) : (
+              <>
+                {/* Pending Save Indicator */}
+                {pendingSave && (
+                  <div className="absolute top-4 right-4 z-50 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg animate-pulse">
+                    Saving...
+                  </div>
+                )}
+
+                {/* Username Bubble (Central) - Naturally centered with flexbox */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full px-4 sm:px-8 py-3 sm:py-6 text-center font-bold text-base sm:text-xl shadow-xl border-2 sm:border-4 border-white min-w-[180px] sm:min-w-[250px] max-w-[280px] sm:max-w-[350px] relative z-20"
+                >
+                  {username}
+                </motion.div>
 
             {/* Topic Bubbles */}
             <AnimatePresence>
@@ -1259,6 +1271,8 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
                   <p className="text-xs sm:text-sm">Click the + button to add topics you're working on</p>
                 </div>
               </motion.div>
+            )}
+              </>
             )}
           </div>
         </CardContent>
