@@ -270,9 +270,14 @@ export const getMapsWithStatsServer = async (
     throw new Error("Could not fetch learning maps.");
   }
 
+  // Filter out personal journey maps from public listings
+  const filteredData = (data || []).filter(map => 
+    !map.metadata?.is_personal_journey
+  );
+
   // Transform data (simplified for server-side - no complex calculations)
-  console.log("SERVER: Transforming", data?.length || 0, "maps for server-side rendering");
-  const mapsWithStats = (data || []).map((map: any) => {
+  console.log("SERVER: Transforming", filteredData?.length || 0, "maps for server-side rendering");
+  const mapsWithStats = filteredData.map((map: any) => {
     try {
     // Use simple fallbacks for server-side rendering - client will load full data
     const nodeCount = 0; // Will be populated client-side

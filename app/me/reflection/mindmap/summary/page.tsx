@@ -181,36 +181,6 @@ export default function MindmapSummaryPage() {
 
 
 
-      {/* Topics Needing Attention */}
-      {topicsWithoutNotes.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-500" />
-              Topics to Focus On Tomorrow
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {topicsWithoutNotes.map((topic, index) => (
-                <motion.div
-                  key={topic.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-3 p-3 border rounded-lg bg-orange-50 dark:bg-orange-900/20"
-                >
-                  <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                  <span className="text-sm font-medium">{topic.text}</span>
-                </motion.div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground mt-4">
-              Consider adding notes for these topics in your next reflection session.
-            </p>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Daily Reflection Card */}
       {combinedReflection && (

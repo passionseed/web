@@ -41,6 +41,10 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
   const [isTopicDialogOpen, setIsTopicDialogOpen] = useState(false);
   const [topicNotes, setTopicNotes] = useState("");
   const [isOperationInProgress, setIsOperationInProgress] = useState(false);
+  // Performance optimization states
+  const [pendingSave, setPendingSave] = useState(false);
+  const dragSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionStorageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Canvas is fixed 600px height, width varies but flexbox centers the username bubble
   const canvasRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -135,6 +139,18 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
     };
   }, [topics, supabase]);
 
+  // Cleanup timeout references to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (dragSaveTimeoutRef.current) {
+        clearTimeout(dragSaveTimeoutRef.current);
+      }
+      if (sessionStorageTimeoutRef.current) {
+        clearTimeout(sessionStorageTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Load existing mindmap topics from database (always, both modes)
   useEffect(() => {
     const loadMindmapTopics = async () => {
@@ -144,6 +160,26 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
         if (!user) {
           console.log(`[${operationId}] No user found, skipping topic load`);
           return;
+        }
+
+        // In reflection mode, prioritize session storage to maintain updates
+        if (isReflectionMode) {
+          const sessionTopics = sessionStorage.getItem('mindmap-topics');
+          if (sessionTopics) {
+            try {
+              const parsedTopics = JSON.parse(sessionTopics);
+              console.log(`[${operationId}] REFLECTION MODE: Loading ${parsedTopics.length} topics from session storage`);
+              setTopics(parsedTopics.map((topic: Topic) => ({
+                ...topic,
+                isNew: false // Prevent animations for session-loaded topics
+              })));
+              return; // Exit early, don't load from database
+            } catch (parseError) {
+              console.error(`[${operationId}] Error parsing session topics, falling back to database:`, parseError);
+            }
+          } else {
+            console.log(`[${operationId}] REFLECTION MODE: No session data found, loading from database`);
+          }
         }
 
         // Check if we need to clear notes after reflection completion
@@ -166,7 +202,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
           }
         }
 
-        console.log(`[${operationId}] STARTING initial load for user ${user.email}`);
+        console.log(`[${operationId}] STARTING database load for user ${user.email}`);
         const { data, error } = await supabase
           .from('mindmap_topics')
           .select('id, user_id, text, position_x, position_y, notes, created_at')
@@ -189,10 +225,10 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
             isNew: false // Existing topics from database should not animate
           }));
           setTopics(loadedTopics);
-          console.log(`[${operationId}] COMPLETED initial load: Found ${loadedTopics.length} topics:`, 
+          console.log(`[${operationId}] COMPLETED database load: Found ${loadedTopics.length} topics:`, 
             loadedTopics.map(t => ({ id: t.id, text: t.text, x: t.x, y: t.y, notes: t.notes })));
         } else {
-          console.log(`[${operationId}] COMPLETED initial load: No persistent topics found in database`);
+          console.log(`[${operationId}] COMPLETED database load: No persistent topics found in database`);
         }
       } catch (error) {
         console.error(`[${operationId}] FAILED initial load:`, error);
@@ -201,7 +237,7 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
 
     // Always load persistent topics when component mounts
     loadMindmapTopics();
-  }, [supabase]); // Removed isReflectionMode dependency
+  }, [supabase, isReflectionMode]); // Added isReflectionMode dependency back
 
   // Function to save topics to database (without automatic reload)
   const saveTopicsToDatabase = useCallback(async (topicsToSave: Topic[], operationId: string) => {
@@ -304,6 +340,44 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
       throw error;
     }
   }, [supabase]);
+
+  // Debounced session storage save function for drag optimization
+  const debouncedSessionSave = useCallback((topics: Topic[]) => {
+    if (sessionStorageTimeoutRef.current) {
+      clearTimeout(sessionStorageTimeoutRef.current);
+    }
+    
+    sessionStorageTimeoutRef.current = setTimeout(() => {
+      if (isReflectionMode) {
+        sessionStorage.setItem('mindmap-topics', JSON.stringify(topics));
+        console.log('📱 DEBOUNCED: Saved topics to session storage');
+      }
+    }, 100); // 100ms debounce for session storage
+  }, [isReflectionMode]);
+
+  // Debounced database save function for drag optimization
+  const debouncedDatabaseSave = useCallback(async (topics: Topic[]) => {
+    if (dragSaveTimeoutRef.current) {
+      clearTimeout(dragSaveTimeoutRef.current);
+    }
+    
+    dragSaveTimeoutRef.current = setTimeout(async () => {
+      if (!isOperationInProgress) {
+        const operationId = `debounced-save-${Date.now()}`;
+        console.log(`[${operationId}] Starting debounced database save`);
+        
+        try {
+          setPendingSave(true);
+          await saveTopicsToDatabase(topics, operationId);
+          console.log(`[${operationId}] Debounced save completed`);
+        } catch (error) {
+          console.error(`[${operationId}] Debounced save failed:`, error);
+        } finally {
+          setPendingSave(false);
+        }
+      }
+    }, 500); // 500ms debounce for database operations
+  }, [saveTopicsToDatabase, isOperationInProgress]);
 
   // Function to reload topics from database with smart updates to prevent animations
   const reloadTopicsFromDatabase = useCallback(async (operationId: string, preventAnimations = true) => {
@@ -449,64 +523,87 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
     
     const isMobile = rect.width < 640;
     
-    // For mobile, use extremely tight grid-like positioning
+    // Define username bubble dimensions (based on the actual component)
+    const usernameBubbleWidth = isMobile ? 180 : 250; // min-w-[180px] sm:min-w-[250px]
+    const usernameBubbleHeight = isMobile ? 42 : 60;  // Approximate height based on padding
+    
+    // Topic bubble dimensions
+    const topicWidth = isMobile ? 80 : 120;
+    const topicHeight = isMobile ? 30 : 36;
+    
+    // Calculate minimum distance from center to avoid overlap
+    const minDistanceFromCenter = Math.max(
+      (usernameBubbleWidth / 2) + (topicWidth / 2) + 20, // 20px padding
+      (usernameBubbleHeight / 2) + (topicHeight / 2) + 20
+    );
+    
     if (isMobile) {
-      // Use minimal radius to keep everything super close to center
-      const maxRadius = 15; // Even smaller - basically just around the center bubble
+      // Mobile positioning - place topics around the username bubble with safe distance
+      const marginX = 40;
+      const marginY = 30;
+      const maxRadius = Math.min(
+        (rect.width / 2) - marginX - (topicWidth / 2),
+        (rect.height / 2) - marginY - (topicHeight / 2)
+      );
       
-      // Massive safety margins to prevent any cropping
-      const marginX = 100; // Very large horizontal margins
-      const marginY = 60;  // Very large vertical margins
-      
-      // Conservative topic dimensions (overestimate to be safe)
-      const topicHeight = 40;   // Larger estimate
-      const maxTopicWidth = 150; // Much larger width estimate
-      
-      // Calculate safe area
-      const safeWidth = rect.width - (marginX * 2);
-      const safeHeight = rect.height - (marginY * 2);
-      
-      // If safe area is too small, just stack vertically near center
-      if (safeWidth < maxTopicWidth + 20 || safeHeight < 100) {
-        return {
-          x: Math.max(marginX, centerX - maxTopicWidth / 2),
-          y: Math.max(marginY, centerY + (Math.random() - 0.5) * 30)
-        };
+      // Ensure we have enough space for positioning
+      if (maxRadius < minDistanceFromCenter) {
+        // If space is too tight, place at edges
+        const side = Math.random();
+        if (side < 0.5) {
+          // Place on left or right
+          return {
+            x: side < 0.25 ? marginX : rect.width - marginX - topicWidth,
+            y: centerY + (Math.random() - 0.5) * (rect.height - 2 * marginY - topicHeight)
+          };
+        } else {
+          // Place on top or bottom
+          return {
+            x: centerX + (Math.random() - 0.5) * (rect.width - 2 * marginX - topicWidth),
+            y: side < 0.75 ? marginY : rect.height - marginY - topicHeight
+          };
+        }
       }
       
-      // Try to place within tiny radius, with immediate fallback to center
       let attempts = 0;
       let x, y;
       
       do {
         attempts++;
         const angle = Math.random() * 2 * Math.PI;
-        const radius = Math.random() * maxRadius; // 0-15px from center
+        // Ensure minimum distance from center, with some variation
+        const radius = minDistanceFromCenter + Math.random() * (maxRadius - minDistanceFromCenter);
         
         x = centerX + Math.cos(angle) * radius;
         y = centerY + Math.sin(angle) * radius;
         
-        // Immediately fallback to center stacking if any positioning issue
-        if (attempts > 2) {
-          x = centerX - maxTopicWidth / 2 + (Math.random() - 0.5) * 10;
-          y = centerY + (Math.random() - 0.5) * 40;
+        // Apply bounds
+        x = Math.max(marginX, Math.min(rect.width - marginX - topicWidth, x));
+        y = Math.max(marginY, Math.min(rect.height - marginY - topicHeight, y));
+        
+        // Fallback after multiple attempts
+        if (attempts > 5) {
+          const fallbackAngle = (Math.random() * 4) * (Math.PI / 2); // 0, 90, 180, 270 degrees
+          x = centerX + Math.cos(fallbackAngle) * minDistanceFromCenter;
+          y = centerY + Math.sin(fallbackAngle) * minDistanceFromCenter;
+          
+          x = Math.max(marginX, Math.min(rect.width - marginX - topicWidth, x));
+          y = Math.max(marginY, Math.min(rect.height - marginY - topicHeight, y));
           break;
         }
-      } while (attempts <= 2);
-      
-      // Final absolute bounds check - force within safe area
-      x = Math.max(marginX, Math.min(rect.width - marginX - maxTopicWidth, x));
-      y = Math.max(marginY, Math.min(rect.height - marginY - topicHeight, y));
+      } while (attempts <= 5);
       
       return { x, y };
     } else {
-      // Desktop positioning (original logic)
-      const baseRadius = 150;
+      // Desktop positioning - maintain larger distances
+      const marginX = 20;
+      const marginY = 20;
+      const baseRadius = Math.max(minDistanceFromCenter, 160); // Ensure minimum distance
       const radiusRange = 100;
-      const marginX = 10;
-      const marginY = 10;
-      const maxTopicWidth = 120;
-      const maxTopicHeight = 36;
+      const maxRadius = Math.min(
+        (rect.width / 2) - marginX - (topicWidth / 2),
+        (rect.height / 2) - marginY - (topicHeight / 2)
+      );
       
       let attempts = 0;
       let x, y;
@@ -514,22 +611,23 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
       do {
         attempts++;
         const angle = Math.random() * 2 * Math.PI;
-        const radius = baseRadius + Math.random() * radiusRange;
+        const radius = Math.min(baseRadius + Math.random() * radiusRange, maxRadius);
         
         x = centerX + Math.cos(angle) * radius;
         y = centerY + Math.sin(angle) * radius;
         
-        const maxX = rect.width - maxTopicWidth - marginX;
-        const maxY = rect.height - maxTopicHeight - marginY;
+        // Apply bounds
+        x = Math.max(marginX, Math.min(rect.width - marginX - topicWidth, x));
+        y = Math.max(marginY, Math.min(rect.height - marginY - topicHeight, y));
         
-        x = Math.max(marginX, Math.min(maxX, x));
-        y = Math.max(marginY, Math.min(maxY, y));
-        
+        // Fallback positioning
         if (attempts > 15) {
-          x = centerX + Math.cos(angle) * 100;
-          y = centerY + Math.sin(angle) * 100;
-          x = Math.max(marginX, Math.min(rect.width - maxTopicWidth - marginX, x));
-          y = Math.max(marginY, Math.min(rect.height - maxTopicHeight - marginY, y));
+          const fallbackRadius = Math.max(baseRadius, 120);
+          x = centerX + Math.cos(angle) * fallbackRadius;
+          y = centerY + Math.sin(angle) * fallbackRadius;
+          
+          x = Math.max(marginX, Math.min(rect.width - marginX - topicWidth, x));
+          y = Math.max(marginY, Math.min(rect.height - marginY - topicHeight, y));
           break;
         }
       } while (attempts <= 15);
@@ -728,14 +826,8 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
       
       // Update session storage in reflection mode for navigation
       if (isReflectionMode) {
-        // Wait a bit for state to update, then save current topics to session storage
-        setTimeout(() => {
-          setTopics(currentTopics => {
-            sessionStorage.setItem('mindmap-topics', JSON.stringify(currentTopics));
-            console.log(`[${operationId}] Updated session storage with ${currentTopics.length} topics`);
-            return currentTopics;
-          });
-        }, 100);
+        sessionStorage.setItem('mindmap-topics', JSON.stringify(updatedTopics));
+        console.log(`[${operationId}] Updated session storage with ${updatedTopics.length} topics`);
       }
       
       setIsTopicDialogOpen(false);
@@ -827,59 +919,43 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
               }
             : topic
         );
-        // Save to session storage in reflection mode when dragging (for instant feedback)
-        if (isReflectionMode) {
-          sessionStorage.setItem('mindmap-topics', JSON.stringify(updatedTopics));
-        }
+        // Use debounced session storage save for better performance
+        debouncedSessionSave(updatedTopics);
         return updatedTopics;
       });
     }
-  }, [draggedTopic, dragStartPos, hasDraggedBeyondThreshold, isReflectionMode]);
+  }, [draggedTopic, dragStartPos, hasDraggedBeyondThreshold, debouncedSessionSave]);
 
-  const handleMouseUp = useCallback(async () => {
-    // Only save to database if we actually dragged beyond the threshold
-    if (draggedTopic && hasDraggedBeyondThreshold && !isOperationInProgress) {
-      const operationId = `drag-complete-${Date.now()}`;
+  const handleMouseUp = useCallback(() => {
+    // Use debounced save for better drag performance - no immediate database operations
+    if (draggedTopic && hasDraggedBeyondThreshold) {
       const draggedTopicText = topics.find(t => t.id === draggedTopic)?.text || draggedTopic;
-      console.log(`[${operationId}] Starting save after drag operation for topic: "${draggedTopicText}"`);
+      console.log(`🚀 DRAG COMPLETED: "${draggedTopicText}" - using debounced save for performance`);
       
-      setIsOperationInProgress(true);
+      // Trigger debounced database save after drag completion
+      debouncedDatabaseSave(topics);
       
-      try {
-        const currentTopics = topics;
-        
-        // Save to database first
-        await saveTopicsToDatabase(currentTopics, operationId);
-        
-        // Then reload from database to get consistent state (prevent animations for position updates)
-        await reloadTopicsFromDatabase(operationId, true);
-        
-        // Also save to session storage in reflection mode for navigation
-        if (isReflectionMode) {
-          sessionStorage.setItem('mindmap-topics', JSON.stringify(currentTopics));
-        }
-      } catch (error) {
-        console.error(`[${operationId}] Failed to save after drag:`, error);
-        // On error, reload from database to get consistent state
-        await reloadTopicsFromDatabase(operationId);
-      } finally {
-        setIsOperationInProgress(false);
+      // Also save immediately to session storage for reflection mode navigation
+      if (isReflectionMode) {
+        sessionStorage.setItem('mindmap-topics', JSON.stringify(topics));
       }
     }
     
-    // Reset all drag-related state
+    // Reset drag-related state with small delay to allow click handler to check drag status
+    const hadDragged = hasDraggedBeyondThreshold;
     setDraggedTopic(null);
     setDragStartPos(null);
-    setHasDraggedBeyondThreshold(false);
+    setIsDragging(false);
     
-    // Reset dragging state - use a short delay only if we actually dragged
-    if (hasDraggedBeyondThreshold) {
-      setTimeout(() => setIsDragging(false), 50); // Reduced delay
+    // Delay clearing hasDraggedBeyondThreshold to prevent click events after drag
+    if (hadDragged) {
+      setTimeout(() => {
+        setHasDraggedBeyondThreshold(false);
+      }, 50); // Small delay to let click handler detect drag
     } else {
-      // No delay if we didn't drag - allows immediate clicking
-      setIsDragging(false);
+      setHasDraggedBeyondThreshold(false);
     }
-  }, [draggedTopic, hasDraggedBeyondThreshold, saveTopicsToDatabase, reloadTopicsFromDatabase, topics, isReflectionMode, isOperationInProgress]);
+  }, [draggedTopic, hasDraggedBeyondThreshold, topics, debouncedDatabaseSave, isReflectionMode]);
 
   const handleSave = useCallback(async () => {
     if (isOperationInProgress) {
@@ -1004,6 +1080,13 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
+            {/* Pending Save Indicator */}
+            {pendingSave && (
+              <div className="absolute top-4 right-4 z-50 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg animate-pulse">
+                Saving...
+              </div>
+            )}
+            
             {/* Username Bubble (Central) - Naturally centered with flexbox */}
             <motion.div
               initial={{ scale: 0 }}
@@ -1019,9 +1102,9 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
                 <motion.div
                   key={topic.id}
                   initial={topic.isNew ? { scale: 0, opacity: 0 } : false}
-                  animate={draggedTopic === topic.id ? false : { scale: 1, opacity: 1 }}
+                  animate={draggedTopic === topic.id ? false : topic.isNew ? { scale: 1, opacity: 1 } : false}
                   exit={{ scale: 0, opacity: 0 }}
-                  transition={draggedTopic === topic.id ? { duration: 0 } : undefined}
+                  transition={draggedTopic === topic.id ? { duration: 0 } : topic.isNew ? { type: "spring", stiffness: 200, damping: 20 } : { duration: 0 }}
                   onAnimationComplete={() => {
                     // Reset isNew flag after animation completes to prevent future animations
                     if (topic.isNew) {
@@ -1032,7 +1115,11 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
                       );
                     }
                   }}
-                  className="absolute cursor-pointer select-none bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-full px-2 sm:px-4 py-1 sm:py-2 text-center font-medium text-xs sm:text-sm shadow-lg border-1 sm:border-2 border-white max-w-[80px] sm:max-w-[120px] group hover:shadow-xl transition-shadow"
+                  className={`absolute cursor-pointer select-none text-white rounded-full px-2 sm:px-4 py-1 sm:py-2 text-center font-medium text-xs sm:text-sm shadow-lg border-1 sm:border-2 border-white max-w-[80px] sm:max-w-[120px] group hover:shadow-xl ${
+                    topic.notes && topic.notes.trim() !== ''
+                      ? 'bg-gradient-to-r from-green-400 to-blue-500 ring-2 ring-green-300/50' // Updated topics: enhanced with ring
+                      : 'bg-gradient-to-r from-gray-400 to-gray-500 opacity-75' // Non-updated topics: muted
+                  }`}
                   style={{ 
                     left: topic.x, 
                     top: topic.y,
@@ -1046,8 +1133,8 @@ export function MindmapReflection({ onSave, onTopicsChange, initialUsername = ""
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span className="break-words text-xs">{topic.text}</span>
-                    {topic.notes && (
-                      <Edit3 className="h-1.5 w-1.5 sm:h-2 sm:w-2 opacity-70" />
+                    {topic.notes && topic.notes.trim() !== '' && (
+                      <Edit3 className="h-2 w-2 sm:h-2.5 sm:w-2.5 opacity-90 text-yellow-200 drop-shadow-sm" />
                     )}
                     <button
                       onClick={(e) => {
