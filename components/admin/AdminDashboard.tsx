@@ -12,7 +12,8 @@ import {
 import { AdminStatsOverview } from "./AdminStatsOverview";
 import { AdminUserManagement } from "./AdminUserManagement";
 import { AdminMapsManagement } from "./AdminMapsManagement";
-import { Users, Activity, Settings, BarChart3 } from "lucide-react";
+import { AdminJourneyPeek } from "./AdminJourneyPeek";
+import { Users, Activity, Settings, BarChart3, Eye } from "lucide-react";
 
 export function AdminDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -40,6 +41,10 @@ export function AdminDashboard() {
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Analytics
+          </TabsTrigger>
+          <TabsTrigger value="journey-peek" className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Journey Peek
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -75,6 +80,10 @@ export function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="journey-peek" className="space-y-4">
+          <AdminJourneyPeek key={`journey-peek-${refreshKey}`} />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">

@@ -17,6 +17,7 @@ import { Project } from "@/types/project";
 import { ReflectionHeatmap } from "@/components/reflection/reflection-heatmap";
 import { useState, useEffect } from "react";
 import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
+import { getOrCreatePersonalJourneyMap } from "@/lib/supabase/maps";
 
 interface MindmapReflection {
   id: string;
@@ -45,6 +46,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
   const [reflections, setReflections] = useState<MindmapReflection[]>([]);
   const [selectedReflection, setSelectedReflection] = useState<MindmapReflection | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreatingJourneyMap, setIsCreatingJourneyMap] = useState(false);
 
   useEffect(() => {
     const fetchReflections = async () => {
@@ -71,6 +73,20 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
   const handleReflectionClick = (reflection: MindmapReflection) => {
     setSelectedReflection(reflection);
     setIsModalOpen(true);
+  };
+
+  const handleJourneyMapClick = async () => {
+    setIsCreatingJourneyMap(true);
+    try {
+      const journeyMap = await getOrCreatePersonalJourneyMap();
+      // Navigate to the journey map in edit mode
+      window.location.href = `/map/${journeyMap.id}/edit`;
+    } catch (error) {
+      console.error("Error accessing journey map:", error);
+      // You could add a toast notification here if available
+    } finally {
+      setIsCreatingJourneyMap(false);
+    }
   };
 
   return (
@@ -141,35 +157,47 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="col-span-1 bg-gradient-to-br from-purple-950 to-violet-900 text-white">
+          <Card 
+            className="col-span-1 bg-gradient-to-br from-purple-950 to-violet-900 text-white cursor-pointer hover:from-purple-900 hover:to-violet-800 transition-colors"
+            onClick={handleJourneyMapClick}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center">
                 <Flame className="mr-2 h-5 w-5 text-red-400" />
-                Your Projects
+                My Journey Map
               </CardTitle>
               <CardDescription className="text-white/70">
-                Projects you're currently working on
+                Your personal learning map that you can edit and customize
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {projects.map((project, index) => (
-                  <div key={index} className="space-y-1">
-                    <div className="flex justify-between">
-                      <span>{project.name}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {project.tags.map((tag) => (
-                        <Badge
-                          key={tag.id}
-                          style={{ backgroundColor: tag.color }}
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))}
+                {isCreatingJourneyMap ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center gap-2 text-white/80">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Opening your journey map...</span>
                     </div>
                   </div>
-                ))}
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-white/70 text-xs">
+                      <span>✏️ Fully editable</span>
+                      <span>•</span>
+                      <span>🔒 Private to you</span>
+                      <span>•</span>
+                      <span>🎯 Your learning path</span>
+                    </div>
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="w-full mt-3 bg-white/10 hover:bg-white/20 text-white border-white/20"
+                      disabled={isCreatingJourneyMap}
+                    >
+                      {isCreatingJourneyMap ? "Opening..." : "Open Journey Map"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

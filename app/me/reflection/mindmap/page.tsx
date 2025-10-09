@@ -52,28 +52,34 @@ export default function MindmapReflectionPage() {
   };
 
   const handleContinue = () => {
-    // Save topics to session storage to pass to feelings page
-    if (topics.length > 0) {
-      // Clear notes from topics for fresh reflection next time
-      const topicsWithoutNotes = topics.map(topic => ({
-        ...topic,
-        notes: undefined // Clear notes for next reflection
-      }));
-      
-      // Save topics with notes to session storage (for the reflection submission)
-      sessionStorage.setItem('mindmap-topics', JSON.stringify(topics));
-      
-      // Update the persistent database storage to clear notes for next time
-      sessionStorage.setItem('clear-topic-notes', 'true');
-      
-      router.push('/me/reflection/mindmap/feelings');
-    } else {
+    // Check if there are topics and if any have updates
+    const topicsWithUpdates = topics.filter(topic => topic.notes && topic.notes.trim() !== '');
+    
+    if (topics.length === 0) {
       toast({
         title: "No topics found",
         description: "Please add some topics before continuing.",
         variant: "destructive",
       });
+      return;
     }
+    
+    if (topicsWithUpdates.length === 0) {
+      toast({
+        title: "No updates found",
+        description: "Please add updates to at least one topic before continuing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Save topics with notes to session storage (for the reflection submission)
+    sessionStorage.setItem('mindmap-topics', JSON.stringify(topics));
+    
+    // Update the persistent database storage to clear notes for next time
+    sessionStorage.setItem('clear-topic-notes', 'true');
+    
+    router.push('/me/reflection/mindmap/feelings');
   };
 
   return (
@@ -107,14 +113,28 @@ export default function MindmapReflectionPage() {
       {/* Continue Button */}
       {topics.length > 0 && (
         <div className="container px-4 py-6">
-          <Button 
-            onClick={handleContinue}
-            size="lg"
-            className="w-full sm:w-auto sm:mx-auto sm:block"
-          >
-            Continue to Feelings
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          {(() => {
+            const topicsWithUpdates = topics.filter(topic => topic.notes && topic.notes.trim() !== '');
+            const canContinue = topicsWithUpdates.length > 0;
+            
+            return (
+              <Button 
+                onClick={handleContinue}
+                disabled={!canContinue}
+                size="lg"
+                className={`w-full sm:w-auto sm:mx-auto sm:block transition-all duration-200 ${
+                  !canContinue 
+                    ? 'opacity-50 cursor-not-allowed bg-gray-600 hover:bg-gray-600 dark:bg-gray-700 dark:hover:bg-gray-700' 
+                    : 'hover:shadow-lg'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <span>Continue to Feelings</span>
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </Button>
+            );
+          })()}
         </div>
       )}
       

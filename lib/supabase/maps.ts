@@ -81,7 +81,12 @@ export const getMaps = async (): Promise<LearningMap[]> => {
     throw new Error("Could not fetch learning maps.");
   }
 
-  return data || [];
+  // Filter out personal journey maps from public listings (client-side filter)
+  const filteredData = (data || []).filter(map => 
+    !map.metadata?.is_personal_journey
+  );
+
+  return filteredData;
 };
 
 // Enhanced function to get maps with detailed statistics and categorization
@@ -195,7 +200,7 @@ export const getMapsWithStats = async (
   } else {
     // Authenticated users can see:
     // 1. Public maps
-    // 2. Their own private maps
+    // 2. Their own private maps (except personal journey maps)
     // 3. Team maps if they're in the team (handled later in categorization)
     // 4. Classroom maps if they're enrolled (handled later in categorization)
     query = query
@@ -538,7 +543,15 @@ export const getMapsWithStats = async (
 
   // Transform data to include calculated statistics and categorization
   const mapsWithStats = uniqueMaps
-    .filter((map: any) => map && map.id && map.title) // Filter out null/invalid maps
+    .filter((map: any) => {
+      // Filter out null/invalid maps
+      if (!map || !map.id || !map.title) return false;
+      
+      // Filter out personal journey maps from public listings
+      if (map.metadata?.is_personal_journey === true) return false;
+      
+      return true;
+    })
     .map((map: any) => {
       const nodes = map.map_nodes || [];
       const nodeCount = nodes.length;
@@ -2637,3 +2650,105 @@ export const getTeamMeetings = async (
 };
 
 // updateTeamNodeStatus has been moved to @/lib/supabase/team-progress
+
+/**
+ * Get or create a personal journey map for the user
+ * This creates a special map that serves as the user's personal learning journey
+ */
+export const getOrCreatePersonalJourneyMap = async (): Promise<LearningMap> => {
+  const supabase = createClient();
+
+  // Get the current authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("User must be authenticated to access their journey map");
+  }
+
+  // First, try to find an existing personal journey map
+  const { data: existingMaps, error: searchError } = await supabase
+    .from("learning_maps")
+    .select("*")
+    .eq("creator_id", user.id)
+    .eq("title", "My Learning Journey")
+    .eq("visibility", "private")
+    .limit(1);
+
+  if (searchError) {
+    console.error("Error searching for existing journey map:", searchError);
+    throw new Error("Failed to check for existing journey map");
+  }
+
+  // If a journey map already exists, return it
+  if (existingMaps && existingMaps.length > 0) {
+    console.log("Found existing personal journey map:", existingMaps[0].id);
+    return existingMaps[0];
+  }
+
+  // Create a new personal journey map
+  console.log("Creating new personal journey map for user:", user.id);
+  
+  const journeyMapData = {
+    title: "My Learning Journey",
+    description: "My personal learning path and reflections",
+    visibility: "private" as const,
+    category: "custom" as const,
+    metadata: {
+      is_personal_journey: true,
+      created_at: new Date().toISOString()
+    }
+  };
+
+  const newJourneyMap = await createMap(journeyMapData);
+  console.log("Created new personal journey map:", newJourneyMap.id);
+  
+  return newJourneyMap;
+};
+
+/**
+ * Admin function to get all personal journey maps
+ * This bypasses normal privacy filters for administrative access
+ */
+export const getAllPersonalJourneyMapsAdmin = async (): Promise<LearningMap[]> => {
+  const supabase = createClient();
+
+  // Get the current authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("User must be authenticated to access admin functions");
+  }
+
+  // Check if user is admin (you may want to implement your own admin check)
+  // For now, we'll assume this function is only called from admin contexts
+
+  // Get all personal journey maps (bypassing normal privacy filters)
+  const { data: journeyMaps, error: searchError } = await supabase
+    .from("learning_maps")
+    .select(`
+      *,
+      profiles!learning_maps_creator_id_fkey (
+        id,
+        email,
+        full_name,
+        username
+      )
+    `)
+    .eq("title", "My Learning Journey")
+    .eq("visibility", "private")
+    .not("metadata->>is_personal_journey", "is", null)
+    .order("updated_at", { ascending: false });
+
+  if (searchError) {
+    console.error("Error fetching journey maps for admin:", searchError);
+    throw new Error("Failed to fetch journey maps");
+  }
+
+  return journeyMaps || [];
+};
