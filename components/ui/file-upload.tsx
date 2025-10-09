@@ -136,6 +136,82 @@ export function FileUpload({
     [accept, maxSize]
   );
 
+  // Helper to upload large files in chunks (bypasses Vercel 4MB limit)
+  const uploadInChunks = useCallback(
+    async (
+      file: File,
+      nodeId: string,
+      uploadType: string,
+      signal: AbortSignal
+    ): Promise<any> => {
+      const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB chunks (safely under 4MB limit)
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const sessionId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+
+      console.log(`Uploading ${file.name} in ${totalChunks} chunks (${CHUNK_SIZE / 1024 / 1024}MB each)`);
+
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const start = chunkIndex * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+
+        console.log(`Uploading chunk ${chunkIndex + 1}/${totalChunks} (${chunk.size} bytes)`);
+
+        // Update progress based on chunks uploaded
+        const percentage = Math.round(((chunkIndex + 0.5) / totalChunks) * 100);
+        setUploadProgress({
+          stage: "uploading",
+          percentage,
+          message: `Uploading chunk ${chunkIndex + 1} of ${totalChunks}...`,
+        });
+
+        const headers: Record<string, string> = {
+          "x-upload-session-id": sessionId,
+          "x-chunk-index": chunkIndex.toString(),
+          "x-total-chunks": totalChunks.toString(),
+          "x-node-id": nodeId,
+          "x-upload-type": uploadType,
+        };
+
+        // First chunk includes file metadata
+        if (chunkIndex === 0) {
+          headers["x-file-name"] = file.name;
+          headers["x-file-type"] = file.type;
+          headers["x-file-size"] = file.size.toString();
+        }
+
+        const response = await fetch("/api/upload/chunk", {
+          method: "POST",
+          headers,
+          body: chunk,
+          signal,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || `Chunk ${chunkIndex + 1} upload failed`);
+        }
+
+        // Last chunk - upload complete
+        if (result.complete) {
+          console.log("All chunks uploaded successfully!");
+          setUploadProgress({
+            stage: "complete",
+            percentage: 100,
+            message: "Upload complete!",
+          });
+          return result;
+        }
+
+        console.log(`Chunk ${chunkIndex + 1}/${totalChunks} uploaded. Progress: ${result.chunksReceived}/${result.totalChunks}`);
+      }
+
+      throw new Error("Upload completed but no final result received");
+    },
+    []
+  );
+
   // Helper to upload with real progress tracking using XMLHttpRequest
   const uploadWithProgress = useCallback(
     (
@@ -274,40 +350,18 @@ export function FileUpload({
       });
 
       try {
-        // For large files or documents, use streaming proxy
-        const useStreamingUpload = file.size > 4 * 1024 * 1024 || uploadEndpoint === "documents";
+        // For large files, use chunked upload to bypass Vercel's 4MB limit
+        const useChunkedUpload = file.size > 4 * 1024 * 1024;
 
-        if (useStreamingUpload) {
-          console.log("Using streaming upload for large file:", file.name, "size:", file.size);
+        if (useChunkedUpload) {
+          console.log("Using chunked upload for large file:", file.name, "size:", file.size);
 
-          // Upload via streaming proxy endpoint with real progress
-          console.log("Uploading via streaming proxy...");
-
-          const response = await uploadWithProgress(
-            "/api/upload/stream",
+          const result = await uploadInChunks(
             file,
-            {
-              "x-node-id": nodeId,
-              "x-file-name": file.name,
-              "x-file-type": file.type,
-              "x-file-size": file.size.toString(),
-              "x-upload-type": uploadEndpoint === "documents" ? "map-content" : "submission",
-            },
+            nodeId,
+            uploadEndpoint === "documents" ? "map-content" : "submission",
             abortController.signal
           );
-
-          let result;
-          try {
-            result = await response.json();
-          } catch (parseError) {
-            console.error("Failed to parse response:", parseError);
-            throw new Error("Invalid server response");
-          }
-
-          if (!response.ok) {
-            console.error("Streaming upload failed:", response.status, result);
-            throw new Error(result.error || `Server error (${response.status})`);
-          }
 
           const uploadedFileData: UploadedFile = {
             name: result.fileName,
@@ -458,7 +512,7 @@ export function FileUpload({
         }, 1000);
       }
     },
-    [nodeId, onUploadComplete, toast, validateFile, uploadWithProgress, finishUpload, uploadEndpoint, allowMultiple]
+    [nodeId, onUploadComplete, toast, validateFile, uploadInChunks, uploadWithProgress, finishUpload, uploadEndpoint, allowMultiple]
   );
 
   const handleFileSelect = useCallback(
