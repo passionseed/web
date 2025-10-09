@@ -15,6 +15,7 @@ import { Flame, Star, Users, BookOpen, Heart, Brain, Calendar, TrendingUp, Zap }
 import Link from "next/link";
 import { Project } from "@/types/project";
 import { ReflectionHeatmap } from "@/components/reflection/reflection-heatmap";
+import { StreakCounter } from "@/components/reflection/StreakCounter";
 import { useState, useEffect } from "react";
 import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
 import { getOrCreatePersonalJourneyMap } from "@/lib/supabase/maps";
@@ -30,6 +31,10 @@ interface MindmapReflection {
     id: string;
     text: string;
     notes: string | null;
+    satisfaction_rating: number | null;
+    progress_rating: number | null;
+    challenge_rating: number | null;
+    reflection_why: string | null;
   }>;
 }
 
@@ -51,8 +56,27 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
   useEffect(() => {
     const fetchReflections = async () => {
       try {
-        const data = await getMindmapReflections(6); // Get latest 6 reflections
-        setReflections(data || []);
+        const data = await getMindmapReflections(20); // Get more to deduplicate
+
+        // Deduplicate: keep only the latest reflection per day
+        const deduplicatedReflections = (data || []).reduce((acc, reflection) => {
+          const date = new Date(reflection.created_at).toDateString();
+          const existing = acc.get(date);
+
+          // Keep the latest reflection for each date
+          if (!existing || new Date(reflection.created_at) > new Date(existing.created_at)) {
+            acc.set(date, reflection);
+          }
+
+          return acc;
+        }, new Map<string, MindmapReflection>());
+
+        // Convert back to array and sort by date (newest first), limit to 6
+        const uniqueReflections = Array.from(deduplicatedReflections.values())
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 6);
+
+        setReflections(uniqueReflections);
       } catch (error) {
         console.error("Error fetching reflections:", error);
         // Silently handle the error - user might not be authenticated on client
@@ -69,6 +93,31 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
       day: "numeric",
       year: "numeric",
     });
+
+  // Parse overall_reflection text to extract topic-specific notes
+  // Format: "topic1: note1\ntopic2: note2\n..."
+  const parseOverallReflection = (text: string): Map<string, string> => {
+    const topicNotesMap = new Map<string, string>();
+
+    if (!text || text.trim() === '') return topicNotesMap;
+
+    // Split by newlines and parse each line
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+
+    for (const line of lines) {
+      // Look for pattern "topic: note"
+      const colonIndex = line.indexOf(':');
+      if (colonIndex > 0) {
+        const topic = line.substring(0, colonIndex).trim().toLowerCase();
+        const note = line.substring(colonIndex + 1).trim();
+        if (topic && note) {
+          topicNotesMap.set(topic, note);
+        }
+      }
+    }
+
+    return topicNotesMap;
+  };
 
   const handleReflectionClick = (reflection: MindmapReflection) => {
     setSelectedReflection(reflection);
@@ -118,23 +167,11 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
           </Card>
 
           <div className="col-span-1 flex flex-col gap-6">
-            <Link href="/me/reflection" className="block">
-              <Card className="bg-gradient-to-r from-green-800 to-emerald-700 hover:from-green-700 hover:to-emerald-600 transition-colors cursor-pointer">
-                <CardContent className="flex items-center justify-between p-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      Reflection Journey
-                    </h3>
-                    <p className="text-white/80">
-                      You have a {reflectionStreak}-day reflection streak! Keep
-                      it up.
-                    </p>
-                  </div>
-                  <Heart className="h-12 w-12 text-red-300" />
-                </CardContent>
-              </Card>
-            </Link>
-            
+            <StreakCounter
+              streak={reflectionStreak}
+              onClick={() => window.location.href = '/me/reflection'}
+            />
+
             <Link href="/me/reflection/mindmap">
               <Card className="bg-gradient-to-br from-blue-800 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-600 transition-colors cursor-pointer">
                 <CardHeader className="pb-3">
@@ -219,61 +256,12 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
           </Card>
         </div>
 
-        <Tabs defaultValue="workshops" className="w-full">
+        <Tabs defaultValue="reflect" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="reflect">Reflect</TabsTrigger>
             <TabsTrigger value="workshops">Workshops</TabsTrigger>
             <TabsTrigger value="communities">Communities</TabsTrigger>
-            <TabsTrigger value="reflect">Reflect</TabsTrigger>
           </TabsList>
-          <TabsContent value="workshops">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  Workshops You've Joined
-                </CardTitle>
-                <CardDescription>
-                  Track your learning journey through workshops
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {workshops.map((workshop, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start justify-between border-b pb-4 last:border-0 last:pb-0"
-                    >
-                      <div className="space-y-1">
-                        <h4 className="font-medium">{workshop.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {workshop.category}
-                        </p>
-                      </div>
-                      <Badge variant="outline">Joined</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="communities">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="mr-2 h-5 w-5" />
-                  Your Communities
-                </CardTitle>
-                <CardDescription>
-                  Communities you're actively participating in
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Placeholder for communities */}
-                <p>Coming soon...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
           <TabsContent value="reflect">
             <Card>
               <CardHeader>
@@ -356,36 +344,100 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
 
                           {/* Topics with updates preview */}
                           <div className="bg-muted/20 rounded p-2">
-                            {reflection.mindmap_topics.filter(topic => topic.notes).length > 0 ? (
-                              <div className="space-y-1">
-                                {reflection.mindmap_topics
-                                  .filter(topic => topic.notes)
-                                  .slice(0, 2)
-                                  .map((topic, idx) => (
-                                    <div key={topic.id} className="text-xs">
-                                      <span className="font-medium text-emerald-600">{topic.text}:</span>
-                                      <span className="text-muted-foreground ml-1 line-clamp-1">
-                                        {topic.notes}
-                                      </span>
-                                    </div>
-                                  ))}
-                                {reflection.mindmap_topics.filter(topic => topic.notes).length > 2 && (
+                            {(() => {
+                              // Parse overall_reflection to get all topic notes
+                              const parsedNotes = parseOverallReflection(reflection.overall_reflection);
+
+                              // Get topics with notes (either from notes field or parsed)
+                              const topicsWithNotes = reflection.mindmap_topics
+                                .map(topic => {
+                                  const displayNotes = topic.notes || parsedNotes.get(topic.text.toLowerCase());
+                                  return displayNotes ? { ...topic, displayNotes } : null;
+                                })
+                                .filter(Boolean) as Array<{ id: string; text: string; displayNotes: string }>;
+
+                              if (topicsWithNotes.length === 0) {
+                                return (
                                   <p className="text-xs text-muted-foreground italic">
-                                    +{reflection.mindmap_topics.filter(topic => topic.notes).length - 2} more topics
+                                    No topic updates available
                                   </p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-xs text-muted-foreground italic">
-                                No topic updates available
-                              </p>
-                            )}
+                                );
+                              }
+
+                              return (
+                                <div className="space-y-1">
+                                  {topicsWithNotes
+                                    .slice(0, 2)
+                                    .map((topic) => (
+                                      <div key={topic.id} className="text-xs">
+                                        <span className="font-medium text-emerald-600">{topic.text}:</span>
+                                        <span className="text-muted-foreground ml-1 line-clamp-1">
+                                          {topic.displayNotes}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  {topicsWithNotes.length > 2 && (
+                                    <p className="text-xs text-muted-foreground italic">
+                                      +{topicsWithNotes.length - 2} more topics
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </CardContent>
                       </Card>
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="workshops">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BookOpen className="mr-2 h-5 w-5" />
+                  Workshops You've Joined
+                </CardTitle>
+                <CardDescription>
+                  Track your learning journey through workshops
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {workshops.map((workshop, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start justify-between border-b pb-4 last:border-0 last:pb-0"
+                    >
+                      <div className="space-y-1">
+                        <h4 className="font-medium">{workshop.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {workshop.category}
+                        </p>
+                      </div>
+                      <Badge variant="outline">Joined</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="communities">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="mr-2 h-5 w-5" />
+                  Your Communities
+                </CardTitle>
+                <CardDescription>
+                  Communities you're actively participating in
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Placeholder for communities */}
+                <p>Coming soon...</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -427,9 +479,37 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Topics & Reflections</h3>
                     <div className="grid gap-4">
-                      {selectedReflection.mindmap_topics
-                        .filter(topic => topic.notes)
-                        .map((topic) => (
+                      {(() => {
+                        // Parse overall_reflection to get topic notes if topics don't have notes
+                        const parsedNotes = parseOverallReflection(selectedReflection.overall_reflection);
+
+                        // Combine topics from mindmap_topics with parsed notes
+                        const topicsWithNotes = selectedReflection.mindmap_topics.map(topic => {
+                          // If topic already has notes, use them
+                          if (topic.notes) {
+                            return { ...topic, displayNotes: topic.notes };
+                          }
+
+                          // Otherwise, try to find notes from parsed overall_reflection
+                          const topicNameLower = topic.text.toLowerCase();
+                          const parsedNote = parsedNotes.get(topicNameLower);
+
+                          return {
+                            ...topic,
+                            displayNotes: parsedNote || null
+                          };
+                        }).filter(topic => topic.displayNotes);
+
+                        // If no topics with notes, show a message
+                        if (topicsWithNotes.length === 0) {
+                          return (
+                            <p className="text-muted-foreground text-center py-8">
+                              No topic reflections available
+                            </p>
+                          );
+                        }
+
+                        return topicsWithNotes.map((topic) => (
                           <Card key={topic.id} className="bg-card/50 border">
                             <CardContent className="p-4">
                               {/* Topic Name */}
@@ -437,53 +517,76 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                                 <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                                 <h4 className="font-semibold text-emerald-600">{topic.text}</h4>
                               </div>
-                              
+
                               {/* Updates */}
                               <div className="mb-4">
                                 <h5 className="text-sm font-medium text-muted-foreground mb-2">Updates:</h5>
                                 <div className="bg-muted/30 rounded-lg p-3">
-                                  <p className="text-sm leading-relaxed">{topic.notes}</p>
+                                  <p className="text-sm leading-relaxed">{topic.displayNotes}</p>
                                 </div>
                               </div>
-                              
-                              {/* Individual Ratings (if we stored them - placeholder for now) */}
-                              <div className="grid grid-cols-3 gap-3">
-                                <div className="text-center p-2 bg-pink-50 dark:bg-pink-900/20 rounded">
-                                  <Heart className="h-4 w-4 text-pink-500 mx-auto mb-1" />
-                                  <div className="text-sm font-medium">N/A</div>
-                                  <div className="text-xs text-muted-foreground">Satisfaction</div>
+
+                              {/* Individual Topic Ratings - Show if available */}
+                              {(topic.satisfaction_rating || topic.progress_rating || topic.challenge_rating) && (
+                                <div className="grid grid-cols-3 gap-3 mb-4">
+                                  <div className="text-center p-2 bg-pink-50 dark:bg-pink-900/20 rounded">
+                                    <Heart className="h-4 w-4 text-pink-500 mx-auto mb-1" />
+                                    <div className="text-sm font-medium">{topic.satisfaction_rating || 0}</div>
+                                    <div className="text-xs text-muted-foreground">Satisfaction</div>
+                                  </div>
+                                  <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                    <TrendingUp className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                                    <div className="text-sm font-medium">{topic.progress_rating || 0}</div>
+                                    <div className="text-xs text-muted-foreground">Progress</div>
+                                  </div>
+                                  <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
+                                    <Zap className="h-4 w-4 text-orange-500 mx-auto mb-1" />
+                                    <div className="text-sm font-medium">{topic.challenge_rating || 0}</div>
+                                    <div className="text-xs text-muted-foreground">Challenge</div>
+                                  </div>
                                 </div>
-                                <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-                                  <TrendingUp className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                                  <div className="text-sm font-medium">N/A</div>
-                                  <div className="text-xs text-muted-foreground">Progress</div>
+                              )}
+
+                              {/* Reflection Why */}
+                              {topic.reflection_why && (
+                                <div>
+                                  <h5 className="text-sm font-medium text-muted-foreground mb-2">Reflection:</h5>
+                                  <div className="bg-muted/30 rounded-lg p-3">
+                                    <p className="text-sm leading-relaxed italic">{topic.reflection_why}</p>
+                                  </div>
                                 </div>
-                                <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
-                                  <Zap className="h-4 w-4 text-orange-500 mx-auto mb-1" />
-                                  <div className="text-sm font-medium">N/A</div>
-                                  <div className="text-xs text-muted-foreground">Challenge</div>
-                                </div>
-                              </div>
+                              )}
                             </CardContent>
                           </Card>
-                        ))}
+                        ));
+                      })()}
                     </div>
-                    
+
+
                     {/* Topics without updates */}
-                    {selectedReflection.mindmap_topics.filter(topic => !topic.notes).length > 0 && (
-                      <div className="mt-6">
-                        <h4 className="font-medium text-muted-foreground mb-2">Topics Added (No Updates)</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedReflection.mindmap_topics
-                            .filter(topic => !topic.notes)
-                            .map((topic) => (
+                    {(() => {
+                      const parsedNotes = parseOverallReflection(selectedReflection.overall_reflection);
+                      const topicsWithoutNotes = selectedReflection.mindmap_topics.filter(topic => {
+                        if (topic.notes) return false;
+                        const topicNameLower = topic.text.toLowerCase();
+                        return !parsedNotes.has(topicNameLower);
+                      });
+
+                      if (topicsWithoutNotes.length === 0) return null;
+
+                      return (
+                        <div className="mt-6">
+                          <h4 className="font-medium text-muted-foreground mb-2">Topics Added (No Updates)</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {topicsWithoutNotes.map((topic) => (
                               <Badge key={topic.id} variant="outline" className="text-xs">
                                 {topic.text}
                               </Badge>
                             ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               </>

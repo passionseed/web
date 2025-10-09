@@ -264,6 +264,24 @@ export async function getUserDashboardData(supabase: SupabaseClient) {
     console.error("Failed to fetch reflections:", error);
   }
 
+  // Also fetch mindmap reflections
+  try {
+    const mindmapReflectionsRes = await supabase
+      .from("mindmap_reflections")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (mindmapReflectionsRes.error) {
+      console.warn("Mindmap reflections data not accessible:", mindmapReflectionsRes.error);
+    } else {
+      // Combine with existing reflections
+      reflectionsData = [...reflectionsData, ...(mindmapReflectionsRes.data || [])];
+    }
+  } catch (error) {
+    console.error("Failed to fetch mindmap reflections:", error);
+  }
+
   // Try to fetch workshops with comprehensive error handling
   try {
     const workshopsRes = await supabase
@@ -493,7 +511,7 @@ export async function getGraphData(): Promise<{
 export async function getReflectionCalendar(
   year: number,
   month?: number
-): Promise<{ created_at: string; emotion: string }[]> {
+): Promise<{ created_at: string; emotion?: string }[]> {
   const supabase = createClient();
   const {
     data: { user },
@@ -508,20 +526,38 @@ export async function getReflectionCalendar(
     ? new Date(year, month, 1)
     : new Date(year + 1, 0, 1);
 
-  const { data, error } = await supabase
+  // Fetch from old reflections table
+  const { data: oldReflections, error: oldError } = await supabase
     .from("reflections")
     .select("created_at, emotion")
     .eq("user_id", user.id)
     .gte("created_at", startDate.toISOString())
     .lt("created_at", endDate.toISOString());
 
-  if (error) {
-    console.error("Error fetching reflection calendar data:", error);
-    return [];
+  if (oldError) {
+    console.error("Error fetching old reflection calendar data:", oldError);
   }
 
+  // Fetch from new mindmap_reflections table
+  const { data: mindmapReflections, error: mindmapError } = await supabase
+    .from("mindmap_reflections")
+    .select("created_at")
+    .eq("user_id", user.id)
+    .gte("created_at", startDate.toISOString())
+    .lt("created_at", endDate.toISOString());
+
+  if (mindmapError) {
+    console.error("Error fetching mindmap reflection calendar data:", mindmapError);
+  }
+
+  // Combine both data sources
+  const combined = [
+    ...(oldReflections || []),
+    ...(mindmapReflections || []).map(r => ({ created_at: r.created_at, emotion: undefined }))
+  ];
+
   // Return raw data and let the client handle timezone-specific grouping
-  return data;
+  return combined;
 }
 
 export async function getMonthlyInsights(

@@ -20,6 +20,10 @@ interface MindmapReflection {
     id: string;
     text: string;
     notes: string | null;
+    satisfaction_rating: number | null;
+    progress_rating: number | null;
+    challenge_rating: number | null;
+    reflection_why: string | null;
   }>;
 }
 
@@ -30,12 +34,52 @@ export default function ReflectionHome() {
   const [reflections, setReflections] = useState<MindmapReflection[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Parse overall_reflection text to extract topic-specific notes
+  const parseOverallReflection = (text: string): Map<string, string> => {
+    const topicNotesMap = new Map<string, string>();
+
+    if (!text || text.trim() === '') return topicNotesMap;
+
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+
+    for (const line of lines) {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex > 0) {
+        const topic = line.substring(0, colonIndex).trim().toLowerCase();
+        const note = line.substring(colonIndex + 1).trim();
+        if (topic && note) {
+          topicNotesMap.set(topic, note);
+        }
+      }
+    }
+
+    return topicNotesMap;
+  };
+
   useEffect(() => {
     const fetchReflections = async () => {
       setLoading(true);
       try {
         const data = await getMindmapReflections();
-        setReflections(data);
+
+        // Deduplicate: keep only the latest reflection per day
+        const deduplicatedReflections = (data || []).reduce((acc, reflection) => {
+          const date = new Date(reflection.created_at).toDateString();
+          const existing = acc.get(date);
+
+          // Keep the latest reflection for each date
+          if (!existing || new Date(reflection.created_at) > new Date(existing.created_at)) {
+            acc.set(date, reflection);
+          }
+
+          return acc;
+        }, new Map<string, MindmapReflection>());
+
+        // Convert back to array and sort by date (newest first)
+        const uniqueReflections = Array.from(deduplicatedReflections.values())
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setReflections(uniqueReflections);
       } catch (error) {
         console.error("Error fetching reflections:", error);
         toast({
@@ -188,30 +232,46 @@ export default function ReflectionHome() {
 
                     {/* Topics with updates preview */}
                     <div className="bg-muted/20 rounded p-2">
-                      {reflection.mindmap_topics.filter(topic => topic.notes).length > 0 ? (
-                        <div className="space-y-1">
-                          {reflection.mindmap_topics
-                            .filter(topic => topic.notes)
-                            .slice(0, 1) // Show only 1 on mobile for space
-                            .map((topic, idx) => (
-                              <div key={topic.id} className="text-xs">
-                                <span className="font-medium text-emerald-600">{topic.text}:</span>
-                                <span className="text-muted-foreground ml-1 line-clamp-1">
-                                  {topic.notes}
-                                </span>
-                              </div>
-                            ))}
-                          {reflection.mindmap_topics.filter(topic => topic.notes).length > 1 && (
+                      {(() => {
+                        // Parse overall_reflection to get all topic notes
+                        const parsedNotes = parseOverallReflection(reflection.overall_reflection);
+
+                        // Get topics with notes (either from notes field or parsed)
+                        const topicsWithNotes = reflection.mindmap_topics
+                          .map(topic => {
+                            const displayNotes = topic.notes || parsedNotes.get(topic.text.toLowerCase());
+                            return displayNotes ? { ...topic, displayNotes } : null;
+                          })
+                          .filter(Boolean) as Array<{ id: string; text: string; displayNotes: string }>;
+
+                        if (topicsWithNotes.length === 0) {
+                          return (
                             <p className="text-xs text-muted-foreground italic">
-                              +{reflection.mindmap_topics.filter(topic => topic.notes).length - 1} more topics
+                              No topic updates available
                             </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic">
-                          No topic updates available
-                        </p>
-                      )}
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-1">
+                            {topicsWithNotes
+                              .slice(0, 1) // Show only 1 on mobile for space
+                              .map((topic) => (
+                                <div key={topic.id} className="text-xs">
+                                  <span className="font-medium text-emerald-600">{topic.text}:</span>
+                                  <span className="text-muted-foreground ml-1 line-clamp-1">
+                                    {topic.displayNotes}
+                                  </span>
+                                </div>
+                              ))}
+                            {topicsWithNotes.length > 1 && (
+                              <p className="text-xs text-muted-foreground italic">
+                                +{topicsWithNotes.length - 1} more topics
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
