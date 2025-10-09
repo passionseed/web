@@ -123,10 +123,22 @@ export default function MindmapSummaryPage() {
     }
 
     setIsSaving(true);
-    
+
     try {
+      // Merge topics with their individual ratings
+      const topicsWithRatings = topics.map(topic => {
+        const rating = topicRatings[topic.id];
+        return {
+          ...topic,
+          satisfaction_rating: rating?.satisfaction || undefined,
+          progress_rating: rating?.progress || undefined,
+          challenge_rating: rating?.challenge || undefined,
+          reflection_why: rating?.why || undefined
+        };
+      });
+
       const reflectionData: MindmapReflectionData = {
-        topics: topics,
+        topics: topicsWithRatings,
         satisfaction: averageRatings.satisfaction,
         progress: averageRatings.progress,
         challenge: averageRatings.challenge,

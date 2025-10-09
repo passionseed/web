@@ -60,6 +60,8 @@ export function NodeEditorPanel({
   const [localText, setLocalText] = useState("");
   // For regular nodes, we also need local state for title to prevent deselection on every keystroke
   const [localTitle, setLocalTitle] = useState("");
+  // For instructions field, use local state to prevent re-rendering issues
+  const [localInstructions, setLocalInstructions] = useState("");
 
   // Remove the debounced updates - we'll only update on blur to prevent refreshing
   // The visual updates are handled by local state, data persistence happens on blur
@@ -100,6 +102,21 @@ export function NodeEditorPanel({
     onEditingStateChange?.(true);
   }, [onEditingStateChange]);
 
+  const handleInstructionsBlur = useCallback(() => {
+    onEditingStateChange?.(false);
+
+    if (selectedNode && localInstructions !== selectedNode.data.instructions) {
+      onNodeDataChange(selectedNode.id, {
+        instructions: localInstructions,
+        updated_at: new Date().toISOString(),
+      });
+    }
+  }, [selectedNode, localInstructions, onNodeDataChange, onEditingStateChange]);
+
+  const handleInstructionsFocus = useCallback(() => {
+    onEditingStateChange?.(true);
+  }, [onEditingStateChange]);
+
   useEffect(() => {
     if (selectedNode) {
       console.log(
@@ -128,6 +145,7 @@ export function NodeEditorPanel({
         setLocalText(selectedNode.data.title || "");
       } else {
         setLocalTitle(selectedNode.data.title || "");
+        setLocalInstructions(selectedNode.data.instructions || "");
       }
     }
   }, [selectedNode, isTextNode]);
@@ -146,6 +164,12 @@ export function NodeEditorPanel({
         // For regular nodes title field, use local state for immediate UI updates only
         if (!isTextNode && field === "title") {
           setLocalTitle(value);
+          return;
+        }
+
+        // For instructions field, use local state to prevent re-rendering issues
+        if (field === "instructions") {
+          setLocalInstructions(value);
           return;
         }
 
@@ -564,8 +588,10 @@ export function NodeEditorPanel({
                         id="instructions"
                         name="instructions"
                         placeholder="Add instruction..."
-                        value={nodeData.instructions || ""}
+                        value={localInstructions}
                         onChange={handleInputChange("instructions")}
+                        onFocus={handleInstructionsFocus}
+                        onBlur={handleInstructionsBlur}
                         className="min-h-[100px]"
                       />
                     </div>

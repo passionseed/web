@@ -6,6 +6,10 @@ export interface MindmapTopic {
   x: number;
   y: number;
   notes?: string;
+  satisfaction_rating?: number;
+  progress_rating?: number;
+  challenge_rating?: number;
+  reflection_why?: string;
 }
 
 export interface MindmapReflectionData {
@@ -55,18 +59,54 @@ export async function saveMindmapReflection(data: MindmapReflectionData) {
     console.log('Reflection saved:', reflection);
 
     // Save topics linked to this reflection
+    // First, get the existing general topics (with reflection_id = null)
+    const { data: existingTopics, error: fetchError } = await supabase
+      .from('mindmap_topics')
+      .select('id')
+      .eq('user_id', user.id)
+      .is('reflection_id', null);
+
+    if (fetchError) {
+      console.error('Error fetching existing topics:', fetchError);
+      throw fetchError;
+    }
+
+    console.log('Existing general topics to update:', existingTopics);
+
     if (data.topics.length > 0) {
+      // Update existing general topics to link them to this reflection
+      // and add the reflection data (ratings, notes, why)
       const topicsToInsert = data.topics.map(topic => ({
         user_id: user.id,
         reflection_id: reflection.id,
         text: topic.text,
         position_x: topic.x,
         position_y: topic.y,
-        notes: topic.notes || null
+        notes: topic.notes || null,
+        satisfaction_rating: topic.satisfaction_rating || null,
+        progress_rating: topic.progress_rating || null,
+        challenge_rating: topic.challenge_rating || null,
+        reflection_why: topic.reflection_why || null
       }));
 
-      console.log('Topics to insert:', topicsToInsert);
+      console.log('Topics to insert for reflection:', topicsToInsert);
 
+      // Delete the old general topics (with reflection_id = null) first
+      // to avoid duplicates
+      const { error: deleteError } = await supabase
+        .from('mindmap_topics')
+        .delete()
+        .eq('user_id', user.id)
+        .is('reflection_id', null);
+
+      if (deleteError) {
+        console.error('Error deleting general topics:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Deleted old general topics');
+
+      // Insert new topics linked to this reflection
       const { error: topicsError } = await supabase
         .from('mindmap_topics')
         .insert(topicsToInsert);
@@ -81,7 +121,7 @@ export async function saveMindmapReflection(data: MindmapReflectionData) {
         throw topicsError;
       }
 
-      console.log('Topics saved successfully');
+      console.log('Topics saved successfully with reflection link');
     }
 
     return reflection;
