@@ -35,6 +35,9 @@ export default async function Home() {
       // Profile incomplete, redirect to finish profile
       redirect("/auth/finish-profile");
     }
+
+    // Profile complete, redirect to /me
+    redirect("/me");
   }
 
   // Learning Maps Preview Component for non-logged-in users

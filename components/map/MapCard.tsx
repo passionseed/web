@@ -1,5 +1,5 @@
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MapWithStats } from "@/hooks/use-map-operations";
 import { VinylRecord } from "./VinylRecord";
 import { OptimizedImage } from "./OptimizedImage";
@@ -9,6 +9,18 @@ import {
   getVinylColorsFromCover,
 } from "@/utils/color-extraction";
 
+// Default album covers for maps without images
+const DEFAULT_ALBUM_COVERS = [
+  "/albums/o-dmb.jpg",
+  "/albums/o-bhn.jpg",
+  "/albums/o-mtp.jpeg",
+  "/albums/o-sotsog.jpg",
+  "/albums/o-wtsmg.jpg",
+  "/albums/n-blch.jpg",
+  "/albums/n-iu.webp",
+  "/albums/rdh-okc.png",
+];
+
 interface MapCardProps {
   map: MapWithStats;
 }
@@ -17,6 +29,18 @@ export function MapCard({ map }: MapCardProps) {
   const router = useRouter();
   const [vinylColors, setVinylColors] = useState<VinylColorScheme | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+
+  // Generate consistent random image for maps without covers
+  const defaultCoverImage = useMemo(() => {
+    if (map.cover_image_url || map.metadata?.coverImage) return null;
+
+    // Use map ID to generate consistent random index
+    const hash = map.id
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = hash % DEFAULT_ALBUM_COVERS.length;
+    return DEFAULT_ALBUM_COVERS[index];
+  }, [map.id, map.cover_image_url, map.metadata?.coverImage]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -55,7 +79,8 @@ export function MapCard({ map }: MapCardProps) {
         }
 
         // Fallback: Extract colors from image URL if no blurhash
-        const imageUrl = map.cover_image_url || map.metadata?.coverImage;
+        const imageUrl =
+          map.cover_image_url || map.metadata?.coverImage || defaultCoverImage;
         if (imageUrl) {
           getVinylColorsFromCover(imageUrl).then(setVinylColors);
         }
@@ -72,6 +97,7 @@ export function MapCard({ map }: MapCardProps) {
     map.cover_image_blurhash,
     map.cover_image_url,
     map.metadata?.coverImage,
+    defaultCoverImage,
   ]);
 
   const handleMapClick = (e: React.MouseEvent) => {
@@ -85,7 +111,12 @@ export function MapCard({ map }: MapCardProps) {
         <VinylRecord
           vinylColors={vinylColors}
           topOffset="top-5"
-          coverImage={map.cover_image_url || map.metadata?.coverImage}
+          coverImage={
+            map.cover_image_url ||
+            map.metadata?.coverImage ||
+            defaultCoverImage ||
+            undefined
+          }
           showClickToPlay
         />
 
@@ -94,11 +125,18 @@ export function MapCard({ map }: MapCardProps) {
           style={{ zIndex: 10 }}
         >
           <div className="album-cover absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-lg shadow-2xl border border-slate-600 overflow-hidden transform-gpu">
-            {map.cover_image_url || map.metadata?.coverImage ? (
+            {map.cover_image_url ||
+            map.metadata?.coverImage ||
+            defaultCoverImage ? (
               <div className="absolute inset-0 rounded-lg overflow-hidden">
                 <div className="relative w-full h-full">
                   <OptimizedImage
-                    src={map.cover_image_url || map.metadata?.coverImage}
+                    src={
+                      map.cover_image_url ||
+                      map.metadata?.coverImage ||
+                      defaultCoverImage ||
+                      ""
+                    }
                     blurhash={map.cover_image_blurhash}
                     alt="Map Cover"
                     fill
