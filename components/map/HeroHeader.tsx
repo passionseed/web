@@ -49,13 +49,13 @@ export function HeroHeader({ isAuthenticated, onCreateMap, searchQuery = "", onS
             <div className="relative group">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition duration-300" />
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-400/70 group-hover:text-blue-400 transition-colors" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-400/70 group-hover:text-blue-400 transition-colors z-10" />
                 <Input
                   type="text"
                   placeholder="Search by title, description, or category..."
                   value={searchQuery}
                   onChange={(e) => onSearchChange?.(e.target.value)}
-                  className="pl-11 pr-4 h-11 bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 rounded-lg backdrop-blur-xl transition-all"
+                  className="!pl-11 pr-4 h-11 bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 rounded-lg backdrop-blur-xl transition-all"
                 />
               </div>
             </div>
