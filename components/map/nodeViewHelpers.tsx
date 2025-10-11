@@ -174,16 +174,143 @@ ImageContent.displayName = "ImageContent";
 // Text Content Component - memoized with markdown support
 const TextContent = memo(({ contentBody }: { contentBody: string }) => {
   console.log("📝 TextContent rendering, content length:", contentBody?.length || 0);
-  
+
   const processedContent = useMemo(() => {
     return processTextContent(contentBody || "");
   }, [contentBody]);
 
   return (
-    <div
-      className="prose prose-sm dark:prose-invert max-w-none"
-      dangerouslySetInnerHTML={{ __html: processedContent }}
-    />
+    <div className="px-2 py-1">
+      <style jsx global>{`
+        .learning-content-text {
+          font-size: 1.0625rem;
+          line-height: 1.75;
+          color: rgb(156 163 175);
+        }
+        .learning-content-text h1,
+        .learning-content-text h2,
+        .learning-content-text h3,
+        .learning-content-text h4 {
+          color: rgb(243 244 246);
+          font-weight: 600;
+          letter-spacing: -0.025em;
+          line-height: 1.3;
+        }
+        .learning-content-text h1 {
+          font-size: 1.875rem;
+          margin-top: 0;
+          margin-bottom: 1rem;
+        }
+        .learning-content-text h1:not(:first-child) {
+          margin-top: 2rem;
+        }
+        .learning-content-text h2 {
+          font-size: 1.5rem;
+          margin-top: 0;
+          margin-bottom: 0.75rem;
+        }
+        .learning-content-text h2:not(:first-child) {
+          margin-top: 1.5rem;
+        }
+        .learning-content-text h3 {
+          font-size: 1.25rem;
+          margin-top: 0;
+          margin-bottom: 0.5rem;
+        }
+        .learning-content-text h3:not(:first-child) {
+          margin-top: 1.25rem;
+        }
+        .learning-content-text h4 {
+          font-size: 1.125rem;
+          margin-top: 0;
+          margin-bottom: 0.5rem;
+        }
+        .learning-content-text h4:not(:first-child) {
+          margin-top: 1rem;
+        }
+        .learning-content-text p {
+          margin-bottom: 1rem;
+          line-height: 1.75;
+        }
+        .learning-content-text p:last-child {
+          margin-bottom: 0;
+        }
+        .learning-content-text strong {
+          color: rgb(229 231 235);
+          font-weight: 600;
+        }
+        .learning-content-text a {
+          color: rgb(96 165 250);
+          text-decoration: none;
+          font-weight: 500;
+          transition: all 0.2s;
+        }
+        .learning-content-text a:hover {
+          text-decoration: underline;
+          color: rgb(147 197 253);
+        }
+        .learning-content-text ul,
+        .learning-content-text ol {
+          margin: 1rem 0;
+          padding-left: 1.5rem;
+        }
+        .learning-content-text ul:first-child,
+        .learning-content-text ol:first-child {
+          margin-top: 0;
+        }
+        .learning-content-text li {
+          margin-bottom: 0.5rem;
+          line-height: 1.75;
+        }
+        .learning-content-text li:last-child {
+          margin-bottom: 0;
+        }
+        .learning-content-text code {
+          background-color: rgb(31 41 55);
+          color: rgb(229 231 235);
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.375rem;
+          font-size: 0.875rem;
+          font-family: 'Monaco', 'Courier New', monospace;
+          border: 1px solid rgb(55 65 81);
+        }
+        .learning-content-text pre {
+          background-color: rgb(17 24 39);
+          border: 1px solid rgb(55 65 81);
+          border-radius: 0.5rem;
+          padding: 1rem;
+          margin: 1rem 0;
+          overflow-x: auto;
+        }
+        .learning-content-text pre code {
+          background: transparent;
+          border: none;
+          padding: 0;
+        }
+        .learning-content-text blockquote {
+          border-left: 4px solid rgb(59 130 246 / 0.5);
+          padding-left: 1rem;
+          padding-top: 0.5rem;
+          padding-bottom: 0.5rem;
+          margin: 1rem 0;
+          font-style: italic;
+          background-color: rgb(31 41 55 / 0.3);
+        }
+        .learning-content-text img {
+          border-radius: 0.5rem;
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+          margin: 1rem 0;
+        }
+        .learning-content-text hr {
+          border-color: rgb(55 65 81);
+          margin: 1.5rem 0;
+        }
+      `}</style>
+      <div
+        className="learning-content-text"
+        dangerouslySetInnerHTML={{ __html: processedContent }}
+      />
+    </div>
   );
 });
 TextContent.displayName = "TextContent";

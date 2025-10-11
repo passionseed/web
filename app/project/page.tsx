@@ -124,6 +124,134 @@ const exampleJson = {
       type: "prerequisite",
     },
   ],
+}; // Define types for clarity and type safety
+type ContentType =
+  | "text"
+  | "video"
+  | "canva_slide"
+  | "image"
+  | "pdf"
+  | "resource_link";
+type AssessmentType =
+  | "quiz"
+  | "text_answer"
+  | "image_upload"
+  | "file_upload"
+  | "checklist";
+
+interface ContentItem {
+  content_type: ContentType;
+  content_body: string;
+  content_url?: string;
+}
+
+interface AssessmentItem {
+  type: AssessmentType;
+  prompt?: string;
+  questions?: any[];
+}
+
+interface Node {
+  id: string;
+  title: string;
+  position: { x: number; y: number };
+  content: ContentItem[];
+  assessments: AssessmentItem[];
+}
+
+interface Connection {
+  from: string;
+  to: string;
+}
+
+interface RoadmapData {
+  map: {
+    title: string;
+    description: string;
+  };
+  nodes: Node[];
+  connections?: Connection[];
+}
+
+/**
+ * Validates the structure and educational completeness of a learning roadmap JSON.
+ * @param jsonString The JSON string to validate.
+ * @returns An array of error messages. An empty array means the JSON is valid.
+ */
+const validateRoadmapJson = (jsonString: string): string[] => {
+  const errors: string[] = [];
+
+  try {
+    const data: RoadmapData = JSON.parse(jsonString);
+
+    // 1. Validate top-level 'map' object
+    if (!data.map) {
+      errors.push("Validation Error: Missing root 'map' object.");
+    } else {
+      if (!data.map.title)
+        errors.push("Validation Error: Map 'title' is required.");
+      if (!data.map.description)
+        errors.push("Validation Error: Map 'description' is required.");
+    }
+
+    // 2. Validate 'nodes' array
+    if (!data.nodes || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+      errors.push(
+        "Validation Error: 'nodes' must be an array with at least one node."
+      );
+    } else {
+      data.nodes.forEach((node, i) => {
+        const nodeLabel = `Node ${i + 1} (ID: ${node.id || "N/A"})`;
+
+        // Check for required node properties
+        if (!node.id) errors.push(`${nodeLabel}: Missing 'id'.`);
+        if (!node.title) errors.push(`${nodeLabel}: Missing 'title'.`);
+        if (
+          !node.position ||
+          typeof node.position.x !== "number" ||
+          typeof node.position.y !== "number"
+        ) {
+          errors.push(
+            `${nodeLabel}: Invalid 'position' (must have numeric x and y coordinates).`
+          );
+        }
+
+        // **NEW**: Ensure each node is educationally complete
+        if (!node.content || node.content.length === 0) {
+          errors.push(`${nodeLabel}: Must have a non-empty 'content' array.`);
+        }
+
+        if (!node.assessments || node.assessments.length === 0) {
+          errors.push(
+            `${nodeLabel}: Must have a non-empty 'assessments' array.`
+          );
+        }
+      });
+    }
+
+    // 3. Validate 'connections' array
+    if (data.connections && Array.isArray(data.connections)) {
+      const nodeIds = new Set((data.nodes || []).map((n) => n.id));
+      data.connections.forEach((conn, i) => {
+        if (!nodeIds.has(conn.from)) {
+          errors.push(
+            `Connection ${i + 1}: 'from' ID "${conn.from}" does not exist.`
+          );
+        }
+        if (!nodeIds.has(conn.to)) {
+          errors.push(
+            `Connection ${i + 1}: 'to' ID "${conn.to}" does not exist.`
+          );
+        }
+      });
+    }
+  } catch (e) {
+    errors.push(
+      "Fatal Error: Invalid JSON format. The string could not be parsed."
+    );
+  }
+
+  return errors;
 };
 
 export default function ProjectPage() {
@@ -135,61 +263,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
-  const validateJson = (jsonString: string) => {
-    const errors: string[] = [];
-
-    try {
-      const data = JSON.parse(jsonString);
-
-      // Validate map structure
-      if (!data.map) errors.push("Missing 'map' object");
-      else {
-        if (!data.map.title) errors.push("Map title is required");
-        if (!data.map.description) errors.push("Map description is required");
-      }
-
-      // Validate nodes
-      if (!data.nodes || !Array.isArray(data.nodes)) {
-        errors.push("'nodes' must be an array with at least one node");
-      } else if (data.nodes.length === 0) {
-        errors.push("At least one node is required");
-      } else {
-        data.nodes.forEach((node: any, i: number) => {
-          if (!node.id) errors.push(`Node ${i + 1}: Missing 'id'`);
-          if (!node.title) errors.push(`Node ${i + 1}: Missing 'title'`);
-          if (
-            !node.position ||
-            typeof node.position.x !== "number" ||
-            typeof node.position.y !== "number"
-          ) {
-            errors.push(
-              `Node ${i + 1}: Invalid 'position' (must have x, y coordinates)`
-            );
-          }
-        });
-      }
-
-      // Validate connections
-      if (data.connections && Array.isArray(data.connections)) {
-        const nodeIds = new Set((data.nodes || []).map((n: any) => n.id));
-        data.connections.forEach((conn: any, i: number) => {
-          if (!nodeIds.has(conn.from))
-            errors.push(`Connection ${i + 1}: Invalid 'from' node ID`);
-          if (!nodeIds.has(conn.to))
-            errors.push(`Connection ${i + 1}: Invalid 'to' node ID`);
-        });
-      }
-
-      if (errors.length === 0) {
-        setPreviewData(data);
-      }
-    } catch (e) {
-      errors.push("Invalid JSON format");
-    }
-
-    setValidationErrors(errors);
-    return errors.length === 0;
-  };
+  const validateJson = validateRoadmapJson;
 
   const handleInputChange = (value: string) => {
     setJsonInput(value);
@@ -312,6 +386,7 @@ export default function ProjectPage() {
         <TabsList>
           <TabsTrigger value="create">Create Map</TabsTrigger>
           <TabsTrigger value="example">View Example</TabsTrigger>
+          <TabsTrigger value="prompt">AI Prompt</TabsTrigger>
           <TabsTrigger value="docs">Documentation</TabsTrigger>
         </TabsList>
 
@@ -453,6 +528,141 @@ export default function ProjectPage() {
               <pre className="bg-gray-900 rounded-lg p-4 overflow-auto text-sm">
                 <code>{JSON.stringify(exampleJson, null, 2)}</code>
               </pre>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="prompt">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Prompt for Generating Maps</CardTitle>
+              <CardDescription>
+                Use this prompt with AI tools like ChatGPT or Claude to generate learning map JSON
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-muted rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-sm">Prompt Template</h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const promptText = document.getElementById("ai-prompt-text")?.textContent || "";
+                      navigator.clipboard.writeText(promptText);
+                      toast({
+                        title: "Prompt Copied",
+                        description: "Paste this into your AI tool to generate a learning map"
+                      });
+                    }}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Prompt
+                  </Button>
+                </div>
+                <pre id="ai-prompt-text" className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-auto text-sm whitespace-pre-wrap">
+{`Final Prompt: Adaptive Learning Roadmap Generator (v2.0)
+
+You are an expert educational content creator specializing in building step-by-step learning roadmaps. When a user describes a project they want to build, you will assess their skill level and generate a detailed, adaptive roadmap in JSON format that supports flexible, non-linear learning paths.
+
+Your Role:
+- Audience Adaptability: Cater to all skill levels, from complete beginners to experienced professionals
+- Skill Assessment: Actively probe the user's background and experience
+- Goal Scoping: For large goals, create a high-level roadmap that charts critical initial stages
+- Path Flexibility: Recognize that learning is not always linear. Structure roadmaps with parallel tracks where appropriate
+
+Available Content & Assessment Types:
+Content Types: "text", "video", "canva_slide", "image", "pdf", "resource_link"
+Assessment Types: "quiz", "text_answer", "image_upload", "file_upload", "checklist"
+
+JSON Structure Required:
+{
+  "map": {
+    "title": "Project Title",
+    "description": "Clear description of what students will build",
+    "difficulty": 1,
+    "estimatedHours": 20,
+    "visibility": "public",
+    "metadata": {
+      "tags": ["web-development", "javascript", "react"],
+      "category": "web-development"
+    }
+  },
+  "nodes": [
+    {
+      "id": "node_1",
+      "title": "Clear, actionable step title",
+      "description": "Brief description of what this step accomplishes",
+      "position": { "x": 100, "y": 100 },
+      "difficulty": 1,
+      "estimatedMinutes": 60,
+      "prerequisites": [],
+      "content": [
+        {
+          "content_type": "text",
+          "content_body": "### Instructions\\n1. First, do this specific action.\\n2. Next, run the following command.\\n\\n### Code Block\\n\`\`\`bash\\nnpm install\\n\`\`\`\\n\\n### Completion Criteria\\nSuccess is when you see the confirmation message."
+        },
+        {
+          "content_type": "resource_link",
+          "content_url": "https://example.com",
+          "content_body": "Official Documentation"
+        }
+      ],
+      "assessments": [
+        {
+          "type": "checklist",
+          "isGraded": false,
+          "pointsPossible": 0,
+          "metadata": {
+            "items": [
+              "Required setup is complete",
+              "I can run the basic command successfully"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "connections": [
+    { "from": "node_1", "to": "node_2", "type": "prerequisite" }
+  ]
+}
+
+Core Requirements:
+- Each node MUST have unique id, content array (not empty), and assessments array (not empty)
+- Use prerequisites array to define node dependencies (empty [] for starting nodes)
+- Position coordinates: increment x by 200 for sequential steps; use different y values (e.g., y: 100 for frontend, y: 300 for backend) for parallel tracks
+
+Best Practices:
+1. "Inspiration & Case Study" Node: Provide real-world examples and architectural patterns
+2. "Explore & Connect" Node: Guide users toward self-directed learning for advanced topics
+
+Clarification Protocol (IMPORTANT):
+Phase 1 - Assess Skill Level:
+- "Could you tell me about your experience with [key technology]?"
+- "What's the most complex project you've built?"
+- "On a scale of 1-5, how would you rate your skill level?"
+
+Phase 2 - Define Project Scope:
+- "What are the 2-3 essential features this project must have?"
+- "Is this a short-term learning project or long-term expansion?"
+- "Do you prefer linear or parallel learning tracks?"
+
+Response Format:
+First Response: Ask 2-3 clarifying questions about skill level and scope
+Second Response: Generate the complete JSON roadmap based on their answers`}
+                </pre>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-900 mb-2">Usage Tips:</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Copy this entire prompt and paste it into ChatGPT or Claude</li>
+                  <li>• Describe your project (e.g., "Help me build a recipe sharing app")</li>
+                  <li>• Answer the AI's clarifying questions about your skill level</li>
+                  <li>• The AI will generate a complete JSON roadmap tailored to you</li>
+                  <li>• Review and validate the generated JSON before pasting into the Create tab</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
