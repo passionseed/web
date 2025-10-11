@@ -3,10 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, FileJson, Rocket, CheckCircle, AlertCircle, Copy, Eye } from "lucide-react";
+import {
+  Loader2,
+  FileJson,
+  Rocket,
+  CheckCircle,
+  AlertCircle,
+  Copy,
+  Eye,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
@@ -20,8 +34,8 @@ const exampleJson = {
     visibility: "public",
     metadata: {
       tags: ["react", "javascript", "frontend"],
-      category: "web-development"
-    }
+      category: "web-development",
+    },
   },
   nodes: [
     {
@@ -37,16 +51,16 @@ const exampleJson = {
         codeBlocks: [
           {
             language: "jsx",
-            code: "function App() {\n  return <h1>Hello, React!</h1>;\n}"
-          }
+            code: "function App() {\n  return <h1>Hello, React!</h1>;\n}",
+          },
         ],
         resources: [
           {
             title: "React Official Docs",
             url: "https://react.dev",
-            type: "documentation"
-          }
-        ]
+            type: "documentation",
+          },
+        ],
       },
       assessments: [
         {
@@ -57,17 +71,21 @@ const exampleJson = {
             {
               type: "multiple_choice",
               question: "What is React?",
-              options: ["A database", "A JavaScript library", "A CSS framework"],
+              options: [
+                "A database",
+                "A JavaScript library",
+                "A CSS framework",
+              ],
               correctAnswer: 1,
-              points: 5
-            }
-          ]
-        }
-      ]
+              points: 5,
+            },
+          ],
+        },
+      ],
     },
     {
       id: "node_2",
-      title: "Components & JSX", 
+      title: "Components & JSX",
       description: "Learn about React components and JSX syntax",
       position: { x: 300, y: 100 },
       difficulty: 2,
@@ -79,28 +97,33 @@ const exampleJson = {
         codeBlocks: [
           {
             language: "jsx",
-            code: "function Welcome(props) {\n  return <h1>Hello, {props.name}!</h1>;\n}"
-          }
-        ]
+            code: "function Welcome(props) {\n  return <h1>Hello, {props.name}!</h1>;\n}",
+          },
+        ],
       },
       assessments: [
         {
           type: "project",
           isGraded: true,
           pointsPossible: 20,
-          prompt: "Create a React component that displays a greeting with your name",
-          requirements: ["Use JSX syntax", "Accept props", "Return a valid element"]
-        }
-      ]
-    }
+          prompt:
+            "Create a React component that displays a greeting with your name",
+          requirements: [
+            "Use JSX syntax",
+            "Accept props",
+            "Return a valid element",
+          ],
+        },
+      ],
+    },
   ],
   connections: [
     {
       from: "node_1",
       to: "node_2",
-      type: "prerequisite"
-    }
-  ]
+      type: "prerequisite",
+    },
+  ],
 };
 
 export default function ProjectPage() {
@@ -114,17 +137,17 @@ export default function ProjectPage() {
 
   const validateJson = (jsonString: string) => {
     const errors: string[] = [];
-    
+
     try {
       const data = JSON.parse(jsonString);
-      
+
       // Validate map structure
       if (!data.map) errors.push("Missing 'map' object");
       else {
         if (!data.map.title) errors.push("Map title is required");
         if (!data.map.description) errors.push("Map description is required");
       }
-      
+
       // Validate nodes
       if (!data.nodes || !Array.isArray(data.nodes)) {
         errors.push("'nodes' must be an array with at least one node");
@@ -134,29 +157,36 @@ export default function ProjectPage() {
         data.nodes.forEach((node: any, i: number) => {
           if (!node.id) errors.push(`Node ${i + 1}: Missing 'id'`);
           if (!node.title) errors.push(`Node ${i + 1}: Missing 'title'`);
-          if (!node.position || typeof node.position.x !== 'number' || typeof node.position.y !== 'number') {
-            errors.push(`Node ${i + 1}: Invalid 'position' (must have x, y coordinates)`);
+          if (
+            !node.position ||
+            typeof node.position.x !== "number" ||
+            typeof node.position.y !== "number"
+          ) {
+            errors.push(
+              `Node ${i + 1}: Invalid 'position' (must have x, y coordinates)`
+            );
           }
         });
       }
-      
+
       // Validate connections
       if (data.connections && Array.isArray(data.connections)) {
         const nodeIds = new Set((data.nodes || []).map((n: any) => n.id));
         data.connections.forEach((conn: any, i: number) => {
-          if (!nodeIds.has(conn.from)) errors.push(`Connection ${i + 1}: Invalid 'from' node ID`);
-          if (!nodeIds.has(conn.to)) errors.push(`Connection ${i + 1}: Invalid 'to' node ID`);
+          if (!nodeIds.has(conn.from))
+            errors.push(`Connection ${i + 1}: Invalid 'from' node ID`);
+          if (!nodeIds.has(conn.to))
+            errors.push(`Connection ${i + 1}: Invalid 'to' node ID`);
         });
       }
-      
+
       if (errors.length === 0) {
         setPreviewData(data);
       }
-      
     } catch (e) {
       errors.push("Invalid JSON format");
     }
-    
+
     setValidationErrors(errors);
     return errors.length === 0;
   };
@@ -176,7 +206,7 @@ export default function ProjectPage() {
       toast({
         title: "Authentication Required",
         description: "Please log in to create maps",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -185,18 +215,18 @@ export default function ProjectPage() {
       toast({
         title: "Validation Failed",
         description: "Please fix the JSON errors before creating the map",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setIsCreating(true);
-    
+
     try {
       const response = await fetch("/api/maps/create-from-json", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: jsonInput
+        body: jsonInput,
       });
 
       const result = await response.json();
@@ -204,9 +234,9 @@ export default function ProjectPage() {
       if (result.success) {
         toast({
           title: "🚀 Map Created Successfully!",
-          description: `Created map with ${result.nodesCreated} nodes and ${result.assessmentsCreated} assessments in ${result.timeElapsed}ms`
+          description: `Created map with ${result.nodesCreated} nodes and ${result.assessmentsCreated} assessments in ${result.timeElapsed}ms`,
         });
-        
+
         // Navigate to the created map
         router.push(`/map/${result.mapId}`);
       } else {
@@ -215,8 +245,11 @@ export default function ProjectPage() {
     } catch (error) {
       toast({
         title: "Creation Failed",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive"
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
+        variant: "destructive",
       });
     } finally {
       setIsCreating(false);
@@ -228,7 +261,7 @@ export default function ProjectPage() {
     handleInputChange(JSON.stringify(exampleJson, null, 2));
     toast({
       title: "Example Copied",
-      description: "You can now modify and create this example map"
+      description: "You can now modify and create this example map",
     });
   };
 
@@ -238,7 +271,9 @@ export default function ProjectPage() {
         <Card className="max-w-md mx-auto">
           <CardHeader>
             <CardTitle>Authentication Required</CardTitle>
-            <CardDescription>Please log in to create maps from JSON</CardDescription>
+            <CardDescription>
+              Please log in to create maps from JSON
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -260,7 +295,7 @@ export default function ProjectPage() {
             </p>
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           <Badge variant="secondary">
             <Rocket className="w-3 h-3 mr-1" />
@@ -300,11 +335,11 @@ export default function ProjectPage() {
                   onChange={(e) => handleInputChange(e.target.value)}
                   className="min-h-[400px] font-mono text-sm"
                 />
-                
+
                 <div className="flex gap-2">
-                  <Button 
-                    onClick={copyExample} 
-                    variant="outline" 
+                  <Button
+                    onClick={copyExample}
+                    variant="outline"
                     size="sm"
                     className="flex-1"
                   >
@@ -313,7 +348,11 @@ export default function ProjectPage() {
                   </Button>
                   <Button
                     onClick={createMapFromJson}
-                    disabled={isCreating || validationErrors.length > 0 || !jsonInput.trim()}
+                    disabled={
+                      isCreating ||
+                      validationErrors.length > 0 ||
+                      !jsonInput.trim()
+                    }
                     className="flex-1"
                   >
                     {isCreating ? (
@@ -349,7 +388,9 @@ export default function ProjectPage() {
               <CardContent>
                 {validationErrors.length > 0 && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                    <h4 className="text-red-800 font-medium mb-2">Validation Errors:</h4>
+                    <h4 className="text-red-800 font-medium mb-2">
+                      Validation Errors:
+                    </h4>
                     <ul className="text-red-700 text-sm space-y-1">
                       {validationErrors.map((error, i) => (
                         <li key={i} className="flex items-start gap-2">
@@ -363,16 +404,28 @@ export default function ProjectPage() {
 
                 {previewData && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="text-green-800 font-medium mb-3">✅ Valid JSON Structure</h4>
+                    <h4 className="text-green-800 font-medium mb-3">
+                      ✅ Valid JSON Structure
+                    </h4>
                     <div className="text-sm text-green-700 space-y-2">
-                      <div><strong>Map:</strong> {previewData.map?.title}</div>
-                      <div><strong>Nodes:</strong> {previewData.nodes?.length || 0}</div>
-                      <div><strong>Connections:</strong> {previewData.connections?.length || 0}</div>
-                      <div><strong>Assessments:</strong> {
-                        previewData.nodes?.reduce((total: number, node: any) => 
-                          total + (node.assessments?.length || 0), 0
-                        ) || 0
-                      }</div>
+                      <div>
+                        <strong>Map:</strong> {previewData.map?.title}
+                      </div>
+                      <div>
+                        <strong>Nodes:</strong> {previewData.nodes?.length || 0}
+                      </div>
+                      <div>
+                        <strong>Connections:</strong>{" "}
+                        {previewData.connections?.length || 0}
+                      </div>
+                      <div>
+                        <strong>Assessments:</strong>{" "}
+                        {previewData.nodes?.reduce(
+                          (total: number, node: any) =>
+                            total + (node.assessments?.length || 0),
+                          0
+                        ) || 0}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -397,7 +450,7 @@ export default function ProjectPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <pre className="bg-gray-100 rounded-lg p-4 overflow-auto text-sm">
+              <pre className="bg-gray-900 rounded-lg p-4 overflow-auto text-sm">
                 <code>{JSON.stringify(exampleJson, null, 2)}</code>
               </pre>
             </CardContent>
@@ -414,23 +467,49 @@ export default function ProjectPage() {
                 <div>
                   <h4 className="font-semibold mb-2">Required Fields:</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground ml-4">
-                    <li>• <code>map.title</code> - Map title</li>
-                    <li>• <code>map.description</code> - Map description</li>
-                    <li>• <code>nodes</code> - Array of learning nodes</li>
-                    <li>• <code>nodes[].id</code> - Unique node identifier</li>
-                    <li>• <code>nodes[].title</code> - Node title</li>
-                    <li>• <code>nodes[].position</code> - Node position {"{x: number, y: number}"}</li>
+                    <li>
+                      • <code>map.title</code> - Map title
+                    </li>
+                    <li>
+                      • <code>map.description</code> - Map description
+                    </li>
+                    <li>
+                      • <code>nodes</code> - Array of learning nodes
+                    </li>
+                    <li>
+                      • <code>nodes[].id</code> - Unique node identifier
+                    </li>
+                    <li>
+                      • <code>nodes[].title</code> - Node title
+                    </li>
+                    <li>
+                      • <code>nodes[].position</code> - Node position{" "}
+                      {"{x: number, y: number}"}
+                    </li>
                   </ul>
                 </div>
-                
+
                 <div>
                   <h4 className="font-semibold mb-2">Optional Fields:</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground ml-4">
-                    <li>• <code>map.difficulty</code> - Difficulty level (1-5)</li>
-                    <li>• <code>map.visibility</code> - "public" or "private"</li>
-                    <li>• <code>nodes[].content</code> - Rich content with text, code, resources</li>
-                    <li>• <code>nodes[].assessments</code> - Quizzes, projects, reflections</li>
-                    <li>• <code>connections</code> - Node prerequisite relationships</li>
+                    <li>
+                      • <code>map.difficulty</code> - Difficulty level (1-5)
+                    </li>
+                    <li>
+                      • <code>map.visibility</code> - "public" or "private"
+                    </li>
+                    <li>
+                      • <code>nodes[].content</code> - Rich content with text,
+                      code, resources
+                    </li>
+                    <li>
+                      • <code>nodes[].assessments</code> - Quizzes, projects,
+                      reflections
+                    </li>
+                    <li>
+                      • <code>connections</code> - Node prerequisite
+                      relationships
+                    </li>
                   </ul>
                 </div>
               </CardContent>

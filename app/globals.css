@@ -409,8 +409,16 @@
 /* Remove conflicting CSS hover rule */
 
 /* Vinyl hover effects */
+.vinyl-container {
+  transform: translateX(-50%);
+}
+
 .group:hover .vinyl-record {
   animation: vinyl-spin 8s linear infinite;
+}
+
+.group:hover .vinyl-container {
+  transform: translateX(-50%) translateY(var(--hover-translate-y, -2rem));
 }
 
 /* Removed cover rotation on hover */

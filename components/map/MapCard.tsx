@@ -80,10 +80,11 @@ export function MapCard({ map }: MapCardProps) {
   };
 
   return (
-    <div onClick={handleMapClick} className="block group cursor-pointer" style={{ marginBottom: '90px' }}>
-      <div className="relative w-80 h-80 cursor-pointer perspective-1000 mt-32">
+    <div onClick={handleMapClick} className="block group cursor-pointer w-full">
+      <div className="relative w-full aspect-square cursor-pointer perspective-1000">
         <VinylRecord
           vinylColors={vinylColors}
+          topOffset="top-5"
           coverImage={map.cover_image_url || map.metadata?.coverImage}
           showClickToPlay
         />
@@ -123,30 +124,14 @@ export function MapCard({ map }: MapCardProps) {
             )}
 
             <div className="relative z-10 h-full flex flex-col">
-              <div className="mt-auto p-6">
+              <div className="mt-auto p-4">
                 <h3
                   style={{ fontFamily: "League Gothic" }}
-                  className={`font-black text-white leading-none mb-2 tracking-wider uppercase ${
-                    map.title.length > 20
-                      ? "text-2xl"
-                      : map.title.length > 16
-                        ? "text-3xl"
-                        : map.title.length > 12
-                          ? "text-4xl"
-                          : map.title.length > 8
-                            ? "text-5xl"
-                            : "text-6xl"
-                  }`}
+                  className="font-black text-white leading-none mb-1 tracking-wider uppercase text-lg line-clamp-2"
                 >
                   {map.title}
                 </h3>
-                <div
-                  className={`text-gray-300 font-medium ${
-                    (map.description || "Learning adventure awaits").length > 50
-                      ? "text-sm"
-                      : "text-lg"
-                  }`}
-                >
+                <div className="text-gray-300 font-medium text-xs line-clamp-2">
                   {map.description || "Learning adventure awaits"}
                 </div>
               </div>
