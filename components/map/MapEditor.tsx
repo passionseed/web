@@ -1062,6 +1062,36 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
       // Create node with temporary ID
       const tempId = `temp_node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Create copied content with temp IDs for proper saving
+      const copiedContent = (copiedNode.node_content || []).map((content: any) => {
+        const tempContentId = `temp_content_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        return {
+          ...content,
+          id: tempContentId,
+          node_id: tempId, // Update to the new temporary node ID
+        };
+      });
+
+      // Create copied assessments with temp IDs for proper saving
+      const copiedAssessments = (copiedNode.node_assessments || []).map((assessment: any) => {
+        const tempAssessmentId = `temp_assessment_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+
+        // Copy quiz questions with temp IDs too
+        const copiedQuizQuestions = (assessment.quiz_questions || []).map((question: any) => ({
+          ...question,
+          id: `temp_question_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          assessment_id: tempAssessmentId,
+        }));
+
+        return {
+          ...assessment,
+          id: tempAssessmentId,
+          node_id: tempId, // Update to the new temporary node ID
+          quiz_questions: copiedQuizQuestions,
+        };
+      });
+
       const nodeData = {
         id: tempId,
         map_id: map.id,
@@ -1083,33 +1113,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         last_modified_by: null,
         node_paths_source: [], // Don't copy connections
         node_paths_destination: [], // Don't copy connections
-        node_content: [],
-        node_assessments: [],
+        node_content: copiedContent,
+        node_assessments: copiedAssessments,
       };
 
       console.log("✅ Created pasted node with temporary ID:", tempId);
-
-      // Create copied assessments with temp IDs for proper saving
-      const copiedAssessments = (copiedNode.node_assessments || []).map((assessment: any) => {
-        const tempAssessmentId = `temp_assessment_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-        
-        // Copy quiz questions with temp IDs too
-        const copiedQuizQuestions = (assessment.quiz_questions || []).map((question: any) => ({
-          ...question,
-          id: `temp_question_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-          assessment_id: tempAssessmentId,
-        }));
-
-        return {
-          ...assessment,
-          id: tempAssessmentId,
-          node_id: tempId, // Update to the new temporary node ID
-          quiz_questions: copiedQuizQuestions,
-        };
-      });
-
-      // Add assessments to the nodeData
-      nodeData.node_assessments = copiedAssessments;
 
       const newNode: AppNode = {
         id: tempId, // Use temporary ID
