@@ -13,11 +13,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { NodeContent, ContentType } from "@/types/map";
-import { Trash2, PlusCircle, Edit, Check, X, AlertCircle, Upload } from "lucide-react";
+import {
+  Trash2,
+  PlusCircle,
+  Edit,
+  Check,
+  X,
+  AlertCircle,
+  Upload,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileUpload } from "@/components/ui/file-upload";
-import { createNodeContent, updateNodeContent, deleteNodeContent } from "@/lib/supabase/nodes";
+import {
+  createNodeContent,
+  updateNodeContent,
+  deleteNodeContent,
+} from "@/lib/supabase/nodes";
 import { useToast } from "@/components/ui/use-toast";
 
 // Content type configurations
@@ -34,7 +46,8 @@ const CONTENT_TYPE_CONFIG = {
   },
   text: {
     label: "📝 Text Content",
-    placeholder: "Write your text content here... You can use HTML tags or Markdown syntax.",
+    placeholder:
+      "Write your text content here... You can use HTML tags or Markdown syntax.",
     hint: "Supports both HTML tags and Markdown syntax (headers, bold, italic, lists, links, etc.)",
   },
   image: {
@@ -161,6 +174,9 @@ const ContentForm = ({
   const [contentType, setContentType] = useState<ContentType>(
     existingContent?.content_type || "video"
   );
+  const [contentTitle, setContentTitle] = useState(
+    existingContent?.content_title || ""
+  );
   const [contentUrl, setContentUrl] = useState(
     existingContent?.content_url || ""
   );
@@ -175,12 +191,13 @@ const ContentForm = ({
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      
+
       console.log("Form submission attempted:", {
         contentType,
+        contentTitle,
         contentUrl,
         contentBody,
-        uploadedFileName
+        uploadedFileName,
       });
 
       const validationErrors = validateContentForm(
@@ -188,9 +205,9 @@ const ContentForm = ({
         contentUrl,
         contentBody
       );
-      
+
       console.log("Validation errors:", validationErrors);
-      
+
       if (validationErrors.length > 0) {
         setErrors(validationErrors);
         return;
@@ -200,9 +217,14 @@ const ContentForm = ({
         id: existingContent?.id || generateTempId(),
         node_id: nodeId,
         content_type: contentType,
-        content_url: ["video", "canva_slide", "resource_link", "image", "pdf"].includes(
-          contentType
-        )
+        content_title: contentTitle.trim() || null,
+        content_url: [
+          "video",
+          "canva_slide",
+          "resource_link",
+          "image",
+          "pdf",
+        ].includes(contentType)
           ? contentUrl.trim()
           : null,
         content_body:
@@ -215,17 +237,28 @@ const ContentForm = ({
       console.log("Saving content payload:", payload);
       onSave(payload);
     },
-    [contentType, contentUrl, contentBody, existingContent, nodeId, onSave]
+    [
+      contentType,
+      contentTitle,
+      contentUrl,
+      contentBody,
+      existingContent,
+      nodeId,
+      onSave,
+    ]
   );
 
   const clearErrors = useCallback(() => setErrors([]), []);
 
-  const handleFileUploadComplete = useCallback((fileUrl: string, fileName: string) => {
-    console.log("File upload completed:", { fileUrl, fileName });
-    setContentUrl(fileUrl);
-    setUploadedFileName(fileName);
-    clearErrors();
-  }, [clearErrors]);
+  const handleFileUploadComplete = useCallback(
+    (fileUrl: string, fileName: string) => {
+      console.log("File upload completed:", { fileUrl, fileName });
+      setContentUrl(fileUrl);
+      setUploadedFileName(fileName);
+      clearErrors();
+    },
+    [clearErrors]
+  );
 
   const handleFileUploadError = useCallback((error: string) => {
     setErrors([error]);
@@ -269,6 +302,26 @@ const ContentForm = ({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Title field for all content types */}
+      <div className="space-y-2">
+        <Label htmlFor="content_title">
+          Title
+          <span className="text-xs text-muted-foreground ml-2">
+            (Optional - give this content a descriptive title)
+          </span>
+        </Label>
+        <Input
+          id="content_title"
+          value={contentTitle}
+          onChange={(e) => {
+            setContentTitle(e.target.value);
+            clearErrors();
+          }}
+          placeholder="e.g., Introduction Video, Week 1 Slides, Important Resource..."
+          className="h-11 border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 transition-colors"
+        />
       </div>
 
       {(contentType === "video" ||
@@ -382,8 +435,7 @@ const ContentForm = ({
       )}
 
       {/* Text Content and Resource Link Description */}
-      {(contentType === "text" ||
-        contentType === "resource_link") && (
+      {(contentType === "text" || contentType === "resource_link") && (
         <div className="space-y-2">
           <Label htmlFor="content_body">
             {contentType === "resource_link" ? "Description" : "Content"} *
@@ -419,8 +471,14 @@ const ContentForm = ({
               </>
             ) : (
               <div className="space-y-1">
-                <div>💡 <strong>HTML:</strong> Use &lt;p&gt; for paragraphs, &lt;h1&gt; for headings, &lt;strong&gt; for bold text</div>
-                <div>📝 <strong>Markdown:</strong> Use # for headings, **bold**, *italic*, - for lists</div>
+                <div>
+                  💡 <strong>HTML:</strong> Use &lt;p&gt; for paragraphs,
+                  &lt;h1&gt; for headings, &lt;strong&gt; for bold text
+                </div>
+                <div>
+                  📝 <strong>Markdown:</strong> Use # for headings, **bold**,
+                  *italic*, - for lists
+                </div>
               </div>
             )}
           </div>
@@ -449,6 +507,21 @@ const ContentForm = ({
 
 // Content preview utilities
 const getContentPreview = (item: NodeContent): string => {
+  // If there's a title, use it as the primary preview
+  if (item.content_title?.trim()) {
+    const typeIcons = {
+      video: "📹",
+      canva_slide: "🎨",
+      text: "📝",
+      image: "🖼️",
+      pdf: "📄",
+      resource_link: "🔗",
+    };
+    const icon = typeIcons[item.content_type] || "";
+    return `${icon} ${item.content_title}`;
+  }
+
+  // Fallback to content-based previews
   const previews = {
     video: () =>
       `📹 Video: ${item.content_url?.substring(0, 50)}${item.content_url && item.content_url.length > 50 ? "..." : ""}`,
@@ -460,11 +533,13 @@ const getContentPreview = (item: NodeContent): string => {
       return `📝 Text: ${bodyPreview}${bodyPreview.length >= 50 ? "..." : ""}`;
     },
     image: () => {
-      const fileName = item.content_url?.split('/').pop()?.substring(0, 30) || "";
+      const fileName =
+        item.content_url?.split("/").pop()?.substring(0, 30) || "";
       return `🖼️ Image: ${fileName}${fileName.length >= 30 ? "..." : ""}`;
     },
     pdf: () => {
-      const fileName = item.content_url?.split('/').pop()?.substring(0, 30) || "";
+      const fileName =
+        item.content_url?.split("/").pop()?.substring(0, 30) || "";
       return `📄 PDF: ${fileName}${fileName.length >= 30 ? "..." : ""}`;
     },
     resource_link: () => {
@@ -500,7 +575,7 @@ export function ContentEditor({
         toast({
           title: "Invalid content data",
           description: "Content is missing required fields",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -510,11 +585,12 @@ export function ContentEditor({
       try {
         let finalContent: NodeContent;
 
-        if (existingIndex >= 0 && !savedContent.id.startsWith('temp_')) {
+        if (existingIndex >= 0 && !savedContent.id.startsWith("temp_")) {
           // Update existing content in database
           console.log("✏️ Updating content in database:", savedContent.id);
           finalContent = await updateNodeContent(savedContent.id, {
             content_type: savedContent.content_type,
+            content_title: savedContent.content_title,
             content_url: savedContent.content_url,
             content_body: savedContent.content_body,
           });
@@ -532,6 +608,7 @@ export function ContentEditor({
           finalContent = await createNodeContent({
             node_id: nodeId,
             content_type: savedContent.content_type,
+            content_title: savedContent.content_title,
             content_url: savedContent.content_url,
             content_body: savedContent.content_body,
           });
@@ -551,7 +628,7 @@ export function ContentEditor({
         toast({
           title: "Failed to save content",
           description: (error as Error).message || "Unknown error",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     },
@@ -562,7 +639,7 @@ export function ContentEditor({
     async (id: string) => {
       try {
         // Delete from database if it's not a temp ID
-        if (!id.startsWith('temp_')) {
+        if (!id.startsWith("temp_")) {
           console.log("🗑️ Deleting content from database:", id);
           await deleteNodeContent(id);
           console.log("✅ Content deleted from database");
@@ -576,7 +653,7 @@ export function ContentEditor({
         toast({
           title: "Failed to delete content",
           description: (error as Error).message || "Unknown error",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     },

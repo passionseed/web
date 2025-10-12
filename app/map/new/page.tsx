@@ -12,10 +12,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { createMap } from "@/lib/supabase/maps";
 import { ImageUpload } from "@/components/map/ImageUpload";
-import { Loader2 } from "lucide-react";
+import { CoverImageMaker } from "@/components/map/CoverImageMaker";
+import { Loader2, Upload, Sparkles } from "lucide-react";
 
 interface CoverImageData {
   url: string;
@@ -37,6 +39,7 @@ export default function NewMapPage() {
     null
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleImageSelect = (file: File) => {
     setCoverImageFile(file);
@@ -55,6 +58,50 @@ export default function NewMapPage() {
     }
     setCoverImageFile(null);
     setCoverImagePreview(null);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    if (isSubmitting) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find((file) => file.type.startsWith("image/"));
+
+    if (imageFile) {
+      // Basic validation
+      if (imageFile.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      handleImageSelect(imageFile);
+    } else {
+      toast({
+        title: "Invalid file type",
+        description: "Please drop an image file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isSubmitting) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    // Only set dragging to false if we're leaving the drop zone entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +133,7 @@ export default function NewMapPage() {
           formData.append("file", coverImageFile);
           formData.append("mapId", newMap.id);
           formData.append("maxWidth", "1200");
-          formData.append("maxHeight", "800");
+          formData.append("maxHeight", "1200");
           formData.append("quality", "85");
 
           const uploadResponse = await fetch("/api/maps/upload-cover-image", {
@@ -206,113 +253,153 @@ export default function NewMapPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="cover-image">Cover Image (Optional)</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                {coverImagePreview ? (
-                  <div className="relative inline-block">
-                    <img
-                      src={coverImagePreview}
-                      alt="Cover preview"
-                      className="max-w-48 max-h-48 rounded-lg object-cover mx-auto"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleImageRemove}
+              <label>Cover Image (Optional)</label>
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload" className="gap-2">
+                    <Upload className="h-4 w-4" />
+                    Upload Image
+                  </TabsTrigger>
+                  <TabsTrigger value="create" className="gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Create Cover
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="upload" className="space-y-2 mt-4">
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      isDragging
+                        ? "border-blue-400 bg-blue-50"
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                  >
+                    {coverImagePreview ? (
+                      <div className="relative inline-block">
+                        <img
+                          src={coverImagePreview}
+                          alt="Cover preview"
+                          className="max-w-48 max-h-48 rounded-lg object-cover mx-auto"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleImageRemove}
+                          disabled={isSubmitting}
+                          className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-lg disabled:opacity-50"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                        <div className="mt-2 text-sm text-gray-600">
+                          {coverImageFile?.name} (
+                          {((coverImageFile?.size || 0) / (1024 * 1024)).toFixed(
+                            2
+                          )}
+                          MB)
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                          <svg
+                            className={`w-6 h-6 ${
+                              isDragging ? "text-blue-600" : "text-gray-400"
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="cover-image"
+                            className="cursor-pointer text-blue-600 hover:text-blue-500 font-medium"
+                          >
+                            {isDragging ? "Drop image here" : "Choose an image"}
+                          </label>
+                          {!isDragging && (
+                            <span className="text-gray-600">
+                              {" "}
+                              or drag and drop
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          PNG, JPG, WebP up to 10MB • Will be optimized
+                          automatically
+                        </p>
+                      </div>
+                    )}
+                    <input
+                      id="cover-image"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Basic validation
+                          if (!file.type.startsWith("image/")) {
+                            toast({
+                              title: "Invalid file type",
+                              description: "Please select an image file",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          if (file.size > 10 * 1024 * 1024) {
+                            toast({
+                              title: "File too large",
+                              description:
+                                "Please select an image smaller than 10MB",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          handleImageSelect(file);
+                        }
+                      }}
+                      className="hidden"
                       disabled={isSubmitting}
-                      className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-lg disabled:opacity-50"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                    <div className="mt-2 text-sm text-gray-600">
-                      {coverImageFile?.name} (
-                      {((coverImageFile?.size || 0) / (1024 * 1024)).toFixed(2)}
-                      MB)
-                    </div>
+                    />
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-6 h-6 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
+                  {coverImageFile && (
+                    <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                      ✨ Image will be automatically optimized (WebP format,
+                      resized, blurhash generated) when you create the map.
                     </div>
-                    <div>
-                      <label
-                        htmlFor="cover-image"
-                        className="cursor-pointer text-blue-600 hover:text-blue-500 font-medium"
-                      >
-                        Choose an image
-                      </label>
-                      <span className="text-gray-600"> or drag and drop</span>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      PNG, JPG, WebP up to 10MB • Will be optimized
-                      automatically
-                    </p>
-                  </div>
-                )}
-                <input
-                  id="cover-image"
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      // Basic validation
-                      if (!file.type.startsWith("image/")) {
-                        toast({
-                          title: "Invalid file type",
-                          description: "Please select an image file",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
+                  )}
+                </TabsContent>
 
-                      if (file.size > 10 * 1024 * 1024) {
-                        toast({
-                          title: "File too large",
-                          description:
-                            "Please select an image smaller than 10MB",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-
-                      handleImageSelect(file);
-                    }
-                  }}
-                  className="hidden"
-                  disabled={isSubmitting}
-                />
-              </div>
-              {coverImageFile && (
-                <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  ✨ Image will be automatically optimized (WebP format,
-                  resized, blurhash generated) when you create the map.
-                </div>
-              )}
+                <TabsContent value="create" className="mt-4">
+                  <CoverImageMaker
+                    onImageCreated={handleImageSelect}
+                    disabled={isSubmitting}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
             <div className="flex justify-end">
               <Button type="submit" disabled={isSubmitting}>

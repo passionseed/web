@@ -31,7 +31,7 @@ import {
   BatchMapUpdate,
 } from "@/lib/supabase/maps";
 import { MapCategory } from "@/types/map";
-import { Loader2, Trash2, ArrowLeft, RefreshCw, Save } from "lucide-react";
+import { Loader2, Trash2, ArrowLeft, RefreshCw, Save, Upload, Sparkles } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -55,6 +55,7 @@ import Loading from "./loading";
 import { MapEditorWithProvider as MapEditor } from "@/components/map/MapEditor";
 import { RawDataView } from "@/components/map/RawDataView";
 import { ImageUpload } from "@/components/map/ImageUpload";
+import { CoverImageMaker } from "@/components/map/CoverImageMaker";
 
 export default function EditMapPage() {
   console.log(
@@ -186,6 +187,51 @@ export default function EditMapPage() {
           }
         : null
     );
+  };
+
+  const handleImageCreated = async (file: File) => {
+    // Upload the created image using the same flow as uploaded images
+    if (!mapId) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("mapId", mapId);
+      formData.append("maxWidth", "1200");
+      formData.append("maxHeight", "1200");
+      formData.append("quality", "85");
+
+      const uploadResponse = await fetch("/api/maps/upload-cover-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || "Image upload failed");
+      }
+
+      const uploadResult = await uploadResponse.json();
+
+      // Update map state with the uploaded image
+      handleImageUploaded({
+        url: uploadResult.url,
+        blurhash: uploadResult.blurhash,
+        fileName: uploadResult.fileName,
+      });
+
+      toast({
+        title: "Cover image created!",
+        description: "Your custom cover image has been saved.",
+      });
+    } catch (error) {
+      console.error("Failed to upload created image:", error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload created image",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleImageRemoved = () => {
@@ -1400,34 +1446,56 @@ export default function EditMapPage() {
 
                         <div className="space-y-2 lg:col-span-2">
                           <Label>Cover Image (Optional)</Label>
-                          {/* Debug info */}
-                          {process.env.NODE_ENV === "development" && (
-                            <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
-                              <div>
-                                cover_image_url: {map.cover_image_url || "null"}
-                              </div>
-                              <div>
-                                cover_image_blurhash:{" "}
-                                {map.cover_image_blurhash || "null"}
-                              </div>
-                              <div>
-                                metadata.coverImage:{" "}
-                                {map.metadata?.coverImage || "null"}
-                              </div>
-                            </div>
-                          )}
-                          <ImageUpload
-                            mapId={mapId}
-                            currentImage={{
-                              url:
-                                map.cover_image_url || map.metadata?.coverImage,
-                              blurhash: map.cover_image_blurhash || undefined,
-                            }}
-                            onImageUploaded={handleImageUploaded}
-                            onImageRemoved={handleImageRemoved}
-                            disabled={isSubmitting}
-                            className="w-full"
-                          />
+                          <Tabs defaultValue="upload" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                              <TabsTrigger value="upload" className="gap-2">
+                                <Upload className="h-4 w-4" />
+                                Upload Image
+                              </TabsTrigger>
+                              <TabsTrigger value="create" className="gap-2">
+                                <Sparkles className="h-4 w-4" />
+                                Create Cover
+                              </TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="upload" className="space-y-2 mt-4">
+                              {/* Debug info */}
+                              {process.env.NODE_ENV === "development" && (
+                                <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+                                  <div>
+                                    cover_image_url: {map.cover_image_url || "null"}
+                                  </div>
+                                  <div>
+                                    cover_image_blurhash:{" "}
+                                    {map.cover_image_blurhash || "null"}
+                                  </div>
+                                  <div>
+                                    metadata.coverImage:{" "}
+                                    {map.metadata?.coverImage || "null"}
+                                  </div>
+                                </div>
+                              )}
+                              <ImageUpload
+                                mapId={mapId}
+                                currentImage={{
+                                  url:
+                                    map.cover_image_url || map.metadata?.coverImage,
+                                  blurhash: map.cover_image_blurhash || undefined,
+                                }}
+                                onImageUploaded={handleImageUploaded}
+                                onImageRemoved={handleImageRemoved}
+                                disabled={isSubmitting}
+                                className="w-full"
+                              />
+                            </TabsContent>
+
+                            <TabsContent value="create" className="mt-4">
+                              <CoverImageMaker
+                                onImageCreated={handleImageCreated}
+                                disabled={isSubmitting}
+                              />
+                            </TabsContent>
+                          </Tabs>
                         </div>
 
                         <div className="space-y-4 lg:col-span-2">

@@ -319,14 +319,25 @@ TextContent.displayName = "TextContent";
 export const renderContent = (content: NodeContent) => {
   const contentUrl = content.content_url;
   const contentType = content.content_type;
-  
+  const contentTitle = content.content_title;
+
   // Create a stable key based on content ID to prevent unnecessary remounts
   const contentKey = `content-${content.id}-${contentType}`;
+
+  // Render title if present
+  const TitleSection = contentTitle?.trim() ? (
+    <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        {contentTitle}
+      </h3>
+    </div>
+  ) : null;
 
   // Handle backward compatibility for old content type
   if (contentType === "text_with_images" as any) {
     return (
       <div key={contentKey}>
+        {TitleSection}
         <TextContent contentBody={content.content_body || ""} />
       </div>
     );
@@ -337,11 +348,17 @@ export const renderContent = (content: NodeContent) => {
       if (!contentUrl) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
-      return <VideoEmbed contentUrl={contentUrl} key={contentKey} />;
+      return (
+        <div key={contentKey}>
+          {TitleSection}
+          <VideoEmbed contentUrl={contentUrl} />
+        </div>
+      );
 
     case "text":
       return (
         <div key={contentKey}>
+          {TitleSection}
           <TextContent contentBody={content.content_body || ""} />
         </div>
       );
@@ -350,7 +367,12 @@ export const renderContent = (content: NodeContent) => {
       if (!contentUrl) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
-      return <ImageContent contentUrl={contentUrl} key={contentKey} />;
+      return (
+        <div key={contentKey}>
+          {TitleSection}
+          <ImageContent contentUrl={contentUrl} />
+        </div>
+      );
 
     case "pdf":
       if (!contentUrl) {
@@ -360,7 +382,8 @@ export const renderContent = (content: NodeContent) => {
       const fileName = contentUrl.split('/').pop() || 'document.pdf';
 
       return (
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-4" key={contentKey}>
+          {TitleSection}
           {/* PDF Viewer with better options */}
           <div className="relative w-full bg-white rounded-lg shadow-lg border border-gray-200">
             {/* Header with controls */}
@@ -371,7 +394,7 @@ export const renderContent = (content: NodeContent) => {
                 </div>
                 <div>
                   <span className="text-sm font-medium text-gray-900 block">
-                    {fileName}
+                    {contentTitle?.trim() || fileName}
                   </span>
                   <span className="text-xs text-gray-500">
                     PDF Document
@@ -481,7 +504,12 @@ export const renderContent = (content: NodeContent) => {
       if (!contentUrl) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
-      return <CanvaEmbed contentUrl={contentUrl} key={contentKey} />;
+      return (
+        <div key={contentKey}>
+          {TitleSection}
+          <CanvaEmbed contentUrl={contentUrl} />
+        </div>
+      );
 
     case "resource_link":
       if (!contentUrl) {
@@ -489,34 +517,39 @@ export const renderContent = (content: NodeContent) => {
       }
 
       return (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center">
-              <ExternalLink className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
-                📚 Resource Link
-              </h3>
-              {content.content_body && (
-                <p className="text-sm text-blue-800 dark:text-blue-200 mb-4 leading-relaxed">
-                  {content.content_body}
-                </p>
-              )}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <a
-                  href={contentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center"
-                >
-                  <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-sm">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open Resource
-                  </Button>
-                </a>
-                <div className="text-xs text-blue-600 dark:text-blue-300 font-mono bg-blue-100 dark:bg-blue-900/50 px-3 py-2 rounded border border-blue-200 dark:border-blue-700 truncate">
-                  {contentUrl}
+        <div key={contentKey}>
+          {TitleSection}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center">
+                <ExternalLink className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                {!contentTitle?.trim() && (
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                    📚 Resource Link
+                  </h3>
+                )}
+                {content.content_body && (
+                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-4 leading-relaxed">
+                    {content.content_body}
+                  </p>
+                )}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <a
+                    href={contentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center"
+                  >
+                    <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-sm">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Open Resource
+                    </Button>
+                  </a>
+                  <div className="text-xs text-blue-600 dark:text-blue-300 font-mono bg-blue-100 dark:bg-blue-900/50 px-3 py-2 rounded border border-blue-200 dark:border-blue-700 truncate">
+                    {contentUrl}
+                  </div>
                 </div>
               </div>
             </div>

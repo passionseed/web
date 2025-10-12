@@ -64,10 +64,11 @@ const areEqual = (prevProps: LearningContentViewProps, nextProps: LearningConten
   for (let i = 0; i < prevProps.nodeContent.length; i++) {
     const prev = prevProps.nodeContent[i];
     const next = nextProps.nodeContent[i];
-    
+
     if (
       prev.id !== next.id ||
       prev.content_type !== next.content_type ||
+      prev.content_title !== next.content_title ||
       prev.content_url !== next.content_url ||
       prev.content_body !== next.content_body
     ) {
@@ -76,6 +77,8 @@ const areEqual = (prevProps: LearningContentViewProps, nextProps: LearningConten
         nextId: next.id,
         prevType: prev.content_type,
         nextType: next.content_type,
+        prevTitle: prev.content_title,
+        nextTitle: next.content_title,
         prevUrl: prev.content_url?.substring(0, 50),
         nextUrl: next.content_url?.substring(0, 50)
       });
