@@ -600,6 +600,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [lastSavedVersion, setLastSavedVersion] = useState<string>("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isContentAutoSavingRef = useRef<boolean>(false);
 
   // Generate a hash of the current map state for change detection
   const generateMapHash = useCallback((currentMap: FullLearningMap) => {
@@ -920,6 +921,12 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       return;
     }
 
+    // Skip if content is being auto-saved
+    if (isContentAutoSavingRef.current) {
+      console.log("⏭️ Skipping hash check - content auto-saving");
+      return;
+    }
+
     const currentHash = generateMapHash(map);
     const hasChanged = currentHash !== lastSavedVersion;
 
@@ -939,21 +946,35 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     }
   }, [map, lastSavedVersion, generateMapHash, autoSaveStatus]);
 
-  // Expose a function to mark content as saved (called by ContentEditor after auto-save)
+  // Expose functions for ContentEditor to coordinate auto-save
   useEffect(() => {
-    // Add a global callback that ContentEditor can use to update lastSavedVersion
-    (window as any).__markContentSaved = () => {
-      const newHash = generateMapHash(map);
-      console.log("✅ Content auto-saved, updating lastSavedVersion");
-      setLastSavedVersion(newHash);
-      setHasUnsavedChanges(false);
-      setAutoSaveStatus(AutoSaveStatus.SAVED);
+    // Signal that content auto-save is starting (prevents change detection)
+    (window as any).__startContentAutoSave = () => {
+      console.log("🔒 Content auto-save starting, disabling change detection");
+      isContentAutoSavingRef.current = true;
+    };
+
+    // Signal that content auto-save is complete (update hash and re-enable detection)
+    (window as any).__finishContentAutoSave = () => {
+      setTimeout(() => {
+        const newHash = generateMapHash(map);
+        console.log("✅ Content auto-saved, updating lastSavedVersion:", {
+          oldHash: lastSavedVersion.substring(0, 10) + "...",
+          newHash: newHash.substring(0, 10) + "...",
+        });
+        setLastSavedVersion(newHash);
+        setHasUnsavedChanges(false);
+        setAutoSaveStatus(AutoSaveStatus.SAVED);
+        isContentAutoSavingRef.current = false;
+        console.log("🔓 Content auto-save complete, re-enabled change detection");
+      }, 100);
     };
 
     return () => {
-      delete (window as any).__markContentSaved;
+      delete (window as any).__startContentAutoSave;
+      delete (window as any).__finishContentAutoSave;
     };
-  }, [map, generateMapHash]);
+  }, [map, generateMapHash, lastSavedVersion]);
 
   // Unsaved changes warning on page unload
   useEffect(() => {

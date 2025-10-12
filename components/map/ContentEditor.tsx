@@ -652,6 +652,11 @@ export function ContentEditor({
 
       const existingIndex = content.findIndex((c) => c.id === savedContent.id);
 
+      // Signal start of content auto-save
+      if (typeof (window as any).__startContentAutoSave === 'function') {
+        (window as any).__startContentAutoSave();
+      }
+
       try {
         let finalContent: NodeContent;
 
@@ -674,12 +679,9 @@ export function ContentEditor({
 
           toast({ title: "Content updated successfully!" });
 
-          // Notify MapEditor that content was auto-saved
-          if (typeof (window as any).__markContentSaved === 'function') {
-            // Use setTimeout to ensure the map state has updated first
-            setTimeout(() => {
-              (window as any).__markContentSaved();
-            }, 100);
+          // Signal content auto-save complete
+          if (typeof (window as any).__finishContentAutoSave === 'function') {
+            (window as any).__finishContentAutoSave();
           }
         } else {
           // Create new content in database
@@ -708,12 +710,9 @@ export function ContentEditor({
 
           toast({ title: "Content added successfully!" });
 
-          // Notify MapEditor that content was auto-saved
-          if (typeof (window as any).__markContentSaved === 'function') {
-            // Use setTimeout to ensure the map state has updated first
-            setTimeout(() => {
-              (window as any).__markContentSaved();
-            }, 100);
+          // Signal content auto-save complete
+          if (typeof (window as any).__finishContentAutoSave === 'function') {
+            (window as any).__finishContentAutoSave();
           }
         }
 
@@ -734,6 +733,11 @@ export function ContentEditor({
 
   const handleDelete = useCallback(
     async (id: string) => {
+      // Signal start of content auto-save
+      if (typeof (window as any).__startContentAutoSave === 'function') {
+        (window as any).__startContentAutoSave();
+      }
+
       try {
         // Delete from database if it's not a temp ID
         if (!id.startsWith("temp_")) {
@@ -746,11 +750,9 @@ export function ContentEditor({
         onContentChange(content.filter((c) => c.id !== id));
         toast({ title: "Content deleted successfully!" });
 
-        // Notify MapEditor that content was auto-saved
-        if (typeof (window as any).__markContentSaved === 'function') {
-          setTimeout(() => {
-            (window as any).__markContentSaved();
-          }, 100);
+        // Signal content auto-save complete
+        if (typeof (window as any).__finishContentAutoSave === 'function') {
+          (window as any).__finishContentAutoSave();
         }
       } catch (error) {
         console.error("❌ Failed to delete content:", error);
