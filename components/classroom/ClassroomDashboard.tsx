@@ -15,24 +15,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   BookOpen,
-  TrendingUp,
-  Calendar,
   Clock,
-  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { ClassroomCard } from "./ClassroomCard";
 import { CreateClassroomModal } from "./CreateClassroomModal";
 import { ClassroomMapsManager } from "./ClassroomMapsManager";
 import { useToast } from "@/hooks/use-toast";
+import { checkClientAuth, UserRole } from "@/lib/supabase/auth-client";
 import type { ClassroomWithAssignments } from "@/types/classroom";
-
-interface DashboardStats {
-  totalClassrooms: number;
-  totalStudents: number;
-  totalAssignments: number;
-  activeAssignments: number;
-}
 
 interface ClassroomMembership {
   id: string;
@@ -56,15 +47,10 @@ export function ClassroomDashboard() {
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userCanCreateClassrooms, setUserCanCreateClassrooms] = useState(false);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalClassrooms: 0,
-    totalStudents: 0,
-    totalAssignments: 0,
-    activeAssignments: 0,
-  });
+  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const { toast } = useToast();
 
-  const loadClassrooms = async () => {
+  const loadClassrooms = async (roles: UserRole[] = []) => {
     setIsLoading(true);
     try {
       // Fetch user's classroom memberships (works for all roles)
@@ -88,36 +74,15 @@ export function ClassroomDashboard() {
 
       setClassrooms(classroomList);
 
-      // Check if user can create classrooms (has instructor or TA role in any classroom)
+      // Check if user can create classrooms (instructors, TAs, and admins)
       const hasInstructorRole = memberships.some(
         (membership) =>
           membership.role === "instructor" || membership.role === "ta"
       );
-      setUserCanCreateClassrooms(hasInstructorRole);
+      const isAdmin = roles.includes("admin");
+      // Allow instructors, TAs, and admins to create classrooms
+      setUserCanCreateClassrooms(hasInstructorRole || isAdmin);
 
-      // Calculate stats
-      const totalClassrooms = classroomList.length;
-      const totalStudents = classroomList.reduce(
-        (sum: number, classroom) => sum + (classroom.member_count || 0),
-        0
-      );
-      const totalAssignments = classroomList.reduce(
-        (sum: number, classroom) => sum + (classroom.assignments?.length || 0),
-        0
-      );
-      const activeAssignments = classroomList.reduce(
-        (sum: number, classroom) =>
-          sum +
-          (classroom.assignments?.filter((a: any) => a.is_active).length || 0),
-        0
-      );
-
-      setStats({
-        totalClassrooms,
-        totalStudents,
-        totalAssignments,
-        activeAssignments,
-      });
     } catch (error) {
       console.error("Load classrooms error:", error);
       toast({
@@ -131,7 +96,23 @@ export function ClassroomDashboard() {
   };
 
   useEffect(() => {
-    loadClassrooms();
+    const loadData = async () => {
+      // Load user roles first
+      let roles: UserRole[] = [];
+      try {
+        const authResult = await checkClientAuth();
+        if (authResult.isAuthenticated && authResult.userRoles) {
+          roles = authResult.userRoles;
+          setUserRoles(roles);
+        }
+      } catch (error) {
+        console.error("Error loading user roles:", error);
+      }
+      
+      // Then load classrooms with the roles
+      await loadClassrooms(roles);
+    };
+    loadData();
   }, []);
 
   const activeClassrooms = classrooms.filter((c) => c.is_active);
@@ -158,81 +139,11 @@ export function ClassroomDashboard() {
         )}
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Classrooms
-            </CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalClassrooms}</div>
-            <p className="text-xs text-muted-foreground">
-              {activeClassrooms.length} active
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Students
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalStudents}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all classrooms
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Assignments
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalAssignments}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.activeAssignments} active
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Progress</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.totalAssignments > 0
-                ? Math.round(
-                    (stats.activeAssignments / stats.totalAssignments) * 100
-                  )
-                : 0}
-              %
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Assignment activity rate
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Classrooms List */}
       <Card>
         <CardHeader>
           <CardTitle>Your Classrooms</CardTitle>
-          <CardDescription>
-            Manage and monitor all your active classrooms
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="active" className="w-full">
@@ -373,37 +284,6 @@ export function ClassroomDashboard() {
         </Card>
       )} */}
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            Common tasks to help you manage your classrooms efficiently
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" asChild>
-              <Link href="/maps">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Browse Learning Maps
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/classrooms/analytics">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                View Analytics
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/help/classroom-guide">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Classroom Guide
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

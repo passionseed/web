@@ -325,6 +325,9 @@ export default function FinishProfilePage() {
         }
       }
 
+      // Scroll to top before redirecting
+      window.scrollTo(0, 0);
+      
       // Redirect to user profile page after profile and skills are updated
       // (skip the interests flow for now)
       router.push("/me");

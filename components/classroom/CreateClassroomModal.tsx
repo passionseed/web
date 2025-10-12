@@ -73,6 +73,8 @@ export function CreateClassroomModal({
     max_students: 30,
     selectedMapIds: [],
   });
+  
+  const [maxStudentsInput, setMaxStudentsInput] = useState<string>("30");
   const { toast } = useToast();
 
   const loadAvailableMaps = async () => {
@@ -136,6 +138,7 @@ export function CreateClassroomModal({
         max_students: 30,
         selectedMapIds: [],
       });
+      setMaxStudentsInput("30");
 
       setOpen(false);
       onClassroomCreated?.();
@@ -236,13 +239,28 @@ export function CreateClassroomModal({
                   type="number"
                   min="1"
                   max="1000"
-                  value={formData.max_students}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "max_students",
-                      parseInt(e.target.value) || 30
-                    )
-                  }
+                  value={maxStudentsInput}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setMaxStudentsInput(value);
+                    
+                    // Update formData with parsed value or keep as undefined if empty
+                    if (value === "") {
+                      setFormData(prev => ({ ...prev, max_students: undefined as any }));
+                    } else {
+                      const parsed = parseInt(value);
+                      if (!isNaN(parsed) && parsed > 0) {
+                        setFormData(prev => ({ ...prev, max_students: parsed }));
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    // If empty on blur, set to default value of 30
+                    if (maxStudentsInput === "") {
+                      setMaxStudentsInput("30");
+                      setFormData(prev => ({ ...prev, max_students: 30 }));
+                    }
+                  }}
                   disabled={isLoading}
                 />
                 <p className="text-xs text-muted-foreground">
