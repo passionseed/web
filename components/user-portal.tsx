@@ -48,6 +48,11 @@ interface UserPortalProps {
 
 export function UserPortal({ dashboardData }: UserPortalProps) {
   const { projects, reflectionStreak, workshops } = dashboardData;
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [reflections, setReflections] = useState<MindmapReflection[]>([]);
   const [selectedReflection, setSelectedReflection] = useState<MindmapReflection | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);

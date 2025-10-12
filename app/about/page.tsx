@@ -3,19 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 
 const AboutPage = () => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const cursorRef = useRef<HTMLDivElement>(null);
   const scrollProgressRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const statsObserverRef = useRef<IntersectionObserver | null>(null);
 
-  // Loading screen effect
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Custom cursor effect
   useEffect(() => {
@@ -206,7 +199,7 @@ const AboutPage = () => {
           <h2 className="text-[clamp(2rem,5vw,4rem)] font-light mb-8 text-center opacity-0 transition-all duration-800 text-[#d8b4fe]">
             Empowering Student Discovery
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-1">
             <div className="philosophy-card p-12 bg-[rgba(255,255,255,0.05)] rounded-2xl backdrop-blur-sm border border-[rgba(147,51,234,0.2)] opacity-0 transform translate-y-24 transition-all duration-800 hover:transform hover:-translate-y-2.5 hover:bg-[rgba(147,51,234,0.08)] hover:border-[rgba(147,51,234,0.4)]">
               <h3 className="text-3xl font-light mb-6 text-[#d8b4fe]">Our Vision</h3>
               <p className="leading-relaxed text-[#e2e8f0]">
