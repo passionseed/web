@@ -62,6 +62,12 @@ export function NodeEditorPanel({
   const [localTitle, setLocalTitle] = useState("");
   // For instructions field, use local state to prevent re-rendering issues
   const [localInstructions, setLocalInstructions] = useState("");
+  // Track current tab to save on tab change
+  const [currentTab, setCurrentTab] = useState("details");
+
+  // Store original values for comparison on blur
+  const [originalTitle, setOriginalTitle] = useState("");
+  const [originalInstructions, setOriginalInstructions] = useState("");
 
   // Remove the debounced updates - we'll only update on blur to prevent refreshing
   // The visual updates are handled by local state, data persistence happens on blur
@@ -72,7 +78,7 @@ export function NodeEditorPanel({
 
     // Force sync React Flow nodes when editing is complete
     // This ensures visual consistency without flashing during typing
-    if (selectedNode && !isTextNode && localTitle !== selectedNode.data.title) {
+    if (selectedNode && !isTextNode && localTitle !== originalTitle) {
       // Trigger a non-title update to force React Flow sync
       onNodeDataChange(selectedNode.id, {
         title: localTitle,
@@ -81,7 +87,7 @@ export function NodeEditorPanel({
     } else if (
       selectedNode &&
       isTextNode &&
-      localText !== selectedNode.data.title
+      localText !== originalTitle
     ) {
       // For text nodes, also ensure sync
       onNodeDataChange(selectedNode.id, {
@@ -94,6 +100,7 @@ export function NodeEditorPanel({
     isTextNode,
     localTitle,
     localText,
+    originalTitle,
     onNodeDataChange,
     onEditingStateChange,
   ]);
@@ -102,20 +109,57 @@ export function NodeEditorPanel({
     onEditingStateChange?.(true);
   }, [onEditingStateChange]);
 
+  // Save any pending changes to title and instructions
+  const savePendingChanges = useCallback(() => {
+    if (!selectedNode) return;
+
+    let hasChanges = false;
+    const updates: Partial<MapNode> = {};
+
+    // Check and save title changes
+    if (isTextNode && localText !== originalTitle) {
+      updates.title = localText;
+      hasChanges = true;
+    } else if (!isTextNode && localTitle !== originalTitle) {
+      updates.title = localTitle;
+      hasChanges = true;
+    }
+
+    // Check and save instructions changes
+    if (!isTextNode && localInstructions !== originalInstructions) {
+      updates.instructions = localInstructions;
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      updates.updated_at = new Date().toISOString();
+      onNodeDataChange(selectedNode.id, updates);
+      console.log("💾 Saved pending changes on tab switch:", updates);
+    }
+  }, [selectedNode, isTextNode, localText, localTitle, localInstructions, originalTitle, originalInstructions, onNodeDataChange]);
+
   const handleInstructionsBlur = useCallback(() => {
     onEditingStateChange?.(false);
 
-    if (selectedNode && localInstructions !== selectedNode.data.instructions) {
+    if (selectedNode && localInstructions !== originalInstructions) {
       onNodeDataChange(selectedNode.id, {
         instructions: localInstructions,
         updated_at: new Date().toISOString(),
       });
     }
-  }, [selectedNode, localInstructions, onNodeDataChange, onEditingStateChange]);
+  }, [selectedNode, localInstructions, originalInstructions, onNodeDataChange, onEditingStateChange]);
 
   const handleInstructionsFocus = useCallback(() => {
     onEditingStateChange?.(true);
   }, [onEditingStateChange]);
+
+  // Handle tab changes - save pending changes before switching
+  const handleTabChange = useCallback((newTab: string) => {
+    console.log("📑 Tab changing from", currentTab, "to", newTab);
+    savePendingChanges();
+    setCurrentTab(newTab);
+    onEditingStateChange?.(false);
+  }, [currentTab, savePendingChanges, onEditingStateChange]);
 
   useEffect(() => {
     if (selectedNode) {
@@ -351,7 +395,7 @@ export function NodeEditorPanel({
 
       {/* Tabs Content - Scrollable */}
       <div className="flex-1 overflow-hidden">
-        <Tabs defaultValue="details" className="h-full flex flex-col">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="h-full flex flex-col">
           <div className="flex-shrink-0 px-4 py-2 bg-background border-b">
             <TabsList
               className={`grid w-full ${isTextNode ? "grid-cols-1" : "grid-cols-3"}`}
