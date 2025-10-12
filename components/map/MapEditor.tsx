@@ -192,7 +192,6 @@ const CustomNode = React.memo(
       [data.sprite_url]
     );
 
-
     // Memoize click handler - DO NOT stopPropagation to allow ReactFlow's onNodeClick
     const handleClick = useCallback(
       (e: React.MouseEvent) => {
@@ -453,14 +452,21 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [isManuallySelecting, setIsManuallySelecting] = useState(false);
   const [isDraggingNodes, setIsDraggingNodes] = useState(false);
   const [dragDistance, setDragDistance] = useState(0);
-  const [dragStartPos, setDragStartPos] = useState<{x: number, y: number} | null>(null);
-  const [newlyCreatedNodeId, setNewlyCreatedNodeId] = useState<string | null>(null);
+  const [dragStartPos, setDragStartPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [newlyCreatedNodeId, setNewlyCreatedNodeId] = useState<string | null>(
+    null
+  );
   const transformTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // JSON import state
   const [showJsonImport, setShowJsonImport] = useState(false);
   const [jsonInput, setJsonInput] = useState("");
-  const [jsonValidationErrors, setJsonValidationErrors] = useState<string[]>([]);
+  const [jsonValidationErrors, setJsonValidationErrors] = useState<string[]>(
+    []
+  );
   const [isImportingJson, setIsImportingJson] = useState(false);
   const [pendingNodeUpdates, setPendingNodeUpdates] = useState<
     Record<string, Partial<MapNode>>
@@ -470,12 +476,12 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
 
-
-
   // Helper functions - ReactFlow as single source of truth for selection
   const getSelectedNodes = useCallback((): AppNode[] => {
     if (!reactFlowInstance) return [];
-    return reactFlowInstance.getNodes().filter(node => node.selected) as AppNode[];
+    return reactFlowInstance
+      .getNodes()
+      .filter((node) => node.selected) as AppNode[];
   }, [reactFlowInstance]);
 
   const getSelectedNode = useCallback((): AppNode | null => {
@@ -489,47 +495,50 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   >({});
 
   // Unified selection handler for both click and drag-fallback scenarios
-  const handleNodeSelection = useCallback((node: any, isMultiSelect: boolean, source: string = "unknown") => {
-    console.log(`🎯 handleNodeSelection called from: ${source}`, {
-      nodeId: node.id,
-      isMultiSelect,
-      dragDistance: dragDistance,
-      timestamp: new Date().toISOString(),
-    });
-    
-    if (!reactFlowInstance) {
-      console.warn("⚠️ ReactFlow instance not available for selection");
-      return;
-    }
-    
-    // Prevent transforms during manual selection
-    setIsManuallySelecting(true);
-    
-    const currentNodes = reactFlowInstance.getNodes();
-    
-    if (isMultiSelect) {
-      // Multi-select: toggle this node's selection
-      const updatedNodes = currentNodes.map(n => ({
-        ...n,
-        selected: n.id === node.id ? !n.selected : n.selected
-      }));
-      reactFlowInstance.setNodes(updatedNodes);
-      console.log("🔄 Multi-select toggle for node:", node.id);
-    } else {
-      // Single select: clear all others and select this one
-      const updatedNodes = currentNodes.map(n => ({
-        ...n,
-        selected: n.id === node.id
-      }));
-      reactFlowInstance.setNodes(updatedNodes);
-      console.log("✅ Single-select for node:", node.id);
-    }
-    
-    // Clear the manual selection flag after a brief delay
-    setTimeout(() => {
-      setIsManuallySelecting(false);
-    }, 50);
-  }, [reactFlowInstance, dragDistance, setIsManuallySelecting]);
+  const handleNodeSelection = useCallback(
+    (node: any, isMultiSelect: boolean, source: string = "unknown") => {
+      console.log(`🎯 handleNodeSelection called from: ${source}`, {
+        nodeId: node.id,
+        isMultiSelect,
+        dragDistance: dragDistance,
+        timestamp: new Date().toISOString(),
+      });
+
+      if (!reactFlowInstance) {
+        console.warn("⚠️ ReactFlow instance not available for selection");
+        return;
+      }
+
+      // Prevent transforms during manual selection
+      setIsManuallySelecting(true);
+
+      const currentNodes = reactFlowInstance.getNodes();
+
+      if (isMultiSelect) {
+        // Multi-select: toggle this node's selection
+        const updatedNodes = currentNodes.map((n) => ({
+          ...n,
+          selected: n.id === node.id ? !n.selected : n.selected,
+        }));
+        reactFlowInstance.setNodes(updatedNodes);
+        console.log("🔄 Multi-select toggle for node:", node.id);
+      } else {
+        // Single select: clear all others and select this one
+        const updatedNodes = currentNodes.map((n) => ({
+          ...n,
+          selected: n.id === node.id,
+        }));
+        reactFlowInstance.setNodes(updatedNodes);
+        console.log("✅ Single-select for node:", node.id);
+      }
+
+      // Clear the manual selection flag after a brief delay
+      setTimeout(() => {
+        setIsManuallySelecting(false);
+      }, 50);
+    },
+    [reactFlowInstance, dragDistance, setIsManuallySelecting]
+  );
 
   // Enhanced debug effect for selection state tracking
   useEffect(() => {
@@ -538,21 +547,26 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
     // Get ReactFlow's internal selection state for comparison
     const reactFlowNodes = reactFlowInstance?.getNodes() || [];
-    const reactFlowSelected = reactFlowNodes.filter(n => n.selected);
+    const reactFlowSelected = reactFlowNodes.filter((n) => n.selected);
 
     console.log("🔍 SELECTION STATE DEBUG:", {
       helperSelectedCount: selectedNodes.length,
-      helperSelectedIds: selectedNodes.map(n => n.id),
+      helperSelectedIds: selectedNodes.map((n) => n.id),
       reactFlowSelectedCount: reactFlowSelected.length,
-      reactFlowSelectedIds: reactFlowSelected.map(n => n.id),
+      reactFlowSelectedIds: reactFlowSelected.map((n) => n.id),
       singleNodeFromHelper: selectedNode?.id || null,
-      statesMatch: selectedNodes.length === reactFlowSelected.length &&
-                  selectedNodes.every(n => reactFlowSelected.some(rf => rf.id === n.id))
+      statesMatch:
+        selectedNodes.length === reactFlowSelected.length &&
+        selectedNodes.every((n) =>
+          reactFlowSelected.some((rf) => rf.id === n.id)
+        ),
     });
 
     // Alert about desync issues
     if (selectedNodes.length !== reactFlowSelected.length) {
-      console.warn("⚠️ SELECTION DESYNC DETECTED! Helper vs ReactFlow mismatch");
+      console.warn(
+        "⚠️ SELECTION DESYNC DETECTED! Helper vs ReactFlow mismatch"
+      );
     }
   }, [getSelectedNodes, getSelectedNode, reactFlowInstance]);
 
@@ -560,31 +574,37 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   // Cross-Tab Clipboard Management
   // ========================================
 
-  const CLIPBOARD_STORAGE_KEY = 'map_editor_clipboard';
+  const CLIPBOARD_STORAGE_KEY = "map_editor_clipboard";
 
   // State to track clipboard for UI updates
   const [clipboardNodeCount, setClipboardNodeCount] = useState<number>(0);
 
   // Save copied nodes to localStorage for cross-tab access
-  const saveCopiedNodesToStorage = useCallback((nodes: MapNode[]) => {
-    try {
-      const clipboardData = {
-        nodes,
-        timestamp: new Date().toISOString(),
-        version: 1, // For future compatibility
-      };
-      localStorage.setItem(CLIPBOARD_STORAGE_KEY, JSON.stringify(clipboardData));
-      setClipboardNodeCount(nodes.length);
-      console.log(`📋 Saved ${nodes.length} nodes to cross-tab clipboard`);
-    } catch (error) {
-      console.error("❌ Failed to save clipboard to localStorage:", error);
-      toast({
-        title: "Clipboard save failed",
-        description: "Unable to save to clipboard. Storage may be full.",
-        variant: "destructive",
-      });
-    }
-  }, [toast]);
+  const saveCopiedNodesToStorage = useCallback(
+    (nodes: MapNode[]) => {
+      try {
+        const clipboardData = {
+          nodes,
+          timestamp: new Date().toISOString(),
+          version: 1, // For future compatibility
+        };
+        localStorage.setItem(
+          CLIPBOARD_STORAGE_KEY,
+          JSON.stringify(clipboardData)
+        );
+        setClipboardNodeCount(nodes.length);
+        console.log(`📋 Saved ${nodes.length} nodes to cross-tab clipboard`);
+      } catch (error) {
+        console.error("❌ Failed to save clipboard to localStorage:", error);
+        toast({
+          title: "Clipboard save failed",
+          description: "Unable to save to clipboard. Storage may be full.",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
 
   // Load copied nodes from localStorage
   const loadCopiedNodesFromStorage = useCallback((): MapNode[] | null => {
@@ -634,13 +654,15 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
             const clipboardData = JSON.parse(e.newValue);
             const nodeCount = clipboardData.nodes?.length || 0;
             setClipboardNodeCount(nodeCount);
-            console.log(`📋 Clipboard updated from another tab: ${nodeCount} nodes`);
+            console.log(
+              `📋 Clipboard updated from another tab: ${nodeCount} nodes`
+            );
 
             // Optional: Show toast notification
             if (nodeCount > 0) {
               toast({
                 title: "Clipboard updated",
-                description: `${nodeCount} node${nodeCount !== 1 ? 's' : ''} copied in another tab`,
+                description: `${nodeCount} node${nodeCount !== 1 ? "s" : ""} copied in another tab`,
               });
             }
           } else {
@@ -653,8 +675,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, [toast]);
 
   // Auto-save state management
@@ -754,7 +776,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         setAutoSaveStatus(AutoSaveStatus.SAVED);
 
         console.log("🔄 Map auto-saved successfully", {
-          savedHash: newHash.substring(0, 10) + "..."
+          savedHash: newHash.substring(0, 10) + "...",
         });
 
         // Show success feedback for manual saves
@@ -1030,7 +1052,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         setHasUnsavedChanges(false);
         setAutoSaveStatus(AutoSaveStatus.SAVED);
         isContentAutoSavingRef.current = false;
-        console.log("🔓 Content auto-save complete, re-enabled change detection");
+        console.log(
+          "🔓 Content auto-save complete, re-enabled change detection"
+        );
       }, 100);
     };
 
@@ -1139,195 +1163,201 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     }
 
     try {
+      // Calculate base paste position (center of visible viewport)
+      let basePastePosition = { x: 150, y: 150 }; // Default fallback
 
-    // Calculate base paste position (center of visible viewport)
-    let basePastePosition = { x: 150, y: 150 }; // Default fallback
+      if (reactFlowInstance) {
+        const viewport = reactFlowInstance.getViewport();
+        const currentSelectedNode = getSelectedNode();
+        const panelOffset = currentSelectedNode ? 0.35 : 0; // Account for right panel
+        const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
 
-    if (reactFlowInstance) {
-      const viewport = reactFlowInstance.getViewport();
-      const currentSelectedNode = getSelectedNode();
-      const panelOffset = currentSelectedNode ? 0.35 : 0; // Account for right panel
-      const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
+        basePastePosition = {
+          x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
+          y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+        };
+      }
 
-      basePastePosition = {
-        x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
-        y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+      console.log(
+        "💾 Creating pasted nodes with temporary IDs for later saving..."
+      );
+
+      // Calculate the bounding box of all copied nodes to preserve relative positioning
+      let minX = Infinity,
+        minY = Infinity;
+      let maxX = -Infinity,
+        maxY = -Infinity;
+
+      copiedNodes.forEach((node) => {
+        if (node.metadata?.position) {
+          const pos = node.metadata.position;
+          minX = Math.min(minX, pos.x);
+          minY = Math.min(minY, pos.y);
+          maxX = Math.max(maxX, pos.x);
+          maxY = Math.max(maxY, pos.y);
+        }
+      });
+
+      // Calculate center of original selection
+      const originalCenter = {
+        x: (minX + maxX) / 2,
+        y: (minY + maxY) / 2,
       };
-    }
 
-    console.log("💾 Creating pasted nodes with temporary IDs for later saving...");
+      // Check if we need to offset to avoid overlapping with original
+      const groupWidth = maxX - minX;
+      const groupHeight = maxY - minY;
+      const distanceFromOriginal = Math.sqrt(
+        Math.pow(basePastePosition.x - originalCenter.x, 2) +
+          Math.pow(basePastePosition.y - originalCenter.y, 2)
+      );
 
-    // Calculate the bounding box of all copied nodes to preserve relative positioning
-    let minX = Infinity,
-      minY = Infinity;
-    let maxX = -Infinity,
-      maxY = -Infinity;
-
-    copiedNodes.forEach((node) => {
-      if (node.metadata?.position) {
-        const pos = node.metadata.position;
-        minX = Math.min(minX, pos.x);
-        minY = Math.min(minY, pos.y);
-        maxX = Math.max(maxX, pos.x);
-        maxY = Math.max(maxY, pos.y);
-      }
-    });
-
-    // Calculate center of original selection
-    const originalCenter = {
-      x: (minX + maxX) / 2,
-      y: (minY + maxY) / 2,
-    };
-
-    // Check if we need to offset to avoid overlapping with original
-    const groupWidth = maxX - minX;
-    const groupHeight = maxY - minY;
-    const distanceFromOriginal = Math.sqrt(
-      Math.pow(basePastePosition.x - originalCenter.x, 2) +
-        Math.pow(basePastePosition.y - originalCenter.y, 2)
-    );
-
-    // If pasting too close to original, add offset
-    const finalPastePosition = { ...basePastePosition };
-    if (distanceFromOriginal < Math.max(groupWidth, groupHeight, 150)) {
-      finalPastePosition.x += 100;
-      finalPastePosition.y += 100;
-    }
-
-    // Create nodes with temporary IDs (to be saved later with Save All)
-    const newNodes: AppNode[] = [];
-    const newNodeData: (MapNode & {
-      node_paths_source: any[];
-      node_paths_destination: any[];
-      node_content: any[];
-      node_assessments: any[];
-    })[] = [];
-
-    // Process each node: create with temporary IDs for later saving
-    for (let index = 0; index < copiedNodes.length; index++) {
-      const copiedNode = copiedNodes[index];
-      
-      // Calculate position preserving relative layout
-      let nodePosition;
-      if (copiedNode.metadata?.position && copiedNodes.length > 1) {
-        // For multiple nodes, preserve relative positioning
-        const originalPos = copiedNode.metadata.position;
-        const relativeToCenter = {
-          x: originalPos.x - originalCenter.x,
-          y: originalPos.y - originalCenter.y,
-        };
-        nodePosition = {
-          x: finalPastePosition.x + relativeToCenter.x,
-          y: finalPastePosition.y + relativeToCenter.y,
-        };
-      } else {
-        // For single nodes, use the paste position directly
-        nodePosition = finalPastePosition;
+      // If pasting too close to original, add offset
+      const finalPastePosition = { ...basePastePosition };
+      if (distanceFromOriginal < Math.max(groupWidth, groupHeight, 150)) {
+        finalPastePosition.x += 100;
+        finalPastePosition.y += 100;
       }
 
-      // Create node with temporary ID
-      const tempId = `temp_node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Create nodes with temporary IDs (to be saved later with Save All)
+      const newNodes: AppNode[] = [];
+      const newNodeData: (MapNode & {
+        node_paths_source: any[];
+        node_paths_destination: any[];
+        node_content: any[];
+        node_assessments: any[];
+      })[] = [];
 
-      // Create copied content with temp IDs for proper saving
-      const copiedContent = (copiedNode.node_content || []).map((content: any) => {
-        const tempContentId = `temp_content_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-        return {
-          ...content,
-          id: tempContentId,
-          node_id: tempId, // Update to the new temporary node ID
+      // Process each node: create with temporary IDs for later saving
+      for (let index = 0; index < copiedNodes.length; index++) {
+        const copiedNode = copiedNodes[index];
+
+        // Calculate position preserving relative layout
+        let nodePosition;
+        if (copiedNode.metadata?.position && copiedNodes.length > 1) {
+          // For multiple nodes, preserve relative positioning
+          const originalPos = copiedNode.metadata.position;
+          const relativeToCenter = {
+            x: originalPos.x - originalCenter.x,
+            y: originalPos.y - originalCenter.y,
+          };
+          nodePosition = {
+            x: finalPastePosition.x + relativeToCenter.x,
+            y: finalPastePosition.y + relativeToCenter.y,
+          };
+        } else {
+          // For single nodes, use the paste position directly
+          nodePosition = finalPastePosition;
+        }
+
+        // Create node with temporary ID
+        const tempId = `temp_node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // Create copied content with temp IDs for proper saving
+        const copiedContent = (copiedNode.node_content || []).map(
+          (content: any) => {
+            const tempContentId = `temp_content_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+            return {
+              ...content,
+              id: tempContentId,
+              node_id: tempId, // Update to the new temporary node ID
+            };
+          }
+        );
+
+        // Create copied assessments with temp IDs for proper saving
+        const copiedAssessments = (copiedNode.node_assessments || []).map(
+          (assessment: any) => {
+            const tempAssessmentId = `temp_assessment_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+
+            // Copy quiz questions with temp IDs too
+            const copiedQuizQuestions = (assessment.quiz_questions || []).map(
+              (question: any) => ({
+                ...question,
+                id: `temp_question_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+                assessment_id: tempAssessmentId,
+              })
+            );
+
+            return {
+              ...assessment,
+              id: tempAssessmentId,
+              node_id: tempId, // Update to the new temporary node ID
+              quiz_questions: copiedQuizQuestions,
+            };
+          }
+        );
+
+        const nodeData = {
+          id: tempId,
+          map_id: map.id,
+          title:
+            copiedNodes.length === 1
+              ? `${copiedNode.title} (Copy)`
+              : `${copiedNode.title} (Copy ${index + 1})`,
+          instructions: copiedNode.instructions || "",
+          difficulty: copiedNode.difficulty || 1,
+          sprite_url: copiedNode.sprite_url,
+          metadata: {
+            ...copiedNode.metadata,
+            position: nodePosition,
+          },
+          node_type: copiedNode.node_type || "learning",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          version: 1,
+          last_modified_by: null,
+          node_paths_source: [], // Don't copy connections
+          node_paths_destination: [], // Don't copy connections
+          node_content: copiedContent,
+          node_assessments: copiedAssessments,
         };
-      });
 
-      // Create copied assessments with temp IDs for proper saving
-      const copiedAssessments = (copiedNode.node_assessments || []).map((assessment: any) => {
-        const tempAssessmentId = `temp_assessment_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        console.log("✅ Created pasted node with temporary ID:", tempId);
 
-        // Copy quiz questions with temp IDs too
-        const copiedQuizQuestions = (assessment.quiz_questions || []).map((question: any) => ({
-          ...question,
-          id: `temp_question_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-          assessment_id: tempAssessmentId,
-        }));
-
-        return {
-          ...assessment,
-          id: tempAssessmentId,
-          node_id: tempId, // Update to the new temporary node ID
-          quiz_questions: copiedQuizQuestions,
-        };
-      });
-
-      const nodeData = {
-        id: tempId,
-        map_id: map.id,
-        title:
-          copiedNodes.length === 1
-            ? `${copiedNode.title} (Copy)`
-            : `${copiedNode.title} (Copy ${index + 1})`,
-        instructions: copiedNode.instructions || "",
-        difficulty: copiedNode.difficulty || 1,
-        sprite_url: copiedNode.sprite_url,
-        metadata: {
-          ...copiedNode.metadata,
+        const newNode: AppNode = {
+          id: tempId, // Use temporary ID
           position: nodePosition,
-        },
-        node_type: copiedNode.node_type || "learning",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        version: 1,
-        last_modified_by: null,
-        node_paths_source: [], // Don't copy connections
-        node_paths_destination: [], // Don't copy connections
-        node_content: copiedContent,
-        node_assessments: copiedAssessments,
+          data: nodeData,
+          type: copiedNode.node_type === "text" ? "text" : "default",
+          draggable: true,
+          connectable: copiedNode.node_type !== "text",
+          selectable: true,
+          style: NODE_STYLE,
+        };
+
+        newNodes.push(newNode);
+        newNodeData.push(nodeData);
+      }
+
+      // Clear ReactFlow's selection state
+      if (reactFlowInstance) {
+        const currentNodes = reactFlowInstance.getNodes();
+        const clearedNodes = currentNodes.map((node) => ({
+          ...node,
+          selected: false,
+        }));
+        reactFlowInstance.setNodes(clearedNodes);
+      }
+
+      // Update React Flow state with new nodes
+      setNodes((nds) => [...nds, ...(newNodes as Node[])]);
+
+      // Update map state with nodes that have temporary IDs (will be saved with Save All)
+      const updatedMap = {
+        ...map,
+        map_nodes: [...map.map_nodes, ...newNodeData],
       };
+      handleMapChange(updatedMap);
 
-      console.log("✅ Created pasted node with temporary ID:", tempId);
-
-      const newNode: AppNode = {
-        id: tempId, // Use temporary ID
-        position: nodePosition,
-        data: nodeData,
-        type: copiedNode.node_type === "text" ? "text" : "default",
-        draggable: true,
-        connectable: copiedNode.node_type !== "text",
-        selectable: true,
-        style: NODE_STYLE,
-      };
-
-      newNodes.push(newNode);
-      newNodeData.push(nodeData);
-    }
-
-    // Clear ReactFlow's selection state
-    if (reactFlowInstance) {
-      const currentNodes = reactFlowInstance.getNodes();
-      const clearedNodes = currentNodes.map((node) => ({
-        ...node,
-        selected: false,
-      }));
-      reactFlowInstance.setNodes(clearedNodes);
-    }
-
-    // Update React Flow state with new nodes
-    setNodes((nds) => [...nds, ...(newNodes as Node[])]);
-
-    // Update map state with nodes that have temporary IDs (will be saved with Save All)
-    const updatedMap = {
-      ...map,
-      map_nodes: [...map.map_nodes, ...newNodeData],
-    };
-    handleMapChange(updatedMap);
-
-    const nodeCount = copiedNodes.length;
-    toast({
-      title: `${nodeCount} node${nodeCount > 1 ? "s" : ""} pasted!`,
-      description:
-        nodeCount === 1
-          ? `"${newNodeData[0].title}" added to map`
-          : `${nodeCount} nodes added to map`,
-    });
-
+      const nodeCount = copiedNodes.length;
+      toast({
+        title: `${nodeCount} node${nodeCount > 1 ? "s" : ""} pasted!`,
+        description:
+          nodeCount === 1
+            ? `"${newNodeData[0].title}" added to map`
+            : `${nodeCount} nodes added to map`,
+      });
     } catch (error) {
       console.error("❌ Failed to paste nodes:", error);
       toast({
@@ -1372,7 +1402,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
     try {
       const data = JSON.parse(jsonInput);
-      
+
       // Calculate base import position (center of visible viewport)
       let basePosition = { x: 200, y: 200 }; // Default fallback
 
@@ -1399,10 +1429,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       // Process each node from JSON
       for (let index = 0; index < data.nodes.length; index++) {
         const jsonNode = data.nodes[index];
-        
+
         // Calculate position - use JSON position if provided, otherwise offset from base
         const nodePosition = jsonNode.position || {
-          x: basePosition.x + (index * 200),
+          x: basePosition.x + index * 200,
           y: basePosition.y,
         };
 
@@ -1416,7 +1446,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           metadata: {
             position: nodePosition,
           },
-          node_type: jsonNode.node_type || "learning"
+          node_type: jsonNode.node_type || "learning",
         });
 
         console.log("✅ Node imported from JSON with ID:", savedNode.id);
@@ -1443,7 +1473,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         if (jsonNode.assessments && Array.isArray(jsonNode.assessments)) {
           for (const assessmentItem of jsonNode.assessments) {
             const tempAssessmentId = `temp_assessment_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-            
+
             // Handle quiz questions if present
             const quizQuestions = [];
             if (assessmentItem.type === "quiz" && assessmentItem.questions) {
@@ -1453,7 +1483,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   assessment_id: tempAssessmentId,
                   question_text: question.question || question.question_text,
                   options: question.options || [],
-                  correct_option: question.correctAnswer || question.correct_option || 0,
+                  correct_option:
+                    question.correctAnswer || question.correct_option || 0,
                 });
               }
             }
@@ -1463,8 +1494,16 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               node_id: savedNode.id,
               assessment_type: assessmentItem.type || "text_answer",
               metadata: assessmentItem.metadata || {},
-              points_possible: assessmentItem.pointsPossible || assessmentItem.points_possible || 10,
-              is_graded: assessmentItem.isGraded !== undefined ? assessmentItem.isGraded : assessmentItem.is_graded !== undefined ? assessmentItem.is_graded : true,
+              points_possible:
+                assessmentItem.pointsPossible ||
+                assessmentItem.points_possible ||
+                10,
+              is_graded:
+                assessmentItem.isGraded !== undefined
+                  ? assessmentItem.isGraded
+                  : assessmentItem.is_graded !== undefined
+                    ? assessmentItem.is_graded
+                    : true,
               quiz_questions: quizQuestions,
             });
           }
@@ -1508,11 +1547,15 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       if (data.connections && Array.isArray(data.connections)) {
         for (const connection of data.connections) {
           // Find the actual node IDs (they may have been remapped)
-          const sourceNode = newNodeData.find(n => 
-            n.title === data.nodes.find((jn: any) => jn.id === connection.from)?.title
+          const sourceNode = newNodeData.find(
+            (n) =>
+              n.title ===
+              data.nodes.find((jn: any) => jn.id === connection.from)?.title
           );
-          const targetNode = newNodeData.find(n => 
-            n.title === data.nodes.find((jn: any) => jn.id === connection.to)?.title
+          const targetNode = newNodeData.find(
+            (n) =>
+              n.title ===
+              data.nodes.find((jn: any) => jn.id === connection.to)?.title
           );
 
           if (sourceNode && targetNode) {
@@ -1531,7 +1574,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
       toast({
         title: "🚀 Nodes Imported Successfully!",
-        description: `Imported ${newNodes.length} node${newNodes.length !== 1 ? 's' : ''} from JSON`,
+        description: `Imported ${newNodes.length} node${newNodes.length !== 1 ? "s" : ""} from JSON`,
       });
 
       // Close dialog and reset state
@@ -1630,111 +1673,133 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     if (transformTimeoutRef.current) {
       clearTimeout(transformTimeoutRef.current);
     }
-    
+
     transformTimeoutRef.current = setTimeout(() => {
+      // Capture current selection state BEFORE transformation
+      const currentSelected =
+        reactFlowInstance?.getNodes().filter((n) => n.selected) || [];
+      const selectedIds = currentSelected.map((n) => n.id);
 
-    // Capture current selection state BEFORE transformation
-    const currentSelected = reactFlowInstance?.getNodes().filter(n => n.selected) || [];
-    const selectedIds = currentSelected.map(n => n.id);
-    
-    console.log("🔄 TRANSFORM START - Preserving selection:", {
-      selectedCount: currentSelected.length,
-      selectedIds: selectedIds,
-      transformTrigger: "map data change"
-    });
-    
-    console.log("🗂️ Map nodes being transformed:", map.map_nodes.length);
-    
-    const transformedNodes: AppNode[] = map.map_nodes.map((node) => {
-      const nodeType = (node as any).node_type === "text" ? "text" : "default";
-      
-      // Preserve existing selection state and position from current nodes
-      const existingNode = reactFlowInstance?.getNode(node.id);
-      // For newly created nodes, only select if it's the newly created node
-      // For existing nodes, preserve their current selection state
-      const isSelected = newlyCreatedNodeId 
-        ? node.id === newlyCreatedNodeId 
-        : (existingNode?.selected || false);
-      // Use current position if node exists in ReactFlow, otherwise use stored metadata position
-      const currentPosition = existingNode?.position || (node.metadata as any)?.position || getRandomPosition();
-      
-      if (isSelected) {
-        console.log(`📌 Preserving selection for node: ${node.id}`);
-      }
+      console.log("🔄 TRANSFORM START - Preserving selection:", {
+        selectedCount: currentSelected.length,
+        selectedIds: selectedIds,
+        transformTrigger: "map data change",
+      });
 
-      return {
-        id: node.id,
-        type: nodeType,
-        data: { ...node, node_type: (node as any).node_type || "learning" },
-        position: currentPosition,
-        draggable: true, // Re-enable dragging for natural ReactFlow behavior
-        connectable: nodeType !== "text", // Text nodes can't be connected
-        selectable: true,
-        selected: isSelected, // CRITICAL: Preserve selection state for pulse rings
-        style: NODE_STYLE,
-      };
-    });
+      console.log("🗂️ Map nodes being transformed:", map.map_nodes.length);
 
-    const transformedEdges: AppEdge[] = [];
-    map.map_nodes.forEach((node) => {
-      node.node_paths_source?.forEach((path) => {
-        transformedEdges.push({
-          id: path.id,
-          source: path.source_node_id,
-          target: path.destination_node_id,
-          type: "floating",
-          markerEnd: { type: MarkerType.ArrowClosed },
-          style: EDGE_STYLE,
+      const transformedNodes: AppNode[] = map.map_nodes.map((node) => {
+        const nodeType =
+          (node as any).node_type === "text" ? "text" : "default";
+
+        // Preserve existing selection state and position from current nodes
+        const existingNode = reactFlowInstance?.getNode(node.id);
+        // For newly created nodes, only select if it's the newly created node
+        // For existing nodes, preserve their current selection state
+        const isSelected = newlyCreatedNodeId
+          ? node.id === newlyCreatedNodeId
+          : existingNode?.selected || false;
+        // Use current position if node exists in ReactFlow, otherwise use stored metadata position
+        const currentPosition =
+          existingNode?.position ||
+          (node.metadata as any)?.position ||
+          getRandomPosition();
+
+        if (isSelected) {
+          console.log(`📌 Preserving selection for node: ${node.id}`);
+        }
+
+        return {
+          id: node.id,
+          type: nodeType,
+          data: { ...node, node_type: (node as any).node_type || "learning" },
+          position: currentPosition,
+          draggable: true, // Re-enable dragging for natural ReactFlow behavior
+          connectable: nodeType !== "text", // Text nodes can't be connected
+          selectable: true,
+          selected: isSelected, // CRITICAL: Preserve selection state for pulse rings
+          style: NODE_STYLE,
+        };
+      });
+
+      const transformedEdges: AppEdge[] = [];
+      map.map_nodes.forEach((node) => {
+        node.node_paths_source?.forEach((path) => {
+          transformedEdges.push({
+            id: path.id,
+            source: path.source_node_id,
+            target: path.destination_node_id,
+            type: "floating",
+            markerEnd: { type: MarkerType.ArrowClosed },
+            style: EDGE_STYLE,
+          });
         });
       });
-    });
 
-    setNodes(transformedNodes as Node[]);
-    setEdges(transformedEdges);
+      setNodes(transformedNodes as Node[]);
+      setEdges(transformedEdges);
 
-    // Check selection state immediately after setNodes
-    setTimeout(() => {
-      const afterSelected = reactFlowInstance?.getNodes().filter(n => n.selected) || [];
-      console.log("🔄 TRANSFORM END - Selection after setNodes:", {
-        beforeCount: selectedIds.length,
-        afterCount: afterSelected.length,
-        beforeIds: selectedIds,
-        afterIds: afterSelected.map(n => n.id),
-        selectionLost: selectedIds.length > 0 && afterSelected.length === 0,
-        selectionChanged: JSON.stringify(selectedIds.sort()) !== JSON.stringify(afterSelected.map(n => n.id).sort())
-      });
-      
-      if (selectedIds.length > 0 && afterSelected.length === 0) {
-        console.error("🚨 SELECTION LOST during transform! Restoring:", selectedIds);
-        
-        setIsRestoringSelection(true);
-        
-        // Restore lost selection
-        const allNodes = reactFlowInstance?.getNodes() || [];
-        const restoredNodes = allNodes.map(node => ({
-          ...node,
-          selected: selectedIds.includes(node.id)
-        }));
-        
-        reactFlowInstance?.setNodes(restoredNodes);
-        console.log("✅ Selection restored for nodes:", selectedIds);
-        
-        // Clear the restoration flag after a brief delay
-        setTimeout(() => {
-          setIsRestoringSelection(false);
-        }, 100);
-      }
-    }, 0);
+      // Check selection state immediately after setNodes
+      setTimeout(() => {
+        const afterSelected =
+          reactFlowInstance?.getNodes().filter((n) => n.selected) || [];
+        console.log("🔄 TRANSFORM END - Selection after setNodes:", {
+          beforeCount: selectedIds.length,
+          afterCount: afterSelected.length,
+          beforeIds: selectedIds,
+          afterIds: afterSelected.map((n) => n.id),
+          selectionLost: selectedIds.length > 0 && afterSelected.length === 0,
+          selectionChanged:
+            JSON.stringify(selectedIds.sort()) !==
+            JSON.stringify(afterSelected.map((n) => n.id).sort()),
+        });
+
+        if (selectedIds.length > 0 && afterSelected.length === 0) {
+          console.error(
+            "🚨 SELECTION LOST during transform! Restoring:",
+            selectedIds
+          );
+
+          setIsRestoringSelection(true);
+
+          // Restore lost selection
+          const allNodes = reactFlowInstance?.getNodes() || [];
+          const restoredNodes = allNodes.map((node) => ({
+            ...node,
+            selected: selectedIds.includes(node.id),
+          }));
+
+          reactFlowInstance?.setNodes(restoredNodes);
+          console.log("✅ Selection restored for nodes:", selectedIds);
+
+          // Clear the restoration flag after a brief delay
+          setTimeout(() => {
+            setIsRestoringSelection(false);
+          }, 100);
+        }
+      }, 0);
     }, 50); // 50ms debounce for transforms
-    
+
     // Cleanup timeout on unmount
     return () => {
       if (transformTimeoutRef.current) {
         clearTimeout(transformTimeoutRef.current);
       }
     };
-  }, [map, setNodes, setEdges, isUpdatingNodeData, isUpdatingAssessment, isAddingNode, isDeletingNode, isSelectionDragging, isRestoringSelection, isManuallySelecting, isDraggingNodes, reactFlowInstance]);
-
+  }, [
+    map,
+    setNodes,
+    setEdges,
+    isUpdatingNodeData,
+    isUpdatingAssessment,
+    isAddingNode,
+    isDeletingNode,
+    isSelectionDragging,
+    isRestoringSelection,
+    isManuallySelecting,
+    isDraggingNodes,
+    reactFlowInstance,
+  ]);
 
   // ReactFlow handles node data and selection internally - no manual sync needed
 
@@ -1752,7 +1817,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
       if (reactFlowInstance) {
         const viewport = reactFlowInstance.getViewport();
-        
+
         // Calculate the center of the visible viewport
         // Account for the right panel if a node is selected
         const currentSelectedNode = getSelectedNode();
@@ -1775,11 +1840,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         metadata: {
           position: nodePosition,
         },
-        node_type: "learning"
+        node_type: "learning",
       });
 
       console.log("✅ Node saved to database with ID:", savedNode.id);
-      
+
       // Set the newly created node ID for selection control
       setNewlyCreatedNodeId(savedNode.id);
 
@@ -1820,17 +1885,17 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
       handleMapChange(updatedMap as any);
 
-      toast({ 
-        title: "Node Created!", 
-        description: "Node was saved to the database and is ready for use."
+      toast({
+        title: "Node Created!",
+        description: "Node was saved to the database and is ready for use.",
       });
-
     } catch (error) {
       console.error("❌ Failed to create node:", error);
       toast({
         title: "Failed to create node",
-        description: "Could not save the node to the database. Please try again.",
-        variant: "destructive"
+        description:
+          "Could not save the node to the database. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsAddingNode(false);
@@ -1887,11 +1952,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           fontWeight: "normal",
           textAlign: "center",
         },
-        node_type: "text"
+        node_type: "text",
       });
 
       console.log("✅ Text node saved to database with ID:", savedNode.id);
-      
+
       // Set the newly created node ID for selection control
       setNewlyCreatedNodeId(savedNode.id);
 
@@ -1933,17 +1998,18 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       };
       handleMapChange(updatedMap as any);
 
-      toast({ 
-        title: "Text Node Created!", 
-        description: "Text node was saved to the database and is ready for editing."
+      toast({
+        title: "Text Node Created!",
+        description:
+          "Text node was saved to the database and is ready for editing.",
       });
-
     } catch (error) {
       console.error("❌ Failed to create text node:", error);
       toast({
         title: "Failed to create text node",
-        description: "Could not save the text node to the database. Please try again.",
-        variant: "destructive"
+        description:
+          "Could not save the text node to the database. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsAddingNode(false);
@@ -2098,9 +2164,6 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     [toast, map, onMapChange]
   );
 
-
-
-
   // Simplified selection change handler - ReactFlow is source of truth
   const onSelectionChange = useCallback(
     (params: OnSelectionChangeParams) => {
@@ -2123,9 +2186,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         }
       } else if (params.nodes.length === 1 && !isSelectionDragging) {
         // Single node selected and NOT during drag operation - open editor
-        console.log(
-          "Single node selected - opening editor panel"
-        );
+        console.log("Single node selected - opening editor panel");
         if (rightPanelRef.current && leftPanelRef.current) {
           rightPanelRef.current.resize(35);
           leftPanelRef.current.resize(65);
@@ -2310,80 +2371,82 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         title: `Node "${nodeToDelete.data.title}" deleted (Auto-saving)`,
       });
     },
-    [
-      nodes,
-      setNodes,
-      setEdges,
-      map,
-      handleMapChange,
-      toast,
-    ]
+    [nodes, setNodes, setEdges, map, handleMapChange, toast]
   );
 
   // Handle node saving when a temporary node gets a real ID
-  const handleNodeSaved = useCallback((oldNodeId: string, newNodeId: string) => {
-    console.log("💾 Node saved, updating ID from", oldNodeId, "to", newNodeId);
+  const handleNodeSaved = useCallback(
+    (oldNodeId: string, newNodeId: string) => {
+      console.log(
+        "💾 Node saved, updating ID from",
+        oldNodeId,
+        "to",
+        newNodeId
+      );
 
-    // Set flags to prevent transforms during the ID update process
-    setIsUpdatingNodeData(true);
-    
-    // Preserve current selection state before any updates
-    const currentNodes = reactFlowInstance?.getNodes() || [];
-    const wasSelected = currentNodes.find(n => n.id === oldNodeId)?.selected || false;
-    
-    console.log("🔍 Selection state before update:", {
-      oldNodeId,
-      newNodeId, 
-      wasSelected,
-      totalNodes: currentNodes.length
-    });
+      // Set flags to prevent transforms during the ID update process
+      setIsUpdatingNodeData(true);
 
-    // Update React Flow nodes with preserved selection
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === oldNodeId) {
-          return { 
-            ...node, 
-            id: newNodeId,
-            selected: wasSelected // Preserve selection state
-          };
-        }
-        return node;
-      })
-    );
+      // Preserve current selection state before any updates
+      const currentNodes = reactFlowInstance?.getNodes() || [];
+      const wasSelected =
+        currentNodes.find((n) => n.id === oldNodeId)?.selected || false;
 
-    // Update React Flow edges
-    setEdges((eds) =>
-      eds.map((edge) => ({
-        ...edge,
-        source: edge.source === oldNodeId ? newNodeId : edge.source,
-        target: edge.target === oldNodeId ? newNodeId : edge.target,
-      }))
-    );
+      console.log("🔍 Selection state before update:", {
+        oldNodeId,
+        newNodeId,
+        wasSelected,
+        totalNodes: currentNodes.length,
+      });
 
-    // Update map state WITHOUT triggering handleMapChange (which causes refresh)
-    // We'll update the map state directly to avoid triggering transforms
-    const updatedMapState = {
-      ...map,
-      map_nodes: map.map_nodes.map((node) =>
-        node.id === oldNodeId ? { ...node, id: newNodeId } : node
-      ),
-    };
-    
-    // Update the map state directly without triggering auto-save or transforms
-    onMapChange(updatedMapState);
+      // Update React Flow nodes with preserved selection
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === oldNodeId) {
+            return {
+              ...node,
+              id: newNodeId,
+              selected: wasSelected, // Preserve selection state
+            };
+          }
+          return node;
+        })
+      );
 
-    // Clear the update flag after a brief delay
-    setTimeout(() => {
-      setIsUpdatingNodeData(false);
-      console.log("✅ Node ID update complete, transforms re-enabled");
-    }, 100);
+      // Update React Flow edges
+      setEdges((eds) =>
+        eds.map((edge) => ({
+          ...edge,
+          source: edge.source === oldNodeId ? newNodeId : edge.source,
+          target: edge.target === oldNodeId ? newNodeId : edge.target,
+        }))
+      );
 
-    toast({
-      title: "Node saved",
-      description: "The node is now available for assessments.",
-    });
-  }, [setNodes, setEdges, map, onMapChange, reactFlowInstance, toast]);
+      // Update map state WITHOUT triggering handleMapChange (which causes refresh)
+      // We'll update the map state directly to avoid triggering transforms
+      const updatedMapState = {
+        ...map,
+        map_nodes: map.map_nodes.map((node) =>
+          node.id === oldNodeId ? { ...node, id: newNodeId } : node
+        ),
+      };
+
+      // Update the map state directly without triggering auto-save or transforms
+      onMapChange(updatedMapState);
+
+      // Clear the update flag after a brief delay
+      setTimeout(() => {
+        setIsUpdatingNodeData(false);
+        console.log("✅ Node ID update complete, transforms re-enabled");
+      }, 100);
+
+      toast({
+        title: "Node saved",
+        description: "The node is now available for assessments.",
+      });
+    },
+    [setNodes, setEdges, map, onMapChange, reactFlowInstance, toast]
+  );
 
   return (
     <div className="h-full w-full">
@@ -2399,10 +2462,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           <div className="h-full w-full bg-slate-50 dark:bg-slate-950 relative">
             {/* Enhanced Floating Toolbar */}
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg">
-              <Button 
-                onClick={handleAddNode} 
-                size="sm" 
-                className="gap-2" 
+              <Button
+                onClick={handleAddNode}
+                size="sm"
+                className="gap-2"
                 disabled={isAddingNode}
               >
                 {isAddingNode ? (
@@ -2439,7 +2502,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               >
                 <Copy className="h-4 w-4" />
                 Copy
-                {getSelectedNodes().length > 1 ? ` (${getSelectedNodes().length})` : ""}
+                {getSelectedNodes().length > 1
+                  ? ` (${getSelectedNodes().length})`
+                  : ""}
               </Button>
               <Button
                 onClick={pasteNode}
@@ -2451,9 +2516,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               >
                 <Clipboard className="h-4 w-4" />
                 Paste
-                {clipboardNodeCount > 1
-                  ? ` (${clipboardNodeCount})`
-                  : ""}
+                {clipboardNodeCount > 1 ? ` (${clipboardNodeCount})` : ""}
               </Button>
               <Button
                 onClick={() => setShowJsonImport(true)}
@@ -2469,7 +2532,6 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               {/* Save functionality - re-enabled now that content/assessments save directly */}
               {true && (
                 <>
-
                   {/* Enhanced Auto-save status indicator */}
                   <div className="flex items-center gap-2 px-2">
                     <div className="flex items-center gap-1">
@@ -2608,39 +2670,59 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               onNodeDrag={(event, node) => {
                 if (dragStartPos) {
                   const distance = Math.sqrt(
-                    Math.pow(event.clientX - dragStartPos.x, 2) + 
-                    Math.pow(event.clientY - dragStartPos.y, 2)
+                    Math.pow(event.clientX - dragStartPos.x, 2) +
+                      Math.pow(event.clientY - dragStartPos.y, 2)
                   );
                   setDragDistance(distance);
                   // Only log drag distance at key thresholds to avoid spam
                   if (distance === 0 || distance % 10 < 1 || distance < 5) {
-                    console.log("📏 Drag distance:", distance.toFixed(2) + "px");
+                    console.log(
+                      "📏 Drag distance:",
+                      distance.toFixed(2) + "px"
+                    );
                   }
                 }
               }}
               onNodeDragStop={(event, node, nodes) => {
-                console.log("🛑 Node drag stopped:", node.id, "Distance:", dragDistance.toFixed(2) + "px");
-                
+                console.log(
+                  "🛑 Node drag stopped:",
+                  node.id,
+                  "Distance:",
+                  dragDistance.toFixed(2) + "px"
+                );
+
                 // If drag distance is very small, treat as a failed click
                 const CLICK_FALLBACK_THRESHOLD = 5; // pixels
                 if (dragDistance < CLICK_FALLBACK_THRESHOLD) {
-                  console.log("🖱️ Treating minimal drag as click:", node.id, "Distance:", dragDistance.toFixed(2) + "px");
+                  console.log(
+                    "🖱️ Treating minimal drag as click:",
+                    node.id,
+                    "Distance:",
+                    dragDistance.toFixed(2) + "px"
+                  );
                   const isMultiSelect = event.ctrlKey || event.metaKey;
-                  handleNodeSelection(node, isMultiSelect, "drag-to-click fallback");
+                  handleNodeSelection(
+                    node,
+                    isMultiSelect,
+                    "drag-to-click fallback"
+                  );
                 } else {
                   // Genuine drag - update position in metadata
-                  const updatedNode = nodes.find(n => n.id === node.id);
+                  const updatedNode = nodes.find((n) => n.id === node.id);
                   if (updatedNode) {
-                    console.log("💾 Saving new position:", updatedNode.position);
+                    console.log(
+                      "💾 Saving new position:",
+                      updatedNode.position
+                    );
                     handleNodeDataChange(node.id, {
                       metadata: {
                         ...(node.data.metadata || {}),
-                        position: updatedNode.position
-                      }
+                        position: updatedNode.position,
+                      },
                     });
                   }
                 }
-                
+
                 // Reset drag tracking
                 setDragStartPos(null);
                 setDragDistance(0);
@@ -2648,18 +2730,25 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   setIsDraggingNodes(false);
                 }, 100);
               }}
-              
               onPaneClick={() => {
                 console.log("🖱️ Canvas clicked - deselecting all nodes");
                 if (!reactFlowInstance) return;
-                
+
                 // Manually deselect all nodes
                 const currentNodes = reactFlowInstance.getNodes();
-                const deselectedNodes = currentNodes.map(n => ({ ...n, selected: false }));
+                const deselectedNodes = currentNodes.map((n) => ({
+                  ...n,
+                  selected: false,
+                }));
                 reactFlowInstance.setNodes(deselectedNodes);
               }}
               onNodeClick={(event, node) => {
-                console.log("🖱️ Node clicked:", node.id, "Ctrl/Cmd:", event.ctrlKey || event.metaKey);
+                console.log(
+                  "🖱️ Node clicked:",
+                  node.id,
+                  "Ctrl/Cmd:",
+                  event.ctrlKey || event.metaKey
+                );
                 const isMultiSelect = event.ctrlKey || event.metaKey;
                 handleNodeSelection(node, isMultiSelect, "onNodeClick");
               }}
@@ -2671,7 +2760,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               attributionPosition="bottom-left"
               panOnScroll
               selectionOnDrag={true} // Enable multi-select box dragging
-              multiSelectionKeyCode={["Meta", "Control"]} // Only allow multi-select with Ctrl/Cmd  
+              multiSelectionKeyCode={["Meta", "Control"]} // Only allow multi-select with Ctrl/Cmd
               selectNodesOnDrag={false} // Handle selection manually to avoid drag conflicts
               panOnDrag={[2]} // Only right mouse button for panning
               nodeDragThreshold={15} // Increase threshold to prevent accidental drags
@@ -2815,7 +2904,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                         return (
                           <>
                             <div>
-                              <strong>Nodes:</strong> {parsed.nodes?.length || 0}
+                              <strong>Nodes:</strong>{" "}
+                              {parsed.nodes?.length || 0}
                             </div>
                             <div>
                               <strong>Connections:</strong>{" "}

@@ -125,17 +125,16 @@ export function MapViewer({ map }: MapViewerProps) {
   // Role detection for instructor/TA functionality
   const { user: authUser, userRoles, isAuthenticated } = useAuth();
 
-
   // Use a strict union for roles to satisfy prop typing
   type UserRole = "instructor" | "TA" | "student" | "admin";
   const globalUserRole: UserRole = useMemo(() => {
     return userRoles?.includes("admin")
       ? "admin"
       : userRoles?.includes("instructor")
-      ? "instructor"
-      : userRoles?.includes("TA")
-        ? "TA"
-        : "student";
+        ? "instructor"
+        : userRoles?.includes("TA")
+          ? "TA"
+          : "student";
   }, [userRoles]);
 
   // Normalize classroom role into the union or ignore if unknown
@@ -143,16 +142,17 @@ export function MapViewer({ map }: MapViewerProps) {
     return classroomRole === "instructor" ||
       classroomRole === "TA" ||
       classroomRole === "student"
-        ? (classroomRole as UserRole)
-        : null;
+      ? (classroomRole as UserRole)
+      : null;
   }, [classroomRole]);
 
   // Use classroom role if available, otherwise fall back to global role
   const userRole: UserRole = roleFromClassroom ?? globalUserRole;
   const isInstructorOrTA = useMemo(() => {
-    return userRole === "instructor" || userRole === "TA" || userRole === "admin";
+    return (
+      userRole === "instructor" || userRole === "TA" || userRole === "admin"
+    );
   }, [userRole]);
-
 
   console.log(
     "🗺️ [MapViewer] Rendering map:",
@@ -949,7 +949,9 @@ export function MapViewer({ map }: MapViewerProps) {
         {isInstructorOrTA && (
           <div className="absolute top-4 left-4 z-10 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
             <Info className="h-4 w-4" />
-            <span className="text-sm font-medium">Instructor View - All Nodes Unlocked</span>
+            <span className="text-sm font-medium">
+              Instructor View - All Nodes Unlocked
+            </span>
           </div>
         )}
 
