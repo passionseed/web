@@ -613,6 +613,40 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
         sprite_url: node.sprite_url,
         position: node.metadata?.position,
         node_type: (node as any).node_type,
+        // Include content and assessments in hash for proper change detection
+        // Sort by ID to ensure stable ordering (database might return in different order)
+        // Note: display_order is excluded because it's saved immediately on reorder
+        node_content: (node.node_content || [])
+          .slice() // Create copy to avoid mutating original
+          .sort((a, b) => a.id.localeCompare(b.id))
+          .map((content) => ({
+            id: content.id,
+            content_type: content.content_type,
+            content_title: content.content_title,
+            content_url: content.content_url,
+            content_body: content.content_body,
+            // display_order intentionally excluded - saved immediately on reorder
+          })),
+        node_assessments: (node.node_assessments || [])
+          .slice() // Create copy to avoid mutating original
+          .sort((a, b) => a.id.localeCompare(b.id))
+          .map((assessment) => ({
+            id: assessment.id,
+            assessment_type: assessment.assessment_type,
+            metadata: assessment.metadata,
+            points_possible: assessment.points_possible,
+            is_graded: assessment.is_graded,
+            // Include quiz questions for quiz assessments
+            quiz_questions: (assessment.quiz_questions || [])
+              .slice() // Create copy
+              .sort((a, b) => a.id.localeCompare(b.id))
+              .map((q) => ({
+                id: q.id,
+                question_text: q.question_text,
+                options: q.options,
+                correct_option: q.correct_option,
+              })),
+          })),
       })),
       paths: currentMap.map_nodes.flatMap((node) =>
         (node.node_paths_source || []).map((path) => ({
@@ -647,13 +681,16 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
         const savedResponse = await response.json();
 
-        // Update tracking state - use the original map since we know it was saved
+        // Update tracking state - use the current map since server doesn't return full map
+        // Content is already saved via ContentEditor, so local state is accurate
         const newHash = generateMapHash(mapToSave);
         setLastSavedVersion(newHash);
         setHasUnsavedChanges(false);
         setAutoSaveStatus(AutoSaveStatus.SAVED);
 
-        console.log("🔄 Map auto-saved successfully");
+        console.log("🔄 Map auto-saved successfully", {
+          savedHash: newHash.substring(0, 10) + "..."
+        });
 
         // Show success feedback for manual saves
         const isManualSave = !saveTimeoutRef.current;
@@ -874,6 +911,49 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       console.error("Error checking localStorage backup:", error);
     }
   }, [map.id, generateMapHash, toast]); // Only run once on mount
+
+  // Track changes to map and update unsaved changes status
+  useEffect(() => {
+    // Skip if we're currently saving (to avoid race conditions)
+    if (autoSaveStatus === AutoSaveStatus.SAVING) {
+      console.log("⏭️ Skipping hash check - currently saving");
+      return;
+    }
+
+    const currentHash = generateMapHash(map);
+    const hasChanged = currentHash !== lastSavedVersion;
+
+    console.log("🔍 Map change detected:", {
+      currentHash: currentHash.substring(0, 10) + "...",
+      lastSaved: lastSavedVersion.substring(0, 10) + "...",
+      hasChanged,
+      autoSaveStatus,
+    });
+
+    if (hasChanged) {
+      setHasUnsavedChanges(true);
+      setAutoSaveStatus(AutoSaveStatus.PENDING);
+    } else {
+      setHasUnsavedChanges(false);
+      setAutoSaveStatus(AutoSaveStatus.SAVED);
+    }
+  }, [map, lastSavedVersion, generateMapHash, autoSaveStatus]);
+
+  // Expose a function to mark content as saved (called by ContentEditor after auto-save)
+  useEffect(() => {
+    // Add a global callback that ContentEditor can use to update lastSavedVersion
+    (window as any).__markContentSaved = () => {
+      const newHash = generateMapHash(map);
+      console.log("✅ Content auto-saved, updating lastSavedVersion");
+      setLastSavedVersion(newHash);
+      setHasUnsavedChanges(false);
+      setAutoSaveStatus(AutoSaveStatus.SAVED);
+    };
+
+    return () => {
+      delete (window as any).__markContentSaved;
+    };
+  }, [map, generateMapHash]);
 
   // Unsaved changes warning on page unload
   useEffect(() => {
