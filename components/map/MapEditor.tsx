@@ -31,6 +31,15 @@ import "@xyflow/react/dist/style.css";
 
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { FullLearningMap } from "@/lib/supabase/maps";
 import { MapNode, QuizQuestion } from "@/types/map";
 import { createNode } from "@/lib/supabase/nodes";
@@ -44,6 +53,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  FileJson,
+  X,
+  Eye,
 } from "lucide-react";
 import {
   ResizableHandle,
@@ -105,6 +117,52 @@ const debounce = <T extends (...args: any[]) => any>(
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
+};
+
+// JSON validation for node import
+const validateNodesJson = (jsonString: string): string[] => {
+  const errors: string[] = [];
+
+  try {
+    const data = JSON.parse(jsonString);
+
+    // Check if it's an array of nodes
+    if (!Array.isArray(data.nodes) || data.nodes.length === 0) {
+      errors.push("JSON must contain a 'nodes' array with at least one node.");
+      return errors;
+    }
+
+    data.nodes.forEach((node: any, i: number) => {
+      const nodeLabel = `Node ${i + 1} (ID: ${node.id || "N/A"})`;
+
+      // Check for required node properties
+      if (!node.id) errors.push(`${nodeLabel}: Missing 'id'.`);
+      if (!node.title) errors.push(`${nodeLabel}: Missing 'title'.`);
+      if (
+        !node.position ||
+        typeof node.position.x !== "number" ||
+        typeof node.position.y !== "number"
+      ) {
+        errors.push(
+          `${nodeLabel}: Invalid 'position' (must have numeric x and y coordinates).`
+        );
+      }
+
+      // Content and assessments are optional but must be arrays if present
+      if (node.content && !Array.isArray(node.content)) {
+        errors.push(`${nodeLabel}: 'content' must be an array.`);
+      }
+      if (node.assessments && !Array.isArray(node.assessments)) {
+        errors.push(`${nodeLabel}: 'assessments' must be an array.`);
+      }
+    });
+  } catch (e) {
+    errors.push(
+      "Fatal Error: Invalid JSON format. The string could not be parsed."
+    );
+  }
+
+  return errors;
 };
 
 // Auto-save status enum
@@ -398,6 +456,12 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   const [dragStartPos, setDragStartPos] = useState<{x: number, y: number} | null>(null);
   const [newlyCreatedNodeId, setNewlyCreatedNodeId] = useState<string | null>(null);
   const transformTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // JSON import state
+  const [showJsonImport, setShowJsonImport] = useState(false);
+  const [jsonInput, setJsonInput] = useState("");
+  const [jsonValidationErrors, setJsonValidationErrors] = useState<string[]>([]);
+  const [isImportingJson, setIsImportingJson] = useState(false);
   const [pendingNodeUpdates, setPendingNodeUpdates] = useState<
     Record<string, Partial<MapNode>>
   >({});
@@ -1279,6 +1343,222 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     map,
     handleMapChange,
     setNodes,
+    toast,
+  ]);
+
+  // JSON import handler
+  const handleJsonInputChange = useCallback((value: string) => {
+    setJsonInput(value);
+    if (value.trim()) {
+      const errors = validateNodesJson(value);
+      setJsonValidationErrors(errors);
+    } else {
+      setJsonValidationErrors([]);
+    }
+  }, []);
+
+  const importNodesFromJson = useCallback(async () => {
+    const errors = validateNodesJson(jsonInput);
+    if (errors.length > 0) {
+      toast({
+        title: "Validation Failed",
+        description: "Please fix the JSON errors before importing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImportingJson(true);
+
+    try {
+      const data = JSON.parse(jsonInput);
+      
+      // Calculate base import position (center of visible viewport)
+      let basePosition = { x: 200, y: 200 }; // Default fallback
+
+      if (reactFlowInstance) {
+        const viewport = reactFlowInstance.getViewport();
+        const currentSelectedNode = getSelectedNode();
+        const panelOffset = currentSelectedNode ? 0.35 : 0;
+        const visibleCanvasWidth = window.innerWidth * (1 - panelOffset);
+
+        basePosition = {
+          x: (-viewport.x + visibleCanvasWidth / 2) / viewport.zoom,
+          y: (-viewport.y + window.innerHeight / 2) / viewport.zoom,
+        };
+      }
+
+      const newNodes: AppNode[] = [];
+      const newNodeData: (MapNode & {
+        node_paths_source: any[];
+        node_paths_destination: any[];
+        node_content: any[];
+        node_assessments: any[];
+      })[] = [];
+
+      // Process each node from JSON
+      for (let index = 0; index < data.nodes.length; index++) {
+        const jsonNode = data.nodes[index];
+        
+        // Calculate position - use JSON position if provided, otherwise offset from base
+        const nodePosition = jsonNode.position || {
+          x: basePosition.x + (index * 200),
+          y: basePosition.y,
+        };
+
+        // Save node to database immediately
+        const savedNode = await createNode({
+          map_id: map.id,
+          title: jsonNode.title,
+          instructions: jsonNode.description || jsonNode.instructions || "",
+          difficulty: jsonNode.difficulty || 1,
+          sprite_url: jsonNode.sprite_url || null,
+          metadata: {
+            position: nodePosition,
+          },
+          node_type: jsonNode.node_type || "learning"
+        });
+
+        console.log("✅ Node imported from JSON with ID:", savedNode.id);
+
+        // Create content items if provided
+        const importedContent = [];
+        if (jsonNode.content && Array.isArray(jsonNode.content)) {
+          for (const contentItem of jsonNode.content) {
+            const tempContentId = `temp_content_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+            importedContent.push({
+              id: tempContentId,
+              node_id: savedNode.id,
+              content_type: contentItem.content_type || "text",
+              content_title: contentItem.content_title || "",
+              content_url: contentItem.content_url || null,
+              content_body: contentItem.content_body || "",
+              display_order: importedContent.length,
+            });
+          }
+        }
+
+        // Create assessment items if provided
+        const importedAssessments = [];
+        if (jsonNode.assessments && Array.isArray(jsonNode.assessments)) {
+          for (const assessmentItem of jsonNode.assessments) {
+            const tempAssessmentId = `temp_assessment_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+            
+            // Handle quiz questions if present
+            const quizQuestions = [];
+            if (assessmentItem.type === "quiz" && assessmentItem.questions) {
+              for (const question of assessmentItem.questions) {
+                quizQuestions.push({
+                  id: `temp_question_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+                  assessment_id: tempAssessmentId,
+                  question_text: question.question || question.question_text,
+                  options: question.options || [],
+                  correct_option: question.correctAnswer || question.correct_option || 0,
+                });
+              }
+            }
+
+            importedAssessments.push({
+              id: tempAssessmentId,
+              node_id: savedNode.id,
+              assessment_type: assessmentItem.type || "text_answer",
+              metadata: assessmentItem.metadata || {},
+              points_possible: assessmentItem.pointsPossible || assessmentItem.points_possible || 10,
+              is_graded: assessmentItem.isGraded !== undefined ? assessmentItem.isGraded : assessmentItem.is_graded !== undefined ? assessmentItem.is_graded : true,
+              quiz_questions: quizQuestions,
+            });
+          }
+        }
+
+        // Create full node data structure
+        const nodeData = {
+          ...savedNode,
+          node_paths_source: [],
+          node_paths_destination: [],
+          node_content: importedContent,
+          node_assessments: importedAssessments,
+        };
+
+        const newNode: AppNode = {
+          id: savedNode.id,
+          position: nodePosition,
+          data: nodeData,
+          type: jsonNode.node_type === "text" ? "text" : "default",
+          draggable: true,
+          connectable: jsonNode.node_type !== "text",
+          selectable: true,
+          style: NODE_STYLE,
+        };
+
+        newNodes.push(newNode);
+        newNodeData.push(nodeData);
+      }
+
+      // Update React Flow state
+      setNodes((nds) => [...nds, ...(newNodes as Node[])]);
+
+      // Update map state
+      const updatedMap = {
+        ...map,
+        map_nodes: [...map.map_nodes, ...newNodeData],
+      };
+      handleMapChange(updatedMap);
+
+      // Process connections if provided
+      if (data.connections && Array.isArray(data.connections)) {
+        for (const connection of data.connections) {
+          // Find the actual node IDs (they may have been remapped)
+          const sourceNode = newNodeData.find(n => 
+            n.title === data.nodes.find((jn: any) => jn.id === connection.from)?.title
+          );
+          const targetNode = newNodeData.find(n => 
+            n.title === data.nodes.find((jn: any) => jn.id === connection.to)?.title
+          );
+
+          if (sourceNode && targetNode) {
+            const tempId = generateTempId("temp_path");
+            const newEdge: AppEdge = {
+              id: tempId,
+              source: sourceNode.id,
+              target: targetNode.id,
+              type: "floating",
+              markerEnd: { type: MarkerType.ArrowClosed },
+            };
+            setEdges((eds) => addEdge(newEdge, eds));
+          }
+        }
+      }
+
+      toast({
+        title: "🚀 Nodes Imported Successfully!",
+        description: `Imported ${newNodes.length} node${newNodes.length !== 1 ? 's' : ''} from JSON`,
+      });
+
+      // Close dialog and reset state
+      setShowJsonImport(false);
+      setJsonInput("");
+      setJsonValidationErrors([]);
+    } catch (error) {
+      console.error("❌ Failed to import JSON:", error);
+      toast({
+        title: "Import Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImportingJson(false);
+    }
+  }, [
+    jsonInput,
+    reactFlowInstance,
+    getSelectedNode,
+    map,
+    setNodes,
+    setEdges,
+    handleMapChange,
     toast,
   ]);
 
@@ -2175,6 +2455,16 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   ? ` (${clipboardNodeCount})`
                   : ""}
               </Button>
+              <Button
+                onClick={() => setShowJsonImport(true)}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                title="Import nodes from JSON"
+              >
+                <FileJson className="h-4 w-4" />
+                Import JSON
+              </Button>
 
               {/* Save functionality - re-enabled now that content/assessments save directly */}
               {true && (
@@ -2450,6 +2740,140 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           </>
         )}
       </ResizablePanelGroup>
+
+      {/* JSON Import Dialog */}
+      <Dialog open={showJsonImport} onOpenChange={setShowJsonImport}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileJson className="h-5 w-5" />
+              Import Nodes from JSON
+            </DialogTitle>
+            <DialogDescription>
+              Paste JSON with node definitions to import them into this map
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 overflow-hidden">
+            {/* JSON Input */}
+            <div className="flex flex-col gap-2 overflow-hidden">
+              <label className="text-sm font-medium">JSON Input</label>
+              <Textarea
+                placeholder={`{\n  "nodes": [\n    {\n      "id": "node_1",\n      "title": "Node Title",\n      "position": { "x": 100, "y": 100 },\n      "content": [...],\n      "assessments": [...]\n    }\n  ],\n  "connections": [...]\n}`}
+                value={jsonInput}
+                onChange={(e) => handleJsonInputChange(e.target.value)}
+                className="font-mono text-sm flex-1 resize-none"
+              />
+            </div>
+
+            {/* Validation & Preview */}
+            <div className="flex flex-col gap-2 overflow-auto">
+              <label className="text-sm font-medium flex items-center gap-2">
+                {jsonValidationErrors.length === 0 && jsonInput.trim() ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    Validation & Preview
+                  </>
+                ) : jsonValidationErrors.length > 0 ? (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    Validation Errors
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4" />
+                    Validation & Preview
+                  </>
+                )}
+              </label>
+
+              {jsonValidationErrors.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="text-red-800 font-medium mb-2">
+                    Validation Errors:
+                  </h4>
+                  <ul className="text-red-700 text-sm space-y-1">
+                    {jsonValidationErrors.map((error, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-red-500 mt-1">•</span>
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {jsonValidationErrors.length === 0 && jsonInput.trim() && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="text-green-800 font-medium mb-3">
+                    ✅ Valid JSON Structure
+                  </h4>
+                  <div className="text-sm text-green-700 space-y-2">
+                    {(() => {
+                      try {
+                        const parsed = JSON.parse(jsonInput);
+                        return (
+                          <>
+                            <div>
+                              <strong>Nodes:</strong> {parsed.nodes?.length || 0}
+                            </div>
+                            <div>
+                              <strong>Connections:</strong>{" "}
+                              {parsed.connections?.length || 0}
+                            </div>
+                          </>
+                        );
+                      } catch {
+                        return null;
+                      }
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {!jsonInput.trim() && (
+                <div className="text-center text-muted-foreground py-8">
+                  <FileJson className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Enter JSON to see validation results</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowJsonImport(false);
+                setJsonInput("");
+                setJsonValidationErrors([]);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={importNodesFromJson}
+              disabled={
+                isImportingJson ||
+                jsonValidationErrors.length > 0 ||
+                !jsonInput.trim()
+              }
+            >
+              {isImportingJson ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <FileJson className="h-4 w-4 mr-2" />
+                  Import Nodes
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

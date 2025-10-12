@@ -399,8 +399,8 @@ export function MapViewer({ map }: MapViewerProps) {
       return true;
     }
 
-    // Instructors can see all nodes in team maps
-    if (isTeamMap && isInstructorOrTA) {
+    // Instructors/TAs can see all nodes (both team and personal maps)
+    if (isInstructorOrTA) {
       return true;
     }
 
@@ -945,6 +945,14 @@ export function MapViewer({ map }: MapViewerProps) {
         maxSize={85}
         className="transition-all duration-300 ease-in-out relative flex flex-col"
       >
+        {/* Instructor View Indicator */}
+        {isInstructorOrTA && (
+          <div className="absolute top-4 left-4 z-10 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            <span className="text-sm font-medium">Instructor View - All Nodes Unlocked</span>
+          </div>
+        )}
+
         {/* Map Container - Takes up full space */}
         <div className="flex-1">
           <ReactFlow
@@ -960,7 +968,7 @@ export function MapViewer({ map }: MapViewerProps) {
             nodesConnectable={false}
             elementsSelectable={true}
             panOnScroll
-            panOnDrag={[1, 2]}
+            panOnDrag={[0, 1, 2]}
             attributionPosition="bottom-left"
             aria-label="Interactive learning map"
           >
