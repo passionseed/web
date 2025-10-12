@@ -471,11 +471,11 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   useEffect(() => {
     const selectedNodes = getSelectedNodes();
     const selectedNode = getSelectedNode();
-    
+
     // Get ReactFlow's internal selection state for comparison
     const reactFlowNodes = reactFlowInstance?.getNodes() || [];
     const reactFlowSelected = reactFlowNodes.filter(n => n.selected);
-    
+
     console.log("🔍 SELECTION STATE DEBUG:", {
       helperSelectedCount: selectedNodes.length,
       helperSelectedIds: selectedNodes.map(n => n.id),
@@ -485,14 +485,113 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       statesMatch: selectedNodes.length === reactFlowSelected.length &&
                   selectedNodes.every(n => reactFlowSelected.some(rf => rf.id === n.id))
     });
-    
+
     // Alert about desync issues
     if (selectedNodes.length !== reactFlowSelected.length) {
       console.warn("⚠️ SELECTION DESYNC DETECTED! Helper vs ReactFlow mismatch");
     }
   }, [getSelectedNodes, getSelectedNode, reactFlowInstance]);
-  // Clipboard functionality
-  const [copiedNodes, setCopiedNodes] = useState<MapNode[] | null>(null);
+
+  // ========================================
+  // Cross-Tab Clipboard Management
+  // ========================================
+
+  const CLIPBOARD_STORAGE_KEY = 'map_editor_clipboard';
+
+  // State to track clipboard for UI updates
+  const [clipboardNodeCount, setClipboardNodeCount] = useState<number>(0);
+
+  // Save copied nodes to localStorage for cross-tab access
+  const saveCopiedNodesToStorage = useCallback((nodes: MapNode[]) => {
+    try {
+      const clipboardData = {
+        nodes,
+        timestamp: new Date().toISOString(),
+        version: 1, // For future compatibility
+      };
+      localStorage.setItem(CLIPBOARD_STORAGE_KEY, JSON.stringify(clipboardData));
+      setClipboardNodeCount(nodes.length);
+      console.log(`📋 Saved ${nodes.length} nodes to cross-tab clipboard`);
+    } catch (error) {
+      console.error("❌ Failed to save clipboard to localStorage:", error);
+      toast({
+        title: "Clipboard save failed",
+        description: "Unable to save to clipboard. Storage may be full.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  // Load copied nodes from localStorage
+  const loadCopiedNodesFromStorage = useCallback((): MapNode[] | null => {
+    try {
+      const stored = localStorage.getItem(CLIPBOARD_STORAGE_KEY);
+      if (!stored) return null;
+
+      const clipboardData = JSON.parse(stored);
+      const nodes = clipboardData.nodes;
+
+      if (!Array.isArray(nodes) || nodes.length === 0) {
+        return null;
+      }
+
+      console.log(`📋 Loaded ${nodes.length} nodes from cross-tab clipboard`);
+      return nodes;
+    } catch (error) {
+      console.error("❌ Failed to load clipboard from localStorage:", error);
+      return null;
+    }
+  }, []);
+
+  // Clear clipboard storage
+  const clearCopiedNodesFromStorage = useCallback(() => {
+    try {
+      localStorage.removeItem(CLIPBOARD_STORAGE_KEY);
+      setClipboardNodeCount(0);
+      console.log("🗑️ Cleared cross-tab clipboard");
+    } catch (error) {
+      console.error("❌ Failed to clear clipboard:", error);
+    }
+  }, []);
+
+  // Initialize clipboard count on mount
+  useEffect(() => {
+    const nodes = loadCopiedNodesFromStorage();
+    setClipboardNodeCount(nodes?.length || 0);
+  }, [loadCopiedNodesFromStorage]);
+
+  // Listen for storage events from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      // Only respond to changes in our clipboard key
+      if (e.key === CLIPBOARD_STORAGE_KEY) {
+        try {
+          if (e.newValue) {
+            const clipboardData = JSON.parse(e.newValue);
+            const nodeCount = clipboardData.nodes?.length || 0;
+            setClipboardNodeCount(nodeCount);
+            console.log(`📋 Clipboard updated from another tab: ${nodeCount} nodes`);
+
+            // Optional: Show toast notification
+            if (nodeCount > 0) {
+              toast({
+                title: "Clipboard updated",
+                description: `${nodeCount} node${nodeCount !== 1 ? 's' : ''} copied in another tab`,
+              });
+            }
+          } else {
+            // Clipboard cleared in another tab
+            setClipboardNodeCount(0);
+          }
+        } catch (error) {
+          console.error("❌ Error handling storage event:", error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [toast]);
 
   // Auto-save state management
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>(
@@ -839,7 +938,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     const nodesToCopy = currentSelectedNodes.map((node) =>
       JSON.parse(JSON.stringify(node.data))
     );
-    setCopiedNodes(nodesToCopy);
+
+    // Save to localStorage for cross-tab access
+    saveCopiedNodesToStorage(nodesToCopy);
 
     // Clear the system text clipboard to ensure only islands can be pasted
     try {
@@ -854,12 +955,15 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       title: `${nodeCount} node${nodeCount > 1 ? "s" : ""} copied!`,
       description:
         nodeCount === 1
-          ? `"${nodesToCopy[0].title}" copied to clipboard`
-          : `${nodeCount} nodes copied to clipboard`,
+          ? `"${nodesToCopy[0].title}" copied to cross-tab clipboard`
+          : `${nodeCount} nodes copied to cross-tab clipboard`,
     });
-  }, [getSelectedNodes, toast]);
+  }, [getSelectedNodes, toast, saveCopiedNodesToStorage]);
 
   const pasteNode = useCallback(async () => {
+    // Load copied nodes from localStorage (cross-tab clipboard)
+    const copiedNodes = loadCopiedNodesFromStorage();
+
     if (!copiedNodes || copiedNodes.length === 0) {
       toast({
         title: "Nothing to paste",
@@ -887,7 +991,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     }
 
     console.log("💾 Creating pasted nodes with temporary IDs for later saving...");
-    
+
     // Calculate the bounding box of all copied nodes to preserve relative positioning
     let minX = Infinity,
       minY = Infinity;
@@ -1060,7 +1164,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       });
     }
   }, [
-    copiedNodes,
+    loadCopiedNodesFromStorage,
     reactFlowInstance,
     getSelectedNode,
     map,
@@ -1089,7 +1193,8 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           break;
         case "v":
           // Paste nodes only if we have some in clipboard; otherwise allow normal paste
-          if (copiedNodes && copiedNodes.length > 0) {
+          const clipboardNodes = loadCopiedNodesFromStorage();
+          if (clipboardNodes && clipboardNodes.length > 0) {
             event.preventDefault();
             pasteNode();
           }
@@ -1104,7 +1209,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [copyNode, pasteNode, copiedNodes, forceSave]);
+  }, [copyNode, pasteNode, loadCopiedNodesFromStorage, forceSave]);
 
   // Transform map data to React Flow format - but NOT during operations that would cause deselection
   useEffect(() => {
@@ -1952,13 +2057,13 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 size="sm"
                 variant="outline"
                 className="gap-2"
-                disabled={!copiedNodes || copiedNodes.length === 0}
-                title={`Paste ${copiedNodes?.length || 0} node${(copiedNodes?.length || 0) !== 1 ? "s" : ""} (Ctrl+V)`}
+                disabled={clipboardNodeCount === 0}
+                title={`Paste ${clipboardNodeCount} node${clipboardNodeCount !== 1 ? "s" : ""} (Ctrl+V)${clipboardNodeCount > 0 ? " - works across tabs!" : ""}`}
               >
                 <Clipboard className="h-4 w-4" />
                 Paste
-                {copiedNodes && copiedNodes.length > 1
-                  ? ` (${copiedNodes.length})`
+                {clipboardNodeCount > 1
+                  ? ` (${clipboardNodeCount})`
                   : ""}
               </Button>
 
