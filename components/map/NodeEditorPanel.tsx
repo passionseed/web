@@ -84,11 +84,7 @@ export function NodeEditorPanel({
         title: localTitle,
         updated_at: new Date().toISOString(), // Add timestamp to force update
       });
-    } else if (
-      selectedNode &&
-      isTextNode &&
-      localText !== originalTitle
-    ) {
+    } else if (selectedNode && isTextNode && localText !== originalTitle) {
       // For text nodes, also ensure sync
       onNodeDataChange(selectedNode.id, {
         title: localText,
@@ -136,7 +132,16 @@ export function NodeEditorPanel({
       onNodeDataChange(selectedNode.id, updates);
       console.log("💾 Saved pending changes on tab switch:", updates);
     }
-  }, [selectedNode, isTextNode, localText, localTitle, localInstructions, originalTitle, originalInstructions, onNodeDataChange]);
+  }, [
+    selectedNode,
+    isTextNode,
+    localText,
+    localTitle,
+    localInstructions,
+    originalTitle,
+    originalInstructions,
+    onNodeDataChange,
+  ]);
 
   const handleInstructionsBlur = useCallback(() => {
     onEditingStateChange?.(false);
@@ -147,19 +152,28 @@ export function NodeEditorPanel({
         updated_at: new Date().toISOString(),
       });
     }
-  }, [selectedNode, localInstructions, originalInstructions, onNodeDataChange, onEditingStateChange]);
+  }, [
+    selectedNode,
+    localInstructions,
+    originalInstructions,
+    onNodeDataChange,
+    onEditingStateChange,
+  ]);
 
   const handleInstructionsFocus = useCallback(() => {
     onEditingStateChange?.(true);
   }, [onEditingStateChange]);
 
   // Handle tab changes - save pending changes before switching
-  const handleTabChange = useCallback((newTab: string) => {
-    console.log("📑 Tab changing from", currentTab, "to", newTab);
-    savePendingChanges();
-    setCurrentTab(newTab);
-    onEditingStateChange?.(false);
-  }, [currentTab, savePendingChanges, onEditingStateChange]);
+  const handleTabChange = useCallback(
+    (newTab: string) => {
+      console.log("📑 Tab changing from", currentTab, "to", newTab);
+      savePendingChanges();
+      setCurrentTab(newTab);
+      onEditingStateChange?.(false);
+    },
+    [currentTab, savePendingChanges, onEditingStateChange]
+  );
 
   useEffect(() => {
     if (selectedNode) {
@@ -395,7 +409,11 @@ export function NodeEditorPanel({
 
       {/* Tabs Content - Scrollable */}
       <div className="flex-1 overflow-hidden">
-        <Tabs value={currentTab} onValueChange={handleTabChange} className="h-full flex flex-col">
+        <Tabs
+          value={currentTab}
+          onValueChange={handleTabChange}
+          className="h-full flex flex-col"
+        >
           <div className="flex-shrink-0 px-4 py-2 bg-background border-b">
             <TabsList
               className={`grid w-full ${isTextNode ? "grid-cols-1" : "grid-cols-3"}`}
