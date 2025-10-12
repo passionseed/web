@@ -114,6 +114,7 @@ export interface NodeContent {
   content_title: string | null; // title for the content
   content_url: string | null;
   content_body: string | null;
+  display_order: number; // determines display order (lower numbers appear first)
   created_at: string; // timestamp with time zone
 }
 

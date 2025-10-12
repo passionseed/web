@@ -21,6 +21,10 @@ import {
   X,
   AlertCircle,
   Upload,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -76,6 +80,7 @@ interface ContentEditorProps {
 interface ContentFormProps {
   nodeId: string;
   existingContent?: NodeContent;
+  contentCount: number; // Number of existing content items
   onSave: (content: NodeContent) => void;
   onCancel: () => void;
 }
@@ -168,6 +173,7 @@ const generateTempId = (): string =>
 const ContentForm = ({
   nodeId,
   existingContent,
+  contentCount,
   onSave,
   onCancel,
 }: ContentFormProps) => {
@@ -185,11 +191,13 @@ const ContentForm = ({
   );
   const [errors, setErrors] = useState<string[]>([]);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const config = CONTENT_TYPE_CONFIG[contentType];
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
 
       console.log("Form submission attempted:", {
@@ -231,11 +239,18 @@ const ContentForm = ({
           contentType === "text" || contentType === "resource_link"
             ? contentBody.trim()
             : null,
+        display_order: existingContent?.display_order ?? contentCount,
         created_at: existingContent?.created_at || new Date().toISOString(),
       };
 
       console.log("Saving content payload:", payload);
-      onSave(payload);
+      setIsSaving(true);
+
+      // Wrap in Promise to handle both sync and async onSave
+      Promise.resolve(onSave(payload))
+        .finally(() => {
+          setIsSaving(false);
+        });
     },
     [
       contentType,
@@ -262,6 +277,11 @@ const ContentForm = ({
 
   const handleFileUploadError = useCallback((error: string) => {
     setErrors([error]);
+  }, []);
+
+  const handleUploadStateChange = useCallback((uploading: boolean) => {
+    console.log("Upload state changed:", uploading);
+    setIsUploading(uploading);
   }, []);
 
   return (
@@ -393,15 +413,37 @@ const ContentForm = ({
             nodeId={nodeId}
             onUploadComplete={handleFileUploadComplete}
             onValidationError={handleFileUploadError}
+            onUploadStateChange={handleUploadStateChange}
             accept=".jpg,.jpeg,.png,.gif,.webp"
             maxSize={5} // 5MB limit for images
             allowMultiple={false}
             uploadEndpoint="images"
             className="border-2 border-dashed border-blue-200"
           />
-          {(uploadedFileName || contentUrl) && (
-            <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
-              ✅ Image uploaded successfully
+          {contentUrl && (
+            <div className="space-y-2">
+              <div className="text-xs text-green-600 bg-green-50 p-2 rounded flex items-center gap-2">
+                <span>✅ Image uploaded successfully</span>
+                {uploadedFileName && (
+                  <span className="text-muted-foreground">({uploadedFileName})</span>
+                )}
+              </div>
+              {/* Image Preview */}
+              <div className="border-2 border-green-200 rounded-lg p-2 bg-green-50/30">
+                <p className="text-xs font-medium text-slate-700 mb-2">Preview:</p>
+                <div className="relative w-full max-w-md mx-auto">
+                  <img
+                    src={contentUrl}
+                    alt="Uploaded preview"
+                    className="w-full h-auto rounded-lg shadow-md object-contain max-h-64"
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      console.error('Failed to load image preview');
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -420,6 +462,7 @@ const ContentForm = ({
             nodeId={nodeId}
             onUploadComplete={handleFileUploadComplete}
             onValidationError={handleFileUploadError}
+            onUploadStateChange={handleUploadStateChange}
             accept=".pdf"
             maxSize={40} // 40MB limit for PDFs
             allowMultiple={false}
@@ -486,7 +529,13 @@ const ContentForm = ({
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onCancel} size="sm">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          size="sm"
+          disabled={isSaving || isUploading}
+        >
           <X className="h-4 w-4 mr-1" />
           Cancel
         </Button>
@@ -494,11 +543,27 @@ const ContentForm = ({
           type="submit"
           size="sm"
           disabled={
-            (contentType === "image" || contentType === "pdf") && !contentUrl
+            isSaving ||
+            isUploading ||
+            ((contentType === "image" || contentType === "pdf") && !contentUrl)
           }
         >
-          <Check className="h-4 w-4 mr-1" />
-          {existingContent ? "Update Content" : "Add Content"}
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              Saving...
+            </>
+          ) : isUploading ? (
+            <>
+              <Upload className="h-4 w-4 mr-1" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Check className="h-4 w-4 mr-1" />
+              {existingContent ? "Update Content" : "Add Content"}
+            </>
+          )}
         </Button>
       </div>
     </form>
@@ -564,6 +629,11 @@ export function ContentEditor({
 
   const isFormActive = isAdding || editingId;
 
+  // Sort content by display_order for rendering
+  const sortedContent = useMemo(() => {
+    return [...content].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+  }, [content]);
+
   const handleSave = useCallback(
     async (savedContent: NodeContent) => {
       if (
@@ -593,6 +663,7 @@ export function ContentEditor({
             content_title: savedContent.content_title,
             content_url: savedContent.content_url,
             content_body: savedContent.content_body,
+            display_order: savedContent.display_order,
           });
           console.log("✅ Content updated in database:", finalContent);
 
@@ -602,15 +673,33 @@ export function ContentEditor({
           onContentChange(updatedContent);
 
           toast({ title: "Content updated successfully!" });
+
+          // Notify MapEditor that content was auto-saved
+          if (typeof (window as any).__markContentSaved === 'function') {
+            // Use setTimeout to ensure the map state has updated first
+            setTimeout(() => {
+              (window as any).__markContentSaved();
+            }, 100);
+          }
         } else {
           // Create new content in database
           console.log("➕ Creating content in database for node:", nodeId);
+          console.log("Content data being sent:", {
+            node_id: nodeId,
+            content_type: savedContent.content_type,
+            content_title: savedContent.content_title,
+            content_url: savedContent.content_url,
+            content_body: savedContent.content_body,
+            display_order: savedContent.display_order,
+          });
+
           finalContent = await createNodeContent({
             node_id: nodeId,
             content_type: savedContent.content_type,
             content_title: savedContent.content_title,
             content_url: savedContent.content_url,
             content_body: savedContent.content_body,
+            display_order: savedContent.display_order ?? 0,
           });
           console.log("✅ Content created in database:", finalContent);
 
@@ -618,6 +707,14 @@ export function ContentEditor({
           onContentChange([...content, finalContent]);
 
           toast({ title: "Content added successfully!" });
+
+          // Notify MapEditor that content was auto-saved
+          if (typeof (window as any).__markContentSaved === 'function') {
+            // Use setTimeout to ensure the map state has updated first
+            setTimeout(() => {
+              (window as any).__markContentSaved();
+            }, 100);
+          }
         }
 
         // Reset form state
@@ -648,6 +745,13 @@ export function ContentEditor({
         // Update local state
         onContentChange(content.filter((c) => c.id !== id));
         toast({ title: "Content deleted successfully!" });
+
+        // Notify MapEditor that content was auto-saved
+        if (typeof (window as any).__markContentSaved === 'function') {
+          setTimeout(() => {
+            (window as any).__markContentSaved();
+          }, 100);
+        }
       } catch (error) {
         console.error("❌ Failed to delete content:", error);
         toast({
@@ -676,6 +780,101 @@ export function ContentEditor({
       }
     },
     [handleDelete]
+  );
+
+  // Reordering functions
+  const moveContentUp = useCallback(
+    async (index: number) => {
+      if (index === 0) return; // Already at top
+      const newContent = [...sortedContent];
+
+      // Swap items
+      [newContent[index - 1], newContent[index]] = [
+        newContent[index],
+        newContent[index - 1],
+      ];
+
+      // Update display_order for all items to match their new positions
+      const updatedContent = newContent.map((item, idx) => ({
+        ...item,
+        display_order: idx,
+      }));
+
+      // Update in local state immediately for UI responsiveness
+      onContentChange(updatedContent);
+
+      // Update the two affected items in database
+      try {
+        await Promise.all([
+          updateNodeContent(updatedContent[index - 1].id, {
+            display_order: index - 1,
+          }),
+          updateNodeContent(updatedContent[index].id, {
+            display_order: index,
+          }),
+        ]);
+      } catch (error) {
+        console.error("Failed to update content order:", error);
+        toast({
+          title: "Order update failed",
+          description: "The order was not saved to the database",
+          variant: "destructive",
+        });
+      }
+
+      toast({
+        title: "Content reordered",
+        description: "Moved up in the list",
+      });
+    },
+    [sortedContent, onContentChange, toast]
+  );
+
+  const moveContentDown = useCallback(
+    async (index: number) => {
+      if (index === sortedContent.length - 1) return; // Already at bottom
+      const newContent = [...sortedContent];
+
+      // Swap items
+      [newContent[index], newContent[index + 1]] = [
+        newContent[index + 1],
+        newContent[index],
+      ];
+
+      // Update display_order for all items to match their new positions
+      const updatedContent = newContent.map((item, idx) => ({
+        ...item,
+        display_order: idx,
+      }));
+
+      // Update in local state immediately for UI responsiveness
+      onContentChange(updatedContent);
+
+      // Update the two affected items in database
+      try {
+        await Promise.all([
+          updateNodeContent(updatedContent[index].id, {
+            display_order: index,
+          }),
+          updateNodeContent(updatedContent[index + 1].id, {
+            display_order: index + 1,
+          }),
+        ]);
+      } catch (error) {
+        console.error("Failed to update content order:", error);
+        toast({
+          title: "Order update failed",
+          description: "The order was not saved to the database",
+          variant: "destructive",
+        });
+      }
+
+      toast({
+        title: "Content reordered",
+        description: "Moved down in the list",
+      });
+    },
+    [sortedContent, onContentChange, toast]
   );
 
   // Empty state component
@@ -707,6 +906,7 @@ export function ContentEditor({
     () => (
       <div className="text-xs text-muted-foreground text-center space-y-1">
         <p>💡 Content will be shown to students in the order listed above</p>
+        <p>↕️ Use the up/down arrows to reorder content items</p>
         <p>
           🎯 Mix different content types to create engaging learning experiences
         </p>
@@ -741,6 +941,7 @@ export function ContentEditor({
           <div className="max-h-[65vh] overflow-y-auto">
             <ContentForm
               nodeId={nodeId}
+              contentCount={content.length}
               onSave={handleSave}
               onCancel={handleCancelForm}
             />
@@ -749,8 +950,8 @@ export function ContentEditor({
       )}
 
       {/* Content list */}
-      <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-        {content.map((item, index) => (
+      <div className="space-y-2 pb-4">
+        {sortedContent.map((item, index) => (
           <Card key={item.id} className="border-l-4 border-l-blue-500">
             <CardContent className="p-3">
               {editingId === item.id ? (
@@ -759,51 +960,98 @@ export function ContentEditor({
                     <ContentForm
                       nodeId={nodeId}
                       existingContent={item}
+                      contentCount={content.length}
                       onSave={handleSave}
                       onCancel={handleCancelForm}
                     />
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-medium">
-                        #{index + 1}
-                      </span>
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {item.content_type.replace("_", " ")}
-                      </span>
-                      {!item.content_url && !item.content_body && (
-                        <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
-                          Missing Content
-                        </span>
-                      )}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-center gap-2">
+                      {/* Reorder buttons */}
+                      <div className="flex flex-col gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => moveContentUp(index)}
+                          className="h-5 w-6 p-0 hover:bg-blue-100"
+                          disabled={index === 0 || !!isFormActive}
+                          title="Move up"
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => moveContentDown(index)}
+                          className="h-5 w-6 p-0 hover:bg-blue-100"
+                          disabled={index === sortedContent.length - 1 || !!isFormActive}
+                          title="Move down"
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-medium">
+                            #{index + 1}
+                          </span>
+                          <span className="text-xs text-muted-foreground capitalize">
+                            {item.content_type.replace("_", " ")}
+                          </span>
+                          {!item.content_url && !item.content_body && (
+                            <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                              Missing Content
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {getContentPreview(item)}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {getContentPreview(item)}
-                    </p>
+
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(item.id)}
+                        className="h-8 w-8 p-0"
+                        disabled={!!isFormActive}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => confirmDelete(item.id)}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                        disabled={!!isFormActive}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(item.id)}
-                      className="h-8 w-8 p-0"
-                      disabled={!!isFormActive}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => confirmDelete(item.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                      disabled={!!isFormActive}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+
+                  {/* Image Preview in List */}
+                  {item.content_type === "image" && item.content_url && (
+                    <div className="mt-2 border border-slate-200 rounded-md overflow-hidden bg-slate-50">
+                      <img
+                        src={item.content_url}
+                        alt={item.content_title || "Image content"}
+                        className="w-full h-auto object-contain max-h-48"
+                        loading="lazy"
+                        onError={(e) => {
+                          // Hide image if it fails to load
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          console.error('Failed to load image thumbnail');
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
