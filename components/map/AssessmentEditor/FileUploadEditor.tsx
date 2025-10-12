@@ -7,27 +7,27 @@ import { NodeAssessment } from "@/types/map";
 import { useToast } from "@/components/ui/use-toast";
 import { updateAssessmentMetadata } from "@/lib/supabase/assessment";
 
-interface TextAnswerEditorProps {
+interface FileUploadEditorProps {
   assessment: NodeAssessment;
   onAssessmentChange: (assessment: NodeAssessment | null, action: "add" | "delete") => void;
 }
 
-export function TextAnswerEditor({ assessment, onAssessmentChange }: TextAnswerEditorProps) {
-  const [question, setQuestion] = useState(assessment.metadata?.question || "");
+export function FileUploadEditor({ assessment, onAssessmentChange }: FileUploadEditorProps) {
+  const [prompt, setPrompt] = useState(assessment.metadata?.prompt || "");
   const { toast } = useToast();
 
   useEffect(() => {
-    setQuestion(assessment.metadata?.question || "");
-  }, [assessment.metadata?.question]);
+    setPrompt(assessment.metadata?.prompt || "");
+  }, [assessment.metadata?.prompt]);
 
-  const handleQuestionChange = async (newQuestion: string) => {
-    setQuestion(newQuestion);
+  const handlePromptChange = async (newPrompt: string) => {
+    setPrompt(newPrompt);
 
     try {
-      // Update the metadata with the question
+      // Update the metadata with the prompt
       const updatedMetadata = {
         ...assessment.metadata,
-        question: newQuestion,
+        prompt: newPrompt,
       };
 
       // Only update in database if this is not a temporary assessment
@@ -43,9 +43,9 @@ export function TextAnswerEditor({ assessment, onAssessmentChange }: TextAnswerE
 
       onAssessmentChange(updatedAssessment, "add");
     } catch (error) {
-      console.error("Failed to update question:", error);
+      console.error("Failed to update prompt:", error);
       toast({
-        title: "Failed to update question",
+        title: "Failed to update prompt",
         variant: "destructive",
       });
     }
@@ -54,17 +54,17 @@ export function TextAnswerEditor({ assessment, onAssessmentChange }: TextAnswerE
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
-        <Label htmlFor="text-question">Question/Prompt</Label>
+        <Label htmlFor="file-upload-prompt">Prompt/Instructions</Label>
         <Textarea
-          id="text-question"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onBlur={(e) => handleQuestionChange(e.target.value)}
-          placeholder="Enter the question or prompt for students..."
+          id="file-upload-prompt"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onBlur={(e) => handlePromptChange(e.target.value)}
+          placeholder="Enter instructions for what students should upload..."
           className="min-h-[100px] resize-none"
         />
         <p className="text-xs text-muted-foreground">
-          Students will see this question and provide a written response
+          Students will see this prompt and upload their file(s) accordingly
         </p>
       </div>
     </div>

@@ -315,7 +315,7 @@ export function ImageUpload({
 
       {/* Current image display */}
       {hasCurrentImage && !hasPreview && (
-        <div className="relative group">
+        <div className="relative group max-w-xs mx-auto">
           <div className="aspect-square w-full rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-100">
             <OptimizedImage
               src={currentImage!.url!}
@@ -331,7 +331,7 @@ export function ImageUpload({
               variant="secondary"
               onClick={handleRemoveImage}
               disabled={disabled || isUploading}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white h-8 w-8 p-0"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -342,9 +342,10 @@ export function ImageUpload({
               variant="secondary"
               onClick={openFileDialog}
               disabled={disabled || isUploading}
+              className="h-8"
             >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Replace
+              <RotateCcw className="h-3 w-3 mr-1" />
+              <span className="text-xs">Replace</span>
             </Button>
           </div>
         </div>
@@ -353,7 +354,7 @@ export function ImageUpload({
       {/* Preview of selected file */}
       {hasPreview && (
         <div className="space-y-3">
-          <div className="relative group">
+          <div className="relative group max-w-xs mx-auto">
             <div className="aspect-square w-full rounded-lg overflow-hidden border-2 border-blue-200">
               <img
                 src={previewUrl || ""}
@@ -374,7 +375,7 @@ export function ImageUpload({
                   setUploadError(null);
                 }}
                 disabled={isUploading}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-red-600 hover:bg-red-700 text-white h-8 w-8 p-0"
               >
                 <X className="h-4 w-4" />
               </Button>

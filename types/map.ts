@@ -111,6 +111,7 @@ export interface NodeContent {
   id: string; // uuid
   node_id: string; // uuid
   content_type: ContentType;
+  content_title: string | null; // title for the content
   content_url: string | null;
   content_body: string | null;
   created_at: string; // timestamp with time zone

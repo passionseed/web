@@ -19,6 +19,7 @@ import { updateAssessmentGroupSettings } from "@/lib/supabase/assessment-groups"
 import { QuizEditor } from "./AssessmentEditor/QuizEditor";
 import { ChecklistEditor } from "./AssessmentEditor/ChecklistEditor";
 import { TextAnswerEditor } from "./AssessmentEditor/TextAnswerEditor";
+import { FileUploadEditor } from "./AssessmentEditor/FileUploadEditor";
 import { GroupManagementModal } from "./AssessmentEditor/GroupManagementModal";
 import { QuizSettings } from "./AssessmentEditor/QuizSettings";
 import { ASSESSMENT_TYPE_CONFIG } from "./AssessmentEditor/constants";
@@ -502,9 +503,24 @@ export function AssessmentEditor({
               />
             </>
           )}
+          {assessment.assessment_type === "file_upload" && (
+            <>
+              <FileUploadEditor
+                assessment={assessment}
+                onAssessmentChange={onAssessmentChange}
+              />
+              <QuizSettings
+                assessment={assessment}
+                onGradingChange={handleGradingChange}
+                onGroupSettingsChange={handleGroupSettingsChange}
+                onManageGroups={() => setIsGroupModalOpen(true)}
+              />
+            </>
+          )}
           {assessment.assessment_type !== "quiz" &&
             assessment.assessment_type !== "checklist" &&
-            assessment.assessment_type !== "text_answer" && (
+            assessment.assessment_type !== "text_answer" &&
+            assessment.assessment_type !== "file_upload" && (
               <div className="text-center py-8 text-muted-foreground">
                 <div className="text-4xl mb-4">
                   {ASSESSMENT_TYPE_CONFIG[assessment.assessment_type]?.icon ||

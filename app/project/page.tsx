@@ -268,7 +268,20 @@ export default function ProjectPage() {
   const handleInputChange = (value: string) => {
     setJsonInput(value);
     if (value.trim()) {
-      validateJson(value);
+      const errors = validateJson(value);
+      setValidationErrors(errors);
+
+      // If valid, set preview data
+      if (errors.length === 0) {
+        try {
+          const parsed = JSON.parse(value);
+          setPreviewData(parsed);
+        } catch {
+          setPreviewData(null);
+        }
+      } else {
+        setPreviewData(null);
+      }
     } else {
       setValidationErrors([]);
       setPreviewData(null);
@@ -285,7 +298,8 @@ export default function ProjectPage() {
       return;
     }
 
-    if (!validateJson(jsonInput)) {
+    const errors = validateJson(jsonInput);
+    if (errors.length > 0) {
       toast({
         title: "Validation Failed",
         description: "Please fix the JSON errors before creating the map",

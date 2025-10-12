@@ -576,6 +576,14 @@ export function AssessmentSection({
             )}
             {assessment.assessment_type === "text_answer" && (
               <div className="space-y-3">
+                {assessment.metadata?.question && (
+                  <div className="p-4 bg-muted/50 rounded-lg border">
+                    <p className="text-sm font-medium text-foreground mb-1">Question</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {assessment.metadata.question}
+                    </p>
+                  </div>
+                )}
                 <label className="text-sm font-medium text-foreground">
                   Your Answer
                 </label>
@@ -689,6 +697,14 @@ export function AssessmentSection({
 
             {assessment.assessment_type === "file_upload" && (
               <div className="space-y-3">
+                {assessment.metadata?.prompt && (
+                  <div className="p-4 bg-muted/50 rounded-lg border">
+                    <p className="text-sm font-medium text-foreground mb-1">Instructions</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {assessment.metadata.prompt}
+                    </p>
+                  </div>
+                )}
                 <label className="text-sm font-medium text-foreground">
                   Upload Your Work{" "}
                   {isFileRequired && <span className="text-red-500">*</span>}
