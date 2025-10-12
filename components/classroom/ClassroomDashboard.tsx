@@ -260,16 +260,19 @@ export function ClassroomDashboard() {
                   </h3>
                   <p className="text-muted-foreground mb-4">
                     {userCanCreateClassrooms
-                      ? "Create your first classroom to start teaching"
+                      ? "Create your first classroom to start teaching or join an existing one"
                       : "Join a classroom with a code or ask your instructor to add you"}
                   </p>
-                  {userCanCreateClassrooms ? (
-                    <CreateClassroomModal onClassroomCreated={loadClassrooms} />
-                  ) : (
+                  <div className="flex items-center justify-center gap-3">
                     <Button asChild>
                       <Link href="/classrooms/join">Join with Code</Link>
                     </Button>
-                  )}
+                    {userCanCreateClassrooms && (
+                      <Button asChild>
+                        <Link href="/classrooms/new">Create Classroom</Link>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </TabsContent>
