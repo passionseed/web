@@ -18,7 +18,7 @@ export interface Cohort {
   updated_at: string; // timestamp with time zone
 }
 
-export type MapCategory = "ai" | "3d" | "unity" | "hacking" | "custom";
+export type MapCategory = "ai" | "3d" | "unity" | "hacking" | "custom" | "journey";
 export type MapVisibility = "public" | "private" | "team";
 
 export interface LearningMap {
