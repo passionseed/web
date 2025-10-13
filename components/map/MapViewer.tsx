@@ -947,9 +947,9 @@ export function MapViewer({ map }: MapViewerProps) {
       >
         {/* Instructor View Indicator */}
         {isInstructorOrTA && (
-          <div className="absolute top-4 left-4 z-10 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+          <div className="absolute bottom-0 left-0 z-10 bg-gray-800 text-muted-foreground px-4 py-2 rounded-tr-lg shadow-lg flex items-center gap-2 ">
             <Info className="h-4 w-4" />
-            <span className="text-sm font-medium">
+            <span className="text-xs font-medium">
               Instructor View - All Nodes Unlocked
             </span>
           </div>

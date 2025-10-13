@@ -44,12 +44,12 @@ const HeatmapCell = ({ count, date }: { count: number; date: string }) => {
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
           <div
-            className={`w-3.5 h-3.5 rounded-sm ${getColor(count)} mx-[2px] my-[2px] transition-shadow hover:shadow-md`}
+            className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${getColor(count)} mx-[1px] md:mx-[2px] my-[1px] md:my-[2px] transition-shadow hover:shadow-md touch-manipulation`}
           />
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="text-xs">
           <p>
-            {count} reflections on {date}
+            {count} reflection{count !== 1 ? 's' : ''} on {date}
           </p>
         </TooltipContent>
       </Tooltip>
@@ -92,8 +92,8 @@ const MonthlyHeatmap = React.memo(function MonthlyHeatmap({
 
   return (
     <div className="flex-shrink-0">
-      <h4 className="font-semibold text-sm mb-1">
-        {format(monthDate, "MMMM")}
+      <h4 className="font-semibold text-xs md:text-sm mb-1 truncate max-w-[100px] md:max-w-none">
+        {format(monthDate, "MMM")} <span className="hidden md:inline">{format(monthDate, "yyyy").slice(2)}</span>
       </h4>
       <table className="w-auto border-collapse">
         <thead>
@@ -101,7 +101,7 @@ const MonthlyHeatmap = React.memo(function MonthlyHeatmap({
             {weekDays.map((day, i) => (
               <th
                 key={`${day}-${i}`}
-                className="font-medium text-xs text-center p-0 pb-1"
+                className="font-medium text-[10px] md:text-xs text-center p-0 pb-0.5 md:pb-1"
               >
                 {day}
               </th>
@@ -121,7 +121,7 @@ const MonthlyHeatmap = React.memo(function MonthlyHeatmap({
                   </td>
                 ) : (
                   <td key={`empty-${wi}-${di}`} className="p-0">
-                    <div className="w-3.5 h-3.5 mx-[2px] my-[2px]" />
+                    <div className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 mx-[1px] md:mx-[2px] my-[1px] md:my-[2px]" />
                   </td>
                 )
               )}
@@ -184,30 +184,32 @@ export function ReflectionHeatmap() {
   }, [currentYear, dataMap]);
 
   return (
-    <div className="p-4 border rounded-lg bg-white dark:bg-neutral-900">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-lg">Contribution Calendar</h3>
-        <div className="flex items-center">
+    <div className="p-3 md:p-4 border rounded-lg bg-white dark:bg-neutral-900">
+      <div className="flex justify-between items-center mb-3 md:mb-4 gap-2">
+        <h3 className="font-bold text-sm md:text-lg">Contribution Calendar</h3>
+        <div className="flex items-center flex-shrink-0">
           <button
             onClick={goToPreviousYear}
-            className="px-2 py-1 text-xs border rounded-md"
+            className="px-2 py-1 text-xs border rounded-md hover:bg-muted transition-colors"
+            aria-label="Previous year"
           >
             &lt;
           </button>
-          <span className="font-bold text-sm mx-2 w-12 text-center">
+          <span className="font-bold text-xs md:text-sm mx-1.5 md:mx-2 w-10 md:w-12 text-center">
             {currentYear}
           </span>
           <button
             onClick={goToNextYear}
-            className={`px-2 py-1 text-xs border rounded-md ${isNextYearFuture ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`px-2 py-1 text-xs border rounded-md hover:bg-muted transition-colors ${isNextYearFuture ? "opacity-50 cursor-not-allowed" : ""}`}
             disabled={isNextYearFuture}
+            aria-label="Next year"
           >
             &gt;
           </button>
         </div>
       </div>
       <div
-        className="flex overflow-x-auto space-x-6 pb-2"
+        className="flex overflow-x-auto space-x-3 md:space-x-6 pb-2 -mx-1 px-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent"
         ref={monthsContainerRef}
       >
         {months.map((monthDate) => (

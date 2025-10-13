@@ -2690,12 +2690,12 @@ export const getOrCreatePersonalJourneyMap = async (): Promise<LearningMap> => {
 
   // Create a new personal journey map
   console.log("Creating new personal journey map for user:", user.id);
-  
+
   const journeyMapData = {
     title: "My Learning Journey",
     description: "My personal learning path and reflections",
     visibility: "private" as const,
-    category: "custom" as const,
+    category: "journey" as const,
     metadata: {
       is_personal_journey: true,
       created_at: new Date().toISOString()

@@ -1169,9 +1169,9 @@ export default function EditMapPage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <Button asChild variant="ghost" size="sm">
-                <Link href={`/map/${mapId}`}>
+                <Link href={map?.category === "journey" ? "/me" : `/map/${mapId}`}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Map
+                  {map?.category === "journey" ? "Back to Portal" : "Back to Map"}
                 </Link>
               </Button>
               <div className="h-6 w-px bg-border" />
@@ -1332,7 +1332,12 @@ export default function EditMapPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="category">Category</Label>
+                          <Label htmlFor="category">
+                            Category
+                            {map.category === "journey" && (
+                              <span className="ml-2 text-xs text-muted-foreground">(Personal Journey - Unchangeable)</span>
+                            )}
+                          </Label>
                           <Select
                             value={map.category || ""}
                             onValueChange={(value: MapCategory) =>
@@ -1340,12 +1345,15 @@ export default function EditMapPage() {
                                 prev ? { ...prev, category: value } : null
                               )
                             }
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || map.category === "journey"}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className={map.category === "journey" ? "opacity-60 cursor-not-allowed" : ""}>
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="journey" disabled>
+                                Personal Journey
+                              </SelectItem>
                               <SelectItem value="ai">
                                 AI & Machine Learning
                               </SelectItem>
