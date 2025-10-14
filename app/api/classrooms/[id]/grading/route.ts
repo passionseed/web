@@ -464,7 +464,7 @@ export async function GET(
       };
     });
 
-    // Add debug information
+    // Add comprehensive debug information
     const debugInfo = {
       total_assessments: allAssessments.length,
       group_assessments: groupAssessmentIds.length,
@@ -472,10 +472,59 @@ export async function GET(
       total_group_members: allGroupMembers.length,
       total_submissions: submissions?.length || 0,
       transformed_submissions: transformedSubmissions.length,
-      students_count: students.length
+      students_count: students.length,
+      
+      // Detailed breakdown
+      assessment_details: allAssessments.map(a => ({
+        id: a.id,
+        node_id: a.node_id,
+        is_group_assessment: a.is_group_assessment,
+        assessment_type: a.assessment_type
+      })),
+      
+      group_details: allGroups.map(g => ({
+        id: g.id,
+        assessment_id: g.assessment_id,
+        group_name: g.group_name,
+        member_count: g.assessment_group_members?.length || 0,
+        members: g.assessment_group_members?.map((m: any) => ({
+          user_id: m.user_id,
+          username: m.profiles?.username,
+          full_name: m.profiles?.full_name
+        })) || []
+      })),
+      
+      submission_details: (submissions || []).map(s => ({
+        id: s.id,
+        assessment_id: s.assessment_id,
+        submitted_for_group: s.submitted_for_group,
+        assessment_group_id: s.assessment_group_id,
+        progress_id: s.progress_id
+      })),
+      
+      transformation_log: transformedSubmissions.map(t => ({
+        submission_id: t.id,
+        student_name: t.student_name,
+        student_user_id: t.student_user_id,
+        is_group_assessment: t.is_group_assessment,
+        submitted_for_group: t.submitted_for_group,
+        assessment_group_id: t.assessment_group_id,
+        group_name: t.group_name,
+        is_original_submitter: t.is_original_submitter,
+        group_member_role: t.group_member_role
+      })),
+      
+      student_summary: students.map(s => ({
+        user_id: s.user_id,
+        full_name: s.full_name,
+        username: s.username,
+        total_submissions: s.total_submissions,
+        graded_submissions: s.graded_submissions,
+        pending_submissions: s.pending_submissions
+      }))
     };
 
-    console.log("🔧 GRADING DEBUG INFO:", debugInfo);
+    console.log("🔧 COMPREHENSIVE GRADING DEBUG:", JSON.stringify(debugInfo, null, 2));
 
     return NextResponse.json({
       submissions: transformedSubmissions,
