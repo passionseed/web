@@ -90,7 +90,7 @@ async function handleGroupGrading(
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -264,7 +264,7 @@ export async function GET(
     const classroomUserIds = classroomMembers.map(m => m.user_id);
     const missingUserIds = classroomUserIds.filter(id => !submissionUserIds.includes(id));
     
-    let additionalProfiles = [];
+    let additionalProfiles: any[] = [];
     if (missingUserIds.length > 0) {
       const { data } = await supabase
         .from("profiles")
@@ -332,11 +332,33 @@ export async function GET(
       };
 
       // Check if this is a group assessment submission
-      if (assessment?.is_group_assessment && submission.submitted_for_group && submission.assessment_group_id) {
-        // Find all group members for this group
-        const groupMembers = allGroupMembers.filter(member => 
-          member.group_id === submission.assessment_group_id
-        );
+      if (assessment?.is_group_assessment && submission.submitted_for_group) {
+        let groupMembers: any[] = [];
+        
+        if (submission.assessment_group_id) {
+          // Case 1: Has explicit assessment_group_id
+          groupMembers = allGroupMembers.filter(member => 
+            member.group_id === submission.assessment_group_id
+          );
+        } else {
+          // Case 2: No assessment_group_id but is group submission - find by user and assessment
+          // This handles the case where assessment_group_id is null but it's still a group submission
+          const submitterUserId = progress?.user_id;
+          if (submitterUserId) {
+            groupMembers = allGroupMembers.filter(member => 
+              member.assessment_id === submission.assessment_id && 
+              member.user_id === submitterUserId
+            );
+            
+            // If we found the submitter's group, get all members of that group
+            if (groupMembers.length > 0) {
+              const groupId = groupMembers[0].group_id;
+              groupMembers = allGroupMembers.filter(member => 
+                member.group_id === groupId
+              );
+            }
+          }
+        }
         
         if (groupMembers.length > 0) {
           // Create a submission entry for each group member
