@@ -159,7 +159,11 @@ export async function GET(
 
     const { data: allAssessments, error: assessmentsError } = await supabase
       .from("node_assessments")
-      .select("id, node_id, assessment_type, is_graded, points_possible")
+      .select(`
+        id, node_id, assessment_type, is_graded, points_possible,
+        is_group_assessment, group_formation_method, group_submission_mode,
+        target_group_size, allow_uneven_groups
+      `)
       .in("node_id", nodeIds);
 
     if (assessmentsError) {
@@ -172,6 +176,45 @@ export async function GET(
     }
 
     const assessmentIds = allAssessments.map(a => a.id);
+    
+    // Identify group assessments
+    const groupAssessmentIds = allAssessments.filter(a => a.is_group_assessment).map(a => a.id);
+    
+    // Step 2.5: Get assessment groups for group assessments
+    let allGroups: any[] = [];
+    let allGroupMembers: any[] = [];
+    
+    if (groupAssessmentIds.length > 0) {
+      const { data: groups, error: groupsError } = await supabase
+        .from("assessment_groups")
+        .select(`
+          id, assessment_id, group_name, group_number,
+          assessment_group_members (
+            user_id,
+            profiles (
+              id, username, full_name, email
+            )
+          )
+        `)
+        .in("assessment_id", groupAssessmentIds);
+      
+      if (groupsError) {
+        console.error("Error fetching assessment groups:", groupsError);
+      } else {
+        allGroups = groups || [];
+        // Flatten group members for easy lookup
+        allGroupMembers = allGroups.flatMap(group => 
+          group.assessment_group_members?.map((member: any) => ({
+            user_id: member.user_id,
+            group_id: group.id,
+            assessment_id: group.assessment_id,
+            group_name: group.group_name,
+            group_number: group.group_number,
+            profile: member.profiles
+          })) || []
+        );
+      }
+    }
 
     // Step 3: Get submissions with group information
     const { data: submissions, error: submissionsError } = await supabase
@@ -250,20 +293,20 @@ export async function GET(
     const nodesMap = new Map(allNodes.map(n => [n.id, n]));
     const mapsMap = new Map((maps || []).map(m => [m.id, m]));
 
-    // Step 8: Transform submissions
-    const transformedSubmissions = (submissions || []).map((submission: any) => {
+    // Step 8: Transform submissions with group expansion
+    const transformedSubmissions: any[] = [];
+    
+    (submissions || []).forEach((submission: any) => {
       const grade = gradesMap.get(submission.id);
       const progress = progressMap.get(submission.progress_id);
-      const student = progress ? profilesMap.get(progress.user_id) : null;
+      const originalStudent = progress ? profilesMap.get(progress.user_id) : null;
       const assessment = assessmentsMap.get(submission.assessment_id);
       const node = assessment ? nodesMap.get(assessment.node_id) : null;
       const map = node ? mapsMap.get(node.map_id) : null;
 
-
-      return {
+      // Base submission data
+      const baseSubmission = {
         id: submission.id,
-        student_user_id: progress?.user_id || null,
-        student_name: student ? (student.full_name || student.username) : 'Unknown Student',
         map_title: map?.title || 'Unknown Map',
         node_title: node?.title || 'Unknown Node',
         assessment_type: assessment?.assessment_type || 'unknown',
@@ -284,8 +327,52 @@ export async function GET(
         submitted_for_group: submission.submitted_for_group || false,
         assessment_group_id: submission.assessment_group_id || null,
         group_number: submission.assessment_groups?.group_number || null,
-        group_name: submission.assessment_groups?.group_name || null
+        group_name: submission.assessment_groups?.group_name || null,
+        is_group_assessment: assessment?.is_group_assessment || false
       };
+
+      // Check if this is a group assessment submission
+      if (assessment?.is_group_assessment && submission.submitted_for_group && submission.assessment_group_id) {
+        // Find all group members for this group
+        const groupMembers = allGroupMembers.filter(member => 
+          member.group_id === submission.assessment_group_id
+        );
+        
+        if (groupMembers.length > 0) {
+          // Create a submission entry for each group member
+          groupMembers.forEach((groupMember: any) => {
+            const memberStudent = profilesMap.get(groupMember.user_id);
+            const isOriginalSubmitter = groupMember.user_id === progress?.user_id;
+            
+            transformedSubmissions.push({
+              ...baseSubmission,
+              student_user_id: groupMember.user_id,
+              student_name: memberStudent ? (memberStudent.full_name || memberStudent.username) : 
+                           (groupMember.profile?.full_name || groupMember.profile?.username || 'Unknown Student'),
+              is_original_submitter: isOriginalSubmitter,
+              group_member_role: isOriginalSubmitter ? 'submitter' : 'member'
+            });
+          });
+        } else {
+          // Fallback: if no group members found, show original submitter only
+          transformedSubmissions.push({
+            ...baseSubmission,
+            student_user_id: progress?.user_id || null,
+            student_name: originalStudent ? (originalStudent.full_name || originalStudent.username) : 'Unknown Student',
+            is_original_submitter: true,
+            group_member_role: 'submitter'
+          });
+        }
+      } else {
+        // Regular individual submission
+        transformedSubmissions.push({
+          ...baseSubmission,
+          student_user_id: progress?.user_id || null,
+          student_name: originalStudent ? (originalStudent.full_name || originalStudent.username) : 'Unknown Student',
+          is_original_submitter: true,
+          group_member_role: null
+        });
+      }
     });
 
     // Step 9: Build student data
@@ -315,23 +402,38 @@ export async function GET(
       });
     });
     
-    // Add submission data to students
+    // Add submission data to students with group awareness
     transformedSubmissions.forEach((submission: any) => {
       const studentId = submission.student_user_id;
       const student = studentMap.get(studentId);
       
       if (student) {
-        student.submissions.push(submission);
-        student.total_submissions++;
+        // Avoid duplicate submissions for the same assessment (group members share the same submission)
+        const existingSubmissionForAssessment = student.submissions.find(
+          (s: any) => s.assessment_id === submission.assessment_id && s.id === submission.id
+        );
         
-        if (submission.status === "graded") {
-          student.graded_submissions++;
-          if (submission.points_awarded !== null) {
-            student.total_points += submission.points_awarded;
-            student.graded_count++;
+        if (!existingSubmissionForAssessment) {
+          student.submissions.push({
+            ...submission,
+            // Add group context for display
+            display_status: submission.is_group_assessment ? 
+              (submission.is_original_submitter ? 
+                `Group ${submission.group_name || 'Member'} (Submitted)` : 
+                `Group ${submission.group_name || 'Member'} (Member)`
+              ) : submission.status
+          });
+          student.total_submissions++;
+          
+          if (submission.status === "graded") {
+            student.graded_submissions++;
+            if (submission.points_awarded !== null) {
+              student.total_points += submission.points_awarded;
+              student.graded_count++;
+            }
+          } else {
+            student.pending_submissions++;
           }
-        } else {
-          student.pending_submissions++;
         }
       }
     });
@@ -341,7 +443,7 @@ export async function GET(
       average_grade: student.graded_count > 0 ? Math.round(student.total_points / student.graded_count) : null
     }));
 
-    // Step 10: Build assessments list
+    // Step 10: Build assessments list with group information
     const allAssessmentNodes = allAssessments.map((assessment: any) => {
       const node = nodesMap.get(assessment.node_id);
       const map = node ? mapsMap.get(node.map_id) : null;
@@ -354,14 +456,42 @@ export async function GET(
         is_grading_enabled: assessment.is_graded,
         points_possible: assessment.points_possible,
         assessment_id: assessment.id,
-        node_id: assessment.node_id
+        node_id: assessment.node_id,
+        is_group_assessment: assessment.is_group_assessment || false,
+        group_formation_method: assessment.group_formation_method,
+        group_submission_mode: assessment.group_submission_mode,
+        target_group_size: assessment.target_group_size
       };
     });
+
+    // Add debug information
+    const debugInfo = {
+      total_assessments: allAssessments.length,
+      group_assessments: groupAssessmentIds.length,
+      total_groups: allGroups.length,
+      total_group_members: allGroupMembers.length,
+      total_submissions: submissions?.length || 0,
+      transformed_submissions: transformedSubmissions.length,
+      students_count: students.length
+    };
+
+    console.log("🔧 GRADING DEBUG INFO:", debugInfo);
 
     return NextResponse.json({
       submissions: transformedSubmissions,
       students: students,
-      all_assessments: allAssessmentNodes
+      all_assessments: allAssessmentNodes,
+      debug: debugInfo,
+      groups: allGroups.map(g => ({
+        id: g.id,
+        assessment_id: g.assessment_id,
+        group_name: g.group_name,
+        members: g.assessment_group_members?.map((m: any) => ({
+          user_id: m.user_id,
+          username: m.profiles?.username,
+          full_name: m.profiles?.full_name
+        })) || []
+      }))
     });
 
   } catch (error) {
