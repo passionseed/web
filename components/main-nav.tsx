@@ -40,7 +40,7 @@ export function MainNav() {
                 maps
               </Link>
               <Link
-                href="/classroom"
+                href="/classrooms"
                 className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
                 onClick={() => setMenuOpen(false)}
               >

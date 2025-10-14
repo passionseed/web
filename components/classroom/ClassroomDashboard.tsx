@@ -12,11 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Users,
-  BookOpen,
-  Clock,
-} from "lucide-react";
+import { Users, BookOpen, Clock } from "lucide-react";
 import Link from "next/link";
 import { ClassroomCard } from "./ClassroomCard";
 import { CreateClassroomModal } from "./CreateClassroomModal";
@@ -82,7 +78,6 @@ export function ClassroomDashboard() {
       const isAdmin = roles.includes("admin");
       // Allow instructors, TAs, and admins to create classrooms
       setUserCanCreateClassrooms(hasInstructorRole || isAdmin);
-
     } catch (error) {
       console.error("Load classrooms error:", error);
       toast({
@@ -108,7 +103,7 @@ export function ClassroomDashboard() {
       } catch (error) {
         console.error("Error loading user roles:", error);
       }
-      
+
       // Then load classrooms with the roles
       await loadClassrooms(roles);
     };
@@ -134,11 +129,18 @@ export function ClassroomDashboard() {
               : "View your classrooms, assignments, and track your learning progress"}
           </p>
         </div>
-        {userCanCreateClassrooms && (
-          <CreateClassroomModal onClassroomCreated={loadClassrooms} />
-        )}
+        <div className="flex items-center gap-3">
+          <Button variant="outline" asChild>
+            <Link href="/classrooms/join">
+              <Users className="h-4 w-4 mr-2" />
+              Join Classroom
+            </Link>
+          </Button>
+          {userCanCreateClassrooms && (
+            <CreateClassroomModal onClassroomCreated={loadClassrooms} />
+          )}
+        </div>
       </div>
-
 
       {/* Classrooms List */}
       <Card>
@@ -283,7 +285,6 @@ export function ClassroomDashboard() {
           </CardContent>
         </Card>
       )} */}
-
     </div>
   );
 }
