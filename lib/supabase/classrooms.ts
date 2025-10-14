@@ -974,8 +974,16 @@ export const getClassroomExclusiveMaps = async (
       );
     }
 
-    return (maps || []).map((map) => ({
-      ...map,
+    return (maps || []).map((map: any) => ({
+      id: map.id,
+      title: map.title,
+      description: map.description,
+      creator_id: map.creator_id,
+      parent_classroom_id: map.parent_classroom_id,
+      map_type: map.map_type,
+      created_at: map.created_at,
+      updated_at: map.updated_at,
+      node_count: map.node_count || 0,
       features: [], // Will be populated separately if needed
     }));
   }
@@ -1121,11 +1129,26 @@ export const deleteClassroomExclusiveMap = async (
     );
   }
 
-  // Check permissions: admin can delete any map, others can only delete their own
-  if (!isAdmin && map.creator_id !== user.id) {
+  // Check permissions: admin, map creator, or classroom instructor can delete
+  let hasPermission = isAdmin || map.creator_id === user.id;
+  
+  // For classroom-exclusive maps, also check if user is instructor/TA of the classroom
+  if (!hasPermission && map.parent_classroom_id) {
+    const { data: membership } = await supabase
+      .from("classroom_memberships")
+      .select("role")
+      .eq("classroom_id", map.parent_classroom_id)
+      .eq("user_id", user.id)
+      .in("role", ["instructor", "ta"])
+      .single();
+    
+    hasPermission = !!membership;
+  }
+  
+  if (!hasPermission) {
     throw new ClassroomError(
       "DELETE_FAILED",
-      "Insufficient permissions to delete this map"
+      "Insufficient permissions to delete this map. Only admins, map creators, or classroom instructors can delete classroom-exclusive maps."
     );
   }
 
@@ -1157,13 +1180,29 @@ export const deleteClassroomExclusiveMap = async (
         const assessmentIds = assessments?.map(a => a.id) || [];
 
         if (assessmentIds.length > 0) {
+          // Get group IDs first
+          const { data: groups } = await supabase
+            .from("assessment_groups")
+            .select("id")
+            .in("assessment_id", assessmentIds);
+          const groupIds = groups?.map(g => g.id) || [];
+
+          // Get submission IDs first
+          const { data: submissions } = await supabase
+            .from("assessment_submissions")
+            .select("id")
+            .in("assessment_id", assessmentIds);
+          const submissionIds = submissions?.map(s => s.id) || [];
+
           // Delete assessment-related data first
-          await supabase.from("assessment_group_members").delete().in("group_id", 
-            supabase.from("assessment_groups").select("id").in("assessment_id", assessmentIds));
-          await supabase.from("assessment_groups").delete().in("assessment_id", assessmentIds);
-          await supabase.from("submission_grades").delete().in("submission_id",
-            supabase.from("assessment_submissions").select("id").in("assessment_id", assessmentIds));
+          if (groupIds.length > 0) {
+            await supabase.from("assessment_group_members").delete().in("group_id", groupIds);
+          }
+          if (submissionIds.length > 0) {
+            await supabase.from("submission_grades").delete().in("submission_id", submissionIds);
+          }
           await supabase.from("assessment_submissions").delete().in("assessment_id", assessmentIds);
+          await supabase.from("assessment_groups").delete().in("assessment_id", assessmentIds);
           await supabase.from("quiz_questions").delete().in("assessment_id", assessmentIds);
           await supabase.from("node_assessments").delete().in("id", assessmentIds);
         }
@@ -1178,7 +1217,7 @@ export const deleteClassroomExclusiveMap = async (
 
       // Delete map-related data
       await supabase.from("classroom_map_features").delete().eq("map_id", mapId);
-      await supabase.from("classroom_map_links").delete().eq("map_id", mapId);
+      await supabase.from("classroom_maps").delete().eq("map_id", mapId);
       await supabase.from("user_map_enrollments").delete().eq("map_id", mapId);
       await supabase.from("cohort_map_enrollments").delete().eq("map_id", mapId);
 
