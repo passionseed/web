@@ -17,16 +17,50 @@ export const getAssessmentGroups = async (
 ): Promise<AssessmentGroupWithMembers[]> => {
   const supabase = createClient();
 
-  const { data, error } = await supabase.rpc("get_assessment_groups", {
-    p_assessment_id: assessmentId,
-  });
+  try {
+    const { data, error } = await supabase.rpc("get_assessment_groups", {
+      p_assessment_id: assessmentId,
+    });
 
-  if (error) {
-    console.error("Failed to get assessment groups:", error);
-    throw new Error(`Failed to get assessment groups: ${error.message}`);
+    if (error) {
+      // Handle permission errors and PostgreSQL function errors
+      const isPermissionError = 
+        error.message?.includes("Access denied") || 
+        error.code === 'PGRST301' ||
+        error.code === 'P0001' || // PostgreSQL custom exception
+        Object.keys(error).length === 0 ||
+        !error.message;
+      
+      if (isPermissionError) {
+        console.warn("Assessment groups not accessible (likely not a classroom assessment) - returning empty array");
+        return []; // Return empty array instead of throwing error for permission issues
+      }
+      
+      // Only log error if we're going to throw it
+      console.error("Failed to get assessment groups:", error);
+      const errorMessage = error.message || error.code || JSON.stringify(error);
+      throw new Error(`Failed to get assessment groups: ${errorMessage}`);
+    }
+
+    return data || [];
+  } catch (error) {
+    // For permission errors or PostgreSQL exceptions, return empty array instead of throwing
+    if (
+      (error instanceof Error && error.message?.includes("Access denied")) ||
+      (error && typeof error === 'object' && (
+        Object.keys(error).length === 0 ||
+        (error as any).code === 'P0001' ||
+        (error as any).code === 'PGRST301'
+      )) ||
+      !error
+    ) {
+      console.warn("Assessment groups not accessible (likely not a classroom assessment) - returning empty groups array");
+      return [];
+    }
+    
+    console.error("Error in getAssessmentGroups:", error);
+    throw error;
   }
-
-  return data || [];
 };
 
 /**
@@ -173,6 +207,63 @@ export const deleteAssessmentGroups = async (assessmentId: string): Promise<void
 };
 
 /**
+ * Gets the map context for an assessment (map ID, classroom ID, map type)
+ */
+export const getAssessmentMapContext = async (
+  assessmentId: string
+): Promise<{
+  map_id: string;
+  classroom_id: string | null;
+  map_type: string;
+  is_classroom_exclusive: boolean;
+} | null> => {
+  const supabase = createClient();
+
+  try {
+    console.log("🔍 Getting map context for assessment:", assessmentId);
+
+    const { data: assessmentData, error: assessmentError } = await supabase
+      .from("node_assessments")
+      .select(`
+        id,
+        map_nodes!inner (
+          learning_maps!inner (
+            id,
+            parent_classroom_id,
+            map_type
+          )
+        )
+      `)
+      .eq("id", assessmentId)
+      .single();
+
+    if (assessmentError) {
+      console.error("❌ Failed to get assessment data:", assessmentError);
+      return null;
+    }
+
+    if (!assessmentData?.map_nodes?.learning_maps) {
+      console.warn("⚠️ No learning map found for assessment");
+      return null;
+    }
+
+    const learningMap = assessmentData.map_nodes.learning_maps;
+    console.log("📍 Found learning map:", learningMap);
+
+    return {
+      map_id: learningMap.id,
+      classroom_id: learningMap.parent_classroom_id,
+      map_type: learningMap.map_type || 'public',
+      is_classroom_exclusive: learningMap.map_type === 'classroom_exclusive' && !!learningMap.parent_classroom_id,
+    };
+
+  } catch (error) {
+    console.error("❌ Error in getAssessmentMapContext:", error);
+    return null;
+  }
+};
+
+/**
  * Gets all students in a classroom for an assessment (for group formation)
  */
 export const getClassroomStudentsForAssessment = async (
@@ -273,6 +364,20 @@ export const getClassroomStudentsForAssessment = async (
 
   } catch (error) {
     console.error("❌ Error in getClassroomStudentsForAssessment:", error);
+    
+    // For permission errors or empty errors, return empty array instead of throwing
+    if (
+      (error instanceof Error && (
+        error.message?.includes("Access denied") || 
+        error.message?.includes("permission")
+      )) ||
+      (error && typeof error === 'object' && Object.keys(error).length === 0) ||
+      !error
+    ) {
+      console.warn("Permission denied or empty error - returning empty students array");
+      return [];
+    }
+    
     throw error;
   }
 };

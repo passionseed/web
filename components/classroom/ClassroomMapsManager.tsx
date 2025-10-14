@@ -141,6 +141,7 @@ export function ClassroomMapsManager({
   const [teams, setTeams] = useState<any[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
   const [forkingMapId, setForkingMapId] = useState<string>("");
+  const [convertingMapId, setConvertingMapId] = useState<string>("");
   const router = useRouter();
   const { toast } = useToast();
 
@@ -290,6 +291,46 @@ export function ClassroomMapsManager({
       });
     } finally {
       setDeletingMapId("");
+    }
+  };
+
+  const handleConvertToClassroomExclusive = async (mapId: string, mapTitle: string) => {
+    const confirmMessage = `Convert "${mapTitle}" to classroom-exclusive?\n\nThis will:\n• Make the map private to this classroom\n• Enable advanced features like group assessments\n• Remove it from the linked maps section\n\nThis action cannot be undone.`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setConvertingMapId(mapId);
+    try {
+      console.log("🔄 Converting map to classroom-exclusive...", {
+        mapId,
+        classroomId,
+        mapTitle,
+      });
+
+      await convertMapToClassroomExclusive(mapId, classroomId);
+
+      toast({
+        title: "Map converted successfully!",
+        description: `"${mapTitle}" is now a classroom-exclusive map with advanced features enabled.`,
+      });
+
+      // Reload both linked maps and classroom-exclusive maps to reflect the changes
+      await Promise.all([
+        loadLinkedMaps(),
+        loadClassroomExclusiveMaps(),
+      ]);
+      onMapsUpdated?.();
+    } catch (error) {
+      console.error("❌ Failed to convert map:", error);
+      toast({
+        title: "Failed to convert map",
+        description: (error as Error).message || "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setConvertingMapId("");
     }
   };
 
@@ -445,6 +486,17 @@ export function ClassroomMapsManager({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {/* Convert to Classroom Exclusive - only show if user can manage */}
+                      {canManage && (
+                        <DropdownMenuItem
+                          onClick={() => handleConvertToClassroomExclusive(map.map_id, map.map_title)}
+                          disabled={convertingMapId === map.map_id}
+                        >
+                          <Star className="h-4 w-4 mr-2 text-blue-500" />
+                          {convertingMapId === map.map_id ? "Converting..." : "Convert to Classroom Exclusive"}
+                        </DropdownMenuItem>
+                      )}
+                      
                       {/* Fork to team - only show if user is leader of any team */}
                       {teamsLoading ? (
                         <DropdownMenuItem disabled>
