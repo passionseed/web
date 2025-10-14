@@ -901,7 +901,10 @@ export const getClassroomExclusiveMaps = async (
     });
 
     if (error) {
-      console.warn("RPC function not available, falling back to direct query:", error.message);
+      console.warn(
+        "RPC function not available, falling back to direct query:",
+        error.message
+      );
       throw error;
     }
 
@@ -909,10 +912,11 @@ export const getClassroomExclusiveMaps = async (
   } catch (error) {
     // Fallback to direct query if RPC function doesn't exist
     console.log("📋 Using fallback query for classroom-exclusive maps");
-    
+
     const { data: maps, error: queryError } = await supabase
       .from("learning_maps")
-      .select(`
+      .select(
+        `
         id,
         title,
         description,
@@ -922,7 +926,8 @@ export const getClassroomExclusiveMaps = async (
         created_at,
         updated_at,
         (SELECT COUNT(*) FROM map_nodes WHERE map_id = learning_maps.id) as node_count
-      `)
+      `
+      )
       .eq("map_type", "classroom_exclusive")
       .eq("parent_classroom_id", classroomId)
       .order("created_at", { ascending: false });
@@ -934,9 +939,9 @@ export const getClassroomExclusiveMaps = async (
       );
     }
 
-    return (maps || []).map(map => ({
+    return (maps || []).map((map) => ({
       ...map,
-      features: [] // Will be populated separately if needed
+      features: [], // Will be populated separately if needed
     }));
   }
 };
