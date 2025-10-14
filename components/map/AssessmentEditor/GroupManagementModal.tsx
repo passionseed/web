@@ -42,7 +42,9 @@ import {
   createAssessmentGroupsShuffle,
   updateAssessmentGroupsManual,
   deleteAssessmentGroups,
+  getAssessmentMapContext,
 } from "@/lib/supabase/assessment-groups";
+import { convertMapToClassroomExclusive } from "@/lib/supabase/classrooms";
 import {
   AssessmentGroupWithMembers,
   NodeAssessment,
@@ -54,6 +56,7 @@ interface GroupManagementModalProps {
   assessment: NodeAssessment;
   onGroupsUpdated: () => void;
   onAssessmentChange?: (assessment: NodeAssessment) => void;
+  classroomId?: string; // Optional: if provided, allows conversion to classroom-exclusive
 }
 
 interface Student {
@@ -74,6 +77,7 @@ export function GroupManagementModal({
   assessment,
   onGroupsUpdated,
   onAssessmentChange,
+  classroomId,
 }: GroupManagementModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -84,6 +88,13 @@ export function GroupManagementModal({
   const [groupSizeInput, setGroupSizeInput] = useState<string>("");
   const [lockedGroupNames, setLockedGroupNames] = useState<Set<string>>(new Set());
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [mapContext, setMapContext] = useState<{
+    map_id: string;
+    classroom_id: string | null;
+    map_type: string;
+    is_classroom_exclusive: boolean;
+  } | null>(null);
+  const [converting, setConverting] = useState(false);
 
   // Load data when modal opens
   useEffect(() => {
@@ -104,17 +115,20 @@ export function GroupManagementModal({
     try {
       console.log("📊 Loading group management data...");
       
-      // Load groups and students in parallel
-      const [groupsData, studentsData] = await Promise.all([
+      // Load groups, students, and map context in parallel
+      const [groupsData, studentsData, mapContextData] = await Promise.all([
         getAssessmentGroups(assessment.id),
         getClassroomStudentsForAssessment(assessment.id),
+        getAssessmentMapContext(assessment.id),
       ]);
 
       console.log("👥 Loaded groups:", groupsData);
       console.log("🎓 Loaded students:", studentsData);
+      console.log("🗺️ Loaded map context:", mapContextData);
 
       setGroups(groupsData);
       setStudents(studentsData);
+      setMapContext(mapContextData);
 
       // Calculate unassigned students
       const assignedUserIds = new Set(
@@ -495,6 +509,46 @@ export function GroupManagementModal({
     });
   }, [toast]);
 
+  const handleConvertToClassroomExclusive = useCallback(async () => {
+    if (!mapContext || !classroomId || mapContext.is_classroom_exclusive) {
+      return;
+    }
+
+    const confirmMessage = `Convert this map to classroom-exclusive?\n\nThis will:\n• Make the map private to this classroom\n• Enable group management features\n• Allow you to create assessment groups\n\nThis action cannot be undone.`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setConverting(true);
+    try {
+      console.log("🔄 Converting map to classroom-exclusive...", {
+        mapId: mapContext.map_id,
+        classroomId,
+      });
+
+      await convertMapToClassroomExclusive(mapContext.map_id, classroomId);
+
+      toast({
+        title: "Map converted successfully!",
+        description: "This map is now classroom-exclusive. You can create assessment groups.",
+      });
+
+      // Reload data to reflect the changes
+      await loadData();
+      onGroupsUpdated();
+    } catch (error) {
+      console.error("❌ Failed to convert map:", error);
+      toast({
+        title: "Failed to convert map",
+        description: (error as Error).message || "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setConverting(false);
+    }
+  }, [mapContext, classroomId, toast, loadData, onGroupsUpdated]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-screen overflow-hidden flex flex-col">
@@ -601,7 +655,7 @@ export function GroupManagementModal({
                 <div className="flex gap-2 flex-wrap">
                   <Button
                     onClick={createNewGroup}
-                    disabled={loading}
+                    disabled={loading || students.length === 0}
                     size="sm"
                     variant="outline"
                     className="flex items-center gap-2"
@@ -611,7 +665,7 @@ export function GroupManagementModal({
                   </Button>
                   <Button
                     onClick={handleAutoShuffle}
-                    disabled={loading}
+                    disabled={loading || students.length === 0}
                     size="sm"
                     className="flex items-center gap-2"
                   >
@@ -624,7 +678,7 @@ export function GroupManagementModal({
                   </Button>
                   <Button
                     onClick={saveManualChanges}
-                    disabled={loading || !hasUnsavedChanges}
+                    disabled={loading || !hasUnsavedChanges || students.length === 0}
                     size="sm"
                     variant={hasUnsavedChanges ? "default" : "outline"}
                     className={`flex items-center gap-2 ${
@@ -642,7 +696,7 @@ export function GroupManagementModal({
                   </Button>
                   <Button
                     onClick={handleResetGroups}
-                    disabled={loading}
+                    disabled={loading || students.length === 0}
                     size="sm"
                     variant="destructive"
                     className="flex items-center gap-2"
@@ -660,8 +714,45 @@ export function GroupManagementModal({
                 ) : groups.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium mb-2">No groups created yet</p>
-                    <p className="text-sm">Use "Auto Shuffle" to automatically create groups</p>
+                    {students.length > 0 ? (
+                      <>
+                        <p className="text-lg font-medium mb-2">No groups created yet</p>
+                        <p className="text-sm">Use "Auto Shuffle" to automatically create groups</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-lg font-medium mb-2">Group management not available</p>
+                        <p className="text-sm">This assessment is not part of a classroom-exclusive learning map.</p>
+                        
+                        {mapContext && !mapContext.is_classroom_exclusive && classroomId && (
+                          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
+                            <p className="text-sm font-medium text-blue-900 mb-2">
+                              Enable Group Management
+                            </p>
+                            <p className="text-xs text-blue-700 mb-4">
+                              Convert this map to classroom-exclusive to enable group assessment features.
+                            </p>
+                            <Button
+                              onClick={handleConvertToClassroomExclusive}
+                              disabled={converting || loading}
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              {converting ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Converting...
+                                </>
+                              ) : (
+                                <>
+                                  🔄 Convert Map
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
@@ -814,7 +905,37 @@ export function GroupManagementModal({
                 {students.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No students found in this classroom</p>
+                    <p className="font-medium">Group management not available</p>
+                    <p className="text-sm mt-2">This assessment is not part of a classroom-exclusive learning map.</p>
+                    <p className="text-sm">Group management is only available for assessments within classroom maps.</p>
+                    
+                    {mapContext && !mapContext.is_classroom_exclusive && classroomId && (
+                      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm font-medium text-blue-900 mb-2">
+                          Convert to Classroom-Exclusive Map
+                        </p>
+                        <p className="text-xs text-blue-700 mb-4">
+                          Convert this map to be classroom-exclusive to enable group management features.
+                        </p>
+                        <Button
+                          onClick={handleConvertToClassroomExclusive}
+                          disabled={converting || loading}
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {converting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Converting...
+                            </>
+                          ) : (
+                            <>
+                              🔄 Convert Map
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="grid gap-2">
