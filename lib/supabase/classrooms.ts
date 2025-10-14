@@ -1,5 +1,40 @@
 import { createClient } from "@/utils/supabase/client";
 // import { createClient as createServerClient } from "@/utils/supabase/server";
+
+/**
+ * Check if current user has admin role (client-side)
+ */
+const checkIsAdmin = async (): Promise<boolean> => {
+  const supabase = createClient();
+  
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return false;
+  }
+
+  try {
+    const { data: roles, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin");
+
+    if (roleError) {
+      console.error("Error checking admin role:", roleError);
+      return false;
+    }
+
+    return roles && roles.length > 0;
+  } catch (error) {
+    console.error("Failed to check admin role:", error);
+    return false;
+  }
+};
+
 import {
   Classroom,
   ClassroomWithMembers,
@@ -1051,21 +1086,34 @@ export const deleteClassroomExclusiveMap = async (
   mapId: string
 ): Promise<void> => {
   const supabase = createClient();
+  
+  // Check authentication
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new ClassroomError("AUTH_ERROR", "User must be authenticated");
+  }
+
+  // Check if user is admin
+  const isAdmin = await checkIsAdmin();
 
   // First verify this is a classroom-exclusive map that the user can delete
   const { data: map, error: mapError } = await supabase
     .from("learning_maps")
-    .select("map_type, parent_classroom_id")
+    .select("map_type, parent_classroom_id, creator_id")
     .eq("id", mapId)
     .single();
-
+    
   if (mapError) {
     throw new ClassroomError(
       "DELETE_FAILED",
       `Failed to verify map type: ${mapError.message}`
     );
   }
-
+  
   if (map.map_type !== "classroom_exclusive") {
     throw new ClassroomError(
       "DELETE_FAILED",
@@ -1073,16 +1121,86 @@ export const deleteClassroomExclusiveMap = async (
     );
   }
 
-  // Delete the map (features will be deleted via CASCADE)
-  const { error: deleteError } = await supabase
-    .from("learning_maps")
-    .delete()
-    .eq("id", mapId);
-
-  if (deleteError) {
+  // Check permissions: admin can delete any map, others can only delete their own
+  if (!isAdmin && map.creator_id !== user.id) {
     throw new ClassroomError(
       "DELETE_FAILED",
-      `Failed to delete classroom-exclusive map: ${deleteError.message}`
+      "Insufficient permissions to delete this map"
+    );
+  }
+
+  try {
+    // Use RPC function for proper cascade delete if available
+    const { error: rpcError } = await supabase.rpc('delete_learning_map_cascade', {
+      map_uuid: mapId
+    });
+
+    if (rpcError) {
+      console.log("RPC cascade delete not available, using manual cascade delete");
+      
+      // Manual cascade delete in correct order
+      // Get all node IDs first for efficient deletion
+      const { data: nodes } = await supabase
+        .from("map_nodes")
+        .select("id")
+        .eq("map_id", mapId);
+      
+      const nodeIds = nodes?.map(n => n.id) || [];
+      
+      if (nodeIds.length > 0) {
+        // Get assessment IDs
+        const { data: assessments } = await supabase
+          .from("node_assessments")
+          .select("id")
+          .in("node_id", nodeIds);
+          
+        const assessmentIds = assessments?.map(a => a.id) || [];
+
+        if (assessmentIds.length > 0) {
+          // Delete assessment-related data first
+          await supabase.from("assessment_group_members").delete().in("group_id", 
+            supabase.from("assessment_groups").select("id").in("assessment_id", assessmentIds));
+          await supabase.from("assessment_groups").delete().in("assessment_id", assessmentIds);
+          await supabase.from("submission_grades").delete().in("submission_id",
+            supabase.from("assessment_submissions").select("id").in("assessment_id", assessmentIds));
+          await supabase.from("assessment_submissions").delete().in("assessment_id", assessmentIds);
+          await supabase.from("quiz_questions").delete().in("assessment_id", assessmentIds);
+          await supabase.from("node_assessments").delete().in("id", assessmentIds);
+        }
+
+        // Delete node-related data
+        await supabase.from("node_submissions").delete().in("node_id", nodeIds);
+        await supabase.from("student_node_progress").delete().in("node_id", nodeIds);
+        await supabase.from("node_content").delete().in("node_id", nodeIds);
+        await supabase.from("node_paths").delete().or(`source_node_id.in.(${nodeIds.join(',')}),destination_node_id.in.(${nodeIds.join(',')})`);
+        await supabase.from("map_nodes").delete().in("id", nodeIds);
+      }
+
+      // Delete map-related data
+      await supabase.from("classroom_map_features").delete().eq("map_id", mapId);
+      await supabase.from("classroom_map_links").delete().eq("map_id", mapId);
+      await supabase.from("user_map_enrollments").delete().eq("map_id", mapId);
+      await supabase.from("cohort_map_enrollments").delete().eq("map_id", mapId);
+
+      // Finally delete the map itself
+      const { error: deleteError } = await supabase
+        .from("learning_maps")
+        .delete()
+        .eq("id", mapId);
+
+      if (deleteError) {
+        throw new ClassroomError(
+          "DELETE_FAILED",
+          `Failed to delete classroom-exclusive map: ${deleteError.message}`
+        );
+      }
+    }
+
+  } catch (error) {
+    console.error("Error during cascade delete:", error);
+    throw new ClassroomError(
+      "DELETE_FAILED",
+      `Failed to delete classroom-exclusive map and related data: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 };
@@ -1106,13 +1224,33 @@ export const convertMapToClassroomExclusive = async (
     throw new ClassroomError("AUTH_ERROR", "User must be authenticated");
   }
 
-  // Verify the map exists and user is the creator
-  const { data: map, error: mapError } = await supabase
-    .from("learning_maps")
-    .select("*")
-    .eq("id", mapId)
-    .eq("creator_id", user.id)
-    .single();
+  // Check if user is admin
+  const isAdmin = await checkIsAdmin();
+
+  // Verify the map exists and user is the creator OR user is admin
+  let map;
+  let mapError;
+
+  if (isAdmin) {
+    // Admin can convert any map
+    const result = await supabase
+      .from("learning_maps")
+      .select("*")
+      .eq("id", mapId)
+      .single();
+    map = result.data;
+    mapError = result.error;
+  } else {
+    // Regular users can only convert their own maps
+    const result = await supabase
+      .from("learning_maps")
+      .select("*")
+      .eq("id", mapId)
+      .eq("creator_id", user.id)
+      .single();
+    map = result.data;
+    mapError = result.error;
+  }
 
   if (mapError) {
     throw new ClassroomError(
