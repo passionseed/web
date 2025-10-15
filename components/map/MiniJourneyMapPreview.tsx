@@ -204,8 +204,8 @@ function MiniMapPreviewContent({ mapId, onClick }: MiniJourneyMapPreviewProps) {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-300/20 via-transparent to-transparent animate-pulse-slow" />
       </div>
 
-      {/* Map Canvas */}
-      <div className="absolute inset-0">
+      {/* Map Canvas - with extra padding at bottom for info overlay */}
+      <div className="absolute inset-0" style={{ paddingBottom: '100px' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -215,9 +215,10 @@ function MiniMapPreviewContent({ mapId, onClick }: MiniJourneyMapPreviewProps) {
           onEdgesChange={onEdgesChange}
           fitView
           fitViewOptions={{
-            padding: 0.25,
+            padding: 0.15,
             includeHiddenNodes: false,
-            maxZoom: 1,
+            maxZoom: 0.9,
+            minZoom: 0.5,
           }}
           nodesDraggable={false}
           nodesConnectable={false}
