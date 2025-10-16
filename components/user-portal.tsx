@@ -17,7 +17,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Flame,
   Star,
   Users,
   BookOpen,
@@ -26,6 +25,10 @@ import {
   Calendar,
   TrendingUp,
   Zap,
+  ArrowRight,
+  Map as MapIcon,
+  CheckCircle2,
+  PlayCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { Project } from "@/types/project";
@@ -35,6 +38,7 @@ import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
 import { getOrCreatePersonalJourneyMap } from "@/lib/supabase/maps";
 import { MiniJourneyMapPreview } from "@/components/map/MiniJourneyMapPreview";
 import { useAuth } from "@/hooks/use-auth";
+import { MapNode, LearningMap } from "@/types/map";
 
 interface MindmapReflection {
   id: string;
@@ -74,8 +78,15 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
   const [selectedReflection, setSelectedReflection] =
     useState<MindmapReflection | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCreatingJourneyMap, setIsCreatingJourneyMap] = useState(false);
   const [journeyMapId, setJourneyMapId] = useState<string | null>(null);
+  const [nextNodes, setNextNodes] = useState<
+    Array<{
+      node: MapNode;
+      map: Pick<LearningMap, "id" | "title" | "category">;
+      status: string;
+    }>
+  >([]);
+  const [isLoadingNextNodes, setIsLoadingNextNodes] = useState(true);
 
   useEffect(() => {
     const fetchReflections = async () => {
@@ -133,6 +144,26 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
     fetchJourneyMap();
   }, []);
 
+  useEffect(() => {
+    const fetchNextNodes = async () => {
+      try {
+        setIsLoadingNextNodes(true);
+        const response = await fetch("/api/user/next-nodes");
+        if (!response.ok) {
+          throw new Error("Failed to fetch next nodes");
+        }
+        const data = await response.json();
+        setNextNodes(data.nextNodes || []);
+      } catch (error) {
+        console.error("Error fetching next nodes:", error);
+        setNextNodes([]);
+      } finally {
+        setIsLoadingNextNodes(false);
+      }
+    };
+    fetchNextNodes();
+  }, []);
+
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -171,20 +202,16 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
   };
 
   const handleJourneyMapClick = async () => {
-    setIsCreatingJourneyMap(true);
     try {
       const journeyMap = await getOrCreatePersonalJourneyMap();
       // Navigate to the journey map in edit mode
       window.location.href = `/map/${journeyMap.id}/edit`;
     } catch (error) {
       console.error("Error accessing journey map:", error);
-      // You could add a toast notification here if available
-    } finally {
-      setIsCreatingJourneyMap(false);
     }
   };
 
-  // Get randomized motivational text
+  // Get randomized motivational text (deterministic based on user)
   const getRandomMotivationalText = () => {
     const texts = [
       "Every great journey begins with a single step. Keep moving forward!",
@@ -198,7 +225,17 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
       "Curiosity is the spark that ignites innovation.",
       "Your dedication inspires others. Keep shining!",
     ];
-    return texts[Math.floor(Math.random() * texts.length)];
+
+    // Use user ID or email to create a deterministic "random" index
+    const seed = user?.id || user?.email || "anonymous";
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      const char = seed.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    const index = Math.abs(hash) % texts.length;
+    return texts[index];
   };
 
   return (
@@ -240,7 +277,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
           {/* Journey Map Preview - Full card without header */}
           <div className="col-span-1 md:col-span-2 rounded-xl overflow-hidden shadow-2xl ring-1 ring-purple-500/20">
             {journeyMapId ? (
-              <div className="h-[340px] md:h-[440px]">
+              <div className="h-[340px] md:h-full">
                 <MiniJourneyMapPreview
                   mapId={journeyMapId}
                   onClick={handleJourneyMapClick}
@@ -299,48 +336,79 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
         </div>
 
         <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-          <Card
-            className="col-span-1 bg-gradient-to-br from-purple-950 to-violet-900 text-white cursor-pointer hover:from-purple-900 hover:to-violet-800 transition-colors"
-            onClick={handleJourneyMapClick}
-          >
+          <Card className="col-span-1 bg-gradient-to-br from-blue-950 to-indigo-900 text-white">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-lg md:text-xl">
-                <Flame className="mr-2 h-4 w-4 md:h-5 md:w-5 text-red-400" />
-                My Journey Map
+                <PlayCircle className="mr-2 h-4 w-4 md:h-5 md:w-5 text-blue-400" />
+                Next Steps
               </CardTitle>
               <CardDescription className="text-white/70 text-xs md:text-sm">
-                Your personal learning map that you can edit and customize
+                Continue your learning journey
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {isCreatingJourneyMap ? (
-                  <div className="flex items-center justify-center py-6 md:py-8">
-                    <div className="flex items-center gap-2 text-white/80 text-sm">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Opening your journey map...</span>
-                    </div>
+              {isLoadingNextNodes ? (
+                <div className="flex items-center justify-center py-6 md:py-8">
+                  <div className="flex items-center gap-2 text-white/80 text-sm">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Loading next steps...</span>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-white/70 text-[10px] md:text-xs">
-                      <span>✏️ Fully editable</span>
-                      <span className="hidden sm:inline">•</span>
-                      <span>🔒 Private to you</span>
-                      <span className="hidden sm:inline">•</span>
-                      <span>🎯 Your learning path</span>
-                    </div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-full mt-3 bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs md:text-sm"
-                      disabled={isCreatingJourneyMap}
+                </div>
+              ) : nextNodes.length > 0 ? (
+                <div className="space-y-2">
+                  {nextNodes.map((item) => (
+                    <Link
+                      key={item.node.id}
+                      href={`/map/${item.map.id}`}
+                      className="block"
                     >
-                      {isCreatingJourneyMap ? "Opening..." : "Open Journey Map"}
-                    </Button>
-                  </div>
-                )}
-              </div>
+                      <div className="p-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer group">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {item.status === "in_progress" ? (
+                              <PlayCircle className="h-4 w-4 text-blue-300" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4 text-white/50" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <MapIcon className="h-3 w-3 text-white/60 flex-shrink-0" />
+                              <span className="text-xs text-white/60 truncate">
+                                {item.map.title}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium text-white group-hover:text-blue-200 transition-colors line-clamp-2">
+                              {item.node.title}
+                            </p>
+                            {item.status === "in_progress" && (
+                              <Badge className="mt-1 bg-blue-500/20 text-blue-200 border-blue-400/30 text-[10px]">
+                                In Progress
+                              </Badge>
+                            )}
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white/80 transition-colors flex-shrink-0 mt-1" />
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 md:py-8">
+                  <MapIcon className="h-10 w-10 md:h-12 md:w-12 mx-auto text-white/40 mb-3" />
+                  <p className="text-white/80 text-sm mb-4">
+                    Start your learning journey!
+                  </p>
+                  <Button
+                    asChild
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+                  >
+                    <Link href="/map">Browse Learning Maps</Link>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

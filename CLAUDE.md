@@ -100,6 +100,8 @@ const supabase = createServerClient(
 - `learning_maps` - Interactive learning content
 - `map_nodes` - Individual learning nodes
 - `team_memberships` - Team participant relationships
+- `user_map_enrollments` - User enrollment in learning maps
+- `student_node_progress` - User progress on individual map nodes
 
 **Team System**:
 
@@ -107,6 +109,14 @@ const supabase = createServerClient(
 - Students can be in one team per classroom
 - Team leaders have management permissions
 - Teams can fork learning maps for collaboration
+
+**Learning Map System**:
+
+- Maps contain nodes that represent learning activities
+- Nodes can have prerequisites (via `node_paths`)
+- Progress tracking: `not_started`, `in_progress`, `submitted`, `passed`, `failed`
+- Users can enroll in multiple maps simultaneously
+- The `getNextNodesToComplete()` function finds unlocked, incomplete nodes across all enrolled maps
 
 ### Testing Approach
 
@@ -127,6 +137,18 @@ Required Supabase environment variables:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+### Key Components
+
+**UserPortal (`components/user-portal.tsx`)**:
+- Main dashboard component for authenticated users
+- Shows personalized content: reflections, workshops, communities
+- **Next Steps Card**: Displays up to 5 upcoming nodes from enrolled learning maps
+  - Prioritizes "in_progress" nodes over "not_started" nodes
+  - Shows map title, node title, and progress status
+  - Links directly to the map view
+  - Empty state encourages users to browse and enroll in maps
+- Fetches data client-side using `getNextNodesToComplete()` from `lib/supabase/enrollment.ts`
 
 ### Common Patterns
 
