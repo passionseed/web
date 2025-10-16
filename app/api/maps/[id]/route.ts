@@ -18,6 +18,61 @@ export async function PUT(
       );
     }
 
+    // SECURITY: Authenticate user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please log in" },
+        { status: 401 }
+      );
+    }
+
+    // SECURITY: Check if user has admin or instructor role
+    const { data: roles, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["admin", "instructor"]);
+
+    if (roleError || !roles || roles.length === 0) {
+      return NextResponse.json(
+        { error: "Forbidden - Insufficient permissions. Only admins and instructors can edit maps." },
+        { status: 403 }
+      );
+    }
+
+    // SECURITY: Verify the map exists and optionally check ownership
+    const { data: existingMap, error: mapFetchError } = await supabase
+      .from("learning_maps")
+      .select("id, creator_id, title")
+      .eq("id", mapId)
+      .single();
+
+    if (mapFetchError || !existingMap) {
+      return NextResponse.json(
+        { error: "Map not found" },
+        { status: 404 }
+      );
+    }
+
+    // Optional: Check if user is the creator or has admin role
+    // Admins can edit any map, instructors can only edit their own maps
+    const isAdmin = roles.some((r) => r.role === "admin");
+    const isCreator = existingMap.creator_id === user.id;
+
+    if (!isAdmin && !isCreator) {
+      return NextResponse.json(
+        {
+          error: "Forbidden - You can only edit maps you created. Admins can edit all maps.",
+        },
+        { status: 403 }
+      );
+    }
+
     const updatedMap: FullLearningMap = await request.json();
 
     // Validate that the map ID matches
