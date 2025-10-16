@@ -205,7 +205,7 @@ function MiniMapPreviewContent({ mapId, onClick }: MiniJourneyMapPreviewProps) {
       </div>
 
       {/* Map Canvas - with extra padding at bottom for info overlay */}
-      <div className="absolute inset-0" style={{ paddingBottom: '100px' }}>
+      <div className="absolute inset-0">
         <ReactFlow
           nodes={nodes}
           edges={edges}
