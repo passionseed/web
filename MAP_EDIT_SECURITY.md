@@ -42,7 +42,21 @@ This document details the security measures implemented for the map editing func
 - `404`: Not Found (map doesn't exist)
 - `500`: Server Error
 
-### 3. Database-Level Security (RLS)
+### 3. Grading Page Protection
+**File:** `app/map/[id]/grading/page.tsx`
+
+**Checks Performed:**
+1. **Authentication**: Verifies user is logged in (404 if not)
+2. **Map Existence**: Verifies the map exists (404 if not)
+3. **Authorization** (any of these grants access):
+   - User is an **instructor** (has instructor role), OR
+   - User is the **map creator** (creator_id match), OR
+   - User is an **admin**
+4. Returns 404 if none of the conditions are met
+
+**Key Feature**: Map creators can grade submissions even without instructor role!
+
+### 4. Database-Level Security (RLS)
 **Recommendation:** Ensure Row Level Security (RLS) policies are in place:
 
 ```sql
@@ -61,12 +75,23 @@ USING (
 
 ## Permission Matrix
 
+### Map Edit Page (`/map/{id}/edit`)
 | User Role | Can View Edit Page | Can Edit Own Maps | Can Edit Other Maps | Notes |
 |-----------|-------------------|-------------------|---------------------|-------|
 | Student | ❌ | ❌ | ❌ | Redirected to map viewer |
+| Map Creator (no role) | ✅ | ✅ | ❌ | Can edit their own maps |
 | Instructor | ✅ | ✅ | ❌ | Only their created maps |
 | Admin | ✅ | ✅ | ✅ | Full access to all maps |
 | Not Logged In | ❌ | ❌ | ❌ | Redirected to login |
+
+### Grading Page (`/map/{id}/grading`)
+| User Type | Can Access | Can Grade | Notes |
+|-----------|-----------|-----------|-------|
+| Map Creator | ✅ | ✅ | Can grade their own map (even without instructor role!) |
+| Instructor | ✅ | ✅ | Can grade any map |
+| Admin | ✅ | ✅ | Full access |
+| Student | ❌ | ❌ | Returns 404 |
+| Not Logged In | ❌ | ❌ | Returns 404 |
 
 ## Security Features
 
@@ -85,8 +110,27 @@ USING (
 4. **Principle of least privilege**: Instructors limited to their own maps
 5. **Defense in depth**: Multiple security layers
 
+## UI Integration
+
+### Map Viewer Page (`/map/{id}`)
+The map viewer page displays action buttons based on user permissions:
+
+**Buttons Shown:**
+1. **"Back to Maps"** - Always visible to all users
+2. **"Edit Map"** - Visible if `userCanEdit` is true:
+   - Map creator ✅
+   - Instructor who created the map ✅
+   - Admin ✅
+3. **"Grade Submissions"** - Visible if `userCanGrade` is true:
+   - Map creator ✅
+   - Any instructor ✅
+   - Admin ✅
+
+**Implementation:** Server-side permission checks ensure buttons only appear for authorized users.
+
 ## Testing Checklist
 
+### Edit Page Tests
 - [ ] **Student user** cannot access `/map/{id}/edit` (redirects to viewer)
 - [ ] **Not logged in** redirects to `/login`
 - [ ] **Instructor** can edit their own maps
@@ -96,6 +140,19 @@ USING (
 - [ ] **API calls** without proper role return 403
 - [ ] **API calls** to non-existent maps return 404
 - [ ] **Direct file access** to `edit-page-client.tsx` is blocked by wrapper
+
+### Grading Page Tests
+- [ ] **Map creator** can access grading page for their map
+- [ ] **Map creator without instructor role** can still grade
+- [ ] **Instructor** can access grading for any map
+- [ ] **Admin** can access grading for any map
+- [ ] **Student** gets 404 on grading page
+- [ ] **Not logged in** gets 404 on grading page
+
+### UI Tests
+- [ ] **Edit Map button** only shows for creator/instructor/admin
+- [ ] **Grade Submissions button** shows for creator/instructor/admin
+- [ ] **Buttons hidden** for students and non-logged-in users
 
 ## Potential Vulnerabilities (Now Mitigated)
 

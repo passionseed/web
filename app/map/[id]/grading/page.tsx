@@ -29,7 +29,7 @@ export default async function GradingPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !(await isInstructor(user.id))) {
+  if (!user) {
     notFound();
   }
 
@@ -43,6 +43,28 @@ export default async function GradingPage({
   ]);
 
   if (!map) {
+    notFound();
+  }
+
+  // SECURITY: Check if user has permission to grade this map
+  // Allow access if user is:
+  // 1. An instructor OR
+  // 2. The creator of the map OR
+  // 3. An admin
+  const userIsInstructor = await isInstructor(user.id);
+  const userIsCreator = map.creator_id === user.id;
+
+  // Check if user is admin
+  const { data: adminRole } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("role", "admin")
+    .single();
+
+  const userIsAdmin = !!adminRole;
+
+  if (!userIsInstructor && !userIsCreator && !userIsAdmin) {
     notFound();
   }
 
