@@ -30,6 +30,8 @@ interface ClassroomMembership {
   classroom: ClassroomWithAssignments & {
     member_count: number;
     student_count: number;
+    instructor_count: number;
+    ta_count: number;
   };
 }
 
@@ -61,11 +63,10 @@ export function ClassroomDashboard() {
       const classroomList = memberships.map((membership) => ({
         ...membership.classroom,
         userRole: membership.role,
-        member_count: 0, // Will be fetched separately if needed
-        student_count: 0, // Will be fetched separately if needed
-        assignments: [], // Will be fetched separately if needed
-        assignment_count: 0,
-        active_assignment_count: 0,
+        // member_count is now provided by the API
+        assignments: membership.classroom.assignments || [], // Will be fetched separately if needed
+        assignment_count: membership.classroom.assignment_count || 0,
+        active_assignment_count: membership.classroom.active_assignment_count || 0,
       }));
 
       setClassrooms(classroomList);

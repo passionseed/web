@@ -51,7 +51,10 @@ interface ClassroomDetailsDashboardProps {
 }
 
 interface DashboardStats {
+  totalMembers: number;
   totalStudents: number;
+  totalInstructors: number;
+  totalTAs: number;
   activeAssignments: number;
   completionRate: number;
   averageProgress: number;
@@ -64,7 +67,10 @@ export function ClassroomDetailsDashboard({
 }: ClassroomDetailsDashboardProps) {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
+    totalMembers: 0,
     totalStudents: 0,
+    totalInstructors: 0,
+    totalTAs: 0,
     activeAssignments: 0,
     completionRate: 0,
     averageProgress: 0,
@@ -94,7 +100,10 @@ export function ClassroomDetailsDashboard({
       const statsData = statsResponse.ok
         ? await statsResponse.json()
         : {
+            totalMembers: 0,
             totalStudents: 0,
+            totalInstructors: 0,
+            totalTAs: 0,
             activeAssignments: 0,
             completionRate: 0,
             averageProgress: 0,
@@ -115,7 +124,10 @@ export function ClassroomDetailsDashboard({
       console.error("Failed to load classroom data:", error);
       // Set default values on error
       setStats({
+        totalMembers: 0,
         totalStudents: 0,
+        totalInstructors: 0,
+        totalTAs: 0,
         activeAssignments: 0,
         completionRate: 0,
         averageProgress: 0,
@@ -261,15 +273,32 @@ export function ClassroomDetailsDashboard({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Students
+              Classroom Members
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalStudents}</div>
-            <p className="text-xs text-muted-foreground">
-              Enrolled in classroom
-            </p>
+            <div className="text-2xl font-bold mb-2">
+              {stats.totalMembers}
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Students</span>
+                <span className="font-medium text-blue-600">{stats.totalStudents}</span>
+              </div>
+              {stats.totalInstructors > 0 && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Instructors</span>
+                  <span className="font-medium text-purple-600">{stats.totalInstructors}</span>
+                </div>
+              )}
+              {stats.totalTAs > 0 && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">TAs</span>
+                  <span className="font-medium text-green-600">{stats.totalTAs}</span>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -491,7 +520,7 @@ export function ClassroomDetailsDashboard({
         <TabsContent value="students" className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">
-              Students ({stats.totalStudents})
+              Members ({stats.totalMembers})
             </h3>
             {canManage && (
               <Button variant="outline" size="sm">

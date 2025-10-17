@@ -49,14 +49,52 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform the data to flatten the classroom object
+    // Get member counts for all classrooms
+    const classroomIds = (memberships || []).map((m) => m.classroom_id);
+
+    const memberCounts: Record<string, number> = {};
+    const studentCounts: Record<string, number> = {};
+    const instructorCounts: Record<string, number> = {};
+    const taCounts: Record<string, number> = {};
+
+    if (classroomIds.length > 0) {
+      // Get total member counts
+      const { data: countData } = await supabase
+        .from("classroom_memberships")
+        .select("classroom_id, role")
+        .in("classroom_id", classroomIds);
+
+      if (countData) {
+        countData.forEach((row) => {
+          // Count all members
+          memberCounts[row.classroom_id] = (memberCounts[row.classroom_id] || 0) + 1;
+
+          // Count by role
+          if (row.role === "student") {
+            studentCounts[row.classroom_id] = (studentCounts[row.classroom_id] || 0) + 1;
+          } else if (row.role === "instructor") {
+            instructorCounts[row.classroom_id] = (instructorCounts[row.classroom_id] || 0) + 1;
+          } else if (row.role === "ta") {
+            taCounts[row.classroom_id] = (taCounts[row.classroom_id] || 0) + 1;
+          }
+        });
+      }
+    }
+
+    // Transform the data to flatten the classroom object and add member counts
     const transformedMemberships = (memberships || []).map((membership) => ({
       id: membership.id,
       classroom_id: membership.classroom_id,
       user_id: membership.user_id,
       role: membership.role,
       joined_at: membership.joined_at,
-      classroom: membership.classrooms,
+      classroom: {
+        ...membership.classrooms,
+        member_count: memberCounts[membership.classroom_id] || 0,
+        student_count: studentCounts[membership.classroom_id] || 0,
+        instructor_count: instructorCounts[membership.classroom_id] || 0,
+        ta_count: taCounts[membership.classroom_id] || 0,
+      },
     }));
 
     return NextResponse.json(transformedMemberships);

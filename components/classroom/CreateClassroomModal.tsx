@@ -183,11 +183,8 @@ export function CreateClassroomModal({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden flex flex-col">
-        <form
-          onSubmit={handleSubmit}
-          className="flex-1 flex flex-col overflow-hidden"
-        >
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Create New Classroom</DialogTitle>
             <DialogDescription>
@@ -196,16 +193,13 @@ export function CreateClassroomModal({
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs
-            defaultValue="details"
-            className="flex-1 flex flex-col overflow-hidden"
-          >
+          <Tabs defaultValue="details" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="details">Classroom Details</TabsTrigger>
               <TabsTrigger value="maps">Link Learning Maps</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="details" className="space-y-4 mt-4">
+            <TabsContent value="details" className="space-y-4 mt-4 max-h-[50vh] overflow-y-auto">
               <div className="space-y-2">
                 <Label htmlFor="name">Classroom Name *</Label>
                 <Input
@@ -296,11 +290,8 @@ export function CreateClassroomModal({
               )}
             </TabsContent>
 
-            <TabsContent
-              value="maps"
-              className="flex-1 flex flex-col overflow-hidden"
-            >
-              <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
+            <TabsContent value="maps" className="mt-4">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-medium">
@@ -316,7 +307,7 @@ export function CreateClassroomModal({
                 </div>
 
                 {isMapsLoading ? (
-                  <div className="space-y-3">
+                  <div className="space-y-3 max-h-[50vh] overflow-y-auto">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <div
                         key={i}
@@ -331,7 +322,7 @@ export function CreateClassroomModal({
                     ))}
                   </div>
                 ) : (
-                  <ScrollArea className="flex-1 border rounded-lg">
+                  <div className="max-h-[50vh] overflow-y-auto border rounded-lg">
                     <div className="p-4 space-y-3">
                       {availableMaps.length === 0 ? (
                         <div className="text-center py-8">
@@ -402,13 +393,13 @@ export function CreateClassroomModal({
                         })
                       )}
                     </div>
-                  </ScrollArea>
+                  </div>
                 )}
               </div>
             </TabsContent>
           </Tabs>
 
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button
               type="button"
               variant="outline"
