@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/server";
 import { isInstructor } from "@/lib/supabase/roles";
 import { MapViewerWithProvider as MapViewer } from "@/components/map/MapViewer";
 import { MapEnrollmentTracker } from "@/components/map/MapEnrollmentTracker";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, ClipboardCheck } from "lucide-react";
 
 export default async function MapViewerPage(props: {
   params: Promise<{ id: string }>;
@@ -27,12 +27,29 @@ export default async function MapViewerPage(props: {
   }
 
   // OPTIMIZATION: Only check instructor status if needed (user exists and isn't creator)
-  const userIsInstructor = user && map.creator_id !== user.id 
+  const userIsInstructor = user && map.creator_id !== user.id
     ? await isInstructor(user.id)
     : false;
 
-  // Simple inline permission check - user can edit if they're the creator OR instructor
-  const userCanEdit = user && (map.creator_id === user.id || userIsInstructor);
+  // Check if user is admin
+  const userIsAdmin = user
+    ? await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .single()
+        .then(({ data }) => !!data)
+    : false;
+
+  // Check if user is the creator of this map
+  const userIsCreator = user && map.creator_id === user.id;
+
+  // Simple inline permission check - user can edit if they're the creator OR instructor OR admin
+  const userCanEdit = user && (userIsCreator || userIsInstructor || userIsAdmin);
+
+  // User can grade if they're creator OR instructor OR admin
+  const userCanGrade = user && (userIsCreator || userIsInstructor || userIsAdmin);
 
   return (
     <MapEnrollmentTracker map={map}>
@@ -52,10 +69,10 @@ export default async function MapViewerPage(props: {
               </Link>
             </Button>
           )}
-          {userIsInstructor && (
+          {userCanGrade && (
             <Button asChild variant="secondary" size="sm">
               <Link href={`/map/${params.id}/grading`}>
-                <Pencil className="h-4 w-4 mr-2" />
+                <ClipboardCheck className="h-4 w-4 mr-2" />
                 Grade Submissions
               </Link>
             </Button>
