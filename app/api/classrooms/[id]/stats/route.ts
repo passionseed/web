@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -31,12 +31,16 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get total students count
-    const { count: totalStudents } = await supabase
+    // Get role-specific counts
+    const { data: membershipData } = await supabase
       .from("classroom_memberships")
-      .select("*", { count: "exact", head: true })
-      .eq("classroom_id", classroomId)
-      .eq("role", "student");
+      .select("role")
+      .eq("classroom_id", classroomId);
+
+    const totalStudents = membershipData?.filter(m => m.role === "student").length || 0;
+    const totalInstructors = membershipData?.filter(m => m.role === "instructor").length || 0;
+    const totalTAs = membershipData?.filter(m => m.role === "ta").length || 0;
+    const totalMembers = membershipData?.length || 0;
 
     // Get active assignments count
     const { count: activeAssignments } = await supabase
@@ -78,7 +82,10 @@ export async function GET(
         : 0;
 
     const stats = {
+      totalMembers: totalMembers || 0,
       totalStudents: totalStudents || 0,
+      totalInstructors: totalInstructors || 0,
+      totalTAs: totalTAs || 0,
       activeAssignments: activeAssignments || 0,
       completionRate,
       averageProgress,

@@ -35,6 +35,7 @@ import {
   deleteNodeContent,
 } from "@/lib/supabase/nodes";
 import { useToast } from "@/components/ui/use-toast";
+import { marked } from "marked";
 
 // Content type configurations
 const CONTENT_TYPE_CONFIG = {
@@ -247,10 +248,9 @@ const ContentForm = ({
       setIsSaving(true);
 
       // Wrap in Promise to handle both sync and async onSave
-      Promise.resolve(onSave(payload))
-        .finally(() => {
-          setIsSaving(false);
-        });
+      Promise.resolve(onSave(payload)).finally(() => {
+        setIsSaving(false);
+      });
     },
     [
       contentType,
@@ -287,15 +287,17 @@ const ContentForm = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 p-4 border rounded-lg bg-muted/30"
+      className="space-y-4 p-4 border rounded-lg bg-muted/30 overflow-hidden"
     >
       {errors.length > 0 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <ul className="list-disc pl-4">
+        <Alert variant="destructive" className="overflow-hidden">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <AlertDescription className="overflow-x-auto">
+            <ul className="list-disc pl-4 break-words">
               {errors.map((error, index) => (
-                <li key={index}>{error}</li>
+                <li key={index} className="break-words">
+                  {error}
+                </li>
               ))}
             </ul>
           </AlertDescription>
@@ -365,7 +367,7 @@ const ContentForm = ({
               clearErrors();
             }}
             placeholder={config.placeholder}
-            className={`h-11 border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 transition-colors ${
+            className={`h-11 border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 transition-colors truncate ${
               errors.some((e) => e.includes("URL"))
                 ? "border-red-400 focus:border-red-500"
                 : ""
@@ -373,9 +375,9 @@ const ContentForm = ({
           />
 
           {contentType === "video" && (
-            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="text-green-600 mt-0.5">🎯</div>
-              <div className="text-xs text-green-800 leading-relaxed">
+            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg overflow-hidden">
+              <div className="text-green-600 mt-0.5 flex-shrink-0">🎯</div>
+              <div className="text-xs text-green-800 leading-relaxed break-words overflow-x-auto">
                 <strong>Supported platforms:</strong> YouTube, Vimeo,
                 SoundCloud, Twitter, Reddit, GIPHY, Flickr.
                 <br />
@@ -386,9 +388,9 @@ const ContentForm = ({
           )}
 
           {contentType === "resource_link" && (
-            <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-              <div className="text-purple-600 mt-0.5">📚</div>
-              <div className="text-xs text-purple-800 leading-relaxed">
+            <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg overflow-hidden">
+              <div className="text-purple-600 mt-0.5 flex-shrink-0">📚</div>
+              <div className="text-xs text-purple-800 leading-relaxed break-words overflow-x-auto">
                 <strong>Examples:</strong> PDFs, Google Docs, GitHub repos,
                 books, articles, datasets, tools.
                 <br />
@@ -425,21 +427,25 @@ const ContentForm = ({
               <div className="text-xs text-green-600 bg-green-50 p-2 rounded flex items-center gap-2">
                 <span>✅ Image uploaded successfully</span>
                 {uploadedFileName && (
-                  <span className="text-muted-foreground">({uploadedFileName})</span>
+                  <span className="text-muted-foreground">
+                    ({uploadedFileName})
+                  </span>
                 )}
               </div>
               {/* Image Preview */}
-              <div className="border-2 border-green-200 rounded-lg p-2 bg-green-50/30">
-                <p className="text-xs font-medium text-slate-700 mb-2">Preview:</p>
-                <div className="relative w-full max-w-md mx-auto">
+              <div className="border-2 border-green-200 rounded-lg p-2 bg-green-50/30 overflow-hidden">
+                <p className="text-xs font-medium text-slate-700 mb-2">
+                  Preview:
+                </p>
+                <div className="relative w-full overflow-x-auto">
                   <img
                     src={contentUrl}
                     alt="Uploaded preview"
                     className="w-full h-auto rounded-lg shadow-md object-contain max-h-64"
                     onError={(e) => {
                       // Fallback if image fails to load
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      console.error('Failed to load image preview');
+                      (e.target as HTMLImageElement).style.display = "none";
+                      console.error("Failed to load image preview");
                     }}
                   />
                 </div>
@@ -617,6 +623,199 @@ const getContentPreview = (item: NodeContent): string => {
   return previews[item.content_type]?.() || item.content_type;
 };
 
+// Get embed URL for video platforms
+const getEmbedUrl = (url: string): string | null => {
+  try {
+    // YouTube
+    if (url.includes("youtube.com") || url.includes("youtu.be")) {
+      const videoId = url.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
+      )?.[1];
+      return videoId
+        ? `https://www.youtube.com/embed/${videoId}`
+        : null;
+    }
+    // Vimeo
+    if (url.includes("vimeo.com")) {
+      const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
+    }
+    // SoundCloud
+    if (url.includes("soundcloud.com")) {
+      return null; // SoundCloud requires oEmbed, return null for fallback
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Preview component for content in list view
+const ContentPreviewDisplay = ({
+  item,
+  expandedTextId,
+  setExpandedTextId,
+}: {
+  item: NodeContent;
+  expandedTextId: string | null;
+  setExpandedTextId: (id: string | null) => void;
+}) => {
+  const isExpanded = expandedTextId === item.id;
+
+  // Video content
+  if (item.content_type === "video" && item.content_url) {
+    const embedUrl = getEmbedUrl(item.content_url);
+    if (embedUrl) {
+      return (
+        <div className="mt-3 rounded-lg overflow-hidden bg-black/5 border border-slate-200">
+          <iframe
+            src={embedUrl}
+            allowFullScreen
+            className="w-full h-auto aspect-video"
+            title={item.content_title || "Video preview"}
+            loading="lazy"
+          />
+        </div>
+      );
+    } else {
+      // Fallback for non-embeddable videos
+      return (
+        <div className="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+          <a
+            href={item.content_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline text-sm break-all"
+          >
+            📹 Open video: {item.content_url}
+          </a>
+        </div>
+      );
+    }
+  }
+
+  // Canva slide content
+  if (item.content_type === "canva_slide" && item.content_url) {
+    return (
+      <div className="mt-3 rounded-lg overflow-hidden bg-slate-50 border border-slate-200">
+        <iframe
+          src={item.content_url}
+          allowFullScreen
+          className="w-full h-auto aspect-video"
+          title={item.content_title || "Canva slide preview"}
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  // Text content - with expandable preview
+  if (item.content_type === "text" && item.content_body) {
+    const hasMoreContent = item.content_body.length > 150;
+
+    // Render markdown if it starts with markdown syntax, otherwise treat as plain text
+    const renderMarkdown = (text: string) => {
+      try {
+        return marked(text);
+      } catch {
+        return `<p>${text.replace(/\n/g, "</p><p>")}</p>`;
+      }
+    };
+
+    return (
+      <div className="mt-3 rounded-lg overflow-hidden bg-slate-50 border border-slate-200">
+        {!isExpanded ? (
+          <>
+            {/* Collapsed preview - show rendered markdown (limited) */}
+            <div className="p-3">
+              <div
+                className="text-sm text-slate-700 line-clamp-3 prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: renderMarkdown(item.content_body),
+                }}
+              />
+              {hasMoreContent && (
+                <button
+                  onClick={() => setExpandedTextId(item.id)}
+                  className="mt-2 text-xs text-blue-600 hover:underline font-medium"
+                >
+                  Show full content →
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Expanded full view */}
+            <div className="p-3 max-h-96 overflow-y-auto">
+              <div
+                className="text-sm text-slate-700 prose prose-sm max-w-none space-y-2"
+                dangerouslySetInnerHTML={{
+                  __html: renderMarkdown(item.content_body),
+                }}
+              />
+              <button
+                onClick={() => setExpandedTextId(null)}
+                className="mt-3 text-xs text-blue-600 hover:underline font-medium"
+              >
+                ← Collapse
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // PDF content
+  if (item.content_type === "pdf" && item.content_url) {
+    const fileName = item.content_url.split("/").pop() || "Document";
+    return (
+      <div className="mt-3 p-3 rounded-lg bg-purple-50 border border-purple-200">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">📄</span>
+          <span className="text-sm font-medium text-slate-700">
+            PDF Document
+          </span>
+        </div>
+        <a
+          href={item.content_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline text-sm break-all"
+        >
+          📥 Download: {fileName}
+        </a>
+      </div>
+    );
+  }
+
+  // Resource link content
+  if (item.content_type === "resource_link") {
+    return (
+      <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+        <div className="mb-2">
+          <p className="text-sm text-slate-700 break-words">
+            {item.content_body}
+          </p>
+        </div>
+        {item.content_url && (
+          <a
+            href={item.content_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline text-sm break-all inline-block"
+          >
+            🔗 {item.content_url}
+          </a>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+};
+
 // Main component
 export function ContentEditor({
   nodeId,
@@ -626,12 +825,15 @@ export function ContentEditor({
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedTextId, setExpandedTextId] = useState<string | null>(null);
 
   const isFormActive = isAdding || editingId;
 
   // Sort content by display_order for rendering
   const sortedContent = useMemo(() => {
-    return [...content].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    return [...content].sort(
+      (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+    );
   }, [content]);
 
   const handleSave = useCallback(
@@ -653,7 +855,7 @@ export function ContentEditor({
       const existingIndex = content.findIndex((c) => c.id === savedContent.id);
 
       // Signal start of content auto-save
-      if (typeof (window as any).__startContentAutoSave === 'function') {
+      if (typeof (window as any).__startContentAutoSave === "function") {
         (window as any).__startContentAutoSave();
       }
 
@@ -680,7 +882,7 @@ export function ContentEditor({
           toast({ title: "Content updated successfully!" });
 
           // Signal content auto-save complete
-          if (typeof (window as any).__finishContentAutoSave === 'function') {
+          if (typeof (window as any).__finishContentAutoSave === "function") {
             (window as any).__finishContentAutoSave();
           }
         } else {
@@ -711,7 +913,7 @@ export function ContentEditor({
           toast({ title: "Content added successfully!" });
 
           // Signal content auto-save complete
-          if (typeof (window as any).__finishContentAutoSave === 'function') {
+          if (typeof (window as any).__finishContentAutoSave === "function") {
             (window as any).__finishContentAutoSave();
           }
         }
@@ -734,7 +936,7 @@ export function ContentEditor({
   const handleDelete = useCallback(
     async (id: string) => {
       // Signal start of content auto-save
-      if (typeof (window as any).__startContentAutoSave === 'function') {
+      if (typeof (window as any).__startContentAutoSave === "function") {
         (window as any).__startContentAutoSave();
       }
 
@@ -751,7 +953,7 @@ export function ContentEditor({
         toast({ title: "Content deleted successfully!" });
 
         // Signal content auto-save complete
-        if (typeof (window as any).__finishContentAutoSave === 'function') {
+        if (typeof (window as any).__finishContentAutoSave === "function") {
           (window as any).__finishContentAutoSave();
         }
       } catch (error) {
@@ -918,7 +1120,7 @@ export function ContentEditor({
   );
 
   return (
-    <div className="p-4">
+    <div className="p-4 w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-medium text-sm">
@@ -939,8 +1141,8 @@ export function ContentEditor({
 
       {/* Add new content form */}
       {isAdding && (
-        <div className="border-2 border-dashed border-blue-300 rounded-lg p-1 max-h-[70vh] overflow-hidden">
-          <div className="max-h-[65vh] overflow-y-auto">
+        <div className="border-2 border-dashed border-blue-300 rounded-lg p-1 max-h-[70vh] overflow-hidden w-full">
+          <div className="max-h-[65vh] overflow-y-auto w-full">
             <ContentForm
               nodeId={nodeId}
               contentCount={content.length}
@@ -952,13 +1154,16 @@ export function ContentEditor({
       )}
 
       {/* Content list */}
-      <div className="space-y-2 pb-4">
+      <div className="space-y-2 pb-4 w-full">
         {sortedContent.map((item, index) => (
-          <Card key={item.id} className="border-l-4 border-l-blue-500">
-            <CardContent className="p-3">
+          <Card
+            key={item.id}
+            className="border-l-4 border-l-blue-500 overflow-hidden"
+          >
+            <CardContent className="p-3 w-full overflow-x-hidden">
               {editingId === item.id ? (
-                <div className="border border-yellow-300 rounded-lg p-1 bg-yellow-50 max-h-[65vh] overflow-hidden">
-                  <div className="max-h-[60vh] overflow-y-auto">
+                <div className="border border-yellow-300 rounded-lg p-1 bg-yellow-50 max-h-[65vh] overflow-hidden w-full">
+                  <div className="max-h-[60vh] overflow-y-auto w-full">
                     <ContentForm
                       nodeId={nodeId}
                       existingContent={item}
@@ -969,11 +1174,11 @@ export function ContentEditor({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex items-center gap-2">
+                <div className="space-y-2 w-full">
+                  <div className="flex justify-between items-start gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       {/* Reorder buttons */}
-                      <div className="flex flex-col gap-0.5">
+                      <div className="flex flex-col gap-0.5 flex-shrink-0">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -989,7 +1194,9 @@ export function ContentEditor({
                           size="sm"
                           onClick={() => moveContentDown(index)}
                           className="h-5 w-6 p-0 hover:bg-blue-100"
-                          disabled={index === sortedContent.length - 1 || !!isFormActive}
+                          disabled={
+                            index === sortedContent.length - 1 || !!isFormActive
+                          }
                           title="Move down"
                         >
                           <ChevronDown className="h-3 w-3" />
@@ -997,26 +1204,26 @@ export function ContentEditor({
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-medium">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-medium flex-shrink-0">
                             #{index + 1}
                           </span>
-                          <span className="text-xs text-muted-foreground capitalize">
+                          <span className="text-xs text-muted-foreground capitalize flex-shrink-0">
                             {item.content_type.replace("_", " ")}
                           </span>
                           {!item.content_url && !item.content_body && (
-                            <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                            <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded flex-shrink-0">
                               Missing Content
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="text-sm text-muted-foreground break-words">
                           {getContentPreview(item)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -1040,20 +1247,29 @@ export function ContentEditor({
 
                   {/* Image Preview in List */}
                   {item.content_type === "image" && item.content_url && (
-                    <div className="mt-2 border border-slate-200 rounded-md overflow-hidden bg-slate-50">
-                      <img
-                        src={item.content_url}
-                        alt={item.content_title || "Image content"}
-                        className="w-full h-auto object-contain max-h-48"
-                        loading="lazy"
-                        onError={(e) => {
-                          // Hide image if it fails to load
-                          (e.target as HTMLImageElement).style.display = 'none';
-                          console.error('Failed to load image thumbnail');
-                        }}
-                      />
+                    <div className="mt-2 border border-slate-200 rounded-md overflow-x-auto bg-slate-50">
+                      <div className="inline-flex w-full">
+                        <img
+                          src={item.content_url}
+                          alt={item.content_title || "Image content"}
+                          className="w-full h-auto object-contain max-h-48"
+                          loading="lazy"
+                          onError={(e) => {
+                            // Hide image if it fails to load
+                            (e.target as HTMLImageElement).style.display = "none";
+                            console.error("Failed to load image thumbnail");
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
+
+                  {/* Content previews for other types */}
+                  <ContentPreviewDisplay
+                    item={item}
+                    expandedTextId={expandedTextId}
+                    setExpandedTextId={setExpandedTextId}
+                  />
                 </div>
               )}
             </CardContent>

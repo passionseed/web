@@ -559,6 +559,36 @@ export function AssessmentSection({
            assessment.group_submission_mode === 'single_submission' && 
            groupHasSubmission) && (
           <div className="space-y-4">
+            {/* Assessment Prompt - Always show at the top */}
+            {(assessment.metadata?.question || assessment.metadata?.prompt || assessment.assessment_type === "quiz") && (
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-blue-900 mb-2">
+                      {assessment.assessment_type === "quiz" ? "Quiz Instructions" : "Assessment Instructions"}
+                    </p>
+                    <div className="text-sm text-blue-800 whitespace-pre-wrap space-y-2">
+                      {assessment.metadata?.question && (
+                        <p>{assessment.metadata.question}</p>
+                      )}
+                      {assessment.metadata?.prompt && (
+                        <p>{assessment.metadata.prompt}</p>
+                      )}
+                      {assessment.assessment_type === "quiz" && assessment.metadata?.quiz_description && (
+                        <p>{assessment.metadata.quiz_description}</p>
+                      )}
+                      {assessment.assessment_type === "quiz" && !assessment.metadata?.question && !assessment.metadata?.prompt && !assessment.metadata?.quiz_description && (
+                        <p>Complete the quiz below. Answer all questions to the best of your ability.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Attempt Information */}
             {submissionsWithGrades.length === 0 && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -576,14 +606,6 @@ export function AssessmentSection({
             )}
             {assessment.assessment_type === "text_answer" && (
               <div className="space-y-3">
-                {assessment.metadata?.question && (
-                  <div className="p-4 bg-muted/50 rounded-lg border">
-                    <p className="text-sm font-medium text-foreground mb-1">Question</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {assessment.metadata.question}
-                    </p>
-                  </div>
-                )}
                 <label className="text-sm font-medium text-foreground">
                   Your Answer
                 </label>
@@ -697,14 +719,6 @@ export function AssessmentSection({
 
             {assessment.assessment_type === "file_upload" && (
               <div className="space-y-3">
-                {assessment.metadata?.prompt && (
-                  <div className="p-4 bg-muted/50 rounded-lg border">
-                    <p className="text-sm font-medium text-foreground mb-1">Instructions</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {assessment.metadata.prompt}
-                    </p>
-                  </div>
-                )}
                 <label className="text-sm font-medium text-foreground">
                   Upload Your Work{" "}
                   {isFileRequired && <span className="text-red-500">*</span>}
