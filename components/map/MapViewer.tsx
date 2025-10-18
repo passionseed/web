@@ -726,17 +726,27 @@ export function MapViewer({ map }: MapViewerProps) {
 
             {/* Floating Label with Enhanced Animation */}
             <div
-              className={`absolute -bottom-8 left-1/2 transform -translate-x-1/2 ${selected ? "scale-105 -translate-y-1" : ""} transition-all duration-300`}
+              className={`absolute -bottom-8 left-1/2 transform -translate-x-1/2 ${selected ? "scale-105 -translate-y-1" : ""} transition-all duration-300 group/label`}
             >
-              <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1 shadow-lg hover:shadow-xl transition-shadow duration-200">
-                <div className="text-xs font-bold text-gray-800 text-center whitespace-nowrap max-w-24 truncate">
+              <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 shadow-lg hover:shadow-xl transition-all duration-200 min-w-[100px] max-w-[240px]">
+                <div className="text-xs font-bold text-card-foreground text-center break-words line-clamp-2 leading-snug">
                   {data.title}
                 </div>
-                <div className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
+                <div className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1 mt-0.5">
                   ⭐ {data.difficulty}
                   {statusIcon && <span className="ml-1">{statusIcon}</span>}
                 </div>
               </div>
+              {/* Full title tooltip on hover - only if truncated */}
+              {data.title && data.title.length > 20 && (
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 opacity-0 group-hover/label:opacity-100 pointer-events-none transition-opacity duration-200 z-50">
+                  <div className="bg-gray-900/95 dark:bg-gray-800/95 text-white text-xs rounded-lg px-3 py-2 shadow-xl whitespace-normal max-w-xs backdrop-blur-sm break-words">
+                    {data.title}
+                    {/* Arrow pointing down */}
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-800" />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Lock Overlay for locked nodes */}

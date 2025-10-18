@@ -631,9 +631,7 @@ const getEmbedUrl = (url: string): string | null => {
       const videoId = url.match(
         /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
       )?.[1];
-      return videoId
-        ? `https://www.youtube.com/embed/${videoId}`
-        : null;
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
     }
     // Vimeo
     if (url.includes("vimeo.com")) {
@@ -1256,7 +1254,8 @@ export function ContentEditor({
                           loading="lazy"
                           onError={(e) => {
                             // Hide image if it fails to load
-                            (e.target as HTMLImageElement).style.display = "none";
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
                             console.error("Failed to load image thumbnail");
                           }}
                         />
