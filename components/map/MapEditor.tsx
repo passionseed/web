@@ -205,37 +205,38 @@ const CustomNode = React.memo(
 
     return (
       <>
-        {/* Connection handles - properly positioned and typed */}
-        {/* Top handle - target only (for incoming connections) */}
+        {/* Connection handles - Large hit areas with hover highlights */}
+        {/* All handles are "source" type so dragging from any direction creates correct forward connections */}
+        {/* Top handle */}
         <Handle
-          type="target"
+          type="source"
           position={Position.Top}
           id="top"
-          className="w-4 h-4 bg-blue-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
+          className="!w-20 !h-20 !bg-green-500/0 hover:!bg-green-500/20 !border-2 !border-green-500/0 hover:!border-green-500/40 !rounded-full transition-all duration-200"
         />
 
-        {/* Bottom handle - source only (for outgoing connections) */}
+        {/* Bottom handle */}
         <Handle
           type="source"
           position={Position.Bottom}
           id="bottom"
-          className="w-4 h-4 bg-green-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
+          className="!w-20 !h-20 !bg-green-500/0 hover:!bg-green-500/20 !border-2 !border-green-500/0 hover:!border-green-500/40 !rounded-full transition-all duration-200"
         />
 
-        {/* Left handle - target only (for incoming connections) */}
+        {/* Left handle */}
         <Handle
-          type="target"
+          type="source"
           position={Position.Left}
           id="left"
-          className="w-3 h-3 bg-blue-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
+          className="!w-20 !h-20 !bg-green-500/0 hover:!bg-green-500/20 !border-2 !border-green-500/0 hover:!border-green-500/40 !rounded-full transition-all duration-200"
         />
 
-        {/* Right handle - source only (for outgoing connections) */}
+        {/* Right handle */}
         <Handle
           type="source"
           position={Position.Right}
           id="right"
-          className="w-3 h-3 bg-green-500 border-2 border-white shadow-md opacity-80 hover:opacity-100 transition-opacity"
+          className="!w-20 !h-20 !bg-green-500/0 hover:!bg-green-500/20 !border-2 !border-green-500/0 hover:!border-green-500/40 !rounded-full transition-all duration-200"
         />
 
         <div
@@ -263,16 +264,26 @@ const CustomNode = React.memo(
           <div
             className={`absolute -top-8 -right-10 transform transition-all duration-200 ${
               selected ? "scale-105" : ""
-            }`}
+            } group/label`}
           >
-            <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1 shadow-lg">
-              <div className="text-xs font-bold text-gray-800 text-center whitespace-normal max-w-24 truncate">
+            <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 shadow-lg hover:shadow-xl transition-all duration-200 min-w-[80px] max-w-[180px]">
+              <div className="text-xs font-bold text-card-foreground text-center break-words line-clamp-2 leading-snug">
                 {data.title}
               </div>
-              <div className="text-xs text-gray-500 text-center">
+              <div className="text-xs text-muted-foreground text-center mt-0.5">
                 ⭐ {data.difficulty}
               </div>
             </div>
+            {/* Full title tooltip on hover - only if truncated */}
+            {data.title && data.title.length > 20 && (
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 opacity-0 group-hover/label:opacity-100 pointer-events-none transition-opacity duration-200 z-50">
+                <div className="bg-gray-900/95 dark:bg-gray-800/95 text-white text-xs rounded-lg px-3 py-2 shadow-xl whitespace-normal max-w-xs backdrop-blur-sm break-words">
+                  {data.title}
+                  {/* Arrow pointing down */}
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-800" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </>
