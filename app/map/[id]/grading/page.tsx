@@ -50,7 +50,8 @@ export default async function GradingPage({
   // Allow access if user is:
   // 1. An instructor OR
   // 2. The creator of the map OR
-  // 3. An admin
+  // 3. An editor of the map OR
+  // 4. An admin
   const userIsInstructor = await isInstructor(user.id);
   const userIsCreator = map.creator_id === user.id;
 
@@ -64,7 +65,17 @@ export default async function GradingPage({
 
   const userIsAdmin = !!adminRole;
 
-  if (!userIsInstructor && !userIsCreator && !userIsAdmin) {
+  // Check if user is an editor
+  const { data: editorData } = await supabase
+    .from("map_editors")
+    .select("id")
+    .eq("map_id", mapId)
+    .eq("user_id", user.id)
+    .single();
+
+  const userIsEditor = !!editorData;
+
+  if (!userIsInstructor && !userIsCreator && !userIsEditor && !userIsAdmin) {
     notFound();
   }
 

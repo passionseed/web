@@ -56,6 +56,7 @@ import {
   FileJson,
   X,
   Eye,
+  Users,
 } from "lucide-react";
 import {
   ResizableHandle,
@@ -67,6 +68,7 @@ import { NodeEditorPanel } from "./NodeEditorPanel";
 import FloatingEdge, { FloatingEdgeEdit } from "./FloatingEdge";
 import { isEditable } from "@/lib/dom/is-editable";
 import { log } from "console";
+import { MapEditorsDialog } from "./MapEditorsDialog";
 
 // Type definitions
 type AppNode = Node<any, "default" | "text">;
@@ -479,6 +481,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
     []
   );
   const [isImportingJson, setIsImportingJson] = useState(false);
+
+  // Map editors dialog state
+  const [showEditorsDialog, setShowEditorsDialog] = useState(false);
   const [pendingNodeUpdates, setPendingNodeUpdates] = useState<
     Record<string, Partial<MapNode>>
   >({});
@@ -2540,6 +2545,19 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 Import JSON
               </Button>
 
+              {/* Manage Editors button */}
+              <div className="h-4 w-px bg-border" />
+              <Button
+                onClick={() => setShowEditorsDialog(true)}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                title="Manage who can edit this map"
+              >
+                <Users className="h-4 w-4" />
+                Editors
+              </Button>
+
               {/* Save functionality - re-enabled now that content/assessments save directly */}
               {true && (
                 <>
@@ -2975,6 +2993,14 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Map Editors Dialog */}
+      <MapEditorsDialog
+        mapId={map.id}
+        mapTitle={map.title}
+        open={showEditorsDialog}
+        onOpenChange={setShowEditorsDialog}
+      />
     </div>
   );
 }

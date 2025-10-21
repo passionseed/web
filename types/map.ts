@@ -18,6 +18,14 @@ export interface Cohort {
   updated_at: string; // timestamp with time zone
 }
 
+export interface MapEditor {
+  id: string; // uuid
+  map_id: string; // uuid
+  user_id: string; // uuid
+  granted_by: string; // uuid
+  granted_at: string; // timestamp with time zone
+}
+
 export type MapCategory = "ai" | "3d" | "unity" | "hacking" | "custom" | "journey";
 export type MapVisibility = "public" | "private" | "team";
 
