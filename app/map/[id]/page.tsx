@@ -45,11 +45,22 @@ export default async function MapViewerPage(props: {
   // Check if user is the creator of this map
   const userIsCreator = user && map.creator_id === user.id;
 
-  // Simple inline permission check - user can edit if they're the creator OR instructor OR admin
-  const userCanEdit = user && (userIsCreator || userIsInstructor || userIsAdmin);
+  // Check if user is an editor of this map
+  const userIsEditor = user
+    ? await supabase
+        .from("map_editors")
+        .select("id")
+        .eq("map_id", params.id)
+        .eq("user_id", user.id)
+        .single()
+        .then(({ data }) => !!data)
+    : false;
 
-  // User can grade if they're creator OR instructor OR admin
-  const userCanGrade = user && (userIsCreator || userIsInstructor || userIsAdmin);
+  // Simple inline permission check - user can edit if they're the creator OR editor OR instructor OR admin
+  const userCanEdit = user && (userIsCreator || userIsEditor || userIsInstructor || userIsAdmin);
+
+  // User can grade if they're creator OR editor OR instructor OR admin
+  const userCanGrade = user && (userIsCreator || userIsEditor || userIsInstructor || userIsAdmin);
 
   return (
     <MapEnrollmentTracker map={map}>
