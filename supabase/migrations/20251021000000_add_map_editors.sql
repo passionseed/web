@@ -1,6 +1,6 @@
 -- Create map_editors table to grant edit access to specific users
 CREATE TABLE public.map_editors (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT extensions.uuid_generate_v4(),
   map_id uuid NOT NULL,
   user_id uuid NOT NULL,
   granted_by uuid NOT NULL,
