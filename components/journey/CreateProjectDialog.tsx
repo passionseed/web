@@ -215,16 +215,19 @@ export function CreateProjectDialog({
             <div className="space-y-2">
               <Label htmlFor="north-star-link">Link to North Star (Optional)</Label>
               <Select
-                value={formData.northStarId}
+                value={formData.northStarId || "none"}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, northStarId: value }))
+                  setFormData((prev) => ({ 
+                    ...prev, 
+                    northStarId: value === "none" ? "" : value 
+                  }))
                 }
               >
                 <SelectTrigger id="north-star-link">
                   <SelectValue placeholder="Select a North Star project..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {northStarProjects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.title}
