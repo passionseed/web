@@ -185,16 +185,19 @@ export function CreateMilestoneDialog({
                 Link to Previous Milestone (Optional)
               </Label>
               <Select
-                value={formData.previousMilestoneId}
+                value={formData.previousMilestoneId || "none"}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, previousMilestoneId: value }))
+                  setFormData((prev) => ({ 
+                    ...prev, 
+                    previousMilestoneId: value === "none" ? "" : value 
+                  }))
                 }
               >
                 <SelectTrigger id="previous-milestone">
                   <SelectValue placeholder="Select a milestone..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None - Start fresh</SelectItem>
+                  <SelectItem value="none">None - Start fresh</SelectItem>
                   {existingMilestones.map((milestone) => (
                     <SelectItem key={milestone.id} value={milestone.id}>
                       {milestone.title}

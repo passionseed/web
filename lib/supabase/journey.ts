@@ -58,6 +58,17 @@ export async function createJourneyProject(
   // We'll store the category in project_type for now and can refactor later
   const projectType = data.project_type;
 
+  // Map status to database-allowed values
+  // Database allows: 'not_started', 'in_progress', 'completed', 'on_hold'
+  // TypeScript types allow: 'not_started', 'planning', 'in_progress', 'on_hold', 'completed', 'archived'
+  const mapStatus = (status?: string) => {
+    if (!status) return "not_started";
+    // Map 'planning' to 'not_started' and 'archived' to 'on_hold'
+    if (status === "planning") return "not_started";
+    if (status === "archived") return "on_hold";
+    return status;
+  };
+
   const { data: project, error } = await supabase
     .from(TABLES.JOURNEY_PROJECTS)
     .insert({
@@ -65,7 +76,7 @@ export async function createJourneyProject(
       title: data.title,
       description: data.description || null,
       project_type: projectType,
-      status: data.status || "not_started",
+      status: mapStatus(data.status),
       color_theme: data.color || "#6366f1",
       metadata: {
         ...(data.metadata || {}),
@@ -393,14 +404,19 @@ export async function createMilestone(
       title: data.title,
       description: data.description,
       status: data.status || "not_started",
-      estimated_hours: data.estimated_hours,
-      due_date: data.due_date,
-      display_order: nextOrderIndex,
-      position: data.position || { x: 0, y: 0 },
-      style: data.style,
-      dependencies: data.dependencies,
-      tags: data.tags,
-      metadata: data.metadata || {},
+      order_index: nextOrderIndex,
+      position_x: data.position?.x || 0,
+      position_y: data.position?.y || 0,
+      progress_percentage: 0,
+      metadata: {
+        ...(data.metadata || {}),
+        // Store additional fields in metadata that don't have direct columns
+        estimated_hours: data.estimated_hours,
+        due_date: data.due_date,
+        style: data.style,
+        dependencies: data.dependencies,
+        tags: data.tags,
+      },
     })
     .select()
     .single();
@@ -438,7 +454,7 @@ export async function getProjectMilestones(
     `
     )
     .eq("project_id", projectId)
-    .order("display_order", { ascending: true });
+    .order("order_index", { ascending: true });
 
   if (error) {
     console.error("Error fetching project milestones:", error);
