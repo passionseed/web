@@ -35,8 +35,6 @@ import { Project } from "@/types/project";
 import { StreakCounter } from "@/components/reflection/StreakCounter";
 import { useState, useEffect } from "react";
 import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
-import { getOrCreatePersonalJourneyMap } from "@/lib/supabase/maps";
-import { MiniJourneyMapPreview } from "@/components/map/MiniJourneyMapPreview";
 import { useAuth } from "@/hooks/use-auth";
 import { MapNode, LearningMap } from "@/types/map";
 
@@ -78,7 +76,6 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
   const [selectedReflection, setSelectedReflection] =
     useState<MindmapReflection | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [journeyMapId, setJourneyMapId] = useState<string | null>(null);
   const [nextNodes, setNextNodes] = useState<
     Array<{
       node: MapNode;
@@ -130,18 +127,6 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
       }
     };
     fetchReflections();
-  }, []);
-
-  useEffect(() => {
-    const fetchJourneyMap = async () => {
-      try {
-        const map = await getOrCreatePersonalJourneyMap();
-        setJourneyMapId(map.id);
-      } catch (error) {
-        console.error("Error fetching journey map:", error);
-      }
-    };
-    fetchJourneyMap();
   }, []);
 
   useEffect(() => {
@@ -201,16 +186,6 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
     setIsModalOpen(true);
   };
 
-  const handleJourneyMapClick = async () => {
-    try {
-      const journeyMap = await getOrCreatePersonalJourneyMap();
-      // Navigate to the journey map in edit mode
-      window.location.href = `/map/${journeyMap.id}/edit`;
-    } catch (error) {
-      console.error("Error accessing journey map:", error);
-    }
-  };
-
   // Get randomized motivational text (deterministic based on user)
   const getRandomMotivationalText = () => {
     const texts = [
@@ -239,73 +214,26 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
   };
 
   return (
-    <div className="container py-6 md:py-10 px-4 md:px-6 max-w-7xl mx-auto">
-      <div className="flex flex-col space-y-6 md:space-y-8">
-        <div className="flex flex-col space-y-2">
-          <div className="flex items-center gap-3 mb-2">
-            {/* <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">
-                {user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() ||
-                  user?.email?.charAt(0)?.toUpperCase() ||
-                  "U"}
-              </span>
-            </div> */}
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                Hi,{" "}
-                {user?.user_metadata?.full_name?.split(" ")[0] ||
-                  user?.email?.split("@")[0] ||
-                  "there"}
-                ! 👋
-              </h1>
-              <p className="text-sm md:text-base text-muted-foreground italic">
-                {getRandomMotivationalText()}
-              </p>
-            </div>
-          </div>
-          {/* <div className="border-t pt-4">
-            <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-              Your Passion Portal
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Track your projects, reflections, and workshops.
+    <div className="flex flex-col space-y-6 md:space-y-8">
+      <div className="flex flex-col space-y-2">
+        <div className="flex items-center gap-3 mb-2">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Hi,{" "}
+              {user?.user_metadata?.full_name?.split(" ")[0] ||
+                user?.email?.split("@")[0] ||
+                "there"}
+              ! 👋
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground italic">
+              {getRandomMotivationalText()}
             </p>
-          </div> */}
-        </div>
-
-        <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-3">
-          {/* Journey Map Preview - Full card without header */}
-          <div className="col-span-1 md:col-span-2 rounded-xl overflow-hidden shadow-2xl ring-1 ring-purple-500/20">
-            {journeyMapId ? (
-              <div className="h-[340px] md:h-full">
-                <MiniJourneyMapPreview
-                  mapId={journeyMapId}
-                  onClick={handleJourneyMapClick}
-                />
-              </div>
-            ) : (
-              <div className="h-[340px] md:h-[440px] flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative">
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white"></div>
-                    <div className="absolute inset-0 animate-ping opacity-20">
-                      <div className="rounded-full h-12 w-12 border-4 border-white"></div>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-white font-semibold mb-1">
-                      Loading Your Journey
-                    </p>
-                    <p className="text-white/60 text-sm">
-                      Preparing your learning map...
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
+        </div>
+      </div>
 
-          <div className="col-span-1 flex flex-col gap-4 md:gap-6">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+        <div className="col-span-1 flex flex-col gap-4 md:gap-6">
             <StreakCounter
               streak={reflectionStreak}
               onClick={() => (window.location.href = "/me/reflection")}
@@ -332,10 +260,10 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                 </CardContent>
               </Card>
             </Link>
-          </div>
         </div>
+      </div>
 
-        <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
           <Card className="col-span-1 bg-gradient-to-br from-blue-950 to-indigo-900 text-white">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-lg md:text-xl">
@@ -879,7 +807,6 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
             )}
           </DialogContent>
         </Dialog>
-      </div>
     </div>
   );
 }
