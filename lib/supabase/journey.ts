@@ -135,8 +135,8 @@ export async function getJourneyProjects(
     milestones: project.milestones || [],
     milestone_count: project.milestones?.length || 0,
     completed_milestone_count:
-      project.milestones?.filter((m: any) => m.status === "completed")
-        .length || 0,
+      project.milestones?.filter((m: any) => m.status === "completed").length ||
+      0,
   }));
 }
 
@@ -187,8 +187,7 @@ export async function getProjectById(
     milestones: data.milestones || [],
     milestone_count: data.milestones?.length || 0,
     completed_milestone_count:
-      data.milestones?.filter((m: any) => m.status === "completed").length ||
-      0,
+      data.milestones?.filter((m: any) => m.status === "completed").length || 0,
   };
 }
 
@@ -385,9 +384,7 @@ export async function createMilestone(
 
   const nextOrderIndex =
     data.display_order ??
-    (milestones && milestones.length > 0
-      ? milestones[0].order_index + 1
-      : 0);
+    (milestones && milestones.length > 0 ? milestones[0].order_index + 1 : 0);
 
   const { data: milestone, error } = await supabase
     .from(TABLES.PROJECT_MILESTONES)
@@ -518,8 +515,7 @@ export async function updateMilestone(
   }
 
   // Remove fields that shouldn't be updated directly
-  const { id, project_id, created_at, updated_at, ...updateData } =
-    data as any;
+  const { id, project_id, created_at, updated_at, ...updateData } = data as any;
 
   const { data: milestone, error } = await supabase
     .from(TABLES.PROJECT_MILESTONES)
@@ -775,10 +771,7 @@ export async function getMilestoneJournals(
 export async function addProjectReflection(
   projectId: string,
   content: string,
-  type:
-    | "milestone_complete"
-    | "project_complete"
-    | "general" = "general"
+  type: "milestone_complete" | "project_complete" | "general" = "general"
 ): Promise<ProjectReflection> {
   const supabase = createClient();
 
@@ -1173,8 +1166,8 @@ export async function getJourneyOverview(
           milestones: p.milestones || [],
           milestone_count: p.milestones?.length || 0,
           completed_milestone_count:
-            p.milestones?.filter((m: any) => m.status === "completed")
-              .length || 0,
+            p.milestones?.filter((m: any) => m.status === "completed").length ||
+            0,
         })) || [],
       recent_activities: (recentActivities as any) || [],
       upcoming_milestones: (upcomingMilestones as any) || [],

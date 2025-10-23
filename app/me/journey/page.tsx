@@ -25,8 +25,12 @@ function JourneyPageLoading() {
           </div>
         </div>
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-white mb-2">Loading your journey</h2>
-          <p className="text-slate-400 text-sm">Initializing your interactive learning map...</p>
+          <h2 className="text-xl font-semibold text-white mb-2">
+            Loading your journey
+          </h2>
+          <p className="text-slate-400 text-sm">
+            Initializing your interactive learning map...
+          </p>
         </div>
       </div>
     </div>
@@ -88,7 +92,9 @@ export default async function JourneyPage() {
           <div className="flex-1" />
 
           {/* Title for mobile */}
-          <h1 className="md:hidden text-lg font-bold text-white">Journey Map</h1>
+          <h1 className="md:hidden text-lg font-bold text-white">
+            Journey Map
+          </h1>
         </div>
       </header>
 

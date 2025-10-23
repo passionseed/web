@@ -58,8 +58,14 @@ export default function Loading() {
 
           {/* Decorative shimmer lines */}
           <div className="mt-8 space-y-2 opacity-30">
-            <div className="h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full animate-pulse" style={{ width: "200px" }} />
-            <div className="h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent rounded-full animate-pulse" style={{ width: "160px", marginLeft: "20px" }} />
+            <div
+              className="h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full animate-pulse"
+              style={{ width: "200px" }}
+            />
+            <div
+              className="h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent rounded-full animate-pulse"
+              style={{ width: "160px", marginLeft: "20px" }}
+            />
           </div>
         </div>
       </main>
