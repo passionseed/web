@@ -39,7 +39,9 @@ export function MainQuestPanel({
   onProjectSelect,
   onRefresh,
 }: MainQuestPanelProps) {
-  const [mainQuest, setMainQuest] = useState<ProjectWithMilestones | null>(null);
+  const [mainQuest, setMainQuest] = useState<ProjectWithMilestones | null>(
+    null
+  );
   const [milestones, setMilestones] = useState<MilestoneWithJournals[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
