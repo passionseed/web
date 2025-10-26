@@ -71,8 +71,15 @@ export interface JourneyProject {
   user_id: string;
   title: string;
   description: string | null;
+  goal: string | null;
+  why: string | null;
   project_type: ProjectType;
+  north_star_id: string | null;
+  is_main_quest: boolean | null;
+  position_x: number | null;
+  position_y: number | null;
   status: ProjectStatus;
+  color_theme: string | null;
   start_date: string | null;
   target_end_date: string | null;
   actual_end_date: string | null;
@@ -87,6 +94,7 @@ export interface JourneyProject {
   metadata: Record<string, any> | null;
   created_at: string;
   updated_at: string;
+  completed_at: string | null;
 }
 
 export interface ProjectMilestone {
@@ -94,6 +102,7 @@ export interface ProjectMilestone {
   project_id: string;
   title: string;
   description: string | null;
+  details: string | null;
   status: MilestoneStatus;
   estimated_hours: number | null;
   actual_hours: number | null;
@@ -115,7 +124,7 @@ export interface MilestonePath {
   id: string;
   source_milestone_id: string;
   destination_milestone_id: string;
-  path_type: "prerequisite" | "sequence" | "optional";
+  path_type: "linear" | "conditional" | "parallel";
   metadata: Record<string, any> | null;
   created_at: string;
 }
@@ -311,11 +320,19 @@ export interface ProjectCreateData {
 export interface ProjectUpdateData {
   title?: string;
   description?: string;
+  goal?: string;
+  why?: string;
   project_type?: ProjectType;
+  north_star_id?: string;
+  is_main_quest?: boolean;
+  position_x?: number;
+  position_y?: number;
   status?: ProjectStatus;
+  color_theme?: string;
   start_date?: string;
   target_end_date?: string;
   actual_end_date?: string;
+  completed_at?: string;
   priority?: number;
   tags?: string[];
   color?: string;
@@ -495,7 +512,7 @@ export interface VisualMilestonePath {
   source: string;
   target: string;
   style: PathStyle;
-  pathType: "prerequisite" | "sequence" | "optional";
+  pathType: "linear" | "conditional" | "parallel";
 }
 
 // ========================================

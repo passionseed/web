@@ -33,6 +33,7 @@ import {
 import Link from "next/link";
 import { Project } from "@/types/project";
 import { StreakCounter } from "@/components/reflection/StreakCounter";
+import { JourneyMapPreview } from "@/components/journey";
 import { useState, useEffect } from "react";
 import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
 import { useAuth } from "@/hooks/use-auth";
@@ -233,6 +234,29 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
       </div>
 
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+        <Card className="col-span-1 h-[400px] md:h-[500px] overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-lg md:text-xl">
+              <MapIcon className="mr-2 h-4 w-4 md:h-5 md:w-5 text-purple-500" />
+              Journey Map
+            </CardTitle>
+            <CardDescription className="text-xs md:text-sm">
+              Your projects and milestones at a glance
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="h-[calc(100%-80px)] p-0">
+            <JourneyMapPreview
+              userId={user?.id || ""}
+              userName={
+                user?.user_metadata?.full_name?.split(" ")[0] ||
+                user?.email?.split("@")[0] ||
+                "User"
+              }
+              userAvatar={user?.user_metadata?.avatar_url}
+            />
+          </CardContent>
+        </Card>
+
         <div className="col-span-1 flex flex-col gap-4 md:gap-6">
             <StreakCounter
               streak={reflectionStreak}

@@ -304,6 +304,77 @@ export async function setMainQuest(projectIds: string[]): Promise<void> {
 }
 
 /**
+ * Update project position on the journey map
+ */
+export async function updateProjectPosition(
+  projectId: string,
+  x: number,
+  y: number
+): Promise<void> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const { error } = await supabase
+    .from(TABLES.JOURNEY_PROJECTS)
+    .update({
+      position_x: x,
+      position_y: y,
+    })
+    .eq("id", projectId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating project position:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update project details (goal, why, description)
+ */
+export async function updateProjectDetails(
+  projectId: string,
+  data: {
+    title?: string;
+    goal?: string;
+    why?: string;
+    description?: string;
+  }
+): Promise<JourneyProject> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const { data: project, error } = await supabase
+    .from(TABLES.JOURNEY_PROJECTS)
+    .update(data)
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating project details:", error);
+    throw error;
+  }
+
+  return project;
+}
+
+/**
  * Link a short-term project to a North Star project
  */
 export async function linkToNorthStar(
@@ -661,6 +732,107 @@ export async function createMilestonePath(
   }
 
   return path;
+}
+
+/**
+ * Delete a milestone path connection
+ */
+export async function deleteMilestonePath(pathId: string): Promise<void> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const { error } = await supabase
+    .from(TABLES.MILESTONE_PATHS)
+    .delete()
+    .eq("id", pathId);
+
+  if (error) {
+    console.error("Error deleting milestone path:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get all milestone paths for a project
+ */
+export async function getProjectMilestonePaths(
+  projectId: string
+): Promise<MilestonePath[]> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  // Get all milestone IDs for this project first
+  const { data: milestones } = await supabase
+    .from(TABLES.PROJECT_MILESTONES)
+    .select("id")
+    .eq("project_id", projectId);
+
+  if (!milestones || milestones.length === 0) {
+    return [];
+  }
+
+  const milestoneIds = milestones.map((m) => m.id);
+
+  // Get all paths where either source or destination is in this project
+  const { data, error } = await supabase
+    .from(TABLES.MILESTONE_PATHS)
+    .select("*")
+    .or(
+      `source_milestone_id.in.(${milestoneIds.join(",")}),destination_milestone_id.in.(${milestoneIds.join(",")})`
+    );
+
+  if (error) {
+    console.error("Error fetching milestone paths:", error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Update a milestone path's type
+ */
+export async function updateMilestonePathType(
+  pathId: string,
+  pathType: "linear" | "conditional" | "parallel"
+): Promise<MilestonePath> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const { data, error } = await supabase
+    .from(TABLES.MILESTONE_PATHS)
+    .update({ path_type: pathType })
+    .eq("id", pathId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating milestone path:", error);
+    throw error;
+  }
+
+  return data;
 }
 
 // ========================================

@@ -4,6 +4,7 @@
 
 // Main canvas component
 export { JourneyMapCanvas } from "./JourneyMapCanvas";
+export { JourneyMapPreview } from "./JourneyMapPreview";
 export { MilestoneMapView } from "./MilestoneMapView";
 
 // Node components
@@ -19,7 +20,6 @@ export { NorthStarLink } from "./edges/NorthStarLink";
 // Dialog components
 export { CreateProjectDialog } from "./CreateProjectDialog";
 export { MilestoneProgressDialog } from "./MilestoneProgressDialog";
-export { CreateMilestoneDialog } from "./CreateMilestoneDialog";
 
 // Panel components
 export { ProjectReflectionPanel } from "./ProjectReflectionPanel";
