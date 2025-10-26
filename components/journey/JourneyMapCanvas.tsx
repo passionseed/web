@@ -119,7 +119,8 @@ function JourneyMapCanvasInner({
   // Dialog states
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<ProjectWithMilestones | null>(null);
+  const [editingProject, setEditingProject] =
+    useState<ProjectWithMilestones | null>(null);
 
   // Load projects on mount
   useEffect(() => {
@@ -353,20 +354,17 @@ function JourneyMapCanvasInner({
     loadProjects();
   };
 
-  const handleNodeDragStop = useCallback(
-    async (_event: any, node: Node) => {
-      // Don't save position for user-center node
-      if (node.id === "user-center") return;
+  const handleNodeDragStop = useCallback(async (_event: any, node: Node) => {
+    // Don't save position for user-center node
+    if (node.id === "user-center") return;
 
-      try {
-        await updateProjectPosition(node.id, node.position.x, node.position.y);
-      } catch (error) {
-        console.error("Error saving node position:", error);
-        toast.error("Failed to save position");
-      }
-    },
-    []
-  );
+    try {
+      await updateProjectPosition(node.id, node.position.x, node.position.y);
+    } catch (error) {
+      console.error("Error saving node position:", error);
+      toast.error("Failed to save position");
+    }
+  }, []);
 
   const togglePanelSize = useCallback(() => {
     const panel = rightPanelRef.current;
