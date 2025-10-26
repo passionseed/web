@@ -181,7 +181,10 @@ export function CreateProjectDialog({
               placeholder="What is this project about?"
               value={formData.description}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, description: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
               }
               rows={3}
             />
@@ -193,7 +196,10 @@ export function CreateProjectDialog({
             <Select
               value={formData.projectType}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, projectType: value as ProjectType }))
+                setFormData((prev) => ({
+                  ...prev,
+                  projectType: value as ProjectType,
+                }))
               }
             >
               <SelectTrigger id="project-type">
@@ -213,13 +219,15 @@ export function CreateProjectDialog({
           {/* Link to North Star (if not North Star itself) */}
           {!formData.isNorthStar && northStarProjects.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="north-star-link">Link to North Star (Optional)</Label>
+              <Label htmlFor="north-star-link">
+                Link to North Star (Optional)
+              </Label>
               <Select
                 value={formData.northStarId || "none"}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ 
-                    ...prev, 
-                    northStarId: value === "none" ? "" : value 
+                  setFormData((prev) => ({
+                    ...prev,
+                    northStarId: value === "none" ? "" : value,
                   }))
                 }
               >

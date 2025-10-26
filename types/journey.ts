@@ -44,19 +44,9 @@ export type ActivityType =
   | "review"
   | "other";
 
-export type MoodLevel =
-  | "very_low"
-  | "low"
-  | "neutral"
-  | "good"
-  | "excellent";
+export type MoodLevel = "very_low" | "low" | "neutral" | "good" | "excellent";
 
-export type EnergyLevel =
-  | "depleted"
-  | "low"
-  | "moderate"
-  | "high"
-  | "peak";
+export type EnergyLevel = "depleted" | "low" | "moderate" | "high" | "peak";
 
 export type FocusLevel =
   | "scattered"
@@ -109,8 +99,10 @@ export interface ProjectMilestone {
   actual_hours: number | null;
   due_date: string | null;
   completed_at: string | null;
-  display_order: number;
-  position: { x: number; y: number } | null;
+  order_index: number;
+  position_x: number | null;
+  position_y: number | null;
+  progress_percentage: number;
   style: NodeStyle | null;
   dependencies: string[] | null;
   tags: string[] | null;
@@ -564,7 +556,13 @@ export interface JourneyTimeline {
 export interface TimelineEvent {
   id: string;
   date: string;
-  type: "project_start" | "project_complete" | "milestone_complete" | "reflection" | "activity" | "journal";
+  type:
+    | "project_start"
+    | "project_complete"
+    | "milestone_complete"
+    | "reflection"
+    | "activity"
+    | "journal";
   title: string;
   description: string | null;
   project_id: string | null;

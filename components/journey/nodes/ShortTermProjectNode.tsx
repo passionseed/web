@@ -22,13 +22,40 @@ interface ShortTermProjectNodeProps {
   selected?: boolean;
 }
 
-const statusColors: Record<ProjectStatus, { bg: string; text: string; border: string }> = {
-  not_started: { bg: "bg-gray-50", text: "text-gray-700", border: "border-gray-400" },
-  planning: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-400" },
-  in_progress: { bg: "bg-green-50", text: "text-green-700", border: "border-green-400" },
-  on_hold: { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-400" },
-  completed: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-400" },
-  archived: { bg: "bg-gray-50", text: "text-gray-500", border: "border-gray-300" },
+const statusColors: Record<
+  ProjectStatus,
+  { bg: string; text: string; border: string }
+> = {
+  not_started: {
+    bg: "bg-gray-50",
+    text: "text-gray-700",
+    border: "border-gray-400",
+  },
+  planning: {
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-400",
+  },
+  in_progress: {
+    bg: "bg-green-50",
+    text: "text-green-700",
+    border: "border-green-400",
+  },
+  on_hold: {
+    bg: "bg-yellow-50",
+    text: "text-yellow-700",
+    border: "border-yellow-400",
+  },
+  completed: {
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    border: "border-purple-400",
+  },
+  archived: {
+    bg: "bg-gray-50",
+    text: "text-gray-500",
+    border: "border-gray-300",
+  },
 };
 
 const statusLabels: Record<ProjectStatus, string> = {
@@ -45,6 +72,7 @@ export function ShortTermProjectNode({
   selected = false,
 }: ShortTermProjectNodeProps) {
   const { project, hasRecentActivity, isMainQuest, northStarTitle } = data;
+  console.log(data.onViewMilestones, "ovms");
   const progressPercentage = project.progress_percentage || 0;
   const statusStyle = statusColors[project.status];
 
@@ -111,11 +139,15 @@ export function ShortTermProjectNode({
 
           {/* Header */}
           <div className="flex items-start gap-3 mb-3">
-            <div className={`bg-blue-500 rounded-lg p-2 shadow-md ${isMainQuest ? "bg-cyan-500" : ""}`}>
+            <div
+              className={`bg-blue-500 rounded-lg p-2 shadow-md ${isMainQuest ? "bg-cyan-500" : ""}`}
+            >
               <Target className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className={`text-base font-bold ${statusStyle.text} truncate`}>
+              <h3
+                className={`text-base font-bold ${statusStyle.text} truncate`}
+              >
                 {project.title}
               </h3>
               <Badge
@@ -129,7 +161,9 @@ export function ShortTermProjectNode({
 
           {/* Description */}
           {project.description && (
-            <p className={`text-sm ${statusStyle.text} line-clamp-2 mb-3 opacity-80`}>
+            <p
+              className={`text-sm ${statusStyle.text} line-clamp-2 mb-3 opacity-80`}
+            >
               {project.description}
             </p>
           )}
@@ -137,7 +171,9 @@ export function ShortTermProjectNode({
           {/* Progress bar */}
           <div className="mb-3">
             <div className="flex justify-between items-center mb-1">
-              <span className={`text-xs font-medium ${statusStyle.text}`}>Progress</span>
+              <span className={`text-xs font-medium ${statusStyle.text}`}>
+                Progress
+              </span>
               <span className={`text-xs font-bold ${statusStyle.text}`}>
                 {progressPercentage}%
               </span>
