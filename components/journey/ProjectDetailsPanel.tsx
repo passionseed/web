@@ -186,6 +186,35 @@ export function ProjectDetailsPanel({
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="p-4 space-y-4">
+            {/* Goal and Why Section */}
+            {(project.goal || project.why) && (
+              <>
+                {project.goal && (
+                  <div className="bg-slate-800/30 rounded-lg p-3">
+                    <h3 className="text-sm font-semibold text-slate-200 mb-2">
+                      Goal
+                    </h3>
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                      {project.goal}
+                    </p>
+                  </div>
+                )}
+
+                {project.why && (
+                  <div className="bg-slate-800/30 rounded-lg p-3">
+                    <h3 className="text-sm font-semibold text-slate-200 mb-2">
+                      Why
+                    </h3>
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                      {project.why}
+                    </p>
+                  </div>
+                )}
+
+                <Separator className="bg-slate-800" />
+              </>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-800/50 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">

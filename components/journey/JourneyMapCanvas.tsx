@@ -49,14 +49,19 @@ import { toast } from "sonner";
 import { UserCenterNode } from "./nodes/UserCenterNode";
 import { NorthStarProjectNode } from "./nodes/NorthStarProjectNode";
 import { ShortTermProjectNode } from "./nodes/ShortTermProjectNode";
-import { MainQuestPath } from "./edges/MainQuestPath";
-import { NorthStarLink } from "./edges/NorthStarLink";
+import { MainQuestFloatingPath } from "./edges/MainQuestFloatingPath";
+import { NorthStarFloatingLink } from "./edges/NorthStarFloatingLink";
 import { CreateProjectDialog } from "./CreateProjectDialog";
+import { EditProjectDialog } from "./EditProjectDialog";
 import { ProjectDetailsPanel } from "./ProjectDetailsPanel";
+import { MainQuestPanel } from "./MainQuestPanel";
 import { DailyActivityPanel } from "./DailyActivityPanel";
 import { MilestoneMapView } from "./MilestoneMapView";
 
-import { getJourneyProjects } from "@/lib/supabase/journey";
+import {
+  getJourneyProjects,
+  updateProjectPosition,
+} from "@/lib/supabase/journey";
 import { JourneyProject, ProjectWithMilestones } from "@/types/journey";
 
 interface JourneyMapCanvasProps {
@@ -72,8 +77,8 @@ const nodeTypes = {
 };
 
 const edgeTypes = {
-  mainQuest: MainQuestPath,
-  northStar: NorthStarLink,
+  mainQuest: MainQuestFloatingPath,
+  northStar: NorthStarFloatingLink,
 };
 
 // Panel size constants
@@ -113,6 +118,8 @@ function JourneyMapCanvasInner({
 
   // Dialog states
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<ProjectWithMilestones | null>(null);
 
   // Load projects on mount
   useEffect(() => {
@@ -131,9 +138,16 @@ function JourneyMapCanvasInner({
     [viewMode]
   );
 
-  const handleEditProject = useCallback((projectId: string) => {
-    setSelectedProjectId(projectId);
-  }, []);
+  const handleEditProject = useCallback(
+    (projectId: string) => {
+      const project = projects.find((p) => p.id === projectId);
+      if (project) {
+        setEditingProject(project);
+        setEditProjectOpen(true);
+      }
+    },
+    [projects]
+  );
 
   const handleAddReflection = useCallback((projectId: string) => {
     setSelectedProjectId(projectId);
@@ -188,9 +202,16 @@ function JourneyMapCanvasInner({
       // Position North Star projects in a circle around user center
       const northStarRadius = 400;
       northStarProjects.forEach((project, index) => {
-        const angle = (index / northStarProjects.length) * 2 * Math.PI;
-        const x = Math.cos(angle) * northStarRadius;
-        const y = Math.sin(angle) * northStarRadius;
+        // Use saved position if available, otherwise calculate default position
+        let x, y;
+        if (project.position_x !== null && project.position_y !== null) {
+          x = project.position_x;
+          y = project.position_y;
+        } else {
+          const angle = (index / northStarProjects.length) * 2 * Math.PI;
+          x = Math.cos(angle) * northStarRadius;
+          y = Math.sin(angle) * northStarRadius;
+        }
 
         const linkedProjects = shortTermProjects.filter(
           (p) => p.metadata?.north_star_id === project.id
@@ -225,9 +246,16 @@ function JourneyMapCanvasInner({
       // Position short-term projects
       const shortTermRadius = 600;
       shortTermProjects.forEach((project, index) => {
-        const angle = (index / shortTermProjects.length) * 2 * Math.PI;
-        const x = Math.cos(angle) * shortTermRadius;
-        const y = Math.sin(angle) * shortTermRadius;
+        // Use saved position if available, otherwise calculate default position
+        let x, y;
+        if (project.position_x !== null && project.position_y !== null) {
+          x = project.position_x;
+          y = project.position_y;
+        } else {
+          const angle = (index / shortTermProjects.length) * 2 * Math.PI;
+          x = Math.cos(angle) * shortTermRadius;
+          y = Math.sin(angle) * shortTermRadius;
+        }
 
         const northStarId = project.metadata?.north_star_id;
         const northStar = northStarProjects.find((p) => p.id === northStarId);
@@ -324,6 +352,21 @@ function JourneyMapCanvasInner({
   const handleProjectCreated = () => {
     loadProjects();
   };
+
+  const handleNodeDragStop = useCallback(
+    async (_event: any, node: Node) => {
+      // Don't save position for user-center node
+      if (node.id === "user-center") return;
+
+      try {
+        await updateProjectPosition(node.id, node.position.x, node.position.y);
+      } catch (error) {
+        console.error("Error saving node position:", error);
+        toast.error("Failed to save position");
+      }
+    },
+    []
+  );
 
   const togglePanelSize = useCallback(() => {
     const panel = rightPanelRef.current;
@@ -464,6 +507,7 @@ function JourneyMapCanvasInner({
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onSelectionChange={handleSelectionChange}
+                onNodeDragStop={handleNodeDragStop}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 fitView
@@ -649,7 +693,7 @@ function JourneyMapCanvasInner({
               {selectedProjectId ? (
                 <ProjectDetailsPanel
                   projectId={selectedProjectId}
-                  onEdit={() => toast.info("Edit dialog coming soon!")}
+                  onEdit={() => handleEditProject(selectedProjectId)}
                   onAddReflection={() =>
                     toast.info("Reflection dialog coming soon!")
                   }
@@ -658,17 +702,18 @@ function JourneyMapCanvasInner({
                   }
                 />
               ) : (
-                <div className="flex items-center justify-center h-full p-8 text-center">
-                  <div>
-                    <Target className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-slate-300 mb-2">
-                      Select a Project
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      Click on a project node to view details and milestones
-                    </p>
-                  </div>
-                </div>
+                <MainQuestPanel
+                  projects={projects}
+                  onProjectSelect={(projectId) => {
+                    setSelectedProjectId(projectId);
+                    // Expand right panel if minimized
+                    if (isPanelMinimized && rightPanelRef.current) {
+                      rightPanelRef.current.resize(PANEL_SIZES.RIGHT_DEFAULT);
+                      setIsPanelMinimized(false);
+                    }
+                  }}
+                  onRefresh={loadProjects}
+                />
               )}
             </>
           )}
@@ -681,6 +726,12 @@ function JourneyMapCanvasInner({
         onOpenChange={setCreateProjectOpen}
         northStarProjects={northStarProjects}
         onSuccess={handleProjectCreated}
+      />
+      <EditProjectDialog
+        open={editProjectOpen}
+        onOpenChange={setEditProjectOpen}
+        project={editingProject}
+        onSuccess={loadProjects}
       />
     </ResizablePanelGroup>
   );

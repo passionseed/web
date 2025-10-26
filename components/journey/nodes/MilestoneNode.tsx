@@ -13,7 +13,7 @@ interface MilestoneNodeProps {
   data: {
     milestone: ProjectMilestone;
     latestJournalPreview?: string;
-    onOpenProgress: () => void;
+    onOpenProgress?: () => void;
   };
   selected?: boolean;
 }
@@ -105,7 +105,7 @@ export function MilestoneNode({ data, selected = false }: MilestoneNodeProps) {
 
       <div
         className={`relative cursor-pointer group ${selected ? "scale-110" : ""} transition-transform duration-300`}
-        onClick={() => data.onOpenProgress()}
+        onClick={() => data.onOpenProgress?.()}
         role="button"
         tabIndex={0}
         aria-label={`${milestone.title} - ${config.label} - ${progressPercentage}% complete`}
