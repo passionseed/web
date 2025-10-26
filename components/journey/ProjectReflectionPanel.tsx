@@ -64,7 +64,9 @@ export function ProjectReflectionPanel({
   const [isLoading, setIsLoading] = useState(false);
   const [project, setProject] = useState<ProjectWithMilestones | null>(null);
   const [milestones, setMilestones] = useState<MilestoneWithJournals[]>([]);
-  const [journals, setJournals] = useState<Record<string, MilestoneJournal[]>>({});
+  const [journals, setJournals] = useState<Record<string, MilestoneJournal[]>>(
+    {}
+  );
   const [reflections, setReflections] = useState<ProjectReflection[]>([]);
 
   useEffect(() => {
@@ -103,7 +105,10 @@ export function ProjectReflectionPanel({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-xl overflow-hidden flex flex-col">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-xl overflow-hidden flex flex-col"
+      >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Target className="w-5 h-5 text-blue-500" />
@@ -119,7 +124,10 @@ export function ProjectReflectionPanel({
             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
           </div>
         ) : project ? (
-          <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+          <Tabs
+            defaultValue="overview"
+            className="flex-1 flex flex-col overflow-hidden"
+          >
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="milestones">Milestones</TabsTrigger>
@@ -156,8 +164,13 @@ export function ProjectReflectionPanel({
 
                   {/* Progress bar */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Overall Progress</Label>
-                    <Progress value={project.progress_percentage || 0} className="h-3" />
+                    <Label className="text-sm font-medium">
+                      Overall Progress
+                    </Label>
+                    <Progress
+                      value={project.progress_percentage || 0}
+                      className="h-3"
+                    />
                   </div>
 
                   {/* Status and type */}
@@ -173,7 +186,11 @@ export function ProjectReflectionPanel({
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Calendar className="w-4 h-4" />
                           <span>
-                            Started: {format(new Date(project.start_date), "MMM d, yyyy")}
+                            Started:{" "}
+                            {format(
+                              new Date(project.start_date),
+                              "MMM d, yyyy"
+                            )}
                           </span>
                         </div>
                       )}
@@ -181,7 +198,11 @@ export function ProjectReflectionPanel({
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Clock className="w-4 h-4" />
                           <span>
-                            Target: {format(new Date(project.target_end_date), "MMM d, yyyy")}
+                            Target:{" "}
+                            {format(
+                              new Date(project.target_end_date),
+                              "MMM d, yyyy"
+                            )}
                           </span>
                         </div>
                       )}
@@ -190,11 +211,20 @@ export function ProjectReflectionPanel({
 
                   {/* Actions */}
                   <div className="flex gap-2">
-                    <Button onClick={onEdit} variant="outline" size="sm" className="flex-1">
+                    <Button
+                      onClick={onEdit}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                    >
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Project
                     </Button>
-                    <Button onClick={onAddReflection} size="sm" className="flex-1">
+                    <Button
+                      onClick={onAddReflection}
+                      size="sm"
+                      className="flex-1"
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Reflection
                     </Button>
@@ -206,7 +236,8 @@ export function ProjectReflectionPanel({
               <TabsContent value="milestones" className="space-y-3 m-0">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm font-semibold">
-                    {milestones.length} Milestone{milestones.length !== 1 ? "s" : ""}
+                    {milestones.length} Milestone
+                    {milestones.length !== 1 ? "s" : ""}
                   </h3>
                   <Button onClick={onAddMilestone} size="sm">
                     <Plus className="w-4 h-4 mr-2" />
@@ -226,14 +257,20 @@ export function ProjectReflectionPanel({
                         className="bg-gray-50 rounded-lg p-4 space-y-2"
                       >
                         <div className="flex items-start justify-between">
-                          <h4 className="font-semibold text-gray-900">{milestone.title}</h4>
+                          <h4 className="font-semibold text-gray-900">
+                            {milestone.title}
+                          </h4>
                           <Badge variant="secondary">{milestone.status}</Badge>
                         </div>
                         {milestone.description && (
-                          <p className="text-sm text-gray-600">{milestone.description}</p>
+                          <p className="text-sm text-gray-600">
+                            {milestone.description}
+                          </p>
                         )}
                         <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>{milestone.journal_count || 0} journal entries</span>
+                          <span>
+                            {milestone.journal_count || 0} journal entries
+                          </span>
                           {milestone.estimated_hours && (
                             <span>{milestone.estimated_hours}h estimated</span>
                           )}
@@ -254,7 +291,9 @@ export function ProjectReflectionPanel({
                 ) : (
                   <div className="space-y-4">
                     {Object.entries(journals).map(([milestoneId, entries]) => {
-                      const milestone = milestones.find((m) => m.id === milestoneId);
+                      const milestone = milestones.find(
+                        (m) => m.id === milestoneId
+                      );
                       return (
                         <div key={milestoneId} className="space-y-2">
                           <h4 className="font-semibold text-sm text-gray-900">
@@ -267,10 +306,16 @@ export function ProjectReflectionPanel({
                             >
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-gray-500">
-                                  {format(new Date(entry.created_at), "MMM d, yyyy")}
+                                  {format(
+                                    new Date(entry.created_at),
+                                    "MMM d, yyyy"
+                                  )}
                                 </span>
                                 {entry.progress_percentage !== undefined && (
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     {entry.progress_percentage}%
                                   </Badge>
                                 )}
@@ -291,7 +336,8 @@ export function ProjectReflectionPanel({
               <TabsContent value="reflections" className="space-y-3 m-0">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm font-semibold">
-                    {reflections.length} Reflection{reflections.length !== 1 ? "s" : ""}
+                    {reflections.length} Reflection
+                    {reflections.length !== 1 ? "s" : ""}
                   </h3>
                   <Button onClick={onAddReflection} size="sm">
                     <Plus className="w-4 h-4 mr-2" />
@@ -317,7 +363,9 @@ export function ProjectReflectionPanel({
                               "MMM d, yyyy"
                             )}
                           </span>
-                          <Badge variant="secondary">{reflection.reflection_type}</Badge>
+                          <Badge variant="secondary">
+                            {reflection.reflection_type}
+                          </Badge>
                         </div>
                         {reflection.title && (
                           <h4 className="font-semibold text-gray-900">
@@ -340,6 +388,12 @@ export function ProjectReflectionPanel({
   );
 }
 
-function Label({ className, children }: { className?: string; children: React.ReactNode }) {
+function Label({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return <div className={className}>{children}</div>;
 }

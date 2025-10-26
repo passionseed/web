@@ -65,17 +65,22 @@ export function CreateMilestoneDialog({
 
     try {
       // Calculate position based on existing milestones
-      let position = { x: 100, y: 100 };
+      let position_x = 100;
+      let position_y = 0;
+
       if (existingMilestones.length > 0) {
-        // Position in a flowing pattern
+        // Position in a flowing pattern using position_x and position_y
         const lastMilestone = existingMilestones[existingMilestones.length - 1];
-        const lastPosition = lastMilestone.position || { x: 100, y: 100 };
+        const lastX = lastMilestone.position_x || 100;
+        const lastY = lastMilestone.position_y || 0;
 
         // Alternate between right and down movements for a natural flow
         if (existingMilestones.length % 3 === 0) {
-          position = { x: lastPosition.x - 150, y: lastPosition.y + 200 };
+          position_x = lastX - 150;
+          position_y = lastY + 200;
         } else {
-          position = { x: lastPosition.x + 200, y: lastPosition.y };
+          position_x = lastX + 200;
+          position_y = lastY;
         }
       }
 
@@ -86,7 +91,8 @@ export function CreateMilestoneDialog({
         estimated_hours: formData.estimatedHours
           ? parseFloat(formData.estimatedHours)
           : undefined,
-        position,
+        position_x,
+        position_y,
       };
 
       const newMilestone = await createMilestone(projectId, milestoneData);
@@ -156,7 +162,10 @@ export function CreateMilestoneDialog({
               placeholder="What needs to be accomplished?"
               value={formData.description}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, description: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
               }
               rows={3}
             />
@@ -173,7 +182,10 @@ export function CreateMilestoneDialog({
               placeholder="e.g., 10"
               value={formData.estimatedHours}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, estimatedHours: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  estimatedHours: e.target.value,
+                }))
               }
             />
           </div>
@@ -187,9 +199,9 @@ export function CreateMilestoneDialog({
               <Select
                 value={formData.previousMilestoneId || "none"}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ 
-                    ...prev, 
-                    previousMilestoneId: value === "none" ? "" : value 
+                  setFormData((prev) => ({
+                    ...prev,
+                    previousMilestoneId: value === "none" ? "" : value,
                   }))
                 }
               >
