@@ -44,6 +44,7 @@ import {
 } from "./utils/journeyCalculations";
 import { buildJourneyMap } from "./utils/journeyMapBuilder";
 import { PANEL_SIZES, VIEW_MODES } from "./constants/journeyMapConfig";
+import { ProjectWithMilestones } from "@/types/journey";
 
 // ========================================
 // TYPES
