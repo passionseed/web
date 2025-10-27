@@ -40,6 +40,13 @@ export interface UseJourneyMapStateReturn {
   setIsPanelMinimized: (minimized: boolean) => void;
   isNavigationExpanded: boolean;
   setIsNavigationExpanded: (expanded: boolean) => void;
+
+  // Connection mode state
+  isProjectConnectMode: boolean;
+  connectingFromProject: string | null;
+  enableProjectConnectMode: () => void;
+  disableProjectConnectMode: () => void;
+  setConnectingFromProject: (projectId: string | null) => void;
 }
 
 /**
@@ -66,6 +73,12 @@ export function useJourneyMapState(): UseJourneyMapStateReturn {
   // Panel state
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
   const [isNavigationExpanded, setIsNavigationExpanded] = useState(false);
+
+  // Connection mode state
+  const [isProjectConnectMode, setIsProjectConnectMode] = useState(false);
+  const [connectingFromProject, setConnectingFromProject] = useState<
+    string | null
+  >(null);
 
   // Selection handlers
   const handleSelectionChange = useCallback(
@@ -115,6 +128,17 @@ export function useJourneyMapState(): UseJourneyMapStateReturn {
     setEditProjectOpen(false);
   }, []);
 
+  // Connection mode handlers
+  const enableProjectConnectMode = useCallback(() => {
+    setIsProjectConnectMode(true);
+    toast.info("Connect mode enabled - drag from one project to another");
+  }, []);
+
+  const disableProjectConnectMode = useCallback(() => {
+    setIsProjectConnectMode(false);
+    setConnectingFromProject(null);
+  }, []);
+
   return {
     // Selection state
     selectedProjectId,
@@ -141,5 +165,12 @@ export function useJourneyMapState(): UseJourneyMapStateReturn {
     setIsPanelMinimized,
     isNavigationExpanded,
     setIsNavigationExpanded,
+
+    // Connection mode state
+    isProjectConnectMode,
+    connectingFromProject,
+    enableProjectConnectMode,
+    disableProjectConnectMode,
+    setConnectingFromProject,
   };
 }

@@ -6,7 +6,7 @@
  */
 
 import { Node, Edge } from "@xyflow/react";
-import { ProjectWithMilestones } from "@/types/journey";
+import { ProjectWithMilestones, ProjectPath } from "@/types/journey";
 import {
   calculateOverallProgress,
   categorizeProjects,
@@ -15,6 +15,7 @@ import {
   checkRecentActivity,
 } from "../utils/journeyCalculations";
 import { NODE_LAYOUT } from "../constants/journeyMapConfig";
+import { getProjectPathStyle } from "../utils/projectPathStyles";
 
 export interface MapBuilderCallbacks {
   onViewMilestones: (projectId: string) => void;
@@ -35,7 +36,8 @@ export function buildJourneyMap(
   userId: string,
   userName: string,
   userAvatar: string | undefined,
-  callbacks: MapBuilderCallbacks
+  callbacks: MapBuilderCallbacks,
+  projectPaths: ProjectPath[] = []
 ): MapBuilderResult {
   const newNodes: Node[] = [];
   const newEdges: Edge[] = [];
@@ -96,6 +98,11 @@ export function buildJourneyMap(
     }
   });
 
+  // Add project path edges
+  projectPaths.forEach((path) => {
+    newEdges.push(createProjectPathEdge(path));
+  });
+
   return { nodes: newNodes, edges: newEdges };
 }
 
@@ -138,6 +145,7 @@ function createNorthStarNode(
     position,
     data: {
       project,
+      icon: project.icon || "🎯",
       linkedProjectCount,
       hasRecentActivity: checkRecentActivity(project),
       onViewMilestones: () => callbacks.onViewMilestones(project.id),
@@ -161,6 +169,7 @@ function createShortTermNode(
     position,
     data: {
       project,
+      icon: project.icon || "🎯",
       hasRecentActivity: checkRecentActivity(project),
       isMainQuest: project.metadata?.is_main_quest === true,
       northStarTitle,
@@ -209,5 +218,32 @@ function createProjectToUserEdge(
     target: projectId,
     type: isMainQuest ? "mainQuest" : "default",
     animated: isMainQuest,
+  };
+}
+
+function createProjectPathEdge(path: ProjectPath): Edge {
+  const pathStyle = getProjectPathStyle(path.path_type);
+
+  return {
+    id: path.id,
+    source: path.source_project_id,
+    target: path.destination_project_id,
+    type: "projectLink",
+    animated: pathStyle.animated,
+    style: {
+      stroke: pathStyle.stroke,
+      strokeWidth: pathStyle.strokeWidth,
+      strokeDasharray: pathStyle.strokeDasharray,
+    },
+    markerEnd: {
+      type: pathStyle.markerEnd.type,
+      color: pathStyle.markerEnd.color,
+      width: pathStyle.markerEnd.width,
+      height: pathStyle.markerEnd.height,
+    },
+    data: {
+      pathType: path.path_type,
+      pathId: path.id,
+    },
   };
 }

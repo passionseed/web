@@ -86,6 +86,7 @@ export interface JourneyProject {
   priority: number;
   tags: string[] | null;
   color: string | null;
+  icon: string | null;
   cover_image_url: string | null;
   cover_image_blurhash: string | null;
   cover_image_key: string | null;
@@ -126,6 +127,14 @@ export interface MilestonePath {
   destination_milestone_id: string;
   path_type: "linear" | "conditional" | "parallel";
   metadata: Record<string, any> | null;
+  created_at: string;
+}
+
+export interface ProjectPath {
+  id: string;
+  source_project_id: string;
+  destination_project_id: string;
+  path_type: "dependency" | "relates_to" | "leads_to";
   created_at: string;
 }
 
@@ -308,6 +317,7 @@ export interface ProjectCreateData {
   title: string;
   description?: string;
   project_type: ProjectType;
+  icon?: string;
   status?: ProjectStatus;
   start_date?: string;
   target_end_date?: string;
@@ -323,6 +333,7 @@ export interface ProjectUpdateData {
   description?: string;
   goal?: string;
   why?: string;
+  icon?: string;
   project_type?: ProjectType;
   north_star_id?: string;
   is_main_quest?: boolean;

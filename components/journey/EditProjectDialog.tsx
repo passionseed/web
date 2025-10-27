@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { updateProjectDetails } from "@/lib/supabase/journey";
 import { JourneyProject } from "@/types/journey";
+import { EmojiPicker } from "@/components/ui/EmojiPicker";
 
 interface EditProjectDialogProps {
   open: boolean;
@@ -39,6 +40,7 @@ export function EditProjectDialog({
   onSuccess,
 }: EditProjectDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [icon, setIcon] = useState("🎯");
   const [formData, setFormData] = useState({
     title: "",
     goal: "",
@@ -49,6 +51,7 @@ export function EditProjectDialog({
   // Update form data when project changes
   useEffect(() => {
     if (project) {
+      setIcon((project as any).icon || "🎯");
       setFormData({
         title: project.title || "",
         goal: project.goal || "",
@@ -76,6 +79,7 @@ export function EditProjectDialog({
         goal: formData.goal.trim() || undefined,
         why: formData.why.trim() || undefined,
         description: formData.description.trim() || undefined,
+        icon: icon,
       });
 
       toast.success("Project updated successfully!");
@@ -101,6 +105,15 @@ export function EditProjectDialog({
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
+            {/* Icon Picker */}
+            <div className="space-y-2">
+              <Label htmlFor="icon">Project Icon</Label>
+              <p className="text-sm text-slate-500">
+                Choose an emoji that represents your project
+              </p>
+              <EmojiPicker value={icon} onSelect={setIcon} disabled={isSubmitting} />
+            </div>
+
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import {
   BookOpen,
   Target,
@@ -31,6 +32,7 @@ import {
   getProjectMilestones,
   getProjectJournals,
   getProjectReflections,
+  updateProjectDetails,
 } from "@/lib/supabase/journey";
 import {
   ProjectWithMilestones,
@@ -39,6 +41,7 @@ import {
   ProjectReflection,
 } from "@/types/journey";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface ProjectDetailsPanelProps {
   projectId: string | null;
@@ -128,12 +131,38 @@ export function ProjectDetailsPanel({
       <div className="p-4 border-b border-slate-800">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              {project.metadata?.is_north_star ? (
-                <Target className="w-5 h-5 text-amber-400" />
-              ) : (
-                <Target className="w-5 h-5 text-blue-400" />
-              )}
+            <div className="flex items-center gap-3 mb-2">
+              {/* Emoji Icon with Quick Edit */}
+              <EmojiPicker
+                value={project.icon || "🎯"}
+                onSelect={async (emoji) => {
+                  try {
+                    await updateProjectDetails(
+                      project.id,
+                      project.title,
+                      project.goal || "",
+                      project.why || "",
+                      project.description || "",
+                      emoji
+                    );
+                    toast.success("Icon updated");
+                    loadProjectData(); // Reload to show new icon
+                  } catch (error) {
+                    console.error("Error updating icon:", error);
+                    toast.error("Failed to update icon");
+                  }
+                }}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-3xl p-1 h-auto hover:bg-slate-800 rounded-lg transition-colors"
+                    title="Click to change icon"
+                  >
+                    {project.icon || "🎯"}
+                  </Button>
+                }
+              />
               <h2 className="text-lg font-bold text-slate-100">
                 {project.title}
               </h2>

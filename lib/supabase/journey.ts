@@ -3,6 +3,7 @@ import {
   JourneyProject,
   ProjectMilestone,
   MilestonePath,
+  ProjectPath,
   MilestoneJournal,
   ProjectReflection,
   DailyActivity,
@@ -27,6 +28,7 @@ const TABLES = {
   JOURNEY_PROJECTS: "journey_projects",
   PROJECT_MILESTONES: "project_milestones",
   MILESTONE_PATHS: "milestone_paths",
+  PROJECT_PATHS: "project_paths",
   MILESTONE_JOURNALS: "milestone_journals",
   PROJECT_REFLECTIONS: "project_reflections",
   DAILY_ACTIVITIES: "daily_activities",
@@ -76,6 +78,7 @@ export async function createJourneyProject(
       title: data.title,
       description: data.description || null,
       project_type: projectType,
+      icon: data.icon || null,
       status: mapStatus(data.status),
       color_theme: data.color || "#6366f1",
       metadata: {
@@ -337,7 +340,7 @@ export async function updateProjectPosition(
 }
 
 /**
- * Update project details (goal, why, description)
+ * Update project details (goal, why, description, icon)
  */
 export async function updateProjectDetails(
   projectId: string,
@@ -346,6 +349,7 @@ export async function updateProjectDetails(
     goal?: string;
     why?: string;
     description?: string;
+    icon?: string;
   }
 ): Promise<JourneyProject> {
   const supabase = createClient();
@@ -1392,4 +1396,204 @@ export async function getJourneyOverview(
     console.error("Error fetching journey overview:", error);
     throw error;
   }
+}
+
+// ========================================
+// PROJECT PATHS (Project-to-Project Linking)
+// ========================================
+
+/**
+ * Create a new path/link between two projects
+ * @param sourceProjectId - The source project ID
+ * @param destinationProjectId - The destination project ID
+ * @param pathType - Type of relationship: dependency, relates_to, or leads_to
+ * @returns The created project path
+ */
+export async function createProjectPath(
+  sourceProjectId: string,
+  destinationProjectId: string,
+  pathType: "dependency" | "relates_to" | "leads_to"
+): Promise<ProjectPath> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  // Validate both projects exist and belong to the user
+  const { data: projects, error: validateError } = await supabase
+    .from(TABLES.JOURNEY_PROJECTS)
+    .select("id")
+    .in("id", [sourceProjectId, destinationProjectId])
+    .eq("user_id", user.id);
+
+  if (validateError) {
+    console.error("Error validating projects:", validateError);
+    throw validateError;
+  }
+
+  if (!projects || projects.length !== 2) {
+    throw new Error("One or both projects not found or not owned by user");
+  }
+
+  // Create the path
+  const { data: path, error } = await supabase
+    .from(TABLES.PROJECT_PATHS)
+    .insert({
+      source_project_id: sourceProjectId,
+      destination_project_id: destinationProjectId,
+      path_type: pathType,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating project path:", error);
+    throw error;
+  }
+
+  return path;
+}
+
+/**
+ * Delete a project path
+ * @param pathId - The project path ID to delete
+ */
+export async function deleteProjectPath(pathId: string): Promise<void> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const { error } = await supabase
+    .from(TABLES.PROJECT_PATHS)
+    .delete()
+    .eq("id", pathId);
+
+  if (error) {
+    console.error("Error deleting project path:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get all project paths for the authenticated user
+ * @returns Array of project paths
+ */
+export async function getAllProjectPaths(): Promise<ProjectPath[]> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  // Get all paths where source project belongs to user
+  const { data: paths, error } = await supabase
+    .from(TABLES.PROJECT_PATHS)
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching project paths:", error);
+    throw error;
+  }
+
+  return paths || [];
+}
+
+/**
+ * Get all paths connected to a specific project (incoming and outgoing)
+ * @param projectId - The project ID
+ * @returns Object with incoming and outgoing paths
+ */
+export async function getProjectPaths(projectId: string): Promise<{
+  outgoing: ProjectPath[];
+  incoming: ProjectPath[];
+}> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  // Get outgoing paths (where this project is the source)
+  const { data: outgoing, error: outgoingError } = await supabase
+    .from(TABLES.PROJECT_PATHS)
+    .select("*")
+    .eq("source_project_id", projectId)
+    .order("created_at", { ascending: false });
+
+  if (outgoingError) {
+    console.error("Error fetching outgoing paths:", outgoingError);
+    throw outgoingError;
+  }
+
+  // Get incoming paths (where this project is the destination)
+  const { data: incoming, error: incomingError } = await supabase
+    .from(TABLES.PROJECT_PATHS)
+    .select("*")
+    .eq("destination_project_id", projectId)
+    .order("created_at", { ascending: false });
+
+  if (incomingError) {
+    console.error("Error fetching incoming paths:", incomingError);
+    throw incomingError;
+  }
+
+  return {
+    outgoing: outgoing || [],
+    incoming: incoming || [],
+  };
+}
+
+/**
+ * Update the type of a project path
+ * @param pathId - The project path ID
+ * @param newPathType - The new path type
+ * @returns The updated project path
+ */
+export async function updateProjectPathType(
+  pathId: string,
+  newPathType: "dependency" | "relates_to" | "leads_to"
+): Promise<ProjectPath> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const { data: path, error } = await supabase
+    .from(TABLES.PROJECT_PATHS)
+    .update({ path_type: newPathType })
+    .eq("id", pathId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating project path type:", error);
+    throw error;
+  }
+
+  return path;
 }

@@ -13,6 +13,7 @@ import { JourneyProject } from "@/types/journey";
 interface NorthStarProjectNodeProps {
   data: {
     project: JourneyProject;
+    icon: string;
     linkedProjectCount: number;
     hasRecentActivity: boolean;
     onViewMilestones: () => void;
@@ -26,7 +27,7 @@ export function NorthStarProjectNode({
   data,
   selected = false,
 }: NorthStarProjectNodeProps) {
-  const { project, linkedProjectCount, hasRecentActivity } = data;
+  const { project, icon, linkedProjectCount, hasRecentActivity } = data;
   const progressPercentage = project.progress_percentage || 0;
 
   // Calculate progress ring offset
@@ -112,13 +113,15 @@ export function NorthStarProjectNode({
             </svg>
           </div>
 
-          {/* Star icon */}
-          <div className="flex items-start gap-3 mb-3">
-            <div className="bg-amber-500 rounded-full p-2 shadow-lg">
-              <Star className="w-6 h-6 text-white fill-white" />
+          {/* Project icon and header */}
+          <div className="flex flex-col items-center mb-3">
+            {/* Emoji icon */}
+            <div className="text-5xl mb-2 select-none" role="img" aria-label="Project icon">
+              {icon}
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold text-amber-900 truncate">
+
+            <div className="w-full text-center">
+              <h3 className="text-lg font-bold text-amber-900 truncate px-2">
                 {project.title}
               </h3>
               <Badge variant="secondary" className="mt-1 bg-amber-200 text-amber-800">
