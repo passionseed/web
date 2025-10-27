@@ -23,13 +23,15 @@ function FloatingEdge({
     return null;
   }
 
-  const { sx, sy, tx, ty } = getEdgeParams(sourceNode, targetNode);
+  const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
 
   const [edgePath] = getBezierPath({
     sourceX: sx,
     sourceY: sy,
+    sourcePosition: sourcePos,
     targetX: tx,
     targetY: ty,
+    targetPosition: targetPos,
   });
 
   // Calculate path length for rope spacing
@@ -72,7 +74,9 @@ function FloatingEdge({
             strokeWidth: selected ? 3 : 2,
             strokeDasharray: selected ? "8,4" : "5,5",
             transition: "all 200ms ease-in-out",
-            filter: selected ? "drop-shadow(0 0 6px rgba(59, 130, 246, 0.6))" : "none",
+            filter: selected
+              ? "drop-shadow(0 0 6px rgba(59, 130, 246, 0.6))"
+              : "none",
             pointerEvents: "none", // Let the invisible path handle events
           }}
         />
@@ -81,7 +85,10 @@ function FloatingEdge({
   }
 
   return (
-    <g className="sky-bridge-group" style={{ cursor: selected ? "pointer" : "default" }}>
+    <g
+      className="sky-bridge-group"
+      style={{ cursor: selected ? "pointer" : "default" }}
+    >
       {/* Invisible thick path for easier selection */}
       <path
         className="react-flow__edge-path"
@@ -120,7 +127,9 @@ function FloatingEdge({
           fill: "none",
           strokeLinecap: "round",
           transition: "all 300ms ease-in-out",
-          filter: selected ? "drop-shadow(0 0 8px rgba(59, 130, 246, 0.8))" : "none",
+          filter: selected
+            ? "drop-shadow(0 0 8px rgba(59, 130, 246, 0.8))"
+            : "none",
           pointerEvents: "none",
         }}
       />
@@ -169,7 +178,6 @@ function FloatingEdge({
         }}
       />
 
-
       {/* Rope supports */}
       {ropePositions.map((pos, index) => (
         <g key={`rope-${index}`} className="rope-support animate-float-rope">
@@ -215,8 +223,8 @@ function FloatingEdge({
           return (
             <circle
               key={`particle-${i}`}
-              cx={x}
-              cy={y}
+              cx={x || 0}
+              cy={y || 0}
               r="1.5"
               fill="#FFD700"
               opacity="0.6"

@@ -54,6 +54,11 @@ import {
   ProjectMilestone,
   MilestonePath,
 } from "@/types/journey";
+import {
+  getPositionSyncManager,
+  SyncStatus,
+} from "@/lib/sync/PositionSyncManager";
+import { SyncStatusIndicator } from "./SyncStatusIndicator";
 
 interface MilestoneMapViewProps {
   projectId: string;
@@ -92,6 +97,11 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
 
   // Dialog states
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+
+  // Sync manager and status
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const [syncMessage, setSyncMessage] = useState<string | undefined>(undefined);
+  const syncManager = getPositionSyncManager();
 
   // Edge types
   const edgeTypes = useMemo(
@@ -239,9 +249,36 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     loadMilestoneMap();
   }, [loadMilestoneMap]);
 
+  // Subscribe to sync status changes
+  useEffect(() => {
+    const unsubscribe = syncManager.onStatusChange((event) => {
+      setSyncStatus(event.status);
+      setSyncMessage(event.message);
+
+      // Show error toast if sync fails
+      if (event.status === "error") {
+        toast.error(event.message || "Failed to save position changes");
+      }
+    });
+
+    // Cleanup: flush pending changes and unsubscribe
+    return () => {
+      syncManager.flush();
+      unsubscribe();
+    };
+  }, [syncManager]);
+
   const handleProgressUpdated = () => {
     loadMilestoneMap();
   };
+
+  const handleNodeDragStop = useCallback(
+    (_event: any, node: Node) => {
+      // Mark milestone as dirty for batched sync
+      syncManager.markMilestoneDirty(node.id, node.position.x, node.position.y);
+    },
+    [syncManager]
+  );
 
   const handleSelectionChange = useCallback(
     (params: OnSelectionChangeParams) => {
@@ -395,6 +432,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onSelectionChange={handleSelectionChange}
+            onNodeDragStop={handleNodeDragStop}
             onConnect={isConnectMode ? onConnect : undefined}
             onEdgeContextMenu={onEdgeContextMenu}
             nodeTypes={nodeTypes}
@@ -563,6 +601,9 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
             milestone={selectedMilestone}
             onSuccess={handleProgressUpdated}
           />
+
+          {/* Sync Status Indicator */}
+          <SyncStatusIndicator status={syncStatus} message={syncMessage} />
         </div>
       </ResizablePanel>
 
