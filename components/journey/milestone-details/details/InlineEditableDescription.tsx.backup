@@ -1,0 +1,228 @@
+/**
+ * InlineEditableDescription - Inline editable text field with checklist support
+ * Supports both plain markdown and interactive checklists in view mode
+ * Provides "Add Checklist Item" functionality in edit mode
+ */
+
+"use client";
+
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Edit, Save, X, ListChecks } from 'lucide-react';
+import { ChecklistRenderer } from './ChecklistRenderer';
+import { useChecklistParser } from '@/hooks/milestone-details/useChecklistParser';
+import { insertChecklistItem } from '@/components/journey/utils/checklistMarkdown';
+import { cn } from '@/lib/utils';
+
+interface InlineEditableDescriptionProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSave?: () => void;
+  placeholder?: string;
+  label?: string;
+  maxLength?: number;
+  rows?: number;
+  className?: string;
+  readOnly?: boolean;
+}
+
+export function InlineEditableDescription({
+  value,
+  onChange,
+  onSave,
+  placeholder = 'Add description...',
+  label,
+  maxLength = 2000,
+  rows = 4,
+  className,
+  readOnly = false,
+}: InlineEditableDescriptionProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Sync edit value with prop changes
+  useEffect(() => {
+    if (!isEditing) {
+      setEditValue(value);
+    }
+  }, [value, isEditing]);
+
+  // Checklist parser for view mode
+  const checklistParser = useChecklistParser({
+    markdown: value,
+    onUpdate: onChange,
+  });
+
+  // Enter edit mode
+  const handleEdit = useCallback(() => {
+    setIsEditing(true);
+    setEditValue(value);
+  }, [value]);
+
+  // Cancel editing
+  const handleCancel = useCallback(() => {
+    setIsEditing(false);
+    setEditValue(value);
+  }, [value]);
+
+  // Save changes
+  const handleSave = useCallback(() => {
+    onChange(editValue);
+    setIsEditing(false);
+    onSave?.();
+  }, [editValue, onChange, onSave]);
+
+  // Add checklist item
+  const handleAddChecklistItem = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const cursorPosition = textarea.selectionStart;
+    const textBeforeCursor = editValue.substring(0, cursorPosition);
+    const textAfterCursor = editValue.substring(cursorPosition);
+
+    // Insert checklist item at cursor position
+    const newValue = `${textBeforeCursor}\n- [ ] ${textAfterCursor}`;
+    setEditValue(newValue);
+
+    // Focus textarea and move cursor after the checkbox
+    setTimeout(() => {
+      const newCursorPosition = cursorPosition + 7; // Length of "\n- [ ] "
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+    }, 0);
+  }, [editValue]);
+
+  // Keyboard shortcuts
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Save on Cmd/Ctrl + Enter
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      }
+      // Cancel on Escape
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      }
+    },
+    [handleSave, handleCancel]
+  );
+
+  if (readOnly) {
+    // Read-only mode - just display content
+    return (
+      <div className={cn('space-y-2', className)}>
+        {label && (
+          <h3 className="text-sm font-semibold text-slate-200">{label}</h3>
+        )}
+        <ChecklistRenderer
+          markdown={value}
+          items={checklistParser.items}
+          onToggle={checklistParser.toggleItem}
+          readOnly={true}
+        />
+      </div>
+    );
+  }
+
+  if (isEditing) {
+    // Edit mode
+    return (
+      <div className={cn('space-y-2', className)}>
+        {label && (
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-200">{label}</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddChecklistItem}
+              className="text-slate-400 hover:text-slate-200 h-7 px-2"
+            >
+              <ListChecks className="w-4 h-4 mr-1" />
+              Add Checklist
+            </Button>
+          </div>
+        )}
+        <Textarea
+          ref={textareaRef}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          rows={rows}
+          maxLength={maxLength}
+          className="bg-slate-900 border-slate-700 text-slate-100 resize-none"
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-slate-500">
+            {editValue.length} / {maxLength}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancel}
+              className="h-8"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              className="h-8 bg-blue-600 hover:bg-blue-700"
+            >
+              <Save className="w-4 h-4 mr-1" />
+              Save
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // View mode
+  return (
+    <div className={cn('space-y-2', className)}>
+      <div className="flex items-center justify-between">
+        {label && <h3 className="text-sm font-semibold text-slate-200">{label}</h3>}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleEdit}
+          className="text-slate-400 hover:text-slate-200 h-7 px-2"
+        >
+          <Edit className="w-4 h-4 mr-1" />
+          Edit
+        </Button>
+      </div>
+
+      {checklistParser.hasChecklistItems || value.trim() ? (
+        <>
+          <ChecklistRenderer
+            markdown={value}
+            items={checklistParser.items}
+            onToggle={checklistParser.toggleItem}
+            readOnly={false}
+          />
+          {checklistParser.totalCount > 0 && (
+            <div className="flex items-center gap-2 text-xs text-slate-500 pt-2">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>
+                  {checklistParser.checkedCount} / {checklistParser.totalCount} completed
+                </span>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="text-sm text-slate-500 italic py-2">{placeholder}</p>
+      )}
+    </div>
+  );
+}

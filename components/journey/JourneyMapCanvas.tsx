@@ -58,11 +58,13 @@ import { MainQuestPanel } from "./MainQuestPanel";
 import { DailyActivityPanel } from "./DailyActivityPanel";
 import { MilestoneMapView } from "./MilestoneMapView";
 
+import { getJourneyProjects } from "@/lib/supabase/journey";
+import { ProjectWithMilestones } from "@/types/journey";
 import {
-  getJourneyProjects,
-  updateProjectPosition,
-} from "@/lib/supabase/journey";
-import { JourneyProject, ProjectWithMilestones } from "@/types/journey";
+  getPositionSyncManager,
+  SyncStatus,
+} from "@/lib/sync/PositionSyncManager";
+import { SyncStatusIndicator } from "./SyncStatusIndicator";
 
 interface JourneyMapCanvasProps {
   userId: string;
@@ -122,10 +124,34 @@ function JourneyMapCanvasInner({
   const [editingProject, setEditingProject] =
     useState<ProjectWithMilestones | null>(null);
 
+  // Sync manager and status
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const [syncMessage, setSyncMessage] = useState<string | undefined>(undefined);
+  const syncManager = getPositionSyncManager();
+
   // Load projects on mount
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // Subscribe to sync status changes
+  useEffect(() => {
+    const unsubscribe = syncManager.onStatusChange((event) => {
+      setSyncStatus(event.status);
+      setSyncMessage(event.message);
+
+      // Show error toast if sync fails
+      if (event.status === "error") {
+        toast.error(event.message || "Failed to save position changes");
+      }
+    });
+
+    // Cleanup: flush pending changes and unsubscribe
+    return () => {
+      syncManager.flush();
+      unsubscribe();
+    };
+  }, [syncManager]);
 
   const handleViewMilestones = useCallback(
     (projectId: string) => {
@@ -354,17 +380,16 @@ function JourneyMapCanvasInner({
     loadProjects();
   };
 
-  const handleNodeDragStop = useCallback(async (_event: any, node: Node) => {
-    // Don't save position for user-center node
-    if (node.id === "user-center") return;
+  const handleNodeDragStop = useCallback(
+    (_event: any, node: Node) => {
+      // Don't save position for user-center node
+      if (node.id === "user-center") return;
 
-    try {
-      await updateProjectPosition(node.id, node.position.x, node.position.y);
-    } catch (error) {
-      console.error("Error saving node position:", error);
-      toast.error("Failed to save position");
-    }
-  }, []);
+      // Mark project as dirty for batched sync
+      syncManager.markProjectDirty(node.id, node.position.x, node.position.y);
+    },
+    [syncManager]
+  );
 
   const togglePanelSize = useCallback(() => {
     const panel = rightPanelRef.current;
@@ -657,6 +682,9 @@ function JourneyMapCanvasInner({
                 <Info className="h-4 w-4 text-slate-400" />
               </button>
             )}
+
+            {/* Sync Status Indicator */}
+            <SyncStatusIndicator status={syncStatus} message={syncMessage} />
           </>
         )}
       </ResizablePanel>

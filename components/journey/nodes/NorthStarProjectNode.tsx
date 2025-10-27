@@ -35,29 +35,19 @@ export function NorthStarProjectNode({
 
   return (
     <div className="relative">
-      {/* Connection handles */}
+      {/* Dynamic connection handles - position calculated automatically for floating edges */}
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="source"
+        className="opacity-0"
+        style={{ pointerEvents: "none" }}
+      />
       <Handle
         type="target"
         position={Position.Top}
-        className="w-3 h-3 bg-purple-500/50 border-2 border-purple-400"
-        style={{ pointerEvents: "none" }}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="w-3 h-3 bg-purple-500/50 border-2 border-purple-400"
-        style={{ pointerEvents: "none" }}
-      />
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="w-3 h-3 bg-purple-500/50 border-2 border-purple-400"
-        style={{ pointerEvents: "none" }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="w-3 h-3 bg-purple-500/50 border-2 border-purple-400"
+        id="target"
+        className="opacity-0"
         style={{ pointerEvents: "none" }}
       />
 

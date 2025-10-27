@@ -29,29 +29,19 @@ export function UserCenterNode({ data }: UserCenterNodeProps) {
 
   return (
     <div className="relative">
-      {/* Connection handles - user center can connect in all directions */}
+      {/* Dynamic connection handle - position calculated automatically for floating edges */}
       <Handle
         type="source"
         position={Position.Top}
-        className="w-2 h-2 bg-blue-500/50 border-2 border-blue-400"
+        id="source"
+        className="opacity-0"
         style={{ pointerEvents: "none" }}
       />
       <Handle
-        type="source"
-        position={Position.Bottom}
-        className="w-2 h-2 bg-blue-500/50 border-2 border-blue-400"
-        style={{ pointerEvents: "none" }}
-      />
-      <Handle
-        type="source"
-        position={Position.Left}
-        className="w-2 h-2 bg-blue-500/50 border-2 border-blue-400"
-        style={{ pointerEvents: "none" }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="w-2 h-2 bg-blue-500/50 border-2 border-blue-400"
+        type="target"
+        position={Position.Top}
+        id="target"
+        className="opacity-0"
         style={{ pointerEvents: "none" }}
       />
 

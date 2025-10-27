@@ -67,20 +67,35 @@ function getEdgePosition(
     return Position.Top;
   }
 
-  if (px <= nx + 1) {
+  // Use tolerance for more reliable edge detection
+  const tolerance = 5;
+
+  if (px <= nx + tolerance) {
     return Position.Left;
   }
-  if (px >= nx + n.width - 1) {
+  if (px >= nx + n.width - tolerance) {
     return Position.Right;
   }
-  if (py <= ny + 1) {
+  if (py <= ny + tolerance) {
     return Position.Top;
   }
-  if (py >= ny + n.height - 1) {
+  if (py >= ny + n.height - tolerance) {
     return Position.Bottom;
   }
 
-  return Position.Top;
+  // Fallback: determine which edge is closest to intersection point
+  const distances = {
+    left: Math.abs(px - nx),
+    right: Math.abs(px - (nx + n.width)),
+    top: Math.abs(py - ny),
+    bottom: Math.abs(py - (ny + n.height)),
+  };
+
+  const minDistance = Math.min(...Object.values(distances));
+  if (distances.left === minDistance) return Position.Left;
+  if (distances.right === minDistance) return Position.Right;
+  if (distances.top === minDistance) return Position.Top;
+  return Position.Bottom;
 }
 
 /**

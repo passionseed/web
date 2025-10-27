@@ -46,6 +46,7 @@ import {
   ProgressSlider,
   StatusSelector,
 } from "./forms/MilestoneFormFields";
+import { InlineEditableDescription } from "./milestone-details/details/InlineEditableDescription";
 
 import {
   getProjectById,
@@ -393,27 +394,29 @@ export function MilestoneDetailsPanel({
 
           {/* Details Tab */}
           <TabsContent value="details" className="p-4 space-y-4">
-            {milestone.description && (
-              <div className="bg-slate-800/30 rounded-lg p-3">
-                <h3 className="text-sm font-semibold text-slate-200 mb-2">
-                  Description
-                </h3>
-                <p className="text-sm text-slate-300 whitespace-pre-wrap">
-                  {milestone.description}
-                </p>
-              </div>
-            )}
+            <div className="bg-slate-800/30 rounded-lg p-3">
+              <InlineEditableDescription
+                value={editDescription}
+                onChange={setEditDescription}
+                onSave={handleSaveDetails}
+                placeholder="Add a brief description of this milestone..."
+                label="Description"
+                maxLength={2000}
+                rows={3}
+              />
+            </div>
 
-            {milestone.details && (
-              <div className="bg-slate-800/30 rounded-lg p-3">
-                <h3 className="text-sm font-semibold text-slate-200 mb-2">
-                  Detailed Notes
-                </h3>
-                <p className="text-sm text-slate-300 whitespace-pre-wrap">
-                  {milestone.details}
-                </p>
-              </div>
-            )}
+            <div className="bg-slate-800/30 rounded-lg p-3">
+              <InlineEditableDescription
+                value={editDetails}
+                onChange={setEditDetails}
+                onSave={handleSaveDetails}
+                placeholder="Add detailed notes, requirements, or context..."
+                label="Detailed Notes"
+                maxLength={10000}
+                rows={6}
+              />
+            </div>
 
             <Separator className="bg-slate-800" />
 
