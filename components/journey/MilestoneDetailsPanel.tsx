@@ -5,24 +5,40 @@
 
 "use client";
 
-import { ProjectMilestone } from "@/types/journey";
+import { ProjectMilestone, ProjectWithMilestones, MilestoneWithJournals } from "@/types/journey";
 import { MilestoneCreationMode } from "./milestone-details/MilestoneCreationMode";
 import { MilestoneViewMode } from "./milestone-details/MilestoneViewMode";
+import { ProjectOverviewPanel } from "./milestone-details/ProjectOverviewPanel";
 
 interface MilestoneDetailsPanelProps {
   milestone: ProjectMilestone | null;
   projectId: string;
-  allMilestones: ProjectMilestone[];
+  project?: ProjectWithMilestones;
+  allMilestones: MilestoneWithJournals[];
   onMilestoneUpdated: () => void;
+  onMilestoneSelect?: (milestone: ProjectMilestone) => void;
 }
 
 export function MilestoneDetailsPanel({
   milestone,
   projectId,
+  project,
   allMilestones,
   onMilestoneUpdated,
+  onMilestoneSelect,
 }: MilestoneDetailsPanelProps) {
-  // Simple mode routing: creation vs viewing
+  // Show project overview when no milestone is selected and we have project data
+  if (!milestone && project) {
+    return (
+      <ProjectOverviewPanel
+        project={project}
+        milestones={allMilestones}
+        onMilestoneSelect={onMilestoneSelect || (() => {})}
+      />
+    );
+  }
+
+  // Show creation form if no milestone but no project data (fallback)
   if (!milestone) {
     return (
       <MilestoneCreationMode
@@ -33,6 +49,7 @@ export function MilestoneDetailsPanel({
     );
   }
 
+  // Show milestone details when a milestone is selected
   return (
     <MilestoneViewMode
       milestone={milestone}

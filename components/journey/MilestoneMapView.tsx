@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo, useContext } from "react";
 import {
   ReactFlow,
   Background,
@@ -59,6 +59,7 @@ import {
   SyncStatus,
 } from "@/lib/sync/PositionSyncManager";
 import { SyncStatusIndicator } from "./SyncStatusIndicator";
+import { MilestoneBreadcrumbContext } from "@/app/me/journey/journey-page-client";
 
 interface MilestoneMapViewProps {
   projectId: string;
@@ -80,6 +81,10 @@ const PANEL_SIZES = {
 };
 
 function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
+  const { setMilestoneTitle, setOnBackToOverview } = useContext(
+    MilestoneBreadcrumbContext
+  );
+  
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,6 +107,11 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [syncMessage, setSyncMessage] = useState<string | undefined>(undefined);
   const syncManager = getPositionSyncManager();
+
+  // Register the onBack callback with the breadcrumb context
+  useEffect(() => {
+    setOnBackToOverview(() => onBack);
+  }, [onBack, setOnBackToOverview]);
 
   // Edge types
   const edgeTypes = useMemo(
@@ -234,6 +244,11 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       setMilestones(milestonesData);
       setMilestonePaths(pathsData);
 
+      // Update breadcrumb with project title
+      if (projectData) {
+        setMilestoneTitle(projectData.title);
+      }
+
       if (projectData && milestonesData) {
         await buildMilestoneMap(milestonesData);
       }
@@ -243,11 +258,16 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, buildMilestoneMap]);
+  }, [projectId, buildMilestoneMap, setMilestoneTitle]);
 
   useEffect(() => {
     loadMilestoneMap();
-  }, [loadMilestoneMap]);
+
+    // Cleanup: clear breadcrumb when unmounting or returning to overview
+    return () => {
+      setMilestoneTitle(null);
+    };
+  }, [loadMilestoneMap, setMilestoneTitle]);
 
   // Subscribe to sync status changes
   useEffect(() => {
@@ -636,8 +656,10 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
             <MilestoneDetailsPanel
               milestone={selectedMilestone}
               projectId={projectId}
+              project={project || undefined}
               allMilestones={milestones}
               onMilestoneUpdated={loadMilestoneMap}
+              onMilestoneSelect={setSelectedMilestone}
             />
           )}
         </div>

@@ -36,6 +36,7 @@ import { MainQuestPanel } from "./MainQuestPanel";
 import { MilestoneMapView } from "./MilestoneMapView";
 
 import { useJourneyProjects } from "@/hooks/use-journey-projects";
+import { useProjectPaths } from "@/hooks/use-project-paths";
 import { useJourneyMapState } from "@/hooks/use-journey-map-state";
 import { usePositionSync } from "@/hooks/use-position-sync";
 import {
@@ -66,6 +67,13 @@ function JourneyMapCanvasInner({
 }: JourneyMapCanvasProps) {
   // Data hooks
   const { projects, isLoading, refreshProjects } = useJourneyProjects();
+  const {
+    paths,
+    loadPaths,
+    createPath,
+    deletePath,
+    updatePathType,
+  } = useProjectPaths();
 
   // UI state hooks
   const {
@@ -88,6 +96,12 @@ function JourneyMapCanvasInner({
     isNavigationExpanded,
     setIsNavigationExpanded,
   } = useJourneyMapState();
+
+  // Connection mode state
+  const [isProjectConnectMode, setIsProjectConnectMode] = React.useState(false);
+  const toggleConnectMode = useCallback(() => {
+    setIsProjectConnectMode((prev) => !prev);
+  }, []);
 
   // Position sync hook
   const { syncStatus, syncMessage, handleNodeDragStop } = usePositionSync();
@@ -151,19 +165,31 @@ function JourneyMapCanvasInner({
     refreshProjects();
   }, [refreshProjects]);
 
+  const handleProjectPathCreated = useCallback(() => {
+    loadPaths();
+  }, [loadPaths]);
+
   // ========================================
   // MEMOIZED COMPUTATIONS
   // ========================================
 
   // Build map from projects data
   const mapData = useMemo(() => {
-    return buildJourneyMap(projects, userId, userName, userAvatar, {
-      onViewMilestones: switchToMilestoneView,
-      onEditProject: handleEditProject,
-      onAddReflection: handleAddReflection,
-    });
+    return buildJourneyMap(
+      projects,
+      userId,
+      userName,
+      userAvatar,
+      {
+        onViewMilestones: switchToMilestoneView,
+        onEditProject: handleEditProject,
+        onAddReflection: handleAddReflection,
+      },
+      paths
+    );
   }, [
     projects,
+    paths,
     userId,
     userName,
     userAvatar,
@@ -177,6 +203,11 @@ function JourneyMapCanvasInner({
     setNodes(mapData.nodes);
     setEdges(mapData.edges);
   }, [mapData, setNodes, setEdges]);
+
+  // Load project paths on mount
+  React.useEffect(() => {
+    loadPaths();
+  }, [loadPaths]);
 
   // Calculate journey statistics
   const journeyStats = useMemo(
@@ -228,11 +259,14 @@ function JourneyMapCanvasInner({
           syncMessage={syncMessage}
           isNavigationExpanded={isNavigationExpanded}
           setIsNavigationExpanded={setIsNavigationExpanded}
+          isProjectConnectMode={isProjectConnectMode}
+          onToggleConnectMode={toggleConnectMode}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onSelectionChange={handleSelectionChange}
           onNodeDragStop={handleNodeDragStop}
           onCreateProject={openCreateDialog}
+          onProjectPathCreated={handleProjectPathCreated}
         />
       </ResizablePanel>
 

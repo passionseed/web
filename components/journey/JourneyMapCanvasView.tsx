@@ -7,7 +7,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   ReactFlow,
   Background,
@@ -18,9 +18,24 @@ import {
   NodeChange,
   EdgeChange,
   OnSelectionChangeParams,
+  Connection,
+  ConnectionMode,
+  Panel,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Loader2 } from "lucide-react";
+import { Loader2, GitFork } from "lucide-react";
+import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { createProjectPath } from "@/lib/supabase/journey";
 
 import { UserCenterNode } from "./nodes/UserCenterNode";
 import { NorthStarProjectNode } from "./nodes/NorthStarProjectNode";
@@ -63,12 +78,17 @@ interface JourneyMapCanvasViewProps {
   isNavigationExpanded: boolean;
   setIsNavigationExpanded: (expanded: boolean) => void;
 
+  // Connection mode
+  isProjectConnectMode: boolean;
+  onToggleConnectMode: () => void;
+
   // Event handlers
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onSelectionChange: (params: OnSelectionChangeParams) => void;
   onNodeDragStop: (_event: any, node: Node) => void;
   onCreateProject: () => void;
+  onProjectPathCreated?: () => void;
 }
 
 export function JourneyMapCanvasView({
@@ -80,12 +100,79 @@ export function JourneyMapCanvasView({
   syncMessage,
   isNavigationExpanded,
   setIsNavigationExpanded,
+  isProjectConnectMode,
+  onToggleConnectMode,
   onNodesChange,
   onEdgesChange,
   onSelectionChange,
   onNodeDragStop,
   onCreateProject,
+  onProjectPathCreated,
 }: JourneyMapCanvasViewProps) {
+  // Path type dialog state
+  const [pathTypeDialogOpen, setPathTypeDialogOpen] = useState(false);
+  const [connectingToProject, setConnectingToProject] = useState<string | null>(
+    null
+  );
+  const [connectingFromProject, setConnectingFromProject] = useState<
+    string | null
+  >(null);
+  const [isCreatingPath, setIsCreatingPath] = useState(false);
+
+  // Handle connection between projects
+  const onConnect = useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target) return;
+
+    // Prevent connecting to self
+    if (connection.source === connection.target) {
+      toast.error("Cannot connect a project to itself");
+      return;
+    }
+
+    // Prevent connecting to/from user center
+    if (
+      connection.source === "user-center" ||
+      connection.target === "user-center"
+    ) {
+      toast.error("Cannot connect to user center");
+      return;
+    }
+
+    // Store connection and open path type dialog
+    setConnectingFromProject(connection.source);
+    setConnectingToProject(connection.target);
+    setPathTypeDialogOpen(true);
+  }, []);
+
+  // Create project path with selected type
+  const handleCreatePath = useCallback(
+    async (pathType: "dependency" | "relates_to" | "leads_to") => {
+      if (!connectingFromProject || !connectingToProject) return;
+
+      setIsCreatingPath(true);
+      try {
+        await createProjectPath(
+          connectingFromProject,
+          connectingToProject,
+          pathType
+        );
+        toast.success("Project connection created");
+        setPathTypeDialogOpen(false);
+        setConnectingFromProject(null);
+        setConnectingToProject(null);
+
+        // Notify parent to reload data
+        onProjectPathCreated?.();
+      } catch (error) {
+        console.error("Error creating project path:", error);
+        toast.error("Failed to create project connection");
+      } finally {
+        setIsCreatingPath(false);
+      }
+    },
+    [connectingFromProject, connectingToProject, onProjectPathCreated]
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full bg-slate-950">
@@ -114,6 +201,7 @@ export function JourneyMapCanvasView({
           onEdgesChange={onEdgesChange}
           onSelectionChange={onSelectionChange}
           onNodeDragStop={onNodeDragStop}
+          onConnect={isProjectConnectMode ? onConnect : undefined}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
@@ -124,8 +212,9 @@ export function JourneyMapCanvasView({
             type: "smoothstep",
             animated: false,
           }}
+          connectionMode={ConnectionMode.Loose}
           nodesDraggable
-          nodesConnectable={false}
+          nodesConnectable={isProjectConnectMode}
           elementsSelectable
           panOnScroll
           panOnDrag={FLOW_CONFIG.PAN_ON_DRAG}
@@ -157,8 +246,107 @@ export function JourneyMapCanvasView({
               borderRadius: "8px",
             }}
           />
+
+          {/* Connection Mode Toggle */}
+          <Panel position="top-right" className="m-2">
+            <Button
+              onClick={onToggleConnectMode}
+              size="sm"
+              className={cn(
+                "transition-colors shadow-lg",
+                isProjectConnectMode
+                  ? "bg-teal-500/20 text-teal-400 border-teal-500 hover:bg-teal-500/30"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              )}
+              variant={isProjectConnectMode ? "default" : "outline"}
+              title="Connect projects together"
+            >
+              <GitFork className="w-4 h-4 mr-2" />
+              {isProjectConnectMode ? "Exit Connect" : "Link Projects"}
+            </Button>
+          </Panel>
+
+          {/* Connection Mode Help */}
+          {isProjectConnectMode && (
+            <Panel position="bottom-left" className="m-4">
+              <div className="bg-teal-900/90 backdrop-blur border border-teal-700 rounded-lg p-3 shadow-lg max-w-sm">
+                <p className="text-sm text-teal-100 font-medium mb-1">
+                  Connect Mode Active
+                </p>
+                <p className="text-xs text-teal-200">
+                  Drag from one project to another to create a connection.
+                </p>
+              </div>
+            </Panel>
+          )}
         </ReactFlow>
       </div>
+
+      {/* Path Type Selection Dialog */}
+      <Dialog open={pathTypeDialogOpen} onOpenChange={setPathTypeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Connection Type</DialogTitle>
+            <DialogDescription>
+              Choose how these projects are related to each other.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            <Button
+              onClick={() => handleCreatePath("dependency")}
+              disabled={isCreatingPath}
+              variant="outline"
+              className="justify-start h-auto py-3 px-4"
+            >
+              <div className="text-left">
+                <div className="font-semibold text-blue-600">Dependency</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Target project depends on source project
+                </div>
+              </div>
+            </Button>
+            <Button
+              onClick={() => handleCreatePath("relates_to")}
+              disabled={isCreatingPath}
+              variant="outline"
+              className="justify-start h-auto py-3 px-4"
+            >
+              <div className="text-left">
+                <div className="font-semibold text-amber-600">Relates To</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Projects are related or connected
+                </div>
+              </div>
+            </Button>
+            <Button
+              onClick={() => handleCreatePath("leads_to")}
+              disabled={isCreatingPath}
+              variant="outline"
+              className="justify-start h-auto py-3 px-4"
+            >
+              <div className="text-left">
+                <div className="font-semibold text-emerald-600">Leads To</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Source project leads to target project
+                </div>
+              </div>
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPathTypeDialogOpen(false);
+                setConnectingFromProject(null);
+                setConnectingToProject(null);
+              }}
+              disabled={isCreatingPath}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Navigation Guide - Bottom */}
       <NavigationGuide

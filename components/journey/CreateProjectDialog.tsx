@@ -30,6 +30,7 @@ import { Star, Target, Loader2 } from "lucide-react";
 import { createJourneyProject } from "@/lib/supabase/journey";
 import { ProjectType } from "@/types/journey";
 import { toast } from "sonner";
+import { EmojiPicker } from "@/components/ui/EmojiPicker";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -56,6 +57,7 @@ export function CreateProjectDialog({
   onSuccess,
 }: CreateProjectDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [icon, setIcon] = useState("🎯");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -82,6 +84,7 @@ export function CreateProjectDialog({
         description: formData.description.trim() || undefined,
         project_type: formData.projectType,
         color: formData.color,
+        icon: icon,
         status: "planning",
         metadata: {
           is_north_star: formData.isNorthStar,
@@ -99,6 +102,7 @@ export function CreateProjectDialog({
       toast.success(`Project "${formData.title}" created successfully!`);
 
       // Reset form
+      setIcon("🎯");
       setFormData({
         title: "",
         description: "",
@@ -157,6 +161,15 @@ export function CreateProjectDialog({
                 setFormData((prev) => ({ ...prev, isNorthStar: checked }))
               }
             />
+          </div>
+
+          {/* Icon Picker */}
+          <div className="space-y-2">
+            <Label htmlFor="icon">Project Icon</Label>
+            <p className="text-sm text-slate-500">
+              Choose an emoji that represents your project
+            </p>
+            <EmojiPicker value={icon} onSelect={setIcon} disabled={isSubmitting} />
           </div>
 
           {/* Title */}

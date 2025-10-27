@@ -13,6 +13,7 @@ import { JourneyProject, ProjectStatus } from "@/types/journey";
 interface ShortTermProjectNodeProps {
   data: {
     project: JourneyProject;
+    icon: string;
     hasRecentActivity: boolean;
     isMainQuest: boolean;
     northStarTitle?: string;
@@ -71,7 +72,7 @@ export const ShortTermProjectNode = React.memo(function ({
   data,
   selected = false,
 }: ShortTermProjectNodeProps) {
-  const { project, hasRecentActivity, isMainQuest, northStarTitle } = data;
+  const { project, icon, hasRecentActivity, isMainQuest, northStarTitle } = data;
 
   const progressPercentage = project.progress_percentage || 0;
   const statusStyle = statusColors[project.status];
@@ -127,16 +128,16 @@ export const ShortTermProjectNode = React.memo(function ({
             </div>
           )}
 
-          {/* Header */}
-          <div className="flex items-start gap-3 mb-3">
-            <div
-              className={`bg-blue-500 rounded-lg p-2 shadow-md ${isMainQuest ? "bg-cyan-500" : ""}`}
-            >
-              <Target className="w-5 h-5 text-white" />
+          {/* Header with emoji icon */}
+          <div className="flex flex-col items-center mb-3">
+            {/* Emoji icon */}
+            <div className="text-4xl mb-2 select-none" role="img" aria-label="Project icon">
+              {icon}
             </div>
-            <div className="flex-1 min-w-0">
+
+            <div className="w-full text-center">
               <h3
-                className={`text-base font-bold ${statusStyle.text} truncate`}
+                className={`text-base font-bold ${statusStyle.text} truncate px-2`}
               >
                 {project.title}
               </h3>
