@@ -135,6 +135,7 @@ export interface MilestoneJournal {
   user_id: string;
   entry_date: string;
   content: string;
+  progress_percentage: number | null;
   mood: MoodLevel | null;
   progress_notes: string | null;
   blockers: string | null;
