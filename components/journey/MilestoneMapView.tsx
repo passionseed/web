@@ -5,7 +5,14 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+  useContext,
+} from "react";
 import {
   ReactFlow,
   Background,
@@ -32,12 +39,22 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { ImperativePanelHandle } from "react-resizable-panels";
-import { ArrowLeft, Plus, Loader2, Target, ChevronLeft, ChevronRight, Link, Unlink } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Loader2,
+  Target,
+  ChevronLeft,
+  ChevronRight,
+  Link,
+  Unlink,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { MilestoneNode } from "./nodes/MilestoneNode";
 import { MilestoneProgressDialog } from "./MilestoneProgressDialog";
 import { MilestoneDetailsPanel } from "./MilestoneDetailsPanel";
+import { AddMilestoneModal } from "./milestone-details/AddMilestoneModal";
 import FloatingEdge from "../map/FloatingEdge";
 
 import {
@@ -84,7 +101,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
   const { setMilestoneTitle, setOnBackToOverview } = useContext(
     MilestoneBreadcrumbContext
   );
-  
+
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,6 +119,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
 
   // Dialog states
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [addMilestoneModalOpen, setAddMilestoneModalOpen] = useState(false);
 
   // Sync manager and status
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
@@ -122,12 +140,9 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
   );
 
   // Edge change handler
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      setEdges((eds) => applyEdgeChanges(changes, eds));
-    },
-    []
-  );
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setEdges((eds) => applyEdgeChanges(changes, eds));
+  }, []);
 
   const handleOpenProgress = useCallback((milestone: ProjectMilestone) => {
     setSelectedMilestone(milestone);
@@ -208,8 +223,8 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
           path.path_type === "linear"
             ? "#3b82f6"
             : path.path_type === "conditional"
-            ? "#f59e0b"
-            : "#10b981",
+              ? "#f59e0b"
+              : "#10b981",
         strokeWidth: 2,
       },
       markerEnd: {
@@ -218,8 +233,8 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
           path.path_type === "linear"
             ? "#3b82f6"
             : path.path_type === "conditional"
-            ? "#f59e0b"
-            : "#10b981",
+              ? "#f59e0b"
+              : "#10b981",
       },
       data: {
         pathType: path.path_type,
@@ -244,10 +259,8 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       setMilestones(milestonesData);
       setMilestonePaths(pathsData);
 
-      // Update breadcrumb with project title
-      if (projectData) {
-        setMilestoneTitle(projectData.title);
-      }
+      // Note: Breadcrumb will be set when a milestone is selected via handleSelectionChange
+      // Don't set it here - only set when viewing a specific milestone
 
       if (projectData && milestonesData) {
         await buildMilestoneMap(milestonesData);
@@ -308,6 +321,8 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
         const milestone = milestones.find((m) => m.id === node.id);
         if (milestone) {
           setSelectedMilestone(milestone);
+          // Update breadcrumb to show milestone title
+          setMilestoneTitle(milestone.title);
           // Expand right panel if minimized
           if (isPanelMinimized && rightPanelRef.current) {
             rightPanelRef.current.resize(PANEL_SIZES.RIGHT_DEFAULT);
@@ -316,57 +331,56 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
         }
       } else {
         setSelectedMilestone(null);
+        // Clear breadcrumb when deselecting
+        setMilestoneTitle(null);
       }
     },
-    [milestones, isPanelMinimized]
+    [milestones, isPanelMinimized, setMilestoneTitle]
   );
 
-  const onConnect = useCallback(
-    async (connection: Connection) => {
-      if (!connection.source || !connection.target) return;
-      if (connection.source === connection.target) {
-        toast.error("Cannot connect a milestone to itself");
-        return;
-      }
+  const onConnect = useCallback(async (connection: Connection) => {
+    if (!connection.source || !connection.target) return;
+    if (connection.source === connection.target) {
+      toast.error("Cannot connect a milestone to itself");
+      return;
+    }
 
-      try {
-        // Create the path in database
-        const newPath = await createMilestonePath(
-          connection.source,
-          connection.target,
-          "linear"
-        );
+    try {
+      // Create the path in database
+      const newPath = await createMilestonePath(
+        connection.source,
+        connection.target,
+        "linear"
+      );
 
-        // Add to local state
-        setMilestonePaths((prev) => [...prev, newPath]);
+      // Add to local state
+      setMilestonePaths((prev) => [...prev, newPath]);
 
-        // Create edge
-        const newEdge: Edge = {
-          id: newPath.id,
-          source: newPath.source_milestone_id,
-          target: newPath.destination_milestone_id,
-          type: "floating",
-          animated: true,
-          style: { stroke: "#3b82f6", strokeWidth: 2 },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: "#3b82f6",
-          },
-          data: {
-            pathType: newPath.path_type,
-            pathId: newPath.id,
-          },
-        };
+      // Create edge
+      const newEdge: Edge = {
+        id: newPath.id,
+        source: newPath.source_milestone_id,
+        target: newPath.destination_milestone_id,
+        type: "floating",
+        animated: true,
+        style: { stroke: "#3b82f6", strokeWidth: 2 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: "#3b82f6",
+        },
+        data: {
+          pathType: newPath.path_type,
+          pathId: newPath.id,
+        },
+      };
 
-        setEdges((eds) => addEdge(newEdge, eds));
-        toast.success("Connection created");
-      } catch (error) {
-        console.error("Error creating connection:", error);
-        toast.error("Failed to create connection");
-      }
-    },
-    []
-  );
+      setEdges((eds) => addEdge(newEdge, eds));
+      toast.success("Connection created");
+    } catch (error) {
+      console.error("Error creating connection:", error);
+      toast.error("Failed to create connection");
+    }
+  }, []);
 
   const onEdgeContextMenu = useCallback(
     async (event: React.MouseEvent, edge: Edge) => {
@@ -382,9 +396,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
         const pathId = edge.data.pathId as string;
         await deleteMilestonePath(pathId);
         setEdges((eds) => eds.filter((e) => e.id !== edge.id));
-        setMilestonePaths((prev) =>
-          prev.filter((p) => p.id !== pathId)
-        );
+        setMilestonePaths((prev) => prev.filter((p) => p.id !== pathId));
         toast.success("Connection deleted");
       } catch (error) {
         console.error("Error deleting connection:", error);
@@ -436,7 +448,11 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
   const totalCount = milestones.length;
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-screen bg-slate-950">
+    <>
+      <ResizablePanelGroup
+        direction="horizontal"
+        className="h-screen bg-slate-950"
+      >
       {/* Left Panel - Milestone Canvas */}
       <ResizablePanel
         ref={leftPanelRef}
@@ -542,7 +558,9 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
                     </Badge>
                     <Badge
                       variant={
-                        project.status === "in_progress" ? "default" : "secondary"
+                        project.status === "in_progress"
+                          ? "default"
+                          : "secondary"
                       }
                     >
                       {project.status}
@@ -550,16 +568,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
                   </div>
                 </div>
                 <Button
-                  onClick={() => {
-                    // Clear selection to trigger creation mode in panel
-                    setSelectedMilestone(null);
-
-                    // Expand right panel if minimized
-                    if (isPanelMinimized && rightPanelRef.current) {
-                      rightPanelRef.current.resize(PANEL_SIZES.RIGHT_DEFAULT);
-                      setIsPanelMinimized(false);
-                    }
-                  }}
+                  onClick={() => setAddMilestoneModalOpen(true)}
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
                 >
@@ -578,20 +587,11 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
                     No milestones yet
                   </h3>
                   <p className="text-slate-400 mb-4">
-                    Break down your project into milestones to track progress and
-                    stay organized.
+                    Break down your project into milestones to track progress
+                    and stay organized.
                   </p>
                   <Button
-                    onClick={() => {
-                      // Clear selection to trigger creation mode in panel
-                      setSelectedMilestone(null);
-
-                      // Expand right panel if minimized
-                      if (isPanelMinimized && rightPanelRef.current) {
-                        rightPanelRef.current.resize(PANEL_SIZES.RIGHT_DEFAULT);
-                        setIsPanelMinimized(false);
-                      }
-                    }}
+                    onClick={() => setAddMilestoneModalOpen(true)}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Create First Milestone
@@ -664,7 +664,17 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
           )}
         </div>
       </ResizablePanel>
-    </ResizablePanelGroup>
+      </ResizablePanelGroup>
+
+      {/* Add Milestone Modal */}
+      <AddMilestoneModal
+        isOpen={addMilestoneModalOpen}
+        onOpenChange={setAddMilestoneModalOpen}
+        projectId={projectId}
+        allMilestones={milestones}
+        onMilestoneCreated={loadMilestoneMap}
+      />
+    </>
   );
 }
 
