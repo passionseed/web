@@ -18,8 +18,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BookOpen, Clock, FileText, CheckCircle2, Circle, AlertCircle, Search, ChevronDown, ChevronUp } from "lucide-react";
-import { ProjectWithMilestones, MilestoneWithJournals, ProjectMilestone } from "@/types/journey";
+import {
+  BookOpen,
+  Clock,
+  FileText,
+  CheckCircle2,
+  Circle,
+  AlertCircle,
+  Search,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import {
+  ProjectWithMilestones,
+  MilestoneWithJournals,
+  ProjectMilestone,
+} from "@/types/journey";
 
 interface ProjectOverviewPanelProps {
   project: ProjectWithMilestones;
@@ -31,13 +45,20 @@ interface ProjectOverviewPanelProps {
 // PROGRESS SUMMARY SECTION
 // ========================================
 
-function ProgressSummary({ milestones }: { milestones: MilestoneWithJournals[] }) {
+function ProgressSummary({
+  milestones,
+}: {
+  milestones: MilestoneWithJournals[];
+}) {
   const completed = milestones.filter((m) => m.status === "completed").length;
   const total = milestones.length;
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   // Calculate total time spent (in hours)
-  const totalTime = milestones.reduce((sum, m) => sum + (m.total_time_spent || 0), 0);
+  const totalTime = milestones.reduce(
+    (sum, m) => sum + (m.total_time_spent || 0),
+    0
+  );
   const totalHours = Math.round((totalTime / 60) * 10) / 10; // Convert minutes to hours
 
   // Count total journals
@@ -61,8 +82,12 @@ function ProgressSummary({ milestones }: { milestones: MilestoneWithJournals[] }
       {/* Progress Bar */}
       <div className="space-y-2">
         <div className="flex justify-between items-baseline">
-          <span className="text-sm font-medium text-slate-300">Overall Progress</span>
-          <span className="text-2xl font-bold text-blue-400">{percentage}%</span>
+          <span className="text-sm font-medium text-slate-300">
+            Overall Progress
+          </span>
+          <span className="text-2xl font-bold text-blue-400">
+            {percentage}%
+          </span>
         </div>
         <Progress value={percentage} className="h-3" />
         <p className="text-xs text-slate-500">
@@ -138,13 +163,17 @@ function AllMilestonesList({
   milestones: MilestoneWithJournals[];
   onSelect: (milestone: ProjectMilestone) => void;
 }) {
-  const [sortBy, setSortBy] = useState<"date" | "progress" | "status" | "title">("date");
+  const [sortBy, setSortBy] = useState<
+    "date" | "progress" | "status" | "title"
+  >("date");
 
   const sortedMilestones = useMemo(() => {
     const sorted = [...milestones];
     switch (sortBy) {
       case "progress":
-        return sorted.sort((a, b) => (b.progress_percentage || 0) - (a.progress_percentage || 0));
+        return sorted.sort(
+          (a, b) => (b.progress_percentage || 0) - (a.progress_percentage || 0)
+        );
       case "status":
         const statusOrder = { completed: 0, in_progress: 1, not_started: 2 };
         return sorted.sort(
@@ -222,7 +251,10 @@ function AllMilestonesList({
             {(milestone.journal_count || milestone.journals?.length) > 0 && (
               <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
                 <FileText className="w-3 h-3" />
-                <span>{milestone.journal_count || milestone.journals?.length || 0} entries</span>
+                <span>
+                  {milestone.journal_count || milestone.journals?.length || 0}{" "}
+                  entries
+                </span>
               </div>
             )}
           </button>
@@ -374,11 +406,14 @@ function AllJournalsList({
                 <div className="flex items-center gap-1 text-xs text-slate-500">
                   <Clock className="w-3 h-3" />
                   <span>
-                    {new Date(journal.created_at || 0).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {new Date(journal.created_at || 0).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      }
+                    )}
                   </span>
                 </div>
               </div>
@@ -403,7 +438,10 @@ export function ProjectOverviewPanel({
     <div className="h-full flex flex-col bg-slate-900">
       <ScrollArea className="flex-1">
         <ProgressSummary milestones={milestones} />
-        <AllMilestonesList milestones={milestones} onSelect={onMilestoneSelect} />
+        <AllMilestonesList
+          milestones={milestones}
+          onSelect={onMilestoneSelect}
+        />
         <AllJournalsList milestones={milestones} />
       </ScrollArea>
     </div>

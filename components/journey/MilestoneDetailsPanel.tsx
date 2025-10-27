@@ -5,8 +5,11 @@
 
 "use client";
 
-import { ProjectMilestone, ProjectWithMilestones, MilestoneWithJournals } from "@/types/journey";
-import { MilestoneCreationMode } from "./milestone-details/MilestoneCreationMode";
+import {
+  ProjectMilestone,
+  ProjectWithMilestones,
+  MilestoneWithJournals,
+} from "@/types/journey";
 import { MilestoneViewMode } from "./milestone-details/MilestoneViewMode";
 import { ProjectOverviewPanel } from "./milestone-details/ProjectOverviewPanel";
 
@@ -38,14 +41,12 @@ export function MilestoneDetailsPanel({
     );
   }
 
-  // Show creation form if no milestone but no project data (fallback)
+  // Empty state if no milestone and no project data (shouldn't occur in normal flow)
   if (!milestone) {
     return (
-      <MilestoneCreationMode
-        projectId={projectId}
-        allMilestones={allMilestones}
-        onMilestoneCreated={onMilestoneUpdated}
-      />
+      <div className="flex items-center justify-center h-full text-muted-foreground">
+        <p>No milestone or project data available</p>
+      </div>
     );
   }
 
