@@ -57,7 +57,7 @@ export function buildJourneyMap(
   // Separate North Star and short-term projects
   const { northStarProjects, shortTermProjects } = categorizeProjects(projects);
 
-  // Create North Star nodes and edges
+  // Create North Star nodes
   northStarProjects.forEach((project, index) => {
     const position = getNodePosition(
       project,
@@ -71,10 +71,10 @@ export function buildJourneyMap(
       createNorthStarNode(project, position, linkedCount, callbacks)
     );
 
-    newEdges.push(createNorthStarEdge("user-center", project.id));
+    // Removed automatic center connection - users can create manually
   });
 
-  // Create short-term nodes and edges
+  // Create short-term nodes
   shortTermProjects.forEach((project, index) => {
     const position = getNodePosition(
       project,
@@ -89,13 +89,7 @@ export function buildJourneyMap(
       createShortTermNode(project, position, northStar?.title, callbacks)
     );
 
-    // Create edge to North Star or user center
-    if (northStarId) {
-      newEdges.push(createProjectToNorthStarEdge(project.id, northStarId));
-    } else {
-      const isMainQuest = project.metadata?.is_main_quest === true;
-      newEdges.push(createProjectToUserEdge(project.id, isMainQuest));
-    }
+    // Removed automatic connections - users can create manually
   });
 
   // Add project path edges
