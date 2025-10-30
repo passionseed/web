@@ -21,9 +21,11 @@ import {
   Connection,
   ConnectionMode,
   Panel,
+  applyEdgeChanges,
+  addEdge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Loader2, GitFork } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -35,7 +37,8 @@ import {
 } from "../ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { createProjectPath } from "@/lib/supabase/journey";
+import { createProjectPath, deleteProjectPath } from "@/lib/supabase/journey";
+import { getProjectPathStyle } from "./utils/projectPathStyles";
 
 import { UserCenterNode } from "./nodes/UserCenterNode";
 import { NorthStarProjectNode } from "./nodes/NorthStarProjectNode";
@@ -67,6 +70,7 @@ interface JourneyMapCanvasViewProps {
   // Data
   nodes: Node[];
   edges: Edge[];
+  setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
   isLoading: boolean;
   journeyStats: JourneyStats;
 
@@ -77,10 +81,6 @@ interface JourneyMapCanvasViewProps {
   // Navigation state
   isNavigationExpanded: boolean;
   setIsNavigationExpanded: (expanded: boolean) => void;
-
-  // Connection mode
-  isProjectConnectMode: boolean;
-  onToggleConnectMode: () => void;
 
   // Event handlers
   onNodesChange: (changes: NodeChange[]) => void;
@@ -94,14 +94,13 @@ interface JourneyMapCanvasViewProps {
 export function JourneyMapCanvasView({
   nodes,
   edges,
+  setEdges,
   isLoading,
   journeyStats,
   syncStatus,
   syncMessage,
   isNavigationExpanded,
   setIsNavigationExpanded,
-  isProjectConnectMode,
-  onToggleConnectMode,
   onNodesChange,
   onEdgesChange,
   onSelectionChange,
@@ -120,7 +119,7 @@ export function JourneyMapCanvasView({
   const [isCreatingPath, setIsCreatingPath] = useState(false);
 
   // Handle connection between projects
-  const onConnect = useCallback((connection: Connection) => {
+  const onConnect = useCallback(async (connection: Connection) => {
     if (!connection.source || !connection.target) return;
 
     // Prevent connecting to self
@@ -130,10 +129,7 @@ export function JourneyMapCanvasView({
     }
 
     // Prevent connecting to/from user center
-    if (
-      connection.source === "user-center" ||
-      connection.target === "user-center"
-    ) {
+    if (connection.source === "user-center" || connection.target === "user-center") {
       toast.error("Cannot connect to user center");
       return;
     }
@@ -151,18 +147,47 @@ export function JourneyMapCanvasView({
 
       setIsCreatingPath(true);
       try {
-        await createProjectPath(
+        // Create the path in database
+        const newPath = await createProjectPath(
           connectingFromProject,
           connectingToProject,
           pathType
         );
+        
+        // Get path style configuration
+        const pathStyle = getProjectPathStyle(pathType);
+        
+        // Create new edge and immediately add to visual state
+        const newEdge: Edge = {
+          id: newPath.id,
+          source: connectingFromProject,
+          target: connectingToProject,
+          type: "smoothstep",
+          animated: pathStyle.animated,
+          style: {
+            stroke: pathStyle.stroke,
+            strokeWidth: pathStyle.strokeWidth,
+            strokeDasharray: pathStyle.strokeDasharray,
+          },
+          markerEnd: {
+            type: pathStyle.markerEnd.type,
+            color: pathStyle.markerEnd.color,
+            width: pathStyle.markerEnd.width,
+            height: pathStyle.markerEnd.height,
+          },
+          data: {
+            pathType: pathType,
+            pathId: newPath.id,
+          },
+        };
+        
+        // Add edge to visual state immediately
+        setEdges((eds) => addEdge(newEdge, eds));
+        
         toast.success("Project connection created");
         setPathTypeDialogOpen(false);
         setConnectingFromProject(null);
         setConnectingToProject(null);
-
-        // Notify parent to reload data
-        onProjectPathCreated?.();
       } catch (error) {
         console.error("Error creating project path:", error);
         toast.error("Failed to create project connection");
@@ -170,8 +195,31 @@ export function JourneyMapCanvasView({
         setIsCreatingPath(false);
       }
     },
-    [connectingFromProject, connectingToProject, onProjectPathCreated]
+    [connectingFromProject, connectingToProject, setEdges]
   );
+
+  // Handle edge changes including deletion
+  const handleEdgesChange = useCallback(async (changes: EdgeChange[]) => {
+    // Handle edge deletions
+    for (const change of changes) {
+      if (change.type === 'remove') {
+        const edge = edges.find(e => e.id === change.id);
+        if (edge && edge.data?.pathId) {
+          try {
+            await deleteProjectPath(edge.data.pathId);
+            toast.success("Connection deleted");
+          } catch (error) {
+            console.error("Error deleting connection:", error);
+            toast.error("Failed to delete connection");
+            return; // Don't apply the change if deletion failed
+          }
+        }
+      }
+    }
+    
+    // Apply the changes to the edges directly
+    setEdges((eds) => applyEdgeChanges(changes, eds));
+  }, [edges, setEdges]);
 
   if (isLoading) {
     return (
@@ -198,10 +246,10 @@ export function JourneyMapCanvasView({
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onEdgesChange={handleEdgesChange}
           onSelectionChange={onSelectionChange}
           onNodeDragStop={onNodeDragStop}
-          onConnect={isProjectConnectMode ? onConnect : undefined}
+          onConnect={onConnect}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
@@ -213,9 +261,13 @@ export function JourneyMapCanvasView({
             animated: false,
           }}
           connectionMode={ConnectionMode.Loose}
+          connectionLineType="smoothstep"
           nodesDraggable
-          nodesConnectable={isProjectConnectMode}
+          nodesConnectable
+          connectOnClick={false}
           elementsSelectable
+          edgesReconnectable={false}
+          deleteKeyCode={["Delete", "Backspace"]}
           panOnScroll
           panOnDrag={FLOW_CONFIG.PAN_ON_DRAG}
           attributionPosition="bottom-left"
@@ -247,38 +299,14 @@ export function JourneyMapCanvasView({
             }}
           />
 
-          {/* Connection Mode Toggle */}
-          <Panel position="top-right" className="m-2">
-            <Button
-              onClick={onToggleConnectMode}
-              size="sm"
-              className={cn(
-                "transition-colors shadow-lg",
-                isProjectConnectMode
-                  ? "bg-teal-500/20 text-teal-400 border-teal-500 hover:bg-teal-500/30"
-                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-              )}
-              variant={isProjectConnectMode ? "default" : "outline"}
-              title="Connect projects together"
-            >
-              <GitFork className="w-4 h-4 mr-2" />
-              {isProjectConnectMode ? "Exit Connect" : "Link Projects"}
-            </Button>
+          {/* Connection Help */}
+          <Panel position="bottom-left" className="m-4">
+            <div className="bg-slate-800/95 backdrop-blur border border-slate-700 rounded-lg p-3 shadow-lg max-w-sm">
+              <p className="text-xs text-slate-200">
+                <span className="font-semibold">💡 Tip:</span> Drag from the colored dot on one project to another project to create a connection. Click edges to select them, then press Backspace or Delete to remove.
+              </p>
+            </div>
           </Panel>
-
-          {/* Connection Mode Help */}
-          {isProjectConnectMode && (
-            <Panel position="bottom-left" className="m-4">
-              <div className="bg-teal-900/90 backdrop-blur border border-teal-700 rounded-lg p-3 shadow-lg max-w-sm">
-                <p className="text-sm text-teal-100 font-medium mb-1">
-                  Connect Mode Active
-                </p>
-                <p className="text-xs text-teal-200">
-                  Drag from one project to another to create a connection.
-                </p>
-              </div>
-            </Panel>
-          )}
         </ReactFlow>
       </div>
 

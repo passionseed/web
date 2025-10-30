@@ -201,6 +201,30 @@ export function NorthStarProjectNode({
           </div>
         )}
       </div>
+
+      {/* Connection Handles */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="bg-amber-500 border-2 border-white shadow-lg hover:bg-amber-600 cursor-grab active:cursor-grabbing"
+        style={{ 
+          left: -15,
+          width: '30px',
+          height: '30px',
+          borderRadius: '50%'
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="bg-amber-500 border-2 border-white shadow-lg hover:bg-amber-600 cursor-grab active:cursor-grabbing"
+        style={{ 
+          right: -15,
+          width: '30px',
+          height: '30px',
+          borderRadius: '50%'
+        }}
+      />
     </div>
   );
 }

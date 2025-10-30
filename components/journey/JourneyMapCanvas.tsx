@@ -97,11 +97,6 @@ function JourneyMapCanvasInner({
     setIsNavigationExpanded,
   } = useJourneyMapState();
 
-  // Connection mode state
-  const [isProjectConnectMode, setIsProjectConnectMode] = React.useState(false);
-  const toggleConnectMode = useCallback(() => {
-    setIsProjectConnectMode((prev) => !prev);
-  }, []);
 
   // Position sync hook
   const { syncStatus, syncMessage, handleNodeDragStop } = usePositionSync();
@@ -253,14 +248,13 @@ function JourneyMapCanvasInner({
         <JourneyMapCanvasView
           nodes={nodes}
           edges={edges}
+          setEdges={setEdges}
           isLoading={isLoading}
           journeyStats={journeyStats}
           syncStatus={syncStatus}
           syncMessage={syncMessage}
           isNavigationExpanded={isNavigationExpanded}
           setIsNavigationExpanded={setIsNavigationExpanded}
-          isProjectConnectMode={isProjectConnectMode}
-          onToggleConnectMode={toggleConnectMode}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onSelectionChange={handleSelectionChange}
