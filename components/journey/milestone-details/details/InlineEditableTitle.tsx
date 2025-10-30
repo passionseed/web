@@ -1,6 +1,6 @@
 /**
  * InlineEditableTitle - Click to edit milestone title
- * Single-line input with character limit and validation
+ * Uses the auto-save system for consistency
  */
 
 "use client";
@@ -10,14 +10,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useInlineEdit } from "@/hooks/milestone-details/useInlineEdit";
 import { CharacterCounter } from "../common/CharacterCounter";
-import { updateMilestone } from "@/lib/supabase/journey";
 import { ProjectMilestone } from "@/types/journey";
+import { updateMilestone } from "@/lib/supabase/journey";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 interface InlineEditableTitleProps {
   milestone: ProjectMilestone;
-  onUpdate: () => void;
+  onUpdate: (updatedMilestone?: ProjectMilestone) => void;
 }
 
 const MAX_LENGTH = 200;
@@ -37,14 +36,18 @@ export function InlineEditableTitle({ milestone, onUpdate }: InlineEditableTitle
   };
 
   const handleSave = async (value: string) => {
+    console.log("🔄 InlineEditableTitle: Starting save for milestone:", milestone.id, "with title:", value.trim());
     try {
-      await updateMilestone(milestone.id, {
+      const updatedMilestone = await updateMilestone(milestone.id, {
         title: value.trim(),
       });
+      console.log("✅ InlineEditableTitle: Save successful, updated milestone:", updatedMilestone);
       toast.success("Title updated");
-      onUpdate();
+      onUpdate(updatedMilestone);
+      return updatedMilestone;
     } catch (error) {
-      console.error("Error updating title:", error);
+      console.error("❌ InlineEditableTitle: Error updating milestone title:", error);
+      toast.error("Failed to update title");
       throw new Error("Failed to update title");
     }
   };
@@ -55,7 +58,6 @@ export function InlineEditableTitle({ milestone, onUpdate }: InlineEditableTitle
     error,
     isSaving,
     startEdit,
-    cancelEdit,
     setValue,
     saveEdit,
     handleKeyDown,
@@ -105,11 +107,6 @@ export function InlineEditableTitle({ milestone, onUpdate }: InlineEditableTitle
               error && "border-red-500 focus-visible:border-red-500"
             )}
           />
-          {isSaving && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-            </div>
-          )}
         </div>
         <div className="flex items-center justify-between">
           {error ? (

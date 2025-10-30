@@ -16,21 +16,16 @@ import { useMilestoneAutoSave } from "@/hooks/milestone-details/useMilestoneAuto
 
 interface MilestoneHeaderProps {
   milestone: ProjectMilestone;
-  onUpdate: () => void;
+  onUpdate: (updatedMilestone?: ProjectMilestone) => void;
 }
 
 export function MilestoneHeader({
   milestone,
   onUpdate,
 }: MilestoneHeaderProps) {
-  const { saveField, status } = useMilestoneAutoSave();
+  const { status } = useMilestoneAutoSave();
   const statusConfig = getMilestoneStatusConfig(milestone.status);
   const StatusIcon = statusConfig.icon;
-
-  const handleTitleSave = async (newTitle: string) => {
-    await saveField(milestone.id, "title", newTitle.trim());
-    onUpdate();
-  };
 
   return (
     <div className="p-4 border-b border-slate-800">

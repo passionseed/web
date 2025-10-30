@@ -24,8 +24,9 @@ export const PANEL_SIZES = {
 
 export const NODE_LAYOUT = {
   USER_CENTER_POSITION: { x: 0, y: 0 },
-  NORTH_STAR_RADIUS: 400,
-  SHORT_TERM_RADIUS: 600,
+  NORTH_STAR_RADIUS: 450,
+  SHORT_TERM_RADIUS: 650,
+  MIN_RADIUS_FROM_CENTER: 350, // Minimum distance from center to avoid username overlap
 } as const;
 
 // ========================================

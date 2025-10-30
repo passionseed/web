@@ -5,3 +5,4 @@
 
 export { useInlineEdit } from "./useInlineEdit";
 export { useMilestoneAutoSave } from "./useMilestoneAutoSave";
+export { useDebouncedProgress } from "./useDebouncedProgress";

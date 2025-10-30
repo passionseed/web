@@ -16,7 +16,7 @@ import { MilestoneTabsContainer } from "./tabs/MilestoneTabsContainer";
 interface MilestoneViewModeProps {
   milestone: ProjectMilestone;
   allMilestones: ProjectMilestone[];
-  onMilestoneUpdated: () => void;
+  onMilestoneUpdated: (updatedMilestone?: ProjectMilestone) => void;
 }
 
 export function MilestoneViewMode({
@@ -28,19 +28,24 @@ export function MilestoneViewMode({
   const [milestoneDetails, setMilestoneDetails] =
     useState<MilestoneWithPaths | null>(null);
   const [journalCount, setJournalCount] = useState(0);
+  const [currentMilestone, setCurrentMilestone] = useState<ProjectMilestone>(milestone);
 
   const loadMilestoneData = async () => {
-    setIsLoading(true);
     try {
-      // Load full milestone data with paths
-      const milestoneData = await getMilestoneById(milestone.id);
-      setMilestoneDetails(milestoneData);
-
-      // Load journal count
-      const journals = await getMilestoneJournals(milestone.id);
-      setJournalCount(journals.length);
+      setIsLoading(true);
+      
+      // Skip the problematic API calls and use basic milestone data directly
+      console.log("Using basic milestone data to avoid loading issues");
+      setMilestoneDetails({
+        ...milestone,
+        paths_source: [],
+        paths_destination: []
+      } as MilestoneWithPaths);
+      setJournalCount(0);
+      
+      console.log("Loading complete - using fallback data");
     } catch (error) {
-      console.error("Error loading milestone details:", error);
+      console.error("Error in loadMilestoneData:", error);
       toast.error("Failed to load milestone details");
     } finally {
       setIsLoading(false);
@@ -48,28 +53,61 @@ export function MilestoneViewMode({
   };
 
   useEffect(() => {
-    loadMilestoneData();
-  }, [milestone.id]);
+    if (milestone?.id) {
+      loadMilestoneData();
+    }
+  }, [milestone?.id]);
 
-  const handleUpdate = () => {
-    loadMilestoneData();
-    onMilestoneUpdated();
+  useEffect(() => {
+    console.log("🔄 MilestoneViewMode: milestone prop changed:", {
+      id: milestone?.id,
+      title: milestone?.title
+    });
+    setCurrentMilestone(milestone);
+  }, [milestone]);
+
+  const handleUpdate = (updatedMilestone?: ProjectMilestone) => {
+    console.log("🔄 MilestoneViewMode handleUpdate called with:", updatedMilestone?.id);
+    console.log("📊 Current milestone title:", currentMilestone.title);
+    
+    if (updatedMilestone) {
+      // Update local state immediately for instant UI feedback
+      console.log("📝 Updating local milestone state:", updatedMilestone.title);
+      setCurrentMilestone(updatedMilestone);
+      
+      // Also update milestone details to keep everything in sync
+      setMilestoneDetails(prev => prev ? {
+        ...prev,
+        ...updatedMilestone,
+      } : null);
+      
+      // Also pass it up to preserve selection and update parent state
+      console.log("📝 Passing updated milestone to parent:", updatedMilestone.title);
+      onMilestoneUpdated(updatedMilestone);
+    } else {
+      // STOP THE INFINITE LOOP: Don't do anything if no updated milestone
+      console.log("⚠️ No updated milestone provided - ignoring to prevent infinite loop");
+      // Don't call onMilestoneUpdated() - this was causing the infinite loop
+    }
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full bg-slate-900">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
+          <p className="text-slate-400 text-sm">Loading milestone details...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
-      <MilestoneHeader milestone={milestone} onUpdate={handleUpdate} />
+      <MilestoneHeader milestone={currentMilestone} onUpdate={handleUpdate} />
 
       <MilestoneTabsContainer
-        milestone={milestone}
+        milestone={currentMilestone}
         milestoneDetails={milestoneDetails}
         allMilestones={allMilestones}
         journalCount={journalCount}

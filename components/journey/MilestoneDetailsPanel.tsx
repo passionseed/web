@@ -18,7 +18,7 @@ interface MilestoneDetailsPanelProps {
   projectId: string;
   project?: ProjectWithMilestones;
   allMilestones: MilestoneWithJournals[];
-  onMilestoneUpdated: () => void;
+  onMilestoneUpdated: (updatedMilestone?: ProjectMilestone) => void;
   onMilestoneSelect?: (milestone: ProjectMilestone) => void;
 }
 

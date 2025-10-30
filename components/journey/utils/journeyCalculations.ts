@@ -118,13 +118,24 @@ export interface NodePosition {
 
 /**
  * Calculate default circular position for a node
+ * Avoids bottom center area to prevent overlap with username display
  */
 export function calculateCircularPosition(
   index: number,
   totalCount: number,
   radius: number
 ): NodePosition {
-  const angle = (index / totalCount) * 2 * Math.PI;
+  // Skip bottom 150 degrees (75 degrees on each side of bottom center)
+  // This excludes the range from 195° to 345° (bottom center area)
+  // We use the remaining 210 degrees starting from top
+  const excludedBottomAngle = Math.PI * (5/6); // 150 degrees in radians
+  const usableAngle = 2 * Math.PI - excludedBottomAngle; // 210 degrees
+  
+  // Start from 15 degrees (slightly right of top) and go clockwise
+  // This avoids the bottom area from 195° to 345°
+  const startAngle = Math.PI * (1/12); // 15 degrees from top
+  const angle = startAngle + (index / totalCount) * usableAngle;
+  
   return {
     x: Math.cos(angle) * radius,
     y: Math.sin(angle) * radius,
@@ -140,15 +151,27 @@ export function getNodePosition(
   totalCount: number,
   isNorthStar: boolean
 ): NodePosition {
-  // Use saved position if available
+  // Use saved position if available, but ensure minimum distance from center
   if (project.position_x !== null && project.position_y !== null) {
-    return {
+    const savedPosition = {
       x: project.position_x,
       y: project.position_y,
     };
+    
+    // Check if saved position is too close to center (where username appears)
+    const distanceFromCenter = Math.sqrt(savedPosition.x * savedPosition.x + savedPosition.y * savedPosition.y);
+    if (distanceFromCenter < NODE_LAYOUT.MIN_RADIUS_FROM_CENTER) {
+      // If saved position is too close to center, use calculated position instead
+      const radius = isNorthStar
+        ? NODE_LAYOUT.NORTH_STAR_RADIUS
+        : NODE_LAYOUT.SHORT_TERM_RADIUS;
+      return calculateCircularPosition(index, totalCount, radius);
+    }
+    
+    return savedPosition;
   }
 
-  // Calculate default position
+  // Calculate default position with appropriate radius
   const radius = isNorthStar
     ? NODE_LAYOUT.NORTH_STAR_RADIUS
     : NODE_LAYOUT.SHORT_TERM_RADIUS;

@@ -17,7 +17,7 @@ import { Loader2, FileText } from "lucide-react";
 
 interface InlineEditableDetailsProps {
   milestone: ProjectMilestone;
-  onUpdate: () => void;
+  onUpdate: (updatedMilestone?: ProjectMilestone) => void;
 }
 
 const MAX_LENGTH = 5000;
@@ -37,11 +37,11 @@ export function InlineEditableDetails({
 
   const handleSave = async (value: string) => {
     try {
-      await updateMilestone(milestone.id, {
+      const updatedMilestone = await updateMilestone(milestone.id, {
         details: value.trim() || null,
       });
       toast.success("Details updated");
-      onUpdate();
+      onUpdate(updatedMilestone);
     } catch (error) {
       console.error("Error updating details:", error);
       throw new Error("Failed to update details");

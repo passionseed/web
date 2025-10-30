@@ -18,77 +18,83 @@ import {
 import { ProjectMilestone, MilestoneStatus } from "@/types/journey";
 import { updateMilestone } from "@/lib/supabase/journey";
 import { toast } from "sonner";
+import { useDebouncedProgress } from "@/hooks/milestone-details/useDebouncedProgress";
+import { Loader2 } from "lucide-react";
 
 interface QuickProgressControlsProps {
   milestone: ProjectMilestone;
-  onUpdate: () => void;
+  onUpdate: (updatedMilestone?: ProjectMilestone) => void;
 }
 
 export function QuickProgressControls({
   milestone,
   onUpdate,
 }: QuickProgressControlsProps) {
-  const handleProgressChange = useCallback(
-    async (value: number[]) => {
-      const newProgress = value[0];
+  const { currentProgress, isSaving, updateProgress } = useDebouncedProgress({
+    milestone,
+    onUpdate,
+    debounceMs: 500, // 500ms debounce for smooth interaction
+  });
 
-      try {
-        await updateMilestone(milestone.id, {
-          progress_percentage: newProgress,
-          status:
-            newProgress === 100
-              ? "completed"
-              : newProgress > 0
-              ? "in_progress"
-              : "not_started",
-        });
-        onUpdate();
-        toast.success(
-          newProgress === 100
-            ? "Milestone completed! Congratulations!"
-            : "Progress updated"
-        );
-      } catch (error) {
-        console.error("Error updating progress:", error);
-        toast.error("Failed to update progress");
-      }
+  const handleProgressChange = useCallback(
+    (value: number[]) => {
+      const newProgress = value[0];
+      updateProgress(newProgress);
     },
-    [milestone.id, onUpdate]
+    [updateProgress]
   );
 
   const handleStatusChange = useCallback(
     async (newStatus: MilestoneStatus) => {
       try {
-        await updateMilestone(milestone.id, {
+        const updateData: Partial<ProjectMilestone> = {
           status: newStatus,
-        });
-        onUpdate();
+        };
+
+        // Handle completion logic to satisfy database constraint
+        if (newStatus === "completed") {
+          updateData.completed_at = new Date().toISOString();
+        } else if (milestone.status === "completed" && newStatus !== "completed") {
+          // If changing from completed to another status, clear completed_at
+          updateData.completed_at = null;
+        }
+
+        const updatedMilestone = await updateMilestone(milestone.id, updateData);
+        onUpdate(updatedMilestone);
         toast.success("Status updated");
       } catch (error) {
         console.error("Error updating status:", error);
         toast.error("Failed to update status");
       }
     },
-    [milestone.id, onUpdate]
+    [milestone.id, milestone.status, onUpdate]
   );
 
   return (
     <div className="space-y-4">
       {/* Progress Slider */}
       <div className="bg-slate-800/30 rounded-lg p-3">
-        <Label className="text-sm font-semibold text-slate-200 mb-3 block">
-          Update Progress
-        </Label>
+        <div className="flex items-center justify-between mb-3">
+          <Label className="text-sm font-semibold text-slate-200">
+            Update Progress
+          </Label>
+          {isSaving && (
+            <div className="flex items-center gap-1 text-xs text-slate-400">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Saving...
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <Slider
-            value={[milestone.progress_percentage]}
+            value={[currentProgress]}
             onValueChange={handleProgressChange}
             max={100}
             step={5}
             className="flex-1"
           />
           <span className="text-sm font-medium text-slate-300 min-w-[3rem] text-right">
-            {milestone.progress_percentage}%
+            {currentProgress}%
           </span>
         </div>
       </div>
