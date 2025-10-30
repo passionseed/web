@@ -21,7 +21,7 @@ import { insertChecklistItem } from "@/components/journey/utils/checklistMarkdow
 
 interface InlineEditableDescriptionProps {
   milestone: ProjectMilestone;
-  onUpdate: () => void;
+  onUpdate: (updatedMilestone?: ProjectMilestone) => void;
 }
 
 const MAX_LENGTH = 1000;
@@ -41,11 +41,11 @@ export function InlineEditableDescription({
 
   const handleSave = async (value: string) => {
     try {
-      await updateMilestone(milestone.id, {
+      const updatedMilestone = await updateMilestone(milestone.id, {
         description: value.trim() || null,
       });
       toast.success("Description updated");
-      onUpdate();
+      onUpdate(updatedMilestone);
     } catch (error) {
       console.error("Error updating description:", error);
       throw new Error("Failed to update description");

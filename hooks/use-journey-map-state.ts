@@ -98,10 +98,21 @@ export function useJourneyMapState(): UseJourneyMapStateReturn {
 
   // View mode handlers
   const switchToMilestoneView = useCallback((projectId: string) => {
-    console.log("🎯 Switching to milestone view for project:", projectId);
+    console.log("🎯 [HOOK DEBUG] Switching to milestone view for project:", projectId);
+    console.log("🎯 [HOOK DEBUG] Current viewMode before:", viewMode);
+    console.log("🎯 [HOOK DEBUG] Current milestoneProjectId before:", milestoneProjectId);
+    
     setMilestoneProjectId(projectId);
     setViewMode(VIEW_MODES.MILESTONE);
-  }, []);
+    
+    console.log("🎯 [HOOK DEBUG] State updates triggered");
+    
+    // Log after a brief delay to see if state updated
+    setTimeout(() => {
+      console.log("🎯 [HOOK DEBUG] State after update - viewMode should be:", VIEW_MODES.MILESTONE);
+      console.log("🎯 [HOOK DEBUG] State after update - milestoneProjectId should be:", projectId);
+    }, 100);
+  }, [viewMode, milestoneProjectId]);
 
   const switchToOverviewView = useCallback(() => {
     console.log("⬅️ Returning to overview");

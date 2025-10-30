@@ -31,7 +31,7 @@ interface MilestoneProgressDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   milestone: ProjectMilestone | null;
-  onSuccess: () => void;
+  onSuccess: (updatedMilestone?: ProjectMilestone) => void;
 }
 
 export function MilestoneProgressDialog({
@@ -85,7 +85,7 @@ export function MilestoneProgressDialog({
     setIsSubmitting(true);
 
     try {
-      await updateMilestoneProgress(milestone.id, progress, journalContent.trim());
+      const result = await updateMilestoneProgress(milestone.id, progress, journalContent.trim());
 
       toast.success(
         progress === 100
@@ -96,7 +96,7 @@ export function MilestoneProgressDialog({
       // Reset form
       setJournalContent("");
 
-      onSuccess();
+      onSuccess(result.milestone);
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating milestone progress:", error);
@@ -110,6 +110,8 @@ export function MilestoneProgressDialog({
     const newProgress = value[0];
     setProgress(newProgress);
     setShowReflectionPrompt(newProgress === 100);
+    // Note: We don't update the milestone during dragging, only on form submit
+    // This prevents the constant rebuilding that was causing the slider to be unusable
   };
 
   if (!milestone) return null;

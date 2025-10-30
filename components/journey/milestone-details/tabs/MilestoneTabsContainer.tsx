@@ -17,7 +17,7 @@ interface MilestoneTabsContainerProps {
   milestoneDetails: MilestoneWithPaths | null;
   allMilestones: ProjectMilestone[];
   journalCount: number;
-  onUpdate: () => void;
+  onUpdate: (updatedMilestone?: ProjectMilestone) => void;
 }
 
 export function MilestoneTabsContainer({

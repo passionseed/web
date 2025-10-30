@@ -136,10 +136,33 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     []
   );
 
-  // Edge change handler
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+  // Edge change handler with deletion support
+  const onEdgesChange = useCallback(async (changes: EdgeChange[]) => {
+    const deletedEdges = changes.filter(change => change.type === 'remove');
+    
+    // Handle edge deletions (including backspace)
+    if (deletedEdges.length > 0) {
+      for (const change of deletedEdges) {
+        const edgeId = change.id;
+        const edge = edges.find(e => e.id === edgeId);
+        
+        if (edge?.data?.pathId) {
+          try {
+            const pathId = edge.data.pathId as string;
+            await deleteMilestonePath(pathId);
+            setMilestonePaths((prev) => prev.filter((p) => p.id !== pathId));
+            toast.success("Connection deleted");
+          } catch (error) {
+            console.error("Error deleting connection:", error);
+            toast.error("Failed to delete connection");
+            return; // Don't apply the edge change if deletion failed
+          }
+        }
+      }
+    }
+    
     setEdges((eds) => applyEdgeChanges(changes, eds));
-  }, []);
+  }, [edges]);
 
   const handleOpenProgress = useCallback((milestone: ProjectMilestone) => {
     setSelectedMilestone(milestone);
@@ -148,56 +171,61 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
 
   const buildMilestoneMap = useCallback(
     async (milestonesData: MilestoneWithJournals[]) => {
-      const newNodes: Node[] = [];
+      try {
+        const newNodes: Node[] = [];
 
-      // Check if milestones have positions set
-      const hasPositions = milestonesData.some(
-        (m) => m.position_x !== null && m.position_x !== undefined
-      );
+        // Check if milestones have positions set
+        const hasPositions = milestonesData.some(
+          (m) => m.position_x !== null && m.position_x !== undefined
+        );
 
-      // Create milestone nodes
-      for (let i = 0; i < milestonesData.length; i++) {
-        const milestone = milestonesData[i];
+        // Create milestone nodes without fetching journals individually (performance improvement)
+        for (let i = 0; i < milestonesData.length; i++) {
+          const milestone = milestonesData[i];
 
-        // Get latest journal for preview
-        const journals = await getMilestoneJournals(milestone.id);
-        const latestJournal = journals.length > 0 ? journals[0] : null;
+          // Use existing journal data from milestone object instead of fetching
+          const latestJournal = milestone.journals && milestone.journals.length > 0 
+            ? milestone.journals[0] 
+            : null;
 
-        // Position logic - use position_x/position_y from database
-        let position;
-        if (hasPositions) {
-          position = {
-            x: milestone.position_x || 0,
-            y: milestone.position_y || 0,
-          };
-        } else {
-          // Auto-layout horizontally
-          const horizontalSpacing = 350;
-          const verticalVariation = (i % 2) * 100 - 50;
-          position = {
-            x: i * horizontalSpacing,
-            y: verticalVariation,
-          };
+          // Position logic - use position_x/position_y from database
+          let position;
+          if (hasPositions) {
+            position = {
+              x: milestone.position_x || 0,
+              y: milestone.position_y || 0,
+            };
+          } else {
+            // Auto-layout horizontally
+            const horizontalSpacing = 350;
+            const verticalVariation = (i % 2) * 100 - 50;
+            position = {
+              x: i * horizontalSpacing,
+              y: verticalVariation,
+            };
+          }
+
+          newNodes.push({
+            id: milestone.id,
+            type: "milestone",
+            position,
+            data: {
+              milestone,
+              latestJournalPreview: latestJournal
+                ? latestJournal.content.slice(0, 100)
+                : undefined,
+            },
+            draggable: true,
+            selectable: true,
+          });
         }
 
-        newNodes.push({
-          id: milestone.id,
-          type: "milestone",
-          position,
-          data: {
-            milestone,
-            latestJournalPreview: latestJournal
-              ? latestJournal.content.slice(0, 100)
-              : undefined,
-            // Note: Removed onOpenProgress - selection handled by onSelectionChange
-          },
-          draggable: true,
-          selectable: true,
-        });
+        console.log("✅ Built milestone nodes:", newNodes.length);
+        setNodes(newNodes);
+      } catch (error) {
+        console.error("Error building milestone map:", error);
+        toast.error("Failed to update milestone view");
       }
-
-      console.log("✅ Built milestone nodes:", newNodes.length);
-      setNodes(newNodes);
     },
     [setNodes]
   );
@@ -215,6 +243,9 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       target: path.destination_milestone_id,
       type: "floating",
       animated: path.path_type === "linear",
+      selectable: true,
+      deletable: true,
+      focusable: true,
       style: {
         stroke:
           path.path_type === "linear"
@@ -222,7 +253,8 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
             : path.path_type === "conditional"
               ? "#f59e0b"
               : "#10b981",
-        strokeWidth: 2,
+        strokeWidth: 3,
+        cursor: "pointer",
       },
       markerEnd: {
         type: MarkerType.ArrowClosed,
@@ -243,7 +275,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     setEdges(newEdges);
   }, [milestonePaths]);
 
-  const loadMilestoneMap = useCallback(async () => {
+  const loadMilestoneMap = useCallback(async () => {    
     setIsLoading(true);
     try {
       const [projectData, milestonesData, pathsData] = await Promise.all([
@@ -256,9 +288,6 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       setMilestones(milestonesData);
       setMilestonePaths(pathsData);
 
-      // Note: Breadcrumb will be set when a milestone is selected via handleSelectionChange
-      // Don't set it here - only set when viewing a specific milestone
-
       if (projectData && milestonesData) {
         await buildMilestoneMap(milestonesData);
       }
@@ -268,7 +297,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, buildMilestoneMap, setMilestoneTitle]);
+  }, [projectId, buildMilestoneMap]);
 
   useEffect(() => {
     loadMilestoneMap();
@@ -277,7 +306,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     return () => {
       setMilestoneTitle(null);
     };
-  }, [loadMilestoneMap, setMilestoneTitle]);
+  }, [projectId, setMilestoneTitle]);
 
   // Subscribe to sync status changes
   useEffect(() => {
@@ -298,9 +327,64 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     };
   }, [syncManager]);
 
-  const handleProgressUpdated = () => {
-    loadMilestoneMap();
-  };
+  const handleProgressUpdated = useCallback(async (updatedMilestone?: ProjectMilestone) => {
+    try {
+      if (updatedMilestone) {
+        console.log("📝 Updating milestone data in place:", updatedMilestone.id);
+        
+        // Update milestones array
+        setMilestones(prev => prev.map(m => 
+          m.id === updatedMilestone.id 
+            ? { ...m, ...updatedMilestone, journals: m.journals } 
+            : m
+        ));
+        
+        // CRITICAL: Update the selected milestone to maintain selection
+        if (selectedMilestone && selectedMilestone.id === updatedMilestone.id) {
+          console.log("📝 Updating selected milestone to maintain selection");
+          setSelectedMilestone({ ...selectedMilestone, ...updatedMilestone });
+        }
+        
+        // Update the node data directly - PRESERVE the selection state
+        setNodes(prev => prev.map(node => {
+          if (node.id === updatedMilestone.id) {
+            return {
+              ...node,
+              selected: node.selected, // PRESERVE selection state
+              data: {
+                ...node.data,
+                milestone: { ...node.data.milestone, ...updatedMilestone }
+              }
+            };
+          }
+          return node;
+        }));
+        
+        console.log("📝 Milestone updated without losing selection");
+      } else {
+        // Fallback: only use if really necessary
+        console.log("📝 Fallback: fetching fresh data");
+        const milestonesData = await getProjectMilestones(projectId);
+        setMilestones(milestonesData);
+        await buildMilestoneMap(milestonesData);
+      }
+    } catch (error) {
+      console.error("Error updating milestone progress:", error);
+      toast.error("Failed to refresh milestones");
+    }
+  }, [projectId, buildMilestoneMap, selectedMilestone]);
+
+  const handleMilestoneCreated = useCallback(async () => {
+    // For new milestones, we do need to fetch fresh data
+    try {
+      const milestonesData = await getProjectMilestones(projectId);
+      setMilestones(milestonesData);
+      await buildMilestoneMap(milestonesData);
+    } catch (error) {
+      console.error("Error refreshing after milestone creation:", error);
+      toast.error("Failed to refresh milestones");
+    }
+  }, [projectId, buildMilestoneMap]);
 
   const handleNodeDragStop = useCallback(
     (_event: any, node: Node) => {
@@ -313,10 +397,16 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
   const handleSelectionChange = useCallback(
     (params: OnSelectionChangeParams) => {
       const selectedNodes = params.nodes;
+      const selectedEdges = params.edges;
+      
+      console.log("🔄 Selection changed - nodes:", selectedNodes.length, "edges:", selectedEdges.length);
+      
+      // Only handle node selection for milestone details, ignore edge selection
       if (selectedNodes.length > 0) {
         const node = selectedNodes[0];
         const milestone = milestones.find((m) => m.id === node.id);
         if (milestone) {
+          console.log("🎯 Selecting milestone:", milestone.title);
           setSelectedMilestone(milestone);
           // Update breadcrumb to show milestone title
           setMilestoneTitle(milestone.title);
@@ -326,7 +416,9 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
             setIsPanelMinimized(false);
           }
         }
-      } else {
+      } else if (selectedEdges.length === 0 && selectedNodes.length === 0) {
+        // Only clear milestone selection if nothing is selected
+        console.log("🔄 Clearing milestone selection");
         setSelectedMilestone(null);
         // Clear breadcrumb when deselecting
         setMilestoneTitle(null);
@@ -360,7 +452,14 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
         target: newPath.destination_milestone_id,
         type: "floating",
         animated: true,
-        style: { stroke: "#3b82f6", strokeWidth: 2 },
+        selectable: true,
+        deletable: true,
+        focusable: true,
+        style: { 
+          stroke: "#3b82f6", 
+          strokeWidth: 3,
+          cursor: "pointer"
+        },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           color: "#3b82f6",
@@ -378,6 +477,30 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       toast.error("Failed to create connection");
     }
   }, []);
+
+  const onEdgeClick = useCallback(
+    async (event: React.MouseEvent, edge: Edge) => {
+      event.stopPropagation();
+
+      if (!edge.data?.pathId) return;
+
+      const confirmed = window.confirm("Delete this connection?");
+
+      if (!confirmed) return;
+
+      try {
+        const pathId = edge.data.pathId as string;
+        await deleteMilestonePath(pathId);
+        setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+        setMilestonePaths((prev) => prev.filter((p) => p.id !== pathId));
+        toast.success("Connection deleted");
+      } catch (error) {
+        console.error("Error deleting connection:", error);
+        toast.error("Failed to delete connection");
+      }
+    },
+    []
+  );
 
   const onEdgeContextMenu = useCallback(
     async (event: React.MouseEvent, edge: Edge) => {
@@ -459,6 +582,11 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
           className="transition-all duration-300 ease-in-out relative"
         >
           <div className="w-full h-full relative bg-slate-950">
+            <style jsx>{`
+              .react-flow__edge-path {
+                transition: stroke 200ms ease-in-out !important;
+              }
+            `}</style>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -467,6 +595,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
               onSelectionChange={handleSelectionChange}
               onNodeDragStop={handleNodeDragStop}
               onConnect={onConnect}
+              onEdgeClick={onEdgeClick}
               onEdgeContextMenu={onEdgeContextMenu}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
@@ -482,11 +611,15 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
               defaultEdgeOptions={{
                 type: "floating",
                 animated: false,
+                selectable: true,
+                deletable: true,
+                focusable: true,
               }}
               nodesDraggable
               nodesConnectable
               elementsSelectable
-              deleteKeyCode="Delete"
+              edgesReconnectable={false}
+              deleteKeyCode={["Delete", "Backspace"]}
               panOnScroll
               panOnDrag={[1, 2]}
               attributionPosition="bottom-left"
@@ -508,76 +641,67 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
               {/* Header panel */}
               <Panel
                 position="top-left"
-                className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-4 m-4"
+                className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-2 m-2 max-w-3xl"
               >
-                <div className="flex items-start gap-4">
-                  <Button onClick={onBack} variant="outline" size="sm">
-                    <ArrowLeft className="w-4 h-4 mr-2" />
+                <div className="flex items-center gap-2">
+                  <Button onClick={onBack} variant="outline" size="sm" className="flex-shrink-0">
+                    <ArrowLeft className="w-4 h-4 mr-1" />
                     Back
                   </Button>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Target className="w-5 h-5 text-blue-400" />
-                      <h2 className="text-lg font-bold text-slate-100">
-                        {project.title}
-                      </h2>
-                    </div>
-                    {project.description && (
-                      <p className="text-sm text-slate-400 mb-2">
-                        {project.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary">
-                        {completedCount} / {totalCount} milestones
-                      </Badge>
-                      <Badge
-                        variant={
-                          project.status === "in_progress"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {project.status}
-                      </Badge>
-                    </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Target className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                    <h2 className="text-sm font-bold text-slate-100 truncate">
+                      {project.title}
+                    </h2>
+                    <Badge variant="secondary" className="text-xs flex-shrink-0">
+                      {completedCount}/{totalCount}
+                    </Badge>
+                    <Badge
+                      variant={
+                        project.status === "in_progress"
+                          ? "default"
+                          : "secondary"
+                      }
+                      className="text-xs flex-shrink-0"
+                    >
+                      {project.status}
+                    </Badge>
                   </div>
                   <Button
                     onClick={() => setAddMilestoneModalOpen(true)}
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex-shrink-0"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Milestone
+                    <Plus className="w-4 h-4" />
                   </Button>
                 </div>
               </Panel>
 
               {/* Empty state */}
               {milestones.length === 0 && (
-                <Panel position="top-center" className="mt-32">
-                  <div className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-8 text-center max-w-md">
-                    <Target className="w-16 h-16 mx-auto mb-4 text-slate-700" />
-                    <h3 className="text-xl font-bold text-slate-100 mb-2">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-6 text-center max-w-sm pointer-events-auto">
+                    <Target className="w-12 h-12 mx-auto mb-3 text-slate-700" />
+                    <h3 className="text-lg font-bold text-slate-100 mb-2">
                       No milestones yet
                     </h3>
-                    <p className="text-slate-400 mb-4">
+                    <p className="text-sm text-slate-400 mb-4">
                       Break down your project into milestones to track progress
                       and stay organized.
                     </p>
-                    <Button onClick={() => setAddMilestoneModalOpen(true)}>
+                    <Button onClick={() => setAddMilestoneModalOpen(true)} size="sm">
                       <Plus className="w-4 h-4 mr-2" />
                       Create First Milestone
                     </Button>
                   </div>
-                </Panel>
+                </div>
               )}
             </ReactFlow>
 
             {/* Linking Help Text */}
-            <div className="absolute bottom-4 left-4 bg-slate-800/95 backdrop-blur border border-slate-700 rounded-lg p-3 shadow-lg max-w-sm">
+            <div className="absolute bottom-20 left-4 bg-slate-800/95 backdrop-blur border border-slate-700 rounded-lg p-3 shadow-lg max-w-sm">
               <p className="text-xs text-slate-200">
-                <span className="font-semibold">💡 Tip:</span> Drag from the green dot on one milestone to the blue dot on another to create a connection. Right-click edges to delete.
+                <span className="font-semibold">💡 Tip:</span> Drag from the green dot on one milestone to the blue dot on another to create a connection. Click edges to select them, then press Backspace or Delete to remove.
               </p>
             </div>
 
@@ -625,7 +749,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
                 projectId={projectId}
                 project={project || undefined}
                 allMilestones={milestones}
-                onMilestoneUpdated={loadMilestoneMap}
+                onMilestoneUpdated={handleProgressUpdated}
                 onMilestoneSelect={setSelectedMilestone}
               />
             )}
@@ -639,7 +763,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
         onOpenChange={setAddMilestoneModalOpen}
         projectId={projectId}
         allMilestones={milestones}
-        onMilestoneCreated={loadMilestoneMap}
+        onMilestoneCreated={handleMilestoneCreated}
       />
     </>
   );
