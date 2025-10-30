@@ -77,30 +77,26 @@ export function MilestoneNode({ data, selected = false }: MilestoneNodeProps) {
 
   return (
     <div className="relative">
-      {/* Connection handles */}
+      {/* Connection handles - large and easy to grab */}
       <Handle
         type="target"
         position={Position.Top}
-        className="w-2 h-2 bg-blue-500/50 border-2 border-blue-400"
-        style={{ pointerEvents: "none" }}
+        className="w-5 h-5 bg-blue-400 border-3 border-blue-300 shadow-lg shadow-blue-500/70 hover:w-6 hover:h-6 hover:shadow-xl transition-all"
       />
       <Handle
         type="source"
         position={Position.Bottom}
-        className="w-2 h-2 bg-green-500/50 border-2 border-green-400"
-        style={{ pointerEvents: "none" }}
+        className="w-5 h-5 bg-green-400 border-3 border-green-300 shadow-lg shadow-green-500/70 hover:w-6 hover:h-6 hover:shadow-xl transition-all"
       />
       <Handle
         type="target"
         position={Position.Left}
-        className="w-2 h-2 bg-blue-500/50 border-2 border-blue-400"
-        style={{ pointerEvents: "none" }}
+        className="w-5 h-5 bg-blue-400 border-3 border-blue-300 shadow-lg shadow-blue-500/70 hover:w-6 hover:h-6 hover:shadow-xl transition-all"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="w-2 h-2 bg-green-500/50 border-2 border-green-400"
-        style={{ pointerEvents: "none" }}
+        className="w-5 h-5 bg-green-400 border-3 border-green-300 shadow-lg shadow-green-500/70 hover:w-6 hover:h-6 hover:shadow-xl transition-all"
       />
 
       <div

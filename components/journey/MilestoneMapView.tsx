@@ -46,8 +46,6 @@ import {
   Target,
   ChevronLeft,
   ChevronRight,
-  Link,
-  Unlink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -110,7 +108,6 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
   const [selectedMilestone, setSelectedMilestone] =
     useState<ProjectMilestone | null>(null);
   const [milestonePaths, setMilestonePaths] = useState<MilestonePath[]>([]);
-  const [isConnectMode, setIsConnectMode] = useState(false);
 
   // Panel management
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -453,217 +450,187 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
         direction="horizontal"
         className="h-screen bg-slate-950"
       >
-      {/* Left Panel - Milestone Canvas */}
-      <ResizablePanel
-        ref={leftPanelRef}
-        defaultSize={PANEL_SIZES.LEFT_DEFAULT}
-        minSize={PANEL_SIZES.LEFT_MIN}
-        maxSize={PANEL_SIZES.LEFT_MAX}
-        className="transition-all duration-300 ease-in-out relative"
-      >
-        <div className="w-full h-full relative bg-slate-950">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onSelectionChange={handleSelectionChange}
-            onNodeDragStop={handleNodeDragStop}
-            onConnect={isConnectMode ? onConnect : undefined}
-            onEdgeContextMenu={onEdgeContextMenu}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            connectionMode={ConnectionMode.Loose}
-            fitView
-            fitViewOptions={{
-              padding: 0.2,
-              minZoom: 0.5,
-              maxZoom: 1.5,
-            }}
-            minZoom={0.3}
-            maxZoom={2}
-            defaultEdgeOptions={{
-              type: "floating",
-              animated: false,
-            }}
-            nodesDraggable
-            nodesConnectable={isConnectMode}
-            elementsSelectable
-            deleteKeyCode="Delete"
-            panOnScroll
-            panOnDrag={[1, 2]}
-            attributionPosition="bottom-left"
-          >
-            <Background
-              gap={20}
-              size={1}
-              color="#334155"
-              style={{ backgroundColor: "#0f172a" }}
-            />
-            <Controls
-              style={{
-                backgroundColor: "rgba(15, 23, 42, 0.9)",
-                border: "1px solid #334155",
-                borderRadius: "8px",
+        {/* Left Panel - Milestone Canvas */}
+        <ResizablePanel
+          ref={leftPanelRef}
+          defaultSize={PANEL_SIZES.LEFT_DEFAULT}
+          minSize={PANEL_SIZES.LEFT_MIN}
+          maxSize={PANEL_SIZES.LEFT_MAX}
+          className="transition-all duration-300 ease-in-out relative"
+        >
+          <div className="w-full h-full relative bg-slate-950">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onSelectionChange={handleSelectionChange}
+              onNodeDragStop={handleNodeDragStop}
+              onConnect={onConnect}
+              onEdgeContextMenu={onEdgeContextMenu}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              connectionMode={ConnectionMode.Loose}
+              fitView
+              fitViewOptions={{
+                padding: 0.2,
+                minZoom: 0.5,
+                maxZoom: 1.5,
               }}
-            />
-
-            {/* Connect Mode Toggle */}
-            <Panel position="top-right" className="space-x-2">
-              <Button
-                onClick={() => setIsConnectMode(!isConnectMode)}
-                size="sm"
-                variant={isConnectMode ? "default" : "outline"}
-                className={isConnectMode ? "bg-blue-600 hover:bg-blue-700" : ""}
-              >
-                {isConnectMode ? (
-                  <>
-                    <Unlink className="w-4 h-4 mr-2" />
-                    Exit Connect Mode
-                  </>
-                ) : (
-                  <>
-                    <Link className="w-4 h-4 mr-2" />
-                    Connect Mode
-                  </>
-                )}
-              </Button>
-            </Panel>
-
-            {/* Header panel */}
-            <Panel
-              position="top-left"
-              className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-4 m-4"
+              minZoom={0.3}
+              maxZoom={2}
+              defaultEdgeOptions={{
+                type: "floating",
+                animated: false,
+              }}
+              nodesDraggable
+              nodesConnectable
+              elementsSelectable
+              deleteKeyCode="Delete"
+              panOnScroll
+              panOnDrag={[1, 2]}
+              attributionPosition="bottom-left"
             >
-              <div className="flex items-start gap-4">
-                <Button onClick={onBack} variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Target className="w-5 h-5 text-blue-400" />
-                    <h2 className="text-lg font-bold text-slate-100">
-                      {project.title}
-                    </h2>
-                  </div>
-                  {project.description && (
-                    <p className="text-sm text-slate-400 mb-2">
-                      {project.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary">
-                      {completedCount} / {totalCount} milestones
-                    </Badge>
-                    <Badge
-                      variant={
-                        project.status === "in_progress"
-                          ? "default"
-                          : "secondary"
-                      }
-                    >
-                      {project.status}
-                    </Badge>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => setAddMilestoneModalOpen(true)}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Milestone
-                </Button>
-              </div>
-            </Panel>
+              <Background
+                gap={20}
+                size={1}
+                color="#334155"
+                style={{ backgroundColor: "#0f172a" }}
+              />
+              <Controls
+                style={{
+                  backgroundColor: "rgba(15, 23, 42, 0.9)",
+                  border: "1px solid #334155",
+                  borderRadius: "8px",
+                }}
+              />
 
-            {/* Empty state */}
-            {milestones.length === 0 && (
-              <Panel position="top-center" className="mt-32">
-                <div className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-8 text-center max-w-md">
-                  <Target className="w-16 h-16 mx-auto mb-4 text-slate-700" />
-                  <h3 className="text-xl font-bold text-slate-100 mb-2">
-                    No milestones yet
-                  </h3>
-                  <p className="text-slate-400 mb-4">
-                    Break down your project into milestones to track progress
-                    and stay organized.
-                  </p>
+              {/* Header panel */}
+              <Panel
+                position="top-left"
+                className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-4 m-4"
+              >
+                <div className="flex items-start gap-4">
+                  <Button onClick={onBack} variant="outline" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Target className="w-5 h-5 text-blue-400" />
+                      <h2 className="text-lg font-bold text-slate-100">
+                        {project.title}
+                      </h2>
+                    </div>
+                    {project.description && (
+                      <p className="text-sm text-slate-400 mb-2">
+                        {project.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <Badge variant="secondary">
+                        {completedCount} / {totalCount} milestones
+                      </Badge>
+                      <Badge
+                        variant={
+                          project.status === "in_progress"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {project.status}
+                      </Badge>
+                    </div>
+                  </div>
                   <Button
                     onClick={() => setAddMilestoneModalOpen(true)}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Create First Milestone
+                    Add Milestone
                   </Button>
                 </div>
               </Panel>
-            )}
-          </ReactFlow>
 
-          {/* Connect Mode Help Text */}
-          {isConnectMode && (
-            <div className="absolute bottom-4 left-4 bg-blue-900/90 backdrop-blur border border-blue-700 rounded-lg p-3 shadow-lg max-w-sm">
-              <p className="text-sm text-blue-100 font-medium mb-1">
-                Connect Mode Active
-              </p>
-              <p className="text-xs text-blue-200">
-                Drag from one milestone to another to create a connection.
-                Right-click an edge to delete it.
+              {/* Empty state */}
+              {milestones.length === 0 && (
+                <Panel position="top-center" className="mt-32">
+                  <div className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-8 text-center max-w-md">
+                    <Target className="w-16 h-16 mx-auto mb-4 text-slate-700" />
+                    <h3 className="text-xl font-bold text-slate-100 mb-2">
+                      No milestones yet
+                    </h3>
+                    <p className="text-slate-400 mb-4">
+                      Break down your project into milestones to track progress
+                      and stay organized.
+                    </p>
+                    <Button onClick={() => setAddMilestoneModalOpen(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create First Milestone
+                    </Button>
+                  </div>
+                </Panel>
+              )}
+            </ReactFlow>
+
+            {/* Linking Help Text */}
+            <div className="absolute bottom-4 left-4 bg-slate-800/95 backdrop-blur border border-slate-700 rounded-lg p-3 shadow-lg max-w-sm">
+              <p className="text-xs text-slate-200">
+                <span className="font-semibold">💡 Tip:</span> Drag from the green dot on one milestone to the blue dot on another to create a connection. Right-click edges to delete.
               </p>
             </div>
-          )}
 
-          {/* Dialogs */}
-          <MilestoneProgressDialog
-            open={progressDialogOpen}
-            onOpenChange={setProgressDialogOpen}
-            milestone={selectedMilestone}
-            onSuccess={handleProgressUpdated}
-          />
-
-          {/* Sync Status Indicator */}
-          <SyncStatusIndicator status={syncStatus} message={syncMessage} />
-        </div>
-      </ResizablePanel>
-
-      <ResizableHandle withHandle />
-
-      {/* Right Panel - Milestone Details */}
-      <ResizablePanel
-        ref={rightPanelRef}
-        defaultSize={PANEL_SIZES.RIGHT_DEFAULT}
-        minSize={PANEL_SIZES.RIGHT_MIN}
-        maxSize={PANEL_SIZES.RIGHT_MAX}
-        className="transition-all duration-300 ease-in-out relative bg-slate-900"
-      >
-        {/* Panel Minimize/Maximize Button */}
-        <button
-          onClick={togglePanelSize}
-          className="absolute top-2 right-2 z-20 bg-slate-800/95 backdrop-blur supports-[backdrop-filter]:bg-slate-800/80 border border-slate-700 rounded-lg p-2 shadow-lg hover:bg-slate-700 transition-colors"
-          title={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
-          aria-label={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
-        >
-          {isPanelMinimized ? (
-            <ChevronLeft className="h-4 w-4 text-slate-400" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-slate-400" />
-          )}
-        </button>
-
-        <div className="h-full flex flex-col overflow-hidden">
-          {!isPanelMinimized && (
-            <MilestoneDetailsPanel
+            {/* Dialogs */}
+            <MilestoneProgressDialog
+              open={progressDialogOpen}
+              onOpenChange={setProgressDialogOpen}
               milestone={selectedMilestone}
-              projectId={projectId}
-              project={project || undefined}
-              allMilestones={milestones}
-              onMilestoneUpdated={loadMilestoneMap}
-              onMilestoneSelect={setSelectedMilestone}
+              onSuccess={handleProgressUpdated}
             />
-          )}
-        </div>
-      </ResizablePanel>
+
+            {/* Sync Status Indicator */}
+            <SyncStatusIndicator status={syncStatus} message={syncMessage} />
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        {/* Right Panel - Milestone Details */}
+        <ResizablePanel
+          ref={rightPanelRef}
+          defaultSize={PANEL_SIZES.RIGHT_DEFAULT}
+          minSize={PANEL_SIZES.RIGHT_MIN}
+          maxSize={PANEL_SIZES.RIGHT_MAX}
+          className="transition-all duration-300 ease-in-out relative bg-slate-900"
+        >
+          {/* Panel Minimize/Maximize Button */}
+          <button
+            onClick={togglePanelSize}
+            className="absolute top-2 right-2 z-20 bg-slate-800/95 backdrop-blur supports-[backdrop-filter]:bg-slate-800/80 border border-slate-700 rounded-lg p-2 shadow-lg hover:bg-slate-700 transition-colors"
+            title={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
+            aria-label={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
+          >
+            {isPanelMinimized ? (
+              <ChevronLeft className="h-4 w-4 text-slate-400" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            )}
+          </button>
+
+          <div className="h-full flex flex-col overflow-hidden">
+            {!isPanelMinimized && (
+              <MilestoneDetailsPanel
+                milestone={selectedMilestone}
+                projectId={projectId}
+                project={project || undefined}
+                allMilestones={milestones}
+                onMilestoneUpdated={loadMilestoneMap}
+                onMilestoneSelect={setSelectedMilestone}
+              />
+            )}
+          </div>
+        </ResizablePanel>
       </ResizablePanelGroup>
 
       {/* Add Milestone Modal */}
