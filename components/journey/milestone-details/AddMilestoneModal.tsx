@@ -21,8 +21,6 @@ import {
   TitleField,
   DescriptionField,
   DetailsField,
-  ProgressSlider,
-  StatusSelector,
 } from "../forms/MilestoneFormFields";
 import { ProjectMilestone } from "@/types/journey";
 
@@ -70,32 +68,26 @@ export function AddMilestoneModal({
           <div className="space-y-4 py-4">
             <TitleField
               value={createForm.formData.title}
-              onChange={(value: string) => createForm.updateField("title", value)}
+              onChange={(value: string) =>
+                createForm.updateField("title", value)
+              }
               disabled={createForm.isSubmitting}
               error={createForm.errors.title}
             />
 
             <DescriptionField
               value={createForm.formData.description}
-              onChange={(value: string) => createForm.updateField("description", value)}
+              onChange={(value: string) =>
+                createForm.updateField("description", value)
+              }
               disabled={createForm.isSubmitting}
             />
 
             <DetailsField
               value={createForm.formData.details}
-              onChange={(value: string) => createForm.updateField("details", value)}
-              disabled={createForm.isSubmitting}
-            />
-
-            <ProgressSlider
-              value={createForm.formData.progress}
-              onChange={(value: number) => createForm.updateField("progress", value)}
-              disabled={createForm.isSubmitting}
-            />
-
-            <StatusSelector
-              value={createForm.formData.status}
-              onChange={(value: any) => createForm.updateField("status", value)}
+              onChange={(value: string) =>
+                createForm.updateField("details", value)
+              }
               disabled={createForm.isSubmitting}
             />
           </div>
