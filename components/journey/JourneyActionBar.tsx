@@ -56,14 +56,16 @@ export function JourneyActionBar({
         </div>
       </div>
 
-      <Button
-        onClick={onCreateProject}
-        size="sm"
-        className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        New Project
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={onCreateProject}
+          size="sm"
+          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Project
+        </Button>
+      </div>
     </div>
   );
 }

@@ -78,7 +78,7 @@ export function buildJourneyMap(
   // Separate North Star and short-term projects
   const { northStarProjects, shortTermProjects } = categorizeProjects(projects);
 
-  // Create North Star nodes and edges
+  // Create North Star nodes
   northStarProjects.forEach((project, index) => {
     const position = getNodePosition(
       project,
@@ -92,10 +92,10 @@ export function buildJourneyMap(
       createNorthStarNode(project, position, linkedCount, callbacks)
     );
 
-    newEdges.push(createNorthStarEdge("user-center", project.id));
+    // Removed automatic center connection - users can create manually
   });
 
-  // Create short-term nodes and edges
+  // Create short-term nodes
   shortTermProjects.forEach((project, index) => {
     const position = getNodePosition(
       project,
@@ -122,17 +122,7 @@ export function buildJourneyMap(
       )
     );
 
-    // Create edge to North Star entity (new system) or North Star project (legacy) or user center
-    if (project.linked_north_star_id) {
-      // Link to North Star entity
-      newEdges.push(createProjectToNorthStarEntityEdge(project.id, project.linked_north_star_id));
-    } else if (northStarId) {
-      // Legacy: Link to North Star project
-      newEdges.push(createProjectToNorthStarEdge(project.id, northStarId));
-    } else {
-      const isMainQuest = project.metadata?.is_main_quest === true;
-      newEdges.push(createProjectToUserEdge(project.id, isMainQuest));
-    }
+    // Removed automatic connections - users can create manually
   });
 
   // Add project path edges
