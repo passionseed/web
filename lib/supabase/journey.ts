@@ -1442,6 +1442,13 @@ export async function createProjectPath(
   }
 
   // Create the path
+  console.log("💾 Creating path in database:", {
+    table: TABLES.PROJECT_PATHS,
+    sourceProjectId,
+    destinationProjectId,
+    pathType
+  });
+  
   const { data: path, error } = await supabase
     .from(TABLES.PROJECT_PATHS)
     .insert({
@@ -1452,8 +1459,13 @@ export async function createProjectPath(
     .select()
     .single();
 
+  console.log("💾 Database result:", { path, error });
+
   if (error) {
     console.error("Error creating project path:", error);
+    if (error.code === '23505') {
+      throw new Error("Connection already exists between these projects");
+    }
     throw error;
   }
 
