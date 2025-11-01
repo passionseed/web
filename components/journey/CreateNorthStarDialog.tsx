@@ -24,11 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Star, Loader2, ChevronRight, ChevronLeft } from "lucide-react";
 import { createNorthStar } from "@/lib/supabase/north-star";
 import { toast } from "sonner";
-import {
-  SDG_GOALS,
-  CAREER_PATHS,
-  NORTH_STAR_COLORS,
-} from "@/constants/sdg";
+import { SDG_GOALS, CAREER_PATHS, NORTH_STAR_COLORS } from "@/constants/sdg";
 import { StarGenerator } from "@/components/ui/star-generator";
 import {
   StarConfig,
@@ -126,9 +122,9 @@ export function CreateNorthStarDialog({
     }
   };
 
-  const selectedColor = NORTH_STAR_COLORS.find(
-    (c) => c.value === formData.northStarColor
-  ) || NORTH_STAR_COLORS[0];
+  const selectedColor =
+    NORTH_STAR_COLORS.find((c) => c.value === formData.northStarColor) ||
+    NORTH_STAR_COLORS[0];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,13 +135,16 @@ export function CreateNorthStarDialog({
             Create Your North Star
           </DialogTitle>
           <DialogDescription>
-            Step {currentStep} of {totalSteps}: {
-              currentStep === 1 ? "Envision your future" :
-              currentStep === 2 ? "Define what needs to happen" :
-              currentStep === 3 ? "Align with your values" :
-              currentStep === 4 ? "Design your star" :
-              "Name your North Star"
-            }
+            Step {currentStep} of {totalSteps}:{" "}
+            {currentStep === 1
+              ? "Envision your future"
+              : currentStep === 2
+                ? "Define what needs to happen"
+                : currentStep === 3
+                  ? "Align with your values"
+                  : currentStep === 4
+                    ? "Design your star"
+                    : "Name your North Star"}
           </DialogDescription>
         </DialogHeader>
 
@@ -163,7 +162,10 @@ export function CreateNorthStarDialog({
                   </div>
 
                   <div className="space-y-4">
-                    <Label htmlFor="vision" className="text-xl font-bold text-amber-900 dark:text-amber-100 block text-center">
+                    <Label
+                      htmlFor="vision"
+                      className="text-xl font-bold text-amber-900 dark:text-amber-100 block text-center"
+                    >
                       What do you want to see happening in the next 3 years?
                     </Label>
                     <p className="text-sm text-muted-foreground text-center mb-4">
@@ -200,7 +202,10 @@ export function CreateNorthStarDialog({
                   </div>
 
                   <div className="space-y-4">
-                    <Label htmlFor="action" className="text-xl font-bold text-blue-900 dark:text-blue-100 block text-center">
+                    <Label
+                      htmlFor="action"
+                      className="text-xl font-bold text-blue-900 dark:text-blue-100 block text-center"
+                    >
                       What needs to happen for that image to be real?
                     </Label>
                     <p className="text-sm text-muted-foreground text-center mb-4">
@@ -295,7 +300,10 @@ export function CreateNorthStarDialog({
 
                 {/* Career Path Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="career-path" className="text-base font-semibold">
+                  <Label
+                    htmlFor="career-path"
+                    className="text-base font-semibold"
+                  >
                     💼 Career Path (Optional)
                   </Label>
                   <p className="text-sm text-muted-foreground mb-3">
@@ -401,7 +409,10 @@ export function CreateNorthStarDialog({
                   </div>
 
                   <div className="space-y-4">
-                    <Label htmlFor="title" className="text-xl font-bold text-purple-900 dark:text-purple-100 block text-center">
+                    <Label
+                      htmlFor="title"
+                      className="text-xl font-bold text-purple-900 dark:text-purple-100 block text-center"
+                    >
                       What will you call your North Star? *
                     </Label>
                     <p className="text-sm text-muted-foreground text-center mb-4">
@@ -412,7 +423,10 @@ export function CreateNorthStarDialog({
                       placeholder="E.g., Become a software engineer solving climate change"
                       value={formData.title}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, title: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          title: e.target.value,
+                        }))
                       }
                       required
                       className="text-lg text-center font-semibold"
@@ -427,14 +441,22 @@ export function CreateNorthStarDialog({
                         </p>
                         {formData.visionQuestion && (
                           <div className="mb-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                            <p className="text-xs font-semibold text-muted-foreground mb-1">Your Vision:</p>
-                            <p className="text-sm line-clamp-3">{formData.visionQuestion}</p>
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">
+                              Your Vision:
+                            </p>
+                            <p className="text-sm line-clamp-3">
+                              {formData.visionQuestion}
+                            </p>
                           </div>
                         )}
                         {formData.actionQuestion && (
                           <div className="p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                            <p className="text-xs font-semibold text-muted-foreground mb-1">Steps Needed:</p>
-                            <p className="text-sm line-clamp-3">{formData.actionQuestion}</p>
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">
+                              Steps Needed:
+                            </p>
+                            <p className="text-sm line-clamp-3">
+                              {formData.actionQuestion}
+                            </p>
                           </div>
                         )}
                       </div>

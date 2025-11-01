@@ -9,7 +9,12 @@ import { Star, ChevronRight, Edit, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { JourneyProject } from "@/types/journey";
-import { SDG_GOALS, CAREER_PATHS, NORTH_STAR_SHAPES, NORTH_STAR_COLORS } from "@/constants/sdg";
+import {
+  SDG_GOALS,
+  CAREER_PATHS,
+  NORTH_STAR_SHAPES,
+  NORTH_STAR_COLORS,
+} from "@/constants/sdg";
 
 interface NorthStarProjectNodeProps {
   data: {
@@ -72,12 +77,12 @@ export function NorthStarProjectNode({
         aria-label={`North Star Project: ${project.title} - ${progressPercentage}% complete`}
       >
         {/* Star glow effect with custom color */}
-        <div 
+        <div
           className="absolute inset-0 rounded-3xl blur-2xl opacity-60 animate-pulse"
           style={{
             background: colorData
               ? `linear-gradient(to bottom right, ${colorData.color}, ${colorData.glow})`
-              : 'linear-gradient(to bottom right, rgb(253 224 71), rgb(251 146 60))'
+              : "linear-gradient(to bottom right, rgb(253 224 71), rgb(251 146 60))",
           }}
         />
 
@@ -136,7 +141,11 @@ export function NorthStarProjectNode({
           {/* Project icon and header */}
           <div className="flex flex-col items-center mb-3">
             {/* Custom Star Icon */}
-            <div className="text-5xl mb-2 select-none" role="img" aria-label="North Star icon">
+            <div
+              className="text-5xl mb-2 select-none"
+              role="img"
+              aria-label="North Star icon"
+            >
               {shapeData?.icon || "⭐"}
             </div>
 
@@ -145,11 +154,17 @@ export function NorthStarProjectNode({
                 {project.title}
               </h3>
               <div className="flex flex-wrap items-center justify-center gap-1 mt-1">
-                <Badge variant="secondary" className="bg-amber-200 text-amber-800">
+                <Badge
+                  variant="secondary"
+                  className="bg-amber-200 text-amber-800"
+                >
                   North Star
                 </Badge>
                 {careerPathData && (
-                  <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 bg-blue-50">
+                  <Badge
+                    variant="outline"
+                    className="text-xs border-blue-300 text-blue-700 bg-blue-50"
+                  >
                     {careerPathData.icon} {careerPathData.label}
                   </Badge>
                 )}
@@ -160,7 +175,9 @@ export function NorthStarProjectNode({
           {/* SDG Goals badges */}
           {selectedSdgs.length > 0 && (
             <div className="mb-3">
-              <div className="text-xs font-medium text-amber-800 mb-1.5">🌍 UN SDGs:</div>
+              <div className="text-xs font-medium text-amber-800 mb-1.5">
+                🌍 UN SDGs:
+              </div>
               <div className="flex flex-wrap gap-1">
                 {selectedSdgs.slice(0, 5).map((sdg) => (
                   <div

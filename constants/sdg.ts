@@ -167,7 +167,12 @@ export const NORTH_STAR_COLORS = [
   { value: "blue", label: "Celestial Blue", color: "#4A90E2", glow: "#7AB3FF" },
   { value: "purple", label: "Royal Purple", color: "#9B59B6", glow: "#C39BD3" },
   { value: "green", label: "Emerald", color: "#2ECC71", glow: "#58D68D" },
-  { value: "orange", label: "Sunset Orange", color: "#E67E22", glow: "#F39C12" },
+  {
+    value: "orange",
+    label: "Sunset Orange",
+    color: "#E67E22",
+    glow: "#F39C12",
+  },
 ] as const;
 
 export type SDGGoal = (typeof SDG_GOALS)[number];

@@ -32,6 +32,7 @@ import { JourneyMapCanvasView } from "./JourneyMapCanvasView";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { EditNorthStarDialog } from "./EditNorthStarDialog";
+import { QuickStatusChangeDialog } from "./QuickStatusChangeDialog";
 import { ProjectDetailsPanel } from "./ProjectDetailsPanel";
 import { MainQuestPanel } from "./MainQuestPanel";
 import { MilestoneMapView } from "./MilestoneMapView";
@@ -46,7 +47,8 @@ import { useNorthStars } from "@/hooks/use-north-stars";
 import { calculateJourneyStats } from "./utils/journeyCalculations";
 import { buildJourneyMap } from "./utils/journeyMapBuilder";
 import { PANEL_SIZES, VIEW_MODES } from "./constants/journeyMapConfig";
-import { NorthStar } from "@/types/journey";
+import { NorthStar, NorthStarStatus } from "@/types/journey";
+import { updateNorthStar } from "@/lib/supabase/north-star";
 
 // ========================================
 // TYPES
@@ -69,13 +71,8 @@ function JourneyMapCanvasInner({
 }: JourneyMapCanvasProps) {
   // Data hooks
   const { projects, isLoading, refreshProjects } = useJourneyProjects();
-  const {
-    paths,
-    loadPaths,
-    createPath,
-    deletePath,
-    updatePathType,
-  } = useProjectPaths();
+  const { paths, loadPaths, createPath, deletePath, updatePathType } =
+    useProjectPaths();
   const { northStars, refreshNorthStars } = useNorthStars();
 
   // UI state hooks
@@ -109,7 +106,13 @@ function JourneyMapCanvasInner({
   // North Star dialog state
   const [createNorthStarOpen, setCreateNorthStarOpen] = React.useState(false);
   const [editNorthStarOpen, setEditNorthStarOpen] = React.useState(false);
-  const [editingNorthStar, setEditingNorthStar] = React.useState<NorthStar | null>(null);
+  const [editingNorthStar, setEditingNorthStar] =
+    React.useState<NorthStar | null>(null);
+
+  // Quick status change dialog state
+  const [quickStatusDialogOpen, setQuickStatusDialogOpen] = React.useState(false);
+  const [changingNorthStar, setChangingNorthStar] = React.useState<NorthStar | null>(null);
+  const [targetStatus, setTargetStatus] = React.useState<NorthStarStatus>("active");
 
   const openCreateNorthStarDialog = useCallback(() => {
     setCreateNorthStarOpen(true);
@@ -171,6 +174,55 @@ function JourneyMapCanvasInner({
     refreshNorthStars();
   }, [refreshNorthStars]);
 
+  const handleCreateProjectForNorthStar = useCallback(
+    (northStarId: string) => {
+      // Store the pre-selected North Star ID in state
+      setPreSelectedNorthStarId(northStarId);
+      openCreateDialog();
+    },
+    [openCreateDialog]
+  );
+
+  const handleQuickStatusChange = useCallback(
+    (northStar: NorthStar, newStatus: NorthStarStatus) => {
+      setChangingNorthStar(northStar);
+      setTargetStatus(newStatus);
+      setQuickStatusDialogOpen(true);
+    },
+    []
+  );
+
+  const handleConfirmStatusChange = useCallback(
+    async () => {
+      if (!changingNorthStar) return;
+
+      try {
+        const updateData: any = {
+          status: targetStatus,
+        };
+
+        // Add achieved_at timestamp when status changes to achieved
+        if (targetStatus === "achieved") {
+          updateData.achieved_at = new Date().toISOString();
+        }
+
+        await updateNorthStar(changingNorthStar.id, updateData);
+
+        // Refresh North Stars to show updated status
+        refreshNorthStars();
+
+        toast.success("North Star status updated successfully!");
+      } catch (error) {
+        console.error("Error updating North Star status:", error);
+        toast.error("Failed to update North Star status");
+      }
+    },
+    [changingNorthStar, targetStatus, refreshNorthStars]
+  );
+
+  // State for pre-selected North Star
+  const [preSelectedNorthStarId, setPreSelectedNorthStarId] = React.useState<string | null>(null);
+
   const handleProjectSelect = useCallback(
     (projectId: string) => {
       setSelectedProjectId(projectId);
@@ -198,6 +250,8 @@ function JourneyMapCanvasInner({
 
   const handleProjectCreated = useCallback(() => {
     refreshProjects();
+    // Clear pre-selected North Star after project is created
+    setPreSelectedNorthStarId(null);
   }, [refreshProjects]);
 
   const handleProjectPathCreated = useCallback(() => {
@@ -220,6 +274,8 @@ function JourneyMapCanvasInner({
         onEditProject: handleEditProject,
         onAddReflection: handleAddReflection,
         onEditNorthStar: handleEditNorthStar,
+        onCreateProjectForNorthStar: handleCreateProjectForNorthStar,
+        onQuickStatusChange: handleQuickStatusChange,
       },
       paths,
       northStars
@@ -235,6 +291,8 @@ function JourneyMapCanvasInner({
     handleEditProject,
     handleAddReflection,
     handleEditNorthStar,
+    handleCreateProjectForNorthStar,
+    handleQuickStatusChange,
   ]);
 
   // Update ReactFlow nodes/edges when map data changes
@@ -387,6 +445,8 @@ function JourneyMapCanvasInner({
         open={createProjectOpen}
         onOpenChange={closeCreateDialog}
         onSuccess={handleProjectCreated}
+        preSelectedNorthStarId={preSelectedNorthStarId || undefined}
+        highlightNorthStarLink={!!preSelectedNorthStarId}
       />
       <EditProjectDialog
         open={editProjectOpen}
@@ -399,6 +459,13 @@ function JourneyMapCanvasInner({
         onOpenChange={closeEditNorthStarDialog}
         northStar={editingNorthStar}
         onSuccess={handleNorthStarEdited}
+      />
+      <QuickStatusChangeDialog
+        open={quickStatusDialogOpen}
+        onOpenChange={setQuickStatusDialogOpen}
+        northStar={changingNorthStar}
+        newStatus={targetStatus}
+        onConfirm={handleConfirmStatusChange}
       />
     </ResizablePanelGroup>
   );

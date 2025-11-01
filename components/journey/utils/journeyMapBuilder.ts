@@ -24,6 +24,8 @@ export interface MapBuilderCallbacks {
   onAddReflection: (projectId: string) => void;
   onEditNorthStar?: (northStar: NorthStar) => void;
   onViewNorthStarDetails?: (northStarId: string) => void;
+  onCreateProjectForNorthStar?: (northStarId: string) => void;
+  onQuickStatusChange?: (northStar: NorthStar, newStatus: NorthStar["status"]) => void;
 }
 
 export interface MapBuilderResult {
@@ -310,6 +312,9 @@ function createNorthStarEntityNode(
         // Quick progress update handler - could be enhanced
         console.log("Update progress for:", northStar.title);
       },
+      onCreateProject: () => callbacks.onCreateProjectForNorthStar?.(northStar.id),
+      onQuickStatusChange: (newStatus: NorthStar["status"]) =>
+        callbacks.onQuickStatusChange?.(northStar, newStatus),
     },
     draggable: true,
     selectable: true,
