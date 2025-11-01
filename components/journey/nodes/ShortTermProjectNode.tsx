@@ -222,6 +222,30 @@ export const ShortTermProjectNode = React.memo(function ({
           </div>
         )}
       </div>
+
+      {/* Connection Handles */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="bg-blue-500 border-2 border-white shadow-lg hover:bg-blue-600 cursor-grab active:cursor-grabbing"
+        style={{ 
+          left: -15,
+          width: '30px',
+          height: '30px',
+          borderRadius: '50%'
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="bg-green-500 border-2 border-white shadow-lg hover:bg-green-600 cursor-grab active:cursor-grabbing"
+        style={{ 
+          right: -15,
+          width: '30px',
+          height: '30px',
+          borderRadius: '50%'
+        }}
+      />
     </div>
   );
 });
