@@ -6,10 +6,10 @@
 
 import React from "react";
 import { Handle, Position } from "@xyflow/react";
-import { Pencil, Info, TrendingUp } from "lucide-react";
+import { Pencil, Info, TrendingUp, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { NorthStar } from "@/types/journey";
+import { NorthStar, NorthStarStatus } from "@/types/journey";
 import { SDG_GOALS, CAREER_PATHS, NORTH_STAR_COLORS } from "@/constants/sdg";
 import { StarSVG } from "@/components/ui/star-generator";
 import { StarConfig } from "@/lib/utils/svg-star";
@@ -23,6 +23,8 @@ interface NorthStarNodeProps {
     onEdit?: () => void;
     onViewDetails?: () => void;
     onUpdateProgress?: () => void;
+    onCreateProject?: () => void;
+    onQuickStatusChange?: (newStatus: NorthStarStatus) => void;
   };
   selected?: boolean;
 }
@@ -31,7 +33,7 @@ export const NorthStarNode = React.memo(function NorthStarNode({
   data,
   selected = false,
 }: NorthStarNodeProps) {
-  const { northStar, linkedProjectCount = 0, hasRecentActivity = false, onEdit, onViewDetails, onUpdateProgress } = data;
+  const { northStar, linkedProjectCount = 0, hasRecentActivity = false, onEdit, onViewDetails, onUpdateProgress, onCreateProject, onQuickStatusChange } = data;
   const progressPercentage = northStar.progress_percentage || 0;
 
   // Get visual customization data
@@ -78,6 +80,22 @@ export const NorthStarNode = React.memo(function NorthStarNode({
 
   const statusStyle = statusStyles[northStar.status] || statusStyles.active;
 
+  // Status-based visual effects for lifecycle
+  const nodeOpacity = northStar.status === 'archived' ? 'opacity-60' :
+                      northStar.status === 'on_hold' ? 'opacity-80' :
+                      'opacity-100';
+
+  const glowIntensity = northStar.status === 'active' ? 0.5 :
+                        northStar.status === 'achieved' ? 0.7 :  // Brightest for achievement (supernova)
+                        northStar.status === 'on_hold' ? 0.3 :
+                        0.2;  // Dimmest for archived (death star/white dwarf)
+
+  const filterEffect = northStar.status === 'archived' ? 'grayscale(60%)' : 'none';
+
+  const progressRingColor = northStar.status === 'archived' ? '#9CA3AF' :  // Gray for death stars
+                            northStar.status === 'achieved' ? '#10B981' :  // Green for achieved
+                            colorData?.color || "#FFD700";
+
   // Progress ring calculation
   const circumference = 2 * Math.PI * 50;
   const offset = circumference - (progressPercentage / 100) * circumference;
@@ -107,7 +125,7 @@ export const NorthStarNode = React.memo(function NorthStarNode({
       />
 
       <div
-        className={`relative cursor-pointer group ${selected ? "scale-105" : "hover:scale-102"} transition-all duration-300`}
+        className={`relative cursor-pointer group ${selected ? "scale-105" : "hover:scale-102"} transition-all duration-300 ${nodeOpacity}`}
         onClick={handleClick}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -118,16 +136,32 @@ export const NorthStarNode = React.memo(function NorthStarNode({
         tabIndex={0}
         aria-label={`North Star: ${northStar.title} - ${progressPercentage}% progress, ${statusStyle.label}`}
       >
-        {/* Glow effect with custom color */}
+        {/* Glow effect with custom color and status-based intensity */}
         <div
-          className="absolute inset-0 rounded-3xl blur-3xl opacity-50 animate-pulse"
+          className="absolute inset-0 rounded-3xl blur-3xl animate-pulse"
           style={{
             background: colorData
               ? `linear-gradient(135deg, ${colorData.color}, ${colorData.glow})`
               : 'linear-gradient(135deg, #FFD700, #FFA500)',
             animationDuration: '3s',
+            opacity: glowIntensity,
           }}
         />
+
+        {/* Achievement celebration shimmer effect (supernova) */}
+        {northStar.status === 'achieved' && (
+          <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+            <div
+              className="absolute inset-0 animate-pulse"
+              style={{
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 50%, transparent 100%)',
+                animationDuration: '2s',
+                transform: 'translateX(-100%)',
+                animation: 'shimmer 3s ease-in-out infinite',
+              }}
+            />
+          </div>
+        )}
 
         {/* Activity pulse indicator */}
         {hasRecentActivity && (
@@ -144,6 +178,7 @@ export const NorthStarNode = React.memo(function NorthStarNode({
             background: colorData
               ? `linear-gradient(to bottom right, ${colorData.color}15, ${colorData.glow}10)`
               : 'linear-gradient(to bottom right, rgb(254 252 232), rgb(254 249 195))',
+            filter: filterEffect,
           }}
         >
           {/* Progress ring in top-right */}
@@ -164,7 +199,7 @@ export const NorthStarNode = React.memo(function NorthStarNode({
                 cx="56"
                 cy="56"
                 r="50"
-                stroke={colorData?.color || "#FFD700"}
+                stroke={progressRingColor}
                 strokeWidth="8"
                 fill="none"
                 strokeDasharray={circumference}
@@ -179,7 +214,7 @@ export const NorthStarNode = React.memo(function NorthStarNode({
                 textAnchor="middle"
                 dy=".35em"
                 className="text-xl font-bold"
-                fill={colorData?.color || "#FFD700"}
+                fill={progressRingColor}
                 transform="rotate(90 56 56)"
               >
                 {progressPercentage}%
@@ -196,6 +231,15 @@ export const NorthStarNode = React.memo(function NorthStarNode({
               {statusStyle.label}
             </Badge>
           </div>
+
+          {/* Dormant indicator for archived stars (white dwarf state) */}
+          {northStar.status === 'archived' && (
+            <div className="absolute top-3 left-28">
+              <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-400 text-xs">
+                ⚫ Dormant
+              </Badge>
+            </div>
+          )}
 
           {/* Hover Edit Icon */}
           {onEdit && (
@@ -334,7 +378,102 @@ export const NorthStarNode = React.memo(function NorthStarNode({
                 Progress
               </Button>
             )}
+            {onCreateProject && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCreateProject();
+                }}
+                size="sm"
+                variant="outline"
+                className="flex-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Project
+              </Button>
+            )}
           </div>
+
+          {/* Quick Status Actions - Contextual based on current status */}
+          {onQuickStatusChange && (
+            <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700 mt-2">
+              {northStar.status === 'active' && (
+                <>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickStatusChange('on_hold');
+                    }}
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 text-xs text-yellow-700 hover:bg-yellow-50"
+                  >
+                    ⏸️ Pause
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickStatusChange('achieved');
+                    }}
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 text-xs text-green-700 hover:bg-green-50"
+                  >
+                    ✨ Achieved
+                  </Button>
+                </>
+              )}
+
+              {northStar.status === 'on_hold' && (
+                <>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickStatusChange('active');
+                    }}
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 text-xs text-blue-700 hover:bg-blue-50"
+                  >
+                    ▶️ Resume
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickStatusChange('archived');
+                    }}
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 text-xs text-gray-700 hover:bg-gray-50"
+                  >
+                    ⚫ Archive
+                  </Button>
+                </>
+              )}
+
+              {northStar.status === 'archived' && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickStatusChange('active');
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-400 font-semibold"
+                >
+                  🔥 Reignite
+                </Button>
+              )}
+
+              {northStar.status === 'achieved' && (
+                <div className="flex-1 text-center py-1">
+                  <span className="text-xs text-green-600 font-medium">
+                    ✨ Completed
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* "Why" preview on hover */}
           {northStar.why && (

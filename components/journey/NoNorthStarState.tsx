@@ -54,10 +54,10 @@ export function NoNorthStarState({ onCreateNorthStar }: NoNorthStarStateProps) {
                   <span className="font-semibold text-amber-700 dark:text-amber-300">
                     North Star
                   </span>{" "}
-                  is your ultimate direction in life — a big dream or purpose that
-                  guides all your decisions and projects. It's the{" "}
-                  <span className="font-semibold">most important goal</span> that
-                  gives meaning to everything else you do.
+                  is your ultimate direction in life — a big dream or purpose
+                  that guides all your decisions and projects. It's the{" "}
+                  <span className="font-semibold">most important goal</span>{" "}
+                  that gives meaning to everything else you do.
                 </p>
               </div>
             </div>
@@ -95,7 +95,9 @@ export function NoNorthStarState({ onCreateNorthStar }: NoNorthStarStateProps) {
                     💻 "Become a software engineer solving climate change"
                   </li>
                   <li>🏥 "Work in healthcare to improve rural communities"</li>
-                  <li>🎓 "Build educational programs for underprivileged youth"</li>
+                  <li>
+                    🎓 "Build educational programs for underprivileged youth"
+                  </li>
                   <li>🌍 "Create sustainable businesses for social impact"</li>
                 </ul>
               </div>

@@ -435,3 +435,13 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* North Star achievement shimmer animation (supernova effect) */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
