@@ -31,11 +31,18 @@ import { createJourneyProject } from "@/lib/supabase/journey";
 import { ProjectType } from "@/types/journey";
 import { toast } from "sonner";
 import { EmojiPicker } from "@/components/ui/EmojiPicker";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  SDG_GOALS,
+  CAREER_PATHS,
+  NORTH_STAR_SHAPES,
+  NORTH_STAR_COLORS,
+} from "@/constants/sdg";
+import { useNorthStars } from "@/hooks/use-north-stars";
 
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  northStarProjects: Array<{ id: string; title: string }>;
   onSuccess: () => void;
 }
 
@@ -53,9 +60,10 @@ const PROJECT_COLORS = [
 export function CreateProjectDialog({
   open,
   onOpenChange,
-  northStarProjects,
   onSuccess,
 }: CreateProjectDialogProps) {
+  // Load North Stars for linking
+  const { northStars, isLoading: northStarsLoading } = useNorthStars();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [icon, setIcon] = useState("🎯");
   const [formData, setFormData] = useState({
@@ -66,6 +74,11 @@ export function CreateProjectDialog({
     northStarId: "",
     color: PROJECT_COLORS[0].value,
     isMainQuest: false,
+    // North Star enhancements
+    sdgGoals: [] as number[],
+    careerPath: "",
+    northStarShape: "classic",
+    northStarColor: "golden",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,6 +105,14 @@ export function CreateProjectDialog({
         },
       };
 
+      // Add North Star enhancements if this is a North Star project
+      if (formData.isNorthStar) {
+        projectData.sdg_goals = formData.sdgGoals.length > 0 ? formData.sdgGoals : null;
+        projectData.career_path = formData.careerPath || null;
+        projectData.north_star_shape = formData.northStarShape;
+        projectData.north_star_color = formData.northStarColor;
+      }
+
       // Add North Star link if selected
       if (!formData.isNorthStar && formData.northStarId) {
         projectData.metadata.north_star_id = formData.northStarId;
@@ -111,6 +132,10 @@ export function CreateProjectDialog({
         northStarId: "",
         color: PROJECT_COLORS[0].value,
         isMainQuest: false,
+        sdgGoals: [],
+        careerPath: "",
+        northStarShape: "classic",
+        northStarColor: "golden",
       });
 
       onSuccess();
@@ -163,6 +188,176 @@ export function CreateProjectDialog({
               }
             />
           </div>
+
+          {/* North Star Customization (only show if North Star is enabled) */}
+          {formData.isNorthStar && (
+            <>
+              {/* SDG Goals Multi-select */}
+              <div className="space-y-2 border rounded-lg p-4 bg-amber-50/50 dark:bg-amber-950/20">
+                <Label className="text-base font-semibold">
+                  🌍 Sustainable Development Goals (Optional)
+                </Label>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Select UN SDGs that align with your North Star
+                </p>
+                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2">
+                  {SDG_GOALS.map((sdg) => (
+                    <div
+                      key={sdg.number}
+                      className="flex items-start space-x-2 p-2 rounded hover:bg-white/50 dark:hover:bg-background/50"
+                    >
+                      <Checkbox
+                        id={`sdg-${sdg.number}`}
+                        checked={formData.sdgGoals.includes(sdg.number)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              sdgGoals: [...prev.sdgGoals, sdg.number],
+                            }));
+                          } else {
+                            setFormData((prev) => ({
+                              ...prev,
+                              sdgGoals: prev.sdgGoals.filter(
+                                (n) => n !== sdg.number
+                              ),
+                            }));
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`sdg-${sdg.number}`}
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                            style={{ backgroundColor: sdg.color }}
+                          >
+                            {sdg.number}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm">
+                              {sdg.title}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {sdg.description}
+                            </div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {formData.sdgGoals.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Selected: {formData.sdgGoals.length} SDG
+                    {formData.sdgGoals.length > 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
+
+              {/* Career Path Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="career-path">💼 Career Path (Optional)</Label>
+                <p className="text-sm text-muted-foreground">
+                  Choose a career direction that aligns with your North Star
+                </p>
+                <Select
+                  value={formData.careerPath || "none"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      careerPath: value === "none" ? "" : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="career-path">
+                    <SelectValue placeholder="Select a career path..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No specific path</SelectItem>
+                    {CAREER_PATHS.map((path) => (
+                      <SelectItem key={path.value} value={path.value}>
+                        {path.icon} {path.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* North Star Shape */}
+              <div className="space-y-2">
+                <Label>✨ Star Icon</Label>
+                <p className="text-sm text-muted-foreground">
+                  Choose an icon that represents your North Star
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {NORTH_STAR_SHAPES.map((shape) => (
+                    <button
+                      key={shape.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          northStarShape: shape.value,
+                        }))
+                      }
+                      className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                        formData.northStarShape === shape.value
+                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20 scale-105"
+                          : "border-gray-300 dark:border-gray-700"
+                      }`}
+                      title={shape.label}
+                    >
+                      <div className="text-2xl text-center">{shape.icon}</div>
+                      <div className="text-xs text-center mt-1 truncate">
+                        {shape.label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* North Star Color */}
+              <div className="space-y-2">
+                <Label>🎨 Star Color Theme</Label>
+                <p className="text-sm text-muted-foreground">
+                  Select a color theme for your North Star
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {NORTH_STAR_COLORS.map((colorTheme) => (
+                    <button
+                      key={colorTheme.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          northStarColor: colorTheme.value,
+                        }))
+                      }
+                      className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                        formData.northStarColor === colorTheme.value
+                          ? "border-amber-500 scale-105"
+                          : "border-gray-300 dark:border-gray-700"
+                      }`}
+                      title={colorTheme.label}
+                    >
+                      <div
+                        className="w-full h-8 rounded"
+                        style={{
+                          background: `linear-gradient(135deg, ${colorTheme.color} 0%, ${colorTheme.glow} 100%)`,
+                        }}
+                      />
+                      <div className="text-xs text-center mt-1 truncate">
+                        {colorTheme.label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Icon Picker */}
           <div className="space-y-2">
@@ -231,32 +426,58 @@ export function CreateProjectDialog({
           </div>
 
           {/* Link to North Star (if not North Star itself) */}
-          {!formData.isNorthStar && northStarProjects.length > 0 && (
+          {!formData.isNorthStar && (
             <div className="space-y-2">
               <Label htmlFor="north-star-link">
                 Link to North Star (Optional)
               </Label>
-              <Select
-                value={formData.northStarId || "none"}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    northStarId: value === "none" ? "" : value,
-                  }))
-                }
-              >
-                <SelectTrigger id="north-star-link">
-                  <SelectValue placeholder="Select a North Star project..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {northStarProjects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {northStarsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500 p-3 border rounded-md">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading North Stars...
+                </div>
+              ) : northStars.length === 0 ? (
+                <div className="text-sm text-gray-500 p-3 border rounded-md bg-gray-50">
+                  No North Stars yet. Create a North Star first to link projects to it!
+                </div>
+              ) : (
+                <>
+                  <Select
+                    value={formData.northStarId || "none"}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        northStarId: value === "none" ? "" : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="north-star-link">
+                      <SelectValue placeholder="Select a North Star..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <span className="text-gray-500">None</span>
+                      </SelectItem>
+                      {northStars.map((northStar) => {
+                        const shapeData = NORTH_STAR_SHAPES.find(
+                          (s) => s.value === northStar.north_star_shape
+                        );
+                        return (
+                          <SelectItem key={northStar.id} value={northStar.id}>
+                            <span className="flex items-center gap-2">
+                              <span>{shapeData?.icon || "⭐"}</span>
+                              <span>{northStar.title}</span>
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    Connect this project to your long-term North Star goal
+                  </p>
+                </>
+              )}
             </div>
           )}
 

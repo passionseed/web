@@ -62,9 +62,41 @@ export type ProgressConfidence =
   | "confident"
   | "very_confident";
 
+export type NorthStarStatus = "active" | "achieved" | "on_hold" | "archived";
+
 // ========================================
 // CORE TABLES
 // ========================================
+
+export interface NorthStarMetadata {
+  starConfig?: {
+    coreSize: number;
+    flareCount: number;
+    seed: string;
+  };
+  [key: string]: any;
+}
+
+export interface NorthStar {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  why: string | null;
+  icon: string;
+  sdg_goals: number[];
+  career_path: string | null;
+  north_star_shape: string;
+  north_star_color: string;
+  position_x: number | null;
+  position_y: number | null;
+  progress_percentage: number;
+  status: NorthStarStatus;
+  metadata: NorthStarMetadata | null;
+  created_at: string;
+  updated_at: string;
+  achieved_at: string | null;
+}
 
 export interface JourneyProject {
   id: string;
@@ -93,6 +125,8 @@ export interface JourneyProject {
   progress_percentage: number;
   is_public: boolean;
   metadata: Record<string, any> | null;
+  // Link to North Star
+  linked_north_star_id: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -313,6 +347,38 @@ export interface MonthlyInsights {
 // CREATE/UPDATE TYPES
 // ========================================
 
+export interface NorthStarCreateData {
+  title: string;
+  description?: string;
+  why?: string;
+  icon?: string;
+  sdg_goals?: number[];
+  career_path?: string;
+  north_star_shape?: string;
+  north_star_color?: string;
+  position_x?: number;
+  position_y?: number;
+  status?: NorthStarStatus;
+  metadata?: Record<string, any>;
+}
+
+export interface NorthStarUpdateData {
+  title?: string;
+  description?: string;
+  why?: string;
+  icon?: string;
+  sdg_goals?: number[];
+  career_path?: string;
+  north_star_shape?: string;
+  north_star_color?: string;
+  position_x?: number;
+  position_y?: number;
+  progress_percentage?: number;
+  status?: NorthStarStatus;
+  achieved_at?: string;
+  metadata?: Record<string, any>;
+}
+
 export interface ProjectCreateData {
   title: string;
   description?: string;
@@ -326,6 +392,7 @@ export interface ProjectCreateData {
   color?: string;
   is_public?: boolean;
   metadata?: Record<string, any>;
+  linked_north_star_id?: string;
 }
 
 export interface ProjectUpdateData {
@@ -338,6 +405,7 @@ export interface ProjectUpdateData {
   north_star_id?: string;
   is_main_quest?: boolean;
   position_x?: number;
+  linked_north_star_id?: string;
   position_y?: number;
   status?: ProjectStatus;
   color_theme?: string;

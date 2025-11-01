@@ -39,6 +39,7 @@ import { createProjectPath } from "@/lib/supabase/journey";
 
 import { UserCenterNode } from "./nodes/UserCenterNode";
 import { NorthStarProjectNode } from "./nodes/NorthStarProjectNode";
+import { NorthStarNode } from "./nodes/NorthStarNode";
 import { ShortTermProjectNode } from "./nodes/ShortTermProjectNode";
 import { MainQuestFloatingPath } from "./edges/MainQuestFloatingPath";
 import { NorthStarFloatingLink } from "./edges/NorthStarFloatingLink";
@@ -55,6 +56,7 @@ import { SyncStatus } from "@/lib/sync/PositionSyncManager";
 const nodeTypes = {
   userCenter: UserCenterNode,
   northStar: NorthStarProjectNode,
+  northStarEntity: NorthStarNode,
   shortTerm: ShortTermProjectNode,
 };
 
