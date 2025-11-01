@@ -5,8 +5,8 @@
  * Handles node positioning, edge creation, and data transformation.
  */
 
-import { Node, Edge } from "@xyflow/react";
-import { ProjectWithMilestones, ProjectPath } from "@/types/journey";
+import { Node, Edge, MarkerType } from "@xyflow/react";
+import { ProjectWithMilestones, ProjectPath, NorthStar } from "@/types/journey";
 import {
   calculateOverallProgress,
   categorizeProjects,
@@ -16,11 +16,14 @@ import {
 } from "../utils/journeyCalculations";
 import { NODE_LAYOUT } from "../constants/journeyMapConfig";
 import { getProjectPathStyle } from "../utils/projectPathStyles";
+import { NORTH_STAR_SHAPES } from "@/constants/sdg";
 
 export interface MapBuilderCallbacks {
   onViewMilestones: (projectId: string) => void;
   onEditProject: (projectId: string) => void;
   onAddReflection: (projectId: string) => void;
+  onEditNorthStar?: (northStar: NorthStar) => void;
+  onViewNorthStarDetails?: (northStarId: string) => void;
 }
 
 export interface MapBuilderResult {
@@ -37,7 +40,8 @@ export function buildJourneyMap(
   userName: string,
   userAvatar: string | undefined,
   callbacks: MapBuilderCallbacks,
-  projectPaths: ProjectPath[] = []
+  projectPaths: ProjectPath[] = [],
+  northStars: NorthStar[] = []
 ): MapBuilderResult {
   const newNodes: Node[] = [];
   const newEdges: Edge[] = [];
@@ -53,6 +57,21 @@ export function buildJourneyMap(
       completionPercentage
     )
   );
+
+  // Create North Star entity nodes (from north_stars table)
+  northStars.forEach((northStar, index) => {
+    const position = getNorthStarEntityPosition(northStar, index, northStars.length);
+    const linkedCount = projects.filter(
+      (p) => p.linked_north_star_id === northStar.id
+    ).length;
+
+    newNodes.push(
+      createNorthStarEntityNode(northStar, position, linkedCount, callbacks)
+    );
+
+    // Create edge from user center to North Star entity
+    newEdges.push(createNorthStarEntityEdge("user-center", northStar.id));
+  });
 
   // Separate North Star and short-term projects
   const { northStarProjects, shortTermProjects } = categorizeProjects(projects);
@@ -82,15 +101,31 @@ export function buildJourneyMap(
       shortTermProjects.length,
       false
     );
+
+    // Check for linked North Star entity (new system)
+    const linkedNorthStarEntity = northStars.find(
+      (ns) => ns.id === project.linked_north_star_id
+    );
+
+    // Check for old North Star project (legacy system)
     const northStarId = project.metadata?.north_star_id;
     const northStar = northStarProjects.find((p) => p.id === northStarId);
 
     newNodes.push(
-      createShortTermNode(project, position, northStar?.title, callbacks)
+      createShortTermNode(
+        project,
+        position,
+        linkedNorthStarEntity?.title || northStar?.title,
+        callbacks
+      )
     );
 
-    // Create edge to North Star or user center
-    if (northStarId) {
+    // Create edge to North Star entity (new system) or North Star project (legacy) or user center
+    if (project.linked_north_star_id) {
+      // Link to North Star entity
+      newEdges.push(createProjectToNorthStarEntityEdge(project.id, project.linked_north_star_id));
+    } else if (northStarId) {
+      // Legacy: Link to North Star project
       newEdges.push(createProjectToNorthStarEdge(project.id, northStarId));
     } else {
       const isMainQuest = project.metadata?.is_main_quest === true;
@@ -244,6 +279,111 @@ function createProjectPathEdge(path: ProjectPath): Edge {
     data: {
       pathType: path.path_type,
       pathId: path.id,
+    },
+  };
+}
+
+// ========================================
+// NORTH STAR ENTITY HELPERS
+// ========================================
+
+/**
+ * Create a North Star entity node (from north_stars table)
+ */
+function createNorthStarEntityNode(
+  northStar: NorthStar,
+  position: { x: number; y: number },
+  linkedProjectCount: number,
+  callbacks: MapBuilderCallbacks
+): Node {
+  return {
+    id: northStar.id,
+    type: "northStarEntity",
+    position,
+    data: {
+      northStar,
+      linkedProjectCount,
+      hasRecentActivity: false, // Could be enhanced with activity tracking
+      onEdit: () => callbacks.onEditNorthStar?.(northStar),
+      onViewDetails: () => callbacks.onViewNorthStarDetails?.(northStar.id),
+      onUpdateProgress: () => {
+        // Quick progress update handler - could be enhanced
+        console.log("Update progress for:", northStar.title);
+      },
+    },
+    draggable: true,
+    selectable: true,
+  };
+}
+
+/**
+ * Calculate position for North Star entity
+ * Places at top of canvas, spread horizontally
+ */
+function getNorthStarEntityPosition(
+  northStar: NorthStar,
+  index: number,
+  totalCount: number
+): { x: number; y: number } {
+  // Use saved position if available
+  if (northStar.position_x !== null && northStar.position_y !== null) {
+    return {
+      x: northStar.position_x,
+      y: northStar.position_y,
+    };
+  }
+
+  // Auto-position at top of canvas
+  const baseY = -400; // Above user center
+  const spacing = 500; // Horizontal spacing between North Stars
+
+  // Center multiple North Stars
+  const totalWidth = (totalCount - 1) * spacing;
+  const startX = -totalWidth / 2;
+  const x = startX + index * spacing;
+
+  return { x, y: baseY };
+}
+
+/**
+ * Create edge from user center to North Star entity
+ */
+function createNorthStarEntityEdge(sourceId: string, targetId: string): Edge {
+  return {
+    id: `${sourceId}-ns-entity-${targetId}`,
+    source: sourceId,
+    target: targetId,
+    type: "floating",
+    animated: false,
+    style: {
+      stroke: "#FFD700",
+      strokeWidth: 3,
+      strokeDasharray: "5,5",
+    },
+  };
+}
+
+/**
+ * Create edge from project to North Star entity
+ */
+function createProjectToNorthStarEntityEdge(
+  projectId: string,
+  northStarId: string
+): Edge {
+  return {
+    id: `project-${projectId}-ns-entity-${northStarId}`,
+    source: projectId,
+    target: northStarId,
+    type: "floating",
+    animated: true,
+    style: {
+      stroke: "#9B59B6",
+      strokeWidth: 2.5,
+      strokeDasharray: "8,4",
+    },
+    markerEnd: {
+      type: MarkerType.Arrow,
+      color: "#9B59B6",
     },
   };
 }

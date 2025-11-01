@@ -9,6 +9,7 @@ import { Star, ChevronRight, Edit, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { JourneyProject } from "@/types/journey";
+import { SDG_GOALS, CAREER_PATHS, NORTH_STAR_SHAPES, NORTH_STAR_COLORS } from "@/constants/sdg";
 
 interface NorthStarProjectNodeProps {
   data: {
@@ -29,6 +30,18 @@ export function NorthStarProjectNode({
 }: NorthStarProjectNodeProps) {
   const { project, icon, linkedProjectCount, hasRecentActivity } = data;
   const progressPercentage = project.progress_percentage || 0;
+
+  // Extract North Star enhancement data
+  const sdgGoals = project.sdg_goals || [];
+  const careerPath = project.career_path;
+  const northStarShape = project.north_star_shape || "classic";
+  const northStarColor = project.north_star_color || "golden";
+
+  // Get SDG details
+  const selectedSdgs = SDG_GOALS.filter((sdg) => sdgGoals.includes(sdg.number));
+  const careerPathData = CAREER_PATHS.find((cp) => cp.value === careerPath);
+  const shapeData = NORTH_STAR_SHAPES.find((s) => s.value === northStarShape);
+  const colorData = NORTH_STAR_COLORS.find((c) => c.value === northStarColor);
 
   // Calculate progress ring offset
   const circumference = 2 * Math.PI * 45;
@@ -58,8 +71,15 @@ export function NorthStarProjectNode({
         tabIndex={0}
         aria-label={`North Star Project: ${project.title} - ${progressPercentage}% complete`}
       >
-        {/* Star glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 rounded-3xl blur-2xl opacity-60 animate-pulse" />
+        {/* Star glow effect with custom color */}
+        <div 
+          className="absolute inset-0 rounded-3xl blur-2xl opacity-60 animate-pulse"
+          style={{
+            background: colorData
+              ? `linear-gradient(to bottom right, ${colorData.color}, ${colorData.glow})`
+              : 'linear-gradient(to bottom right, rgb(253 224 71), rgb(251 146 60))'
+          }}
+        />
 
         {/* Activity pulse */}
         {hasRecentActivity && (
@@ -115,20 +135,51 @@ export function NorthStarProjectNode({
 
           {/* Project icon and header */}
           <div className="flex flex-col items-center mb-3">
-            {/* Emoji icon */}
-            <div className="text-5xl mb-2 select-none" role="img" aria-label="Project icon">
-              {icon}
+            {/* Custom Star Icon */}
+            <div className="text-5xl mb-2 select-none" role="img" aria-label="North Star icon">
+              {shapeData?.icon || "⭐"}
             </div>
 
             <div className="w-full text-center">
               <h3 className="text-lg font-bold text-amber-900 truncate px-2">
                 {project.title}
               </h3>
-              <Badge variant="secondary" className="mt-1 bg-amber-200 text-amber-800">
-                North Star
-              </Badge>
+              <div className="flex flex-wrap items-center justify-center gap-1 mt-1">
+                <Badge variant="secondary" className="bg-amber-200 text-amber-800">
+                  North Star
+                </Badge>
+                {careerPathData && (
+                  <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 bg-blue-50">
+                    {careerPathData.icon} {careerPathData.label}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* SDG Goals badges */}
+          {selectedSdgs.length > 0 && (
+            <div className="mb-3">
+              <div className="text-xs font-medium text-amber-800 mb-1.5">🌍 UN SDGs:</div>
+              <div className="flex flex-wrap gap-1">
+                {selectedSdgs.slice(0, 5).map((sdg) => (
+                  <div
+                    key={sdg.number}
+                    className="w-7 h-7 rounded flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                    style={{ backgroundColor: sdg.color }}
+                    title={`${sdg.number}. ${sdg.title}`}
+                  >
+                    {sdg.number}
+                  </div>
+                ))}
+                {selectedSdgs.length > 5 && (
+                  <div className="w-7 h-7 rounded flex items-center justify-center bg-gray-200 text-gray-700 text-xs font-bold">
+                    +{selectedSdgs.length - 5}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           {project.description && (

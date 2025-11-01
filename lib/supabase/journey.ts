@@ -81,6 +81,7 @@ export async function createJourneyProject(
       icon: data.icon || null,
       status: mapStatus(data.status),
       color_theme: data.color || "#6366f1",
+      linked_north_star_id: data.linked_north_star_id || null,
       metadata: {
         ...(data.metadata || {}),
         category: projectType, // Store the category type separately

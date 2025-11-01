@@ -31,20 +31,22 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { JourneyMapCanvasView } from "./JourneyMapCanvasView";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
+import { EditNorthStarDialog } from "./EditNorthStarDialog";
 import { ProjectDetailsPanel } from "./ProjectDetailsPanel";
 import { MainQuestPanel } from "./MainQuestPanel";
 import { MilestoneMapView } from "./MilestoneMapView";
+import { NoNorthStarState } from "./NoNorthStarState";
+import { CreateNorthStarDialog } from "./CreateNorthStarDialog";
 
 import { useJourneyProjects } from "@/hooks/use-journey-projects";
 import { useProjectPaths } from "@/hooks/use-project-paths";
 import { useJourneyMapState } from "@/hooks/use-journey-map-state";
 import { usePositionSync } from "@/hooks/use-position-sync";
-import {
-  calculateJourneyStats,
-  extractNorthStarOptions,
-} from "./utils/journeyCalculations";
+import { useNorthStars } from "@/hooks/use-north-stars";
+import { calculateJourneyStats } from "./utils/journeyCalculations";
 import { buildJourneyMap } from "./utils/journeyMapBuilder";
 import { PANEL_SIZES, VIEW_MODES } from "./constants/journeyMapConfig";
+import { NorthStar } from "@/types/journey";
 
 // ========================================
 // TYPES
@@ -74,6 +76,7 @@ function JourneyMapCanvasInner({
     deletePath,
     updatePathType,
   } = useProjectPaths();
+  const { northStars, refreshNorthStars } = useNorthStars();
 
   // UI state hooks
   const {
@@ -101,6 +104,27 @@ function JourneyMapCanvasInner({
   const [isProjectConnectMode, setIsProjectConnectMode] = React.useState(false);
   const toggleConnectMode = useCallback(() => {
     setIsProjectConnectMode((prev) => !prev);
+  }, []);
+
+  // North Star dialog state
+  const [createNorthStarOpen, setCreateNorthStarOpen] = React.useState(false);
+  const [editNorthStarOpen, setEditNorthStarOpen] = React.useState(false);
+  const [editingNorthStar, setEditingNorthStar] = React.useState<NorthStar | null>(null);
+
+  const openCreateNorthStarDialog = useCallback(() => {
+    setCreateNorthStarOpen(true);
+  }, []);
+  const closeCreateNorthStarDialog = useCallback(() => {
+    setCreateNorthStarOpen(false);
+  }, []);
+
+  const openEditNorthStarDialog = useCallback((northStar: NorthStar) => {
+    setEditingNorthStar(northStar);
+    setEditNorthStarOpen(true);
+  }, []);
+  const closeEditNorthStarDialog = useCallback(() => {
+    setEditNorthStarOpen(false);
+    setEditingNorthStar(null);
   }, []);
 
   // Position sync hook
@@ -135,6 +159,17 @@ function JourneyMapCanvasInner({
     },
     [setSelectedProjectId]
   );
+
+  const handleEditNorthStar = useCallback(
+    (northStar: NorthStar) => {
+      openEditNorthStarDialog(northStar);
+    },
+    [openEditNorthStarDialog]
+  );
+
+  const handleNorthStarEdited = useCallback(() => {
+    refreshNorthStars();
+  }, [refreshNorthStars]);
 
   const handleProjectSelect = useCallback(
     (projectId: string) => {
@@ -173,7 +208,7 @@ function JourneyMapCanvasInner({
   // MEMOIZED COMPUTATIONS
   // ========================================
 
-  // Build map from projects data
+  // Build map from projects data and North Stars
   const mapData = useMemo(() => {
     return buildJourneyMap(
       projects,
@@ -184,18 +219,22 @@ function JourneyMapCanvasInner({
         onViewMilestones: switchToMilestoneView,
         onEditProject: handleEditProject,
         onAddReflection: handleAddReflection,
+        onEditNorthStar: handleEditNorthStar,
       },
-      paths
+      paths,
+      northStars
     );
   }, [
     projects,
     paths,
+    northStars,
     userId,
     userName,
     userAvatar,
     switchToMilestoneView,
     handleEditProject,
     handleAddReflection,
+    handleEditNorthStar,
   ]);
 
   // Update ReactFlow nodes/edges when map data changes
@@ -215,11 +254,18 @@ function JourneyMapCanvasInner({
     [projects]
   );
 
-  // Extract North Star options for dialogs
-  const northStarProjects = useMemo(
-    () => extractNorthStarOptions(projects),
-    [projects]
-  );
+  // Check if user has any North Star projects or North Star entities
+  const hasNorthStar = useMemo(() => {
+    // Check if there are North Star entities (new system)
+    const hasNorthStarEntities = northStars.length > 0;
+
+    // Check if there are legacy North Star projects
+    const hasNorthStarProjects = projects.some(
+      (project) => project.metadata?.is_north_star === true
+    );
+
+    return hasNorthStarEntities || hasNorthStarProjects;
+  }, [northStars, projects]);
 
   // ========================================
   // RENDER MILESTONE VIEW
@@ -239,6 +285,22 @@ function JourneyMapCanvasInner({
   // ========================================
   // RENDER OVERVIEW (MAIN MAP)
   // ========================================
+
+  // Show empty state if no North Star exists and not loading
+  if (!isLoading && !hasNorthStar) {
+    return (
+      <>
+        <div className="h-full w-full bg-slate-950">
+          <NoNorthStarState onCreateNorthStar={openCreateNorthStarDialog} />
+        </div>
+        <CreateNorthStarDialog
+          open={createNorthStarOpen}
+          onOpenChange={closeCreateNorthStarDialog}
+          onSuccess={refreshNorthStars}
+        />
+      </>
+    );
+  }
 
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full bg-slate-950">
@@ -324,7 +386,6 @@ function JourneyMapCanvasInner({
       <CreateProjectDialog
         open={createProjectOpen}
         onOpenChange={closeCreateDialog}
-        northStarProjects={northStarProjects}
         onSuccess={handleProjectCreated}
       />
       <EditProjectDialog
@@ -332,6 +393,12 @@ function JourneyMapCanvasInner({
         onOpenChange={closeEditDialog}
         project={editingProject}
         onSuccess={refreshProjects}
+      />
+      <EditNorthStarDialog
+        open={editNorthStarOpen}
+        onOpenChange={closeEditNorthStarDialog}
+        northStar={editingNorthStar}
+        onSuccess={handleNorthStarEdited}
       />
     </ResizablePanelGroup>
   );

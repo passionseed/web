@@ -12,6 +12,7 @@ import {
   getPositionSyncManager,
   SyncStatus,
 } from "@/lib/sync/PositionSyncManager";
+import { updateNorthStarPosition } from "@/lib/supabase/north-star";
 
 export interface UsePositionSyncReturn {
   syncStatus: SyncStatus;
@@ -51,6 +52,17 @@ export function usePositionSync(): UsePositionSyncReturn {
     (_event: any, node: Node) => {
       // Don't save position for user-center node
       if (node.id === "user-center") return;
+
+      // Check if this is a North Star entity node
+      if (node.type === "northStarEntity") {
+        // Save North Star position directly (not batched)
+        updateNorthStarPosition(node.id, node.position.x, node.position.y)
+          .catch((error) => {
+            toast.error("Failed to save North Star position");
+            console.error("North Star position sync error:", error);
+          });
+        return;
+      }
 
       // Mark project as dirty for batched sync
       syncManager.markProjectDirty(node.id, node.position.x, node.position.y);
