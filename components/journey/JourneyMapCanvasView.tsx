@@ -7,7 +7,7 @@
 
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -23,6 +23,7 @@ import {
   Panel,
   applyEdgeChanges,
   addEdge,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Loader2 } from "lucide-react";
@@ -46,6 +47,8 @@ import { NorthStarNode } from "./nodes/NorthStarNode";
 import { ShortTermProjectNode } from "./nodes/ShortTermProjectNode";
 import { MainQuestFloatingPath } from "./edges/MainQuestFloatingPath";
 import { NorthStarFloatingLink } from "./edges/NorthStarFloatingLink";
+import { ProjectFloatingEdge } from "./ProjectFloatingEdge";
+import FloatingEdge from "../map/FloatingEdge";
 import { JourneyActionBar, JourneyStats } from "./JourneyActionBar";
 import { NavigationGuide } from "./NavigationGuide";
 import { SyncStatusIndicator } from "./SyncStatusIndicator";
@@ -66,7 +69,11 @@ const nodeTypes = {
 const edgeTypes = {
   mainQuest: MainQuestFloatingPath,
   northStar: NorthStarFloatingLink,
+  projectLink: ProjectFloatingEdge,
+  floating: FloatingEdge,
 };
+
+export type ZoomLevel = "low" | "medium" | "high";
 
 interface JourneyMapCanvasViewProps {
   // Data
@@ -90,7 +97,9 @@ interface JourneyMapCanvasViewProps {
   onSelectionChange: (params: OnSelectionChangeParams) => void;
   onNodeDragStop: (_event: any, node: Node) => void;
   onCreateProject: () => void;
+  onCreateNorthStar: () => void;
   onProjectPathCreated?: () => void;
+  onZoomChange?: (zoomLevel: ZoomLevel, numericZoom: number) => void;
 }
 
 export function JourneyMapCanvasView({
@@ -108,8 +117,44 @@ export function JourneyMapCanvasView({
   onSelectionChange,
   onNodeDragStop,
   onCreateProject,
+  onCreateNorthStar,
   onProjectPathCreated,
+  onZoomChange,
 }: JourneyMapCanvasViewProps) {
+  const { getZoom } = useReactFlow();
+
+  // Zoom level state - track both numeric and categorical
+  const [currentZoom, setCurrentZoom] = useState<number>(1);
+  const [currentZoomLevel, setCurrentZoomLevel] = useState<ZoomLevel>("medium");
+
+  // Helper function to determine zoom level
+  const getZoomLevel = useCallback((zoom: number): ZoomLevel => {
+    if (zoom < 0.75) return "low";
+    if (zoom >= 1.25) return "high";
+    return "medium";
+  }, []);
+
+  // Monitor zoom changes with ReactFlow's viewport change handler
+  useEffect(() => {
+    const updateZoomLevel = () => {
+      const zoom = getZoom();
+      const newZoomLevel = getZoomLevel(zoom);
+
+      // Update numeric zoom for smooth transitions
+      setCurrentZoom(zoom);
+
+      // Update categorical zoom level if changed
+      if (newZoomLevel !== currentZoomLevel) {
+        setCurrentZoomLevel(newZoomLevel);
+        onZoomChange?.(newZoomLevel, zoom);
+      }
+    };
+
+    // Check zoom level periodically - using shorter interval for smoother updates
+    const interval = setInterval(updateZoomLevel, 50);
+    return () => clearInterval(interval);
+  }, [getZoom, getZoomLevel, currentZoomLevel, onZoomChange]);
+
   // Path type dialog state
   const [pathTypeDialogOpen, setPathTypeDialogOpen] = useState(false);
   const [connectingToProject, setConnectingToProject] = useState<string | null>(
@@ -240,6 +285,7 @@ export function JourneyMapCanvasView({
       <JourneyActionBar
         stats={journeyStats}
         onCreateProject={onCreateProject}
+        onCreateNorthStar={onCreateNorthStar}
       />
 
       {/* ReactFlow Canvas */}

@@ -23,11 +23,13 @@ export interface JourneyStats {
 interface JourneyActionBarProps {
   stats: JourneyStats;
   onCreateProject: () => void;
+  onCreateNorthStar: () => void;
 }
 
 export function JourneyActionBar({
   stats,
   onCreateProject,
+  onCreateNorthStar,
 }: JourneyActionBarProps) {
   return (
     <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between gap-4">
@@ -36,14 +38,14 @@ export function JourneyActionBar({
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-blue-400" />
             <span className="text-sm text-slate-300">
-              {stats.totalProjects} Projects
+              {stats.totalProjects} {stats.totalProjects === 1 ? 'Project' : 'Projects'}
             </span>
           </div>
           <div className="w-px h-4 bg-slate-700" />
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-amber-400" />
             <span className="text-sm text-slate-300">
-              {stats.northStarCount} North Star
+              {stats.northStarCount} North {stats.northStarCount === 1 ? 'Star' : 'Stars'}
             </span>
           </div>
           <div className="w-px h-4 bg-slate-700" />
@@ -57,6 +59,15 @@ export function JourneyActionBar({
       </div>
 
       <div className="flex items-center gap-2">
+        <Button
+          onClick={onCreateNorthStar}
+          size="sm"
+          variant="outline"
+          className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/50 hover:bg-amber-500/20 hover:border-amber-500 shadow-lg"
+        >
+          <Star className="w-4 h-4 mr-2 text-amber-500" />
+          New North Star
+        </Button>
         <Button
           onClick={onCreateProject}
           size="sm"

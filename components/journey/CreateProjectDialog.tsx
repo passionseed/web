@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Star, Target, Loader2, Link2 } from "lucide-react";
 import { createJourneyProject } from "@/lib/supabase/journey";
+import { createNorthStar } from "@/lib/supabase/north-star";
 import { ProjectType } from "@/types/journey";
 import { toast } from "sonner";
 import { EmojiPicker } from "@/components/ui/EmojiPicker";
@@ -112,36 +113,44 @@ export function CreateProjectDialog({
     setIsSubmitting(true);
 
     try {
-      const projectData: any = {
-        title: formData.title.trim(),
-        description: formData.description.trim() || undefined,
-        project_type: formData.projectType,
-        color: formData.color,
-        icon: icon,
-        status: "planning",
-        metadata: {
-          is_north_star: formData.isNorthStar,
-          is_main_quest: formData.isMainQuest,
-        },
-      };
-
-      // Add North Star enhancements if this is a North Star project
       if (formData.isNorthStar) {
-        projectData.sdg_goals =
-          formData.sdgGoals.length > 0 ? formData.sdgGoals : null;
-        projectData.career_path = formData.careerPath || null;
-        projectData.north_star_shape = formData.northStarShape;
-        projectData.north_star_color = formData.northStarColor;
+        // Create North Star instead of project
+        const northStarData = {
+          title: formData.title.trim(),
+          description: formData.description.trim() || undefined,
+          why: formData.why || null,
+          icon: icon,
+          sdg_goals: formData.sdgGoals.length > 0 ? formData.sdgGoals : [],
+          career_path: formData.careerPath || null,
+          north_star_shape: formData.northStarShape,
+          north_star_color: formData.northStarColor,
+          metadata: {},
+        };
+
+        await createNorthStar(northStarData);
+        toast.success(`North Star "${formData.title}" created successfully!`);
+      } else {
+        // Create regular project
+        const projectData: any = {
+          title: formData.title.trim(),
+          description: formData.description.trim() || undefined,
+          project_type: formData.projectType,
+          color: formData.color,
+          icon: icon,
+          status: "planning",
+          metadata: {
+            is_main_quest: formData.isMainQuest,
+          },
+        };
+
+        // Add North Star link if selected
+        if (formData.northStarId) {
+          projectData.linked_north_star_id = formData.northStarId;
+        }
+
+        await createJourneyProject(projectData);
+        toast.success(`Project "${formData.title}" created successfully!`);
       }
-
-      // Add North Star link if selected
-      if (!formData.isNorthStar && formData.northStarId) {
-        projectData.metadata.north_star_id = formData.northStarId;
-      }
-
-      await createJourneyProject(projectData);
-
-      toast.success(`Project "${formData.title}" created successfully!`);
 
       // Reset form
       setIcon("🎯");
