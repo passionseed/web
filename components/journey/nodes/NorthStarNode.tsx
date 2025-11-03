@@ -1,24 +1,27 @@
 /**
  * NorthStarNode - ReactFlow node for North Star entities
  * Displays North Stars from the north_stars table (not projects)
- * More prominent and aspirational than project nodes
+ * Redesigned with minimalist circular design and zoom-based progressive disclosure
  */
 
 import React from "react";
 import { Handle, Position } from "@xyflow/react";
-import { Pencil, Info, TrendingUp, Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NorthStar, NorthStarStatus } from "@/types/journey";
-import { SDG_GOALS, CAREER_PATHS, NORTH_STAR_COLORS } from "@/constants/sdg";
+import { NORTH_STAR_COLORS } from "@/constants/sdg";
 import { StarSVG } from "@/components/ui/star-generator";
 import { StarConfig } from "@/lib/utils/svg-star";
+
+export type ZoomLevel = "low" | "medium" | "high";
 
 interface NorthStarNodeProps {
   data: {
     northStar: NorthStar;
     linkedProjectCount?: number;
     hasRecentActivity?: boolean;
+    numericZoom?: number;
     onClick?: () => void;
     onEdit?: () => void;
     onViewDetails?: () => void;
@@ -29,18 +32,52 @@ interface NorthStarNodeProps {
   selected?: boolean;
 }
 
+/**
+ * Calculate timeframe from creation to 3 years later
+ */
+const calculateTimeframe = (createdAt: string) => {
+  const created = new Date(createdAt);
+  const threeYearsLater = new Date(created);
+  threeYearsLater.setFullYear(created.getFullYear() + 3);
+
+  const now = new Date();
+  const diffTime = threeYearsLater.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffDays <= 0) {
+    return "Goal period completed";
+  }
+
+  return `in ${diffYears} year${diffYears !== 1 ? 's' : ''} (${diffDays} days)`;
+};
+
+/**
+ * Format creation date
+ */
+const formatCreationDate = (createdAt: string) => {
+  const date = new Date(createdAt);
+  return `set at ${date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })}`;
+};
+
 export const NorthStarNode = React.memo(function NorthStarNode({
   data,
   selected = false,
 }: NorthStarNodeProps) {
-  const { northStar, linkedProjectCount = 0, hasRecentActivity = false, onEdit, onViewDetails, onUpdateProgress, onCreateProject, onQuickStatusChange } = data;
-  const progressPercentage = northStar.progress_percentage || 0;
+  const {
+    northStar,
+    linkedProjectCount = 0,
+    hasRecentActivity = false,
+    numericZoom = 1,
+    onEdit,
+    onCreateProject
+  } = data;
 
-  // Get visual customization data
-  const selectedSdgs = SDG_GOALS.filter((sdg) =>
-    northStar.sdg_goals?.includes(sdg.number)
-  );
-  const careerPathData = CAREER_PATHS.find((cp) => cp.value === northStar.career_path);
+  const progressPercentage = northStar.progress_percentage || 0;
   const colorData = NORTH_STAR_COLORS.find((c) => c.value === northStar.north_star_color);
 
   // Get star config from metadata, or use default
@@ -50,55 +87,12 @@ export const NorthStarNode = React.memo(function NorthStarNode({
     seed: northStar.id,
   };
 
-  // Status styling
-  const statusStyles = {
-    active: {
-      bg: "bg-blue-50",
-      text: "text-blue-700",
-      border: "border-blue-500",
-      label: "Active"
-    },
-    achieved: {
-      bg: "bg-green-50",
-      text: "text-green-700",
-      border: "border-green-500",
-      label: "Achieved"
-    },
-    on_hold: {
-      bg: "bg-yellow-50",
-      text: "text-yellow-700",
-      border: "border-yellow-500",
-      label: "On Hold"
-    },
-    archived: {
-      bg: "bg-gray-50",
-      text: "text-gray-500",
-      border: "border-gray-400",
-      label: "Archived"
-    },
-  };
-
-  const statusStyle = statusStyles[northStar.status] || statusStyles.active;
-
-  // Status-based visual effects for lifecycle
+  // Status-based visual effects
   const nodeOpacity = northStar.status === 'archived' ? 'opacity-60' :
                       northStar.status === 'on_hold' ? 'opacity-80' :
                       'opacity-100';
 
-  const glowIntensity = northStar.status === 'active' ? 0.5 :
-                        northStar.status === 'achieved' ? 0.7 :  // Brightest for achievement (supernova)
-                        northStar.status === 'on_hold' ? 0.3 :
-                        0.2;  // Dimmest for archived (death star/white dwarf)
-
   const filterEffect = northStar.status === 'archived' ? 'grayscale(60%)' : 'none';
-
-  const progressRingColor = northStar.status === 'archived' ? '#9CA3AF' :  // Gray for death stars
-                            northStar.status === 'achieved' ? '#10B981' :  // Green for achieved
-                            colorData?.color || "#FFD700";
-
-  // Progress ring calculation
-  const circumference = 2 * Math.PI * 50;
-  const offset = circumference - (progressPercentage / 100) * circumference;
 
   const handleClick = () => {
     if (data.onClick) {
@@ -134,370 +128,145 @@ export const NorthStarNode = React.memo(function NorthStarNode({
         }}
         role="button"
         tabIndex={0}
-        aria-label={`North Star: ${northStar.title} - ${progressPercentage}% progress, ${statusStyle.label}`}
+        aria-label={`North Star: ${northStar.title} - ${progressPercentage}% progress`}
+        style={{
+          filter: filterEffect,
+          opacity: numericZoom < 0.5 ? Math.max(0.4, numericZoom * 1.2) : 1
+        }}
       >
-        {/* Glow effect with custom color and status-based intensity */}
+        {/* Large circular background with navy gradient */}
         <div
-          className="absolute inset-0 rounded-3xl blur-3xl animate-pulse"
+          className="relative rounded-full flex flex-col items-center justify-center text-center transition-all duration-300"
           style={{
-            background: colorData
-              ? `linear-gradient(135deg, ${colorData.color}, ${colorData.glow})`
-              : 'linear-gradient(135deg, #FFD700, #FFA500)',
-            animationDuration: '3s',
-            opacity: glowIntensity,
-          }}
-        />
-
-        {/* Achievement celebration shimmer effect (supernova) */}
-        {northStar.status === 'achieved' && (
-          <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-            <div
-              className="absolute inset-0 animate-pulse"
-              style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 50%, transparent 100%)',
-                animationDuration: '2s',
-                transform: 'translateX(-100%)',
-                animation: 'shimmer 3s ease-in-out infinite',
-              }}
-            />
-          </div>
-        )}
-
-        {/* Activity pulse indicator */}
-        {hasRecentActivity && (
-          <div className="absolute top-3 right-3 z-50">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-ping" />
-            <div className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full" />
-          </div>
-        )}
-
-        {/* Main container - larger than projects */}
-        <div
-          className={`relative rounded-3xl p-7 shadow-2xl border-[5px] w-80 min-h-64 transition-all duration-300 group-hover:shadow-3xl ${statusStyle.border}`}
-          style={{
-            background: colorData
-              ? `linear-gradient(to bottom right, ${colorData.color}15, ${colorData.glow}10)`
-              : 'linear-gradient(to bottom right, rgb(254 252 232), rgb(254 249 195))',
-            filter: filterEffect,
+            width: `${Math.max(280, Math.min(400, 320 + (numericZoom - 1) * 40))}px`,
+            height: `${Math.max(280, Math.min(400, 320 + (numericZoom - 1) * 40))}px`,
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
           }}
         >
-          {/* Progress ring in top-right */}
-          <div className="absolute -top-6 -right-6">
-            <svg className="w-28 h-28 transform -rotate-90">
-              {/* Background circle */}
-              <circle
-                cx="56"
-                cy="56"
-                r="50"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="none"
-                className="text-gray-200"
-              />
-              {/* Progress circle */}
-              <circle
-                cx="56"
-                cy="56"
-                r="50"
-                stroke={progressRingColor}
-                strokeWidth="8"
-                fill="none"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                className="transition-all duration-500"
-                strokeLinecap="round"
-              />
-              {/* Percentage text */}
-              <text
-                x="56"
-                y="56"
-                textAnchor="middle"
-                dy=".35em"
-                className="text-xl font-bold"
-                fill={progressRingColor}
-                transform="rotate(90 56 56)"
-              >
-                {progressPercentage}%
-              </text>
-            </svg>
-          </div>
-
-          {/* Status badge in top-left */}
-          <div className="absolute top-3 left-3">
-            <Badge
-              variant="outline"
-              className={`${statusStyle.bg} ${statusStyle.text} border-2 ${statusStyle.border}`}
-            >
-              {statusStyle.label}
-            </Badge>
-          </div>
-
-          {/* Dormant indicator for archived stars (white dwarf state) */}
-          {northStar.status === 'archived' && (
-            <div className="absolute top-3 left-28">
-              <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-400 text-xs">
-                ⚫ Dormant
-              </Badge>
-            </div>
-          )}
-
           {/* Hover Edit Icon */}
           {onEdit && (
-            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-50">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="p-2 bg-white/90 dark:bg-gray-800/90 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+                className="p-2 bg-white/20 backdrop-blur-sm rounded-full shadow-lg hover:bg-white/30 transition-colors"
                 title="Edit North Star"
               >
-                <Pencil className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                <Pencil className="w-4 h-4 text-white" />
               </button>
             </div>
           )}
 
-          {/* North Star icon */}
-          <div className="flex flex-col items-center mt-4 mb-4">
-            <div className="mb-3">
-              <StarSVG
-                config={starConfig}
-                color={colorData?.color || "#FFD700"}
-                glowColor={colorData?.glow || "#FFA500"}
-                size={96}
-              />
+          {/* Activity pulse indicator */}
+          {hasRecentActivity && (
+            <div className="absolute top-4 left-4 z-50">
+              <div className="w-3 h-3 bg-emerald-400 rounded-full animate-ping" />
+              <div className="absolute top-0 left-0 w-3 h-3 bg-emerald-400 rounded-full" />
             </div>
+          )}
 
-            {/* Title */}
-            <h3
-              className="text-xl font-bold text-center px-2 mb-2 leading-tight"
-              style={{ color: colorData?.color || '#92400e' }}
-              title={northStar.title}
+          {/* Centered Star Icon */}
+          <div className="mb-4 transition-all duration-300">
+            <StarSVG
+              config={starConfig}
+              color={colorData?.color || "#FFD700"}
+              glowColor={colorData?.glow || "#FFA500"}
+              size={Math.max(80, Math.min(160, 120 + (numericZoom - 1) * 20))}
+            />
+          </div>
+
+          {/* Title - Always Visible */}
+          <h3 className="text-2xl font-bold text-white mb-2 px-4 leading-tight">
+            {northStar.title}
+          </h3>
+
+          {/* Timeframe - Always Visible */}
+          <p className="text-slate-300 text-base mb-6">
+            {calculateTimeframe(northStar.created_at)}
+          </p>
+
+          {/* Medium Zoom (>= 0.75): Tags and Creation Date */}
+          {numericZoom >= 0.75 && (
+            <div
+              className="transition-all duration-300 ease-in-out"
+              style={{
+                opacity: Math.min(1, (numericZoom - 0.75) / 0.25),
+                transform: `scale(${Math.min(1, 0.8 + (numericZoom - 0.75) * 0.8)})`
+              }}
             >
-              {northStar.title}
-            </h3>
-
-            {/* Career path badge */}
-            {careerPathData && (
-              <Badge
-                variant="outline"
-                className="text-xs border-blue-400 text-blue-700 bg-blue-50 mb-2"
-              >
-                {careerPathData.icon} {careerPathData.label}
-              </Badge>
-            )}
-          </div>
-
-          {/* Description */}
-          {northStar.description && (
-            <p className="text-sm text-gray-700 text-center line-clamp-2 mb-4 px-2">
-              {northStar.description}
-            </p>
-          )}
-
-          {/* SDG Goals badges */}
-          {selectedSdgs.length > 0 && (
-            <div className="mb-4">
-              <div className="text-xs font-semibold text-gray-600 mb-2 text-center">
-                🌍 UN SDG Goals
-              </div>
-              <div className="flex flex-wrap gap-1.5 justify-center">
-                {selectedSdgs.slice(0, 5).map((sdg) => (
-                  <div
-                    key={sdg.number}
-                    className="w-8 h-8 rounded-md flex items-center justify-center text-white text-xs font-bold shadow-md hover:scale-110 transition-transform cursor-help"
-                    style={{ backgroundColor: sdg.color }}
-                    title={`${sdg.number}. ${sdg.title}\n${sdg.description}`}
-                    aria-label={`SDG ${sdg.number}: ${sdg.title}`}
-                  >
-                    {sdg.number}
-                  </div>
-                ))}
-                {selectedSdgs.length > 5 && (
-                  <div
-                    className="w-8 h-8 rounded-md flex items-center justify-center bg-gray-300 text-gray-700 text-xs font-bold shadow-md cursor-help"
-                    title={`And ${selectedSdgs.length - 5} more: ${selectedSdgs.slice(5).map(s => s.number).join(', ')}`}
-                  >
-                    +{selectedSdgs.length - 5}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Linked projects count */}
-          {linkedProjectCount > 0 && (
-            <div className="flex items-center justify-center gap-2 pt-3 border-t border-gray-200">
-              <span className="text-sm font-semibold text-gray-700">
-                {linkedProjectCount} project{linkedProjectCount !== 1 ? "s" : ""} working toward this
-              </span>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            {onEdit && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                size="sm"
-                variant="outline"
-                className="flex-1 text-xs"
-              >
-                <Pencil className="w-3 h-3 mr-1" />
-                Edit
-              </Button>
-            )}
-            {onViewDetails && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewDetails();
-                }}
-                size="sm"
-                variant="outline"
-                className="flex-1 text-xs"
-              >
-                <Info className="w-3 h-3 mr-1" />
-                Details
-              </Button>
-            )}
-            {northStar.status !== 'achieved' && onUpdateProgress && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUpdateProgress();
-                }}
-                size="sm"
-                variant="outline"
-                className="flex-1 text-xs"
-              >
-                <TrendingUp className="w-3 h-3 mr-1" />
-                Progress
-              </Button>
-            )}
-            {onCreateProject && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCreateProject();
-                }}
-                size="sm"
-                variant="outline"
-                className="flex-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Add Project
-              </Button>
-            )}
-          </div>
-
-          {/* Quick Status Actions - Contextual based on current status */}
-          {onQuickStatusChange && (
-            <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700 mt-2">
-              {northStar.status === 'active' && (
-                <>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickStatusChange('on_hold');
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="flex-1 text-xs text-yellow-700 hover:bg-yellow-50"
-                  >
-                    ⏸️ Pause
-                  </Button>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickStatusChange('achieved');
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="flex-1 text-xs text-green-700 hover:bg-green-50"
-                  >
-                    ✨ Achieved
-                  </Button>
-                </>
-              )}
-
-              {northStar.status === 'on_hold' && (
-                <>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickStatusChange('active');
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="flex-1 text-xs text-blue-700 hover:bg-blue-50"
-                  >
-                    ▶️ Resume
-                  </Button>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickStatusChange('archived');
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="flex-1 text-xs text-gray-700 hover:bg-gray-50"
-                  >
-                    ⚫ Archive
-                  </Button>
-                </>
-              )}
-
-              {northStar.status === 'archived' && (
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onQuickStatusChange('active');
-                  }}
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-400 font-semibold"
-                >
-                  🔥 Reignite
-                </Button>
-              )}
-
-              {northStar.status === 'achieved' && (
-                <div className="flex-1 text-center py-1">
-                  <span className="text-xs text-green-600 font-medium">
-                    ✨ Completed
-                  </span>
+              {/* Tags */}
+              {northStar.tags && northStar.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 justify-center mb-3 px-4">
+                  {northStar.tags.slice(0, 3).map((tag, index) => {
+                    const colors = [
+                      'bg-blue-500/80 text-blue-100',
+                      'bg-purple-500/80 text-purple-100',
+                      'bg-emerald-500/80 text-emerald-100',
+                      'bg-orange-500/80 text-orange-100'
+                    ];
+                    return (
+                      <Badge
+                        key={tag}
+                        className={`text-xs px-2 py-1 ${colors[index % colors.length]} border-none`}
+                      >
+                        {tag}
+                      </Badge>
+                    );
+                  })}
                 </div>
               )}
+
+              {/* Creation Date */}
+              <p className="text-slate-400 text-sm mb-4">
+                {formatCreationDate(northStar.created_at)}
+              </p>
             </div>
           )}
 
-          {/* "Why" preview on hover */}
-          {northStar.why && (
-            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-3xl p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center pointer-events-none">
-              <div className="text-xs font-semibold text-gray-500 mb-2 text-center">
-                WHY THIS MATTERS
-              </div>
-              <p className="text-sm text-gray-800 text-center line-clamp-6 italic">
-                "{northStar.why}"
-              </p>
+          {/* High Zoom (>= 1.25): Progress */}
+          {numericZoom >= 1.25 && (
+            <div
+              className="text-slate-300 text-sm transition-all duration-300 ease-in-out"
+              style={{
+                opacity: Math.min(1, (numericZoom - 1.25) / 0.25),
+                transform: `scale(${Math.min(1, 0.8 + (numericZoom - 1.25) * 0.8)})`
+              }}
+            >
+              progress {progressPercentage}% from {linkedProjectCount} project{linkedProjectCount !== 1 ? 's' : ''}
             </div>
           )}
         </div>
 
-        {/* Shadow for depth when selected */}
-        {selected && (
-          <div className="absolute inset-0 -z-10">
+        {/* Dotted line to "+ add project" button */}
+        {onCreateProject && (
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 flex flex-col items-center">
+            {/* Dotted line */}
             <div
-              className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 w-56 h-10 rounded-full blur-2xl"
+              className="w-0.5 h-16 my-2"
               style={{
-                background: colorData?.glow || '#FFA500',
-                opacity: 0.4,
+                backgroundImage: 'linear-gradient(to bottom, white 50%, transparent 50%)',
+                backgroundSize: '1px 8px',
+                backgroundRepeat: 'repeat-y',
+                opacity: 0.6
               }}
             />
+
+            {/* Add project button */}
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCreateProject();
+              }}
+              variant="outline"
+              size="sm"
+              className="bg-slate-800/95 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              add project
+            </Button>
           </div>
         )}
       </div>
