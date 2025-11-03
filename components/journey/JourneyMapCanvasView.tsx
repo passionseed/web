@@ -176,7 +176,10 @@ export function JourneyMapCanvasView({
     }
 
     // Prevent connecting to/from user center
-    if (connection.source === "user-center" || connection.target === "user-center") {
+    if (
+      connection.source === "user-center" ||
+      connection.target === "user-center"
+    ) {
       toast.error("Cannot connect to user center");
       return;
     }
@@ -200,10 +203,10 @@ export function JourneyMapCanvasView({
           connectingToProject,
           pathType
         );
-        
+
         // Get path style configuration
         const pathStyle = getProjectPathStyle(pathType);
-        
+
         // Create new edge and immediately add to visual state
         const newEdge: Edge = {
           id: newPath.id,
@@ -227,10 +230,10 @@ export function JourneyMapCanvasView({
             pathId: newPath.id,
           },
         };
-        
+
         // Add edge to visual state immediately
         setEdges((eds) => addEdge(newEdge, eds));
-        
+
         toast.success("Project connection created");
         setPathTypeDialogOpen(false);
         setConnectingFromProject(null);
@@ -246,27 +249,30 @@ export function JourneyMapCanvasView({
   );
 
   // Handle edge changes including deletion
-  const handleEdgesChange = useCallback(async (changes: EdgeChange[]) => {
-    // Handle edge deletions
-    for (const change of changes) {
-      if (change.type === 'remove') {
-        const edge = edges.find(e => e.id === change.id);
-        if (edge && edge.data?.pathId) {
-          try {
-            await deleteProjectPath(edge.data.pathId);
-            toast.success("Connection deleted");
-          } catch (error) {
-            console.error("Error deleting connection:", error);
-            toast.error("Failed to delete connection");
-            return; // Don't apply the change if deletion failed
+  const handleEdgesChange = useCallback(
+    async (changes: EdgeChange[]) => {
+      // Handle edge deletions
+      for (const change of changes) {
+        if (change.type === "remove") {
+          const edge = edges.find((e) => e.id === change.id);
+          if (edge && edge.data?.pathId) {
+            try {
+              await deleteProjectPath(edge.data.pathId);
+              toast.success("Connection deleted");
+            } catch (error) {
+              console.error("Error deleting connection:", error);
+              toast.error("Failed to delete connection");
+              return; // Don't apply the change if deletion failed
+            }
           }
         }
       }
-    }
-    
-    // Apply the changes to the edges directly
-    setEdges((eds) => applyEdgeChanges(changes, eds));
-  }, [edges, setEdges]);
+
+      // Apply the changes to the edges directly
+      setEdges((eds) => applyEdgeChanges(changes, eds));
+    },
+    [edges, setEdges]
+  );
 
   if (isLoading) {
     return (
@@ -351,7 +357,10 @@ export function JourneyMapCanvasView({
           <Panel position="bottom-left" className="m-4">
             <div className="bg-slate-800/95 backdrop-blur border border-slate-700 rounded-lg p-3 shadow-lg max-w-sm">
               <p className="text-xs text-slate-200">
-                <span className="font-semibold">💡 Tip:</span> Drag from the colored dot on one project to another project to create a connection. Click edges to select them, then press Backspace or Delete to remove.
+                <span className="font-semibold">💡 Tip:</span> Drag from the
+                colored dot on one project to another project to create a
+                connection. Click edges to select them, then press Backspace or
+                Delete to remove.
               </p>
             </div>
           </Panel>

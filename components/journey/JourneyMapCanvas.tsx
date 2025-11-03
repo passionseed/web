@@ -101,9 +101,10 @@ function JourneyMapCanvasInner({
   } = useJourneyMapState();
 
   // Zoom level state
-  const [zoomLevel, setZoomLevel] = React.useState<"low" | "medium" | "high">("medium");
+  const [zoomLevel, setZoomLevel] = React.useState<"low" | "medium" | "high">(
+    "medium"
+  );
   const [numericZoom, setNumericZoom] = React.useState<number>(1);
-
 
   // North Star dialog state
   const [createNorthStarOpen, setCreateNorthStarOpen] = React.useState(false);
@@ -112,9 +113,12 @@ function JourneyMapCanvasInner({
     React.useState<NorthStar | null>(null);
 
   // Quick status change dialog state
-  const [quickStatusDialogOpen, setQuickStatusDialogOpen] = React.useState(false);
-  const [changingNorthStar, setChangingNorthStar] = React.useState<NorthStar | null>(null);
-  const [targetStatus, setTargetStatus] = React.useState<NorthStarStatus>("active");
+  const [quickStatusDialogOpen, setQuickStatusDialogOpen] =
+    React.useState(false);
+  const [changingNorthStar, setChangingNorthStar] =
+    React.useState<NorthStar | null>(null);
+  const [targetStatus, setTargetStatus] =
+    React.useState<NorthStarStatus>("active");
 
   const openCreateNorthStarDialog = useCallback(() => {
     setCreateNorthStarOpen(true);
@@ -136,10 +140,13 @@ function JourneyMapCanvasInner({
   const { syncStatus, syncMessage, handleNodeDragStop } = usePositionSync();
 
   // Handle zoom changes from the canvas
-  const handleZoomChange = useCallback((zoomLevel: "low" | "medium" | "high", numericZoom: number) => {
-    setZoomLevel(zoomLevel);
-    setNumericZoom(numericZoom);
-  }, []);
+  const handleZoomChange = useCallback(
+    (zoomLevel: "low" | "medium" | "high", numericZoom: number) => {
+      setZoomLevel(zoomLevel);
+      setNumericZoom(numericZoom);
+    },
+    []
+  );
 
   // Panel refs
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -201,36 +208,35 @@ function JourneyMapCanvasInner({
     []
   );
 
-  const handleConfirmStatusChange = useCallback(
-    async () => {
-      if (!changingNorthStar) return;
+  const handleConfirmStatusChange = useCallback(async () => {
+    if (!changingNorthStar) return;
 
-      try {
-        const updateData: any = {
-          status: targetStatus,
-        };
+    try {
+      const updateData: any = {
+        status: targetStatus,
+      };
 
-        // Add achieved_at timestamp when status changes to achieved
-        if (targetStatus === "achieved") {
-          updateData.achieved_at = new Date().toISOString();
-        }
-
-        await updateNorthStar(changingNorthStar.id, updateData);
-
-        // Refresh North Stars to show updated status
-        refreshNorthStars();
-
-        toast.success("North Star status updated successfully!");
-      } catch (error) {
-        console.error("Error updating North Star status:", error);
-        toast.error("Failed to update North Star status");
+      // Add achieved_at timestamp when status changes to achieved
+      if (targetStatus === "achieved") {
+        updateData.achieved_at = new Date().toISOString();
       }
-    },
-    [changingNorthStar, targetStatus, refreshNorthStars]
-  );
+
+      await updateNorthStar(changingNorthStar.id, updateData);
+
+      // Refresh North Stars to show updated status
+      refreshNorthStars();
+
+      toast.success("North Star status updated successfully!");
+    } catch (error) {
+      console.error("Error updating North Star status:", error);
+      toast.error("Failed to update North Star status");
+    }
+  }, [changingNorthStar, targetStatus, refreshNorthStars]);
 
   // State for pre-selected North Star
-  const [preSelectedNorthStarId, setPreSelectedNorthStarId] = React.useState<string | null>(null);
+  const [preSelectedNorthStarId, setPreSelectedNorthStarId] = React.useState<
+    string | null
+  >(null);
 
   const handleProjectSelect = useCallback(
     (projectId: string) => {
@@ -424,7 +430,9 @@ function JourneyMapCanvasInner({
                 <NorthStarDetailsPanel
                   northStarId={selectedNorthStarId}
                   onEdit={() => {
-                    const northStar = northStars.find(ns => ns.id === selectedNorthStarId);
+                    const northStar = northStars.find(
+                      (ns) => ns.id === selectedNorthStarId
+                    );
                     if (northStar) {
                       openEditNorthStarDialog(northStar);
                     }
