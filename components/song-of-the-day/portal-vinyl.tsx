@@ -29,6 +29,26 @@ export function PortalVinyl() {
   const [isSaving, setIsSaving] = useState(false);
   const [vinylColors, setVinylColors] = useState<VinylColorScheme | null>(null);
 
+  const loadTodaysSong = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const song = await getTodaysSong();
+      if (song) {
+        setCurrentSong({
+          title: song.song_title,
+          artist: song.artist,
+          url: song.song_url,
+          albumCover: song.album_cover_url,
+          previewUrl: song.preview_url,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading today's song:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Load today's song on mount
   useEffect(() => {
     if (user) {
@@ -49,26 +69,6 @@ export function PortalVinyl() {
       setVinylColors(null);
     }
   }, [currentSong?.albumCover]);
-
-  const loadTodaysSong = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const song = await getTodaysSong();
-      if (song) {
-        setCurrentSong({
-          title: song.song_title,
-          artist: song.artist,
-          url: song.song_url,
-          albumCover: song.album_cover_url,
-          previewUrl: song.preview_url,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading today's song:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   const handleSongSelect = async (song: Song) => {
     try {
