@@ -71,7 +71,13 @@ export function buildJourneyMap(
     ).length;
 
     newNodes.push(
-      createNorthStarEntityNode(northStar, position, linkedCount, callbacks, numericZoom)
+      createNorthStarEntityNode(
+        northStar,
+        position,
+        linkedCount,
+        callbacks,
+        numericZoom
+      )
     );
 
     // Note: Edge to North Star will be created from the last project in the chain
@@ -92,7 +98,13 @@ export function buildJourneyMap(
     const linkedCount = countLinkedProjects(project.id, shortTermProjects);
 
     newNodes.push(
-      createNorthStarNode(project, position, linkedCount, callbacks, numericZoom)
+      createNorthStarNode(
+        project,
+        position,
+        linkedCount,
+        callbacks,
+        numericZoom
+      )
     );
 
     // Removed automatic center connection - users can create manually
@@ -112,7 +124,7 @@ export function buildJourneyMap(
     const linkedNorthStarEntity = northStars.find(
       (ns) => ns.id === project.linked_north_star_id
     );
-    
+
     if (linkedNorthStarEntity) {
       linkedProjects.push({
         project,
@@ -199,14 +211,20 @@ export function buildJourneyMap(
         // Middle projects: connect from previous project
         const previousProject = sortedItems[index - 1];
         newEdges.push(
-          createProjectToNorthStarEntityEdge(previousProject.project.id, item.project.id)
+          createProjectToNorthStarEntityEdge(
+            previousProject.project.id,
+            item.project.id
+          )
         );
       }
 
       // Last project: connect to North Star entity
       if (index === sortedItems.length - 1) {
         newEdges.push(
-          createProjectToNorthStarEntityEdge(item.project.id, northStarEntity.id)
+          createProjectToNorthStarEntityEdge(
+            item.project.id,
+            northStarEntity.id
+          )
         );
       }
     });
