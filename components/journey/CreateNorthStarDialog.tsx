@@ -21,9 +21,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, Loader2, ChevronRight, ChevronLeft, Languages, X, GripVertical, Pencil, Check } from "lucide-react";
+import {
+  Star,
+  Loader2,
+  ChevronRight,
+  ChevronLeft,
+  Languages,
+  X,
+  GripVertical,
+  Pencil,
+  Check,
+} from "lucide-react";
 import { createNorthStar } from "@/lib/supabase/north-star";
-import { createJourneyProject, createProjectPath } from "@/lib/supabase/journey";
+import {
+  createJourneyProject,
+  createProjectPath,
+} from "@/lib/supabase/journey";
 import { toast } from "sonner";
 import { SDG_GOALS, CAREER_PATHS, NORTH_STAR_COLORS } from "@/constants/sdg";
 import { StarGenerator } from "@/components/ui/star-generator";
@@ -33,7 +46,7 @@ import {
   validateStarConfig,
 } from "@/lib/utils/svg-star";
 
-type Language = 'en' | 'th';
+type Language = "en" | "th";
 
 const translations = {
   en: {
@@ -46,34 +59,41 @@ const translations = {
     step5: "Name your North Star",
     welcomeTitle: "Your Journey Begins Here",
     welcomeSubtitle: "Take a moment to pause and reflect",
-    welcomeQuote: "\"The future belongs to those who believe in the beauty of their dreams.\"",
+    welcomeQuote:
+      '"The future belongs to those who believe in the beauty of their dreams."',
     welcomeAuthor: "— Eleanor Roosevelt",
-    welcomeIntro: "You're about to create something powerful—a North Star that will guide your journey for years to come.",
+    welcomeIntro:
+      "You're about to create something powerful—a North Star that will guide your journey for years to come.",
     welcomeReflect: "Before we begin, let's take a moment to reflect:",
     welcomePoint1: "What matters most to you in life?",
     welcomePoint2: "What impact do you want to make on the world?",
     welcomePoint3: "What legacy do you want to leave behind?",
-    welcomeFooter: "There are no wrong answers. This is your journey, your vision, your North Star.",
+    welcomeFooter:
+      "There are no wrong answers. This is your journey, your vision, your North Star.",
     welcomeReady: "When you're ready, let's begin this journey together.",
     welcomeButton: "I'm Ready to Begin",
     visionTitle: "What do you want to see happening in the next 3 years?",
     visionSubtitle: "Paint a vivid picture of your ideal future",
-    visionPlaceholder: "Imagine yourself 3 years from now... What does success look like? What impact are you making? How do you feel? What are you proud of?",
+    visionPlaceholder:
+      "Imagine yourself 3 years from now... What does success look like? What impact are you making? How do you feel? What are you proud of?",
     visionIntro: "Take a moment to envision your future...",
     actionTitle: "What needs to happen for that image to be real?",
     actionSubtitle: "Think about the steps, skills, and changes needed",
-    actionPlaceholder: "What skills do you need to develop? What obstacles must you overcome? What resources or support do you need? What habits need to change?",
+    actionPlaceholder:
+      "What skills do you need to develop? What obstacles must you overcome? What resources or support do you need? What habits need to change?",
     actionIntro: "Now, let's think about the journey...",
     milestoneTitle: "Break Down Your Journey",
     milestoneSubtitle: "List the key milestones you need to achieve",
     milestoneIntro: "Now, let's map out your path...",
     yourGoal: "Your North Star Goal:",
-    milestonePlaceholder: "E.g., Learn programming fundamentals, Build first project, Get internship...",
+    milestonePlaceholder:
+      "E.g., Learn programming fundamentals, Build first project, Get internship...",
     addMilestone: "Add Milestone",
     removeMilestone: "Remove",
     noMilestones: "No milestones yet. Add your first milestone to begin.",
     milestoneHint: "What are the major steps you need to take?",
-    planTopDown: "💡 Pro tip: Start with big milestones first, then add smaller steps",
+    planTopDown:
+      "💡 Pro tip: Start with big milestones first, then add smaller steps",
     dragToReorder: "Drag to reorder • Click to edit",
     editMilestone: "Edit",
     saveMilestone: "Save",
@@ -81,7 +101,8 @@ const translations = {
     sdgSubtitle: "Select SDGs that align with your North Star",
     sdgSelected: "Selected",
     careerTitle: "💼 Career Path (Optional)",
-    careerSubtitle: "Choose a career direction that aligns with your North Star",
+    careerSubtitle:
+      "Choose a career direction that aligns with your North Star",
     careerNone: "No specific path",
     starDesignTitle: "⭐ Design Your Star",
     starDesignSubtitle: "Create a unique star that represents your North Star",
@@ -111,34 +132,40 @@ const translations = {
     step5: "ตั้งชื่อดาวเหนือ",
     welcomeTitle: "การเดินทางของคุณเริ่มต้นที่นี่",
     welcomeSubtitle: "ใช้เวลาสักครู่เพื่อหยุดและไตร่ตรอง",
-    welcomeQuote: "\"อนาคตเป็นของผู้ที่เชื่อในความงามของความฝัน\"",
+    welcomeQuote: '"อนาคตเป็นของผู้ที่เชื่อในความงามของความฝัน"',
     welcomeAuthor: "— เอเลนอร์ รูสเวลต์",
-    welcomeIntro: "คุณกำลังจะสร้างสิ่งที่ทรงพลัง—ดาวเหนือที่จะนำทางการเดินทางของคุณในอีกหลายปีข้างหน้า",
-    welcomeReflect: "ก่อนที่เราจะเริ่ม ลองใช้เวลาสักครู่เพื่อไตร่ตรอง:",
+    welcomeIntro:
+      "คุณกำลังจะสร้างสิ่งที่ทรงพลัง—ดาวเหนือที่จะนำทางการเดินทางของคุณในอีกหลายปีข้างหน้า",
+    welcomeReflect: "ก่อนที่เราจะเริ่ม ลองตั้งใจคิดสักแปป:",
     welcomePoint1: "อะไรคือสิ่งที่สำคัญที่สุดในชีวิตของคุณ?",
     welcomePoint2: "คุณต้องการสร้างผลกระทบอะไรต่อโลก?",
     welcomePoint3: "คุณต้องการทิ้งมรดกอะไรไว้?",
-    welcomeFooter: "ไม่มีคำตอบที่ผิด นี่คือการเดินทาง วิสัยทัศน์ และดาวเหนือของคุณ",
+    welcomeFooter:
+      "ไม่มีคำตอบที่ผิด นี่คือการเดินทาง วิสัยทัศน์ และดาวเหนือของคุณ",
     welcomeReady: "เมื่อคุณพร้อมแล้ว เรามาเริ่มการเดินทางนี้ด้วยกัน",
     welcomeButton: "ฉันพร้อมที่จะเริ่มต้น",
-    visionTitle: "คุณอยากเห็นอะไรเกิดขึ้นในอีก 3 ปีข้างหน้า?",
-    visionSubtitle: "วาดภาพอนาคตที่คุณฝันถึงให้ชัดเจน",
-    visionPlaceholder: "ลองจินตนาการตัวเองในอีก 3 ปีข้างหน้า... ความสำเร็จของคุณเป็นอย่างไร? คุณสร้างผลกระทบอะไร? คุณรู้สึกอย่างไร? คุณภูมิใจในอะไร?",
+    visionTitle: "คุณอยากเห็นอะไรเกิดขึ้นในชีวิตของคุณในอีก 3 ปีข้างหน้า?",
+    visionSubtitle: "จินตนาการอนาคตที่คุณฝันถึงให้ชัดเจน",
+    visionPlaceholder:
+      "ลองจินตนาการตัวเองในอีก 3 ปีข้างหน้า... ความสำเร็จของคุณเป็นอย่างไร? คุณสร้างผลกระทบอะไร? คุณรู้สึกอย่างไร? คุณภูมิใจในอะไร?",
     visionIntro: "ใช้เวลาสักครู่เพื่อจินตนาการถึงอนาคตของคุณ...",
     actionTitle: "อะไรต้องเกิดขึ้นเพื่อให้ภาพนั้นเป็นจริง?",
     actionSubtitle: "คิดถึงขั้นตอน ทักษะ และการเปลี่ยนแปลงที่จำเป็น",
-    actionPlaceholder: "คุณต้องพัฒนาทักษะอะไร? อุปสรรคอะไรที่ต้องก้าวข้าม? ต้องการทรัพยากรหรือการสนับสนุนอะไร? นิสัยอะไรต้องเปลี่ยน?",
+    actionPlaceholder:
+      "คุณต้องพัฒนาทักษะอะไร? อุปสรรคอะไรที่ต้องก้าวข้าม? ต้องการทรัพยากรหรือการสนับสนุนอะไร? นิสัยอะไรต้องเปลี่ยน?",
     actionIntro: "มาคิดถึงเส้นทางกันเถอะ...",
     milestoneTitle: "แบ่งเส้นทางออกเป็นขั้นตอน",
     milestoneSubtitle: "ระบุขั้นตอนสำคัญที่คุณต้องบรรลุ",
     milestoneIntro: "มาวางแผนเส้นทางของคุณกันเถอะ...",
     yourGoal: "เป้าหมายดาวเหนือของคุณ:",
-    milestonePlaceholder: "เช่น เรียนรู้พื้นฐานการเขียนโปรแกรม, สร้างโปรเจกต์แรก, หาฝึกงาน...",
+    milestonePlaceholder:
+      "เช่น เรียนรู้พื้นฐานการเขียนโปรแกรม, สร้างโปรเจกต์แรก, หาฝึกงาน...",
     addMilestone: "เพิ่มขั้นตอน",
     removeMilestone: "ลบ",
     noMilestones: "ยังไม่มีขั้นตอน เพิ่มขั้นตอนแรกเพื่อเริ่มต้น",
     milestoneHint: "ขั้นตอนสำคัญที่คุณต้องทำมีอะไรบ้าง?",
-    planTopDown: "💡 เคล็ดลับ: เริ่มจากขั้นตอนใหญ่ก่อน แล้วค่อยเพิ่มรายละเอียดย่อย",
+    planTopDown:
+      "💡 เคล็ดลับ: เริ่มจากขั้นตอนใหญ่ก่อน แล้วค่อยเพิ่มรายละเอียดย่อย",
     dragToReorder: "ลากเพื่อเรียงลำดับ • คลิกเพื่อแก้ไข",
     editMilestone: "แก้ไข",
     saveMilestone: "บันทึก",
@@ -153,8 +180,10 @@ const translations = {
     colorThemeTitle: "🎨 ธีมสี",
     colorThemeSubtitle: "เลือกธีมสีสำหรับดาวของคุณ",
     finalTitle: "คุณจะเรียกดาวเหนือของคุณว่าอะไร? *",
-    finalSubtitle: "ชื่อที่ชัดเจนและสร้างแรงบันดาลใจสำหรับวิสัยทัศน์ระยะยาวของคุณ",
-    finalPlaceholder: "เช่น เป็นวิศวกรซอฟต์แวร์ที่แก้ปัญหาการเปลี่ยนแปลงสภาพภูมิอากาศ",
+    finalSubtitle:
+      "ชื่อที่ชัดเจนและสร้างแรงบันดาลใจสำหรับวิสัยทัศน์ระยะยาวของคุณ",
+    finalPlaceholder:
+      "เช่น เป็นวิศวกรซอฟต์แวร์ที่แก้ปัญหาการเปลี่ยนแปลงสภาพภูมิอากาศ",
     finalIntro: "สุดท้าย ตั้งชื่อให้ดาวเหนือของคุณ",
     summaryTitle: "สรุปดาวเหนือของคุณ",
     summaryVision: "วิสัยทัศน์ของคุณ:",
@@ -180,8 +209,8 @@ export function CreateNorthStarDialog({
   onSuccess,
 }: CreateNorthStarDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [language, setLanguage] = useState<Language>('en');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [language, setLanguage] = useState<Language>("en");
   const [formData, setFormData] = useState({
     visionQuestion: "", // "What do you want to see happening in the next 3 years?"
     milestones: [] as string[], // List of milestone items
@@ -198,11 +227,11 @@ export function CreateNorthStarDialog({
 
   const t = translations[language];
 
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const handleNext = () => {
     // Validation is optional for reflection steps - allow moving forward
-    if (currentStep < totalSteps) {
+    if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -224,21 +253,24 @@ export function CreateNorthStarDialog({
     setIsSubmitting(true);
 
     try {
-      console.log('🌟 Starting North Star creation...');
-      
+      console.log("🌟 Starting North Star creation...");
+
       // Validate star config
       const validatedConfig = validateStarConfig(formData.starConfig);
 
       // Create the North Star
-      console.log('📝 Creating North Star with data:', {
+      console.log("📝 Creating North Star with data:", {
         title: formData.title.trim(),
         milestones: formData.milestones.length,
       });
-      
+
       const northStar = await createNorthStar({
         title: formData.title.trim(),
         description: formData.visionQuestion.trim() || undefined,
-        why: formData.milestones.length > 0 ? formData.milestones.join('\n') : undefined,
+        why:
+          formData.milestones.length > 0
+            ? formData.milestones.join("\n")
+            : undefined,
         icon: "svg", // Marker to indicate SVG star
         sdg_goals: formData.sdgGoals.length > 0 ? formData.sdgGoals : undefined,
         career_path: formData.careerPath || undefined,
@@ -249,22 +281,27 @@ export function CreateNorthStarDialog({
         },
       });
 
-      console.log('✅ North Star created:', northStar.id);
+      console.log("✅ North Star created:", northStar.id);
 
       // Create projects from milestones and link them to the North Star
       let createdProjectsCount = 0;
       if (formData.milestones.length > 0) {
-        console.log(`🎯 Creating ${formData.milestones.length} milestone projects...`);
-        
+        console.log(
+          `🎯 Creating ${formData.milestones.length} milestone projects...`
+        );
+
         const createdProjects = [];
-        
+
         // Create each milestone as a project
         for (let i = 0; i < formData.milestones.length; i++) {
           const milestone = formData.milestones[i];
-          
+
           try {
-            console.log(`📦 Creating project ${i + 1}/${formData.milestones.length}:`, milestone);
-            
+            console.log(
+              `📦 Creating project ${i + 1}/${formData.milestones.length}:`,
+              milestone
+            );
+
             const project = await createJourneyProject({
               title: milestone,
               description: `Step ${i + 1} towards: ${formData.title}`,
@@ -279,43 +316,53 @@ export function CreateNorthStarDialog({
                 north_star_title: formData.title,
               },
             });
-            
+
             createdProjects.push(project);
             createdProjectsCount++;
-            console.log(`✅ Created project ${i + 1}/${formData.milestones.length}:`, {
-              id: project.id,
-              title: project.title,
-              linked_north_star_id: project.linked_north_star_id,
-            });
+            console.log(
+              `✅ Created project ${i + 1}/${formData.milestones.length}:`,
+              {
+                id: project.id,
+                title: project.title,
+                linked_north_star_id: project.linked_north_star_id,
+              }
+            );
           } catch (error: any) {
-            console.error(`❌ Failed to create project for milestone "${milestone}":`, error);
-            console.error('Error details:', {
+            console.error(
+              `❌ Failed to create project for milestone "${milestone}":`,
+              error
+            );
+            console.error("Error details:", {
               message: error.message,
               stack: error.stack,
             });
             // Continue creating other projects even if one fails
           }
         }
-        
-        console.log(`🔗 Created ${createdProjects.length} projects, now creating paths...`);
-        
+
+        console.log(
+          `🔗 Created ${createdProjects.length} projects, now creating paths...`
+        );
+
         // Create project paths in sequence (leads_to pattern)
         let createdPathsCount = 0;
         for (let i = 0; i < createdProjects.length - 1; i++) {
           try {
             console.log(`🔗 Linking project ${i + 1} to ${i + 2}...`);
-            
+
             const path = await createProjectPath(
               createdProjects[i].id,
               createdProjects[i + 1].id,
               "leads_to"
             );
-            
+
             createdPathsCount++;
-            console.log(`✅ Linked "${createdProjects[i].title}" → "${createdProjects[i + 1].title}"`);
+            console.log(
+              `✅ Linked "${createdProjects[i].title}" → "${createdProjects[i + 1].title}"`
+            );
           } catch (error: any) {
             console.error(`❌ Failed to create path between projects:`, error);
-            console.error('Path error details:', {
+            console.error("Path error details:", {
               from: createdProjects[i]?.id,
               to: createdProjects[i + 1]?.id,
               message: error.message,
@@ -323,14 +370,17 @@ export function CreateNorthStarDialog({
             // Continue creating other paths even if one fails
           }
         }
-        
-        console.log(`🎉 Summary: Created ${createdProjectsCount} projects and ${createdPathsCount} paths`);
+
+        console.log(
+          `🎉 Summary: Created ${createdProjectsCount} projects and ${createdPathsCount} paths`
+        );
       }
 
-      const successMessage = formData.milestones.length > 0
-        ? `North Star "${formData.title}" created with ${createdProjectsCount} milestone projects!`
-        : `North Star "${formData.title}" created successfully!`;
-      
+      const successMessage =
+        formData.milestones.length > 0
+          ? `North Star "${formData.title}" created with ${createdProjectsCount} milestone projects!`
+          : `North Star "${formData.title}" created successfully!`;
+
       toast.success(successMessage);
 
       // Reset form
@@ -349,13 +399,15 @@ export function CreateNorthStarDialog({
       setDraggedIndex(null);
       setCurrentStep(0);
 
-      console.log('🔄 Calling onSuccess to refresh journey map...');
+      console.log("🔄 Calling onSuccess to refresh journey map...");
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
       console.error("❌ Error creating North Star:", error);
-      console.error('Error stack:', error.stack);
-      toast.error(`Failed to create North Star: ${error.message || 'Unknown error'}`);
+      console.error("Error stack:", error.stack);
+      toast.error(
+        `Failed to create North Star: ${error.message || "Unknown error"}`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -374,7 +426,10 @@ export function CreateNorthStarDialog({
               <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
               {t.title}
             </DialogTitle>
-            <Select value={language} onValueChange={(val) => setLanguage(val as Language)}>
+            <Select
+              value={language}
+              onValueChange={(val) => setLanguage(val as Language)}
+            >
               <SelectTrigger className="w-[140px] h-8">
                 <Languages className="w-4 h-4 mr-2" />
                 <SelectValue />
@@ -590,12 +645,21 @@ export function CreateNorthStarDialog({
                                 }}
                                 onDrop={(e) => {
                                   e.preventDefault();
-                                  if (draggedIndex === null || draggedIndex === index) return;
-                                  
-                                  const newMilestones = [...formData.milestones];
-                                  const [removed] = newMilestones.splice(draggedIndex, 1);
+                                  if (
+                                    draggedIndex === null ||
+                                    draggedIndex === index
+                                  )
+                                    return;
+
+                                  const newMilestones = [
+                                    ...formData.milestones,
+                                  ];
+                                  const [removed] = newMilestones.splice(
+                                    draggedIndex,
+                                    1
+                                  );
                                   newMilestones.splice(index, 0, removed);
-                                  
+
                                   setFormData((prev) => ({
                                     ...prev,
                                     milestones: newMilestones,
@@ -625,11 +689,19 @@ export function CreateNorthStarDialog({
                                     <div className="flex items-center gap-2">
                                       <Input
                                         value={editingText}
-                                        onChange={(e) => setEditingText(e.target.value)}
+                                        onChange={(e) =>
+                                          setEditingText(e.target.value)
+                                        }
                                         onKeyDown={(e) => {
-                                          if (e.key === "Enter" && editingText.trim()) {
-                                            const newMilestones = [...formData.milestones];
-                                            newMilestones[index] = editingText.trim();
+                                          if (
+                                            e.key === "Enter" &&
+                                            editingText.trim()
+                                          ) {
+                                            const newMilestones = [
+                                              ...formData.milestones,
+                                            ];
+                                            newMilestones[index] =
+                                              editingText.trim();
                                             setFormData((prev) => ({
                                               ...prev,
                                               milestones: newMilestones,
@@ -649,8 +721,11 @@ export function CreateNorthStarDialog({
                                         size="sm"
                                         onClick={() => {
                                           if (editingText.trim()) {
-                                            const newMilestones = [...formData.milestones];
-                                            newMilestones[index] = editingText.trim();
+                                            const newMilestones = [
+                                              ...formData.milestones,
+                                            ];
+                                            newMilestones[index] =
+                                              editingText.trim();
                                             setFormData((prev) => ({
                                               ...prev,
                                               milestones: newMilestones,
@@ -985,7 +1060,8 @@ export function CreateNorthStarDialog({
                     />
 
                     {/* Show summary of what they've created */}
-                    {(formData.visionQuestion || formData.milestones.length > 0) && (
+                    {(formData.visionQuestion ||
+                      formData.milestones.length > 0) && (
                       <div className="mt-6 pt-6 border-t border-purple-200 dark:border-purple-800">
                         <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-3 text-center">
                           {t.summaryTitle}
@@ -1006,12 +1082,19 @@ export function CreateNorthStarDialog({
                               {t.summarySteps}
                             </p>
                             <ul className="text-sm space-y-1">
-                              {formData.milestones.slice(0, 3).map((milestone, index) => (
-                                <li key={index} className="flex items-start gap-2">
-                                  <span className="text-purple-600 dark:text-purple-400">{index + 1}.</span>
-                                  <span className="flex-1">{milestone}</span>
-                                </li>
-                              ))}
+                              {formData.milestones
+                                .slice(0, 3)
+                                .map((milestone, index) => (
+                                  <li
+                                    key={index}
+                                    className="flex items-start gap-2"
+                                  >
+                                    <span className="text-purple-600 dark:text-purple-400">
+                                      {index + 1}.
+                                    </span>
+                                    <span className="flex-1">{milestone}</span>
+                                  </li>
+                                ))}
                               {formData.milestones.length > 3 && (
                                 <li className="text-muted-foreground italic">
                                   +{formData.milestones.length - 3} more...
@@ -1069,7 +1152,7 @@ export function CreateNorthStarDialog({
                 </div>
 
                 <div className="flex gap-2">
-                  {currentStep < totalSteps ? (
+                  {currentStep < totalSteps - 1 ? (
                     <Button
                       type="button"
                       onClick={handleNext}
