@@ -38,14 +38,16 @@ export function JourneyActionBar({
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-blue-400" />
             <span className="text-sm text-slate-300">
-              {stats.totalProjects} {stats.totalProjects === 1 ? 'Project' : 'Projects'}
+              {stats.totalProjects}{" "}
+              {stats.totalProjects === 1 ? "Project" : "Projects"}
             </span>
           </div>
           <div className="w-px h-4 bg-slate-700" />
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-amber-400" />
             <span className="text-sm text-slate-300">
-              {stats.northStarCount} North {stats.northStarCount === 1 ? 'Star' : 'Stars'}
+              {stats.northStarCount} North{" "}
+              {stats.northStarCount === 1 ? "Star" : "Stars"}
             </span>
           </div>
           <div className="w-px h-4 bg-slate-700" />
