@@ -18,6 +18,8 @@ export interface UseJourneyMapStateReturn {
   // Selection state
   selectedProjectId: string | null;
   setSelectedProjectId: (id: string | null) => void;
+  selectedNorthStarId: string | null;
+  setSelectedNorthStarId: (id: string | null) => void;
   handleSelectionChange: (params: OnSelectionChangeParams) => void;
 
   // View mode state
@@ -57,6 +59,9 @@ export function useJourneyMapState(): UseJourneyMapStateReturn {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null
   );
+  const [selectedNorthStarId, setSelectedNorthStarId] = useState<string | null>(
+    null
+  );
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.OVERVIEW);
@@ -87,10 +92,21 @@ export function useJourneyMapState(): UseJourneyMapStateReturn {
       if (selectedNodes.length > 0) {
         const node = selectedNodes[0];
         if (node.id !== "user-center") {
-          setSelectedProjectId(node.id);
+          // Check node type to determine what was selected
+          if (node.type === "northStarEntity") {
+            // North Star entity selected
+            setSelectedNorthStarId(node.id);
+            setSelectedProjectId(null);
+          } else {
+            // Project node selected (northStar or shortTerm)
+            setSelectedProjectId(node.id);
+            setSelectedNorthStarId(null);
+          }
         }
       } else {
+        // Nothing selected
         setSelectedProjectId(null);
+        setSelectedNorthStarId(null);
       }
     },
     []
@@ -154,6 +170,8 @@ export function useJourneyMapState(): UseJourneyMapStateReturn {
     // Selection state
     selectedProjectId,
     setSelectedProjectId,
+    selectedNorthStarId,
+    setSelectedNorthStarId,
     handleSelectionChange,
 
     // View mode state

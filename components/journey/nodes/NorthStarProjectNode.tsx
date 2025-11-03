@@ -1,6 +1,7 @@
 /**
  * NorthStarProjectNode - Long-term "North Star" project node
  * Larger than short-term projects with star glow effect
+ * Zoom-responsive with progressive disclosure
  */
 
 import React from "react";
@@ -22,6 +23,7 @@ interface NorthStarProjectNodeProps {
     icon: string;
     linkedProjectCount: number;
     hasRecentActivity: boolean;
+    numericZoom?: number;
     onViewMilestones: () => void;
     onEdit: () => void;
     onReflect: () => void;
@@ -33,7 +35,7 @@ export function NorthStarProjectNode({
   data,
   selected = false,
 }: NorthStarProjectNodeProps) {
-  const { project, icon, linkedProjectCount, hasRecentActivity } = data;
+  const { project, icon, linkedProjectCount, hasRecentActivity, numericZoom = 1 } = data;
   const progressPercentage = project.progress_percentage || 0;
 
   // Extract North Star enhancement data
@@ -47,6 +49,20 @@ export function NorthStarProjectNode({
   const careerPathData = CAREER_PATHS.find((cp) => cp.value === careerPath);
   const shapeData = NORTH_STAR_SHAPES.find((s) => s.value === northStarShape);
   const colorData = NORTH_STAR_COLORS.find((c) => c.value === northStarColor);
+
+  // Calculate zoom-responsive dimensions
+  const baseWidth = 288;
+  const minWidth = 180;
+  const maxWidth = 320;
+  const nodeWidth = Math.max(minWidth, Math.min(maxWidth, baseWidth + (numericZoom - 1) * 64));
+
+  // Determine zoom level for progressive disclosure
+  const isLowZoom = numericZoom < 0.75;
+  const isMediumZoom = numericZoom >= 0.75 && numericZoom < 1.25;
+  const isHighZoom = numericZoom >= 1.25;
+
+  // Calculate icon size based on zoom
+  const iconSize = Math.max(2.5, Math.min(3.5, 3 + (numericZoom - 1) * 0.25));
 
   // Calculate progress ring offset
   const circumference = 2 * Math.PI * 45;
@@ -71,20 +87,25 @@ export function NorthStarProjectNode({
       />
 
       <div
-        className={`relative cursor-pointer group ${selected ? "scale-110" : ""} transition-transform duration-300`}
+        className={`relative cursor-pointer group ${selected ? "scale-110" : ""} transition-all duration-300`}
         role="button"
         tabIndex={0}
         aria-label={`North Star Project: ${project.title} - ${progressPercentage}% complete`}
+        style={{
+          width: `${nodeWidth}px`,
+        }}
       >
-        {/* Star glow effect with custom color */}
-        <div
-          className="absolute inset-0 rounded-3xl blur-2xl opacity-60 animate-pulse"
-          style={{
-            background: colorData
-              ? `linear-gradient(to bottom right, ${colorData.color}, ${colorData.glow})`
-              : "linear-gradient(to bottom right, rgb(253 224 71), rgb(251 146 60))",
-          }}
-        />
+        {/* Star glow effect with custom color - hide at low zoom */}
+        {!isLowZoom && (
+          <div
+            className="absolute inset-0 rounded-3xl blur-2xl opacity-60 animate-pulse transition-opacity duration-300"
+            style={{
+              background: colorData
+                ? `linear-gradient(to bottom right, ${colorData.color}, ${colorData.glow})`
+                : "linear-gradient(to bottom right, rgb(253 224 71), rgb(251 146 60))",
+            }}
+          />
+        )}
 
         {/* Activity pulse */}
         {hasRecentActivity && (
@@ -96,64 +117,85 @@ export function NorthStarProjectNode({
 
         {/* Main container */}
         <div
-          className="relative bg-gradient-to-br from-amber-50 to-yellow-50 rounded-3xl p-6 shadow-2xl border-4 border-amber-400 w-72 min-h-56 transition-all duration-300 group-hover:shadow-3xl group-hover:border-amber-500"
+          className="relative bg-gradient-to-br from-amber-50 to-yellow-50 rounded-3xl shadow-2xl border-4 border-amber-400 transition-all duration-300 group-hover:shadow-3xl group-hover:border-amber-500"
           style={{
             backgroundColor: project.color || undefined,
+            padding: isLowZoom ? '12px' : '24px',
+            minHeight: isLowZoom ? 'auto' : '224px',
           }}
         >
-          {/* Progress ring */}
-          <div className="absolute -top-4 -right-4">
-            <svg className="w-24 h-24 transform -rotate-90">
-              <circle
-                cx="48"
-                cy="48"
-                r="45"
-                stroke="currentColor"
-                strokeWidth="6"
-                fill="none"
-                className="text-amber-200"
-              />
-              <circle
-                cx="48"
-                cy="48"
-                r="45"
-                stroke="currentColor"
-                strokeWidth="6"
-                fill="none"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                className="text-amber-500 transition-all duration-500"
-                strokeLinecap="round"
-              />
-              <text
-                x="48"
-                y="48"
-                textAnchor="middle"
-                dy=".3em"
-                className="text-lg font-bold fill-amber-700"
-                transform="rotate(90 48 48)"
-              >
-                {progressPercentage}%
-              </text>
-            </svg>
-          </div>
+          {/* Progress ring - hide at low zoom */}
+          {!isLowZoom && (
+            <div className="absolute -top-4 -right-4 transition-all duration-300">
+              <svg className="w-24 h-24 transform -rotate-90">
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="45"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="none"
+                  className="text-amber-200"
+                />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="45"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="none"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offset}
+                  className="text-amber-500 transition-all duration-500"
+                  strokeLinecap="round"
+                />
+                <text
+                  x="48"
+                  y="48"
+                  textAnchor="middle"
+                  dy=".3em"
+                  className="text-lg font-bold fill-amber-700"
+                  transform="rotate(90 48 48)"
+                >
+                  {progressPercentage}%
+                </text>
+              </svg>
+            </div>
+          )}
 
-          {/* Project icon and header */}
+          {/* Project icon and header - always visible */}
           <div className="flex flex-col items-center mb-3">
-            {/* Custom Star Icon */}
+            {/* Custom Star Icon - scaled by zoom */}
             <div
-              className="text-5xl mb-2 select-none"
+              className="mb-2 select-none transition-all duration-300"
               role="img"
               aria-label="North Star icon"
+              style={{
+                fontSize: `${iconSize}rem`,
+              }}
             >
               {shapeData?.icon || "⭐"}
             </div>
 
             <div className="w-full text-center">
-              <h3 className="text-lg font-bold text-amber-900 truncate px-2">
+              <h3
+                className="font-bold text-amber-900 truncate px-2 transition-all duration-300"
+                style={{
+                  fontSize: isLowZoom ? '0.875rem' : '1.125rem',
+                }}
+              >
                 {project.title}
               </h3>
-              <div className="flex flex-wrap items-center justify-center gap-1 mt-1">
+              {/* Badges - show at medium+ zoom */}
+              <div
+                className="flex flex-wrap items-center justify-center gap-1 mt-1 transition-all duration-300"
+                style={{
+                  opacity: isLowZoom ? 0 : 1,
+                  transform: isLowZoom ? 'scale(0.8)' : 'scale(1)',
+                  maxHeight: isLowZoom ? '0px' : '100px',
+                  overflow: 'hidden',
+                }}
+              >
                 <Badge
                   variant="secondary"
                   className="bg-amber-200 text-amber-800"
@@ -172,9 +214,17 @@ export function NorthStarProjectNode({
             </div>
           </div>
 
-          {/* SDG Goals badges */}
+          {/* SDG Goals badges - show at medium+ zoom */}
           {selectedSdgs.length > 0 && (
-            <div className="mb-3">
+            <div
+              className="mb-3 transition-all duration-300"
+              style={{
+                opacity: isLowZoom ? 0 : 1,
+                transform: isLowZoom ? 'scale(0.8)' : 'scale(1)',
+                maxHeight: isLowZoom ? '0px' : '200px',
+                overflow: 'hidden',
+              }}
+            >
               <div className="text-xs font-medium text-amber-800 mb-1.5">
                 🌍 UN SDGs:
               </div>
@@ -198,22 +248,51 @@ export function NorthStarProjectNode({
             </div>
           )}
 
-          {/* Description */}
+          {/* Description - show at medium+ zoom */}
           {project.description && (
-            <p className="text-sm text-amber-800 line-clamp-2 mb-3">
-              {project.description}
-            </p>
+            <div
+              className="transition-all duration-300"
+              style={{
+                marginBottom: isLowZoom ? '0' : '12px',
+                opacity: isLowZoom ? 0 : 1,
+                transform: isLowZoom ? 'scale(0.8)' : 'scale(1)',
+                maxHeight: isLowZoom ? '0px' : '100px',
+                overflow: 'hidden',
+              }}
+            >
+              <p className="text-sm text-amber-800 line-clamp-2">
+                {project.description}
+              </p>
+            </div>
           )}
 
-          {/* Progress bar */}
-          <div className="mb-3">
+          {/* Progress bar - show at medium+ zoom */}
+          <div
+            className="transition-all duration-300"
+            style={{
+              marginBottom: isLowZoom ? '0' : '12px',
+              opacity: isLowZoom ? 0 : 1,
+              transform: isLowZoom ? 'scale(0.8)' : 'scale(1)',
+              maxHeight: isLowZoom ? '0px' : '50px',
+              overflow: 'hidden',
+            }}
+          >
             <Progress value={progressPercentage} className="h-2 bg-amber-200">
               <div className="h-full bg-amber-500 transition-all" />
             </Progress>
           </div>
 
-          {/* Linked projects count */}
-          <div className="flex items-center gap-2 mb-4">
+          {/* Linked projects count - show at medium+ zoom */}
+          <div
+            className="flex items-center gap-2 transition-all duration-300"
+            style={{
+              marginBottom: isLowZoom ? '0' : '16px',
+              opacity: isLowZoom ? 0 : 1,
+              transform: isLowZoom ? 'scale(0.8)' : 'scale(1)',
+              maxHeight: isLowZoom ? '0px' : '50px',
+              overflow: 'hidden',
+            }}
+          >
             <div className="flex items-center gap-1 text-sm text-amber-700">
               <ChevronRight className="w-4 h-4" />
               <span className="font-semibold">{linkedProjectCount}</span>
@@ -221,8 +300,16 @@ export function NorthStarProjectNode({
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-2">
+          {/* Action buttons - show at high zoom only */}
+          <div
+            className="flex gap-2 transition-all duration-300"
+            style={{
+              opacity: isHighZoom ? 1 : 0,
+              transform: isHighZoom ? 'scale(1)' : 'scale(0.8)',
+              maxHeight: isHighZoom ? '100px' : '0px',
+              overflow: 'hidden',
+            }}
+          >
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -275,7 +362,7 @@ export function NorthStarProjectNode({
         type="target"
         position={Position.Left}
         className="bg-amber-500 border-2 border-white shadow-lg hover:bg-amber-600 cursor-grab active:cursor-grabbing"
-        style={{ 
+        style={{
           left: -15,
           width: '30px',
           height: '30px',
@@ -286,7 +373,7 @@ export function NorthStarProjectNode({
         type="source"
         position={Position.Right}
         className="bg-amber-500 border-2 border-white shadow-lg hover:bg-amber-600 cursor-grab active:cursor-grabbing"
-        style={{ 
+        style={{
           right: -15,
           width: '30px',
           height: '30px',
@@ -296,3 +383,5 @@ export function NorthStarProjectNode({
     </div>
   );
 }
+
+// Enhanced NorthStarProjectNode - ready for modern journey mapping with zoom responsiveness

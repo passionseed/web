@@ -34,6 +34,7 @@ import { EditProjectDialog } from "./EditProjectDialog";
 import { EditNorthStarDialog } from "./EditNorthStarDialog";
 import { QuickStatusChangeDialog } from "./QuickStatusChangeDialog";
 import { ProjectDetailsPanel } from "./ProjectDetailsPanel";
+import { NorthStarDetailsPanel } from "./NorthStarDetailsPanel";
 import { MainQuestPanel } from "./MainQuestPanel";
 import { MilestoneMapView } from "./MilestoneMapView";
 import { NoNorthStarState } from "./NoNorthStarState";
@@ -79,6 +80,8 @@ function JourneyMapCanvasInner({
   const {
     selectedProjectId,
     setSelectedProjectId,
+    selectedNorthStarId,
+    setSelectedNorthStarId,
     handleSelectionChange,
     viewMode,
     milestoneProjectId,
@@ -96,6 +99,10 @@ function JourneyMapCanvasInner({
     isNavigationExpanded,
     setIsNavigationExpanded,
   } = useJourneyMapState();
+
+  // Zoom level state
+  const [zoomLevel, setZoomLevel] = React.useState<"low" | "medium" | "high">("medium");
+  const [numericZoom, setNumericZoom] = React.useState<number>(1);
 
 
   // North Star dialog state
@@ -127,6 +134,12 @@ function JourneyMapCanvasInner({
 
   // Position sync hook
   const { syncStatus, syncMessage, handleNodeDragStop } = usePositionSync();
+
+  // Handle zoom changes from the canvas
+  const handleZoomChange = useCallback((zoomLevel: "low" | "medium" | "high", numericZoom: number) => {
+    setZoomLevel(zoomLevel);
+    setNumericZoom(numericZoom);
+  }, []);
 
   // Panel refs
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -167,7 +180,8 @@ function JourneyMapCanvasInner({
 
   const handleNorthStarEdited = useCallback(() => {
     refreshNorthStars();
-  }, [refreshNorthStars]);
+    refreshProjects(); // Also refresh projects in case they were updated
+  }, [refreshNorthStars, refreshProjects]);
 
   const handleCreateProjectForNorthStar = useCallback(
     (northStarId: string) => {
@@ -273,7 +287,8 @@ function JourneyMapCanvasInner({
         onQuickStatusChange: handleQuickStatusChange,
       },
       paths,
-      northStars
+      northStars,
+      numericZoom
     );
   }, [
     projects,
@@ -288,6 +303,7 @@ function JourneyMapCanvasInner({
     handleEditNorthStar,
     handleCreateProjectForNorthStar,
     handleQuickStatusChange,
+    numericZoom,
   ]);
 
   // Update ReactFlow nodes/edges when map data changes
@@ -339,22 +355,6 @@ function JourneyMapCanvasInner({
   // RENDER OVERVIEW (MAIN MAP)
   // ========================================
 
-  // Show empty state if no North Star exists and not loading
-  if (!isLoading && !hasNorthStar) {
-    return (
-      <>
-        <div className="h-full w-full bg-slate-950">
-          <NoNorthStarState onCreateNorthStar={openCreateNorthStarDialog} />
-        </div>
-        <CreateNorthStarDialog
-          open={createNorthStarOpen}
-          onOpenChange={closeCreateNorthStarDialog}
-          onSuccess={refreshNorthStars}
-        />
-      </>
-    );
-  }
-
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full bg-slate-950">
       {/* Left Panel - Main Map Canvas */}
@@ -365,23 +365,32 @@ function JourneyMapCanvasInner({
         maxSize={PANEL_SIZES.LEFT_MAX}
         className="transition-all duration-300 ease-in-out relative flex flex-col"
       >
-        <JourneyMapCanvasView
-          nodes={nodes}
-          edges={edges}
-          setEdges={setEdges}
-          isLoading={isLoading}
-          journeyStats={journeyStats}
-          syncStatus={syncStatus}
-          syncMessage={syncMessage}
-          isNavigationExpanded={isNavigationExpanded}
-          setIsNavigationExpanded={setIsNavigationExpanded}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onSelectionChange={handleSelectionChange}
-          onNodeDragStop={handleNodeDragStop}
-          onCreateProject={openCreateDialog}
-          onProjectPathCreated={handleProjectPathCreated}
-        />
+        {/* Show empty state if no North Star exists and not loading */}
+        {!isLoading && !hasNorthStar ? (
+          <div className="h-full w-full flex items-center justify-center">
+            <NoNorthStarState onCreateNorthStar={openCreateNorthStarDialog} />
+          </div>
+        ) : (
+          <JourneyMapCanvasView
+            nodes={nodes}
+            edges={edges}
+            setEdges={setEdges}
+            isLoading={isLoading}
+            journeyStats={journeyStats}
+            syncStatus={syncStatus}
+            syncMessage={syncMessage}
+            isNavigationExpanded={isNavigationExpanded}
+            setIsNavigationExpanded={setIsNavigationExpanded}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onSelectionChange={handleSelectionChange}
+            onNodeDragStop={handleNodeDragStop}
+            onCreateProject={openCreateDialog}
+            onCreateNorthStar={openCreateNorthStarDialog}
+            onProjectPathCreated={handleProjectPathCreated}
+            onZoomChange={handleZoomChange}
+          />
+        )}
       </ResizablePanel>
 
       <ResizableHandle withHandle />
@@ -411,7 +420,21 @@ function JourneyMapCanvasInner({
         <div className="h-full flex flex-col overflow-hidden">
           {!isPanelMinimized && (
             <>
-              {selectedProjectId ? (
+              {selectedNorthStarId ? (
+                <NorthStarDetailsPanel
+                  northStarId={selectedNorthStarId}
+                  onEdit={() => {
+                    const northStar = northStars.find(ns => ns.id === selectedNorthStarId);
+                    if (northStar) {
+                      openEditNorthStarDialog(northStar);
+                    }
+                  }}
+                  onCreateProject={() => {
+                    handleCreateProjectForNorthStar(selectedNorthStarId);
+                  }}
+                  onProjectSelect={handleProjectSelect}
+                />
+              ) : selectedProjectId ? (
                 <ProjectDetailsPanel
                   projectId={selectedProjectId}
                   onEdit={() => handleEditProject(selectedProjectId)}
@@ -435,6 +458,11 @@ function JourneyMapCanvasInner({
       </ResizablePanel>
 
       {/* Dialogs */}
+      <CreateNorthStarDialog
+        open={createNorthStarOpen}
+        onOpenChange={closeCreateNorthStarDialog}
+        onSuccess={handleNorthStarEdited}
+      />
       <CreateProjectDialog
         open={createProjectOpen}
         onOpenChange={closeCreateDialog}

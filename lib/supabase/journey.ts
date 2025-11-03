@@ -171,6 +171,7 @@ export async function getProjectById(
     return null;
   }
 
+  // Start with basic query and add joins incrementally
   const { data, error } = await supabase
     .from(TABLES.JOURNEY_PROJECTS)
     .select(
@@ -178,8 +179,6 @@ export async function getProjectById(
       *,
       milestones:project_milestones(
         *,
-        paths_source:milestone_paths!source_milestone_id(*),
-        paths_destination:milestone_paths!destination_milestone_id(*),
         journals:milestone_journals(*)
       )
     `
@@ -189,7 +188,14 @@ export async function getProjectById(
     .single();
 
   if (error) {
-    console.error("Error fetching project:", error);
+    console.error("Error fetching project by ID:", projectId);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      fullError: error
+    });
     return null;
   }
 
@@ -1609,4 +1615,38 @@ export async function updateProjectPathType(
   }
 
   return path;
+}
+
+/**
+ * Get all projects linked to a specific North Star
+ */
+export async function getProjectsByNorthStarId(
+  northStarId: string
+): Promise<ProjectWithMilestones[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from(TABLES.JOURNEY_PROJECTS)
+    .select(
+      `
+      *,
+      milestones:project_milestones(*)
+    `
+    )
+    .eq("linked_north_star_id", northStarId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching projects by North Star ID:", error);
+    throw error;
+  }
+
+  return (data || []).map((project: any) => ({
+    ...project,
+    milestones: project.milestones || [],
+    milestone_count: project.milestones?.length || 0,
+    completed_milestone_count:
+      project.milestones?.filter((m: any) => m.status === "completed").length ||
+      0,
+  }));
 }
