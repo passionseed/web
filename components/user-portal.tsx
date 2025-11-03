@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   PlayCircle,
   Flame,
+  Brain,
 } from "lucide-react";
 import Link from "next/link";
 import { Project } from "@/types/project";
@@ -296,12 +297,14 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                 {/* Recent days indicator */}
                 {reflectionStreak > 0 && (
                   <div className="flex flex-col items-center gap-1.5">
-                    {Array.from({ length: Math.min(5, reflectionStreak) }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="w-2.5 h-6 bg-gradient-to-t from-orange-600 to-orange-400 rounded-full shadow-[0_0_8px_rgba(251,146,60,0.5)]"
-                      />
-                    ))}
+                    {Array.from({ length: Math.min(5, reflectionStreak) }).map(
+                      (_, i) => (
+                        <div
+                          key={i}
+                          className="w-2.5 h-6 bg-gradient-to-t from-orange-600 to-orange-400 rounded-full shadow-[0_0_8px_rgba(251,146,60,0.5)]"
+                        />
+                      )
+                    )}
                   </div>
                 )}
               </div>
