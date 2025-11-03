@@ -21,7 +21,6 @@ import {
   Users,
   BookOpen,
   Heart,
-  Brain,
   Calendar,
   TrendingUp,
   Zap,
@@ -29,10 +28,11 @@ import {
   Map as MapIcon,
   CheckCircle2,
   PlayCircle,
+  Flame,
 } from "lucide-react";
 import Link from "next/link";
 import { Project } from "@/types/project";
-import { StreakCounter } from "@/components/reflection/StreakCounter";
+import { PortalVinyl } from "@/components/song-of-the-day/portal-vinyl";
 import { JourneyMapPreview } from "@/components/journey";
 import { useState, useEffect } from "react";
 import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
@@ -258,32 +258,68 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
         </Card>
 
         <div className="col-span-1 flex flex-col gap-4 md:gap-6">
-          <StreakCounter
-            streak={reflectionStreak}
-            onClick={() => (window.location.href = "/me/reflection")}
-          />
+          <PortalVinyl />
 
-          <Link href="/me/reflection/mindmap">
-            <Card className="bg-gradient-to-br from-blue-800 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-600 transition-colors cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-lg md:text-xl">
-                  <Brain className="mr-2 h-4 w-4 md:h-5 md:w-5 text-blue-400" />
-                  Daily Reflection
-                </CardTitle>
-                <CardDescription className="text-white/80 text-xs md:text-sm">
-                  Map your current activities and reflect on your day
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button
-                  size="default"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-sm md:text-base"
-                >
-                  Start Reflecting
-                </Button>
-              </CardContent>
-            </Card>
-          </Link>
+          {/* Streak section in right column */}
+          <div
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 p-[2px] cursor-pointer group hover:scale-[1.02] transition-transform"
+            onClick={() => (window.location.href = "/me/reflection")}
+          >
+            {/* Animated gradient border effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
+
+            <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-6 h-full">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/20 to-transparent rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-500/20 to-transparent rounded-full blur-2xl" />
+
+              <div className="relative z-10 flex items-center justify-center gap-6">
+                {/* Flame icon with glow */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-600 rounded-full blur-xl opacity-60" />
+                  <Flame className="relative h-10 w-10 text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.8)]" />
+                </div>
+
+                {/* Streak info */}
+                <div className="text-center">
+                  <div className="text-4xl font-black bg-gradient-to-br from-orange-300 via-orange-400 to-red-500 bg-clip-text text-transparent drop-shadow-lg">
+                    {reflectionStreak}
+                  </div>
+                  <div className="text-orange-200 text-base font-semibold tracking-wider uppercase">
+                    {reflectionStreak === 1 ? "Night" : "Nights"}
+                  </div>
+                  <div className="text-orange-400/80 text-sm font-medium tracking-widest uppercase">
+                    Streak
+                  </div>
+                </div>
+
+                {/* Recent days indicator */}
+                {reflectionStreak > 0 && (
+                  <div className="flex flex-col items-center gap-1.5">
+                    {Array.from({ length: Math.min(5, reflectionStreak) }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-2.5 h-6 bg-gradient-to-t from-orange-600 to-orange-400 rounded-full shadow-[0_0_8px_rgba(251,146,60,0.5)]"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Motivational text */}
+              <p className="text-orange-200/60 text-xs text-center mt-3 max-w-[200px] mx-auto">
+                {reflectionStreak === 0
+                  ? "Start your reflection journey today!"
+                  : reflectionStreak < 3
+                    ? "Keep the fire burning! 🔥"
+                    : reflectionStreak < 7
+                      ? "You're on a roll! ✨"
+                      : reflectionStreak < 14
+                        ? "Amazing dedication! 🌟"
+                        : "Legendary streak! 🏆"}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
