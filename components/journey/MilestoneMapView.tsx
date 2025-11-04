@@ -1004,12 +1004,12 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
                       </Badge>
                     </div>
                     
-                    {/* North Star Display */}
+                    {/* Milestone Goal Display */}
                     {project.metadata?.milestone_north_star && (
                       <div className="flex items-center gap-2 text-xs text-amber-200">
                         <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
                         <span className="truncate">
-                          North Star: {project.metadata.milestone_north_star.title}
+                          Goal: {project.metadata.milestone_north_star.title}
                         </span>
                       </div>
                     )}

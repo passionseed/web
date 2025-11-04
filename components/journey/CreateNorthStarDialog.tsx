@@ -22,6 +22,12 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Star,
   Loader2,
   ChevronRight,
@@ -136,6 +142,33 @@ const translations = {
     create: "Create North Star",
     creating: "Creating...",
     language: "Language",
+    
+    // AI Enhancement
+    aiEnhance: "✨ Enhance with AI",
+    aiEnhancing: "Enhancing...",
+    aiEnhanced: "✓ AI Enhanced",
+    aiError: "AI enhancement failed",
+    aiLimitReached: "AI enhancement already used",
+    aiHint: "AI will help clarify and strengthen your vision",
+    
+    // SMART Milestones
+    smartMode: "Add SMART Details",
+    simpleMode: "Simple Mode",
+    startDate: "Start Date",
+    dueDate: "Due Date",
+    measurableGoal: "How will you measure success?",
+    timelineView: "Timeline View",
+    generating: "Generating...",
+    aiGenerate: "✨ Generate Milestones with AI",
+    aiGenerateHint: "AI will suggest milestones based on your vision",
+    estimatedHours: "Estimated Hours",
+    milestoneDetails: "Milestone Details",
+    
+    // Life Aspects
+    lifeAspectsTitle: "🌈 Life Aspects",
+    lifeAspectsSubtitle: "Select the areas of life this North Star impacts",
+    sdgForImpact: "For Social Impact & Business Projects",
+    selectLifeAspects: "Select at least one life aspect",
   },
   th: {
     title: "สร้างดาวเหนือของคุณ",
@@ -209,6 +242,33 @@ const translations = {
     create: "สร้างดาวเหนือ",
     creating: "กำลังสร้าง...",
     language: "ภาษา",
+    
+    // AI Enhancement
+    aiEnhance: "✨ ปรับปรุงด้วย AI",
+    aiEnhancing: "กำลังปรับปรุง...",
+    aiEnhanced: "✓ ปรับปรุงแล้ว",
+    aiError: "การปรับปรุงด้วย AI ล้มเหลว",
+    aiLimitReached: "ใช้การปรับปรุง AI ไปแล้ว",
+    aiHint: "AI จะช่วยชี้แจงและเสริมความแข็งแกร่งให้วิสัยทัศน์ของคุณ",
+    
+    // SMART Milestones
+    smartMode: "เพิ่มรายละเอียด SMART",
+    simpleMode: "โหมดง่าย",
+    startDate: "วันเริ่มต้น",
+    dueDate: "วันครบกำหนด",
+    measurableGoal: "คุณจะวัดความสำเร็จอย่างไร?",
+    timelineView: "มุมมองไทม์ไลน์",
+    generating: "กำลังสร้าง...",
+    aiGenerate: "✨ สร้างขั้นตอนด้วย AI",
+    aiGenerateHint: "AI จะแนะนำขั้นตอนตามวิสัยทัศน์ของคุณ",
+    estimatedHours: "ชั่วโมงโดยประมาณ",
+    milestoneDetails: "รายละเอียดขั้นตอน",
+    
+    // Life Aspects
+    lifeAspectsTitle: "🌈 ด้านชีวิต",
+    lifeAspectsSubtitle: "เลือกด้านชีวิตที่ดาวเหนือนี้ส่งผลกระทบ",
+    sdgForImpact: "สำหรับโปรเจกต์ผลกระทบทางสังคมและธุรกิจ",
+    selectLifeAspects: "เลือกอย่างน้อยหนึ่งด้านชีวิต",
   },
 };
 
@@ -240,13 +300,89 @@ export function CreateNorthStarDialog({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [aiUsed, setAiUsed] = useState(false);
+  const [originalVision, setOriginalVision] = useState("");
+  const [aiEnhancedVision, setAiEnhancedVision] = useState("");
+  const [showVisionComparison, setShowVisionComparison] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiUsedForMilestones, setAiUsedForMilestones] = useState(false);
   const [showSMARTDetails, setShowSMARTDetails] = useState(false);
 
   const t = translations[language];
 
   const totalSteps = 6;
+
+  // AI Enhancement Handlers
+  const handleEnhanceVision = async () => {
+    if (!formData.visionQuestion.trim()) {
+      return;
+    }
+
+    setIsAiLoading(true);
+    try {
+      const result = await enhanceVision(formData.visionQuestion, language);
+      
+      if (result.success && result.data) {
+        setOriginalVision(formData.visionQuestion);
+        setAiEnhancedVision(result.data as string);
+        setShowVisionComparison(true);
+        toast.success(t.aiEnhanced);
+      } else {
+        toast.error(result.error || t.aiError);
+      }
+    } catch (error) {
+      console.error("AI enhancement error:", error);
+      toast.error(t.aiError);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleAcceptAiVision = () => {
+    setFormData((prev) => ({
+      ...prev,
+      visionQuestion: aiEnhancedVision,
+    }));
+    setShowVisionComparison(false);
+  };
+
+  const handleRejectAiVision = () => {
+    setShowVisionComparison(false);
+  };
+
+  const handleGenerateMilestones = async () => {
+    if (!formData.visionQuestion.trim()) {
+      return;
+    }
+
+    setIsAiLoading(true);
+    try {
+      const result = await generateMilestones(formData.visionQuestion, language);
+      
+      if (result.success && result.data && Array.isArray(result.data)) {
+        const now = new Date();
+        const generatedMilestones: SMARTMilestone[] = result.data.map((title, index) => ({
+          title,
+          startDate: format(addMonths(now, index * 4), "yyyy-MM-dd"),
+          dueDate: format(addMonths(now, (index + 1) * 4), "yyyy-MM-dd"),
+          measurable: "",
+        }));
+        
+        setFormData((prev) => ({
+          ...prev,
+          milestones: generatedMilestones,
+        }));
+        setAiUsedForMilestones(true);
+        toast.success(`Generated ${generatedMilestones.length} milestones!`);
+      } else {
+        toast.error(result.error || t.aiError);
+      }
+    } catch (error) {
+      console.error("AI generation error:", error);
+      toast.error(t.aiError);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const handleNext = () => {
     // Validation is optional for reflection steps - allow moving forward
@@ -288,7 +424,7 @@ export function CreateNorthStarDialog({
         description: formData.visionQuestion.trim() || undefined,
         why:
           formData.milestones.length > 0
-            ? formData.milestones.map(m => m.title).join("\n")
+            ? formData.milestones.map((m) => m.title).join("\n")
             : undefined,
         icon: "svg", // Marker to indicate SVG star
         sdg_goals: formData.sdgGoals.length > 0 ? formData.sdgGoals : undefined,
@@ -297,6 +433,9 @@ export function CreateNorthStarDialog({
         north_star_color: formData.northStarColor,
         metadata: {
           starConfig: validatedConfig,
+          lifeAspects: formData.lifeAspects.length > 0 ? formData.lifeAspects : undefined,
+          aiEnhancedVision: showVisionComparison || originalVision ? true : false,
+          aiGeneratedMilestones: aiUsedForMilestones,
         },
       });
 
@@ -333,6 +472,12 @@ export function CreateNorthStarDialog({
                 milestone_index: i,
                 from_north_star_wizard: true,
                 north_star_title: formData.title,
+                // SMART milestone data
+                smart_milestone: {
+                  startDate: milestone.startDate || undefined,
+                  dueDate: milestone.dueDate || undefined,
+                  measurable: milestone.measurable || undefined,
+                },
               },
             });
 
@@ -417,6 +562,10 @@ export function CreateNorthStarDialog({
       setEditingIndex(null);
       setEditingText("");
       setDraggedIndex(null);
+      setOriginalVision("");
+      setAiEnhancedVision("");
+      setShowVisionComparison(false);
+      setAiUsedForMilestones(false);
       setCurrentStep(0);
 
       console.log("🔄 Calling onSuccess to refresh journey map...");
@@ -591,6 +740,83 @@ export function CreateNorthStarDialog({
                       className="resize-none text-base"
                       autoFocus
                     />
+                    
+                    {/* AI Enhancement Button */}
+                    <div className="flex flex-col items-center gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleEnhanceVision}
+                        disabled={isAiLoading || !formData.visionQuestion.trim()}
+                        className="w-full max-w-md bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-300 dark:border-purple-700 hover:border-purple-400"
+                      >
+                        {isAiLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {t.aiEnhancing}
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            {t.aiEnhance}
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        {t.aiHint}
+                      </p>
+                    </div>
+                    
+                    {/* Vision Comparison Modal */}
+                    {showVisionComparison && (
+                      <div className="mt-4 p-4 bg-white dark:bg-gray-900 border-2 border-purple-300 dark:border-purple-700 rounded-xl">
+                        <h4 className="text-sm font-semibold mb-3 text-purple-900 dark:text-purple-100">
+                          Compare & Choose
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-muted-foreground">
+                              Your Original
+                            </Label>
+                            <Textarea
+                              value={originalVision}
+                              onChange={(e) => setOriginalVision(e.target.value)}
+                              rows={6}
+                              className="text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-purple-600 dark:text-purple-400">
+                              ✨ AI Enhanced
+                            </Label>
+                            <Textarea
+                              value={aiEnhancedVision}
+                              onChange={(e) => setAiEnhancedVision(e.target.value)}
+                              rows={6}
+                              className="text-sm border-purple-300 dark:border-purple-700"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRejectAiVision}
+                          >
+                            Keep Original
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleAcceptAiVision}
+                            className="bg-purple-600 hover:bg-purple-700"
+                          >
+                            Use AI Version
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -631,6 +857,34 @@ export function CreateNorthStarDialog({
                     <p className="text-sm text-muted-foreground text-center mb-4">
                       {t.milestoneSubtitle}
                     </p>
+
+                    {/* AI Generation Button */}
+                    {formData.milestones.length === 0 && (
+                      <div className="flex flex-col items-center gap-2 pb-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleGenerateMilestones}
+                          disabled={isAiLoading || !formData.visionQuestion.trim()}
+                          className="w-full max-w-md bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-300 dark:border-purple-700 hover:border-purple-400"
+                        >
+                          {isAiLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              {t.generating}
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              {t.aiGenerate}
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          {t.aiGenerateHint}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Milestone List */}
                     <div className="space-y-3">
@@ -724,7 +978,7 @@ export function CreateNorthStarDialog({
                                               title: editingText.trim(),
                                               startDate: "",
                                               dueDate: "",
-                                              measurable: ""
+                                              measurable: "",
                                             };
                                             setFormData((prev) => ({
                                               ...prev,
@@ -752,7 +1006,7 @@ export function CreateNorthStarDialog({
                                               title: editingText.trim(),
                                               startDate: "",
                                               dueDate: "",
-                                              measurable: ""
+                                              measurable: "",
                                             };
                                             setFormData((prev) => ({
                                               ...prev,
@@ -854,7 +1108,7 @@ export function CreateNorthStarDialog({
                                     title: newMilestone.trim(),
                                     startDate: "",
                                     dueDate: "",
-                                    measurable: ""
+                                    measurable: "",
                                   },
                                 ],
                               }));
@@ -875,7 +1129,7 @@ export function CreateNorthStarDialog({
                                     title: newMilestone.trim(),
                                     startDate: "",
                                     dueDate: "",
-                                    measurable: ""
+                                    measurable: "",
                                   },
                                 ],
                               }));
@@ -897,70 +1151,130 @@ export function CreateNorthStarDialog({
             {/* STEP 3: Values Alignment (SDG + Career) */}
             {currentStep === 3 && (
               <div className="space-y-6 animate-in fade-in duration-300">
-                {/* SDG Goals Multi-select */}
-                <div className="space-y-2 border rounded-lg p-4 bg-amber-50/50 dark:bg-amber-950/20">
+                {/* Life Aspects Multi-select */}
+                <div className="space-y-2 border rounded-lg p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
                   <Label className="text-base font-semibold">
-                    {t.sdgTitle}
+                    {t.lifeAspectsTitle}
                   </Label>
                   <p className="text-sm text-muted-foreground mb-3">
-                    {t.sdgSubtitle}
+                    {t.lifeAspectsSubtitle}
                   </p>
-                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-2">
-                    {SDG_GOALS.map((sdg) => (
+                  <div className="grid grid-cols-2 gap-2">
+                    {LIFE_ASPECTS.map((aspect) => (
                       <div
-                        key={sdg.number}
-                        className="flex items-start space-x-2 p-2 rounded hover:bg-white/50 dark:hover:bg-background/50"
+                        key={aspect.value}
+                        className="flex items-start space-x-2 p-3 rounded-lg hover:bg-white/50 dark:hover:bg-background/50 border border-transparent hover:border-purple-200 dark:hover:border-purple-700 transition-colors"
                       >
                         <Checkbox
-                          id={`sdg-${sdg.number}`}
-                          checked={formData.sdgGoals.includes(sdg.number)}
+                          id={`aspect-${aspect.value}`}
+                          checked={formData.lifeAspects.includes(aspect.value)}
                           onCheckedChange={(checked) => {
                             if (checked) {
                               setFormData((prev) => ({
                                 ...prev,
-                                sdgGoals: [...prev.sdgGoals, sdg.number],
+                                lifeAspects: [...prev.lifeAspects, aspect.value],
                               }));
                             } else {
                               setFormData((prev) => ({
                                 ...prev,
-                                sdgGoals: prev.sdgGoals.filter(
-                                  (n) => n !== sdg.number
+                                lifeAspects: prev.lifeAspects.filter(
+                                  (a) => a !== aspect.value
                                 ),
                               }));
                             }
                           }}
                         />
                         <label
-                          htmlFor={`sdg-${sdg.number}`}
+                          htmlFor={`aspect-${aspect.value}`}
                           className="flex-1 cursor-pointer"
                         >
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                              style={{ backgroundColor: sdg.color }}
-                            >
-                              {sdg.number}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm">
-                                {sdg.title}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {sdg.description}
-                              </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg">{aspect.icon}</span>
+                            <div className="font-medium text-sm">
+                              {aspect.label}
                             </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {aspect.description}
                           </div>
                         </label>
                       </div>
                     ))}
                   </div>
-                  {formData.sdgGoals.length > 0 && (
+                  {formData.lifeAspects.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      {t.sdgSelected}: {formData.sdgGoals.length} SDG
-                      {formData.sdgGoals.length > 1 ? "s" : ""}
+                      Selected: {formData.lifeAspects.length} life aspect
+                      {formData.lifeAspects.length > 1 ? "s" : ""}
                     </p>
                   )}
                 </div>
+
+                {/* SDG Goals - Only show if "contribution" life aspect is selected */}
+                {formData.lifeAspects.includes("contribution") && (
+                  <div className="space-y-2 border rounded-lg p-4 bg-amber-50/50 dark:bg-amber-950/20">
+                    <Label className="text-base font-semibold">
+                      {t.sdgTitle}
+                    </Label>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {t.sdgForImpact}
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-2">
+                      {SDG_GOALS.map((sdg) => (
+                        <div
+                          key={sdg.number}
+                          className="flex items-start space-x-2 p-2 rounded hover:bg-white/50 dark:hover:bg-background/50"
+                        >
+                          <Checkbox
+                            id={`sdg-${sdg.number}`}
+                            checked={formData.sdgGoals.includes(sdg.number)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  sdgGoals: [...prev.sdgGoals, sdg.number],
+                                }));
+                              } else {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  sdgGoals: prev.sdgGoals.filter(
+                                    (n) => n !== sdg.number
+                                  ),
+                                }));
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`sdg-${sdg.number}`}
+                            className="flex-1 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                style={{ backgroundColor: sdg.color }}
+                              >
+                                {sdg.number}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm">
+                                  {sdg.title}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {sdg.description}
+                                </div>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {formData.sdgGoals.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {t.sdgSelected}: {formData.sdgGoals.length} SDG
+                        {formData.sdgGoals.length > 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Career Path Selection */}
                 <div className="space-y-2">
@@ -1130,7 +1444,9 @@ export function CreateNorthStarDialog({
                                     <span className="text-purple-600 dark:text-purple-400">
                                       {index + 1}.
                                     </span>
-                                    <span className="flex-1">{milestone.title}</span>
+                                    <span className="flex-1">
+                                      {milestone.title}
+                                    </span>
                                   </li>
                                 ))}
                               {formData.milestones.length > 3 && (

@@ -71,10 +71,10 @@ function JourneyMapCanvasInner({
   userAvatar,
 }: JourneyMapCanvasProps) {
   // Data hooks
-  const { projects, isLoading, refreshProjects } = useJourneyProjects();
+  const { projects, isLoading, refreshProjects, updateProjectPositionLocal } = useJourneyProjects();
   const { paths, loadPaths, createPath, deletePath, updatePathType } =
     useProjectPaths();
-  const { northStars, refreshNorthStars } = useNorthStars();
+  const { northStars, refreshNorthStars, updateNorthStarPositionLocal } = useNorthStars();
 
   // UI state hooks
   const {
@@ -136,8 +136,11 @@ function JourneyMapCanvasInner({
     setEditingNorthStar(null);
   }, []);
 
-  // Position sync hook
-  const { syncStatus, syncMessage, handleNodeDragStop } = usePositionSync();
+  // Position sync hook with optimistic local state updates
+  const { syncStatus, syncMessage, handleNodeDragStop, hasPendingSave } = usePositionSync(
+    updateProjectPositionLocal,
+    updateNorthStarPositionLocal
+  );
 
   // Handle zoom changes from the canvas
   const handleZoomChange = useCallback(
@@ -315,26 +318,28 @@ function JourneyMapCanvasInner({
   ]);
 
   // Update ReactFlow nodes/edges when map data changes
-  // Preserve current node positions to avoid overwriting uncommitted changes
+  // With optimistic updates, local state always has current positions
+  // so we can simply use mapData directly without complex merging
   React.useEffect(() => {
     setNodes((currentNodes) => {
-      // Create a map of current node positions
-      const currentPositions = new Map(
-        currentNodes.map((node) => [node.id, node.position])
+      // Create a map of current positions for nodes with pending saves
+      const pendingPositions = new Map(
+        currentNodes
+          .filter((node) => hasPendingSave(node.id))
+          .map((node) => [node.id, node.position])
       );
 
-      // Merge new nodes with existing positions
+      // Use pending position if save in progress, otherwise use mapData
       return mapData.nodes.map((newNode) => {
-        const existingPosition = currentPositions.get(newNode.id);
-        // Use existing position if node already exists, otherwise use DB position
-        return existingPosition
-          ? { ...newNode, position: existingPosition }
+        const pendingPosition = pendingPositions.get(newNode.id);
+        return pendingPosition
+          ? { ...newNode, position: pendingPosition }
           : newNode;
       });
     });
 
     setEdges(mapData.edges);
-  }, [mapData, setNodes, setEdges]);
+  }, [mapData, setNodes, setEdges, hasPendingSave]);
 
   // Load project paths on mount
   React.useEffect(() => {

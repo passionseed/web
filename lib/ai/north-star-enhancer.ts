@@ -5,7 +5,7 @@
  * Rate limited: 1 enhancement per North Star creation session
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 const AI_PROMPTS = {
   enhanceVision: (vision: string, language: "en" | "th") => {
@@ -27,13 +27,11 @@ const AI_PROMPTS = {
 
 User's vision (3 years from now):
 "${vision}"
+You are a life coach helping people clarify their 3-year vision.
 
-Please help by:
-1. Making this vision more specific and concrete
-2. Adding measurable details about what success looks like
-3. Making it more inspiring and motivating
+Refine this vision to be clearer, more vivid, and realistic. Add measurable signs of success and make it naturally inspiring.
 
-Respond with ONLY the improved vision (1-2 paragraphs), no additional explanation.`;
+Respond with only the improved vision (1–2 short paragraphs), nothing else.`;
   },
 
   generateMilestones: (vision: string, language: "en" | "th") => {
@@ -93,13 +91,18 @@ export async function enhanceVision(
       return { success: false, error: "AI service not configured" };
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+    const genAI = new GoogleGenAI({ apiKey });
     const prompt = AI_PROMPTS.enhanceVision(visionText, language);
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const enhancedVision = response.text().trim();
+    const response = await genAI.models.generateContent({
+      model: "gemini-flash-latest",
+      contents: prompt,
+    });
+
+    if (!response.text) {
+      return { success: false, error: "No response from AI" };
+    }
+
+    const enhancedVision = response.text;
 
     return { success: true, data: enhancedVision };
   } catch (error: any) {
@@ -129,13 +132,18 @@ export async function generateMilestones(
       return { success: false, error: "AI service not configured" };
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+    const genAI = new GoogleGenAI({ apiKey });
     const prompt = AI_PROMPTS.generateMilestones(visionText, language);
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text().trim();
+    const response = await genAI.models.generateContent({
+      model: "gemini-flash-latest",
+      contents: prompt,
+    });
+
+    if (!response.text) {
+      return { success: false, error: "No response from AI" };
+    }
+
+    const text = response.text;
 
     // Try to parse JSON response
     try {

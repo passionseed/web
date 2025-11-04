@@ -18,13 +18,20 @@ export interface UsePositionSyncReturn {
   syncMessage: string | undefined;
   handleNodeDragStop: (_event: any, node: Node) => void;
   flush: () => void;
+  hasPendingSave: (nodeId: string) => boolean;
 }
 
 /**
  * Hook for managing position synchronization with the backend
  * Implements immediate save with exponential backoff retry
+ *
+ * @param onProjectPositionUpdate - Callback to update project position in local state
+ * @param onNorthStarPositionUpdate - Callback to update North Star position in local state
  */
-export function usePositionSync(): UsePositionSyncReturn {
+export function usePositionSync(
+  onProjectPositionUpdate?: (id: string, x: number, y: number) => void,
+  onNorthStarPositionUpdate?: (id: string, x: number, y: number) => void
+): UsePositionSyncReturn {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [syncMessage, setSyncMessage] = useState<string | undefined>(undefined);
 
@@ -52,8 +59,12 @@ export function usePositionSync(): UsePositionSyncReturn {
       try {
         if (nodeType === "northStarEntity") {
           await updateNorthStarPosition(nodeId, x, y);
+          // Update local state immediately after successful save
+          onNorthStarPositionUpdate?.(nodeId, x, y);
         } else {
           await updateProjectPosition(nodeId, x, y);
+          // Update local state immediately after successful save
+          onProjectPositionUpdate?.(nodeId, x, y);
         }
 
         // Success - clear saved indicator after 2 seconds
@@ -97,7 +108,7 @@ export function usePositionSync(): UsePositionSyncReturn {
         }
       }
     },
-    []
+    [onProjectPositionUpdate, onNorthStarPositionUpdate]
   );
 
   const handleNodeDragStop = useCallback(
@@ -132,10 +143,16 @@ export function usePositionSync(): UsePositionSyncReturn {
     // No-op: immediate saves mean nothing to flush
   }, []);
 
+  // Check if a node has a pending save operation
+  const hasPendingSave = useCallback((nodeId: string) => {
+    return pendingSaves.current.has(nodeId);
+  }, []);
+
   return {
     syncStatus,
     syncMessage,
     handleNodeDragStop,
     flush,
+    hasPendingSave,
   };
 }

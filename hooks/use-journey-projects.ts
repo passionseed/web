@@ -16,6 +16,7 @@ export interface UseJourneyProjectsReturn {
   error: Error | null;
   loadProjects: () => Promise<void>;
   refreshProjects: () => Promise<void>;
+  updateProjectPositionLocal: (projectId: string, x: number, y: number) => void;
 }
 
 /**
@@ -48,6 +49,23 @@ export function useJourneyProjects(): UseJourneyProjectsReturn {
     await loadProjects();
   }, [loadProjects]);
 
+  /**
+   * Optimistically update project position in local state
+   * Called immediately after saving to DB to keep UI in sync
+   */
+  const updateProjectPositionLocal = useCallback(
+    (projectId: string, x: number, y: number) => {
+      setProjects((prevProjects) =>
+        prevProjects.map((project) =>
+          project.id === projectId
+            ? { ...project, position_x: x, position_y: y }
+            : project
+        )
+      );
+    },
+    []
+  );
+
   // Load projects on mount
   useEffect(() => {
     loadProjects();
@@ -59,5 +77,6 @@ export function useJourneyProjects(): UseJourneyProjectsReturn {
     error,
     loadProjects,
     refreshProjects,
+    updateProjectPositionLocal,
   };
 }
