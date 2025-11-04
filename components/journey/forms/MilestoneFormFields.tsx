@@ -41,7 +41,7 @@ export function TitleField({ value, onChange, disabled, error }: TitleFieldProps
         placeholder="Enter milestone title"
         disabled={disabled}
         maxLength={500}
-        className="bg-slate-900 border-slate-700 text-slate-100"
+        className="bg-slate-900 border-slate-700 text-slate-100 focus:ring-inset"
       />
       <div className="flex justify-between text-xs">
         <span className="text-slate-500">{value.length} / 500 characters</span>

@@ -30,12 +30,14 @@ import {
   PlayCircle,
   Flame,
   Brain,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import { Project } from "@/types/project";
 import { PortalVinyl } from "@/components/song-of-the-day/portal-vinyl";
-import { JourneyMapPreview } from "@/components/journey";
+import { MilestoneList } from "@/components/milestones/MilestoneList";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
 import { useAuth } from "@/hooks/use-auth";
 import { MapNode, LearningMap } from "@/types/map";
@@ -69,6 +71,7 @@ interface UserPortalProps {
 export function UserPortal({ dashboardData }: UserPortalProps) {
   const { projects, reflectionStreak, workshops } = dashboardData;
   const { user } = useAuth();
+  const router = useRouter();
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -237,24 +240,29 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         <Card className="col-span-1 h-[400px] md:h-[500px] overflow-hidden">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center text-lg md:text-xl">
-              <MapIcon className="mr-2 h-4 w-4 md:h-5 md:w-5 text-purple-500" />
-              Journey Map
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center text-lg md:text-xl">
+                <MapIcon className="mr-2 h-4 w-4 md:h-5 md:w-5 text-purple-500" />
+                Journey Map
+              </CardTitle>
+              <Button
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={() => {
+                  console.log('Navigating to /me/journey');
+                  window.location.assign('/me/journey');
+                }}
+              >
+                <ArrowRight className="h-3 w-3 mr-1" />
+                Enter
+              </Button>
+            </div>
             <CardDescription className="text-xs md:text-sm">
               Your projects and milestones at a glance
             </CardDescription>
           </CardHeader>
-          <CardContent className="h-[calc(100%-80px)] p-0">
-            <JourneyMapPreview
-              userId={user?.id || ""}
-              userName={
-                user?.user_metadata?.full_name?.split(" ")[0] ||
-                user?.email?.split("@")[0] ||
-                "User"
-              }
-              userAvatar={user?.user_metadata?.avatar_url}
-            />
+          <CardContent className="h-[calc(100%-80px)] p-4">
+            <MilestoneList />
           </CardContent>
         </Card>
 
