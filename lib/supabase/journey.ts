@@ -1650,3 +1650,35 @@ export async function getProjectsByNorthStarId(
       0,
   }));
 }
+
+/**
+ * Get all user milestones that are in progress or not started
+ */
+export async function getUserActiveMilestones(): Promise<Array<ProjectMilestone & { project: { title: string; id: string } }>> {
+  const supabase = createClient();
+  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from(TABLES.PROJECT_MILESTONES)
+    .select(`
+      *,
+      project:journey_projects!inner(id, title)
+    `)
+    .eq("journey_projects.user_id", user.id)
+    .in("status", ["not_started", "in_progress"])
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching user active milestones:", error);
+    return [];
+  }
+
+  return data || [];
+}

@@ -11,7 +11,6 @@ import React, { useState, useCallback, useEffect } from "react";
 import {
   ReactFlow,
   Background,
-  MiniMap,
   Controls,
   Node,
   Edge,
@@ -55,7 +54,6 @@ import { SyncStatusIndicator } from "./SyncStatusIndicator";
 import {
   FLOW_CONFIG,
   BACKGROUND_CONFIG,
-  MINIMAP_COLORS,
 } from "./constants/journeyMapConfig";
 import { SyncStatus } from "@/lib/sync/PositionSyncManager";
 
@@ -331,19 +329,6 @@ export function JourneyMapCanvasView({
             size={BACKGROUND_CONFIG.SIZE}
             color={BACKGROUND_CONFIG.COLOR}
             style={{ backgroundColor: BACKGROUND_CONFIG.BG_COLOR }}
-          />
-          <MiniMap
-            nodeColor={(node) => {
-              if (node.type === "userCenter") return MINIMAP_COLORS.USER_CENTER;
-              if (node.type === "northStar") return MINIMAP_COLORS.NORTH_STAR;
-              return MINIMAP_COLORS.SHORT_TERM;
-            }}
-            maskColor={MINIMAP_COLORS.MASK}
-            style={{
-              backgroundColor: "rgba(15, 23, 42, 0.9)",
-              border: "1px solid #334155",
-              borderRadius: "8px",
-            }}
           />
           <Controls
             style={{
