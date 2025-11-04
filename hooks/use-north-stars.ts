@@ -39,11 +39,29 @@ export function useNorthStars() {
     return loadNorthStars();
   }, [loadNorthStars]);
 
+  /**
+   * Optimistically update North Star position in local state
+   * Called immediately after saving to DB to keep UI in sync
+   */
+  const updateNorthStarPositionLocal = useCallback(
+    (northStarId: string, x: number, y: number) => {
+      setNorthStars((prevNorthStars) =>
+        prevNorthStars.map((ns) =>
+          ns.id === northStarId
+            ? { ...ns, position_x: x, position_y: y }
+            : ns
+        )
+      );
+    },
+    []
+  );
+
   return {
     northStars,
     isLoading,
     error,
     refreshNorthStars,
+    updateNorthStarPositionLocal,
   };
 }
 

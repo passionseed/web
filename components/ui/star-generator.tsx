@@ -36,6 +36,18 @@ export function StarGenerator({
     onConfigChange({ ...config, flareCount: Math.round(values[0]) });
   };
 
+  const handleRotationChange = (values: number[]) => {
+    onConfigChange({ ...config, rotation: values[0] });
+  };
+
+  const handleSharpnessChange = (values: number[]) => {
+    onConfigChange({ ...config, innerRadiusRatio: values[0] });
+  };
+
+  const handleGlowChange = (values: number[]) => {
+    onConfigChange({ ...config, glowIntensity: values[0] });
+  };
+
   const handleRandomize = () => {
     onConfigChange(randomizeStarConfig());
   };
@@ -51,6 +63,7 @@ export function StarGenerator({
             style={{
               background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
               animationDuration: "3s",
+              opacity: config.glowIntensity / 20, // Scale opacity based on glow intensity
             }}
           />
 
@@ -61,7 +74,7 @@ export function StarGenerator({
             viewBox={starSVG.viewBox}
             className="relative drop-shadow-2xl"
             style={{
-              filter: `drop-shadow(0 0 20px ${glowColor}80)`,
+              filter: `drop-shadow(0 0 ${config.glowIntensity * 2}px ${glowColor}80)`,
             }}
           >
             <defs>
@@ -97,52 +110,134 @@ export function StarGenerator({
 
       {/* Controls */}
       <div className="space-y-4">
-        {/* Star Size Slider */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="core-size" className="text-sm font-medium">
-              Star Size
-            </Label>
-            <span className="text-sm text-muted-foreground">
-              {config.coreSize}
-            </span>
+        {/* Star Shape Controls Section */}
+        <div className="space-y-4 pb-4 border-b">
+          <h3 className="text-sm font-semibold text-muted-foreground">Star Shape Controls</h3>
+          
+          {/* Star Density Slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="core-size" className="text-sm font-medium">
+                Star Density
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                {config.coreSize}
+              </span>
+            </div>
+            <Slider
+              id="core-size"
+              min={30}
+              max={100}
+              step={1}
+              value={[config.coreSize]}
+              onValueChange={handleCoreSizeChange}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Controls the overall size and density of your star
+            </p>
           </div>
-          <Slider
-            id="core-size"
-            min={30}
-            max={100}
-            step={1}
-            value={[config.coreSize]}
-            onValueChange={handleCoreSizeChange}
-            className="w-full"
-          />
-          <p className="text-xs text-muted-foreground">
-            Adjust how large your star appears
-          </p>
+
+          {/* Flare Count Slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="flare-count" className="text-sm font-medium">
+                Star Points
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                {config.flareCount}
+              </span>
+            </div>
+            <Slider
+              id="flare-count"
+              min={4}
+              max={12}
+              step={1}
+              value={[config.flareCount]}
+              onValueChange={handleFlareCountChange}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Number of points on your star
+            </p>
+          </div>
+
+          {/* Point Sharpness Slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="sharpness" className="text-sm font-medium">
+                Point Sharpness
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                {(config.innerRadiusRatio * 100).toFixed(0)}%
+              </span>
+            </div>
+            <Slider
+              id="sharpness"
+              min={0.3}
+              max={0.7}
+              step={0.05}
+              value={[config.innerRadiusRatio]}
+              onValueChange={handleSharpnessChange}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Lower values create sharper, more pointed stars
+            </p>
+          </div>
+
+          {/* Rotation Slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="rotation" className="text-sm font-medium">
+                Rotation
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                {config.rotation}°
+              </span>
+            </div>
+            <Slider
+              id="rotation"
+              min={0}
+              max={360}
+              step={5}
+              value={[config.rotation]}
+              onValueChange={handleRotationChange}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Rotate your star (0-360 degrees)
+            </p>
+          </div>
         </div>
 
-        {/* Flare Count Slider */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="flare-count" className="text-sm font-medium">
-              Star Points
-            </Label>
-            <span className="text-sm text-muted-foreground">
-              {config.flareCount}
-            </span>
+        {/* Visual Effects Section */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-muted-foreground">Visual Effects</h3>
+          
+          {/* Glow Intensity Slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="glow" className="text-sm font-medium">
+                Glow Intensity
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                {config.glowIntensity}
+              </span>
+            </div>
+            <Slider
+              id="glow"
+              min={0}
+              max={10}
+              step={1}
+              value={[config.glowIntensity]}
+              onValueChange={handleGlowChange}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Adjust the glow and radiance effect
+            </p>
           </div>
-          <Slider
-            id="flare-count"
-            min={4}
-            max={12}
-            step={1}
-            value={[config.flareCount]}
-            onValueChange={handleFlareCountChange}
-            className="w-full"
-          />
-          <p className="text-xs text-muted-foreground">
-            Number of points on your star
-          </p>
         </div>
 
         {/* Randomize Button */}
@@ -187,7 +282,7 @@ export function StarSVG({
       viewBox={starSVG.viewBox}
       className={className}
       style={{
-        filter: `drop-shadow(0 0 ${size * 0.15}px ${glowColor}80)`,
+        filter: `drop-shadow(0 0 ${size * 0.15 * (config.glowIntensity / 5)}px ${glowColor}80)`,
       }}
     >
       <defs>
