@@ -25,7 +25,10 @@ export interface MapBuilderCallbacks {
   onEditNorthStar?: (northStar: NorthStar) => void;
   onViewNorthStarDetails?: (northStarId: string) => void;
   onCreateProjectForNorthStar?: (northStarId: string) => void;
-  onQuickStatusChange?: (northStar: NorthStar, newStatus: NorthStar["status"]) => void;
+  onQuickStatusChange?: (
+    northStar: NorthStar,
+    newStatus: NorthStar["status"]
+  ) => void;
 }
 
 export interface MapBuilderResult {
@@ -65,7 +68,11 @@ export function buildJourneyMap(
 
   // Create North Star entity nodes (from north_stars table)
   northStars.forEach((northStar, index) => {
-    const position = getNorthStarEntityPosition(northStar, index, northStars.length);
+    const position = getNorthStarEntityPosition(
+      northStar,
+      index,
+      northStars.length
+    );
     const linkedCount = projects.filter(
       (p) => p.linked_north_star_id === northStar.id
     ).length;
@@ -437,7 +444,8 @@ function createNorthStarEntityNode(
         // Quick progress update handler - could be enhanced
         console.log("Update progress for:", northStar.title);
       },
-      onCreateProject: () => callbacks.onCreateProjectForNorthStar?.(northStar.id),
+      onCreateProject: () =>
+        callbacks.onCreateProjectForNorthStar?.(northStar.id),
       onQuickStatusChange: (newStatus: NorthStar["status"]) =>
         callbacks.onQuickStatusChange?.(northStar, newStatus),
     },

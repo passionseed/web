@@ -278,6 +278,8 @@ function JourneyMapCanvasInner({
   // ========================================
 
   // Build map from projects data and North Stars
+  // NOTE: numericZoom is NOT in dependencies to prevent rebuilds on zoom
+  // It's only passed to buildJourneyMap for initial node sizing
   const mapData = useMemo(() => {
     return buildJourneyMap(
       projects,
@@ -313,8 +315,24 @@ function JourneyMapCanvasInner({
   ]);
 
   // Update ReactFlow nodes/edges when map data changes
+  // Preserve current node positions to avoid overwriting uncommitted changes
   React.useEffect(() => {
-    setNodes(mapData.nodes);
+    setNodes((currentNodes) => {
+      // Create a map of current node positions
+      const currentPositions = new Map(
+        currentNodes.map((node) => [node.id, node.position])
+      );
+
+      // Merge new nodes with existing positions
+      return mapData.nodes.map((newNode) => {
+        const existingPosition = currentPositions.get(newNode.id);
+        // Use existing position if node already exists, otherwise use DB position
+        return existingPosition
+          ? { ...newNode, position: existingPosition }
+          : newNode;
+      });
+    });
+
     setEdges(mapData.edges);
   }, [mapData, setNodes, setEdges]);
 
