@@ -2,6 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Space_Mono, Libre_Franklin } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { createClient } from "@/utils/supabase/server";
@@ -29,27 +30,35 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Passion Seed"
+    title: "Passion Seed",
   },
   icons: {
     icon: [
-      { url: '/favicon-16x16.webp', sizes: '16x16', type: 'image/webp' },
-      { url: '/favicon-32x32.webp', sizes: '32x32', type: 'image/webp' }
+      { url: "/favicon-16x16.webp", sizes: "16x16", type: "image/webp" },
+      { url: "/favicon-32x32.webp", sizes: "32x32", type: "image/webp" },
     ],
     apple: [
-      { url: '/apple-touch-icon.webp', sizes: '180x180', type: 'image/webp' }
+      { url: "/apple-touch-icon.webp", sizes: "180x180", type: "image/webp" },
     ],
     other: [
-      { url: '/android-chrome-192x192.webp', sizes: '192x192', type: 'image/webp' },
-      { url: '/android-chrome-512x512.webp', sizes: '512x512', type: 'image/webp' }
-    ]
-  }
+      {
+        url: "/android-chrome-192x192.webp",
+        sizes: "192x192",
+        type: "image/webp",
+      },
+      {
+        url: "/android-chrome-512x512.webp",
+        sizes: "512x512",
+        type: "image/webp",
+      },
+    ],
+  },
 };
 
 export const viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
-  themeColor: '#5b21b6',
+  themeColor: "#5b21b6",
 };
 
 export default async function RootLayout({
@@ -79,6 +88,7 @@ export default async function RootLayout({
             {/* <ServiceWorkerRegistration /> */}
           </ErrorBoundary>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
