@@ -28,6 +28,7 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  Star,
 } from "lucide-react";
 import {
   ProjectWithMilestones,
@@ -117,6 +118,55 @@ function ProgressSummary({
           <FileText className="w-3 h-3" />
           <span>{totalJournals} journal entries</span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ========================================
+// NORTH STAR SECTION
+// ========================================
+
+function NorthStarSection({ project }: { project: ProjectWithMilestones }) {
+  const northStar = project.metadata?.milestone_north_star;
+
+  if (!northStar) {
+    return null;
+  }
+
+  return (
+    <div className="p-4 border-b border-slate-800 space-y-4">
+      <div>
+        <h2 className="text-lg font-bold text-amber-100 flex items-center gap-2">
+          <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+          North Star
+        </h2>
+        <p className="text-sm text-slate-400 mt-1">
+          Your guiding vision for this project
+        </p>
+      </div>
+
+      <div className="bg-gradient-to-br from-amber-900/20 to-orange-900/20 rounded-lg p-4 border border-amber-800/30">
+        <h3 className="font-semibold text-amber-100 mb-2">
+          {northStar.title}
+        </h3>
+        
+        {northStar.description && (
+          <div className="mb-3">
+            <p className="text-sm text-amber-200/80 leading-relaxed">
+              {northStar.description}
+            </p>
+          </div>
+        )}
+        
+        {northStar.why && (
+          <div>
+            <p className="text-xs font-medium text-amber-300 mb-1">Why this matters:</p>
+            <p className="text-sm text-amber-200/70 leading-relaxed">
+              {northStar.why}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -438,6 +488,7 @@ export function ProjectOverviewPanel({
     <div className="h-full flex flex-col bg-slate-900">
       <ScrollArea className="flex-1">
         <ProgressSummary milestones={milestones} />
+        <NorthStarSection project={project} />
         <AllMilestonesList
           milestones={milestones}
           onSelect={onMilestoneSelect}

@@ -9,7 +9,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   ReactFlow,
   Background,
-  MiniMap,
   Controls,
   useNodesState,
   useEdgesState,
@@ -298,19 +297,6 @@ function JourneyMapPreviewInner({
           size={1}
           color="#334155"
           style={{ backgroundColor: "#0f172a" }}
-        />
-        <MiniMap
-          nodeColor={(node) => {
-            if (node.type === "userCenter") return "#3b82f6";
-            if (node.type === "northStar") return "#f59e0b";
-            return "#10b981";
-          }}
-          maskColor="rgba(0, 0, 0, 0.3)"
-          style={{
-            backgroundColor: "rgba(15, 23, 42, 0.9)",
-            border: "1px solid #334155",
-            borderRadius: "8px",
-          }}
         />
         <Controls
           showInteractive={false}
