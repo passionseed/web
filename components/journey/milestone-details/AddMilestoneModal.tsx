@@ -52,7 +52,7 @@ export function AddMilestoneModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-slate-900 border-slate-800">
+      <DialogContent className="sm:max-w-[500px] bg-slate-900 border-slate-800 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-slate-100">
             <Plus className="w-5 h-5 text-blue-400" />

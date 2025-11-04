@@ -46,13 +46,16 @@ import {
   Target,
   ChevronLeft,
   ChevronRight,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { MilestoneNode } from "./nodes/MilestoneNode";
+import { MilestoneNorthStarNode } from "./nodes/MilestoneNorthStarNode";
 import { MilestoneProgressDialog } from "./MilestoneProgressDialog";
 import { MilestoneDetailsPanel } from "./MilestoneDetailsPanel";
 import { AddMilestoneModal } from "./milestone-details/AddMilestoneModal";
+import { CreateMilestoneNorthStarDialog } from "./CreateMilestoneNorthStarDialog";
 import FloatingEdge from "../map/FloatingEdge";
 
 import {
@@ -62,6 +65,8 @@ import {
   getProjectMilestonePaths,
   createMilestonePath,
   deleteMilestonePath,
+  updateMilestone,
+  updateProject,
 } from "@/lib/supabase/journey";
 import {
   ProjectWithMilestones,
@@ -83,6 +88,7 @@ interface MilestoneMapViewProps {
 
 const nodeTypes = {
   milestone: MilestoneNode,
+  milestoneNorthStar: MilestoneNorthStarNode,
 };
 
 // Panel size constants
@@ -108,6 +114,14 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
   const [selectedMilestone, setSelectedMilestone] =
     useState<ProjectMilestone | null>(null);
   const [milestonePaths, setMilestonePaths] = useState<MilestonePath[]>([]);
+  
+  // Zoom state management
+  const [zoomLevel, setZoomLevel] = useState<"low" | "medium" | "high">("medium");
+  const [numericZoom, setNumericZoom] = useState<number>(1);
+
+  // North Star dialog state
+  const [showNorthStarDialog, setShowNorthStarDialog] = useState(false);
+  const [hasCheckedNorthStar, setHasCheckedNorthStar] = useState(false);
 
   // Panel management
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -157,20 +171,110 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
             toast.error("Failed to delete connection");
             return; // Don't apply the edge change if deletion failed
           }
+        } else if (edge?.data?.isNorthStarConnection) {
+          try {
+            const milestoneId = edge.data.milestoneId as string;
+            
+            // Remove from project metadata
+            if (project) {
+              const currentConnections = project.metadata?.north_star_connections || [];
+              const newConnections = currentConnections.filter((id) => id !== milestoneId);
+              
+              await updateProject(projectId, {
+                metadata: {
+                  ...project.metadata,
+                  north_star_connections: newConnections,
+                },
+              });
+              
+              // Update local state
+              setProject(prev => prev ? {
+                ...prev,
+                metadata: {
+                  ...prev.metadata,
+                  north_star_connections: newConnections,
+                }
+              } : null);
+            }
+            
+            toast.success("North Star connection deleted");
+          } catch (error) {
+            console.error("Error deleting North Star connection:", error);
+            toast.error("Failed to delete North Star connection");
+            return; // Don't apply the edge change if deletion failed
+          }
         }
       }
     }
     
     setEdges((eds) => applyEdgeChanges(changes, eds));
-  }, [edges]);
+  }, [edges, project, projectId, setProject]);
 
   const handleOpenProgress = useCallback((milestone: ProjectMilestone) => {
     setSelectedMilestone(milestone);
     setProgressDialogOpen(true);
   }, []);
 
+  const handleUpdateMilestone = useCallback(async (milestoneId: string, updates: Partial<ProjectMilestone>) => {
+    try {
+      console.log("🔄 Updating milestone:", milestoneId, updates);
+      const updatedMilestone = await updateMilestone(milestoneId, updates);
+      
+      // Update the milestones array
+      setMilestones(prev => prev.map(m => 
+        m.id === milestoneId ? { ...m, ...updatedMilestone } : m
+      ));
+      
+      // Update the node data in place
+      setNodes(prev => prev.map(node => {
+        if (node.id === milestoneId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              milestone: { ...node.data.milestone, ...updatedMilestone }
+            }
+          };
+        }
+        return node;
+      }));
+      
+      toast.success("Milestone updated successfully!");
+    } catch (error) {
+      console.error("Error updating milestone:", error);
+      toast.error("Failed to update milestone");
+    }
+  }, []);
+
+  // Handle zoom changes from the canvas with throttling
+  const handleZoomChange = useCallback(
+    (zoomLevel: "low" | "medium" | "high", numericZoom: number) => {
+      // Only update if zoom level actually changed to reduce lag
+      setZoomLevel(prev => prev !== zoomLevel ? zoomLevel : prev);
+      setNumericZoom(prev => Math.abs(prev - numericZoom) > 0.05 ? numericZoom : prev);
+    },
+    []
+  );
+
+  // Update nodes when zoom changes - debounced for performance
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setNodes((prevNodes) =>
+        prevNodes.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            numericZoom,
+          },
+        }))
+      );
+    }, 50); // 50ms debounce to reduce lag
+
+    return () => clearTimeout(timeoutId);
+  }, [numericZoom, setNodes]);
+
   const buildMilestoneMap = useCallback(
-    async (milestonesData: MilestoneWithJournals[]) => {
+    async (milestonesData: MilestoneWithJournals[], projectData?: ProjectWithMilestones) => {
       try {
         const newNodes: Node[] = [];
 
@@ -178,6 +282,39 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
         const hasPositions = milestonesData.some(
           (m) => m.position_x !== null && m.position_x !== undefined
         );
+
+        // Add North Star node if it exists - use projectData parameter if provided, otherwise fallback to state
+        const currentProject = projectData || project;
+        if (currentProject?.metadata?.milestone_north_star) {
+          const northStar = currentProject.metadata.milestone_north_star;
+          if (process.env.NODE_ENV === 'development') {
+            console.log("🌟 Creating North Star node:", northStar);
+          }
+          
+          // Use saved position or default position
+          const savedPosition = currentProject.metadata?.north_star_position;
+          const position = savedPosition ? {
+            x: savedPosition.x,
+            y: savedPosition.y,
+          } : {
+            x: -400, // Default position to the left of milestones
+            y: -100, // Default slightly above center
+          };
+          
+          newNodes.push({
+            id: "milestone-north-star",
+            type: "milestoneNorthStar",
+            position,
+            data: {
+              northStar,
+              project: currentProject,
+              numericZoom,
+              onEdit: () => setShowNorthStarDialog(true),
+            },
+            draggable: true,
+            selectable: true,
+          });
+        }
 
         // Create milestone nodes without fetching journals individually (performance improvement)
         for (let i = 0; i < milestonesData.length; i++) {
@@ -214,30 +351,34 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
               latestJournalPreview: latestJournal
                 ? latestJournal.content.slice(0, 100)
                 : undefined,
+              numericZoom,
+              onOpenProgress: () => handleOpenProgress(milestone),
+              onUpdateMilestone: handleUpdateMilestone,
             },
             draggable: true,
             selectable: true,
           });
         }
 
-        console.log("✅ Built milestone nodes:", newNodes.length);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("✅ Built milestone nodes:", newNodes.length);
+          console.log("🎯 All nodes created:", newNodes.map(n => ({ id: n.id, type: n.type, position: n.position })));
+        }
         setNodes(newNodes);
+        
+        // Store North Star connection data for later edge creation
+        // (edges will be created after nodes are fully set)
       } catch (error) {
         console.error("Error building milestone map:", error);
         toast.error("Failed to update milestone view");
       }
     },
-    [setNodes]
+    [setNodes, setEdges, numericZoom, setShowNorthStarDialog, handleOpenProgress, handleUpdateMilestone]
   );
 
   // Build edges from milestone paths (separate useEffect to avoid timing issues)
   useEffect(() => {
-    if (milestonePaths.length === 0) {
-      setEdges([]);
-      return;
-    }
-
-    const newEdges: Edge[] = milestonePaths.map((path) => ({
+    const pathEdges: Edge[] = milestonePaths.map((path) => ({
       id: path.id,
       source: path.source_milestone_id,
       target: path.destination_milestone_id,
@@ -271,9 +412,54 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       },
     }));
 
-    console.log("✅ Built edges from paths:", newEdges.length);
-    setEdges(newEdges);
-  }, [milestonePaths]);
+    // Create North Star edges if project and nodes exist
+    const northStarEdges: Edge[] = [];
+    if (project?.metadata?.north_star_connections && nodes.length > 0) {
+      const northStarConnections = project.metadata.north_star_connections;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log("🌟 Creating North Star edges:", northStarConnections);
+        console.log("🎯 Available nodes:", nodes.map(n => n.id));
+      }
+      
+      northStarConnections.forEach((milestoneId) => {
+        // Only create edges if both North Star and milestone nodes exist
+        const northStarExists = nodes.some(n => n.id === "milestone-north-star");
+        const milestoneExists = nodes.some(n => n.id === milestoneId);
+        
+        if (northStarExists && milestoneExists) {
+          northStarEdges.push({
+            id: `north-star-milestone-north-star-${milestoneId}`,
+            source: "milestone-north-star",
+            target: milestoneId,
+            type: "floating",
+            animated: false,
+            selectable: true,
+            deletable: true,
+            style: {
+              stroke: "#F59E0B", // Amber color for North Star connections
+              strokeWidth: 3,
+              strokeDasharray: "5,5", // Dashed line to show it's different
+            },
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: "#F59E0B",
+            },
+            data: {
+              isNorthStarConnection: true,
+              milestoneId: milestoneId,
+            },
+          });
+        } else if (process.env.NODE_ENV === 'development') {
+          console.warn(`⚠️ Cannot create edge - North Star: ${northStarExists}, Milestone ${milestoneId}: ${milestoneExists}`);
+        }
+      });
+    }
+
+    const allEdges = [...pathEdges, ...northStarEdges];
+    console.log("✅ Built all edges:", allEdges.length, "- Paths:", pathEdges.length, "North Star:", northStarEdges.length);
+    setEdges(allEdges);
+  }, [milestonePaths, project?.metadata?.north_star_connections, nodes]);
 
   const loadMilestoneMap = useCallback(async () => {    
     setIsLoading(true);
@@ -288,8 +474,19 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       setMilestones(milestonesData);
       setMilestonePaths(pathsData);
 
+      // Check if project needs a milestone North Star (only check once per session)
+      if (projectData && !hasCheckedNorthStar) {
+        const hasMilestoneNorthStar = projectData.metadata?.has_milestone_north_star === true;
+        
+        if (!hasMilestoneNorthStar) {
+          console.log("🌟 Project has no milestone North Star, showing dialog");
+          setShowNorthStarDialog(true);
+        }
+        setHasCheckedNorthStar(true);
+      }
+
       if (projectData && milestonesData) {
-        await buildMilestoneMap(milestonesData);
+        await buildMilestoneMap(milestonesData, projectData);
       }
     } catch (error) {
       console.error("Error loading milestone map:", error);
@@ -386,12 +583,62 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     }
   }, [projectId, buildMilestoneMap]);
 
+  const handleNorthStarCreated = useCallback(async () => {
+    // Refresh project data to get the updated North Star link
+    try {
+      const projectData = await getProjectById(projectId);
+      setProject(projectData);
+      
+      // Rebuild the map to include the new North Star node
+      if (milestones.length > 0) {
+        await buildMilestoneMap(milestones);
+      }
+      
+      console.log("🔄 Project data refreshed after North Star creation");
+    } catch (error) {
+      console.error("Error refreshing project after North Star creation:", error);
+    }
+  }, [projectId, milestones, buildMilestoneMap]);
+
   const handleNodeDragStop = useCallback(
-    (_event: any, node: Node) => {
+    async (_event: any, node: Node) => {
+      // Handle North Star position saving separately
+      if (node.id === "milestone-north-star") {
+        console.log("🌟 Saving North Star position:", node.position);
+        try {
+          if (project) {
+            await updateProject(projectId, {
+              metadata: {
+                ...project.metadata,
+                north_star_position: {
+                  x: node.position.x,
+                  y: node.position.y,
+                },
+              },
+            });
+            
+            // Update local state
+            setProject(prev => prev ? {
+              ...prev,
+              metadata: {
+                ...prev.metadata,
+                north_star_position: {
+                  x: node.position.x,
+                  y: node.position.y,
+                },
+              }
+            } : null);
+          }
+        } catch (error) {
+          console.error("Error saving North Star position:", error);
+        }
+        return;
+      }
+      
       // Mark milestone as dirty for batched sync
       syncManager.markMilestoneDirty(node.id, node.position.x, node.position.y);
     },
-    [syncManager]
+    [syncManager, project, projectId]
   );
 
   const handleSelectionChange = useCallback(
@@ -433,6 +680,79 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       toast.error("Cannot connect a milestone to itself");
       return;
     }
+
+    // Check if either source or target is the North Star node
+    if (connection.source === "milestone-north-star" || connection.target === "milestone-north-star") {
+      console.log("🌟 Creating North Star connection");
+      
+      try {
+        // Determine the milestone ID (the one that's not the North Star)
+        const milestoneId = connection.source === "milestone-north-star" 
+          ? connection.target 
+          : connection.source;
+        
+        // Save North Star connection to project metadata
+        if (project) {
+          const currentConnections = project.metadata?.north_star_connections || [];
+          const newConnections = [...currentConnections];
+          
+          // Avoid duplicates
+          if (!newConnections.includes(milestoneId)) {
+            newConnections.push(milestoneId);
+            
+            await updateProject(projectId, {
+              metadata: {
+                ...project.metadata,
+                north_star_connections: newConnections,
+              },
+            });
+            
+            // Update local state
+            setProject(prev => prev ? {
+              ...prev,
+              metadata: {
+                ...prev.metadata,
+                north_star_connections: newConnections,
+              }
+            } : null);
+          }
+        }
+        
+        // Create a visual edge for North Star connections
+        const visualEdge: Edge = {
+          id: `north-star-${connection.source}-${connection.target}`,
+          source: connection.source,
+          target: connection.target,
+          type: "floating",
+          animated: false,
+          selectable: true,
+          deletable: true,
+          style: {
+            stroke: "#F59E0B", // Amber color for North Star connections
+            strokeWidth: 3,
+            strokeDasharray: "5,5", // Dashed line to show it's different
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: "#F59E0B",
+          },
+          data: {
+            isNorthStarConnection: true,
+            milestoneId: milestoneId,
+          },
+        };
+        
+        // Add visual edge directly to edges state
+        setEdges((prev) => [...prev, visualEdge]);
+        toast.success("North Star connection created");
+      } catch (error) {
+        console.error("Error saving North Star connection:", error);
+        toast.error("Failed to save North Star connection");
+      }
+      return;
+    }
+
+    console.log("🔗 Creating milestone path:", connection);
 
     try {
       // Create the path in database
@@ -476,7 +796,7 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       console.error("Error creating connection:", error);
       toast.error("Failed to create connection");
     }
-  }, []);
+  }, [project, projectId, setProject]);
 
   const onEdgeClick = useCallback(
     async (event: React.MouseEvent, edge: Edge) => {
@@ -525,6 +845,8 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
     },
     []
   );
+
+
 
   const togglePanelSize = useCallback(() => {
     const panel = rightPanelRef.current;
@@ -600,6 +922,19 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               connectionMode={ConnectionMode.Loose}
+              onViewportChange={(viewport) => {
+                // Calculate zoom level based on viewport zoom - 3 states only
+                const zoom = viewport.zoom;
+                let level: "low" | "medium" | "high";
+                if (zoom < 1.0) {
+                  level = "low";
+                } else if (zoom < 1.5) {
+                  level = "medium";
+                } else {
+                  level = "high";
+                }
+                handleZoomChange(level, zoom);
+              }}
               fitView
               fitViewOptions={{
                 padding: 0.2,
@@ -648,38 +983,61 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
                     <ArrowLeft className="w-4 h-4 mr-1" />
                     Back
                   </Button>
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Target className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <h2 className="text-sm font-bold text-slate-100 truncate">
-                      {project.title}
-                    </h2>
-                    <Badge variant="secondary" className="text-xs flex-shrink-0">
-                      {completedCount}/{totalCount}
-                    </Badge>
-                    <Badge
-                      variant={
-                        project.status === "in_progress"
-                          ? "default"
-                          : "secondary"
-                      }
-                      className="text-xs flex-shrink-0"
-                    >
-                      {project.status}
-                    </Badge>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Target className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                      <h2 className="text-sm font-bold text-slate-100 truncate">
+                        {project.title}
+                      </h2>
+                      <Badge variant="secondary" className="text-xs flex-shrink-0">
+                        {completedCount}/{totalCount}
+                      </Badge>
+                      <Badge
+                        variant={
+                          project.status === "in_progress"
+                            ? "default"
+                            : "secondary"
+                        }
+                        className="text-xs flex-shrink-0"
+                      >
+                        {project.status}
+                      </Badge>
+                    </div>
+                    
+                    {/* North Star Display */}
+                    {project.metadata?.milestone_north_star && (
+                      <div className="flex items-center gap-2 text-xs text-amber-200">
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                        <span className="truncate">
+                          North Star: {project.metadata.milestone_north_star.title}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <Button
-                    onClick={() => setAddMilestoneModalOpen(true)}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex-shrink-0"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setAddMilestoneModalOpen(true)}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex-shrink-0"
+                      title="Add Milestone"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={() => setShowNorthStarDialog(true)}
+                      size="sm"
+                      className="bg-amber-600 hover:bg-amber-700 text-white shadow-lg flex-shrink-0"
+                      title={project?.metadata?.has_milestone_north_star ? "Edit Milestone North Star" : "Create Milestone North Star"}
+                    >
+                      <Star className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </Panel>
 
               {/* Empty state */}
               {milestones.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[100]">
                   <div className="bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 border border-slate-800 rounded-lg shadow-lg p-6 text-center max-w-sm pointer-events-auto">
                     <Target className="w-12 h-12 mx-auto mb-3 text-slate-700" />
                     <h3 className="text-lg font-bold text-slate-100 mb-2">
@@ -689,7 +1047,17 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
                       Break down your project into milestones to track progress
                       and stay organized.
                     </p>
-                    <Button onClick={() => setAddMilestoneModalOpen(true)} size="sm">
+                    <Button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Button clicked, opening modal...');
+                        setAddMilestoneModalOpen(true);
+                      }} 
+                      size="sm"
+                      variant="default"
+                      className="bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer relative z-[101]"
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Create First Milestone
                     </Button>
@@ -760,11 +1128,26 @@ function MilestoneMapViewInner({ projectId, onBack }: MilestoneMapViewProps) {
       {/* Add Milestone Modal */}
       <AddMilestoneModal
         isOpen={addMilestoneModalOpen}
-        onOpenChange={setAddMilestoneModalOpen}
+        onOpenChange={(open) => {
+          console.log('Modal state changing to:', open);
+          setAddMilestoneModalOpen(open);
+        }}
         projectId={projectId}
         allMilestones={milestones}
         onMilestoneCreated={handleMilestoneCreated}
       />
+
+      {/* Milestone North Star Creation Dialog */}
+      {project && (
+        <CreateMilestoneNorthStarDialog
+          open={showNorthStarDialog}
+          onOpenChange={setShowNorthStarDialog}
+          onSuccess={handleNorthStarCreated}
+          projectId={projectId}
+          projectTitle={project.title}
+          existingMilestoneNorthStar={project.metadata?.milestone_north_star || undefined}
+        />
+      )}
     </>
   );
 }
