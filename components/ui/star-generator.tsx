@@ -97,11 +97,11 @@ export function StarGenerator({
 
       {/* Controls */}
       <div className="space-y-4">
-        {/* Core Size Slider */}
+        {/* Star Size Slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="core-size" className="text-sm font-medium">
-              Core Size
+              Star Size
             </Label>
             <span className="text-sm text-muted-foreground">
               {config.coreSize}
@@ -117,7 +117,7 @@ export function StarGenerator({
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Adjust the size of the star's center
+            Adjust how large your star appears
           </p>
         </div>
 
