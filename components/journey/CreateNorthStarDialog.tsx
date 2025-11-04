@@ -31,6 +31,8 @@ import {
   GripVertical,
   Pencil,
   Check,
+  Sparkles,
+  Calendar,
 } from "lucide-react";
 import { createNorthStar } from "@/lib/supabase/north-star";
 import {
@@ -39,14 +41,27 @@ import {
 } from "@/lib/supabase/journey";
 import { toast } from "sonner";
 import { SDG_GOALS, CAREER_PATHS, NORTH_STAR_COLORS } from "@/constants/sdg";
+import { LIFE_ASPECTS } from "@/constants/life-aspects";
 import { StarGenerator } from "@/components/ui/star-generator";
 import {
   StarConfig,
   createDefaultStarConfig,
   validateStarConfig,
 } from "@/lib/utils/svg-star";
+import {
+  enhanceVision,
+  generateMilestones,
+} from "@/lib/ai/north-star-enhancer";
+import { addMonths, format } from "date-fns";
 
 type Language = "en" | "th";
+
+interface SMARTMilestone {
+  title: string;
+  startDate: string;
+  dueDate: string;
+  measurable: string;
+}
 
 const translations = {
   en: {
@@ -212,8 +227,9 @@ export function CreateNorthStarDialog({
   const [currentStep, setCurrentStep] = useState(0);
   const [language, setLanguage] = useState<Language>("en");
   const [formData, setFormData] = useState({
-    visionQuestion: "", // "What do you want to see happening in the next 3 years?"
-    milestones: [] as string[], // List of milestone items
+    visionQuestion: "",
+    milestones: [] as SMARTMilestone[],
+    lifeAspects: [] as string[],
     sdgGoals: [] as number[],
     careerPath: "",
     starConfig: createDefaultStarConfig(),
@@ -224,6 +240,9 @@ export function CreateNorthStarDialog({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [aiUsed, setAiUsed] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showSMARTDetails, setShowSMARTDetails] = useState(false);
 
   const t = translations[language];
 
@@ -269,7 +288,7 @@ export function CreateNorthStarDialog({
         description: formData.visionQuestion.trim() || undefined,
         why:
           formData.milestones.length > 0
-            ? formData.milestones.join("\n")
+            ? formData.milestones.map(m => m.title).join("\n")
             : undefined,
         icon: "svg", // Marker to indicate SVG star
         sdg_goals: formData.sdgGoals.length > 0 ? formData.sdgGoals : undefined,
@@ -303,7 +322,7 @@ export function CreateNorthStarDialog({
             );
 
             const project = await createJourneyProject({
-              title: milestone,
+              title: milestone.title,
               description: `Step ${i + 1} towards: ${formData.title}`,
               project_type: "learning",
               status: "not_started",
@@ -329,7 +348,7 @@ export function CreateNorthStarDialog({
             );
           } catch (error: any) {
             console.error(
-              `❌ Failed to create project for milestone "${milestone}":`,
+              `❌ Failed to create project for milestone "${milestone.title}":`,
               error
             );
             console.error("Error details:", {
@@ -388,6 +407,7 @@ export function CreateNorthStarDialog({
         title: "",
         visionQuestion: "",
         milestones: [],
+        lifeAspects: [],
         sdgGoals: [],
         careerPath: "",
         starConfig: createDefaultStarConfig(),
@@ -700,8 +720,12 @@ export function CreateNorthStarDialog({
                                             const newMilestones = [
                                               ...formData.milestones,
                                             ];
-                                            newMilestones[index] =
-                                              editingText.trim();
+                                            newMilestones[index] = {
+                                              title: editingText.trim(),
+                                              startDate: "",
+                                              dueDate: "",
+                                              measurable: ""
+                                            };
                                             setFormData((prev) => ({
                                               ...prev,
                                               milestones: newMilestones,
@@ -724,8 +748,12 @@ export function CreateNorthStarDialog({
                                             const newMilestones = [
                                               ...formData.milestones,
                                             ];
-                                            newMilestones[index] =
-                                              editingText.trim();
+                                            newMilestones[index] = {
+                                              title: editingText.trim(),
+                                              startDate: "",
+                                              dueDate: "",
+                                              measurable: ""
+                                            };
                                             setFormData((prev) => ({
                                               ...prev,
                                               milestones: newMilestones,
@@ -755,10 +783,10 @@ export function CreateNorthStarDialog({
                                       className="text-base text-blue-900 dark:text-blue-100 cursor-text"
                                       onClick={() => {
                                         setEditingIndex(index);
-                                        setEditingText(milestone);
+                                        setEditingText(milestone.title);
                                       }}
                                     >
-                                      {milestone}
+                                      {milestone.title}
                                     </p>
                                   )}
                                 </div>
@@ -772,7 +800,7 @@ export function CreateNorthStarDialog({
                                       size="sm"
                                       onClick={() => {
                                         setEditingIndex(index);
-                                        setEditingText(milestone);
+                                        setEditingText(milestone.title);
                                       }}
                                       className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20"
                                       title={t.editMilestone}
@@ -822,7 +850,12 @@ export function CreateNorthStarDialog({
                                 ...prev,
                                 milestones: [
                                   ...prev.milestones,
-                                  newMilestone.trim(),
+                                  {
+                                    title: newMilestone.trim(),
+                                    startDate: "",
+                                    dueDate: "",
+                                    measurable: ""
+                                  },
                                 ],
                               }));
                               setNewMilestone("");
@@ -838,7 +871,12 @@ export function CreateNorthStarDialog({
                                 ...prev,
                                 milestones: [
                                   ...prev.milestones,
-                                  newMilestone.trim(),
+                                  {
+                                    title: newMilestone.trim(),
+                                    startDate: "",
+                                    dueDate: "",
+                                    measurable: ""
+                                  },
                                 ],
                               }));
                               setNewMilestone("");
@@ -1092,7 +1130,7 @@ export function CreateNorthStarDialog({
                                     <span className="text-purple-600 dark:text-purple-400">
                                       {index + 1}.
                                     </span>
-                                    <span className="flex-1">{milestone}</span>
+                                    <span className="flex-1">{milestone.title}</span>
                                   </li>
                                 ))}
                               {formData.milestones.length > 3 && (
