@@ -112,8 +112,10 @@ export function StarGenerator({
       <div className="space-y-4">
         {/* Star Shape Controls Section */}
         <div className="space-y-4 pb-4 border-b">
-          <h3 className="text-sm font-semibold text-muted-foreground">Star Shape Controls</h3>
-          
+          <h3 className="text-sm font-semibold text-muted-foreground">
+            Star Shape Controls
+          </h3>
+
           {/* Star Density Slider */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -213,8 +215,10 @@ export function StarGenerator({
 
         {/* Visual Effects Section */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground">Visual Effects</h3>
-          
+          <h3 className="text-sm font-semibold text-muted-foreground">
+            Visual Effects
+          </h3>
+
           {/* Glow Intensity Slider */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">

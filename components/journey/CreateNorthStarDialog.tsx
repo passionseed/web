@@ -142,7 +142,7 @@ const translations = {
     create: "Create North Star",
     creating: "Creating...",
     language: "Language",
-    
+
     // AI Enhancement
     aiEnhance: "✨ Enhance with AI",
     aiEnhancing: "Enhancing...",
@@ -150,7 +150,7 @@ const translations = {
     aiError: "AI enhancement failed",
     aiLimitReached: "AI enhancement already used",
     aiHint: "AI will help clarify and strengthen your vision",
-    
+
     // SMART Milestones
     smartMode: "Add SMART Details",
     simpleMode: "Simple Mode",
@@ -163,7 +163,7 @@ const translations = {
     aiGenerateHint: "AI will suggest milestones based on your vision",
     estimatedHours: "Estimated Hours",
     milestoneDetails: "Milestone Details",
-    
+
     // Life Aspects
     lifeAspectsTitle: "🌈 Life Aspects",
     lifeAspectsSubtitle: "Select the areas of life this North Star impacts",
@@ -242,7 +242,7 @@ const translations = {
     create: "สร้างดาวเหนือ",
     creating: "กำลังสร้าง...",
     language: "ภาษา",
-    
+
     // AI Enhancement
     aiEnhance: "✨ ปรับปรุงด้วย AI",
     aiEnhancing: "กำลังปรับปรุง...",
@@ -250,7 +250,7 @@ const translations = {
     aiError: "การปรับปรุงด้วย AI ล้มเหลว",
     aiLimitReached: "ใช้การปรับปรุง AI ไปแล้ว",
     aiHint: "AI จะช่วยชี้แจงและเสริมความแข็งแกร่งให้วิสัยทัศน์ของคุณ",
-    
+
     // SMART Milestones
     smartMode: "เพิ่มรายละเอียด SMART",
     simpleMode: "โหมดง่าย",
@@ -263,7 +263,7 @@ const translations = {
     aiGenerateHint: "AI จะแนะนำขั้นตอนตามวิสัยทัศน์ของคุณ",
     estimatedHours: "ชั่วโมงโดยประมาณ",
     milestoneDetails: "รายละเอียดขั้นตอน",
-    
+
     // Life Aspects
     lifeAspectsTitle: "🌈 ด้านชีวิต",
     lifeAspectsSubtitle: "เลือกด้านชีวิตที่ดาวเหนือนี้ส่งผลกระทบ",
@@ -320,7 +320,7 @@ export function CreateNorthStarDialog({
     setIsAiLoading(true);
     try {
       const result = await enhanceVision(formData.visionQuestion, language);
-      
+
       if (result.success && result.data) {
         setOriginalVision(formData.visionQuestion);
         setAiEnhancedVision(result.data as string);
@@ -356,17 +356,22 @@ export function CreateNorthStarDialog({
 
     setIsAiLoading(true);
     try {
-      const result = await generateMilestones(formData.visionQuestion, language);
-      
+      const result = await generateMilestones(
+        formData.visionQuestion,
+        language
+      );
+
       if (result.success && result.data && Array.isArray(result.data)) {
         const now = new Date();
-        const generatedMilestones: SMARTMilestone[] = result.data.map((title, index) => ({
-          title,
-          startDate: format(addMonths(now, index * 4), "yyyy-MM-dd"),
-          dueDate: format(addMonths(now, (index + 1) * 4), "yyyy-MM-dd"),
-          measurable: "",
-        }));
-        
+        const generatedMilestones: SMARTMilestone[] = result.data.map(
+          (title, index) => ({
+            title,
+            startDate: format(addMonths(now, index * 4), "yyyy-MM-dd"),
+            dueDate: format(addMonths(now, (index + 1) * 4), "yyyy-MM-dd"),
+            measurable: "",
+          })
+        );
+
         setFormData((prev) => ({
           ...prev,
           milestones: generatedMilestones,
@@ -433,8 +438,10 @@ export function CreateNorthStarDialog({
         north_star_color: formData.northStarColor,
         metadata: {
           starConfig: validatedConfig,
-          lifeAspects: formData.lifeAspects.length > 0 ? formData.lifeAspects : undefined,
-          aiEnhancedVision: showVisionComparison || originalVision ? true : false,
+          lifeAspects:
+            formData.lifeAspects.length > 0 ? formData.lifeAspects : undefined,
+          aiEnhancedVision:
+            showVisionComparison || originalVision ? true : false,
           aiGeneratedMilestones: aiUsedForMilestones,
         },
       });
@@ -740,14 +747,16 @@ export function CreateNorthStarDialog({
                       className="resize-none text-base"
                       autoFocus
                     />
-                    
+
                     {/* AI Enhancement Button */}
                     <div className="flex flex-col items-center gap-2 pt-2">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={handleEnhanceVision}
-                        disabled={isAiLoading || !formData.visionQuestion.trim()}
+                        disabled={
+                          isAiLoading || !formData.visionQuestion.trim()
+                        }
                         className="w-full max-w-md bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-300 dark:border-purple-700 hover:border-purple-400"
                       >
                         {isAiLoading ? (
@@ -766,7 +775,7 @@ export function CreateNorthStarDialog({
                         {t.aiHint}
                       </p>
                     </div>
-                    
+
                     {/* Vision Comparison Modal */}
                     {showVisionComparison && (
                       <div className="mt-4 p-4 bg-white dark:bg-gray-900 border-2 border-purple-300 dark:border-purple-700 rounded-xl">
@@ -780,7 +789,9 @@ export function CreateNorthStarDialog({
                             </Label>
                             <Textarea
                               value={originalVision}
-                              onChange={(e) => setOriginalVision(e.target.value)}
+                              onChange={(e) =>
+                                setOriginalVision(e.target.value)
+                              }
                               rows={6}
                               className="text-sm"
                             />
@@ -791,7 +802,9 @@ export function CreateNorthStarDialog({
                             </Label>
                             <Textarea
                               value={aiEnhancedVision}
-                              onChange={(e) => setAiEnhancedVision(e.target.value)}
+                              onChange={(e) =>
+                                setAiEnhancedVision(e.target.value)
+                              }
                               rows={6}
                               className="text-sm border-purple-300 dark:border-purple-700"
                             />
@@ -865,7 +878,9 @@ export function CreateNorthStarDialog({
                           type="button"
                           variant="outline"
                           onClick={handleGenerateMilestones}
-                          disabled={isAiLoading || !formData.visionQuestion.trim()}
+                          disabled={
+                            isAiLoading || !formData.visionQuestion.trim()
+                          }
                           className="w-full max-w-md bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-300 dark:border-purple-700 hover:border-purple-400"
                         >
                           {isAiLoading ? (
@@ -1172,7 +1187,10 @@ export function CreateNorthStarDialog({
                             if (checked) {
                               setFormData((prev) => ({
                                 ...prev,
-                                lifeAspects: [...prev.lifeAspects, aspect.value],
+                                lifeAspects: [
+                                  ...prev.lifeAspects,
+                                  aspect.value,
+                                ],
                               }));
                             } else {
                               setFormData((prev) => ({

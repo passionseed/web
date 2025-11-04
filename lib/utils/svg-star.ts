@@ -25,11 +25,11 @@ export interface StarSVGData {
 function seededRandom(seed: string): () => number {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
-    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
     hash = hash & hash;
   }
 
-  return function() {
+  return function () {
     hash = (hash * 9301 + 49297) % 233280;
     return hash / 233280;
   };
@@ -91,15 +91,15 @@ export function generateStarPath(config: StarConfig): StarSVGData {
 
   // Build SVG path
   const pathData = points.reduce((path, point, index) => {
-    const command = index === 0 ? 'M' : 'L';
+    const command = index === 0 ? "M" : "L";
     return `${path} ${command} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-  }, '');
+  }, "");
 
   const closedPath = `${pathData} Z`;
 
   return {
     path: closedPath,
-    viewBox: '0 0 256 256',
+    viewBox: "0 0 256 256",
     centerX,
     centerY,
   };
@@ -134,7 +134,10 @@ export function validateStarConfig(config: Partial<StarConfig>): StarConfig {
     coreSize: Math.max(30, Math.min(100, config.coreSize || 60)),
     flareCount: Math.max(4, Math.min(12, config.flareCount || 5)),
     rotation: Math.max(0, Math.min(360, config.rotation || 0)),
-    innerRadiusRatio: Math.max(0.3, Math.min(0.7, config.innerRadiusRatio || 0.4)),
+    innerRadiusRatio: Math.max(
+      0.3,
+      Math.min(0.7, config.innerRadiusRatio || 0.4)
+    ),
     glowIntensity: Math.max(0, Math.min(10, config.glowIntensity || 5)),
     seed: config.seed || generateSeed(),
   };
