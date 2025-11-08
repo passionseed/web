@@ -19,7 +19,7 @@ interface MilestoneDetailsPanelProps {
   project?: ProjectWithMilestones;
   allMilestones: MilestoneWithJournals[];
   onMilestoneUpdated: (updatedMilestone?: ProjectMilestone) => void;
-  onMilestoneSelect?: (milestone: ProjectMilestone) => void;
+  onMilestoneSelect?: (milestone: ProjectMilestone | null) => void;
 }
 
 export function MilestoneDetailsPanel({
@@ -37,6 +37,7 @@ export function MilestoneDetailsPanel({
         project={project}
         milestones={allMilestones}
         onMilestoneSelect={onMilestoneSelect || (() => {})}
+        onMilestoneUpdated={onMilestoneUpdated}
       />
     );
   }
@@ -56,6 +57,7 @@ export function MilestoneDetailsPanel({
       milestone={milestone}
       allMilestones={allMilestones}
       onMilestoneUpdated={onMilestoneUpdated}
+      onBack={() => onMilestoneSelect?.(null)}
     />
   );
 }

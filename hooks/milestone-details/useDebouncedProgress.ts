@@ -1,11 +1,12 @@
 /**
  * useDebouncedProgress - Smooth progress updates with debounced API calls
  * Provides immediate visual feedback while batching API requests
+ * Creates automatic journal entries for progress updates
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ProjectMilestone } from "@/types/journey";
-import { updateMilestone } from "@/lib/supabase/journey";
+import { updateMilestoneProgressWithJournal } from "@/lib/supabase/journey";
 import { toast } from "sonner";
 
 interface UseDebouncedProgressProps {
@@ -43,31 +44,19 @@ export function useDebouncedProgress({
       }
 
       setIsSaving(true);
-      
+
       try {
-        const newStatus = progressValue === 100 ? "completed" : progressValue > 0 ? "in_progress" : "not_started";
-        
-        const updateData: Partial<ProjectMilestone> = {
-          progress_percentage: progressValue,
-          status: newStatus,
-        };
+        // Use the new function that creates journal entries automatically
+        const { milestone: updatedMilestone, journalEntry } =
+          await updateMilestoneProgressWithJournal(milestone.id, progressValue);
 
-        // Handle completion logic to satisfy database constraint
-        if (newStatus === "completed") {
-          updateData.completed_at = new Date().toISOString();
-        } else if (milestone.status === "completed" && newStatus !== "completed") {
-          // If changing from completed to another status, clear completed_at
-          updateData.completed_at = null;
-        }
-
-        const updatedMilestone = await updateMilestone(milestone.id, updateData);
         lastSavedProgress.current = progressValue;
         onUpdate(updatedMilestone);
-        
+
         toast.success(
           progressValue === 100
-            ? "Milestone completed! Congratulations!"
-            : "Progress updated"
+            ? "Milestone completed! Journal entry created"
+            : "Progress updated with journal entry"
         );
       } catch (error) {
         console.error("Error updating progress:", error);
@@ -78,7 +67,7 @@ export function useDebouncedProgress({
         setIsSaving(false);
       }
     },
-    [milestone.id, milestone.status, onUpdate]
+    [milestone.id, onUpdate]
   );
 
   const updateProgress = useCallback(
