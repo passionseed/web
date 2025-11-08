@@ -17,12 +17,14 @@ interface MilestoneViewModeProps {
   milestone: ProjectMilestone;
   allMilestones: ProjectMilestone[];
   onMilestoneUpdated: (updatedMilestone?: ProjectMilestone) => void;
+  onBack?: () => void;
 }
 
 export function MilestoneViewMode({
   milestone,
   allMilestones,
   onMilestoneUpdated,
+  onBack,
 }: MilestoneViewModeProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [milestoneDetails, setMilestoneDetails] =
@@ -104,7 +106,11 @@ export function MilestoneViewMode({
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
-      <MilestoneHeader milestone={currentMilestone} onUpdate={handleUpdate} />
+      <MilestoneHeader
+        milestone={currentMilestone}
+        onUpdate={handleUpdate}
+        onBack={onBack}
+      />
 
       <MilestoneTabsContainer
         milestone={currentMilestone}

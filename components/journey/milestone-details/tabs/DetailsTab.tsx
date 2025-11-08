@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ProjectMilestone, MilestoneWithPaths } from "@/types/journey";
 import { InlineEditableDescription } from "../details/InlineEditableDescription";
 import { InlineEditableDetails } from "../details/InlineEditableDetails";
+import { InlineEditableDates } from "../details/InlineEditableDates";
 import { QuickProgressControls } from "../details/QuickProgressControls";
 import { DependenciesSection } from "../details/DependenciesSection";
 import { MilestoneMetadata } from "../details/MilestoneMetadata";
@@ -45,6 +46,14 @@ export function DetailsTab({
           Detailed Notes
         </Label>
         <InlineEditableDetails milestone={milestone} onUpdate={onUpdate} />
+      </div>
+
+      {/* Timeline Dates */}
+      <div className="bg-slate-800/30 rounded-lg p-3">
+        <Label className="text-sm font-semibold text-slate-200 mb-2 block">
+          Timeline
+        </Label>
+        <InlineEditableDates milestone={milestone} onUpdate={onUpdate} />
       </div>
 
       <Separator className="bg-slate-800" />

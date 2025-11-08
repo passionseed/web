@@ -10,6 +10,8 @@ import { ProjectMilestone } from "@/types/journey";
 import { InlineEditableTitle } from "../details/InlineEditableTitle";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import { getMilestoneStatusConfig } from "@/components/journey/utils/milestoneStatusConfig";
 import { AutoSaveIndicator } from "../common/AutoSaveIndicator";
 import { useMilestoneAutoSave } from "@/hooks/milestone-details/useMilestoneAutoSave";
@@ -17,11 +19,13 @@ import { useMilestoneAutoSave } from "@/hooks/milestone-details/useMilestoneAuto
 interface MilestoneHeaderProps {
   milestone: ProjectMilestone;
   onUpdate: (updatedMilestone?: ProjectMilestone) => void;
+  onBack?: () => void;
 }
 
 export function MilestoneHeader({
   milestone,
   onUpdate,
+  onBack,
 }: MilestoneHeaderProps) {
   const { status } = useMilestoneAutoSave();
   const statusConfig = getMilestoneStatusConfig(milestone.status);
@@ -29,6 +33,21 @@ export function MilestoneHeader({
 
   return (
     <div className="p-4 border-b border-slate-800">
+      {/* Back button */}
+      {onBack && (
+        <div className="mb-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="text-slate-400 hover:text-slate-200 -ml-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Timeline
+          </Button>
+        </div>
+      )}
+
       {/* Header with auto-save indicator */}
       <div className="flex items-start gap-3 mb-3">
         <StatusIcon className={`w-5 h-5 mt-1 shrink-0 ${statusConfig.iconClassName}`} />

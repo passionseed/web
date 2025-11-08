@@ -141,6 +141,7 @@ export interface ProjectMilestone {
   status: MilestoneStatus;
   estimated_hours: number | null;
   actual_hours: number | null;
+  start_date: string | null;
   due_date: string | null;
   completed_at: string | null;
   order_index: number;
@@ -430,6 +431,7 @@ export interface MilestoneCreateData {
   description?: string;
   status?: MilestoneStatus;
   estimated_hours?: number;
+  start_date?: string;
   due_date?: string;
   display_order?: number;
   position?: NodePosition;
@@ -445,6 +447,7 @@ export interface MilestoneUpdateData {
   status?: MilestoneStatus;
   estimated_hours?: number;
   actual_hours?: number;
+  start_date?: string;
   due_date?: string;
   completed_at?: string;
   display_order?: number;

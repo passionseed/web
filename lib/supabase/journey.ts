@@ -494,6 +494,7 @@ export async function createMilestone(
         ...(data.metadata || {}),
         // Store additional fields in metadata that don't have direct columns
         estimated_hours: data.estimated_hours,
+        start_date: data.start_date,
         due_date: data.due_date,
         style: data.style,
         dependencies: data.dependencies,
@@ -612,12 +613,54 @@ export async function updateMilestone(
     throw new Error("User not authenticated");
   }
 
-  // Remove fields that shouldn't be updated directly
-  const { id, project_id, created_at, updated_at, ...updateData } = data as any;
+  // First get the current milestone to merge metadata
+  const { data: currentMilestone } = await supabase
+    .from(TABLES.PROJECT_MILESTONES)
+    .select("metadata")
+    .eq("id", milestoneId)
+    .single();
+
+  // Separate fields that go in metadata vs direct columns
+  const {
+    id,
+    project_id,
+    created_at,
+    updated_at,
+    start_date,
+    due_date,
+    estimated_hours,
+    actual_hours,
+    style,
+    dependencies,
+    tags,
+    ...directUpdateData
+  } = data as any;
+
+  // Prepare metadata update
+  const metadataUpdates: any = {};
+  if (start_date !== undefined) metadataUpdates.start_date = start_date;
+  if (due_date !== undefined) metadataUpdates.due_date = due_date;
+  if (estimated_hours !== undefined) metadataUpdates.estimated_hours = estimated_hours;
+  if (actual_hours !== undefined) metadataUpdates.actual_hours = actual_hours;
+  if (style !== undefined) metadataUpdates.style = style;
+  if (dependencies !== undefined) metadataUpdates.dependencies = dependencies;
+  if (tags !== undefined) metadataUpdates.tags = tags;
+
+  // Merge with existing metadata
+  const finalUpdateData: any = {
+    ...directUpdateData,
+  };
+
+  if (Object.keys(metadataUpdates).length > 0) {
+    finalUpdateData.metadata = {
+      ...(currentMilestone?.metadata || {}),
+      ...metadataUpdates,
+    };
+  }
 
   const { data: milestone, error } = await supabase
     .from(TABLES.PROJECT_MILESTONES)
-    .update(updateData)
+    .update(finalUpdateData)
     .eq("id", milestoneId)
     .select()
     .single();
@@ -680,6 +723,127 @@ export async function updateMilestoneProgress(
     return { milestone, journalEntry };
   } catch (error) {
     console.error("Error updating milestone progress:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update milestone progress with automatic journal creation
+ * Creates a journal entry documenting the progress update with optional user note
+ */
+export async function updateMilestoneProgressWithJournal(
+  milestoneId: string,
+  newProgress: number,
+  optionalNote?: string
+): Promise<{ milestone: ProjectMilestone; journalEntry: MilestoneJournal }> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  try {
+    // Get current milestone to calculate progress delta and get last journal
+    const { data: currentMilestone, error: fetchError } = await supabase
+      .from(TABLES.PROJECT_MILESTONES)
+      .select("*, journals:milestone_journals(*)")
+      .eq("id", milestoneId)
+      .single();
+
+    if (fetchError || !currentMilestone) {
+      throw new Error("Milestone not found");
+    }
+
+    const oldProgress = currentMilestone.progress_percentage || 0;
+    const progressDelta = newProgress - oldProgress;
+
+    // Calculate time since last update
+    let timeSinceLastUpdate = "";
+    if (currentMilestone.journals && currentMilestone.journals.length > 0) {
+      const lastJournal = currentMilestone.journals.sort(
+        (a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )[0];
+      const lastUpdateDate = new Date(lastJournal.created_at);
+      const now = new Date();
+      const daysDiff = Math.floor(
+        (now.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      if (daysDiff === 0) {
+        timeSinceLastUpdate = " (earlier today)";
+      } else if (daysDiff === 1) {
+        timeSinceLastUpdate = " (yesterday)";
+      } else if (daysDiff < 7) {
+        timeSinceLastUpdate = ` (${daysDiff} days ago)`;
+      } else if (daysDiff < 30) {
+        const weeks = Math.floor(daysDiff / 7);
+        timeSinceLastUpdate = ` (${weeks} week${weeks > 1 ? "s" : ""} ago)`;
+      } else {
+        const months = Math.floor(daysDiff / 30);
+        timeSinceLastUpdate = ` (${months} month${months > 1 ? "s" : ""} ago)`;
+      }
+    }
+
+    // Generate journal content
+    let journalContent = "";
+
+    if (newProgress === 100) {
+      journalContent = `Milestone completed! 🎉\n\nProgress updated to ${newProgress}% (${progressDelta > 0 ? "+" : ""}${progressDelta}%)${timeSinceLastUpdate}`;
+    } else if (progressDelta > 0) {
+      journalContent = `Progress updated to ${newProgress}% (${progressDelta > 0 ? "+" : ""}${progressDelta}%)${timeSinceLastUpdate}`;
+    } else if (progressDelta < 0) {
+      journalContent = `Progress adjusted to ${newProgress}% (${progressDelta}%)${timeSinceLastUpdate}`;
+    } else {
+      journalContent = `Progress logged at ${newProgress}%`;
+    }
+
+    // Add optional user note if provided
+    if (optionalNote && optionalNote.trim()) {
+      journalContent += `\n\nNote: ${optionalNote.trim()}`;
+    }
+
+    // Update milestone progress
+    const { data: milestone, error: milestoneError } = await supabase
+      .from(TABLES.PROJECT_MILESTONES)
+      .update({
+        progress_percentage: newProgress,
+        status: newProgress === 100 ? "completed" : newProgress > 0 ? "in_progress" : "not_started",
+        completed_at: newProgress === 100 ? new Date().toISOString() : null,
+      })
+      .eq("id", milestoneId)
+      .select()
+      .single();
+
+    if (milestoneError) throw milestoneError;
+
+    // Create journal entry
+    const { data: journalEntry, error: journalError } = await supabase
+      .from(TABLES.MILESTONE_JOURNALS)
+      .insert({
+        milestone_id: milestoneId,
+        user_id: user.id,
+        content: journalContent,
+        progress_percentage: newProgress,
+        metadata: {
+          auto_generated: true,
+          progress_delta: progressDelta,
+          old_progress: oldProgress,
+          has_user_note: !!optionalNote,
+        },
+      })
+      .select()
+      .single();
+
+    if (journalError) throw journalError;
+
+    return { milestone, journalEntry };
+  } catch (error) {
+    console.error("Error updating milestone progress with journal:", error);
     throw error;
   }
 }
