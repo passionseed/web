@@ -18,7 +18,7 @@ export function Layout({ children }: LayoutProps) {
   const pathname = usePathname();
   
   // Hide navbar for profile completion pages
-  const hideNavbar = pathname?.includes('finish-profile') || pathname?.includes('complete-profile') || pathname === '/about';
+  const hideNavbar = pathname?.includes('finish-profile') || pathname?.includes('complete-profile');
 
   useEffect(() => {
     async function getUser() {
