@@ -50,6 +50,7 @@ import { buildJourneyMap } from "./utils/journeyMapBuilder";
 import { PANEL_SIZES, VIEW_MODES } from "./constants/journeyMapConfig";
 import { NorthStar, NorthStarStatus } from "@/types/journey";
 import { updateNorthStar } from "@/lib/supabase/north-star";
+import { createClient } from "@/utils/supabase/client";
 
 // ========================================
 // TYPES
@@ -75,6 +76,10 @@ function JourneyMapCanvasInner({
   const { paths, loadPaths, createPath, deletePath, updatePathType } =
     useProjectPaths();
   const { northStars, refreshNorthStars, updateNorthStarPositionLocal } = useNorthStars();
+  
+  // User profile state
+  const [userEducationLevel, setUserEducationLevel] = React.useState<'high_school' | 'university' | 'unaffiliated'>('university');
+  const supabase = createClient();
 
   // UI state hooks
   const {
@@ -119,6 +124,27 @@ function JourneyMapCanvasInner({
     React.useState<NorthStar | null>(null);
   const [targetStatus, setTargetStatus] =
     React.useState<NorthStarStatus>("active");
+
+  // Fetch user profile to get education level
+  React.useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('education_level')
+          .eq('id', userId)
+          .single();
+        
+        if (profile?.education_level) {
+          setUserEducationLevel(profile.education_level);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, [userId, supabase]);
 
   const openCreateNorthStarDialog = useCallback(() => {
     setCreateNorthStarOpen(true);
@@ -318,28 +344,27 @@ function JourneyMapCanvasInner({
   ]);
 
   // Update ReactFlow nodes/edges when map data changes
-  // With optimistic updates, local state always has current positions
-  // so we can simply use mapData directly without complex merging
+  // Preserve user-dragged positions by keeping existing node positions
+  // This prevents position resets when mapData rebuilds after saves
   React.useEffect(() => {
     setNodes((currentNodes) => {
-      // Create a map of current positions for nodes with pending saves
-      const pendingPositions = new Map(
-        currentNodes
-          .filter((node) => hasPendingSave(node.id))
-          .map((node) => [node.id, node.position])
+      // Create a map of current positions for all existing nodes
+      // This preserves user-dragged positions even after saves complete
+      const currentPositions = new Map(
+        currentNodes.map((node) => [node.id, node.position])
       );
 
-      // Use pending position if save in progress, otherwise use mapData
+      // Update nodes, preserving existing positions to prevent resets
       return mapData.nodes.map((newNode) => {
-        const pendingPosition = pendingPositions.get(newNode.id);
-        return pendingPosition
-          ? { ...newNode, position: pendingPosition }
+        const existingPosition = currentPositions.get(newNode.id);
+        return existingPosition
+          ? { ...newNode, position: existingPosition }
           : newNode;
       });
     });
 
     setEdges(mapData.edges);
-  }, [mapData, setNodes, setEdges, hasPendingSave]);
+  }, [mapData, setNodes, setEdges]);
 
   // Load project paths on mount
   React.useEffect(() => {
@@ -493,6 +518,7 @@ function JourneyMapCanvasInner({
         open={createNorthStarOpen}
         onOpenChange={closeCreateNorthStarDialog}
         onSuccess={handleNorthStarEdited}
+        userEducationLevel={userEducationLevel}
       />
       <CreateProjectDialog
         open={createProjectOpen}

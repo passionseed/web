@@ -52,15 +52,15 @@ export const PROJECT_PATH_STYLES: Record<ProjectPathType, PathStyleConfig> = {
     description: "These projects share common themes or goals",
   },
   leads_to: {
-    stroke: "#10b981", // Green - animated, progression
-    strokeWidth: 2.5,
+    stroke: "transparent", // Hidden arrows
+    strokeWidth: 0,
     strokeDasharray: undefined,
-    animated: true,
+    animated: false,
     markerEnd: {
       type: MarkerType.ArrowClosed,
-      color: "#10b981",
-      width: 20,
-      height: 20,
+      color: "transparent",
+      width: 0,
+      height: 0,
     },
     label: "Leads To",
     description: "This project naturally progresses to the next one",

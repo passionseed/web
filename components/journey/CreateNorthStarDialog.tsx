@@ -59,6 +59,9 @@ import {
   generateMilestones,
 } from "@/lib/ai/north-star-enhancer";
 import { addMonths, format } from "date-fns";
+import { EducationalPathwayFlow } from "@/components/education/EducationalPathwayFlow";
+import { getAllUniversities } from "@/lib/supabase/education";
+import { University, SimpleRoadmap, EducationalFlowData } from "@/types/education";
 
 type Language = "en" | "th";
 
@@ -276,12 +279,14 @@ interface CreateNorthStarDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  userEducationLevel?: 'high_school' | 'university' | 'unaffiliated';
 }
 
 export function CreateNorthStarDialog({
   open,
   onOpenChange,
   onSuccess,
+  userEducationLevel = 'university', // Default to university for backward compatibility
 }: CreateNorthStarDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -306,6 +311,12 @@ export function CreateNorthStarDialog({
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiUsedForMilestones, setAiUsedForMilestones] = useState(false);
   const [showSMARTDetails, setShowSMARTDetails] = useState(false);
+  
+  // Educational pathway state
+  const [showEducationalPathway, setShowEducationalPathway] = useState(false);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [educationalData, setEducationalData] = useState<EducationalFlowData & { roadmap: SimpleRoadmap } | null>(null);
+  const [loadingUniversities, setLoadingUniversities] = useState(false);
 
   const t = translations[language];
 
@@ -389,17 +400,67 @@ export function CreateNorthStarDialog({
     }
   };
 
-  const handleNext = () => {
-    // Validation is optional for reflection steps - allow moving forward
+  const handleNext = async () => {
+    // Step 1 -> Check if high school student for educational pathway
+    if (currentStep === 1 && userEducationLevel === 'high_school' && formData.visionQuestion.trim()) {
+      // Load universities and show educational pathway
+      setLoadingUniversities(true);
+      try {
+        const universitiesData = await getAllUniversities();
+        setUniversities(universitiesData);
+        setShowEducationalPathway(true);
+      } catch (error) {
+        console.error('Error loading universities:', error);
+        toast.error('Failed to load universities');
+        // Continue with standard flow
+        setCurrentStep(currentStep + 1);
+      } finally {
+        setLoadingUniversities(false);
+      }
+      return;
+    }
+
+    // Regular flow for non-high school students or other steps
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
+    if (showEducationalPathway) {
+      setShowEducationalPathway(false);
+      return;
+    }
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
+  };
+
+  const handleEducationalPathwayComplete = (data: EducationalFlowData & { roadmap: SimpleRoadmap }) => {
+    setEducationalData(data);
+    setShowEducationalPathway(false);
+    
+    // Update formData with educational data
+    setFormData(prev => ({
+      ...prev,
+      visionQuestion: data.vision,
+      // Convert roadmap milestones to form milestones
+      milestones: data.roadmap.milestones.map((milestone, index) => ({
+        title: milestone.title,
+        startDate: format(addMonths(new Date(), index * 6), "yyyy-MM-dd"),
+        dueDate: format(addMonths(new Date(), (index + 1) * 6), "yyyy-MM-dd"),
+        measurable: milestone.description
+      }))
+    }));
+    
+    // Skip to step 3 (values alignment) since we have vision and milestones
+    setCurrentStep(3);
+  };
+
+  const handleEducationalPathwayCancel = () => {
+    setShowEducationalPathway(false);
+    // Go back to vision editing (step 1)
+    setCurrentStep(1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -595,7 +656,7 @@ export function CreateNorthStarDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+      <DialogContent className={`${showEducationalPathway ? 'sm:max-w-[800px]' : 'sm:max-w-[600px]'} max-h-[90vh] flex flex-col`}>
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
@@ -636,8 +697,21 @@ export function CreateNorthStarDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="space-y-6 overflow-y-auto flex-1 pr-2 -mr-2">
+        {showEducationalPathway ? (
+          // Educational Pathway Flow for High School Students
+          <div className="flex flex-col flex-1 min-h-0 max-h-[80vh]">
+            <div className="overflow-y-auto flex-1 pr-2 -mr-2">
+              <EducationalPathwayFlow
+                vision={formData.visionQuestion}
+                universities={universities}
+                onComplete={handleEducationalPathwayComplete}
+                onCancel={handleEducationalPathwayCancel}
+              />
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+            <div className="space-y-6 overflow-y-auto flex-1 pr-2 -mr-2">
             {/* STEP 0: Welcome & Reflection */}
             {currentStep === 0 && (
               <div className="space-y-8 animate-in fade-in duration-700">
@@ -1528,11 +1602,20 @@ export function CreateNorthStarDialog({
                     <Button
                       type="button"
                       onClick={handleNext}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || loadingUniversities}
                       className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
                     >
-                      {t.next}
-                      <ChevronRight className="w-4 h-4 ml-1" />
+                      {loadingUniversities ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          {t.next}
+                          <ChevronRight className="w-4 h-4 ml-1" />
+                        </>
+                      )}
                     </Button>
                   ) : (
                     <Button
@@ -1558,6 +1641,7 @@ export function CreateNorthStarDialog({
             )}
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

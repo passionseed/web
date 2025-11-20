@@ -50,19 +50,15 @@ export function NorthStarProjectNode({
   const shapeData = NORTH_STAR_SHAPES.find((s) => s.value === northStarShape);
   const colorData = NORTH_STAR_COLORS.find((c) => c.value === northStarColor);
 
-  // Calculate zoom-responsive dimensions
-  const baseWidth = 288;
-  const minWidth = 180;
-  const maxWidth = 320;
-  const nodeWidth = Math.max(minWidth, Math.min(maxWidth, baseWidth + (numericZoom - 1) * 64));
+  // Calculate zoom-responsive dimensions (optimized)
+  const nodeWidth = 320; // Fixed width for better performance
 
-  // Determine zoom level for progressive disclosure
-  const isLowZoom = numericZoom < 0.75;
-  const isMediumZoom = numericZoom >= 0.75 && numericZoom < 1.25;
-  const isHighZoom = numericZoom >= 1.25;
+  // Simplified zoom level detection
+  const isLowZoom = numericZoom < 0.8;
+  const isHighZoom = numericZoom >= 1.2;
 
-  // Calculate icon size based on zoom
-  const iconSize = Math.max(2.5, Math.min(3.5, 3 + (numericZoom - 1) * 0.25));
+  // Fixed icon size for performance
+  const iconSize = 3;
 
   // Calculate progress ring offset
   const circumference = 2 * Math.PI * 45;
@@ -87,9 +83,7 @@ export function NorthStarProjectNode({
       />
 
       <div
-        className={`relative cursor-pointer group ${selected ? "scale-110" : ""} transition-all duration-300`}
-        role="button"
-        tabIndex={0}
+        className={`relative cursor-move group ${selected ? "scale-110" : ""} transition-all duration-300 drag-handle`}
         aria-label={`North Star Project: ${project.title} - ${progressPercentage}% complete`}
         style={{
           width: `${nodeWidth}px`,
@@ -124,6 +118,12 @@ export function NorthStarProjectNode({
             minHeight: isLowZoom ? 'auto' : '224px',
           }}
         >
+          {/* Drag Handle Area */}
+          <div className="absolute top-0 left-0 right-0 h-8 cursor-move z-10" 
+               title="Drag to move project"
+               style={{ pointerEvents: 'all' }}>
+          </div>
+
           {/* Progress ring - hide at low zoom */}
           {!isLowZoom && (
             <div className="absolute -top-4 -right-4 transition-all duration-300">

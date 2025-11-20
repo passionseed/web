@@ -49,8 +49,8 @@ export const FLOW_CONFIG = {
 // ========================================
 
 export const BACKGROUND_CONFIG = {
-  GAP: 20,
-  SIZE: 1,
+  GAP: 40,
+  SIZE: 0.5,
   COLOR: "#334155",
   BG_COLOR: "#0f172a",
 } as const;

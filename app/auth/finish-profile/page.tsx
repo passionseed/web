@@ -33,6 +33,9 @@ import {
   Lightbulb,
   X,
   ArrowLeft,
+  GraduationCap,
+  School,
+  Building,
 } from "lucide-react";
 
 type Skill = {
@@ -51,6 +54,7 @@ export default function FinishProfilePage() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [educationLevel, setEducationLevel] = useState<'high_school' | 'university' | 'unaffiliated'>('high_school');
   const [selectedSkills, setSelectedSkills] = useState<Skill[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -165,6 +169,7 @@ export default function FinishProfilePage() {
         setFullName(profileData.full_name || "");
         setUsername(profileData.username || "");
         setDateOfBirth(profileData.date_of_birth || "");
+        setEducationLevel(profileData.education_level || 'high_school');
       }
 
       // Fetch existing skills from interests table
@@ -275,6 +280,7 @@ export default function FinishProfilePage() {
         full_name: fullName,
         username: username,
         date_of_birth: dateOfBirth,
+        education_level: educationLevel,
         updated_at: new Date(),
         avatar_url: user.user_metadata?.avatar_url || null,
         email: user.email,
@@ -458,6 +464,75 @@ export default function FinishProfilePage() {
                   onChange={(e) => setDateOfBirth(e.target.value)}
                   required
                 />
+              </div>
+            </div>
+
+            {/* Education & Background Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium border-b pb-2">
+                Education & Background
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Help us personalize your learning journey based on your current education level
+              </p>
+
+              {/* Education Level Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">
+                  Current Education Level
+                </Label>
+                <div className="grid grid-cols-1 gap-3 max-w-md">
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'high_school' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => setEducationLevel('high_school')}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <School className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">High School</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Currently in high school
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'university' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => setEducationLevel('university')}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <GraduationCap className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">University</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Currently in university
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'unaffiliated' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => setEducationLevel('unaffiliated')}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <Building className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">Unaffiliated</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Not currently in formal education
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                </div>
               </div>
             </div>
 
