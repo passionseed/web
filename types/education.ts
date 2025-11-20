@@ -101,3 +101,38 @@ export interface RoadmapGenerationResponse {
   success: boolean;
   error?: string;
 }
+
+// University Example Journey Maps
+export interface UniversityExampleMap {
+  id: string;
+  university_id: string;
+  title: string;
+  description?: string;
+  target_audience?: string;
+  example_data: any; // JSON structure matching journey map format
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+}
+
+// AI Agents Archive
+export interface AIAgent {
+  id: string;
+  name: string;
+  description?: string;
+  use_case: string;
+  category: string;
+  system_prompt: string;
+  user_prompt_template?: string;
+  model_config: {
+    temperature?: number;
+    top_p?: number;
+    max_tokens?: number;
+    [key: string]: any;
+  };
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  last_used_at?: string;
+}

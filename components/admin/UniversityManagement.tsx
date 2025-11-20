@@ -21,10 +21,8 @@ import {
   Trash2, 
   Search, 
   Globe, 
-  Upload,
   Download,
-  Eye,
-  X
+  Map
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -32,6 +30,7 @@ import {
   updateUniversity, 
   deleteUniversity 
 } from '@/lib/supabase/education';
+import { useRouter } from 'next/navigation';
 
 interface UniversityManagementProps {
   initialUniversities: University[];
@@ -42,6 +41,7 @@ export function UniversityManagement({
   initialUniversities,
   user 
 }: UniversityManagementProps) {
+  const router = useRouter();
   const [universities, setUniversities] = useState<University[]>(initialUniversities);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -95,6 +95,10 @@ export function UniversityManagement({
   const handleDelete = (university: University) => {
     setEditingUniversity(university);
     setShowDeleteDialog(true);
+  };
+
+  const handleExampleMaps = (university: University) => {
+    router.push(`/admin/archive/universities/${university.id}/example-maps/create`);
   };
 
   const handleSubmitCreate = async () => {
@@ -198,6 +202,8 @@ export function UniversityManagement({
     
     toast.success('Universities exported to CSV');
   };
+
+
 
   return (
     <div className="space-y-6">
@@ -328,6 +334,15 @@ export function UniversityManagement({
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleExampleMaps(university)}
+                      className="text-slate-400 hover:text-blue-400"
+                      title="Create Example Journey Map"
+                    >
+                      <Map className="w-4 h-4" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -550,6 +565,7 @@ export function UniversityManagement({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

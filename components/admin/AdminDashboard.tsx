@@ -116,6 +116,22 @@ export function AdminDashboard() {
                   </Card>
                 </a>
                 
+                <a href="/admin/archive/ai" className="block">
+                  <Card className="cursor-pointer hover:bg-slate-800/50 transition-colors">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">AI Agents</CardTitle>
+                      <CardDescription>
+                        Manage AI agents and prompts
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-slate-400">
+                        Configure AI behavior for different use cases like roadmap generation.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </a>
+
                 <Card className="opacity-50 cursor-not-allowed">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg text-slate-500">Learning Resources</CardTitle>
@@ -126,20 +142,6 @@ export function AdminDashboard() {
                   <CardContent>
                     <p className="text-sm text-slate-500">
                       Future archive for educational content and materials.
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="opacity-50 cursor-not-allowed">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-slate-500">System Data</CardTitle>
-                    <CardDescription>
-                      Coming soon - System configuration
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-slate-500">
-                      Archive for system settings and templates.
                     </p>
                   </CardContent>
                 </Card>

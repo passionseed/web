@@ -33,21 +33,23 @@ export function calculateOverallProgress(
  * Calculate journey statistics for dashboard display
  */
 export function calculateJourneyStats(projects: ProjectWithMilestones[]) {
-  const totalProjects = projects.length;
-  const northStarCount = projects.filter(
+  // Ensure projects is a valid array
+  const validProjects = Array.isArray(projects) ? projects : [];
+  const totalProjects = validProjects.length;
+  const northStarCount = validProjects.filter(
     (p) => p.metadata?.is_north_star
   ).length;
-  const activeProjects = projects.filter(
+  const activeProjects = validProjects.filter(
     (p) => p.status === "in_progress"
   ).length;
-  const completedProjects = projects.filter(
+  const completedProjects = validProjects.filter(
     (p) => p.status === "completed"
   ).length;
-  const totalMilestones = projects.reduce(
+  const totalMilestones = validProjects.reduce(
     (sum, p) => sum + (p.milestone_count || 0),
     0
   );
-  const completedMilestones = projects.reduce(
+  const completedMilestones = validProjects.reduce(
     (sum, p) => sum + (p.completed_milestone_count || 0),
     0
   );
