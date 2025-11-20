@@ -13,7 +13,7 @@ import { AdminStatsOverview } from "./AdminStatsOverview";
 import { AdminUserManagement } from "./AdminUserManagement";
 import { AdminMapsManagement } from "./AdminMapsManagement";
 import { AdminJourneyPeek } from "./AdminJourneyPeek";
-import { Users, Activity, Settings, BarChart3, Eye } from "lucide-react";
+import { Users, Activity, Settings, BarChart3, Eye, Archive } from "lucide-react";
 
 export function AdminDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -45,6 +45,10 @@ export function AdminDashboard() {
           <TabsTrigger value="journey-peek" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             Journey Peek
+          </TabsTrigger>
+          <TabsTrigger value="archive" className="flex items-center gap-2">
+            <Archive className="h-4 w-4" />
+            Archive
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -84,6 +88,64 @@ export function AdminDashboard() {
 
         <TabsContent value="journey-peek" className="space-y-4">
           <AdminJourneyPeek key={`journey-peek-${refreshKey}`} />
+        </TabsContent>
+
+        <TabsContent value="archive" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Archive Management</CardTitle>
+              <CardDescription>
+                Manage archived data and system resources
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <a href="/admin/archive/universities" className="block">
+                  <Card className="cursor-pointer hover:bg-slate-800/50 transition-colors">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Universities</CardTitle>
+                      <CardDescription>
+                        Manage university archive for educational pathways
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-slate-400">
+                        Add, edit, and organize universities that students can select.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </a>
+                
+                <Card className="opacity-50 cursor-not-allowed">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-slate-500">Learning Resources</CardTitle>
+                    <CardDescription>
+                      Coming soon - Manage learning resources
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-slate-500">
+                      Future archive for educational content and materials.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="opacity-50 cursor-not-allowed">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-slate-500">System Data</CardTitle>
+                    <CardDescription>
+                      Coming soon - System configuration
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-slate-500">
+                      Archive for system settings and templates.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">

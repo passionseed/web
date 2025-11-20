@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Upload, Save, User, Mail, Calendar, Edit } from 'lucide-react'
+import { Upload, Save, User, Mail, Calendar, Edit, School, GraduationCap, Building } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface UserProfile {
@@ -18,6 +18,7 @@ interface UserProfile {
   avatar_url: string | null
   date_of_birth: string | null
   discord_id: string | null
+  education_level: 'high_school' | 'university' | 'unaffiliated' | null
   created_at: string | null
   updated_at: string | null
 }
@@ -35,6 +36,7 @@ export default function ProfilePage() {
   const [username, setUsername] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
   const [discordId, setDiscordId] = useState('')
+  const [educationLevel, setEducationLevel] = useState<'high_school' | 'university' | 'unaffiliated'>('high_school')
 
   useEffect(() => {
     fetchProfile()
@@ -50,6 +52,7 @@ export default function ProfilePage() {
           full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
           username: user.user_metadata?.preferred_username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
           avatar_url: user.user_metadata?.avatar_url || null,
+          education_level: 'high_school',
         })
         .select('*')
         .single()
@@ -65,6 +68,7 @@ export default function ProfilePage() {
       setUsername(newProfile.username || '')
       setDateOfBirth(newProfile.date_of_birth || '')
       setDiscordId(newProfile.discord_id || '')
+      setEducationLevel(newProfile.education_level || 'high_school')
       toast.success('Profile created successfully!')
     } catch (error) {
       console.error('Profile creation error:', error)
@@ -103,6 +107,7 @@ export default function ProfilePage() {
       setUsername(profileData.username || '')
       setDateOfBirth(profileData.date_of_birth || '')
       setDiscordId(profileData.discord_id || '')
+      setEducationLevel(profileData.education_level || 'high_school')
     } catch (error) {
       console.error('Profile fetch error:', error)
       toast.error('Failed to load profile')
@@ -154,6 +159,7 @@ export default function ProfilePage() {
           username: username,
           date_of_birth: dateOfBirth || null,
           discord_id: discordId || null,
+          education_level: educationLevel,
           updated_at: new Date().toISOString(),
         })
         .eq('id', profile.id)
@@ -169,6 +175,7 @@ export default function ProfilePage() {
         username,
         date_of_birth: dateOfBirth || null,
         discord_id: discordId || null,
+        education_level: educationLevel,
         updated_at: new Date().toISOString(),
       } : null)
 
@@ -188,6 +195,7 @@ export default function ProfilePage() {
       setUsername(profile.username || '')
       setDateOfBirth(profile.date_of_birth || '')
       setDiscordId(profile.discord_id || '')
+      setEducationLevel(profile.education_level || 'high_school')
     }
     setIsEditing(false)
   }
@@ -316,6 +324,65 @@ export default function ProfilePage() {
                   disabled={!isEditing}
                   placeholder="Enter your Discord username"
                 />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Education Level</Label>
+                <div className="grid grid-cols-1 gap-3 max-w-md">
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'high_school' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => isEditing && setEducationLevel('high_school')}
+                    disabled={!isEditing}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <School className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">High School</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Currently in high school
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'university' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => isEditing && setEducationLevel('university')}
+                    disabled={!isEditing}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <GraduationCap className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">University</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Currently in university
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'unaffiliated' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => isEditing && setEducationLevel('unaffiliated')}
+                    disabled={!isEditing}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <Building className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">Unaffiliated</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Not currently in formal education
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                </div>
               </div>
             </div>
 

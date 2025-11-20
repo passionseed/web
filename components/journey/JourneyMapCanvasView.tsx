@@ -309,7 +309,7 @@ export function JourneyMapCanvasView({
           minZoom={FLOW_CONFIG.MIN_ZOOM}
           maxZoom={FLOW_CONFIG.MAX_ZOOM}
           defaultEdgeOptions={{
-            type: "smoothstep",
+            type: "straight",
             animated: false,
           }}
           connectionMode={ConnectionMode.Loose}
@@ -323,6 +323,9 @@ export function JourneyMapCanvasView({
           panOnScroll
           panOnDrag={FLOW_CONFIG.PAN_ON_DRAG}
           attributionPosition="bottom-left"
+          onlyRenderVisibleElements
+          elevateEdgesOnSelect={false}
+          disableKeyboardA11y={true}
         >
           <Background
             gap={BACKGROUND_CONFIG.GAP}

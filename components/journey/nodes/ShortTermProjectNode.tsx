@@ -111,19 +111,15 @@ export const ShortTermProjectNode = React.memo(function ({
 
   const progressPercentage = project.progress_percentage || 0;
 
-  // Calculate zoom-responsive dimensions
-  const baseWidth = 320;
-  const minWidth = 200;
-  const maxWidth = 320;
-  const nodeWidth = Math.max(minWidth, Math.min(maxWidth, baseWidth + (numericZoom - 1) * 60));
+  // Fixed dimensions for better performance
+  const nodeWidth = 320;
 
-  // Determine zoom level for progressive disclosure
-  const isLowZoom = numericZoom < 0.75;
-  const isMediumZoom = numericZoom >= 0.75 && numericZoom < 1.25;
-  const isHighZoom = numericZoom >= 1.25;
+  // Simplified zoom level detection
+  const isLowZoom = numericZoom < 0.8;
+  const isHighZoom = numericZoom >= 1.2;
 
-  // Calculate icon size based on zoom
-  const iconSize = Math.max(1.5, Math.min(2, 1.5 + (numericZoom - 1) * 0.25));
+  // Fixed icon size for performance
+  const iconSize = 1.75;
 
   return (
     <div className="relative">
@@ -144,11 +140,9 @@ export const ShortTermProjectNode = React.memo(function ({
       />
 
       <div
-        className={`relative cursor-pointer group ${
+        className={`relative cursor-move group ${
           selected ? "scale-105" : "hover:scale-[1.02]"
-        } transition-all duration-200`}
-        role="button"
-        tabIndex={0}
+        } transition-all duration-200 drag-handle`}
         aria-label={`Project: ${project.title} - ${progressPercentage}% complete`}
         style={{
           width: `${nodeWidth}px`,
@@ -188,6 +182,12 @@ export const ShortTermProjectNode = React.memo(function ({
               <Sparkles className="w-4 h-4 text-white fill-white" />
             </div>
           )}
+
+          {/* Drag Handle Area */}
+          <div className="absolute top-0 left-0 right-0 h-8 cursor-move z-10" 
+               title="Drag to move project"
+               style={{ pointerEvents: 'all' }}>
+          </div>
 
           {/* Header - Always visible */}
           <div className="flex items-center gap-3 mb-3">
