@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { CreateExampleMapFlow } from "@/components/admin/CreateExampleMapFlow";
+import { EditExampleMapFlow } from "@/components/admin/EditExampleMapFlow";
 
 async function getUniversity(supabase: any, universityId: string) {
   const { data: university, error } = await supabase
@@ -16,10 +16,24 @@ async function getUniversity(supabase: any, universityId: string) {
   return university;
 }
 
-export default async function CreateExampleMapPage({
+async function getExampleMap(supabase: any, mapId: string) {
+  const { data: exampleMap, error } = await supabase
+    .from("university_example_maps")
+    .select("*")
+    .eq("id", mapId)
+    .single();
+
+  if (error || !exampleMap) {
+    return null;
+  }
+
+  return exampleMap;
+}
+
+export default async function EditExampleMapPage({
   params,
 }: {
-  params: Promise<{ universityId: string }>;
+  params: Promise<{ universityId: string; mapId: string }>;
 }) {
   const supabase = await createClient();
   const resolvedParams = await params;
@@ -42,10 +56,16 @@ export default async function CreateExampleMapPage({
   }
 
   const university = await getUniversity(supabase, resolvedParams.universityId);
+  const exampleMap = await getExampleMap(supabase, resolvedParams.mapId);
+
+  if (!exampleMap) {
+    redirect(`/admin/archive/universities/${resolvedParams.universityId}`);
+  }
 
   return (
-    <CreateExampleMapFlow 
+    <EditExampleMapFlow 
       university={university}
+      exampleMap={exampleMap}
       user={user}
     />
   );

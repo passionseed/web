@@ -18,6 +18,7 @@ import {
 import { ImperativePanelHandle } from "react-resizable-panels";
 import { ChevronLeft, ChevronRight, Save, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,10 +82,22 @@ import { useJourneyMapState } from "@/hooks/use-journey-map-state";
 import { usePositionSync } from "@/hooks/use-position-sync";
 import { buildJourneyMap, MapBuilderCallbacks } from "@/components/journey/utils/journeyMapBuilder";
 import { calculateJourneyStats } from "@/components/journey/utils/journeyCalculations";
+import { getUniversityExampleMaps } from "@/lib/supabase/education";
+import { Edit, Trash2, Users } from "lucide-react";
+import { StudentPersona } from "./PersonaFormDialog";
 
 interface UniversityExampleJourneyCanvasProps {
   university: University;
   user: any;
+  persona?: StudentPersona | null;
+  onEditPersona?: () => void;
+  existingMapId?: string;
+  initialMapData?: {
+    title: string;
+    description: string;
+    target_audience: string;
+  };
+  initialExampleData?: any;
 }
 
 interface ExampleMapMetadata {
@@ -93,19 +106,152 @@ interface ExampleMapMetadata {
   target_audience: string;
 }
 
+// University Example Milestone Panel Component
+interface UniversityExampleMilestonePanelProps {
+  projectId: string;
+  projects: ProjectWithMilestones[];
+  university: University;
+  onEdit: () => void;
+}
+
+function UniversityExampleMilestonePanel({
+  projectId,
+  projects,
+  university,
+  onEdit,
+}: UniversityExampleMilestonePanelProps) {
+  const project = projects.find(p => p.id === projectId);
+  
+  if (!project) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center h-full text-center">
+        <div className="bg-slate-800 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+          <BookOpen className="w-8 h-8 text-slate-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-white mb-2">
+          Milestone Not Found
+        </h3>
+        <p className="text-slate-400 text-sm">
+          The selected milestone could not be found.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-slate-900">
+      {/* Header */}
+      <div className="p-4 border-b border-slate-800">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">{project.icon || "📚"}</span>
+              <h2 className="text-lg font-semibold text-white line-clamp-2">
+                {project.title}
+              </h2>
+            </div>
+            <Badge className="bg-blue-700 text-blue-200 text-xs">
+              University Example
+            </Badge>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onEdit}
+            className="text-slate-400 hover:text-white"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 flex-1 overflow-y-auto space-y-6">
+        {/* Description */}
+        {project.description && (
+          <div>
+            <h3 className="text-sm font-medium text-slate-300 mb-2">Description</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              {project.description}
+            </p>
+          </div>
+        )}
+
+        {/* Metadata */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-slate-300">Milestone Details</h3>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-500">Category</span>
+              <Badge variant="outline" className="text-xs">
+                {project.metadata?.category || 'Academic'}
+              </Badge>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-500">Importance</span>
+              <Badge variant="outline" className="text-xs">
+                {project.metadata?.importance || 'Important'}
+              </Badge>
+            </div>
+            
+            {project.metadata?.target_timeframe && (
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-500">Timeframe</span>
+                <span className="text-xs text-slate-400">
+                  {project.metadata.target_timeframe}
+                </span>
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-500">Target University</span>
+              <span className="text-xs text-slate-400">
+                {university.name}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="pt-4 border-t border-slate-800">
+          <Button
+            onClick={onEdit}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            size="sm"
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Milestone
+          </Button>
+        </div>
+
+        {/* Example Note */}
+        <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+          <p className="text-xs text-slate-500">
+            💡 This is an example milestone for university pathway planning.
+            Edit to customize the details for your specific requirements.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Build university example journey map in current format (North Star at top, projects flowing down)
 function buildUniversityExampleJourneyMap(
   projects: ProjectWithMilestones[],
   northStar: NorthStar,
   callbacks: MapBuilderCallbacks,
   paths: any[],
-  numericZoom: number = 1
+  numericZoom: number = 1,
+  savedNorthStarPosition: {x: number, y: number} | null = null
 ): { nodes: Node[]; edges: Edge[] } {
   const newNodes: Node[] = [];
   const newEdges: Edge[] = [];
 
-  // Create North Star entity node at the top center
-  const northStarPosition = { x: 0, y: -300 };
+  // Create North Star entity node - use saved position if available, otherwise default
+  const northStarPosition = savedNorthStarPosition || { x: 0, y: -300 };
   newNodes.push({
     id: northStar.id,
     type: "northStarEntity",
@@ -194,6 +340,11 @@ function buildUniversityExampleJourneyMap(
 export function UniversityExampleJourneyCanvas({
   university,
   user,
+  persona,
+  onEditPersona,
+  existingMapId,
+  initialMapData,
+  initialExampleData,
 }: UniversityExampleJourneyCanvasProps) {
   const supabase = createClient();
   const router = useRouter();
@@ -201,11 +352,15 @@ export function UniversityExampleJourneyCanvas({
   
   // Example map metadata
   const [exampleMapData, setExampleMapData] = React.useState<ExampleMapMetadata>({
-    title: '',
-    description: '',
-    target_audience: ''
+    title: initialMapData?.title || '',
+    description: initialMapData?.description || '',
+    target_audience: initialMapData?.target_audience || ''
   });
   const [showSaveDialog, setShowSaveDialog] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  
+  // Track if this is an existing map being edited
+  const [existingMapIdState, setExistingMapIdState] = React.useState<string | null>(existingMapId || null);
 
   // Create a synthetic North Star for this university
   const universityNorthStar = useMemo<NorthStar>(() => ({
@@ -236,8 +391,56 @@ export function UniversityExampleJourneyCanvas({
 
   // Mock projects data for university example (we'll call them milestones in the UI)
   const [projects, setProjects] = React.useState<ProjectWithMilestones[]>([]);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true); // Start with loading=true to load existing data
   const [milestoneCounter, setMilestoneCounter] = React.useState(1);
+  const [savedNorthStarPosition, setSavedNorthStarPosition] = React.useState<{x: number, y: number} | null>(null);
+  
+  // Load existing map data if editing
+  React.useEffect(() => {
+    if (initialExampleData) {
+      try {
+        // Load existing milestones
+        if (initialExampleData.milestones && Array.isArray(initialExampleData.milestones)) {
+          const loadedProjects = initialExampleData.milestones.map((milestone: any, index: number) => ({
+            id: `milestone-${index + 1}`,
+            user_id: user.id,
+            title: milestone.title || '',
+            description: milestone.description || '',
+            project_type: 'short_term' as const,
+            color: '#3B82F6',
+            icon: '📚',
+            completed_at: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            position_x: milestone.position_x || 0,
+            position_y: milestone.position_y || 0,
+            metadata: {
+              category: milestone.category || 'academic',
+              importance: milestone.importance || 'important',
+              target_timeframe: milestone.target_timeframe || ''
+            },
+            milestones: []
+          }));
+          setProjects(loadedProjects);
+          setMilestoneCounter(loadedProjects.length + 1);
+        }
+        
+        // Load saved north star position
+        if (initialExampleData.metadata?.north_star) {
+          const northStar = initialExampleData.metadata.north_star;
+          if (northStar.position_x !== undefined && northStar.position_y !== undefined) {
+            setSavedNorthStarPosition({ 
+              x: northStar.position_x, 
+              y: northStar.position_y 
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading existing map data:', error);
+      }
+    }
+    setIsLoading(false);
+  }, [initialExampleData, user.id]);
   
   // Journey map state
   const {
@@ -271,6 +474,101 @@ export function UniversityExampleJourneyCanvas({
   const [zoomLevel, setZoomLevel] = React.useState<"low" | "medium" | "high">("medium");
   const [numericZoom, setNumericZoom] = React.useState<number>(1);
 
+  // Load existing example maps on mount
+  React.useEffect(() => {
+    const loadExistingExampleMaps = async () => {
+      try {
+        setIsLoading(true);
+        const existingMaps = await getUniversityExampleMaps(university.id);
+        
+        if (existingMaps.length > 0) {
+          // Load the most recent example map
+          const latestMap = existingMaps[0];
+          setExistingMapIdState(latestMap.id);
+          
+          console.log('Loading existing map:', latestMap);
+          
+          // Set the example map metadata
+          setExampleMapData({
+            title: latestMap.title,
+            description: latestMap.description || '',
+            target_audience: latestMap.target_audience || ''
+          });
+          
+          // Convert saved milestones back to project format
+          if (latestMap.example_data?.milestones) {
+            const loadedProjects = latestMap.example_data.milestones.map((milestone: any, index: number) => ({
+              id: `milestone-${index + 1}`,
+              user_id: user.id,
+              title: milestone.title,
+              description: milestone.description || null,
+              goal: null,
+              why: null,
+              project_type: "learning",
+              north_star_id: universityNorthStar.id,
+              is_main_quest: false,
+              position_x: milestone.position_x !== undefined ? milestone.position_x : 0,
+              position_y: milestone.position_y !== undefined ? milestone.position_y : (-100 + (index * 200)),
+              status: "not_started",
+              color_theme: null,
+              start_date: null,
+              target_end_date: null,
+              actual_end_date: null,
+              priority: index + 1,
+              tags: null,
+              color: null,
+              icon: "📚",
+              cover_image_url: null,
+              cover_image_blurhash: null,
+              cover_image_key: null,
+              progress_percentage: 0,
+              is_public: false,
+              metadata: {
+                isUniversityMilestone: true,
+                universityId: university.id,
+                category: milestone.category || "academic",
+                importance: milestone.importance || "important",
+                target_timeframe: milestone.target_timeframe || ""
+              },
+              linked_north_star_id: universityNorthStar.id,
+              created_at: "2024-01-01T00:00:00.000Z",
+              updated_at: "2024-01-01T00:00:00.000Z",
+              completed_at: null,
+              milestones: [],
+              milestone_count: 0,
+              completed_milestone_count: 0,
+              reflection_count: 0
+            }));
+            
+            setProjects(loadedProjects);
+            setMilestoneCounter(loadedProjects.length + 1);
+            console.log('Loaded projects:', loadedProjects);
+          }
+          
+          // Load saved north star position if available
+          if (latestMap.example_data?.metadata?.north_star) {
+            const northStarData = latestMap.example_data.metadata.north_star;
+            if (northStarData.position_x !== undefined && northStarData.position_y !== undefined) {
+              setSavedNorthStarPosition({
+                x: northStarData.position_x,
+                y: northStarData.position_y
+              });
+              console.log('Loaded north star position:', { x: northStarData.position_x, y: northStarData.position_y });
+            }
+          }
+        } else {
+          console.log('No existing maps found for university:', university.id);
+        }
+      } catch (error) {
+        console.error('Error loading existing example maps:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadExistingExampleMaps();
+  }, [university.id, user.id, universityNorthStar.id]);
+
   // Set the university north star as selected by default
   React.useEffect(() => {
     setSelectedNorthStarId(universityNorthStar.id);
@@ -298,7 +596,8 @@ export function UniversityExampleJourneyCanvas({
         onQuickStatusChange: () => {},
       },
       paths,
-      numericZoom
+      numericZoom,
+      savedNorthStarPosition
     );
     
     setNodes(result.nodes);
@@ -310,6 +609,8 @@ export function UniversityExampleJourneyCanvas({
     openEditDialog,
     openCreateDialog,
     numericZoom,
+    savedNorthStarPosition?.x,
+    savedNorthStarPosition?.y,
     setNodes,
     setEdges,
   ]);
@@ -482,48 +783,107 @@ export function UniversityExampleJourneyCanvas({
       return;
     }
 
+    setIsSaving(true);
+    
     try {
-      // Convert projects to milestone format for saving
-      const milestonesData = projects.map(project => ({
-        title: project.title,
-        description: project.description || "",
-        target_timeframe: project.metadata?.target_timeframe || "",
-        category: project.metadata?.category || "academic",
-        importance: project.metadata?.importance || "important"
-      }));
+      console.log('Starting save process...', { university, projects, exampleMapData });
+      
+      // Convert projects to milestone format for saving (including positions)
+      const milestonesData = projects.map(project => {
+        // Find the current node position for this project
+        const currentNode = nodes.find(node => node.id === project.id);
+        const position = currentNode ? currentNode.position : { x: project.position_x || 0, y: project.position_y || 0 };
+        
+        return {
+          title: project.title,
+          description: project.description || "",
+          target_timeframe: project.metadata?.target_timeframe || "",
+          category: project.metadata?.category || "academic",
+          importance: project.metadata?.importance || "important",
+          position_x: position.x,
+          position_y: position.y
+        };
+      });
+
+      // Get north star position from current nodes
+      const northStarNode = nodes.find(node => node.id === universityNorthStar.id);
+      const northStarPosition = northStarNode ? northStarNode.position : { x: 0, y: -300 };
 
       const exampleData = {
         milestones: milestonesData,
+        persona: persona || null,
         metadata: {
           created_with: "journey_canvas",
           milestone_count: projects.length,
           north_star: {
             title: universityNorthStar.title,
-            description: universityNorthStar.description
+            description: universityNorthStar.description,
+            position_x: northStarPosition.x,
+            position_y: northStarPosition.y
           }
         }
       };
 
-      const { error } = await supabase
-        .from('university_example_maps')
-        .insert({
-          university_id: university.id,
-          title: exampleMapData.title,
-          description: exampleMapData.description || null,
-          target_audience: exampleMapData.target_audience || null,
-          example_data: exampleData
-        });
+      const insertData = {
+        university_id: university.id,
+        title: exampleMapData.title,
+        description: exampleMapData.description || null,
+        target_audience: exampleMapData.target_audience || null,
+        example_data: exampleData
+      };
+
+      console.log('Insert/Update data:', insertData);
+
+      let data, error;
+
+      if (existingMapIdState) {
+        // Update existing map
+        console.log('Updating existing map with ID:', existingMapIdState);
+        const result = await supabase
+          .from('university_example_maps')
+          .update(insertData)
+          .eq('id', existingMapIdState)
+          .select();
+        data = result.data;
+        error = result.error;
+      } else {
+        // Create new map
+        console.log('Creating new map');
+        const result = await supabase
+          .from('university_example_maps')
+          .insert(insertData)
+          .select();
+        data = result.data;
+        error = result.error;
+        
+        // Set the existing map ID for future updates
+        if (!error && data && data.length > 0) {
+          setExistingMapIdState(data[0].id);
+        }
+      }
       
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        toast.error(`Database error: ${error.message}`);
+        return;
+      }
       
-      toast.success('Example journey map saved successfully');
-      router.push('/admin/archive/universities');
+      console.log('Save successful:', data);
+      toast.success(existingMapIdState ? 'Example journey map updated successfully' : 'Example journey map created successfully');
+      
+      // Close dialog and wait a moment before redirecting to ensure the toast is visible
+      setShowSaveDialog(false);
+      setTimeout(() => {
+        router.push('/admin/archive/universities');
+      }, 1000);
+      
     } catch (error) {
       console.error('Error saving example map:', error);
-      toast.error('Failed to save example map');
+      toast.error(`Failed to save example map: ${error.message || error}`);
+      setShowSaveDialog(false);
+    } finally {
+      setIsSaving(false);
     }
-    
-    setShowSaveDialog(false);
   };
 
   return (
@@ -553,6 +913,16 @@ export function UniversityExampleJourneyCanvas({
           </div>
 
           <div className="flex items-center gap-3">
+            {persona && onEditPersona && (
+              <Button
+                variant="outline"
+                onClick={onEditPersona}
+                className="border-blue-600 text-blue-400 hover:bg-blue-600/10"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Edit Persona
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setShowSaveDialog(true)}
@@ -602,6 +972,14 @@ export function UniversityExampleJourneyCanvas({
                 
                 {/* Main ReactFlow Canvas */}
                 <div className="flex-1">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-slate-400">Loading university example map...</p>
+                      </div>
+                    </div>
+                  ) : (
                   <ReactFlow
                     nodes={nodes}
                     edges={edges}
@@ -656,6 +1034,7 @@ export function UniversityExampleJourneyCanvas({
                       }}
                     />
                   </ReactFlow>
+                  )}
                 </div>
                 
                 {/* Navigation Guide */}
@@ -675,16 +1054,16 @@ export function UniversityExampleJourneyCanvas({
               maxSize={50}
               className="border-l border-slate-700"
             >
-              <div className="h-full bg-slate-900 overflow-y-auto">
+              <div className="h-full bg-slate-900">
                 {selectedProjectId ? (
-                  <ProjectDetailsPanel
+                  <UniversityExampleMilestonePanel
                     projectId={selectedProjectId}
+                    projects={projects}
+                    university={university}
                     onEdit={() => {
                       const project = projects.find(p => p.id === selectedProjectId);
                       if (project) openEditDialog(project);
                     }}
-                    onAddReflection={() => {}} // Not needed for examples
-                    onAddMilestone={() => {}} // Not applicable to examples
                   />
                 ) : (
                   <div className="p-6 space-y-6">
@@ -812,10 +1191,10 @@ export function UniversityExampleJourneyCanvas({
             </Button>
             <Button
               onClick={handleSaveExampleMap}
-              disabled={!exampleMapData.title.trim() || projects.length === 0}
+              disabled={isSaving || !exampleMapData.title.trim() || projects.length === 0}
               className="bg-green-600 hover:bg-green-700"
             >
-              Save Example Map
+              {isSaving ? "Saving..." : "Save Example Map"}
             </Button>
           </DialogFooter>
         </DialogContent>

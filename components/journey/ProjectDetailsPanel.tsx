@@ -75,20 +75,51 @@ export function ProjectDetailsPanel({
 
     setIsLoading(true);
     try {
-      const [projectData, milestonesData, journalsData, reflectionsData] =
-        await Promise.all([
-          getProjectById(projectId),
-          getProjectMilestones(projectId),
-          getProjectJournals(projectId),
-          getProjectReflections(projectId),
-        ]);
+      // Check if this is a university example project (starts with "milestone-")
+      if (projectId.startsWith('milestone-')) {
+        // This is a mock university project, show a placeholder message
+        setProject(null);
+        setMilestones([]);
+        setJournals([]);
+        setReflections([]);
+        setIsLoading(false);
+        return;
+      }
 
+      // Load project data first
+      const projectData = await getProjectById(projectId);
+      if (!projectData) {
+        console.warn(`Project with ID ${projectId} not found`);
+        setProject(null);
+        setMilestones([]);
+        setJournals([]);
+        setReflections([]);
+        setIsLoading(false);
+        return;
+      }
+      
       setProject(projectData);
+
+      // Load other data with individual error handling
+      const [milestonesData, journalsData] = await Promise.all([
+        getProjectMilestones(projectId),
+        getProjectJournals(projectId),
+      ]);
+
       setMilestones(milestonesData);
       setJournals(journalsData);
-      setReflections(reflectionsData);
+
+      // Load reflections separately with error handling
+      try {
+        const reflectionsData = await getProjectReflections(projectId);
+        setReflections(reflectionsData);
+      } catch (reflectionError) {
+        console.warn("Could not load reflections, continuing without them:", reflectionError);
+        setReflections([]); // Set empty array as fallback
+      }
     } catch (error) {
       console.error("Error loading project data:", error);
+      toast.error("Failed to load project details");
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +134,30 @@ export function ProjectDetailsPanel({
   }
 
   if (!project) {
+    // Check if this is a university example project
+    if (projectId?.startsWith('milestone-')) {
+      return (
+        <div className="h-full flex flex-col bg-slate-900">
+          <div className="p-6 flex flex-col items-center justify-center h-full text-center">
+            <div className="bg-slate-800 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+              <BookOpen className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">
+              University Example Milestone
+            </h3>
+            <p className="text-slate-400 text-sm max-w-sm">
+              This is a sample milestone for demonstrating university pathway planning. 
+              In a real journey map, you would see detailed milestone information, 
+              progress tracking, and reflection tools here.
+            </p>
+            <div className="mt-6 text-xs text-slate-500">
+              💡 Create your own journey map to track real milestones
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     return null;
   }
 

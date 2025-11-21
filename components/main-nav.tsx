@@ -1,14 +1,13 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useId } from "react";
+import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 
 export function MainNav() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const sheetId = useId();
 
   return (
     <div className="relative flex items-center justify-between w-full sm:px-4 lg:px-8 min-h-16">
@@ -20,12 +19,12 @@ export function MainNav() {
               variant="ghost"
               className="md:hidden p-2 rounded focus:outline-none"
               aria-label="Toggle menu"
-              aria-controls={sheetId}
+              suppressHydrationWarning
             >
               <Menu className="w-7 h-7 sm:w-8 sm:h-8" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-full sm:w-3/4" id={sheetId}>
+          <SheetContent side="left" className="w-full sm:w-3/4">
             <nav className="flex flex-col space-y-4 pt-10">
               <Link
                 href="/about"
