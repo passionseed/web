@@ -89,7 +89,10 @@ export function EmojiPicker({
       </div>
 
       {/* Emoji Grid */}
-      <div className="max-h-48 overflow-y-auto border rounded-lg p-3 bg-slate-50">
+      <div className="max-h-32 overflow-y-auto border rounded-lg p-3 bg-slate-50" style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#cbd5e1 #f1f5f9'
+      }}>
         {Object.entries(filteredCategories).map(([category, emojis]) => (
           <div key={category} className="mb-4 last:mb-0">
             <div className="text-xs font-semibold text-slate-500 mb-2">

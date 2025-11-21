@@ -24,6 +24,7 @@ import {
   Download,
   Map
 } from 'lucide-react';
+import { UniversityExampleMapsDialog } from './UniversityExampleMapsDialog';
 import { toast } from 'sonner';
 import { 
   createUniversity, 
@@ -47,6 +48,7 @@ export function UniversityManagement({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showExampleMapsDialog, setShowExampleMapsDialog] = useState(false);
   const [editingUniversity, setEditingUniversity] = useState<University | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -98,7 +100,8 @@ export function UniversityManagement({
   };
 
   const handleExampleMaps = (university: University) => {
-    router.push(`/admin/archive/universities/${university.id}/example-maps/create`);
+    setEditingUniversity(university);
+    setShowExampleMapsDialog(true);
   };
 
   const handleSubmitCreate = async () => {
@@ -565,6 +568,13 @@ export function UniversityManagement({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Example Maps Dialog */}
+      <UniversityExampleMapsDialog
+        open={showExampleMapsDialog}
+        onOpenChange={setShowExampleMapsDialog}
+        university={editingUniversity}
+      />
 
     </div>
   );

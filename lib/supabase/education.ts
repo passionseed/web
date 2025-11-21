@@ -301,3 +301,37 @@ export async function saveUserRoadmap(
 
   return data
 }
+
+// =====================================
+// UNIVERSITY EXAMPLE MAPS
+// =====================================
+
+export async function getUniversityExampleMaps(universityId: string) {
+  const { data, error } = await supabase
+    .from('university_example_maps')
+    .select('*')
+    .eq('university_id', universityId)
+    .order('created_at', { ascending: false })
+  
+  if (error) {
+    console.error('Error fetching university example maps:', error)
+    return []
+  }
+  
+  return data || []
+}
+
+export async function getUniversityExampleMapById(mapId: string) {
+  const { data, error } = await supabase
+    .from('university_example_maps')
+    .select('*')
+    .eq('id', mapId)
+    .single()
+  
+  if (error) {
+    console.error('Error fetching university example map:', error)
+    return null
+  }
+  
+  return data
+}

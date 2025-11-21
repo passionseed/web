@@ -30,7 +30,7 @@ interface EditProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project: JourneyProject | null;
-  onSuccess?: () => void;
+  onSuccess?: (updatedProject?: Partial<JourneyProject>) => void;
 }
 
 export function EditProjectDialog({
@@ -74,17 +74,25 @@ export function EditProjectDialog({
     setIsSubmitting(true);
 
     try {
-      await updateProjectDetails(project.id, {
+      const updatedData = {
         title: formData.title.trim(),
         goal: formData.goal.trim() || undefined,
         why: formData.why.trim() || undefined,
         description: formData.description.trim() || undefined,
         icon: icon,
-      });
+      };
 
-      toast.success("Project updated successfully!");
+      if (onSuccess) {
+        // University example mode - just pass the data to the callback
+        onSuccess(updatedData);
+        toast.success("Milestone updated successfully!");
+      } else {
+        // Regular project mode - update in database
+        await updateProjectDetails(project.id, updatedData);
+        toast.success("Project updated successfully!");
+      }
+
       onOpenChange(false);
-      onSuccess?.();
     } catch (error) {
       console.error("Error updating project:", error);
       toast.error("Failed to update project");
@@ -95,16 +103,16 @@ export function EditProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Edit Project</DialogTitle>
           <DialogDescription>
             Update your project details, goals, and motivation
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 pr-2 -mr-2">
             {/* Icon Picker */}
             <div className="space-y-2">
               <Label htmlFor="icon">Project Icon</Label>
@@ -196,7 +204,7 @@ export function EditProjectDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 mt-4">
             <Button
               type="button"
               variant="outline"

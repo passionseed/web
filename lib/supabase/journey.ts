@@ -1181,19 +1181,36 @@ export async function getProjectReflections(
     return [];
   }
 
-  const { data, error } = await supabase
-    .from(TABLES.PROJECT_REFLECTIONS)
-    .select("*")
-    .eq("project_id", projectId)
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from(TABLES.PROJECT_REFLECTIONS)
+      .select("*")
+      .eq("project_id", projectId)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching project reflections:", error);
-    throw error;
+    if (error) {
+      // Check if this is a table doesn't exist error
+      if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
+        console.warn("Project reflections table does not exist, returning empty array");
+        return [];
+      }
+      
+      console.error("Error fetching project reflections:", {
+        error,
+        projectId,
+        userId: user.id,
+        table: TABLES.PROJECT_REFLECTIONS
+      });
+      throw error;
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("Unexpected error in getProjectReflections:", err);
+    // Return empty array instead of throwing to prevent blocking the UI
+    return [];
   }
-
-  return data || [];
 }
 
 // ========================================
