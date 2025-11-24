@@ -11,8 +11,10 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { resetJourneyMap } from "@/app/actions/journey";
+import { toast } from "sonner";
 
 interface JourneyPageClientWrapperProps {
   userId: string;
@@ -123,6 +125,37 @@ export function JourneyPageClientWrapper({
             <h1 className="md:hidden text-lg font-bold text-white">
               {milestoneTitle ? `${milestoneTitle}` : "Journey Map"}
             </h1>
+
+            {/* Reset Button (Dev only) */}
+            {process.env.NODE_ENV === "development" && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  if (
+                    confirm(
+                      "ARE YOU SURE? This will delete ALL journey data (North Stars, Projects, Milestones) for your account. This cannot be undone."
+                    )
+                  ) {
+                    try {
+                      const result = await resetJourneyMap();
+                      if (result.success) {
+                        toast.success("Journey map reset successfully");
+                        window.location.reload();
+                      } else {
+                        toast.error("Failed to reset journey map");
+                      }
+                    } catch (error) {
+                      toast.error("An error occurred");
+                    }
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Reset Map</span>
+              </Button>
+            )}
           </div>
         </header>
 

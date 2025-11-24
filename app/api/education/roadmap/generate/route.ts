@@ -75,6 +75,11 @@ async function getUniversityExampleMaps(
     .order('created_at', { ascending: false })
   
   if (error) {
+    // If table doesn't exist, just return empty array
+    if (error.code === '42P01') {
+      console.warn('University example maps table missing, skipping.')
+      return []
+    }
     console.error('Error fetching university example maps:', error)
     return []
   }
@@ -94,6 +99,11 @@ async function getAIAgent(
     .single()
   
   if (error) {
+    // If table doesn't exist, just return null
+    if (error.code === '42P01') {
+      console.warn('AI agents table missing, using default logic.')
+      return null
+    }
     console.error('Error fetching AI agent:', error)
     return null
   }
