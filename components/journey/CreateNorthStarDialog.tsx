@@ -762,35 +762,41 @@ export function CreateNorthStarDialog({
 
                 {/* STEP 5: NAME & LAUNCH */}
                 {currentStep === 5 && (
-                  <div>
-                    <div className="text-center space-y-8">
-                      <div className="space-y-2">
-                        <h2 className="text-3xl font-bold">Name Your Star</h2>
-                        <p className="text-slate-400">
-                          Give it a powerful title
-                        </p>
-                      </div>
-
-                      <div className="max-w-md mx-auto">
-                        <Input
-                          value={formData.title}
-                          onChange={(e) =>
-                            setFormData({ ...formData, title: e.target.value })
-                          }
-                          placeholder="e.g. The Year of Growth"
-                          className="bg-slate-900 border-slate-700 text-center text-xl font-semibold"
-                        />
-                      </div>
+                  <div className="text-center space-y-8">
+                    <div className="space-y-2">
+                      <h2 className="text-3xl font-bold">Name Your Star</h2>
+                      <p className="text-slate-400">
+                        Give it a powerful title
+                      </p>
                     </div>
 
-                    <div className="pt-4">
+                    <div className="max-w-md mx-auto">
+                      <Input
+                        value={formData.title}
+                        onChange={(e) =>
+                          setFormData({ ...formData, title: e.target.value })
+                        }
+                        placeholder="e.g. Operation: Mars Colonization"
+                        className="text-center text-2xl h-16 bg-slate-900 border-slate-700 rounded-xl focus:border-white focus:ring-white transition-all"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="pt-8">
                       <Button
+                        size="lg"
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        size="lg"
-                        className="rounded-full px-12 py-8 text-xl font-bold bg-white text-slate-950 hover:bg-slate-200 transition-all hover:scale-105 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
+                        className="h-16 px-12 text-xl rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:shadow-[0_0_50px_rgba(59,130,246,0.7)] transition-all hover:scale-105"
                       >
-                        {isSubmitting ? t.launching : t.launchBtn}
+                        {isSubmitting ? (
+                          <Sparkles className="w-6 h-6 animate-spin" />
+                        ) : (
+                          <>
+                            <Rocket className="w-6 h-6 mr-2" />
+                            Launch North Star
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>

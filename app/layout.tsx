@@ -10,6 +10,7 @@ import { Layout } from "@/components/layout";
 import ServiceWorkerRegistration from "@/components/service-worker";
 import ErrorBoundary from "@/components/error-boundary";
 import { DevHealthCheck } from "@/components/dev-health-check";
+import { TOSAcceptanceModal } from "@/components/TOSAcceptanceModal";
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],
@@ -84,6 +85,7 @@ export default async function RootLayout({
             <Layout>{children}</Layout>
             <Toaster />
             <DevHealthCheck />
+            <TOSAcceptanceModal />
             {/* ServiceWorker temporarily disabled to fix localhost errors */}
             {/* <ServiceWorkerRegistration /> */}
           </ErrorBoundary>
