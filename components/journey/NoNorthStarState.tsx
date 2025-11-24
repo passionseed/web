@@ -2,15 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Compass,
-  Sparkles,
-  Target,
-  TrendingUp,
-  Lightbulb,
-  Heart,
-  ArrowRight,
-} from "lucide-react";
+import { Sparkles, ArrowRight, Compass, Star } from "lucide-react";
 
 interface NoNorthStarStateProps {
   onCreateNorthStar: () => void;
@@ -18,137 +10,73 @@ interface NoNorthStarStateProps {
 
 export function NoNorthStarState({ onCreateNorthStar }: NoNorthStarStateProps) {
   return (
-    <div className="flex items-center justify-center h-full w-full p-4 md:p-8">
-      <Card className="max-w-4xl w-full p-6 md:p-8 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/20 dark:via-background dark:to-orange-950/20 border-2 border-amber-200 dark:border-amber-800 max-h-full overflow-y-auto">
-        <div className="flex flex-col items-center text-center space-y-6 md:space-y-8">
-          {/* Animated Star Icon */}
-          <div className="relative">
-            <div className="absolute inset-0 animate-ping">
-              <Sparkles className="w-16 h-16 md:w-24 md:h-24 text-amber-400 opacity-20" />
-            </div>
-            <div className="relative">
-              <Sparkles className="w-16 h-16 md:w-24 md:h-24 text-amber-500 animate-pulse" />
-            </div>
+    <div className="absolute inset-0 flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
+      <div className="w-full text-center space-y-8">
+        
+        {/* Hero Icon */}
+        <div className="relative mx-auto w-32 h-32">
+          <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-3xl animate-pulse" />
+          <div className="relative bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 p-6 rounded-full border-2 border-amber-200 dark:border-amber-700 shadow-xl">
+            <Compass className="w-full h-full text-amber-600 dark:text-amber-400" />
           </div>
-
-          {/* Main Heading */}
-          <div className="space-y-2 md:space-y-3">
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">
-              Set Your North Star
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
-              Your guiding light for life's journey
-            </p>
-          </div>
-
-          {/* What is a North Star? */}
-          <div className="bg-white/50 dark:bg-background/50 rounded-lg p-4 md:p-6 max-w-2xl border border-amber-200 dark:border-amber-800">
-            <div className="flex items-start gap-3 mb-3 md:mb-4">
-              <Compass className="w-5 h-5 md:w-6 md:h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-1" />
-              <div className="text-left">
-                <h3 className="text-base md:text-lg font-semibold mb-2 text-amber-900 dark:text-amber-100">
-                  What is a North Star?
-                </h3>
-                <p className="text-sm md:text-sm text-muted-foreground leading-relaxed">
-                  Just like sailors used the North Star to navigate, your{" "}
-                  <span className="font-semibold text-amber-700 dark:text-amber-300">
-                    North Star
-                  </span>{" "}
-                  is your ultimate direction in life — a big dream or purpose
-                  that guides all your decisions and projects. It's the{" "}
-                  <span className="font-semibold">most important goal</span>{" "}
-                  that gives meaning to everything else you do.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Benefits Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 w-full max-w-3xl">
-            <BenefitCard
-              icon={<Target className="w-5 h-5" />}
-              title="Clarity"
-              description="Know exactly where you're heading"
-            />
-            <BenefitCard
-              icon={<TrendingUp className="w-5 h-5" />}
-              title="Motivation"
-              description="Stay inspired during tough times"
-            />
-            <BenefitCard
-              icon={<Lightbulb className="w-5 h-5" />}
-              title="Decision-making"
-              description="Choose projects that align with your purpose"
-            />
-          </div>
-
-          {/* Examples */}
-          <div className="bg-gradient-to-r from-amber-100/50 to-orange-100/50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg p-4 md:p-6 max-w-2xl border border-amber-200 dark:border-amber-700">
-            <div className="flex items-start gap-3">
-              <Heart className="w-4 h-4 md:w-5 md:h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-1" />
-              <div className="text-left">
-                <h4 className="font-semibold mb-2 text-sm md:text-base text-amber-900 dark:text-amber-100">
-                  Examples of North Stars:
-                </h4>
-                <ul className="text-xs md:text-sm text-muted-foreground space-y-1">
-                  <li>
-                    💻 "Become a software engineer solving climate change"
-                  </li>
-                  <li>🏥 "Work in healthcare to improve rural communities"</li>
-                  <li>
-                    🎓 "Build educational programs for underprivileged youth"
-                  </li>
-                  <li>🌍 "Create sustainable businesses for social impact"</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          <div className="pt-2 md:pt-4">
-            <Button
-              onClick={onCreateNorthStar}
-              size="lg"
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold px-6 md:px-8 py-4 md:py-6 text-base md:text-lg shadow-lg hover:shadow-xl transition-all duration-200 group"
-            >
-              <Sparkles className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:animate-spin" />
-              Create Your North Star
-              <ArrowRight className="w-4 h-4 md:w-5 md:h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <p className="text-xs md:text-sm text-muted-foreground mt-2 md:mt-3">
-              It takes just 2 minutes to define your purpose
-            </p>
-          </div>
-
-          {/* Footer Note */}
-          <div className="pt-3 md:pt-4 border-t border-amber-200 dark:border-amber-800 w-full max-w-2xl">
-            <p className="text-xs text-muted-foreground">
-              💡 <span className="font-semibold">Pro tip:</span> You can create
-              multiple North Stars if you have different life goals. All your
-              projects and milestones can connect to them.
-            </p>
+          <div className="absolute -top-2 -right-2">
+            <Star className="w-8 h-8 text-yellow-400 fill-yellow-400 animate-bounce" />
           </div>
         </div>
-      </Card>
-    </div>
-  );
-}
 
-function BenefitCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="bg-white/80 dark:bg-background/80 rounded-lg p-3 md:p-4 border border-amber-100 dark:border-amber-900 hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
-      <div className="flex flex-col items-center text-center gap-2">
-        <div className="text-amber-600 dark:text-amber-400">{icon}</div>
-        <h4 className="font-semibold text-xs md:text-sm">{title}</h4>
-        <p className="text-xs text-muted-foreground leading-snug">{description}</p>
+        {/* Main Text */}
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 dark:from-amber-400 dark:via-orange-400 dark:to-amber-400 bg-clip-text text-transparent bg-300% animate-gradient">
+            Find Your North Star
+          </h1>
+          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-lg mx-auto leading-relaxed">
+            Stop wandering. Start moving with purpose. <br/>
+            Define your ultimate goal and let it guide your journey.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <Button
+            onClick={onCreateNorthStar}
+            size="lg"
+            className="h-14 px-8 text-lg rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all hover:scale-105"
+          >
+            <Sparkles className="w-5 h-5 mr-2" />
+            Create North Star
+          </Button>
+          
+          <Button
+            onClick={onCreateNorthStar}
+            variant="outline"
+            size="lg"
+            className="h-14 px-8 text-lg rounded-full border-2 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all"
+          >
+            I'm not sure yet...
+          </Button>
+        </div>
+
+        {/* Footer Info */}
+        <div className="pt-8 grid grid-cols-3 gap-4 text-center text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
+          <div className="flex flex-col items-center gap-2">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+              <Star className="w-4 h-4" />
+            </div>
+            <span>Clarity</span>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+              <Compass className="w-4 h-4" />
+            </div>
+            <span>Direction</span>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <span>Purpose</span>
+          </div>
+        </div>
       </div>
     </div>
   );

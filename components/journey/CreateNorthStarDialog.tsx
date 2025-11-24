@@ -15,22 +15,39 @@ import {
   Plus,
   Trash2,
   Wand2,
+  Languages,
+  Compass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { createNorthStar } from "@/lib/supabase/north-star";
-import { createJourneyProject, createProjectPath } from "@/lib/supabase/journey";
+import {
+  createJourneyProject,
+  createProjectPath,
+} from "@/lib/supabase/journey";
 import { StarGenerator } from "@/components/ui/star-generator";
-import { createDefaultStarConfig, validateStarConfig } from "@/lib/utils/svg-star";
-import { enhanceVision, generateMilestones } from "@/lib/ai/north-star-enhancer";
+import {
+  createDefaultStarConfig,
+  validateStarConfig,
+} from "@/lib/utils/svg-star";
+import {
+  enhanceVision,
+  generateMilestones,
+} from "@/lib/ai/north-star-enhancer";
 import { addMonths, format } from "date-fns";
 import { EducationalPathwayFlow } from "@/components/education/EducationalPathwayFlow";
 import { getAllUniversities } from "@/lib/supabase/education";
-import { University, SimpleRoadmap, EducationalFlowData } from "@/types/education";
+import {
+  University,
+  SimpleRoadmap,
+  EducationalFlowData,
+} from "@/types/education";
 import { LIFE_ASPECTS } from "@/constants/life-aspects";
 import { SDG_GOALS, NORTH_STAR_COLORS } from "@/constants/sdg";
+import { DirectionFinderResult } from "@/types/direction-finder";
+import { DirectionFinderFlow } from "../education/direction-finder/DirectionFinderFlow";
 
 // Types
 interface SMARTMilestone {
@@ -40,6 +57,69 @@ interface SMARTMilestone {
   measurable: string;
 }
 
+const translations = {
+  en: {
+    headerTitle: "Create North Star",
+    step0Title: "Design Your\nFuture Self",
+    step0Subtitle:
+      '"The future belongs to those who believe in the beauty of their dreams."',
+    startBtn: "Start Designing",
+    step1Title: "What's the Dream?",
+    step1Subtitle:
+      "Where do you see yourself in 3 years? Be bold. Be specific.",
+    step1Placeholder:
+      "I want to be a software engineer building tools that help people learn...",
+    enhanceBtn: "Enhance with AI",
+    aiSuggestion: "AI Suggestion",
+    useThis: "Use This",
+    keepMine: "Keep Mine",
+    step2Title: "The Roadmap",
+    step2Subtitle: "Break it down. What are the major checkpoints?",
+    generateBtn: "Generate with AI",
+    milestonePlaceholder: "Milestone title...",
+    addMilestone: "Add Milestone",
+    step3Title: "The Why",
+    step3Subtitle: "What areas of life does this impact?",
+    step4Title: "Design Your Star",
+    step4Subtitle: "Make it unique. This is your beacon.",
+    colorTheme: "Color Theme",
+    points: "Points",
+    innerRadius: "Inner Radius",
+    step5Title: "Name Your Legend",
+    step5Subtitle: "Give this chapter of your life a title.",
+    namePlaceholder: "e.g. The Year of Growth",
+    launchBtn: "Launch North Star",
+    launching: "Launching...",
+    back: "Back",
+    next: "Next",
+    nameError: "Please name your North Star!",
+    visionError: "Please describe your vision first!",
+    milestonesGenerated: "Milestones generated!",
+    milestonesError: "Failed to generate milestones",
+    aiError: "AI enhancement failed",
+    eduLoadError: "Failed to load universities",
+    createSuccess: "North Star created successfully!",
+    createError: "Failed to create North Star",
+  },
+  th: {
+    headerTitle: "สร้างดาวเหนือ",
+    step0Title: "ออกแบบตัวตน\nในอนาคตของคุณ",
+    step0Subtitle: '"อนาคตเป็นของผู้ที่เชื่อในความงามของความฝัน"',
+    startBtn: "เริ่มออกแบบ",
+    step1Title: "ความฝันของคุณคืออะไร?",
+    step1Subtitle:
+      "คุณเห็นตัวเองเป็นอย่างไรในอีก 3 ปีข้างหน้า? กล้าที่จะฝัน ระบุให้ชัดเจน",
+    step1Placeholder:
+      "ฉันอยากเป็นวิศวกรซอฟต์แวร์ที่สร้างเครื่องมือช่วยให้ผู้คนเรียนรู้...",
+    enhanceBtn: "ปรับปรุงด้วย AI",
+    aiSuggestion: "คำแนะนำจาก AI",
+    useThis: "ใช้ข้อความนี้",
+    keepMine: "ใช้ของฉัน",
+    step2Title: "แผนที่การเดินทาง",
+    step2Subtitle: "แบ่งย่อยเป้าหมาย จุดตรวจสอบสำคัญคืออะไร?",
+  },
+};
+const t = translations["en"]; // TODO: Dynamic locale
 interface CreateNorthStarDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -66,7 +146,7 @@ export function CreateNorthStarDialog({
     starConfig: createDefaultStarConfig(),
     northStarColor: "golden",
   });
-  
+
   // AI State
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiEnhancedVision, setAiEnhancedVision] = useState("");
@@ -76,6 +156,9 @@ export function CreateNorthStarDialog({
   const [showEducationalPathway, setShowEducationalPathway] = useState(false);
   const [universities, setUniversities] = useState<University[]>([]);
   const [loadingUniversities, setLoadingUniversities] = useState(false);
+
+  // Direction Finder State
+  const [showDirectionFinder, setShowDirectionFinder] = useState(false);
 
   // Reset on open
   useEffect(() => {
@@ -93,22 +176,6 @@ export function CreateNorthStarDialog({
       return;
     }
 
-    // High School Flow Interception
-    if (currentStep === 1 && userEducationLevel === "high_school") {
-      setLoadingUniversities(true);
-      try {
-        const data = await getAllUniversities();
-        setUniversities(data);
-        setShowEducationalPathway(true);
-      } catch (error) {
-        toast.error("Failed to load universities");
-        setCurrentStep(currentStep + 1);
-      } finally {
-        setLoadingUniversities(false);
-      }
-      return;
-    }
-
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -119,6 +186,10 @@ export function CreateNorthStarDialog({
   const handleBack = () => {
     if (showEducationalPathway) {
       setShowEducationalPathway(false);
+      return;
+    }
+    if (showDirectionFinder) {
+      setShowDirectionFinder(false);
       return;
     }
     if (currentStep > 0) {
@@ -155,7 +226,7 @@ export function CreateNorthStarDialog({
           dueDate: format(addMonths(now, (i + 1) * 3), "yyyy-MM-dd"),
           measurable: "",
         }));
-        setFormData(prev => ({ ...prev, milestones: newMilestones }));
+        setFormData((prev) => ({ ...prev, milestones: newMilestones }));
         toast.success("Milestones generated!");
       }
     } catch (e) {
@@ -165,19 +236,47 @@ export function CreateNorthStarDialog({
     }
   };
 
-  const handleEducationalPathwayComplete = (data: EducationalFlowData & { roadmap: SimpleRoadmap }) => {
+  const startEducationalPathway = async () => {
+    setLoadingUniversities(true);
+    try {
+      const data = await getAllUniversities();
+      setUniversities(data);
+      setShowEducationalPathway(true);
+    } catch (error) {
+      toast.error("Failed to load universities");
+    } finally {
+      setLoadingUniversities(false);
+    }
+  };
+
+  const handleEducationalPathwayComplete = (
+    data: EducationalFlowData & { roadmap: SimpleRoadmap }
+  ) => {
     setShowEducationalPathway(false);
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       visionQuestion: data.vision,
       milestones: data.roadmap.milestones.map((m, i) => ({
         title: m.title,
         startDate: format(addMonths(new Date(), i * 6), "yyyy-MM-dd"),
         dueDate: format(addMonths(new Date(), (i + 1) * 6), "yyyy-MM-dd"),
-        measurable: m.description
-      }))
+        measurable: m.description,
+      })),
     }));
     setCurrentStep(3); // Skip to values
+  };
+
+  const handleDirectionFinderComplete = (result: DirectionFinderResult) => {
+    setShowDirectionFinder(false);
+    // Use the Ikigai profile and direction vectors to populate the vision
+    const vision = `My Ikigai is to leverage my strengths in ${result.profile.strengths.join(", ")} and my passion for ${result.profile.energizers.join(", ")} to address ${result.profile.values.join(", ")}. I aim to explore paths like ${result.vectors[0].name}.`;
+
+    setFormData((prev) => ({
+      ...prev,
+      visionQuestion: vision,
+      // We could also pre-populate milestones from the "commitments" or "exploration_steps"
+    }));
+    setCurrentStep(2); // Move to milestones
   };
 
   const handleSubmit = async () => {
@@ -222,7 +321,11 @@ export function CreateNorthStarDialog({
 
         // 3. Link Projects
         for (let i = 0; i < createdProjects.length - 1; i++) {
-          await createProjectPath(createdProjects[i].id, createdProjects[i + 1].id, "leads_to");
+          await createProjectPath(
+            createdProjects[i].id,
+            createdProjects[i + 1].id,
+            "leads_to"
+          );
         }
       }
 
@@ -250,11 +353,18 @@ export function CreateNorthStarDialog({
       {/* Header */}
       <div className="relative z-10 flex items-center justify-between px-6 py-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="rounded-full hover:bg-white/10">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onOpenChange(false)}
+            className="rounded-full hover:bg-white/10"
+          >
             <X className="w-6 h-6" />
           </Button>
           <div className="flex flex-col">
-            <span className="text-sm text-slate-400 font-medium tracking-wider uppercase">Create North Star</span>
+            <span className="text-sm text-slate-400 font-medium tracking-wider uppercase">
+              Create North Star
+            </span>
             <div className="flex gap-1 mt-1">
               {[0, 1, 2, 3, 4, 5].map((s) => (
                 <div
@@ -288,6 +398,19 @@ export function CreateNorthStarDialog({
                   onCancel={() => setShowEducationalPathway(false)}
                 />
               </motion.div>
+            ) : showDirectionFinder ? (
+              <motion.div
+                key="direction-finder"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="w-full max-w-4xl h-full"
+              >
+                <DirectionFinderFlow
+                  onComplete={handleDirectionFinderComplete}
+                  onCancel={() => setShowDirectionFinder(false)}
+                />
+              </motion.div>
             ) : (
               <motion.div
                 key={currentStep}
@@ -300,54 +423,92 @@ export function CreateNorthStarDialog({
                 {/* STEP 0: WELCOME */}
                 {currentStep === 0 && (
                   <div className="text-center space-y-8">
-                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-amber-400/20 to-purple-500/20 border border-white/10 mb-4">
-                      <Sparkles className="w-12 h-12 text-amber-300" />
+                    <div className="relative inline-block">
+                      <div className="absolute inset-0 bg-amber-500 blur-3xl opacity-20 animate-pulse" />
+                      <Sparkles className="w-24 h-24 text-amber-400 relative z-10" />
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                      Design Your<br />Future Self
-                    </h1>
-                    <p className="text-xl text-slate-400 max-w-xl mx-auto leading-relaxed">
-                      "The future belongs to those who believe in the beauty of their dreams."
-                    </p>
-                    <div className="pt-8">
-                      <Button onClick={handleNext} size="lg" className="rounded-full px-10 py-8 text-xl bg-white text-slate-950 hover:bg-slate-200 transition-all hover:scale-105">
-                        Start Designing <ChevronRight className="ml-2 w-6 h-6" />
-                      </Button>
+                    <div className="space-y-4">
+                      <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent">
+                        Design Your Future
+                      </h2>
+                      <p className="text-xl text-slate-400 max-w-lg mx-auto leading-relaxed">
+                        "The best way to predict the future is to create it."
+                      </p>
                     </div>
+                    <Button
+                      size="lg"
+                      onClick={handleNext}
+                      className="h-14 px-10 text-lg rounded-full bg-white text-slate-950 hover:bg-slate-200 transition-all hover:scale-105"
+                    >
+                      Start Designing <ChevronRight className="ml-2" />
+                    </Button>
                   </div>
                 )}
 
                 {/* STEP 1: VISION */}
                 {currentStep === 1 && (
                   <div className="space-y-8">
-                    <div className="text-center mb-12">
-                      <h2 className="text-4xl font-bold mb-4">What's the Dream?</h2>
-                      <p className="text-lg text-slate-400">
-                        Where do you see yourself in 3 years? Be bold. Be specific.
+                    <div className="text-center space-y-2">
+                      <h2 className="text-3xl font-bold">What's the Dream?</h2>
+                      <p className="text-slate-400">
+                        Where do you see yourself in 3 years?
                       </p>
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowDirectionFinder(true)}
+                        className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
+                      >
+                        <Compass className="w-6 h-6 text-blue-400" />
+                        <span className="font-semibold">
+                          I'm not sure yet...
+                        </span>
+                        <span className="text-xs text-slate-500 font-normal">
+                          Help me find my direction
+                        </span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={startEducationalPathway}
+                        className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
+                      >
+                        <Map className="w-6 h-6 text-green-400" />
+                        <span className="font-semibold">I know my path!</span>
+                        <span className="text-xs text-slate-500 font-normal">
+                          Search universities & faculties
+                        </span>
+                      </Button>
+                    </div>
+
                     <div className="relative group">
-                      <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
+                      <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
                       <Textarea
                         value={formData.visionQuestion}
-                        onChange={(e) => setFormData({ ...formData, visionQuestion: e.target.value })}
-                        placeholder="I want to be a software engineer building tools that help people learn..."
-                        className="relative w-full min-h-[200px] bg-slate-900/80 border-slate-700 text-xl p-6 rounded-xl focus:ring-purple-500 resize-none"
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            visionQuestion: e.target.value,
+                          })
+                        }
+                        placeholder="I want to build a startup that solves..."
+                        className="relative min-h-[200px] text-lg p-6 bg-slate-900/90 border-slate-700 rounded-xl focus:border-blue-500 transition-all resize-none"
                       />
-                      
-                      <div className="absolute bottom-4 right-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleEnhanceVision}
-                          disabled={isAiLoading || !formData.visionQuestion}
-                          className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
-                        >
-                          {isAiLoading ? <Wand2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                          Enhance with AI
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleEnhanceVision}
+                        disabled={isAiLoading || !formData.visionQuestion}
+                        className="absolute bottom-4 right-4 text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+                      >
+                        {isAiLoading ? (
+                          <Sparkles className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-4 h-4 mr-2" />
+                        )}
+                        Enhance with AI
+                      </Button>
                     </div>
 
                     {showVisionComparison && (
@@ -355,21 +516,26 @@ export function CreateNorthStarDialog({
                         <div className="flex items-center gap-2 text-purple-400 font-medium">
                           <Sparkles className="w-4 h-4" /> AI Suggestion
                         </div>
-                        <p className="text-slate-300 italic">"{aiEnhancedVision}"</p>
+                        <p className="text-slate-300 italic leading-relaxed">
+                          "{aiEnhancedVision}"
+                        </p>
                         <div className="flex gap-3">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             onClick={() => {
-                              setFormData({ ...formData, visionQuestion: aiEnhancedVision });
+                              setFormData({
+                                ...formData,
+                                visionQuestion: aiEnhancedVision,
+                              });
                               setShowVisionComparison(false);
                             }}
                             className="bg-purple-600 hover:bg-purple-700"
                           >
-                            Use This
+                            Use This Version
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => setShowVisionComparison(false)}
                           >
                             Keep Mine
@@ -383,67 +549,105 @@ export function CreateNorthStarDialog({
                 {/* STEP 2: MILESTONES */}
                 {currentStep === 2 && (
                   <div className="space-y-8">
-                    <div className="text-center mb-8">
-                      <h2 className="text-4xl font-bold mb-4">The Roadmap</h2>
-                      <p className="text-lg text-slate-400">
-                        Break it down. What are the major checkpoints?
+                    <div className="text-center space-y-2">
+                      <h2 className="text-3xl font-bold">Key Milestones</h2>
+                      <p className="text-slate-400">
+                        Break it down into big steps
                       </p>
                     </div>
 
-                    <div className="flex justify-center mb-8">
-                      <Button 
-                        variant="outline" 
-                        onClick={handleGenerateMilestones}
-                        disabled={isAiLoading}
-                        className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-                      >
-                        {isAiLoading ? <Wand2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                        Generate with AI
-                      </Button>
-                    </div>
-
-                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-4">
                       {formData.milestones.map((milestone, idx) => (
-                        <div key={idx} className="flex items-center gap-4 bg-slate-900/50 border border-slate-800 p-4 rounded-xl group hover:border-slate-600 transition-colors">
-                          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold">
+                        <div
+                          key={idx}
+                          className="flex gap-3 items-start group animate-in slide-in-from-bottom-2"
+                          style={{ animationDelay: `${idx * 100}ms` }}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold border border-slate-700 shrink-0 mt-1">
                             {idx + 1}
                           </div>
-                          <Input 
-                            value={milestone.title}
-                            onChange={(e) => {
-                              const newMilestones = [...formData.milestones];
-                              newMilestones[idx].title = e.target.value;
-                              setFormData({ ...formData, milestones: newMilestones });
-                            }}
-                            className="bg-transparent border-none text-lg focus-visible:ring-0 px-0"
-                            placeholder="Milestone title..."
-                          />
+                          <div className="flex-1 space-y-2">
+                            <Input
+                              value={milestone.title}
+                              onChange={(e) => {
+                                const newM = [...formData.milestones];
+                                newM[idx].title = e.target.value;
+                                setFormData({ ...formData, milestones: newM });
+                              }}
+                              className="bg-slate-900 border-slate-700"
+                              placeholder="Milestone title..."
+                            />
+                            <div className="flex gap-2">
+                              <Input
+                                type="date"
+                                value={milestone.dueDate}
+                                onChange={(e) => {
+                                  const newM = [...formData.milestones];
+                                  newM[idx].dueDate = e.target.value;
+                                  setFormData({
+                                    ...formData,
+                                    milestones: newM,
+                                  });
+                                }}
+                                className="bg-slate-900 border-slate-700 text-sm"
+                              />
+                            </div>
+                          </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              const newMilestones = formData.milestones.filter((_, i) => i !== idx);
-                              setFormData({ ...formData, milestones: newMilestones });
+                              const newM = formData.milestones.filter(
+                                (_, i) => i !== idx
+                              );
+                              setFormData({ ...formData, milestones: newM });
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:bg-red-900/20"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       ))}
-                      
+
                       <Button
-                        variant="ghost"
-                        onClick={() => {
+                        variant="outline"
+                        onClick={() =>
                           setFormData({
                             ...formData,
-                            milestones: [...formData.milestones, { title: "", startDate: "", dueDate: "", measurable: "" }]
-                          });
-                        }}
-                        className="w-full py-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-500 hover:border-slate-600 hover:text-slate-300 hover:bg-slate-900/30"
+                            milestones: [
+                              ...formData.milestones,
+                              {
+                                title: "",
+                                startDate: format(new Date(), "yyyy-MM-dd"),
+                                dueDate: format(
+                                  addMonths(new Date(), 3),
+                                  "yyyy-MM-dd"
+                                ),
+                                measurable: "",
+                              },
+                            ],
+                          })
+                        }
+                        className="w-full border-dashed border-slate-700 hover:bg-slate-800 hover:text-white"
                       >
-                        <Plus className="w-6 h-6 mr-2" /> Add Milestone
+                        <Plus className="w-4 h-4 mr-2" /> Add Milestone
                       </Button>
+
+                      <div className="flex justify-center pt-4">
+                        <Button
+                          variant="ghost"
+                          onClick={handleGenerateMilestones}
+                          disabled={isAiLoading}
+                          className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                        >
+                          {isAiLoading ? (
+                            <Sparkles className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <Wand2 className="w-4 h-4 mr-2" />
+                          )}
+                          Generate with AI
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -451,109 +655,105 @@ export function CreateNorthStarDialog({
                 {/* STEP 3: VALUES & ASPECTS */}
                 {currentStep === 3 && (
                   <div className="space-y-8">
-                    <div className="text-center mb-8">
-                      <h2 className="text-4xl font-bold mb-4">The Why</h2>
-                      <p className="text-lg text-slate-400">
-                        What areas of life does this impact?
+                    <div className="text-center space-y-2">
+                      <h2 className="text-3xl font-bold">Life Aspects</h2>
+                      <p className="text-slate-400">
+                        What areas does this impact?
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {LIFE_ASPECTS.map((aspect) => {
-                        const isSelected = formData.lifeAspects.includes(aspect.id);
+                        const isSelected = formData.lifeAspects.includes(
+                          aspect.value
+                        );
                         return (
-                          <button
-                            key={aspect.id}
+                          <div
+                            key={aspect.value}
                             onClick={() => {
-                              const newAspects = isSelected
-                                ? formData.lifeAspects.filter(id => id !== aspect.id)
-                                : [...formData.lifeAspects, aspect.id];
-                              setFormData({ ...formData, lifeAspects: newAspects });
+                              if (isSelected) {
+                                setFormData({
+                                  ...formData,
+                                  lifeAspects: formData.lifeAspects.filter(
+                                    (a) => a !== aspect.value
+                                  ),
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  lifeAspects: [
+                                    ...formData.lifeAspects,
+                                    aspect.value,
+                                  ],
+                                });
+                              }
                             }}
-                            className={`p-6 rounded-xl border text-left transition-all duration-200 ${
-                              isSelected
-                                ? "bg-purple-600/20 border-purple-500 shadow-[0_0_20px_-5px_rgba(168,85,247,0.4)]"
-                                : "bg-slate-900/50 border-slate-800 hover:border-slate-600 hover:bg-slate-800/50"
-                            }`}
+                            className={`
+                              cursor-pointer p-4 rounded-xl border transition-all duration-200 flex flex-col items-center gap-2 text-center
+                              ${
+                                isSelected
+                                  ? "bg-white/10 border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.2)] scale-105"
+                                  : "bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-600 hover:bg-slate-800"
+                              }
+                            `}
                           >
-                            <div className="text-2xl mb-3">{aspect.icon}</div>
-                            <div className={`font-bold mb-1 ${isSelected ? "text-purple-300" : "text-slate-200"}`}>
+                            <span className="text-2xl">{aspect.icon}</span>
+                            <span className="font-medium text-sm">
                               {aspect.label}
-                            </div>
-                          </button>
+                            </span>
+                          </div>
                         );
                       })}
                     </div>
                   </div>
                 )}
 
-                {/* STEP 4: DESIGN */}
+                {/* STEP 4: DESIGN STAR */}
                 {currentStep === 4 && (
                   <div className="space-y-8">
-                    <div className="text-center mb-8">
-                      <h2 className="text-4xl font-bold mb-4">Design Your Star</h2>
-                      <p className="text-lg text-slate-400">
-                        Make it unique. This is your beacon.
-                      </p>
+                    <div className="text-center space-y-2">
+                      <h2 className="text-3xl font-bold">Design Your Star</h2>
+                      <p className="text-slate-400">Make it unique to you</p>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-12 items-center justify-center">
-                      {/* Preview */}
-                      <div className="relative w-64 h-64 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/0 rounded-full blur-3xl" />
-                        <StarGenerator
-                          config={formData.starConfig}
-                          color={formData.northStarColor}
-                          className="w-full h-full drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
-                        />
-                      </div>
+                    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                      <StarGenerator
+                        config={formData.starConfig}
+                        onConfigChange={(newConfig) =>
+                          setFormData({ ...formData, starConfig: newConfig })
+                        }
+                        color={
+                          NORTH_STAR_COLORS.find(
+                            (c) => c.value === formData.northStarColor
+                          )?.color || "#FFD700"
+                        }
+                        glowColor={
+                          NORTH_STAR_COLORS.find(
+                            (c) => c.value === formData.northStarColor
+                          )?.glow || "#FFA500"
+                        }
+                      />
 
-                      {/* Controls */}
-                      <div className="space-y-6 w-full max-w-xs">
-                        <div>
-                          <label className="text-sm text-slate-400 mb-2 block">Color Theme</label>
-                          <div className="flex flex-wrap gap-3">
-                            {NORTH_STAR_COLORS.map((color) => (
-                              <button
-                                key={color.value}
-                                onClick={() => setFormData({ ...formData, northStarColor: color.value })}
-                                className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
-                                  formData.northStarColor === color.value ? "border-white scale-110" : "border-transparent"
-                                }`}
-                                style={{ backgroundColor: color.hex }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label className="text-sm text-slate-400 mb-2 block">Points</label>
-                          <input
-                            type="range"
-                            min="4"
-                            max="12"
-                            value={formData.starConfig.points}
-                            onChange={(e) => setFormData({
-                              ...formData,
-                              starConfig: { ...formData.starConfig, points: parseInt(e.target.value) }
-                            })}
-                            className="w-full accent-purple-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-sm text-slate-400 mb-2 block">Inner Radius</label>
-                          <input
-                            type="range"
-                            min="20"
-                            max="80"
-                            value={formData.starConfig.innerRadius}
-                            onChange={(e) => setFormData({
-                              ...formData,
-                              starConfig: { ...formData.starConfig, innerRadius: parseInt(e.target.value) }
-                            })}
-                            className="w-full accent-purple-500"
-                          />
+                      <div className="mt-6 pt-6 border-t border-slate-800">
+                        <div className="flex gap-2 justify-center flex-wrap">
+                          {NORTH_STAR_COLORS.map((color) => (
+                            <button
+                              key={color.value}
+                              onClick={() =>
+                                setFormData({
+                                  ...formData,
+                                  northStarColor: color.value,
+                                })
+                              }
+                              className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                formData.northStarColor === color.value
+                                  ? "scale-125 border-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                  : "border-transparent opacity-50 hover:opacity-100"
+                              }`}
+                              style={{ background: color.color }}
+                              title={color.label}
+                            />
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -562,35 +762,35 @@ export function CreateNorthStarDialog({
 
                 {/* STEP 5: NAME & LAUNCH */}
                 {currentStep === 5 && (
-                  <div className="text-center space-y-12">
-                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-purple-500/20 border border-purple-500/30 mb-4 animate-pulse">
-                      <Rocket className="w-10 h-10 text-purple-400" />
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <h2 className="text-4xl font-bold">Name Your Legend</h2>
-                      <p className="text-lg text-slate-400">
-                        Give this chapter of your life a title.
-                      </p>
+                  <div>
+                    <div className="text-center space-y-8">
+                      <div className="space-y-2">
+                        <h2 className="text-3xl font-bold">Name Your Star</h2>
+                        <p className="text-slate-400">
+                          Give it a powerful title
+                        </p>
+                      </div>
+
+                      <div className="max-w-md mx-auto">
+                        <Input
+                          value={formData.title}
+                          onChange={(e) =>
+                            setFormData({ ...formData, title: e.target.value })
+                          }
+                          placeholder="e.g. The Year of Growth"
+                          className="bg-slate-900 border-slate-700 text-center text-xl font-semibold"
+                        />
+                      </div>
                     </div>
 
-                    <div className="max-w-xl mx-auto">
-                      <Input
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        placeholder="e.g. The Year of Growth"
-                        className="text-center text-3xl md:text-4xl font-bold bg-transparent border-b-2 border-slate-700 rounded-none px-0 py-4 focus-visible:ring-0 focus-visible:border-purple-500 placeholder:text-slate-700 h-auto"
-                      />
-                    </div>
-
-                    <div className="pt-8">
+                    <div className="pt-4">
                       <Button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
                         size="lg"
                         className="rounded-full px-12 py-8 text-xl font-bold bg-white text-slate-950 hover:bg-slate-200 transition-all hover:scale-105 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
                       >
-                        {isSubmitting ? "Launching..." : "Launch North Star"}
+                        {isSubmitting ? t.launching : t.launchBtn}
                       </Button>
                     </div>
                   </div>
@@ -609,15 +809,15 @@ export function CreateNorthStarDialog({
             onClick={handleBack}
             className="text-slate-400 hover:text-white"
           >
-            <ChevronLeft className="w-4 h-4 mr-2" /> Back
+            <ChevronLeft className="w-4 h-4 mr-2" /> {t.back}
           </Button>
-          
+
           {currentStep < 5 && (
             <Button
               onClick={handleNext}
               className="bg-white/10 hover:bg-white/20 text-white border border-white/10"
             >
-              Next <ChevronRight className="w-4 h-4 ml-2" />
+              {t.next} <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           )}
         </div>

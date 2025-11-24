@@ -1,8 +1,18 @@
 import { DirectionFinderResult } from '@/types/direction-finder';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Download, Share2 } from 'lucide-react';
+import { 
+  ArrowRight, 
+  Download, 
+  Share2, 
+  Sparkles, 
+  Heart, 
+  Zap, 
+  Target,
+  TrendingUp,
+  CheckCircle2,
+  Lightbulb
+} from 'lucide-react';
 
 interface DirectionResultsProps {
   result: DirectionFinderResult;
@@ -10,92 +20,184 @@ interface DirectionResultsProps {
 
 export function DirectionResults({ result }: DirectionResultsProps) {
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold text-white">Your Direction Profile</h2>
-        <p className="text-slate-400">Based on your interests, strengths, and our conversation.</p>
+    <div className="space-y-12 max-w-5xl mx-auto pb-12">
+      {/* Hero Section with Ikigai Visualization */}
+      <div className="text-center space-y-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-600/10 via-transparent to-transparent blur-3xl pointer-events-none" />
+        
+        <div className="relative">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 mb-4 animate-pulse">
+            <Sparkles className="w-10 h-10 text-purple-400" />
+          </div>
+          
+          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-3">
+            Your Direction Profile
+          </h2>
+          
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Based on your unique interests, strengths, and values—here's your personalized roadmap.
+          </p>
+        </div>
       </div>
 
-      {/* Ikigai Profile Summary */}
-      <Card className="bg-slate-900 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-xl text-white">Your Core Profile</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-blue-400 uppercase tracking-wider">What Energizes You</h4>
-            <div className="flex flex-wrap gap-2">
-              {result.profile.energizers.map((item, i) => (
-                <Badge key={i} variant="secondary" className="bg-blue-900/30 text-blue-200 hover:bg-blue-900/50">
-                  {item}
-                </Badge>
-              ))}
+      {/* Ikigai Breakdown - Visual Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* What Energizes You */}
+        <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-700/30 rounded-2xl p-6 space-y-4 hover:border-blue-600/50 transition-all hover:scale-[1.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-500/30">
+              <Zap className="w-6 h-6 text-blue-400" />
             </div>
+            <h3 className="text-sm font-bold text-blue-300 uppercase tracking-wider">What You Love</h3>
           </div>
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-green-400 uppercase tracking-wider">Your Strengths</h4>
-            <div className="flex flex-wrap gap-2">
-              {result.profile.strengths.map((item, i) => (
-                <Badge key={i} variant="secondary" className="bg-green-900/30 text-green-200 hover:bg-green-900/50">
-                  {item}
-                </Badge>
-              ))}
-            </div>
+            {result.profile.energizers.map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-blue-100 bg-blue-950/30 px-3 py-2 rounded-lg">
+                <Heart className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
+                <span>{item}</span>
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Direction Vectors */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-white">Recommended Directions</h3>
-        <div className="grid grid-cols-1 gap-4">
+        {/* Your Strengths */}
+        <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-700/30 rounded-2xl p-6 space-y-4 hover:border-green-600/50 transition-all hover:scale-[1.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center border border-green-500/30">
+              <TrendingUp className="w-6 h-6 text-green-400" />
+            </div>
+            <h3 className="text-sm font-bold text-green-300 uppercase tracking-wider">Your Strengths</h3>
+          </div>
+          <div className="space-y-2">
+            {result.profile.strengths.map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-green-100 bg-green-950/30 px-3 py-2 rounded-lg">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* What You Value */}
+        <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/10 border border-purple-700/30 rounded-2xl p-6 space-y-4 hover:border-purple-600/50 transition-all hover:scale-[1.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center border border-purple-500/30">
+              <Target className="w-6 h-6 text-purple-400" />
+            </div>
+            <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">What You Value</h3>
+          </div>
+          <div className="space-y-2">
+            {result.profile.values.map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-purple-100 bg-purple-950/30 px-3 py-2 rounded-lg">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Direction Vectors - Recommended Paths */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+          <h3 className="text-2xl font-bold text-white">Your Top Directions</h3>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+        </div>
+
+        <div className="space-y-4">
           {result.vectors.map((vector, idx) => (
-            <Card key={idx} className="bg-slate-800/50 border-slate-700 hover:border-slate-600 transition-colors">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-lg font-bold text-white mb-1">{vector.name}</h4>
-                    <p className="text-sm text-slate-400">
-                      Matches your interest in <span className="text-blue-400">{vector.fit_reason.interest_alignment}</span> and skill in <span className="text-green-400">{vector.fit_reason.strength_alignment}</span>.
+            <div 
+              key={idx} 
+              className="group relative bg-gradient-to-br from-slate-900/90 to-slate-800/50 border border-slate-700/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]"
+            >
+              {/* Rank Badge */}
+              <div className="absolute -top-3 -left-3 w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg border-2 border-slate-900">
+                {idx + 1}
+              </div>
+
+              <div className="space-y-5">
+                {/* Header */}
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1">
+                    <h4 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
+                      {vector.name}
+                    </h4>
+                    <p className="text-slate-400 leading-relaxed">
+                      Perfect match for your passion in{' '}
+                      <span className="text-blue-400 font-medium">{vector.fit_reason.interest_alignment}</span>
+                      {' '}and expertise in{' '}
+                      <span className="text-green-400 font-medium">{vector.fit_reason.strength_alignment}</span>.
                     </p>
                   </div>
-                  <Badge className="bg-purple-600">Top Match</Badge>
-                </div>
-                
-                <div className="bg-slate-900/50 p-4 rounded-lg space-y-3">
-                  <h5 className="text-sm font-medium text-slate-300">How to explore this:</h5>
-                  <ul className="space-y-2">
-                    {vector.exploration_steps.map((step, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
-                        <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                        <span>{step.description}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {idx === 0 && (
+                    <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 px-4 py-1.5 text-sm font-semibold shadow-lg">
+                      🎯 Best Match
+                    </Badge>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <div className="text-sm text-slate-400">
-                    <span className="font-medium text-white">First Step:</span> {vector.first_step}
+                {/* Exploration Steps */}
+                <div className="bg-slate-950/50 border border-slate-800/50 rounded-xl p-5 space-y-4">
+                  <h5 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 text-amber-400" />
+                    How to Explore This Path
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {vector.exploration_steps.map((step, i) => (
+                      <div 
+                        key={i} 
+                        className="flex items-start gap-3 bg-slate-900/50 p-3 rounded-lg hover:bg-slate-900/80 transition-colors group/step"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-blue-600/20 flex items-center justify-center shrink-0 mt-0.5 border border-blue-500/30 group-hover/step:bg-blue-600/40 transition-colors">
+                          <span className="text-xs font-bold text-blue-400">{i + 1}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-slate-300 leading-relaxed">{step.description}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <Button size="sm" variant="outline">
-                    View Details <ArrowRight className="ml-2 w-4 h-4" />
+                </div>
+
+                {/* First Step CTA */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
+                  <div className="flex items-start gap-2 flex-1">
+                    <div className="w-8 h-8 rounded-lg bg-green-600/20 flex items-center justify-center shrink-0 border border-green-500/30">
+                      <CheckCircle2 className="w-4 h-4 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-green-400 uppercase tracking-wider">Start Here</p>
+                      <p className="text-sm text-slate-300 mt-0.5">{vector.first_step}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 shadow-lg"
+                  >
+                    Begin Journey <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-center gap-4 pt-4">
-        <Button variant="outline" className="gap-2">
-          <Download className="w-4 h-4" /> Save Profile
+      <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+        <Button 
+          variant="outline" 
+          size="lg"
+          className="gap-2 border-slate-700 hover:bg-slate-800 hover:text-white text-slate-300"
+        >
+          <Download className="w-5 h-5" /> Save Profile
         </Button>
-        <Button className="gap-2 bg-white text-slate-900 hover:bg-slate-200">
-          <Share2 className="w-4 h-4" /> Share Results
+        <Button 
+          size="lg"
+          className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25"
+        >
+          <Share2 className="w-5 h-5" /> Share Results
         </Button>
       </div>
     </div>

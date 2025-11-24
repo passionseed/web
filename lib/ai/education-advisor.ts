@@ -1,5 +1,9 @@
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject, generateText } from "ai";
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
+});
 import { z } from "zod";
 import { StudentProfile, RecommendedUniversity } from "@/types/education";
 import { AssessmentAnswers, DirectionFinderResult } from "@/types/direction-finder";

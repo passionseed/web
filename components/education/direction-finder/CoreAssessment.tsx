@@ -1,14 +1,11 @@
 import { AssessmentStep, AssessmentAnswers } from '@/types/direction-finder';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowRight, ArrowLeft, Star, GripVertical, Home, Sun, Calendar, Sparkles, User, Users, Wrench, Lightbulb, Clock, Mountain } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { ArrowRight, ArrowLeft, Star, Home, Sun, Calendar, Sparkles, User, Users, Wrench, Lightbulb, Clock, Mountain } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CoreAssessmentProps {
@@ -18,6 +15,24 @@ interface CoreAssessmentProps {
   onNext: () => void;
   onBack: () => void;
 }
+
+const QuestionWrapper = ({ title, subtitle, children, canProceed = true, onBack, onNext }: any) => (
+  <div className="space-y-6">
+    <div className="space-y-2">
+      <h3 className="text-xl font-semibold text-white">{title}</h3>
+      {subtitle && <p className="text-slate-400">{subtitle}</p>}
+    </div>
+    <div className="py-2">
+      {children}
+    </div>
+    <div className="flex justify-between pt-4">
+      <Button variant="outline" onClick={onBack}>Back</Button>
+      <Button onClick={onNext} disabled={!canProceed} className="bg-blue-600 hover:bg-blue-700">
+        Next <ArrowRight className="ml-2 w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+);
 
 export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: CoreAssessmentProps) {
   const [localAnswers, setLocalAnswers] = useState<Partial<AssessmentAnswers>>(answers);
@@ -32,24 +47,6 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     setLocalAnswers(newAnswers);
     onAnswer(newAnswers);
   };
-
-  const QuestionWrapper = ({ title, subtitle, children, canProceed = true }: any) => (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold text-white">{title}</h3>
-        {subtitle && <p className="text-slate-400">{subtitle}</p>}
-      </div>
-      <div className="py-2">
-        {children}
-      </div>
-      <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={onBack}>Back</Button>
-        <Button onClick={onNext} disabled={!canProceed} className="bg-blue-600 hover:bg-blue-700">
-          Next <ArrowRight className="ml-2 w-4 h-4" />
-        </Button>
-      </div>
-    </div>
-  );
 
   // Intro Step
   if (step === 'intro') {
@@ -96,6 +93,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         title="Time Flies When..." 
         subtitle={`Select your top 3 activities (${currentSelection.length}/3 selected)`}
         canProceed={currentSelection.length === 3}
+        onBack={onBack}
+        onNext={onNext}
       >
         <div className="grid gap-3">
           {options.map((option) => (
@@ -140,6 +139,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         title="Energy Check" 
         subtitle={`Which give you ENERGY? Pick 3 (${currentSelection.length}/3)`}
         canProceed={currentSelection.length === 3}
+        onBack={onBack}
+        onNext={onNext}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {options.map((option) => (
@@ -167,7 +168,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     );
   }
 
-  // Q3: Work Style (Sliders)
+  // Q3: Work Style (Clickers)
   if (step === 'q3') {
     const styles = localAnswers.q3_work_style || {
       indoor_outdoor: 50,
@@ -177,71 +178,79 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
       routine_challenge: 50
     };
 
-    const renderSlider = (
+    const renderClicker = (
       key: keyof typeof styles, 
       left: { label: string, icon: any }, 
       right: { label: string, icon: any }
     ) => {
       const value = styles[key];
-      const isLeft = value < 40;
-      const isRight = value > 60;
-
+      
       return (
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "flex items-center gap-1.5 min-w-[140px]", 
-            isLeft ? "text-blue-400" : "text-slate-500"
-          )}>
-            <left.icon className="w-4 h-4 flex-shrink-0" />
-            <span className="text-xs font-medium">{left.label}</span>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-slate-400 px-1">
+            <div className="flex items-center gap-1">
+              <left.icon className="w-3 h-3" /> {left.label}
+            </div>
+            <div className="flex items-center gap-1">
+              {right.label} <right.icon className="w-3 h-3" />
+            </div>
           </div>
-          
-          <div className="flex-1 relative">
-            <Slider
-              value={[value]}
-              min={0}
-              max={100}
-              step={1}
-              onValueChange={(newValue) => updateAnswer('q3_work_style', { ...styles, [key]: newValue[0] })}
-              className="w-full [&>span:first-child]:h-2 [&>span:first-child]:bg-slate-800 [&>span:first-child>span]:bg-blue-400 [&>span:last-child]:h-[18px] [&>span:last-child]:w-[18px] [&>span:last-child]:border-2 [&>span:last-child]:border-blue-400 [&>span:last-child]:bg-white [&>span:last-child]:shadow-md"
-            />
-          </div>
+          <div className="flex gap-1 h-10">
+            {[0, 25, 50, 75, 100].map((val) => {
+              const isSelected = val === value;
+              // Determine color based on side
+              let bgClass = "bg-slate-800 border-slate-700";
+              if (isSelected) {
+                if (val < 50) bgClass = "bg-blue-600 border-blue-500 text-white";
+                else if (val > 50) bgClass = "bg-purple-600 border-purple-500 text-white";
+                else bgClass = "bg-slate-600 border-slate-500 text-white";
+              }
 
-          <div className={cn(
-            "flex items-center gap-1.5 min-w-[140px] justify-end", 
-            isRight ? "text-purple-400" : "text-slate-500"
-          )}>
-            <span className="text-xs font-medium">{right.label}</span>
-            <right.icon className="w-4 h-4 flex-shrink-0" />
+              return (
+                <button
+                  key={val}
+                  onClick={() => updateAnswer('q3_work_style', { ...styles, [key]: val })}
+                  className={cn(
+                    "flex-1 rounded border transition-all hover:bg-slate-700",
+                    bgClass
+                  )}
+                />
+              );
+            })}
           </div>
         </div>
       );
     };
 
     return (
-      <QuestionWrapper title="Work Style" subtitle="Drag the sliders to show your preferences">
-        <div className="space-y-4 bg-slate-900/30 p-4 rounded-lg border border-slate-800">
-          {renderSlider(
+      <QuestionWrapper 
+        title="Work Style" 
+        subtitle="Click to show your preference"
+        onBack={onBack}
+        onNext={onNext}
+      >
+        <div className="space-y-6 bg-slate-900/30 p-4 rounded-lg border border-slate-800">
+          {renderClicker(
             'indoor_outdoor', 
-            { label: 'Indoor work', icon: Home }, 
-            { label: 'Outdoor work', icon: Sun }
+            { label: 'Indoor', icon: Home }, 
+            { label: 'Outdoor', icon: Sun }
           )}
-          {renderSlider(
+          {renderClicker(
             'structured_flexible', 
             { label: 'Structured', icon: Calendar }, 
             { label: 'Flexible', icon: Sparkles }
           )}
-          {renderSlider(
+          {renderClicker(
             'solo_team', 
-            { label: 'Solo work', icon: User }, 
-            { label: 'Team work', icon: Users }
+            { label: 'Solo', icon: User }, 
+            { label: 'Team', icon: Users }
           )}
-          {renderSlider(
+          {renderClicker(
             'hands_on_theory', 
             { label: 'Hands-on', icon: Wrench }, 
             { label: 'Theory', icon: Lightbulb }
           )}
-          {renderSlider(
+          {renderClicker(
             'routine_challenge', 
             { label: 'Routine', icon: Clock }, 
             { label: 'Challenge', icon: Mountain }
@@ -267,7 +276,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
       if (exists) {
         updateAnswer('q4_subject_interests', selections.filter(s => s.subject !== subject));
       } else {
-        updateAnswer('q4_subject_interests', [...selections, { subject, intensity: 2 }]);
+        updateAnswer('q4_subject_interests', [...selections, { subject, intensity: 3 }]);
       }
     };
 
@@ -278,51 +287,65 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
       ));
     };
 
+    // Flatten and sort subjects
+    // Selected subjects go to top
+    const allSubjects = Object.entries(categories).flatMap(([cat, subs]) => 
+      subs.map(sub => ({ category: cat, subject: sub }))
+    );
+
+    const sortedSubjects = [...allSubjects].sort((a, b) => {
+      const aSelected = selections.find(s => s.subject === a.subject);
+      const bSelected = selections.find(s => s.subject === b.subject);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return 0;
+    });
+
     return (
       <QuestionWrapper 
         title="Subject Love" 
-        subtitle="Pick ALL that genuinely interest you and rate intensity"
+        subtitle="Pick subjects you genuinely like, not just ones you're good at."
         canProceed={selections.length > 0}
+        onBack={onBack}
+        onNext={onNext}
       >
-        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-          {Object.entries(categories).map(([category, subjects]) => (
-            <div key={category} className="space-y-3">
-              <h4 className="font-semibold text-blue-400">{category}</h4>
-              <div className="grid grid-cols-1 gap-2">
-                {subjects.map(subject => {
-                  const selection = selections.find(s => s.subject === subject);
-                  return (
-                    <div 
-                      key={subject}
-                      onClick={() => toggleSubject(subject)}
-                      className={cn(
-                        "p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between",
-                        selection
-                          ? "bg-slate-800 border-blue-500" 
-                          : "bg-slate-900 border-slate-800 hover:border-slate-600"
-                      )}
-                    >
-                      <span className={selection ? "text-white" : "text-slate-400"}>{subject}</span>
-                      {selection && (
-                        <div className="flex gap-1">
-                          {[1, 2, 3].map(star => (
-                            <Star 
-                              key={star}
-                              className={cn(
-                                "w-5 h-5 cursor-pointer hover:scale-110 transition-transform",
-                                star <= selection.intensity ? "fill-amber-400 text-amber-400" : "text-slate-600"
-                              )}
-                              onClick={(e) => setIntensity(subject, star, e)}
-                            />
-                          ))}
-                        </div>
-                      )}
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+          {sortedSubjects.map(({ category, subject }) => {
+            const selection = selections.find(s => s.subject === subject);
+            return (
+              <div 
+                key={subject}
+                onClick={() => toggleSubject(subject)}
+                className={cn(
+                  "p-3 rounded-lg border cursor-pointer transition-all flex flex-col gap-2",
+                  selection
+                    ? "bg-slate-800 border-blue-500" 
+                    : "bg-slate-900 border-slate-800 hover:border-slate-600"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className={selection ? "text-white font-medium" : "text-slate-400"}>{subject}</span>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider">{category}</span>
+                  </div>
+                  {selection && (
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star 
+                          key={star}
+                          className={cn(
+                            "w-5 h-5 cursor-pointer hover:scale-110 transition-transform",
+                            star <= selection.intensity ? "fill-amber-400 text-amber-400" : "text-slate-600"
+                          )}
+                          onClick={(e) => setIntensity(subject, star, e)}
+                        />
+                      ))}
                     </div>
-                  );
-                })}
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </QuestionWrapper>
     );
@@ -342,6 +365,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         title="Flow State Memory" 
         subtitle="Describe the last time you were so absorbed you lost track of time"
         canProceed={!!flowData.activity && flowData.engaging_factors.length > 0}
+        onBack={onBack}
+        onNext={onNext}
       >
         <div className="space-y-6">
           <div className="space-y-2">
@@ -418,6 +443,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         title="Strongest Skills" 
         subtitle={`Select your top 5 strengths (${selectedSkills.length}/5)`}
         canProceed={selectedSkills.length === 5}
+        onBack={onBack}
+        onNext={onNext}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-2">
           {Object.entries(skillCategories).map(([category, skills]) => (
@@ -466,6 +493,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         title="Proud Moments" 
         subtitle="What have you accomplished that made you proud? (Pick up to 3)"
         canProceed={selected.length > 0}
+        onBack={onBack}
+        onNext={onNext}
       >
         <div className="grid gap-2">
           {options.map(option => (
@@ -498,7 +527,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     const options = ["Reading", "Videos/demos", "Hands-on doing", "One-on-one mentoring", "Structured classes", "Trial and error"];
     const selected = localAnswers.q8_learning_style || [];
     return (
-      <QuestionWrapper title="Learning Style" subtitle="How do you learn best? (Pick 2)" canProceed={selected.length === 2}>
+      <QuestionWrapper title="Learning Style" subtitle="How do you learn best? (Pick 2)" canProceed={selected.length === 2} onBack={onBack} onNext={onNext}>
         <div className="grid grid-cols-2 gap-3">
           {options.map(opt => (
             <div key={opt} onClick={() => {
@@ -515,7 +544,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     const options = ["Tech help", "Creative ideas", "Explaining concepts", "Organizing", "Emotional support", "Homework help", "Making/fixing", "Decisions", "Entertainment", "Sports"];
     const selected = localAnswers.q9_help_requests || [];
     return (
-      <QuestionWrapper title="What People Ask For" subtitle="What do others ask you for help with? (Select all that apply)">
+      <QuestionWrapper title="What People Ask For" subtitle="What do others ask you for help with? (Select all that apply)" onBack={onBack} onNext={onNext}>
         <div className="grid grid-cols-2 gap-2">
           {options.map(opt => (
             <div key={opt} onClick={() => {
@@ -531,7 +560,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
   if (step === 'q10') {
     const data = localAnswers.q10_fast_learner || { is_fast_learner: false };
     return (
-      <QuestionWrapper title="Fast Learner Moment" subtitle="Is there something you picked up way faster than others?" canProceed={!data.is_fast_learner || (!!data.topic && !!data.speed)}>
+      <QuestionWrapper title="Fast Learner Moment" subtitle="Is there something you picked up way faster than others?" canProceed={!data.is_fast_learner || (!!data.topic && !!data.speed)} onBack={onBack} onNext={onNext}>
         <div className="space-y-6">
           <div className="flex gap-4">
             <Button variant={data.is_fast_learner ? "default" : "outline"} onClick={() => updateAnswer('q10_fast_learner', { ...data, is_fast_learner: true })}>Yes</Button>
@@ -562,7 +591,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
   if (step === 'q11') {
     const data = localAnswers.q11_zone_activity || { in_zone: false };
     return (
-      <QuestionWrapper title="Zone Activity Check" subtitle="Do you regularly lose track of time doing something?" canProceed={!data.in_zone || (!!data.activity && !!data.frequency)}>
+      <QuestionWrapper title="Zone Activity Check" subtitle="Do you regularly lose track of time doing something?" canProceed={!data.in_zone || (!!data.activity && !!data.frequency)} onBack={onBack} onNext={onNext}>
         <div className="space-y-6">
           <div className="flex gap-4">
             <Button variant={data.in_zone ? "default" : "outline"} onClick={() => updateAnswer('q11_zone_activity', { ...data, in_zone: true })}>Yes</Button>
@@ -594,7 +623,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     const ratings = localAnswers.q12_confidence || { creative: 3, analytical: 3, technical: 3, people: 3, organizational: 3, physical: 3 };
     const areas = ["Creative", "Analytical", "Technical", "People", "Organizational", "Physical"];
     return (
-      <QuestionWrapper title="Confidence Rating" subtitle="Rate your overall confidence in each area">
+      <QuestionWrapper title="Confidence Rating" subtitle="Rate your overall confidence in each area" onBack={onBack} onNext={onNext}>
         <div className="space-y-4">
           {areas.map(area => {
             const key = area.toLowerCase() as keyof typeof ratings;
@@ -617,7 +646,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
   if (step === 'q13') {
     return (
-      <QuestionWrapper title="Recognition Pattern" subtitle="What do people often compliment you on?" canProceed={!!localAnswers.q13_recognition}>
+      <QuestionWrapper title="Recognition Pattern" subtitle="What do people often compliment you on?" canProceed={!!localAnswers.q13_recognition} onBack={onBack} onNext={onNext}>
         <div className="space-y-4">
           <Textarea 
             value={localAnswers.q13_recognition || ''} 
