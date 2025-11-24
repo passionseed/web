@@ -18,7 +18,9 @@ import {
   Map,
   Users,
   Calendar,
-  Target
+  Target,
+  Download,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUniversityExampleMaps } from '@/lib/supabase/education';
@@ -154,6 +156,85 @@ export function UniversityExampleMapsDialog({
     }
   };
 
+  const handleExportMap = (mapId: string) => {
+    const mapToExport = exampleMaps.find(m => m.id === mapId);
+    if (!mapToExport) return;
+    
+    // Create export data
+    const exportData = {
+      title: mapToExport.title,
+      description: mapToExport.description,
+      target_audience: mapToExport.target_audience,
+      example_data: mapToExport.example_data,
+      exported_at: new Date().toISOString(),
+      exported_from: university?.name || 'Unknown University'
+    };
+    
+    // Create and download file
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${mapToExport.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_roadmap.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Roadmap exported successfully!');
+  };
+
+  const handleImportMap = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      try {
+        const text = await file.text();
+        const importData = JSON.parse(text);
+        
+        // Validate import data structure
+        if (!importData.title || !importData.example_data) {
+          toast.error('Invalid roadmap file format');
+          return;
+        }
+        
+        // Create new map from imported data
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('university_example_maps')
+          .insert({
+            university_id: university!.id,
+            title: `${importData.title} (Imported)`,
+            description: importData.description || 'Imported roadmap',
+            target_audience: importData.target_audience || '',
+            example_data: importData.example_data
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error importing roadmap:', error);
+          toast.error('Failed to import roadmap');
+          return;
+        }
+        
+        // Add to local state
+        setExampleMaps(prev => [data, ...prev]);
+        toast.success(`Roadmap "${importData.title}" imported successfully!`);
+      } catch (error) {
+        console.error('Error parsing import file:', error);
+        toast.error('Invalid JSON file');
+      }
+    };
+    input.click();
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -182,20 +263,36 @@ export function UniversityExampleMapsDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 pr-2 -mr-2">
-          {/* Create New Button */}
-          <Card className="border-dashed border-2 hover:border-blue-400 transition-colors">
-            <CardContent className="p-6">
-              <Button 
-                onClick={handleCreateNew}
-                variant="ghost" 
-                className="w-full h-24 flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground"
-              >
-                <Plus className="w-8 h-8" />
-                <span className="font-medium">Create New Example Journey Map</span>
-                <span className="text-xs">Define student persona and build journey</span>
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Create New and Import Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border-dashed border-2 hover:border-blue-400 transition-colors">
+              <CardContent className="p-6">
+                <Button 
+                  onClick={handleCreateNew}
+                  variant="ghost" 
+                  className="w-full h-24 flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="w-8 h-8" />
+                  <span className="font-medium">Create New Example Journey Map</span>
+                  <span className="text-xs">Define student persona and build journey</span>
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-dashed border-2 hover:border-green-400 transition-colors">
+              <CardContent className="p-6">
+                <Button 
+                  onClick={handleImportMap}
+                  variant="ghost" 
+                  className="w-full h-24 flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Upload className="w-8 h-8" />
+                  <span className="font-medium">Import Roadmap</span>
+                  <span className="text-xs">Upload existing roadmap from JSON file</span>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Loading State */}
           {isLoading && (
@@ -237,6 +334,15 @@ export function UniversityExampleMapsDialog({
                       title="Edit Journey Map"
                     >
                       <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleExportMap(map.id)}
+                      className="text-slate-500 hover:text-blue-500"
+                      title="Export Roadmap"
+                    >
+                      <Download className="w-4 h-4" />
                     </Button>
                     <Button
                       size="sm"
