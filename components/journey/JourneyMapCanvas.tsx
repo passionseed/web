@@ -39,6 +39,7 @@ import { MainQuestPanel } from "./MainQuestPanel";
 import { MilestoneMapView } from "./MilestoneMapView";
 import { NoNorthStarState } from "./NoNorthStarState";
 import { CreateNorthStarDialog } from "./CreateNorthStarDialog";
+import { JourneyMapOnboarding } from "./JourneyMapOnboarding";
 
 import { useJourneyProjects } from "@/hooks/use-journey-projects";
 import { useProjectPaths } from "@/hooks/use-project-paths";
@@ -78,7 +79,7 @@ function JourneyMapCanvasInner({
   const { northStars, refreshNorthStars, updateNorthStarPositionLocal } = useNorthStars();
   
   // User profile state
-  const [userEducationLevel, setUserEducationLevel] = React.useState<'high_school' | 'university' | 'unaffiliated'>('university');
+  const [userEducationLevel, setUserEducationLevel] = React.useState<'high_school' | 'university' | 'unaffiliated'>('high_school');
   const supabase = createClient();
 
   // UI state hooks
@@ -136,7 +137,8 @@ function JourneyMapCanvasInner({
           .single();
         
         if (profile?.education_level) {
-          setUserEducationLevel(profile.education_level);
+          // setUserEducationLevel(profile.education_level);
+          console.log('Profile education level:', profile.education_level);
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -394,6 +396,30 @@ function JourneyMapCanvasInner({
   // RENDER MILESTONE VIEW
   // ========================================
 
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = React.useState(false);
+
+  // Check onboarding status on mount
+  React.useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem("journey_map_onboarding_seen");
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+    setHasCheckedOnboarding(true);
+  }, []);
+
+  const handleOnboardingComplete = useCallback(() => {
+    localStorage.setItem("journey_map_onboarding_seen", "true");
+    setShowOnboarding(false);
+    // Open North Star dialog immediately after onboarding
+    setCreateNorthStarOpen(true);
+  }, []);
+
+  // ========================================
+  // RENDER MILESTONE VIEW
+  // ========================================
+
   if (viewMode === VIEW_MODES.MILESTONE && milestoneProjectId) {
     return (
       <div className="h-full w-full bg-slate-950">
@@ -409,8 +435,18 @@ function JourneyMapCanvasInner({
   // RENDER OVERVIEW (MAIN MAP)
   // ========================================
 
+  // Show loading state while checking onboarding
+  if (!hasCheckedOnboarding) {
+    return null; // Or a loading spinner
+  }
+
+  // Show onboarding if needed
+  if (showOnboarding) {
+    return <JourneyMapOnboarding onComplete={handleOnboardingComplete} />;
+  }
+
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full bg-slate-950">
+    <ResizablePanelGroup id="journey-map-panel-group" direction="horizontal" className="h-full bg-slate-950">
       {/* Left Panel - Main Map Canvas */}
       <ResizablePanel
         ref={leftPanelRef}

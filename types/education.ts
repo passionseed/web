@@ -4,6 +4,9 @@ export interface University {
   id: string;
   name: string;
   short_name?: string;
+  country?: string;
+  state?: string;
+  city?: string;
   website_url?: string;
   logo_url?: string;
   description?: string;
@@ -48,6 +51,24 @@ export interface SimpleRoadmap {
     primary_interest: string;
   };
   milestones: SimpleMilestone[];
+}
+
+export interface StudentProfile {
+  interests: string[];
+  strengths: string[];
+  preferredLocation: string;
+  campusVibe: string;
+  extracurriculars: string[];
+  careerAspirations: string[];
+  industryPreference: string;
+}
+
+export interface RecommendedUniversity {
+  universityName: string;
+  faculty: string;
+  major: string;
+  matchScore: number;
+  reasoning: string;
 }
 
 export interface AIRoadmap {

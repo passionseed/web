@@ -1,15 +1,15 @@
-"use client";
-
 import { useState, useEffect } from 'react';
-import { University, SimpleRoadmap, EducationalFlowData } from '@/types/education';
+import { University, SimpleRoadmap, EducationalFlowData, RecommendedUniversity } from '@/types/education';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, CheckCircle, Sparkles } from 'lucide-react';
 
 import { UniversityPicker } from './UniversityPicker';
 import { InterestPriorityList } from './InterestPriorityList';
 import { RoadmapDisplay } from './RoadmapDisplay';
+import { DirectionFinderFlow } from './direction-finder/DirectionFinderFlow';
+import { DirectionFinderResult } from '@/types/direction-finder';
 
 interface EducationalPathwayFlowProps {
   vision: string;
@@ -18,7 +18,7 @@ interface EducationalPathwayFlowProps {
   onCancel: () => void;
 }
 
-type FlowStep = 'universities' | 'interests' | 'roadmap' | 'complete';
+type FlowStep = 'universities' | 'recommendation' | 'interests' | 'roadmap' | 'complete';
 
 interface InterestItem {
   id: string;
@@ -38,6 +38,7 @@ export function EducationalPathwayFlow({
   const [generatedRoadmap, setGeneratedRoadmap] = useState<SimpleRoadmap | null>(null);
   const [isGeneratingRoadmap, setIsGeneratingRoadmap] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<RecommendedUniversity[]>([]);
 
   const steps = [
     { id: 'universities', title: 'Choose Universities', description: 'Select your top 3 university choices' },
@@ -46,8 +47,13 @@ export function EducationalPathwayFlow({
     { id: 'complete', title: 'Complete', description: 'Finalize your educational pathway' }
   ];
 
-  const getCurrentStepIndex = () => steps.findIndex(step => step.id === currentStep);
-  const progress = ((getCurrentStepIndex() + 1) / steps.length) * 100;
+  // Helper to map current step to progress index
+  const getProgressIndex = () => {
+    if (currentStep === 'recommendation') return 0;
+    return steps.findIndex(step => step.id === currentStep);
+  };
+  
+  const progress = ((getProgressIndex() + 1) / steps.length) * 100;
 
   const canProceedFromUniversities = selectedUniversities.length === 3;
   const canProceedFromInterests = interests.length > 0;
@@ -72,11 +78,92 @@ export function EducationalPathwayFlow({
     if (currentStep === 'universities') {
       // Go back to edit vision statement
       onCancel();
+    } else if (currentStep === 'recommendation') {
+      setCurrentStep('universities');
     } else if (currentStep === 'interests') {
       setCurrentStep('universities');
     } else if (currentStep === 'roadmap') {
       setCurrentStep('interests');
     }
+  };
+
+  const handleDirectionFinderComplete = (result: DirectionFinderResult) => {
+    // Map matched programs to universities if possible
+    const newSelections: University[] = [];
+    const newInterests: InterestItem[] = [];
+
+    // Try to find universities from the matched programs
+    result.programs.forEach(program => {
+      const matchedUni = universities.find(u => 
+        program.name.toLowerCase().includes(u.name.toLowerCase()) || 
+        u.name.toLowerCase().includes(program.name.toLowerCase())
+      );
+      
+      if (matchedUni && !newSelections.find(u => u.id === matchedUni.id) && newSelections.length < 3) {
+        newSelections.push(matchedUni);
+      }
+      
+      // Add program name as interest
+      if (!newInterests.find(i => i.name === program.name)) {
+        newInterests.push({
+          id: Date.now().toString() + Math.random(),
+          name: program.name,
+          priority: newInterests.length + 1
+        });
+      }
+    });
+
+    // Also add direction vectors as interests
+    result.vectors.forEach(vector => {
+      if (!newInterests.find(i => i.name === vector.name)) {
+        newInterests.push({
+          id: Date.now().toString() + Math.random(),
+          name: vector.name,
+          priority: newInterests.length + 1
+        });
+      }
+    });
+
+    if (newSelections.length > 0) {
+      setSelectedUniversities(newSelections);
+    }
+    
+    if (newInterests.length > 0) {
+      setInterests(newInterests);
+    }
+
+    // Move to next step (universities selection to confirm/edit)
+    setCurrentStep('universities');
+  };
+
+  const handleSelectRecommendation = (rec: RecommendedUniversity) => {
+    // Find matching university in the list if possible, or create a temporary one
+    // For now, we'll try to match by name or just use the name
+    const matchedUni = universities.find(u => u.name.toLowerCase().includes(rec.universityName.toLowerCase()));
+    
+    if (matchedUni) {
+      if (!selectedUniversities.find(u => u.id === matchedUni.id)) {
+         if (selectedUniversities.length < 3) {
+             setSelectedUniversities([...selectedUniversities, matchedUni]);
+         } else {
+             // Replace the last one or handle full list
+             const newSelection = [...selectedUniversities];
+             newSelection[2] = matchedUni;
+             setSelectedUniversities(newSelection);
+         }
+      }
+    }
+    
+    // Also add the faculty/major to interests if not present
+    const interestName = `${rec.faculty} - ${rec.major}`;
+    if (!interests.find(i => i.name === interestName)) {
+        setInterests(prev => [
+            ...prev, 
+            { id: Date.now().toString(), name: interestName, priority: prev.length + 1 }
+        ]);
+    }
+
+    setCurrentStep('universities');
   };
 
   const generateRoadmap = async () => {
@@ -137,30 +224,32 @@ export function EducationalPathwayFlow({
               </Button>
             </div>
             
-            {/* Progress */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Step {getCurrentStepIndex() + 1} of {steps.length}</span>
-                <span className="text-slate-400">{Math.round(progress)}% Complete</span>
+            {/* Progress - Hide in recommendation mode */}
+            {currentStep !== 'recommendation' && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Step {getProgressIndex() + 1} of {steps.length}</span>
+                  <span className="text-slate-400">{Math.round(progress)}% Complete</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+                
+                {/* Step titles */}
+                <div className="grid grid-cols-4 gap-2 mt-4">
+                  {steps.map((step, index) => (
+                    <div
+                      key={step.id}
+                      className={`text-center p-2 rounded ${
+                        getProgressIndex() >= index
+                          ? 'bg-blue-600/20 text-blue-400'
+                          : 'bg-slate-800 text-slate-500'
+                      }`}
+                    >
+                      <div className="text-xs font-medium">{step.title}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Progress value={progress} className="h-2" />
-              
-              {/* Step titles */}
-              <div className="grid grid-cols-4 gap-2 mt-4">
-                {steps.map((step, index) => (
-                  <div
-                    key={step.id}
-                    className={`text-center p-2 rounded ${
-                      getCurrentStepIndex() >= index
-                        ? 'bg-blue-600/20 text-blue-400'
-                        : 'bg-slate-800 text-slate-500'
-                    }`}
-                  >
-                    <div className="text-xs font-medium">{step.title}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Vision reminder */}
             <div className="bg-slate-800 rounded-lg p-3 border border-slate-700">
@@ -176,11 +265,21 @@ export function EducationalPathwayFlow({
       <div className="min-h-[400px]">
         {currentStep === 'universities' && (
           <Card className="bg-slate-900 border-slate-700">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-white text-lg">Choose Your Top 3 Universities</CardTitle>
-              <p className="text-slate-400 text-sm">
-                Select exactly 3 universities you'd like to attend, in order of preference.
-              </p>
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-white text-lg">Choose Your Top 3 Universities</CardTitle>
+                <p className="text-slate-400 text-sm">
+                  Select exactly 3 universities you'd like to attend, in order of preference.
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                onClick={() => setCurrentStep('recommendation')}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Help me choose
+              </Button>
             </CardHeader>
             <CardContent className="pt-0">
               <UniversityPicker
@@ -191,6 +290,15 @@ export function EducationalPathwayFlow({
               />
             </CardContent>
           </Card>
+        )}
+
+        {currentStep === 'recommendation' && (
+           <div className="space-y-6">
+             <DirectionFinderFlow 
+               onComplete={handleDirectionFinderComplete}
+               onCancel={() => setCurrentStep('universities')}
+             />
+           </div>
         )}
 
         {currentStep === 'interests' && (
@@ -257,52 +365,54 @@ export function EducationalPathwayFlow({
       )}
 
       {/* Navigation */}
-      <Card className="bg-slate-900 border-slate-700">
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={isGeneratingRoadmap}
-              className="border-slate-600"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {currentStep === 'universities' ? 'Edit Vision' : 'Back'}
-            </Button>
+      {currentStep !== 'recommendation' && (
+        <Card className="bg-slate-900 border-slate-700">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={isGeneratingRoadmap}
+                className="border-slate-600"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {currentStep === 'universities' ? 'Edit Vision' : 'Back'}
+              </Button>
 
-            <div className="text-center">
-              {getCurrentStepIndex() < steps.length - 1 && (
-                <p className="text-sm text-slate-400">
-                  {steps[getCurrentStepIndex()]?.description}
-                </p>
-              )}
+              <div className="text-center">
+                {getProgressIndex() < steps.length - 1 && (
+                  <p className="text-sm text-slate-400">
+                    {steps[getProgressIndex()]?.description}
+                  </p>
+                )}
+              </div>
+
+              <Button
+                onClick={handleNext}
+                disabled={
+                  (currentStep === 'universities' && !canProceedFromUniversities) ||
+                  (currentStep === 'interests' && !canProceedFromInterests) ||
+                  isGeneratingRoadmap ||
+                  (currentStep === 'roadmap' && !generatedRoadmap)
+                }
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {currentStep === 'roadmap' ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Complete Setup
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
             </div>
-
-            <Button
-              onClick={handleNext}
-              disabled={
-                (currentStep === 'universities' && !canProceedFromUniversities) ||
-                (currentStep === 'interests' && !canProceedFromInterests) ||
-                isGeneratingRoadmap ||
-                (currentStep === 'roadmap' && !generatedRoadmap)
-              }
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {currentStep === 'roadmap' ? (
-                <>
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Complete Setup
-                </>
-              ) : (
-                <>
-                  Next
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
