@@ -29,6 +29,7 @@ export interface MapBuilderCallbacks {
     northStar: NorthStar,
     newStatus: NorthStar["status"]
   ) => void;
+  onUserClick?: () => void;
 }
 
 export interface MapBuilderResult {
@@ -62,7 +63,8 @@ export function buildJourneyMap(
       userName,
       userAvatar,
       projects.length,
-      completionPercentage
+      completionPercentage,
+      callbacks
     )
   );
 
@@ -77,15 +79,27 @@ export function buildJourneyMap(
       (p) => p.linked_north_star_id === northStar.id
     ).length;
 
-    newNodes.push(
-      createNorthStarEntityNode(
-        northStar,
-        position,
-        linkedCount,
-        callbacks,
-        numericZoom
-      )
-    );
+    if (northStar.north_star_shape === 'university') {
+      newNodes.push(
+        createUniversityGoalNode(
+          northStar,
+          position,
+          linkedCount,
+          callbacks,
+          numericZoom
+        )
+      );
+    } else {
+      newNodes.push(
+        createNorthStarEntityNode(
+          northStar,
+          position,
+          linkedCount,
+          callbacks,
+          numericZoom
+        )
+      );
+    }
 
     // Note: Edge to North Star will be created from the last project in the chain
     // No direct edge from user center to maintain continuous line visualization
@@ -278,7 +292,8 @@ function createUserCenterNode(
   userName: string,
   userAvatar: string | undefined,
   projectCount: number,
-  completionPercentage: number
+  completionPercentage: number,
+  callbacks: MapBuilderCallbacks
 ): Node {
   return {
     id: "user-center",
@@ -290,6 +305,7 @@ function createUserCenterNode(
       userAvatar,
       projectCount,
       completionPercentage,
+      onClick: callbacks.onUserClick,
     },
     draggable: false,
     selectable: true,
@@ -446,6 +462,37 @@ function createNorthStarEntityNode(
       },
       onCreateProject: () =>
         callbacks.onCreateProjectForNorthStar?.(northStar.id),
+    onQuickStatusChange: (newStatus: NorthStar["status"]) =>
+        callbacks.onQuickStatusChange?.(northStar, newStatus),
+    },
+    draggable: true,
+    selectable: true,
+  };
+}
+
+/**
+ * Create a University Goal node
+ */
+function createUniversityGoalNode(
+  northStar: NorthStar,
+  position: { x: number; y: number },
+  linkedProjectCount: number,
+  callbacks: MapBuilderCallbacks,
+  numericZoom: number = 1
+): Node {
+  return {
+    id: northStar.id,
+    type: "universityGoal",
+    position,
+    data: {
+      northStar,
+      linkedProjectCount,
+      hasRecentActivity: false,
+      numericZoom,
+      onEdit: () => callbacks.onEditNorthStar?.(northStar),
+      onViewDetails: () => callbacks.onViewNorthStarDetails?.(northStar.id),
+      onCreateProject: () =>
+        callbacks.onCreateProjectForNorthStar?.(northStar.id),
       onQuickStatusChange: (newStatus: NorthStar["status"]) =>
         callbacks.onQuickStatusChange?.(northStar, newStatus),
     },
@@ -472,8 +519,8 @@ function getNorthStarEntityPosition(
   }
 
   // Auto-position at top of canvas
-  const baseY = -400; // Above user center
-  const spacing = 500; // Horizontal spacing between North Stars
+  const baseY = -800; // Above user center (increased from -400 to give more space)
+  const spacing = 800; // Horizontal spacing between North Stars (increased from 500)
 
   // Center multiple North Stars
   const totalWidth = (totalCount - 1) * spacing;
@@ -512,9 +559,9 @@ function calculatePositionAlongLine(
   totalCount: number
 ): { x: number; y: number } {
   // Position projects evenly spaced along the line
-  // Start at 30% from user, end at 70% to North Star (to avoid overlap)
-  const startPercent = 0.3;
-  const endPercent = 0.7;
+  // Start at 20% from user, end at 80% to North Star (to avoid overlap)
+  const startPercent = 0.2;
+  const endPercent = 0.8;
   const availableRange = endPercent - startPercent;
 
   let t: number;

@@ -16,6 +16,7 @@ interface UserCenterNodeProps {
     userAvatar?: string;
     projectCount: number;
     completionPercentage: number;
+    onClick?: () => void;
   };
 }
 
@@ -47,6 +48,12 @@ export function UserCenterNode({ data }: UserCenterNodeProps) {
 
       <div
         className="relative cursor-pointer group"
+        onClick={data.onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            data.onClick?.();
+          }
+        }}
         role="button"
         tabIndex={0}
         aria-label={`${data.userName}'s Journey Center - ${data.projectCount} projects, ${data.completionPercentage}% complete`}

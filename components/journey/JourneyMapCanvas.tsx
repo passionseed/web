@@ -324,6 +324,11 @@ function JourneyMapCanvasInner({
         onEditNorthStar: handleEditNorthStar,
         onCreateProjectForNorthStar: handleCreateProjectForNorthStar,
         onQuickStatusChange: handleQuickStatusChange,
+        onUserClick: () => {
+          toast.info("User stats coming soon!", {
+            description: "Here you'll see your journey statistics and profile info."
+          });
+        },
       },
       paths,
       northStars,
