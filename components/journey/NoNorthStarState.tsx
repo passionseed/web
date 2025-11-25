@@ -10,7 +10,7 @@ interface NoNorthStarStateProps {
 
 export function NoNorthStarState({ onCreateNorthStar }: NoNorthStarStateProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
+    <div className="h-full w-full flex items-center justify-center p-6 md:p-12 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
       <div className="w-full text-center space-y-8">
         
         {/* Hero Icon */}

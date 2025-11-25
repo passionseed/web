@@ -2,7 +2,7 @@
 
 -- Universities table (admin managed)
 CREATE TABLE IF NOT EXISTS public.universities (
-  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   name text NOT NULL,
   short_name text,
   country text NOT NULL DEFAULT 'United States',
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.universities (
 
 -- User university selections (high school students choose top 3)
 CREATE TABLE IF NOT EXISTS public.user_university_targets (
-  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   university_id uuid REFERENCES public.universities(id) ON DELETE CASCADE,
   priority_rank integer NOT NULL CHECK (priority_rank BETWEEN 1 AND 3),
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.user_university_targets (
 
 -- User interests with priority ranking
 CREATE TABLE IF NOT EXISTS public.user_interest_priorities (
-  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   interest_name text NOT NULL,
   priority_rank integer NOT NULL CHECK (priority_rank > 0),
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS public.user_interest_priorities (
 
 -- AI generated roadmaps
 CREATE TABLE IF NOT EXISTS public.ai_roadmaps (
-  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   vision_statement text NOT NULL,
   top_university_id uuid REFERENCES public.universities(id),

@@ -483,10 +483,13 @@ function JourneyMapCanvasInner({
         )}
       </ResizablePanel>
 
-      <ResizableHandle withHandle />
+      {/* Only show handle and right panel when user has a North Star */}
+      {!isLoading && hasNorthStar && (
+        <>
+          <ResizableHandle withHandle />
 
-      {/* Right Panel - Project Details */}
-      <ResizablePanel
+          {/* Right Panel - Project Details */}
+          <ResizablePanel
         ref={rightPanelRef}
         defaultSize={PANEL_SIZES.RIGHT_DEFAULT}
         minSize={PANEL_SIZES.RIGHT_MIN}
@@ -548,6 +551,8 @@ function JourneyMapCanvasInner({
           )}
         </div>
       </ResizablePanel>
+        </>
+      )}
 
       {/* Dialogs */}
       <CreateNorthStarDialog

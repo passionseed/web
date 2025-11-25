@@ -107,7 +107,7 @@ export function TOSAcceptanceModal() {
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4 -mr-4">
+        <ScrollArea className="h-[400px] pr-4 -mr-4">
           <div className="space-y-6 text-sm">
             <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
               <div className="flex items-start gap-3 mb-4">
