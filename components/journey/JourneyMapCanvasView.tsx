@@ -19,6 +19,7 @@ import {
   OnSelectionChangeParams,
   Connection,
   ConnectionMode,
+  ConnectionLineType,
   Panel,
   applyEdgeChanges,
   addEdge,
@@ -40,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { createProjectPath, deleteProjectPath } from "@/lib/supabase/journey";
 import { getProjectPathStyle } from "./utils/projectPathStyles";
 
+import { UniversityGoalNode } from "./nodes/UniversityGoalNode";
 import { UserCenterNode } from "./nodes/UserCenterNode";
 import { NorthStarProjectNode } from "./nodes/NorthStarProjectNode";
 import { NorthStarNode } from "./nodes/NorthStarNode";
@@ -61,6 +63,7 @@ const nodeTypes = {
   userCenter: UserCenterNode,
   northStar: NorthStarProjectNode,
   northStarEntity: NorthStarNode,
+  universityGoal: UniversityGoalNode,
   shortTerm: ShortTermProjectNode,
 };
 
@@ -152,6 +155,16 @@ export function JourneyMapCanvasView({
     const interval = setInterval(updateZoomLevel, 50);
     return () => clearInterval(interval);
   }, [getZoom, getZoomLevel, currentZoomLevel, onZoomChange]);
+
+  // Center on user node (0,0) on initial load
+  const { setCenter } = useReactFlow();
+  useEffect(() => {
+    // Small delay to ensure nodes are rendered
+    const timer = setTimeout(() => {
+      setCenter(0, 0, { zoom: 1, duration: 800 });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [setCenter]);
 
   // Path type dialog state
   const [pathTypeDialogOpen, setPathTypeDialogOpen] = useState(false);
@@ -267,7 +280,7 @@ export function JourneyMapCanvasView({
       }
 
       // Apply the changes to the edges directly
-      setEdges((eds) => applyEdgeChanges(changes, eds));
+      setEdges((eds) => applyEdgeChanges(changes, eds) as Edge[]);
     },
     [edges, setEdges]
   );
@@ -313,7 +326,7 @@ export function JourneyMapCanvasView({
             animated: false,
           }}
           connectionMode={ConnectionMode.Loose}
-          connectionLineType="smoothstep"
+          connectionLineType={ConnectionLineType.SmoothStep}
           nodesDraggable
           nodesConnectable
           connectOnClick={false}
