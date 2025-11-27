@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Disc3, Play, Pause, Music2 } from "lucide-react";
+import { Disc3, Play, Pause, Music2, Activity, Zap, Heart } from "lucide-react";
 import { getVinylColorsFromCover, VinylColorScheme } from "@/utils/color-extraction";
 import { SongSelector } from "@/components/song-of-the-day/song-selector";
 import {
@@ -20,6 +20,12 @@ interface Song {
   url: string;
   albumCover?: string;
   previewUrl?: string;
+  audioFeatures?: {
+    danceability: number;
+    energy: number;
+    valence: number;
+    tempo: number;
+  };
 }
 
 export function PortalVinyl() {
@@ -46,6 +52,7 @@ export function PortalVinyl() {
           url: song.song_url,
           albumCover: song.album_cover_url,
           previewUrl: song.preview_url,
+          audioFeatures: song.audio_features,
         });
       }
     } catch (error) {
@@ -125,16 +132,18 @@ export function PortalVinyl() {
         setIsPlaying(false);
       }
 
+      setCurrentSong(song);
+      
       const songData: SongOfTheDayCreateData = {
         song_url: song.url,
         song_title: song.title,
         artist: song.artist,
         album_cover_url: song.albumCover,
         preview_url: song.previewUrl,
+        audio_features: song.audioFeatures,
       };
 
       await setTodaysSong(songData);
-      setCurrentSong(song);
       
       toast.success("Song of the day updated! 🎵");
     } catch (error) {
@@ -201,6 +210,36 @@ export function PortalVinyl() {
                           {currentSong.artist}
                         </p>
                       </div>
+
+                      {/* Audio Features Stats */}
+                      {currentSong.audioFeatures && (
+                        <div className="flex items-center justify-center md:justify-start gap-4 py-2">
+                          <div className="flex flex-col items-center gap-1" title="Energy">
+                            <div className="p-2 rounded-full bg-yellow-500/10 text-yellow-500">
+                              <Zap className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
+                              {Math.round(currentSong.audioFeatures.energy * 100)}%
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-center gap-1" title="Danceability">
+                            <div className="p-2 rounded-full bg-blue-500/10 text-blue-500">
+                              <Activity className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
+                              {Math.round(currentSong.audioFeatures.danceability * 100)}%
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-center gap-1" title="Mood (Valence)">
+                            <div className="p-2 rounded-full bg-pink-500/10 text-pink-500">
+                              <Heart className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
+                              {Math.round(currentSong.audioFeatures.valence * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
                         <button

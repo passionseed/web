@@ -62,7 +62,7 @@ export function LandingFeatures({ lang }: LandingFeaturesProps) {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
             >
-              <Card className="bg-white/5 border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-300 group h-full">
+              <Card className="relative bg-white/5 border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-300 group h-full">
                 <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <CardHeader>
                   <feature.icon className={`h-12 w-12 ${feature.color} mb-4`} />

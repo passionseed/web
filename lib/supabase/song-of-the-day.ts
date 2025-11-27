@@ -14,6 +14,12 @@ export interface SongOfTheDay {
   spotify_id?: string;
   duration_ms?: number;
   popularity?: number;
+  audio_features?: {
+    danceability: number;
+    energy: number;
+    valence: number;
+    tempo: number;
+  };
 }
 
 export interface SongOfTheDayCreateData {
@@ -25,6 +31,12 @@ export interface SongOfTheDayCreateData {
   spotify_id?: string;
   duration_ms?: number;
   popularity?: number;
+  audio_features?: {
+    danceability: number;
+    energy: number;
+    valence: number;
+    tempo: number;
+  };
 }
 
 export interface SongOfTheDayUpdateData {
@@ -36,6 +48,12 @@ export interface SongOfTheDayUpdateData {
   spotify_id?: string;
   duration_ms?: number;
   popularity?: number;
+  audio_features?: {
+    danceability: number;
+    energy: number;
+    valence: number;
+    tempo: number;
+  };
 }
 
 const TABLE_NAME = "song_of_the_day";
@@ -110,6 +128,7 @@ export async function setTodaysSong(
         spotify_id: data.spotify_id,
         duration_ms: data.duration_ms,
         popularity: data.popularity,
+        audio_features: data.audio_features,
       })
       .eq("id", existingSong.id)
       .select()
@@ -135,6 +154,7 @@ export async function setTodaysSong(
         spotify_id: data.spotify_id,
         duration_ms: data.duration_ms,
         popularity: data.popularity,
+        audio_features: data.audio_features,
         date: today,
       })
       .select()
