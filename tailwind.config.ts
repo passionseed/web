@@ -24,7 +24,8 @@ const config = {
         '53': 'repeat(53, minmax(0, 1fr))',
       },
       fontFamily: {
-        sans: ["var(--font-libre-franklin)", "var(--font-kodchasan)"],
+        sans: ["var(--font-libre-franklin)", "var(--font-bai-jamjuree)"],
+        heading: ["var(--font-libre-franklin)", "var(--font-krub)"],
         mono: ["var(--font-space-mono)"],
       },
       colors: {

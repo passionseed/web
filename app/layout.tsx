@@ -1,6 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Space_Mono, Libre_Franklin, Kodchasan } from "next/font/google";
+import { Space_Mono, Libre_Franklin, Krub, Bai_Jamjuree } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -24,10 +24,16 @@ const libreFranklin = Libre_Franklin({
   variable: "--font-libre-franklin",
 });
 
-const kodchasan = Kodchasan({
+const krub = Krub({
   weight: ["200", "300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
-  variable: "--font-kodchasan",
+  variable: "--font-krub",
+});
+
+const baiJamjuree = Bai_Jamjuree({
+  weight: ["200", "300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  variable: "--font-bai-jamjuree",
 });
 
 export const metadata: Metadata = {
@@ -80,7 +86,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${libreFranklin.variable} ${spaceMono.variable} ${kodchasan.variable}`}>
+      <body className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable}`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

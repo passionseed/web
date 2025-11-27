@@ -57,7 +57,7 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: var(--font-libre-franklin), var(--font-kodchasan), sans-serif;
+    font-family: var(--font-libre-franklin), var(--font-bai-jamjuree), sans-serif;
   }
   h1,
   h2,
@@ -65,7 +65,8 @@
   h4,
   h5,
   h6 {
-    @apply font-sans font-bold;
+    @apply font-heading font-bold;
+    font-family: var(--font-libre-franklin), var(--font-krub), sans-serif;
   }
   code,
   pre,
