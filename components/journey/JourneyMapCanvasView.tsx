@@ -58,6 +58,8 @@ import {
   BACKGROUND_CONFIG,
 } from "./constants/journeyMapConfig";
 import { SyncStatus } from "@/lib/sync/PositionSyncManager";
+import { NorthStarSky } from "./NorthStarSky";
+import { NorthStar } from "@/types/journey";
 
 const nodeTypes = {
   userCenter: UserCenterNode,
@@ -101,6 +103,11 @@ interface JourneyMapCanvasViewProps {
   onCreateNorthStar: () => void;
   onProjectPathCreated?: () => void;
   onZoomChange?: (zoomLevel: ZoomLevel, numericZoom: number) => void;
+  
+  // North Star Data & Callbacks
+  northStars?: NorthStar[];
+  onEditNorthStar?: (northStar: NorthStar) => void;
+  onViewNorthStarDetails?: (northStarId: string) => void;
 }
 
 export function JourneyMapCanvasView({
@@ -121,6 +128,9 @@ export function JourneyMapCanvasView({
   onCreateNorthStar,
   onProjectPathCreated,
   onZoomChange,
+  northStars,
+  onEditNorthStar,
+  onViewNorthStarDetails,
 }: JourneyMapCanvasViewProps) {
   const { getZoom } = useReactFlow();
 
@@ -268,7 +278,7 @@ export function JourneyMapCanvasView({
           const edge = edges.find((e) => e.id === change.id);
           if (edge && edge.data?.pathId) {
             try {
-              await deleteProjectPath(edge.data.pathId);
+              await deleteProjectPath(edge.data.pathId as string);
               toast.success("Connection deleted");
             } catch (error) {
               console.error("Error deleting connection:", error);
@@ -298,6 +308,15 @@ export function JourneyMapCanvasView({
 
   return (
     <>
+      {/* North Star Sky Overlay */}
+      {northStars && (
+        <NorthStarSky 
+          northStars={northStars} 
+          onEditNorthStar={onEditNorthStar || (() => {})}
+          onViewNorthStarDetails={onViewNorthStarDetails || (() => {})}
+        />
+      )}
+
       {/* Top Action Bar */}
       <JourneyActionBar
         stats={journeyStats}
