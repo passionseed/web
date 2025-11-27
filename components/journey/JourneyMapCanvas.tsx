@@ -484,6 +484,16 @@ function JourneyMapCanvasInner({
             onCreateNorthStar={openCreateNorthStarDialog}
             onProjectPathCreated={handleProjectPathCreated}
             onZoomChange={handleZoomChange}
+            northStars={northStars}
+            onEditNorthStar={handleEditNorthStar}
+            onViewNorthStarDetails={(id) => {
+              setSelectedNorthStarId(id);
+              // Expand right panel if minimized
+              if (isPanelMinimized && rightPanelRef.current) {
+                rightPanelRef.current.resize(PANEL_SIZES.RIGHT_DEFAULT);
+                setIsPanelMinimized(false);
+              }
+            }}
           />
         )}
       </ResizablePanel>

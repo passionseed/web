@@ -7,7 +7,8 @@ import React from "react";
 import { Handle, Position } from "@xyflow/react";
 import { ChevronRight, Edit, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { JourneyProject, ProjectStatus } from "@/types/journey";
+import { JourneyProject, ProjectStatus, NorthStar } from "@/types/journey";
+import { NORTH_STAR_COLORS } from "@/constants/sdg";
 
 interface ShortTermProjectNodeProps {
   data: {
@@ -15,7 +16,7 @@ interface ShortTermProjectNodeProps {
     icon: string;
     hasRecentActivity: boolean;
     isMainQuest: boolean;
-    northStarTitle?: string;
+    northStar?: NorthStar;
     milestone_count?: number;
     completed_milestone_count?: number;
     numericZoom?: number;
@@ -70,10 +71,10 @@ const MilestoneInfo = ({ milestoneCount, completedCount }: { milestoneCount?: nu
 // Enhanced Progress Bar Component
 const EnhancedProgressBar = ({
   progress,
-  northStarTitle
+  northStar
 }: {
   progress: number;
-  northStarTitle?: string;
+  northStar?: NorthStar;
 }) => {
   const calculateNorthStarContribution = () => {
     // Simple calculation - could be enhanced based on actual business logic
@@ -94,9 +95,9 @@ const EnhancedProgressBar = ({
         />
       </div>
 
-      {northStarTitle && progress < 100 && (
+      {northStar && progress < 100 && (
         <div className="text-sm font-medium">
-          finish to +{calculateNorthStarContribution()}% to ⭐ {northStarTitle}
+          finish to +{calculateNorthStarContribution()}% to ⭐ {northStar.title}
         </div>
       )}
     </div>
@@ -107,9 +108,10 @@ export const ShortTermProjectNode = React.memo(function ({
   data,
   selected = false,
 }: ShortTermProjectNodeProps) {
-  const { project, icon, hasRecentActivity, isMainQuest, northStarTitle, milestone_count, completed_milestone_count, numericZoom = 1 } = data;
+  const { project, icon, hasRecentActivity, isMainQuest, northStar, milestone_count, completed_milestone_count, numericZoom = 1 } = data;
 
   const progressPercentage = project.progress_percentage || 0;
+  const northStarColor = northStar ? NORTH_STAR_COLORS.find(c => c.value === northStar.north_star_color)?.color : null;
 
   // Fixed dimensions for better performance
   const nodeWidth = 320;
@@ -138,6 +140,22 @@ export const ShortTermProjectNode = React.memo(function ({
         className="opacity-0"
         style={{ pointerEvents: "none" }}
       />
+
+      {/* North Star Direction Beam */}
+      {northStar && northStarColor && (
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-1 h-32 pointer-events-none z-0">
+          <div 
+            className="w-full h-full"
+            style={{
+              background: `linear-gradient(to top, ${northStarColor}40, transparent)`,
+            }}
+          />
+          <div 
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full animate-pulse"
+            style={{ backgroundColor: northStarColor }}
+          />
+        </div>
+      )}
 
       <div
         className={`relative cursor-move group ${
@@ -254,7 +272,7 @@ export const ShortTermProjectNode = React.memo(function ({
           >
             <EnhancedProgressBar
               progress={progressPercentage}
-              northStarTitle={northStarTitle}
+              northStar={northStar}
             />
           </div>
 

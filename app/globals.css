@@ -57,6 +57,7 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    font-family: var(--font-libre-franklin), var(--font-kodchasan), sans-serif;
   }
   h1,
   h2,

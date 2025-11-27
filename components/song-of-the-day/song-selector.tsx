@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,19 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Music, ExternalLink, Search } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { spotifyAPI, type SearchResult } from "@/lib/spotify-api";
+import { Music, ExternalLink, Search, Play, Pause } from "lucide-react";
 import { debounce } from "lodash";
 
 interface Song {
@@ -29,6 +19,16 @@ interface Song {
   artist: string;
   url: string;
   albumCover?: string;
+  previewUrl?: string;
+}
+
+interface SearchResult {
+  id: string;
+  title: string;
+  artist: string;
+  album?: string;
+  albumCover?: string;
+  deezerUrl?: string;
   previewUrl?: string;
 }
 
@@ -50,22 +50,68 @@ export function SongSelector({
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState("");
   const [isValidating, setIsValidating] = useState(false);
+  
+  // Audio preview state
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingPreviewId, setPlayingPreviewId] = useState<string | null>(null);
 
   const handleClose = () => {
     if (isLoading || isValidating) return;
+    stopAudio();
     onOpenChange(false);
     setGlobalSearchQuery("");
     setSearchResults([]);
     setError("");
   };
 
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlayingPreviewId(null);
+  };
+
+  const playPreview = (e: React.MouseEvent, previewUrl: string, id: string) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (playingPreviewId === id) {
+      stopAudio();
+      return;
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    const newAudio = new Audio(previewUrl);
+    newAudio.volume = 0.5;
+    newAudio.play().catch(e => console.error("Playback failed", e));
+    newAudio.onended = () => setPlayingPreviewId(null);
+    
+    audioRef.current = newAudio;
+    setPlayingPreviewId(id);
+  };
+
+  // Stop audio when closing or unmounting
+  useEffect(() => {
+    if (!open) {
+      stopAudio();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    return () => stopAudio();
+  }, []);
+
   const handleSearchResultSelect = async (result: SearchResult) => {
     setIsValidating(true);
+    stopAudio();
     try {
       const songData: Song = {
         title: result.title,
         artist: result.artist,
-        url: result.spotifyUrl || "#",
+        url: result.deezerUrl || "#",
         albumCover: result.albumCover,
         previewUrl: result.previewUrl,
       };
@@ -89,8 +135,25 @@ export function SongSelector({
 
       setIsSearching(true);
       try {
-        const results = await spotifyAPI.searchTracks(query);
-        setSearchResults(results);
+        const res = await fetch(`/api/deezer/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        const tracks = data.data || [];
+        const mappedResults: SearchResult[] = tracks.map((track: any) => ({
+          id: track.id.toString(),
+          title: track.title,
+          artist: track.artist.name,
+          album: track.album.title,
+          albumCover: track.album.cover_medium,
+          deezerUrl: track.link,
+          previewUrl: track.preview
+        }));
+
+        setSearchResults(mappedResults);
       } catch (error) {
         console.error('Search error:', error);
         setSearchResults([]);
@@ -121,7 +184,7 @@ export function SongSelector({
             <div className="relative flex-shrink-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder="Search millions of songs worldwide..."
+                placeholder="Search songs on Deezer..."
                 value={globalSearchQuery}
                 onChange={(e) => setGlobalSearchQuery(e.target.value)}
                 className="pl-10"
@@ -133,32 +196,48 @@ export function SongSelector({
               {isSearching && (
                 <div className="text-center py-8">
                   <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Searching...</p>
+                  <p className="text-sm text-muted-foreground">Searching Deezer...</p>
                 </div>
               )}
 
               {searchResults.length > 0 ? (
                 <div className="space-y-2">
-                  {searchResults.map((result, index) => (
+                  {searchResults.map((result) => (
                     <Card
-                      key={index}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      key={result.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors group"
                       onClick={() => handleSearchResultSelect(result)}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-center gap-3">
-                          {/* Album Cover */}
-                          <div className="w-12 h-12 bg-muted rounded flex-shrink-0 overflow-hidden">
-                            {result.albumCover ? (
-                              <img
-                                src={result.albumCover}
-                                alt={`${result.title} album cover`}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Music className="w-6 h-6 text-muted-foreground" />
-                              </div>
+                          {/* Album Cover & Play Button */}
+                          <div className="relative w-12 h-12 flex-shrink-0">
+                            <div className="w-12 h-12 bg-muted rounded overflow-hidden">
+                              {result.albumCover ? (
+                                <img
+                                  src={result.albumCover}
+                                  alt={`${result.title} album cover`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Music className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Play Preview Button Overlay */}
+                            {result.previewUrl && (
+                              <button
+                                onClick={(e) => playPreview(e, result.previewUrl!, result.id)}
+                                className={`absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded ${playingPreviewId === result.id ? 'opacity-100' : ''}`}
+                              >
+                                {playingPreviewId === result.id ? (
+                                  <Pause className="w-6 h-6 text-white drop-shadow-md" />
+                                ) : (
+                                  <Play className="w-6 h-6 text-white drop-shadow-md" />
+                                )}
+                              </button>
                             )}
                           </div>
 
@@ -175,22 +254,17 @@ export function SongSelector({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="w-8 h-8 p-0 flex-shrink-0"
+                            className="w-8 h-8 p-0 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (result.spotifyUrl) {
-                                window.open(result.spotifyUrl, '_blank');
+                              if (result.deezerUrl) {
+                                window.open(result.deezerUrl, '_blank');
                               }
                             }}
-                            title="Open in Spotify"
+                            title="Open in Deezer"
                           >
                             <ExternalLink className="w-4 h-4" />
                           </Button>
-
-                          {/* Popularity Badge */}
-                          <Badge variant="outline" className="text-xs flex-shrink-0">
-                            {result.popularity}%
-                          </Badge>
                         </div>
                       </CardContent>
                     </Card>
@@ -206,9 +280,9 @@ export function SongSelector({
               ) : !globalSearchQuery.trim() && !isSearching ? (
                 <div className="text-center py-12">
                   <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="font-semibold mb-2">Search for any song, artist, or album</h3>
+                  <h3 className="font-semibold mb-2">Search for any song</h3>
                   <p className="text-sm text-muted-foreground">
-                    Powered by Spotify's global catalog
+                    Powered by Deezer
                   </p>
                 </div>
               ) : null}
@@ -218,7 +292,7 @@ export function SongSelector({
 
         {/* Notice */}
         <div className="text-xs text-muted-foreground bg-muted/50 p-4 border-t flex-shrink-0">
-          <strong>Note:</strong> You can only select one song per day. Choose wisely! Your song will be displayed on the beautiful vinyl record.
+          <strong>Note:</strong> You can only select one song per day. Choose wisely!
         </div>
       </DialogContent>
     </Dialog>

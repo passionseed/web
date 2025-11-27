@@ -69,41 +69,13 @@ export function buildJourneyMap(
   );
 
   // Create North Star entity nodes (from north_stars table)
+  // North Star nodes are now rendered in the NorthStarSky overlay
+  // We still calculate positions for project alignment, but don't create nodes
+  /*
   northStars.forEach((northStar, index) => {
-    const position = getNorthStarEntityPosition(
-      northStar,
-      index,
-      northStars.length
-    );
-    const linkedCount = projects.filter(
-      (p) => p.linked_north_star_id === northStar.id
-    ).length;
-
-    if (northStar.north_star_shape === 'university') {
-      newNodes.push(
-        createUniversityGoalNode(
-          northStar,
-          position,
-          linkedCount,
-          callbacks,
-          numericZoom
-        )
-      );
-    } else {
-      newNodes.push(
-        createNorthStarEntityNode(
-          northStar,
-          position,
-          linkedCount,
-          callbacks,
-          numericZoom
-        )
-      );
-    }
-
-    // Note: Edge to North Star will be created from the last project in the chain
-    // No direct edge from user center to maintain continuous line visualization
+    // ... (node creation logic removed)
   });
+  */
 
   // Separate North Star and short-term projects
   const { northStarProjects, shortTermProjects } = categorizeProjects(projects);
@@ -175,6 +147,8 @@ export function buildJourneyMap(
   });
 
   // Handle North Stars with no linked projects - create direct edge from user center
+  // Edges to North Stars are replaced by directional beams
+  /*
   northStars.forEach((northStar) => {
     const linkedItems = linkedProjectsByNorthStar.get(northStar.id);
     const hasLinkedProjects = linkedItems && linkedItems.length > 0;
@@ -185,6 +159,7 @@ export function buildJourneyMap(
       );
     }
   });
+  */
 
   linkedProjectsByNorthStar.forEach((items) => {
     if (items.length === 0) return;
@@ -216,7 +191,7 @@ export function buildJourneyMap(
         createShortTermNode(
           item.project,
           position,
-          northStarEntity.title,
+          northStarEntity,
           callbacks,
           numericZoom
         )
@@ -239,7 +214,8 @@ export function buildJourneyMap(
         );
       }
 
-      // Last project: connect to North Star entity
+      // Last project: directional beam handled by node component
+      /*
       if (index === sortedItems.length - 1) {
         newEdges.push(
           createProjectToNorthStarEntityEdge(
@@ -248,6 +224,7 @@ export function buildJourneyMap(
           )
         );
       }
+      */
     });
   });
 
@@ -268,7 +245,7 @@ export function buildJourneyMap(
       createShortTermNode(
         project,
         position,
-        northStar?.title,
+        undefined, // Legacy North Star projects don't use the sky overlay
         callbacks,
         numericZoom
       )
@@ -341,7 +318,7 @@ function createNorthStarNode(
 function createShortTermNode(
   project: ProjectWithMilestones,
   position: { x: number; y: number },
-  northStarTitle: string | undefined,
+  northStar: NorthStar | undefined,
   callbacks: MapBuilderCallbacks,
   numericZoom: number = 1
 ): Node {
@@ -354,7 +331,7 @@ function createShortTermNode(
       icon: project.icon || "🎯",
       hasRecentActivity: checkRecentActivity(project),
       isMainQuest: project.metadata?.is_main_quest === true,
-      northStarTitle,
+      northStar,
       numericZoom,
       onViewMilestones: () => callbacks.onViewMilestones(project.id),
       onEdit: () => callbacks.onEditProject(project.id),

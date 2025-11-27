@@ -36,6 +36,7 @@ import {
   GraduationCap,
   School,
   Building,
+  Globe,
 } from "lucide-react";
 
 type Skill = {
@@ -55,6 +56,7 @@ export default function FinishProfilePage() {
   const [username, setUsername] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [educationLevel, setEducationLevel] = useState<'high_school' | 'university' | 'unaffiliated'>('high_school');
+  const [preferredLanguage, setPreferredLanguage] = useState<'en' | 'th'>('en');
   const [selectedSkills, setSelectedSkills] = useState<Skill[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -170,6 +172,7 @@ export default function FinishProfilePage() {
         setUsername(profileData.username || "");
         setDateOfBirth(profileData.date_of_birth || "");
         setEducationLevel(profileData.education_level || 'high_school');
+        setPreferredLanguage(profileData.preferred_language || 'en');
       }
 
       // Fetch existing skills from interests table
@@ -281,6 +284,7 @@ export default function FinishProfilePage() {
         username: username,
         date_of_birth: dateOfBirth,
         education_level: educationLevel,
+        preferred_language: preferredLanguage,
         updated_at: new Date(),
         avatar_url: user.user_metadata?.avatar_url || null,
         email: user.email,
@@ -533,6 +537,56 @@ export default function FinishProfilePage() {
                     </div>
                   </Button>
                 </div>
+              </div>
+            </div>
+
+            {/* Language Preference Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium border-b pb-2">
+                Language Preference
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Choose your preferred language for the interface
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
+                <Button
+                  type="button"
+                  variant={preferredLanguage === 'en' ? "default" : "outline"}
+                  className="h-auto p-4 justify-start text-left"
+                  onClick={() => setPreferredLanguage('en')}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 flex-shrink-0">
+                      <span className="text-lg">🇺🇸</span>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">English</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        English
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant={preferredLanguage === 'th' ? "default" : "outline"}
+                  className="h-auto p-4 justify-start text-left"
+                  onClick={() => setPreferredLanguage('th')}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 flex-shrink-0">
+                      <span className="text-lg">🇹🇭</span>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Thai</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        ภาษาไทย
+                      </div>
+                    </div>
+                  </div>
+                </Button>
               </div>
             </div>
 

@@ -1,7 +1,4 @@
-import { HeroSection } from "@/components/hero-section";
-import { FeatureSection } from "@/components/feature-section";
-import { WorkshopCategories } from "@/components/workshop-categories";
-import { CommunitySection } from "@/components/community-section";
+import { LandingPageWrapper } from "@/components/landing-page-wrapper";
 import { DashboardHome } from "@/components/dashboard-home";
 import { createClient } from "@/utils/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -42,12 +39,12 @@ export default async function Home() {
 
   // Learning Maps Preview Component for non-logged-in users
   const LearningMapsPreview = () => (
-    <section className="container py-16 px-4 md:px-6">
+    <section className="container py-16 px-4 md:px-6 bg-black/50">
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold tracking-tighter mb-4">
+        <h2 className="text-3xl font-bold tracking-tighter mb-4 text-white">
           Interactive Learning Maps
         </h2>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
           Navigate through gamified learning paths with floating islands,
           unlockable content, and progress tracking
         </p>
@@ -82,19 +79,19 @@ export default async function Home() {
         ].map((mapData, index) => (
           <Card
             key={index}
-            className="hover:shadow-lg transition-all duration-300 group hover:scale-105"
+            className="bg-white/5 border-white/10 hover:bg-white/10 hover:shadow-lg transition-all duration-300 group hover:scale-105"
           >
             <CardHeader>
               <div className="flex justify-between items-start">
-                <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                <CardTitle className="text-lg text-white group-hover:text-primary transition-colors">
                   {mapData.title}
                 </CardTitle>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1 text-sm text-gray-400">
                   <Map className="h-4 w-4" />
                   <span>{mapData.nodes}</span>
                 </div>
               </div>
-              <CardDescription>{mapData.description}</CardDescription>
+              <CardDescription className="text-gray-400">{mapData.description}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -111,7 +108,7 @@ export default async function Home() {
                   >
                     {mapData.difficulty}
                   </Badge>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
                     <Sparkles className="h-3 w-3" />
                     <span>{mapData.theme}</span>
                   </div>
@@ -126,7 +123,7 @@ export default async function Home() {
         <Button
           asChild
           size="lg"
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
         >
           <Link href="/map" className="flex items-center gap-2">
             <Play className="h-4 w-4" />
@@ -134,7 +131,7 @@ export default async function Home() {
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
-        <p className="text-sm text-muted-foreground mt-4">
+        <p className="text-sm text-gray-500 mt-4">
           Sign up to track your progress and unlock achievements
         </p>
       </div>
@@ -144,21 +141,11 @@ export default async function Home() {
   return (
     <>
       {user ? (
-        <>
-          <DashboardHome user={user} />
-          <HeroSection />
-          <FeatureSection />
-          <WorkshopCategories />
-          <CommunitySection />
-        </>
+        <DashboardHome user={user} />
       ) : (
-        <>
-          <HeroSection />
+        <LandingPageWrapper>
           <LearningMapsPreview />
-          <FeatureSection />
-          <WorkshopCategories />
-          <CommunitySection />
-        </>
+        </LandingPageWrapper>
       )}
     </>
   );
