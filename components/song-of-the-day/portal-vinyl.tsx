@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { generateMockStats } from "@/utils/music-utils";
 
 interface Song {
   title: string;
@@ -46,13 +47,16 @@ export function PortalVinyl() {
       setIsLoading(true);
       const song = await getTodaysSong();
       if (song) {
+        // Use DB stats or generate fallback stats for legacy data
+        const audioFeatures = song.audio_features || generateMockStats(song.song_title + song.artist);
+        
         setCurrentSong({
           title: song.song_title,
           artist: song.artist,
           url: song.song_url,
           albumCover: song.album_cover_url,
           previewUrl: song.preview_url,
-          audioFeatures: song.audio_features,
+          audioFeatures: audioFeatures,
         });
       }
     } catch (error) {
@@ -154,6 +158,8 @@ export function PortalVinyl() {
     }
   };
 
+
+
   if (!user) {
     return null;
   }
@@ -212,32 +218,53 @@ export function PortalVinyl() {
                       </div>
 
                       {/* Audio Features Stats */}
-                      {currentSong.audioFeatures && (
-                        <div className="flex items-center justify-center md:justify-start gap-4 py-2">
-                          <div className="flex flex-col items-center gap-1" title="Energy">
-                            <div className="p-2 rounded-full bg-yellow-500/10 text-yellow-500">
-                              <Zap className="w-4 h-4" />
+                      {currentSong.audioFeatures ? (
+                        <div className="flex items-center justify-center md:justify-start gap-6 py-4">
+                          <div className="flex flex-col items-center gap-2" title="Energy">
+                            <div className="p-2.5 rounded-full bg-yellow-500/20 text-yellow-400 ring-1 ring-yellow-500/50">
+                              <Zap className="w-5 h-5" />
                             </div>
-                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
-                              {Math.round(currentSong.audioFeatures.energy * 100)}%
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-center gap-1" title="Danceability">
-                            <div className="p-2 rounded-full bg-blue-500/10 text-blue-500">
-                              <Activity className="w-4 h-4" />
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-bold text-white">
+                                {Math.round(currentSong.audioFeatures.energy * 100)}%
+                              </span>
+                              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-medium">
+                                Energy
+                              </span>
                             </div>
-                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
-                              {Math.round(currentSong.audioFeatures.danceability * 100)}%
-                            </span>
                           </div>
-                          <div className="flex flex-col items-center gap-1" title="Mood (Valence)">
-                            <div className="p-2 rounded-full bg-pink-500/10 text-pink-500">
-                              <Heart className="w-4 h-4" />
+                          <div className="flex flex-col items-center gap-2" title="Danceability">
+                            <div className="p-2.5 rounded-full bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50">
+                              <Activity className="w-5 h-5" />
                             </div>
-                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
-                              {Math.round(currentSong.audioFeatures.valence * 100)}%
-                            </span>
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-bold text-white">
+                                {Math.round(currentSong.audioFeatures.danceability * 100)}%
+                              </span>
+                              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-medium">
+                                Dance
+                              </span>
+                            </div>
                           </div>
+                          <div className="flex flex-col items-center gap-2" title="Mood (Valence)">
+                            <div className="p-2.5 rounded-full bg-pink-500/20 text-pink-400 ring-1 ring-pink-500/50">
+                              <Heart className="w-5 h-5" />
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-bold text-white">
+                                {Math.round(currentSong.audioFeatures.valence * 100)}%
+                              </span>
+                              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-medium">
+                                Mood
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-4 text-center md:text-left">
+                          <p className="text-xs text-zinc-500 italic">
+                            Stats not available. Select song again to refresh.
+                          </p>
                         </div>
                       )}
 
