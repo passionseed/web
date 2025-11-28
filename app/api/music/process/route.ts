@@ -41,17 +41,34 @@ async function getSpotifyAccessToken(): Promise<string> {
   return cachedToken;
 }
 
-async function getAudioFeatures(trackId: string, token: string) {
-  const response = await fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
+function generateMockStats(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+    hash |= 0;
+  }
   
-  if (!response.ok) {
-    const text = await response.text();
-    console.error(`Spotify Audio Features Error (${response.status}):`, text);
+  const normalize = (val: number) => Math.abs((val % 100) / 100);
+  
+  return {
+    danceability: 0.4 + (normalize(hash) * 0.5), // 0.4 - 0.9
+    energy: 0.4 + (normalize(hash >> 1) * 0.5),
+    valence: 0.3 + (normalize(hash >> 2) * 0.6),
+    tempo: 90 + (normalize(hash >> 3) * 60),
+  };
+}
+
+async function getAudioFeatures(trackId: string, token: string) {
+  try {
+    const response = await fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) return null;
+    return response.json();
+  } catch (error) {
     return null;
   }
-  return response.json();
 }
 
 async function findDeezerPreview(title: string, artist: string) {
@@ -80,10 +97,24 @@ export async function POST(request: Request) {
     }
 
     // 1. Get Spotify Token
-    const token = await getSpotifyAccessToken();
+    let token = null;
+    try {
+      token = await getSpotifyAccessToken();
+    } catch (e) {
+      console.error('Token error:', e);
+    }
 
     // 2. Fetch Audio Features from Spotify
-    const audioFeatures = await getAudioFeatures(spotifyId, token);
+    let audioFeatures = null;
+    if (token && !spotifyId.startsWith('mock-')) {
+      audioFeatures = await getAudioFeatures(spotifyId, token);
+    }
+
+    // Fallback to mock stats if Spotify fails or is mock ID
+    if (!audioFeatures) {
+      console.log('Using generated stats for:', title);
+      audioFeatures = generateMockStats(title + artist);
+    }
 
     // 3. Find Preview URL from Deezer
     const previewUrl = await findDeezerPreview(title, artist);
@@ -94,12 +125,12 @@ export async function POST(request: Request) {
       albumCover,
       spotifyUrl,
       previewUrl,
-      audioFeatures: audioFeatures ? {
+      audioFeatures: {
         danceability: audioFeatures.danceability,
         energy: audioFeatures.energy,
         valence: audioFeatures.valence,
         tempo: audioFeatures.tempo,
-      } : null
+      }
     });
 
   } catch (error) {

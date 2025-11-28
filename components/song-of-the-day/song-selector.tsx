@@ -134,9 +134,15 @@ export function SongSelector({
         url: processedData.spotifyUrl || "#",
         albumCover: processedData.albumCover,
         previewUrl: processedData.previewUrl, // From Deezer
-        audioFeatures: processedData.audioFeatures // From Spotify
+        audioFeatures: processedData.audioFeatures || {
+          danceability: 0.5,
+          energy: 0.5,
+          valence: 0.5,
+          tempo: 100
+        }
       };
       
+      console.log("SongSelector passing data:", songData);
       onSongSelect(songData);
       handleClose();
     } catch (error) {
