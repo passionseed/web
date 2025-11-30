@@ -36,7 +36,8 @@ export function PortalVinyl() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [vinylColors, setVinylColors] = useState<VinylColorScheme | null>(null);
-  
+  const [hasSongToday, setHasSongToday] = useState(false); // Track if song was already set today
+
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -49,7 +50,7 @@ export function PortalVinyl() {
       if (song) {
         // Use DB stats or generate fallback stats for legacy data
         const audioFeatures = song.audio_features || generateMockStats(song.song_title + song.artist);
-        
+
         setCurrentSong({
           title: song.song_title,
           artist: song.artist,
@@ -58,6 +59,9 @@ export function PortalVinyl() {
           previewUrl: song.preview_url,
           audioFeatures: audioFeatures,
         });
+        setHasSongToday(true); // Mark that a song exists for today
+      } else {
+        setHasSongToday(false); // No song set yet
       }
     } catch (error) {
       console.error("Error loading today's song:", error);
@@ -127,9 +131,15 @@ export function PortalVinyl() {
   };
 
   const handleSongSelect = async (song: Song) => {
+    // Prevent changing song if already set today
+    if (hasSongToday) {
+      toast.error("You've already set your song of the day!");
+      return;
+    }
+
     try {
       setIsSaving(true);
-      
+
       // Stop current playback if any
       if (isPlaying && audioRef.current) {
         audioRef.current.pause();
@@ -137,7 +147,7 @@ export function PortalVinyl() {
       }
 
       setCurrentSong(song);
-      
+
       const songData: SongOfTheDayCreateData = {
         song_url: song.url,
         song_title: song.title,
@@ -148,8 +158,9 @@ export function PortalVinyl() {
       };
 
       await setTodaysSong(songData);
-      
-      toast.success("Song of the day updated! 🎵");
+      setHasSongToday(true); // Mark that song is now set for today
+
+      toast.success("Song of the day set! 🎵");
     } catch (error) {
       console.error("Error saving song:", error);
       toast.error("Failed to save song. Please try again.");
@@ -166,9 +177,12 @@ export function PortalVinyl() {
 
   return (
     <>
-      <Card 
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black p-[2px] cursor-pointer group hover:scale-[1.01] transition-all duration-500 shadow-xl"
-        onClick={() => !isPlaying && setIsSelectorOpen(true)}
+      <Card
+        className={cn(
+          "relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black p-[2px] group transition-all duration-500 shadow-xl",
+          !hasSongToday && "cursor-pointer hover:scale-[1.01]"
+        )}
+        onClick={() => !isPlaying && !hasSongToday && setIsSelectorOpen(true)}
       >
         {/* Animated gradient border effect */}
         <div className={cn(
@@ -273,7 +287,7 @@ export function PortalVinyl() {
                           onClick={togglePlay}
                           className={cn(
                             "flex items-center gap-2 px-6 py-2.5 rounded-full font-medium transition-all duration-300 transform active:scale-95",
-                            isPlaying 
+                            isPlaying
                               ? "bg-purple-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:bg-purple-600"
                               : "bg-white text-black hover:bg-zinc-200"
                           )}
@@ -290,16 +304,19 @@ export function PortalVinyl() {
                             </>
                           )}
                         </button>
-                        
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsSelectorOpen(true);
-                          }}
-                          className="px-4 py-2.5 rounded-full text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
-                        >
-                          Change Song
-                        </button>
+
+                        {/* Only show "Change Song" button if song hasn't been set today */}
+                        {!hasSongToday && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsSelectorOpen(true);
+                            }}
+                            className="px-4 py-2.5 rounded-full text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+                          >
+                            Change Song
+                          </button>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -433,9 +450,9 @@ export function PortalVinyl() {
         </div>
       </Card>
 
-      {/* Song Selector Modal */}
+      {/* Song Selector Modal - Only allow opening if no song set today */}
       <SongSelector
-        open={isSelectorOpen}
+        open={isSelectorOpen && !hasSongToday}
         onOpenChange={setIsSelectorOpen}
         onSongSelect={handleSongSelect}
         isLoading={isSaving}
