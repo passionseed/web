@@ -4,9 +4,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowRight, ArrowLeft, Star, Home, Sun, Calendar, Sparkles, User, Users, Wrench, Lightbulb, Clock, Mountain } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Star, Home, Sun, Calendar, Sparkles, User, Users, Wrench, Lightbulb, Clock, Mountain, Heart, Zap } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface CoreAssessmentProps {
   step: AssessmentStep;
@@ -36,6 +37,15 @@ const QuestionWrapper = ({ title, subtitle, children, canProceed = true, onBack,
 
 export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: CoreAssessmentProps) {
   const [localAnswers, setLocalAnswers] = useState<Partial<AssessmentAnswers>>(answers);
+  const [customSkill, setCustomSkill] = useState("");
+
+  const addCustomSkill = () => {
+    const selectedSkills = localAnswers.q6_strongest_skills || [];
+    if (customSkill.trim() && !selectedSkills.includes(customSkill) && selectedSkills.length < 5) {
+      updateAnswer('q6_strongest_skills', [...selectedSkills, customSkill.trim()]);
+      setCustomSkill("");
+    }
+  };
 
   // Sync props to local state when step changes
   useEffect(() => {
@@ -260,7 +270,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     );
   }
 
-  // Q4: Subject Love (Multi-select + intensity)
+  // Q4: Subject Love (Matrix: Love vs Capable)
   if (step === 'q4') {
     const categories = {
       "STEM": ["Math/Logic", "Science (Bio/Chem/Phys)", "Technology/Coding", "Engineering/Building"],
@@ -276,19 +286,19 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
       if (exists) {
         updateAnswer('q4_subject_interests', selections.filter(s => s.subject !== subject));
       } else {
-        updateAnswer('q4_subject_interests', [...selections, { subject, intensity: 3 }]);
+        // Default to 3/3
+        updateAnswer('q4_subject_interests', [...selections, { subject, love: 3, capable: 3 }]);
       }
     };
 
-    const setIntensity = (subject: string, intensity: number, e: React.MouseEvent) => {
+    const updateRating = (subject: string, type: 'love' | 'capable', value: number, e: React.MouseEvent) => {
       e.stopPropagation();
       updateAnswer('q4_subject_interests', selections.map(s => 
-        s.subject === subject ? { ...s, intensity } : s
+        s.subject === subject ? { ...s, [type]: value } : s
       ));
     };
 
     // Flatten and sort subjects
-    // Selected subjects go to top
     const allSubjects = Object.entries(categories).flatMap(([cat, subs]) => 
       subs.map(sub => ({ category: cat, subject: sub }))
     );
@@ -303,8 +313,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
     return (
       <QuestionWrapper 
-        title="Subject Love" 
-        subtitle="Pick subjects you genuinely like, not just ones you're good at."
+        title="Subject Matrix" 
+        subtitle="For subjects you like, rate how much you LOVE it vs how CAPABLE you are."
         canProceed={selections.length > 0}
         onBack={onBack}
         onNext={onNext}
@@ -317,7 +327,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
                 key={subject}
                 onClick={() => toggleSubject(subject)}
                 className={cn(
-                  "p-3 rounded-lg border cursor-pointer transition-all flex flex-col gap-2",
+                  "p-4 rounded-lg border cursor-pointer transition-all flex flex-col gap-3",
                   selection
                     ? "bg-slate-800 border-blue-500" 
                     : "bg-slate-900 border-slate-800 hover:border-slate-600"
@@ -328,21 +338,49 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
                     <span className={selection ? "text-white font-medium" : "text-slate-400"}>{subject}</span>
                     <span className="text-[10px] text-slate-500 uppercase tracking-wider">{category}</span>
                   </div>
-                  {selection && (
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star 
-                          key={star}
-                          className={cn(
-                            "w-5 h-5 cursor-pointer hover:scale-110 transition-transform",
-                            star <= selection.intensity ? "fill-amber-400 text-amber-400" : "text-slate-600"
-                          )}
-                          onClick={(e) => setIntensity(subject, star, e)}
-                        />
-                      ))}
-                    </div>
-                  )}
                 </div>
+
+                {selection && (
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700/50">
+                    {/* Love Rating */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <Heart className="w-3 h-3 text-pink-500" /> Love / Interest
+                      </div>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <div 
+                            key={star}
+                            className={cn(
+                              "w-6 h-1.5 rounded-full cursor-pointer transition-colors",
+                              star <= selection.love ? "bg-pink-500" : "bg-slate-700"
+                            )}
+                            onClick={(e) => updateRating(subject, 'love', star, e)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Capable Rating */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <Zap className="w-3 h-3 text-yellow-500" /> Capable / Skill
+                      </div>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <div 
+                            key={star}
+                            className={cn(
+                              "w-6 h-1.5 rounded-full cursor-pointer transition-colors",
+                              star <= selection.capable ? "bg-yellow-500" : "bg-slate-700"
+                            )}
+                            onClick={(e) => updateRating(subject, 'capable', star, e)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -425,7 +463,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     );
   }
 
-  // Q6: Strongest Skills (Pick 5)
+  // Q6: Strongest Skills (Pick 5 + Custom)
   if (step === 'q6') {
     const skillCategories = {
       "Creative": ["Visual design", "Writing/storytelling", "Original ideas", "Artistic/musical"],
@@ -446,34 +484,61 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         onBack={onBack}
         onNext={onNext}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-2">
-          {Object.entries(skillCategories).map(([category, skills]) => (
-            <div key={category} className="space-y-2">
-              <h4 className="font-semibold text-green-400 text-sm">{category}</h4>
-              <div className="space-y-1">
-                {skills.map(skill => (
-                  <div 
-                    key={skill}
-                    onClick={() => {
-                      if (selectedSkills.includes(skill)) {
-                        updateAnswer('q6_strongest_skills', selectedSkills.filter(s => s !== skill));
-                      } else if (selectedSkills.length < 5) {
-                        updateAnswer('q6_strongest_skills', [...selectedSkills, skill]);
-                      }
-                    }}
-                    className={cn(
-                      "p-2 rounded border cursor-pointer text-sm transition-colors",
-                      selectedSkills.includes(skill)
-                        ? "bg-green-600/20 border-green-500 text-white"
-                        : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
-                    )}
-                  >
-                    {skill}
-                  </div>
-                ))}
+        <div className="space-y-4">
+          {/* Custom Input */}
+          <div className="flex gap-2">
+            <Input 
+              value={customSkill}
+              onChange={(e) => setCustomSkill(e.target.value)}
+              placeholder="Add a custom skill..."
+              className="bg-slate-800 border-slate-700"
+              onKeyDown={(e) => e.key === 'Enter' && addCustomSkill()}
+            />
+            <Button onClick={addCustomSkill} disabled={!customSkill.trim() || selectedSkills.length >= 5} variant="secondary">
+              Add
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[50vh] overflow-y-auto pr-2">
+            {Object.entries(skillCategories).map(([category, skills]) => (
+              <div key={category} className="space-y-2">
+                <h4 className="font-semibold text-green-400 text-sm">{category}</h4>
+                <div className="space-y-1">
+                  {skills.map(skill => (
+                    <div 
+                      key={skill}
+                      onClick={() => {
+                        if (selectedSkills.includes(skill)) {
+                          updateAnswer('q6_strongest_skills', selectedSkills.filter(s => s !== skill));
+                        } else if (selectedSkills.length < 5) {
+                          updateAnswer('q6_strongest_skills', [...selectedSkills, skill]);
+                        }
+                      }}
+                      className={cn(
+                        "p-2 rounded border cursor-pointer text-sm transition-colors",
+                        selectedSkills.includes(skill)
+                          ? "bg-green-600/20 border-green-500 text-white"
+                          : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                      )}
+                    >
+                      {skill}
+                    </div>
+                  ))}
+                </div>
               </div>
+            ))}
+          </div>
+          
+          {/* Selected Skills Summary */}
+          {selectedSkills.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
+              {selectedSkills.map(skill => (
+                <Badge key={skill} variant="secondary" className="bg-green-900/30 text-green-300 hover:bg-green-900/50 cursor-pointer" onClick={() => updateAnswer('q6_strongest_skills', selectedSkills.filter(s => s !== skill))}>
+                  {skill} <span className="ml-1 text-xs">×</span>
+                </Badge>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </QuestionWrapper>
     );
@@ -588,36 +653,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     );
   }
 
-  if (step === 'q11') {
-    const data = localAnswers.q11_zone_activity || { in_zone: false };
-    return (
-      <QuestionWrapper title="Zone Activity Check" subtitle="Do you regularly lose track of time doing something?" canProceed={!data.in_zone || (!!data.activity && !!data.frequency)} onBack={onBack} onNext={onNext}>
-        <div className="space-y-6">
-          <div className="flex gap-4">
-            <Button variant={data.in_zone ? "default" : "outline"} onClick={() => updateAnswer('q11_zone_activity', { ...data, in_zone: true })}>Yes</Button>
-            <Button variant={!data.in_zone ? "default" : "outline"} onClick={() => updateAnswer('q11_zone_activity', { in_zone: false })}>No</Button>
-          </div>
-          {data.in_zone && (
-            <div className="space-y-4 animate-in fade-in">
-              <div className="space-y-2">
-                <Label>What activity?</Label>
-                <Input value={data.activity || ''} onChange={e => updateAnswer('q11_zone_activity', { ...data, activity: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>How often?</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {['rarely', 'monthly', 'weekly', 'daily'].map(f => (
-                    <div key={f} onClick={() => updateAnswer('q11_zone_activity', { ...data, frequency: f })} 
-                      className={cn("p-2 text-center rounded border cursor-pointer capitalize text-sm", data.frequency === f ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700")}>{f}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </QuestionWrapper>
-    );
-  }
+  // Q11: Zone Activity (REMOVED - Duplicate of Q5)
+  // if (step === 'q11') { ... }
 
   if (step === 'q12') {
     const ratings = localAnswers.q12_confidence || { creative: 3, analytical: 3, technical: 3, people: 3, organizational: 3, physical: 3 };

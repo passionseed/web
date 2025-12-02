@@ -1,4 +1,4 @@
-import { DirectionFinderResult } from '@/types/direction-finder';
+import { DirectionFinderResult, AssessmentAnswers } from '@/types/direction-finder';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -11,18 +11,50 @@ import {
   Target,
   TrendingUp,
   CheckCircle2,
-  Lightbulb
+  Lightbulb,
+  ArrowLeft,
+  Save
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useState } from 'react';
+import { saveDirectionFinderResult } from '@/app/actions/save-direction';
 
 interface DirectionResultsProps {
   result: DirectionFinderResult;
+  answers: AssessmentAnswers;
+  onComplete: () => void;
+  onBack: () => void;
 }
 
-export function DirectionResults({ result }: DirectionResultsProps) {
+export function DirectionResults({ result, answers, onComplete, onBack }: DirectionResultsProps) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await saveDirectionFinderResult(answers, result);
+      toast.success("Profile saved successfully!");
+      // Do NOT call onComplete() here. Let user decide when to proceed.
+    } catch (error) {
+      toast.error("Failed to save profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="space-y-12 max-w-5xl mx-auto pb-12">
+    <div className="space-y-12 max-w-5xl mx-auto pb-12 relative">
+      {/* Back Button */}
+      <Button 
+        variant="ghost" 
+        onClick={onBack}
+        className="absolute top-0 left-0 text-slate-400 hover:text-white"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" /> Back
+      </Button>
+
       {/* Hero Section with Ikigai Visualization */}
-      <div className="text-center space-y-6 relative">
+      <div className="text-center space-y-6 relative pt-8">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-600/10 via-transparent to-transparent blur-3xl pointer-events-none" />
         
         <div className="relative">
@@ -173,9 +205,11 @@ export function DirectionResults({ result }: DirectionResultsProps) {
                   </div>
                   <Button 
                     size="sm" 
+                    onClick={onComplete}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 shadow-lg"
                   >
-                    Begin Journey <ArrowRight className="ml-2 w-4 h-4" />
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                    Begin Journey
                   </Button>
                 </div>
               </div>
@@ -189,12 +223,17 @@ export function DirectionResults({ result }: DirectionResultsProps) {
         <Button 
           variant="outline" 
           size="lg"
+          onClick={handleSave}
+          disabled={isSaving}
           className="gap-2 border-slate-700 hover:bg-slate-800 hover:text-white text-slate-300"
         >
-          <Download className="w-5 h-5" /> Save Profile
+          {isSaving ? <Sparkles className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />} 
+          Save Profile
         </Button>
         <Button 
           size="lg"
+          onClick={handleSave}
+          disabled={isSaving}
           className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25"
         >
           <Share2 className="w-5 h-5" /> Share Results

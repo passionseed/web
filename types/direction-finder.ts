@@ -11,7 +11,8 @@ export interface AssessmentAnswers {
   };
   q4_subject_interests: {
     subject: string;
-    intensity: number; // 1-3 stars
+    love: number; // 1-5 stars (Interest)
+    capable: number; // 1-5 stars (Competence)
   }[];
   q5_flow_state: {
     activity: string;
@@ -28,11 +29,7 @@ export interface AssessmentAnswers {
     topic?: string;
     speed?: 'bit' | 'noticeably' | 'way';
   };
-  q11_zone_activity: {
-    in_zone: boolean;
-    activity?: string;
-    frequency?: 'rarely' | 'monthly' | 'weekly' | 'daily';
-  };
+  // q11_zone_activity removed as it was duplicate of q5
   q12_confidence: {
     creative: number; // 1-5 stars
     analytical: number;
@@ -89,7 +86,7 @@ export type AssessmentStep =
   | 'intro'
   | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' // Part 1
   | 'part2_intro'
-  | 'q6' | 'q7' | 'q8' | 'q9' | 'q10' | 'q11' | 'q12' | 'q13' // Part 2
+  | 'q6' | 'q7' | 'q8' | 'q9' | 'q10' | 'q12' | 'q13' // Part 2
   | 'ai_intro'
   | 'ai_chat'
   | 'results';

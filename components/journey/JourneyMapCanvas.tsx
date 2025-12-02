@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/resizable";
 import { ImperativePanelHandle } from "react-resizable-panels";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 import { JourneyMapCanvasView } from "./JourneyMapCanvasView";
 import { CreateProjectDialog } from "./CreateProjectDialog";
@@ -146,7 +147,20 @@ function JourneyMapCanvasInner({
     };
 
     fetchUserProfile();
+    fetchUserProfile();
   }, [userId, supabase]);
+
+  // Check for direction-finder action
+  const searchParams = useSearchParams();
+  const [defaultOpenDirectionFinder, setDefaultOpenDirectionFinder] = React.useState(false);
+
+  React.useEffect(() => {
+    const action = searchParams.get("action");
+    if (action === "direction-finder") {
+      setDefaultOpenDirectionFinder(true);
+      setCreateNorthStarOpen(true);
+    }
+  }, [searchParams]);
 
   const openCreateNorthStarDialog = useCallback(() => {
     setCreateNorthStarOpen(true);
@@ -575,6 +589,7 @@ function JourneyMapCanvasInner({
         onOpenChange={closeCreateNorthStarDialog}
         onSuccess={handleNorthStarEdited}
         userEducationLevel={userEducationLevel}
+        defaultOpenDirectionFinder={defaultOpenDirectionFinder}
       />
       <CreateProjectDialog
         open={createProjectOpen}

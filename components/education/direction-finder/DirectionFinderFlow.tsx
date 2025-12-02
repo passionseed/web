@@ -17,7 +17,7 @@ const STEPS_ORDER: AssessmentStep[] = [
   'intro',
   'q1', 'q2', 'q3', 'q4', 'q5',
   'part2_intro',
-  'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13',
+  'q6', 'q7', 'q8', 'q9', 'q10', 'q12', 'q13',
   'ai_intro',
   'ai_chat',
   'results'
@@ -52,7 +52,18 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
   const handleAIComplete = (finalResult: DirectionFinderResult) => {
     setResult(finalResult);
     setCurrentStepIndex(STEPS_ORDER.indexOf('results'));
-    onComplete(finalResult);
+    // Do NOT call onComplete here anymore. 
+    // Let the user review the results first.
+  };
+
+  const handleBackFromResults = () => {
+    // Go back to AI chat or AI intro
+    const aiChatIndex = STEPS_ORDER.indexOf('ai_chat');
+    if (aiChatIndex !== -1) {
+      setCurrentStepIndex(aiChatIndex);
+    } else {
+      handleBack();
+    }
   };
 
   // Render content based on current step
@@ -67,7 +78,14 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
     }
 
     if (currentStep === 'results' && result) {
-      return <DirectionResults result={result} />;
+      return (
+        <DirectionResults 
+          result={result} 
+          answers={answers as AssessmentAnswers}
+          onComplete={() => onComplete(result)}
+          onBack={handleBackFromResults}
+        />
+      );
     }
 
     return (
