@@ -16,8 +16,9 @@ import {
   Save
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { saveDirectionFinderResult } from '@/app/actions/save-direction';
+import { toPng } from 'html-to-image';
 
 interface DirectionResultsProps {
   result: DirectionFinderResult;
@@ -28,7 +29,9 @@ interface DirectionResultsProps {
 
 export function DirectionResults({ result, answers, onComplete, onBack }: DirectionResultsProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [hasAutoSaved, setHasAutoSaved] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Auto-save on mount
   useEffect(() => {
@@ -60,13 +63,74 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
     }
   };
 
+  const handleShare = async () => {
+    if (!resultsRef.current) return;
+    
+    setIsSharing(true);
+    try {
+      // Generate image
+      const dataUrl = await toPng(resultsRef.current, { 
+        cacheBust: true,
+        backgroundColor: '#020617', // slate-950
+        filter: (node) => {
+          // Exclude elements with data-hide-on-share attribute
+          if (node instanceof HTMLElement && node.getAttribute('data-hide-on-share') === 'true') {
+            return false;
+          }
+          return true;
+        },
+        style: {
+          padding: '40px', // Add some padding to the image
+        }
+      });
+      
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'direction-profile.png', { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'My Direction Profile',
+            text: 'Check out my direction profile!',
+            files: [file],
+          });
+          toast.success("Shared successfully!");
+        } catch (shareError) {
+          if ((shareError as Error).name !== 'AbortError') {
+            console.error('Error sharing:', shareError);
+            // Fallback to download if share fails (but not if user aborted)
+            downloadImage(dataUrl);
+            toast.success("Image saved to device!");
+          }
+        }
+      } else {
+        // Fallback to download
+        downloadImage(dataUrl);
+        toast.success("Image saved to device!");
+      }
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+      toast.error("Failed to generate image");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const downloadImage = (dataUrl: string) => {
+    const link = document.createElement('a');
+    link.download = 'direction-profile.png';
+    link.href = dataUrl;
+    link.click();
+  };
+
   return (
-    <div className="space-y-12 max-w-5xl mx-auto pb-12 relative">
+    <div ref={resultsRef} className="space-y-12 max-w-5xl mx-auto pb-12 relative">
       {/* Back Button */}
       <Button 
         variant="ghost" 
         onClick={onBack}
         className="absolute top-0 left-0 text-slate-400 hover:text-white"
+        data-hide-on-share="true"
       >
         <ArrowLeft className="w-4 h-4 mr-2" /> Back
       </Button>
@@ -237,7 +301,7 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+      <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8" data-hide-on-share="true">
         <Button 
           variant="outline" 
           size="lg"
@@ -250,11 +314,12 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
         </Button>
         <Button 
           size="lg"
-          onClick={handleSave}
-          disabled={isSaving}
+          onClick={handleShare}
+          disabled={isSharing}
           className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25"
         >
-          <Share2 className="w-5 h-5" /> Share Results
+          {isSharing ? <Sparkles className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} 
+          Share Results
         </Button>
       </div>
     </div>

@@ -76,6 +76,7 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
           onComplete={handleAIComplete}
           history={chatHistory}
           onHistoryChange={setChatHistory}
+          onBack={handleBack}
         />
       );
     }
