@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, ArrowRight, CheckCircle, Sparkles } from 'lucide-react';
 import { CoreAssessment } from './CoreAssessment';
-import { AIConversation } from './AIConversation';
+import { AIConversation, Message } from './AIConversation';
 import { DirectionResults } from './DirectionResults';
 
 interface DirectionFinderFlowProps {
@@ -27,6 +27,7 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<AssessmentAnswers>>({});
   const [result, setResult] = useState<DirectionFinderResult | null>(null);
+  const [chatHistory, setChatHistory] = useState<Message[] | undefined>(undefined);
 
   const currentStep = STEPS_ORDER[currentStepIndex];
   const progress = ((currentStepIndex + 1) / STEPS_ORDER.length) * 100;
@@ -73,6 +74,8 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
         <AIConversation 
           answers={answers as AssessmentAnswers}
           onComplete={handleAIComplete}
+          history={chatHistory}
+          onHistoryChange={setChatHistory}
         />
       );
     }
