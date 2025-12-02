@@ -82,16 +82,15 @@ export function EditProjectDialog({
         icon: icon,
       };
 
-      if (onSuccess) {
-        // University example mode - just pass the data to the callback
-        onSuccess(updatedData);
-        toast.success("Milestone updated successfully!");
-      } else {
-        // Regular project mode - update in database
-        await updateProjectDetails(project.id, updatedData);
-        toast.success("Project updated successfully!");
-      }
+      // Always update in database first
+      await updateProjectDetails(project.id, updatedData);
 
+      // Then call onSuccess if provided (e.g. to refresh the list)
+      if (onSuccess) {
+        onSuccess(updatedData);
+      }
+      
+      toast.success("Project updated successfully!");
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating project:", error);

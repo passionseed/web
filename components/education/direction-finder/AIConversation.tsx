@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, ArrowLeft } from 'lucide-react';
 import { conductDirectionConversation, generateDirectionProfile } from '@/lib/ai/education-advisor';
 import { toast } from 'sonner';
 
@@ -14,6 +14,7 @@ interface AIConversationProps {
   onComplete: (result: DirectionFinderResult) => void;
   history?: Message[];
   onHistoryChange?: (messages: Message[]) => void;
+  onBack: () => void;
 }
 
 export interface Message {
@@ -22,7 +23,7 @@ export interface Message {
   content: string;
 }
 
-export function AIConversation({ answers, onComplete, history, onHistoryChange }: AIConversationProps) {
+export function AIConversation({ answers, onComplete, history, onHistoryChange, onBack }: AIConversationProps) {
   const [messages, setMessages] = useState<Message[]>(history || [
     {
       id: 'welcome',
@@ -99,6 +100,9 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange }
     <Card className="h-[600px] flex flex-col bg-slate-900 border-slate-700">
       <CardHeader className="border-b border-slate-800 py-3 flex flex-row items-center justify-between">
         <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400 hover:text-white mr-1">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
           <div className="bg-gradient-to-br from-purple-500 to-blue-600 p-2 rounded-full">
             <Bot className="w-5 h-5 text-white" />
           </div>
