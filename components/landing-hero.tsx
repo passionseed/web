@@ -24,7 +24,7 @@ export function LandingHero({ lang }: LandingHeroProps) {
       const { error } = await supabase.auth.signInAnonymously();
       if (error) throw error;
       
-      router.push("/me?action=direction-finder");
+      router.push("/me/journey?action=direction-finder");
     } catch (error: any) {
       console.error("Guest auth error:", error);
       if (error.message?.includes("Anonymous sign-ins are disabled")) {

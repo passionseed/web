@@ -12,16 +12,18 @@ import { toast } from 'sonner';
 interface AIConversationProps {
   answers: AssessmentAnswers;
   onComplete: (result: DirectionFinderResult) => void;
+  history?: Message[];
+  onHistoryChange?: (messages: Message[]) => void;
 }
 
-interface Message {
+export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
 }
 
-export function AIConversation({ answers, onComplete }: AIConversationProps) {
-  const [messages, setMessages] = useState<Message[]>([
+export function AIConversation({ answers, onComplete, history, onHistoryChange }: AIConversationProps) {
+  const [messages, setMessages] = useState<Message[]>(history || [
     {
       id: 'welcome',
       role: 'assistant',
@@ -38,6 +40,11 @@ export function AIConversation({ answers, onComplete }: AIConversationProps) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Sync to parent
+  useEffect(() => {
+    onHistoryChange?.(messages);
+  }, [messages, onHistoryChange]);
 
   const handleSend = async () => {
     if (!input.trim()) return;

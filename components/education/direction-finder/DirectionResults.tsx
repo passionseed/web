@@ -16,7 +16,7 @@ import {
   Save
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { saveDirectionFinderResult } from '@/app/actions/save-direction';
 
 interface DirectionResultsProps {
@@ -28,6 +28,24 @@ interface DirectionResultsProps {
 
 export function DirectionResults({ result, answers, onComplete, onBack }: DirectionResultsProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [hasAutoSaved, setHasAutoSaved] = useState(false);
+
+  // Auto-save on mount
+  useEffect(() => {
+    const autoSave = async () => {
+      if (hasAutoSaved) return;
+      
+      try {
+        await saveDirectionFinderResult(answers, result);
+        setHasAutoSaved(true);
+        // Optional: toast.success("Profile auto-saved!"); 
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+      }
+    };
+    
+    autoSave();
+  }, [answers, result, hasAutoSaved]);
 
   const handleSave = async () => {
     setIsSaving(true);
