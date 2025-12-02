@@ -2,27 +2,56 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Play } from "lucide-react";
+import { ArrowRight, Sparkles, Play, Compass, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface LandingHeroProps {
   lang: "en" | "th";
 }
 
 export function LandingHero({ lang }: LandingHeroProps) {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClient();
+
+  const handleGuestAccess = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInAnonymously();
+      if (error) throw error;
+      
+      router.push("/me?action=direction-finder");
+    } catch (error: any) {
+      console.error("Guest auth error:", error);
+      if (error.message?.includes("Anonymous sign-ins are disabled")) {
+        toast.error("Admin: Please enable Anonymous Sign-ins in Supabase Dashboard -> Authentication -> Providers");
+      } else {
+        toast.error("Failed to start guest session. Please try signing up instead.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const content = {
     en: {
-      headline: "Discover Your True Self. Design Your Future.",
+      headline: "Turn Daily Routine into Meaningful Activities.",
       subhead:
-        "Join the multiplayer self-learning revolution. Explore your passions, connect with peers, and find your path.",
-      ctaStart: "Start Your Journey",
+        "Gain direction and confidence to build a fulfilling future. Start your journey of self-discovery today.",
+      ctaStart: "Direction Finder",
+      ctaGuest: "Try as Guest",
       ctaParents: "For Parents",
     },
     th: {
-      headline: "เข้าใจตัวเอง แล้วสร้างอนาคตให้ดีที่สุด",
+      headline: "เปลี่ยนกิจวัตรประจำวัน ให้เป็นกิจกรรมที่มีความหมาย",
       subhead:
-        "เข้าร่วมการปฏิวัติการเรียนรู้ด้วยตนเองแบบผู้เล่นหลายคน ค้นหาความชอบ เชื่อมต่อกับเพื่อน และค้นพบเส้นทางของคุณ",
-      ctaStart: "เริ่มต้นการเดินทาง",
+        "ค้นหาทิศทางและสร้างความมั่นใจเพื่ออนาคตที่เติมเต็ม เริ่มต้นการเดินทางค้นหาตัวเองได้วันนี้",
+      ctaStart: "ค้นหาทิศทาง",
+      ctaGuest: "ทดลองใช้งาน",
       ctaParents: "สำหรับผู้ปกครอง",
     },
   };
@@ -49,7 +78,7 @@ export function LandingHero({ lang }: LandingHeroProps) {
           >
             <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />
             <span className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-              {lang === "en" ? "New: Seed Camp is Live!" : "ใหม่: Seed Camp เปิดแล้ว!"}
+              {lang === "en" ? "New: Direction Finder" : "ใหม่: เครื่องมือค้นหาทิศทาง"}
             </span>
           </motion.div>
 
@@ -58,20 +87,17 @@ export function LandingHero({ lang }: LandingHeroProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white max-w-4xl"
+            className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white max-w-5xl"
           >
             {lang === "en" ? (
               <>
-                Discover Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">True Self</span>.
-                <br />
-                Design Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-600">Future</span>.
+                Turn Daily Routine into <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">Meaningful Activities</span>
               </>
             ) : (
               <>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">เข้าใจตัวเอง</span>
-                <br />
-                แล้วสร้าง
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-600">อนาคตให้ดีที่สุด</span>
+                เปลี่ยนกิจวัตรประจำวัน <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">ให้เป็นกิจกรรมที่มีความหมาย</span>
               </>
             )}
           </motion.h1>
@@ -91,28 +117,30 @@ export function LandingHero({ lang }: LandingHeroProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+            className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-center"
           >
             <Button
-              asChild
               size="lg"
-              className="bg-white text-black hover:bg-gray-200 text-lg h-12 px-8 rounded-full transition-all duration-300 hover:scale-105"
+              onClick={handleGuestAccess}
+              disabled={isLoading}
+              className="bg-white text-black hover:bg-gray-200 text-lg h-14 px-8 rounded-full transition-all duration-300 hover:scale-105 min-w-[200px]"
             >
-              <Link href="/login" className="flex items-center gap-2">
-                <Play className="h-4 w-4 fill-current" />
-                {t.ctaStart}
-              </Link>
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  <Compass className="h-5 w-5 mr-2" />
+                  {t.ctaStart}
+                </>
+              )}
             </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-white/20 text-white hover:bg-white/10 text-lg h-12 px-8 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-105"
-            >
-              <Link href="#parents">
-                {t.ctaParents}
-              </Link>
-            </Button>
+            
+            <div className="flex items-center gap-4">
+               <span className="text-gray-500 text-sm">or</span>
+               <Link href="/login" className="text-gray-400 hover:text-white underline underline-offset-4 text-sm transition-colors">
+                 Sign in with account
+               </Link>
+            </div>
           </motion.div>
         </div>
       </div>

@@ -125,6 +125,7 @@ interface CreateNorthStarDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   userEducationLevel?: "high_school" | "university" | "unaffiliated";
+  defaultOpenDirectionFinder?: boolean;
 }
 
 export function CreateNorthStarDialog({
@@ -132,6 +133,7 @@ export function CreateNorthStarDialog({
   onOpenChange,
   onSuccess,
   userEducationLevel = "university",
+  defaultOpenDirectionFinder = false,
 }: CreateNorthStarDialogProps) {
   // State
   const [currentStep, setCurrentStep] = useState(0);
@@ -164,9 +166,14 @@ export function CreateNorthStarDialog({
   useEffect(() => {
     if (open) {
       setCurrentStep(0);
+      if (defaultOpenDirectionFinder) {
+        setShowDirectionFinder(true);
+      } else {
+        setShowDirectionFinder(false);
+      }
       // Reset other state if needed
     }
-  }, [open]);
+  }, [open, defaultOpenDirectionFinder]);
 
   // Handlers
   const handleNext = async () => {
