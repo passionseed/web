@@ -61,6 +61,13 @@ export function MainNav() {
               >
                 My Journey
               </Link>
+              <Link
+                href="/seeds"
+                className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
+                onClick={() => setMenuOpen(false)}
+              >
+                Seeds
+              </Link>
             </nav>
           </SheetContent>
         </Sheet>
@@ -109,6 +116,12 @@ export function MainNav() {
           className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
         >
           My Journey
+        </Link>
+        <Link
+          href="/seeds"
+          className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+        >
+          Seeds
         </Link>
       </nav>
       {/* Mobile nav */}

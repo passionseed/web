@@ -86,10 +86,13 @@ async function checkEditAccess(mapId: string) {
 export default async function EditMapPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  // Await params for Next.js 15+
+  const { id } = await params;
+
   // Check access before rendering
-  await checkEditAccess(params.id);
+  await checkEditAccess(id);
 
   // If we get here, user has proper access
   return <EditMapPageClient />;
