@@ -6,6 +6,8 @@ import { getClassroomTeams, getClassroomTeamMaps, getClassroomTeamStats } from "
 import { getUserClassrooms } from "@/lib/supabase/classroom-memberships";
 import { Users } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function TeamsPage() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();

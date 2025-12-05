@@ -28,6 +28,8 @@ async function checkAdminAccess() {
   return user;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   const user = await checkAdminAccess();
 

@@ -3,7 +3,6 @@ import { AssessmentAnswers, DirectionFinderResult, AssessmentStep } from '@/type
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, CheckCircle, Sparkles } from 'lucide-react';
 import { CoreAssessment } from './CoreAssessment';
 import { AIConversation, Message } from './AIConversation';
 import { DirectionResults } from './DirectionResults';

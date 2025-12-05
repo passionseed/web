@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { JoinClassroomForm } from "@/components/classroom/JoinClassroomForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function JoinClassroomPage() {
   const supabase = await createClient();
 

@@ -7,6 +7,8 @@ export const metadata = {
   description: "Cultivate your passions and watch them grow over time.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function PassionTreePage() {
   const supabase = await createClient();
 

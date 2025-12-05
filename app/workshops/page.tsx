@@ -83,6 +83,8 @@ function formatDateRange(start: string, end?: string) {
   return `${startDate.toLocaleDateString(undefined, { month: "short", year: "numeric" })} - ${endDate.toLocaleDateString(undefined, { month: "short", year: "numeric" })}`;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function WorkshopsPage() {
   const supabase = await createClient();
   const {
