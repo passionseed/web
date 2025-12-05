@@ -4,6 +4,8 @@ import { UserPortal } from "@/components/user-portal";
 import { createClient } from "@/utils/supabase/server";
 import { getUserDashboardData } from "@/lib/supabase/reflection";
 
+export const dynamic = "force-dynamic";
+
 export default async function PortalPage() {
   const supabase = await createClient();
   const {

@@ -1,12 +1,14 @@
+"use server";
+
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateObject, generateText } from "ai";
+import { generateObject } from "ai";
+import { z } from "zod";
+import { StudentProfile, RecommendedUniversity } from "@/types/education";
+import { AssessmentAnswers, DirectionFinderResult } from "@/types/direction-finder";
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
 });
-import { z } from "zod";
-import { StudentProfile, RecommendedUniversity } from "@/types/education";
-import { AssessmentAnswers, DirectionFinderResult } from "@/types/direction-finder";
 
 export async function recommendUniversities(
   profile: StudentProfile,
@@ -33,7 +35,7 @@ export async function recommendUniversities(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"),
+      model: google("gemini-1.5-flash"),
       schema: z.object({
         recommendations: z.array(
           z.object({
@@ -58,38 +60,62 @@ export async function recommendUniversities(
 export async function conductDirectionConversation(
   history: { role: 'user' | 'assistant'; content: string }[],
   answers: AssessmentAnswers
-): Promise<string> {
+): Promise<{ messages: string[]; options: string[] }> {
   try {
+    console.log("conductDirectionConversation called");
+    console.log("History length:", history.length);
+    console.log("Answers keys:", Object.keys(answers));
+    console.log("API Key present:", !!(process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY));
+
     const systemPrompt = `
-      You are an expert student direction counselor. Your goal is to help a student find their "Ikigai" (intersection of passion, skill, world need, and reality).
+      You are a cool, casual mentor helping a high school student find their future path. You are NOT a stiff professor. Use emojis and keeping it high-energy.
       
-      You have access to their initial assessment data:
+      Your Goal: 
+      Connect their "Inner Ikigai" (Passion + Skill, which we know from the assessment) to their "Outer Ikigai" (What the World Needs + What They Can Be Paid For).
+      
+      Student Assessment Context (Inner Ikigai):
       ${JSON.stringify(answers, null, 2)}
       
-      Your role is to:
-      1. Ask follow-up questions to understand what problems/causes they care about (World Needs).
-      2. Assess practical constraints and lifestyle preferences (Reality).
-      3. Help synthesize their direction.
+      Strategy:
+      1. If this is the start: Hype up their strengths/interests! Then immediately ask a question to bridge to the real world.
+      2. Explore "World Needs": Ask what problems annoy them, what causes they care about, or who they want to help.
+      3. Explore "Reality/Market": Ask about lifestyle preferences, work environment (team vs solo), or industry interests.
       
-      Current Phase of Conversation:
-      - If this is the start, acknowledge their strengths/interests from the assessment and ask about what problems in the world they care about.
-      - If they've shared interests, ask about practical reality (constraints, resources).
-      - If you have enough info, move to synthesis.
+      Constraints:
+      - Output strictly valid JSON.
+      - "messages": An array of 2-3 SHORT strings. Max 1-2 sentences per bubble. Split ideas into separate bubbles for better reading.
+      - "options": An array of 3-4 distinct, short reply buttons for the user. 
+        - Option 1: Enthusiastic/Agree.
+        - Option 2: Neutral/Curious/Elaborate.
+        - Option 3: A different angle/Disagree.
       
-      Keep your responses short, encouraging, and conversational. Do not be a robot. Be a cool mentor.
-      Ask only 1-2 questions at a time.
+      Tone:
+      - Short, punchy, conversational.
+      - No walls of text.
     `;
 
-    const { text } = await generateText({
+    const { object } = await generateObject({
       model: google("gemini-2.5-flash"),
       system: systemPrompt,
       messages: history,
+      schema: z.object({
+        messages: z.array(z.string()),
+        options: z.array(z.string()),
+      }),
     });
 
-    return text;
+    return object;
   } catch (error) {
     console.error("Error in direction conversation:", error);
-    return "I'm having a bit of trouble connecting right now. Could you tell me more about what you're looking for?";
+    // @ts-ignore
+    if (error.response) {
+        // @ts-ignore
+        console.error("Error response:", JSON.stringify(error.response, null, 2));
+    }
+    return {
+      messages: ["I'm having a bit of trouble connecting right now. 🔌", "Could you tell me a bit more about what you're looking for?"],
+      options: ["I want to find a major", "I'm lost", "Just exploring"]
+    };
   }
 }
 
@@ -115,7 +141,7 @@ export async function generateDirectionProfile(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"),
+      model: google("gemini-1.5-flash"),
       schema: z.object({
         profile: z.object({
           energizers: z.array(z.string()),

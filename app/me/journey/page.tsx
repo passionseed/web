@@ -23,6 +23,8 @@ function JourneyPageLoading() {
   );
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function JourneyPage() {
   const supabase = await createClient();
   const {

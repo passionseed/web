@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowRight, ArrowLeft, Star, Home, Sun, Calendar, Sparkles, User, Users, Wrench, Lightbulb, Clock, Mountain, Heart, Zap } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Star, Home, Sun, Calendar, Sparkles, User, Users, Wrench, Lightbulb, Clock, Mountain, Heart, Zap } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -27,10 +27,34 @@ const QuestionWrapper = ({ title, subtitle, children, canProceed = true, onBack,
       {children}
     </div>
     <div className="flex justify-between pt-4">
-      <Button variant="outline" onClick={onBack}>Back</Button>
-      <Button onClick={onNext} disabled={!canProceed} className="bg-blue-600 hover:bg-blue-700">
-        Next <ArrowRight className="ml-2 w-4 h-4" />
+      <Button 
+        variant="ghost" 
+        onClick={onBack}
+        className="text-slate-400 hover:text-white"
+      >
+        <ChevronLeft className="w-4 h-4 mr-2" /> Back
       </Button>
+      <div className="flex gap-2">
+        {process.env.NODE_ENV === 'development' && (
+          <Button 
+            variant="ghost" 
+            onClick={onNext}
+            className="text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 text-xs"
+          >
+            Skip (Dev)
+          </Button>
+        )}
+        <Button 
+          onClick={onNext} 
+          disabled={!canProceed} 
+          className={cn(
+            "bg-white/10 hover:bg-white/20 text-white border border-white/10",
+            !canProceed && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          Next <ChevronRight className="ml-2 w-4 h-4" />
+        </Button>
+      </div>
     </div>
   </div>
 );
@@ -69,8 +93,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
           <br/>
           <span className="text-sm text-slate-400 mt-2 block">Time: 5-7 minutes</span>
         </p>
-        <Button onClick={onNext} size="lg" className="bg-blue-600 hover:bg-blue-700">
-          Start Assessment <ArrowRight className="ml-2 w-4 h-4" />
+        <Button onClick={onNext} size="lg" className="bg-white/10 hover:bg-white/20 text-white border border-white/10">
+          Start Assessment <ChevronRight className="ml-2 w-4 h-4" />
         </Button>
       </div>
     );
@@ -343,39 +367,47 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
                 {selection && (
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700/50">
                     {/* Love Rating */}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                        <Heart className="w-3 h-3 text-pink-500" /> Love / Interest
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-slate-400">
+                        <Heart className="w-4 h-4 text-pink-500" /> Love / Interest
                       </div>
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <div 
-                            key={star}
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map(rating => (
+                          <button 
+                            key={rating}
+                            onClick={(e) => updateRating(subject, 'love', rating, e)}
                             className={cn(
-                              "w-6 h-1.5 rounded-full cursor-pointer transition-colors",
-                              star <= selection.love ? "bg-pink-500" : "bg-slate-700"
+                              "flex-1 h-10 rounded-md font-medium transition-all flex items-center justify-center text-sm",
+                              rating <= selection.love 
+                                ? "bg-pink-600 text-white shadow-[0_0_10px_rgba(236,72,153,0.3)]" 
+                                : "bg-slate-800 text-slate-500 hover:bg-slate-700"
                             )}
-                            onClick={(e) => updateRating(subject, 'love', star, e)}
-                          />
+                          >
+                            {rating}
+                          </button>
                         ))}
                       </div>
                     </div>
 
                     {/* Capable Rating */}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                        <Zap className="w-3 h-3 text-yellow-500" /> Capable / Skill
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-slate-400">
+                        <Zap className="w-4 h-4 text-yellow-500" /> Capable / Skill
                       </div>
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <div 
-                            key={star}
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map(rating => (
+                          <button 
+                            key={rating}
+                            onClick={(e) => updateRating(subject, 'capable', rating, e)}
                             className={cn(
-                              "w-6 h-1.5 rounded-full cursor-pointer transition-colors",
-                              star <= selection.capable ? "bg-yellow-500" : "bg-slate-700"
+                              "flex-1 h-10 rounded-md font-medium transition-all flex items-center justify-center text-sm",
+                              rating <= selection.capable 
+                                ? "bg-yellow-600 text-white shadow-[0_0_10px_rgba(234,179,8,0.3)]" 
+                                : "bg-slate-800 text-slate-500 hover:bg-slate-700"
                             )}
-                            onClick={(e) => updateRating(subject, 'capable', star, e)}
-                          />
+                          >
+                            {rating}
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -456,8 +488,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         <p className="text-slate-300">
           Now let's look at your natural strengths and skills.
         </p>
-        <Button onClick={onNext} size="lg" className="bg-green-600 hover:bg-green-700">
-          Continue <ArrowRight className="ml-2 w-4 h-4" />
+        <Button onClick={onNext} size="lg" className="bg-white/10 hover:bg-white/20 text-white border border-white/10">
+          Continue <ChevronRight className="ml-2 w-4 h-4" />
         </Button>
       </div>
     );
@@ -712,7 +744,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
           Great job! Now for the final step: a quick 5-minute chat with our AI advisor to connect the dots and build your profile.
         </p>
         <Button onClick={onNext} size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-          Start Conversation <ArrowRight className="ml-2 w-4 h-4" />
+          Start Conversation <ChevronRight className="ml-2 w-4 h-4" />
         </Button>
       </div>
     );

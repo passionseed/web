@@ -815,7 +815,7 @@ export function CreateNorthStarDialog({
       </div>
 
       {/* Footer Navigation */}
-      {!showEducationalPathway && currentStep > 0 && (
+      {!showEducationalPathway && !showDirectionFinder && currentStep > 0 && (
         <div className="relative z-10 p-6 flex justify-between items-center max-w-5xl mx-auto w-full">
           <Button
             variant="ghost"
