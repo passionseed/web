@@ -12,6 +12,7 @@ import { LearningMap } from "@/types/map";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { CategoryManagementModal } from "./CategoryManagementModal";
 
 interface CreateSeedModalProps {
     isOpen: boolean;
@@ -30,6 +31,9 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
     const supabase = createClient();
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>("");
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -43,6 +47,7 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
     useEffect(() => {
         if (isOpen) {
             fetchMaps();
+            fetchCategories();
         }
     }, [isOpen]);
 
@@ -50,10 +55,21 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
         const { data, error } = await supabase
             .from("learning_maps")
             .select("*")
-            .eq("visibility", "public"); // Or whatever criteria
+            .eq("visibility", "public");
 
         if (data) {
             setMaps(data);
+        }
+    };
+
+    const fetchCategories = async () => {
+        const { data, error } = await supabase
+            .from("seed_categories")
+            .select("*")
+            .order("name", { ascending: true });
+
+        if (data) {
+            setCategories(data);
         }
     };
 
@@ -72,6 +88,8 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                 return;
             }
 
+            let categoryId = selectedCategory;
+
             // 1. Create the seed record
             const { data: seed, error: seedError } = await supabase
                 .from("seeds")
@@ -80,6 +98,7 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                     description,
                     map_id: mapId,
                     created_by: user.id,
+                    category_id: categoryId || null,
                 })
                 .select()
                 .single();
@@ -143,6 +162,32 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                                 ))}
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="category">Category</Label>
+                        <div className="flex gap-2">
+                            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                <SelectTrigger className="flex-1 p-2 rounded-md bg-neutral-800 border border-neutral-700 text-white">
+                                    <SelectValue placeholder="Select category (optional)" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-neutral-800 border-neutral-700 text-white">
+                                    {categories.map((category) => (
+                                        <SelectItem key={category.id} value={category.id}>
+                                            {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsCategoryModalOpen(true)}
+                                className="bg-neutral-800 border-neutral-700 hover:bg-neutral-700"
+                            >
+                                Manage
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -230,6 +275,12 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                     </div>
                 </form>
             </DialogContent>
+
+            <CategoryManagementModal
+                isOpen={isCategoryModalOpen}
+                onClose={() => setIsCategoryModalOpen(false)}
+                onCategoryCreated={fetchCategories}
+            />
         </Dialog>
     );
 }

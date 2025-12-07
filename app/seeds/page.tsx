@@ -25,7 +25,7 @@ export default async function SeedsPage({ searchParams }: { searchParams: Promis
     // Fetch all seeds
     const { data: seeds } = await supabase
         .from("seeds")
-        .select("id, map_id, title, description, cover_image_url, cover_image_blurhash, cover_image_key, cover_image_updated_at, created_by, created_at, updated_at")
+        .select("*, category:seed_categories(*)")
         .order("created_at", { ascending: false });
 
     // Fetch user's current room if logged in
