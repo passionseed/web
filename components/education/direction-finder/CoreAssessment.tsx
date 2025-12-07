@@ -93,9 +93,14 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
           <br/>
           <span className="text-sm text-slate-400 mt-2 block">Time: 5-7 minutes</span>
         </p>
-        <Button onClick={onNext} size="lg" className="bg-white/10 hover:bg-white/20 text-white border border-white/10">
-          Start Assessment <ChevronRight className="ml-2 w-4 h-4" />
-        </Button>
+        <div className="flex gap-4 justify-center">
+          <Button variant="ghost" onClick={onBack} className="text-slate-400 hover:text-white">
+            Cancel
+          </Button>
+          <Button onClick={onNext} size="lg" className="bg-white/10 hover:bg-white/20 text-white border border-white/10">
+            Start Assessment <ChevronRight className="ml-2 w-4 h-4" />
+          </Button>
+        </div>
       </div>
     );
   }
@@ -109,7 +114,10 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
       "Deep learning (research, reading, exploring)",
       "Organizing/planning",
       "Performing for others",
-      "Solving puzzles/problems"
+      "Solving puzzles/problems",
+      "Leading or influencing others",
+      "Analyzing strategies/systems",
+      "Exploring nature/outdoors"
     ];
     
     const currentSelection = localAnswers.q1_time_flies || [];
@@ -125,8 +133,8 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     return (
       <QuestionWrapper 
         title="Time Flies When..." 
-        subtitle={`Select your top 3 activities (${currentSelection.length}/3 selected)`}
-        canProceed={currentSelection.length === 3}
+        subtitle={`Select your top activities (1-3) (${currentSelection.length}/3 selected)`}
+        canProceed={currentSelection.length >= 1 && currentSelection.length <= 3}
         onBack={onBack}
         onNext={onNext}
       >
@@ -488,9 +496,14 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         <p className="text-slate-300">
           Now let's look at your natural strengths and skills.
         </p>
-        <Button onClick={onNext} size="lg" className="bg-white/10 hover:bg-white/20 text-white border border-white/10">
-          Continue <ChevronRight className="ml-2 w-4 h-4" />
-        </Button>
+        <div className="flex gap-4 justify-center">
+          <Button variant="ghost" onClick={onBack} className="text-slate-400 hover:text-white">
+            <ChevronLeft className="w-4 h-4 mr-2" /> Back
+          </Button>
+          <Button onClick={onNext} size="lg" className="bg-white/10 hover:bg-white/20 text-white border border-white/10">
+            Continue <ChevronRight className="ml-2 w-4 h-4" />
+          </Button>
+        </div>
       </div>
     );
   }
@@ -743,9 +756,14 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
         <p className="text-slate-300 max-w-md mx-auto">
           Great job! Now for the final step: a quick 5-minute chat with our AI advisor to connect the dots and build your profile.
         </p>
-        <Button onClick={onNext} size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-          Start Conversation <ChevronRight className="ml-2 w-4 h-4" />
-        </Button>
+        <div className="flex gap-4 justify-center">
+          <Button variant="ghost" onClick={onBack} className="text-slate-400 hover:text-white">
+            <ChevronLeft className="w-4 h-4 mr-2" /> Back
+          </Button>
+          <Button onClick={onNext} size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+            Start Conversation <ChevronRight className="ml-2 w-4 h-4" />
+          </Button>
+        </div>
       </div>
     );
   }

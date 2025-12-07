@@ -35,7 +35,7 @@ export async function recommendUniversities(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-1.5-flash"),
+      model: google("gemini-2.5-flash"),
       schema: z.object({
         recommendations: z.array(
           z.object({
@@ -135,13 +135,13 @@ export async function generateDirectionProfile(
       
       Generate a JSON object with:
       1. Ikigai Profile (Energizers, Strengths, Values, Reality)
-      2. 3 Direction Vectors (distinct paths they could take)
-      3. 3 Matched Programs (specific university programs or general fields if specific ones aren't clear)
+      2. 3 Direction Vectors (distinct paths). IMPORTANT: Calculate 'match_scores' (0-100) for 'passion' (interest) and 'skill' (ability) based on the user's answers. 'overall' is the average.
+      3. 3 Matched Programs (specific university programs or general fields)
       4. Suggested Commitments (micro-actions)
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-1.5-flash"),
+      model: google("gemini-2.5-flash"),
       schema: z.object({
         profile: z.object({
           energizers: z.array(z.string()),
@@ -155,6 +155,11 @@ export async function generateDirectionProfile(
             interest_alignment: z.string(),
             strength_alignment: z.string(),
             value_alignment: z.string(),
+          }),
+          match_scores: z.object({
+            overall: z.number().min(0).max(100),
+            passion: z.number().min(0).max(100),
+            skill: z.number().min(0).max(100),
           }),
           exploration_steps: z.array(z.object({
             type: z.enum(['camp', 'study', 'activity', 'person']),

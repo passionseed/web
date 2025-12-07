@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { AssessmentAnswers, DirectionFinderResult } from '@/types/direction-finder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Bot, User, Loader2, Sparkles, ArrowLeft } from 'lucide-react';
@@ -65,18 +65,17 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
     setCurrentOptions([]); // Hide options while thinking
 
     try {
-      // If initial, we don't send the "Start conversation" trigger to the AI, just context
-      // Actually, let's just send the history. For initial, it might be empty or have system prompt context.
+      // If initial, we send the "Start conversation" trigger to the AI so it knows to begin.
       // The server action expects history.
       
       const response = await conductDirectionConversation(
-        isInitial ? [] : currentHistory, 
+        currentHistory, 
         answers
       );
 
       // Simulate "human" typing and message splitting
       for (const msgContent of response.messages) {
-        await simulateTyping(800 + Math.random() * 500); // Random delay
+        await simulateTyping(300 + Math.random() * 300); // Shorter, snappier delay
         setMessages(prev => [
           ...prev, 
           { id: Date.now().toString(), role: 'assistant', content: msgContent }
@@ -226,12 +225,18 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
 
         <div className="p-4 border-t border-slate-800 bg-slate-900/50 backdrop-blur-sm">
           <form onSubmit={(e) => { e.preventDefault(); handleSend(input); }} className="flex gap-2">
-            <Input
+            <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your answer..."
-              className="bg-slate-800 border-slate-700 focus-visible:ring-blue-500"
+              className="bg-slate-800 border-slate-700 focus-visible:ring-blue-500 min-h-[44px] max-h-[120px] resize-none py-3"
               disabled={isGeneratingProfile || isTyping}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(input);
+                }
+              }}
             />
             <Button type="submit" size="icon" disabled={!input.trim() || isTyping || isGeneratingProfile} className="bg-blue-600 hover:bg-blue-700">
               <Send className="w-4 h-4" />
@@ -239,6 +244,50 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
           </form>
         </div>
       </CardContent>
+
+      {/* Dev Debug View */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-2 right-2 z-50">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => console.log({ answers, messages })}
+            className="text-xs bg-black/50 border-white/20 text-white backdrop-blur-md"
+            title="Log context to console"
+          >
+            Log Context
+          </Button>
+          <div className="hidden group-hover:block absolute right-0 top-full mt-2 w-96 p-4 bg-black/90 text-xs font-mono text-green-400 rounded-lg border border-green-900 shadow-2xl max-h-[500px] overflow-auto whitespace-pre-wrap">
+             {/* We can make this a proper dialog or just log to console as implemented above for simplicity, 
+                 but user asked to "show" it. Let's make a collapsible details element. */}
+          </div>
+        </div>
+      )}
+      
+      {process.env.NODE_ENV === 'development' && (
+        <details className="absolute top-14 right-2 z-40 max-w-sm w-full bg-black/80 backdrop-blur text-xs text-green-300 p-2 rounded border border-green-800 shadow-xl overflow-hidden">
+            <summary className="cursor-pointer font-bold hover:text-green-100 p-1">DEV: AI Context</summary>
+            <div className="max-h-60 overflow-auto p-2 space-y-4">
+                <div>
+                    <strong className="text-white block mb-1">Assessment Answers:</strong>
+                    <pre className="whitespace-pre-wrap">{JSON.stringify(answers, null, 2)}</pre>
+                </div>
+                <div>
+                    <strong className="text-white block mb-1">View Result Logic:</strong>
+                    <div className="text-gray-400">
+                        Messages: {messages.length} / 5 (Required)<br/>
+                        Typing: {isTyping ? 'Yes' : 'No'}<br/>
+                        Generating: {isGeneratingProfile ? 'Yes' : 'No'}<br/>
+                        <strong>Result: {messages.length > 4 ? 'VISIBLE' : 'HIDDEN'}</strong>
+                    </div>
+                </div>
+                <div>
+                    <strong className="text-white block mb-1">Chat History:</strong>
+                    <pre className="whitespace-pre-wrap">{JSON.stringify(messages, null, 2)}</pre>
+                </div>
+            </div>
+        </details>
+      )}
     </Card>
   );
 }
