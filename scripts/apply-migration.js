@@ -21,7 +21,7 @@ async function applyMigration() {
         await client.connect();
         console.log('Connected to database.');
 
-        const migrationPath = path.join(__dirname, '../supabase/migrations/20251203000001_add_seed_image_columns.sql');
+        const migrationPath = path.join(__dirname, '../supabase/migrations/20251206000001_add_seed_categories.sql');
         const sql = fs.readFileSync(migrationPath, 'utf8');
 
         console.log('Applying migration:', migrationPath);

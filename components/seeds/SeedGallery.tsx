@@ -71,16 +71,34 @@ export function SeedGallery({ seeds, isAdmin, currentRoom }: SeedGalleryProps) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {seeds.map((seed) => (
-                    <GameBoxCard
-                        key={seed.id}
-                        seed={seed}
-                        href={`/seeds/${seed.id}`}
-                        className="transform transition-transform duration-300"
-                    />
-                ))}
-            </div>
+            {/* Group seeds by category */}
+            {(() => {
+                // Group seeds by category
+                const grouped = seeds.reduce((acc, seed) => {
+                    const categoryName = seed.category?.name || "Uncategorized";
+                    if (!acc[categoryName]) {
+                        acc[categoryName] = [];
+                    }
+                    acc[categoryName].push(seed);
+                    return acc;
+                }, {} as Record<string, typeof seeds>);
+
+                return Object.entries(grouped).map(([categoryName, categorySeeds]) => (
+                    <div key={categoryName} className="space-y-4">
+                        <h3 className="text-xl font-bold text-white tracking-tight">{categoryName}</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                            {categorySeeds.map((seed) => (
+                                <GameBoxCard
+                                    key={seed.id}
+                                    seed={seed}
+                                    href={`/seeds/${seed.id}`}
+                                    className="transform transition-transform duration-300"
+                                />
+                            ))}
+                        </div>
+                    </div>
+                ));
+            })()}
 
             {seeds.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 text-center bg-neutral-900/30 rounded-3xl border border-neutral-800 border-dashed">
