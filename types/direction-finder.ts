@@ -55,6 +55,11 @@ export interface DirectionVector {
     strength_alignment: string;
     value_alignment: string;
   };
+  match_scores: {
+    overall: number; // 0-100
+    passion: number; // 0-100
+    skill: number; // 0-100
+  };
   exploration_steps: {
     type: 'camp' | 'study' | 'activity' | 'person';
     description: string;

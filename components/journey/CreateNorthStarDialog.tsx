@@ -161,6 +161,7 @@ export function CreateNorthStarDialog({
 
   // Direction Finder State
   const [showDirectionFinder, setShowDirectionFinder] = useState(false);
+  const [directionFinderResult, setDirectionFinderResult] = useState<DirectionFinderResult | null>(null);
 
   // Reset on open
   useEffect(() => {
@@ -274,16 +275,37 @@ export function CreateNorthStarDialog({
   };
 
   const handleDirectionFinderComplete = (result: DirectionFinderResult) => {
+    setDirectionFinderResult(result);
     setShowDirectionFinder(false);
+    
     // Use the Ikigai profile and direction vectors to populate the vision
-    const vision = `My Ikigai is to leverage my strengths in ${result.profile.strengths.join(", ")} and my passion for ${result.profile.energizers.join(", ")} to address ${result.profile.values.join(", ")}. I aim to explore paths like ${result.vectors[0].name}.`;
+    const vision = `My Ikigai is to leverage my strengths in ${result.profile.strengths.join(", ")} and my passion for ${result.profile.energizers.join(", ")} to address ${result.profile.values.join(", ")}. I aim to explore paths like ${result.vectors[0]?.name || 'my chosen direction'}.`;
+
+    // Pre-populate milestones from the first direction's exploration_steps
+    const explorationSteps = result.vectors[0]?.exploration_steps || [];
+    const milestones: SMARTMilestone[] = explorationSteps.slice(0, 5).map((step, idx) => {
+      const startDate = new Date(Date.now() + idx * 30 * 24 * 60 * 60 * 1000);
+      const dueDate = new Date(Date.now() + (idx + 1) * 30 * 24 * 60 * 60 * 1000);
+      return {
+        title: step.description,
+        startDate: startDate.toISOString().split('T')[0],
+        dueDate: dueDate.toISOString().split('T')[0],
+        measurable: step.reason || 'Complete this step',
+      };
+    });
 
     setFormData((prev) => ({
       ...prev,
       visionQuestion: vision,
-      // We could also pre-populate milestones from the "commitments" or "exploration_steps"
+      milestones: milestones.length > 0 ? milestones : prev.milestones,
     }));
     setCurrentStep(2); // Move to milestones
+  };
+
+  const goBackToDirectionResults = () => {
+    if (directionFinderResult) {
+      setShowDirectionFinder(true);
+    }
   };
 
   const handleSubmit = async () => {
@@ -562,6 +584,16 @@ export function CreateNorthStarDialog({
                         Break it down into big steps
                       </p>
                     </div>
+
+                    {directionFinderResult && (
+                      <Button
+                        variant="ghost"
+                        onClick={goBackToDirectionResults}
+                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" /> Back to Direction Profile
+                      </Button>
+                    )}
 
                     <div className="space-y-4">
                       {formData.milestones.map((milestone, idx) => (
