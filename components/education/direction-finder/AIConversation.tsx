@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { AssessmentAnswers, DirectionFinderResult } from '@/types/direction-finder';
+import { AssessmentAnswers, DirectionFinderResult, Message } from '@/types/direction-finder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,12 +9,7 @@ import { Send, Bot, User, Loader2, Sparkles, ArrowLeft } from 'lucide-react';
 import { conductDirectionConversation, generateDirectionProfile } from '@/lib/ai/education-advisor';
 import { toast } from 'sonner';
 import { marked } from 'marked';
-
-export interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { cn } from '@/lib/utils';
 
 interface AIConversationProps {
   answers: AssessmentAnswers;
@@ -22,9 +17,11 @@ interface AIConversationProps {
   history?: Message[];
   onHistoryChange?: (messages: Message[]) => void;
   onBack: () => void;
+  model?: string;
+  className?: string;
 }
 
-export function AIConversation({ answers, onComplete, history, onHistoryChange, onBack }: AIConversationProps) {
+export function AIConversation({ answers, onComplete, history, onHistoryChange, onBack, model, className }: AIConversationProps) {
   const [messages, setMessages] = useState<Message[]>(history || []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -70,7 +67,8 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
       
       const response = await conductDirectionConversation(
         currentHistory, 
-        answers
+        answers,
+        model
       );
 
       // Simulate "human" typing and message splitting
@@ -119,7 +117,7 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
         content: m.content
       }));
       
-      const result = await generateDirectionProfile(apiHistory, answers);
+      const result = await generateDirectionProfile(apiHistory, answers, model);
       onComplete(result);
     } catch (error) {
       console.error('Error generating profile:', error);
@@ -129,7 +127,7 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
   };
 
   return (
-    <Card className="h-[600px] flex flex-col bg-slate-900 border-slate-700">
+    <Card className={cn("h-[600px] flex flex-col bg-slate-900 border-slate-700", className)}>
       <CardHeader className="border-b border-slate-800 py-3 flex flex-row items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={onBack} className="text-slate-400 hover:text-white mr-1">

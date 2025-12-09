@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   ArrowRight, 
-  Download, 
   Share2, 
   Sparkles, 
   Heart, 
@@ -11,25 +10,33 @@ import {
   Target,
   TrendingUp,
   CheckCircle2,
-  Lightbulb,
   ArrowLeft,
   Save,
   Plus,
-  Map as MapIcon
+  Map as MapIcon,
+  MessageSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState, useEffect, useRef } from 'react';
 import { saveDirectionFinderResult } from '@/app/actions/save-direction';
 import { toPng } from 'html-to-image';
+import { Message } from '@/types/direction-finder';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
+import { AIConversation } from './AIConversation';
 
 interface DirectionResultsProps {
   result: DirectionFinderResult;
   answers: AssessmentAnswers;
   onComplete: () => void;
   onBack: () => void;
+  chatHistory?: Message[];
+  model?: string;
 }
 
-export function DirectionResults({ result, answers, onComplete, onBack }: DirectionResultsProps) {
+export function DirectionResults({ result: initialResult, answers, onComplete, onBack, chatHistory: initialHistory, model }: DirectionResultsProps) {
+  const [result, setResult] = useState(initialResult);
+  const [history, setHistory] = useState<Message[] | undefined>(initialHistory);
+  const [isRefining, setIsRefining] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [hasAutoSaved, setHasAutoSaved] = useState(false);
@@ -41,23 +48,21 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
       if (hasAutoSaved) return;
       
       try {
-        await saveDirectionFinderResult(answers, result);
+        await saveDirectionFinderResult(answers, result, history);
         setHasAutoSaved(true);
-        // Optional: toast.success("Profile auto-saved!"); 
       } catch (error) {
         console.error("Auto-save failed:", error);
       }
     };
     
     autoSave();
-  }, [answers, result, hasAutoSaved]);
+  }, [answers, result, hasAutoSaved, history]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await saveDirectionFinderResult(answers, result);
+      await saveDirectionFinderResult(answers, result, history);
       toast.success("Profile saved successfully!");
-      // Do NOT call onComplete() here. Let user decide when to proceed.
     } catch (error) {
       toast.error("Failed to save profile");
     } finally {
@@ -100,13 +105,11 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
         } catch (shareError) {
           if ((shareError as Error).name !== 'AbortError') {
             console.error('Error sharing:', shareError);
-            // Fallback to download if share fails (but not if user aborted)
             downloadImage(dataUrl);
             toast.success("Image saved to device!");
           }
         }
       } else {
-        // Fallback to download
         downloadImage(dataUrl);
         toast.success("Image saved to device!");
       }
@@ -126,7 +129,7 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
   };
 
   return (
-    <div ref={resultsRef} className="space-y-12 max-w-5xl mx-auto pb-12 relative">
+    <div ref={resultsRef} className="space-y-12 max-w-7xl mx-auto pb-12 relative">
       {/* Back Button */}
       <Button 
         variant="ghost" 
@@ -136,6 +139,33 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
       >
         <ArrowLeft className="w-4 h-4 mr-2" /> Back
       </Button>
+
+      {/* Refine Button */}
+      <div className="absolute top-0 right-0 z-10" data-hide-on-share="true">
+           <Dialog open={isRefining} onOpenChange={setIsRefining}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 border-purple-500/30 hover:bg-purple-500/10 text-purple-300">
+                <MessageSquare className="w-4 h-4" /> Refine with AI
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl h-[80vh] p-0 bg-slate-950 border-slate-800 flex flex-col overflow-hidden">
+               <DialogTitle className="sr-only">Refine Direction with AI</DialogTitle>
+              <AIConversation
+                answers={answers}
+                history={history}
+                onHistoryChange={setHistory}
+                onComplete={(newResult) => {
+                  setResult(newResult);
+                  setIsRefining(false);
+                  toast.success("Profile updated!");
+                }}
+                onBack={() => setIsRefining(false)}
+                model={model}
+                className="h-full border-0"
+              />
+            </DialogContent>
+          </Dialog>
+      </div>
 
       {/* Hero Section with Ikigai Visualization */}
       <div className="text-center space-y-6 relative pt-8">
@@ -238,8 +268,6 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
                 {idx + 1}
               </div>
 
-              {/* Duplicate Badge was here, removed. */}
-
               <div className="space-y-4 flex-1 pt-2">
                 <div className="flex justify-between items-start">
                   <h4 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
@@ -286,7 +314,7 @@ export function DirectionResults({ result, answers, onComplete, onBack }: Direct
                 {/* Suggested Milestones (formerly Exploration Steps) */}
                 <div className="pt-2">
                   <h5 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <MapIcon className="w-3 h-3 text-purple-400" /> Milestone Blueprint
+                    <MapIcon className="w-3 h-3 text-purple-400" /> Suggested Projects
                   </h5>
                   <div className="relative pl-4 space-y-4 border-l border-slate-800 ml-1.5 space-y-4">
                     {vector.exploration_steps.map((step, i) => (

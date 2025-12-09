@@ -1,13 +1,17 @@
 /**
- * ShortTermProjectNode - Enhanced short-term project node
- * Modern design with dark blue gradient and improved UX/UI
+ * ShortTermProjectNode - Compact project card with inverse zoom scaling
+ * 
+ * Features:
+ * - Inverse zoom: nodes appear the same visual size at any zoom level
+ * - Compact glassmorphism design
+ * - Short truncated title
+ * - Progress shown as compact circular indicator
  */
 
 import React from "react";
 import { Handle, Position } from "@xyflow/react";
-import { ChevronRight, Edit, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { JourneyProject, ProjectStatus, NorthStar } from "@/types/journey";
+import { ChevronRight, Edit, Sparkles, Target } from "lucide-react";
+import { JourneyProject, NorthStar } from "@/types/journey";
 import { NORTH_STAR_COLORS } from "@/constants/sdg";
 
 interface ShortTermProjectNodeProps {
@@ -26,80 +30,45 @@ interface ShortTermProjectNodeProps {
   selected?: boolean;
 }
 
-// Priority Indicator Component
-const PriorityIndicator = ({ project }: { project: JourneyProject }) => {
-  const isMainQuest = project.is_main_quest;
-  const isHighPriority = (project.priority || 0) >= 8; // Assuming 1-10 scale
-
-  if (isMainQuest) {
-    return (
-      <div className="flex items-center gap-2 text-yellow-400 text-sm font-medium mb-2">
-        <span>⭐</span>
-        <span>Main Quest</span>
-      </div>
-    );
-  }
-
-  if (isHighPriority) {
-    return (
-      <div className="flex items-center gap-2 text-orange-400 text-sm font-medium mb-2">
-        <span>🔸</span>
-        <span>High priority</span>
-      </div>
-    );
-  }
-
-  return null;
-};
-
-// Milestone Count Component
-const MilestoneInfo = ({ milestoneCount, completedCount }: { milestoneCount?: number; completedCount?: number }) => {
-  const total = milestoneCount || 0;
-  const completed = completedCount || 0;
+// Circular progress indicator
+const CircularProgress = ({ progress, size = 32 }: { progress: number; size?: number }) => {
+  const radius = (size - 4) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="text-base text-white mb-4">
-      {total > 0 ? (
-        <span>{total} milestone{total !== 1 ? 's' : ''}</span>
-      ) : (
-        <span>No milestones yet</span>
-      )}
-    </div>
-  );
-};
-
-// Enhanced Progress Bar Component
-const EnhancedProgressBar = ({
-  progress,
-  northStar
-}: {
-  progress: number;
-  northStar?: NorthStar;
-}) => {
-  const calculateNorthStarContribution = () => {
-    // Simple calculation - could be enhanced based on actual business logic
-    return Math.round(progress * 0.19); // Example calculation
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-sm">
-        <span className="opacity-80">progress</span>
-        <span className="font-medium">{progress}%</span>
-      </div>
-
-      <div className="w-full bg-gray-600 rounded-full h-2">
-        <div
-          className="bg-white h-2 rounded-full transition-all duration-500"
-          style={{ width: `${progress}%` }}
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgba(255,255,255,0.2)"
+          strokeWidth="3"
+          fill="none"
         />
-      </div>
-
-      {northStar && progress < 100 && (
-        <div className="text-sm font-medium">
-          finish to +{calculateNorthStarContribution()}% to ⭐ {northStar.title}
-        </div>
-      )}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="url(#progressGradient)"
+          strokeWidth="3"
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-500"
+        />
+        <defs>
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#60a5fa" />
+            <stop offset="100%" stopColor="#a78bfa" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white/90">
+        {progress}%
+      </span>
     </div>
   );
 };
@@ -108,24 +77,32 @@ export const ShortTermProjectNode = React.memo(function ({
   data,
   selected = false,
 }: ShortTermProjectNodeProps) {
-  const { project, icon, hasRecentActivity, isMainQuest, northStar, milestone_count, completed_milestone_count, numericZoom = 1 } = data;
+  const { project, icon, hasRecentActivity, isMainQuest, northStar, milestone_count, numericZoom = 1 } = data;
 
   const progressPercentage = project.progress_percentage || 0;
   const northStarColor = northStar ? NORTH_STAR_COLORS.find(c => c.value === northStar.north_star_color)?.color : null;
 
-  // Fixed dimensions for better performance
-  const nodeWidth = 320;
+  // Partial inverse scaling - nodes grow with zoom but not 1:1
+  // At zoom 1: scale 1, at zoom 2: scale ~0.85 (grows to ~1.7x instead of 2x)
+  const inverseScale = Math.max(0.85, 1 / Math.pow(numericZoom, 0.3));
+  
+  // Base node width - larger for better visibility
+  const nodeWidth = 260;
 
-  // Simplified zoom level detection
-  const isLowZoom = numericZoom < 0.8;
-  const isHighZoom = numericZoom >= 1.2;
-
-  // Fixed icon size for performance
-  const iconSize = 1.75;
+  // Determine detail level based on zoom
+  const showDetails = numericZoom >= 0.8;
+  const showActions = numericZoom >= 1.2;
+  const showFullDetails = numericZoom >= 1.5; // Show goal/description at very high zoom
 
   return (
-    <div className="relative">
-      {/* Dynamic connection handles - position calculated automatically for floating edges */}
+    <div 
+      className="relative"
+      style={{
+        transform: `scale(${inverseScale})`,
+        transformOrigin: 'center center',
+      }}
+    >
+      {/* Hidden handles for connections */}
       <Handle
         type="source"
         position={Position.Top}
@@ -143,186 +120,175 @@ export const ShortTermProjectNode = React.memo(function ({
 
       {/* North Star Direction Beam */}
       {northStar && northStarColor && (
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-1 h-32 pointer-events-none z-0">
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-0.5 h-20 pointer-events-none z-0">
           <div 
             className="w-full h-full"
             style={{
-              background: `linear-gradient(to top, ${northStarColor}40, transparent)`,
+              background: `linear-gradient(to top, ${northStarColor}60, transparent)`,
             }}
           />
           <div 
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full animate-pulse"
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full animate-pulse"
             style={{ backgroundColor: northStarColor }}
           />
         </div>
       )}
 
       <div
-        className={`relative cursor-move group ${
-          selected ? "scale-105" : "hover:scale-[1.02]"
-        } transition-all duration-200 drag-handle`}
-        aria-label={`Project: ${project.title} - ${progressPercentage}% complete`}
-        style={{
-          width: `${nodeWidth}px`,
-        }}
+        className={`relative cursor-move group transition-all duration-200 ${
+          selected ? "ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-900" : ""
+        }`}
+        style={{ width: `${nodeWidth}px` }}
       >
-        {/* Main quest glow effect */}
+        {/* Main quest glow */}
         {isMainQuest && (
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl blur-xl opacity-60 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/40 to-blue-500/40 rounded-xl blur-lg animate-pulse" />
         )}
 
-        {/* Activity pulse indicator */}
-        {hasRecentActivity && (
-          <div className="absolute top-2 right-2 z-50">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-ping" />
-            <div className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full" />
-          </div>
-        )}
-
-        {/* Main container with dark blue gradient */}
+        {/* Card Container - Glassmorphism */}
         <div
-          className="
-            bg-gradient-to-br from-blue-900 to-blue-950
-            rounded-2xl shadow-xl border border-blue-800/50
-            text-white
+          className={`
+            relative overflow-hidden
+            bg-gradient-to-br from-slate-800/90 via-slate-900/95 to-slate-950/90
+            backdrop-blur-xl
+            rounded-xl
+            border border-white/10
+            shadow-xl shadow-black/20
             transition-all duration-300
+            group-hover:border-white/20
             group-hover:shadow-2xl
-            group-hover:border-blue-700/70
-          "
-          style={{
-            padding: isLowZoom ? '12px' : '24px',
-            minHeight: isLowZoom ? 'auto' : '192px',
-          }}
+            group-hover:shadow-blue-500/10
+          `}
+          style={{ padding: showFullDetails ? '18px' : '14px' }}
         >
-          {/* Main quest indicator - hide at low zoom */}
-          {isMainQuest && !isLowZoom && (
-            <div className="absolute -top-3 -left-3 bg-cyan-500 rounded-full p-2 shadow-lg border-2 border-white transition-all duration-300">
-              <Sparkles className="w-4 h-4 text-white fill-white" />
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 pointer-events-none" />
+          
+          {/* Activity indicator */}
+          {hasRecentActivity && (
+            <div className="absolute top-2 right-2 z-10">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+              <div className="absolute inset-0 w-2 h-2 bg-emerald-400 rounded-full" />
             </div>
           )}
 
-          {/* Drag Handle Area */}
-          <div className="absolute top-0 left-0 right-0 h-8 cursor-move z-10" 
-               title="Drag to move project"
-               style={{ pointerEvents: 'all' }}>
-          </div>
+          {/* Main Quest Badge */}
+          {isMainQuest && (
+            <div className="absolute -top-1 -left-1 z-10">
+              <div className="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full p-1.5 shadow-lg">
+                <Sparkles className="w-3 h-3 text-white" />
+              </div>
+            </div>
+          )}
 
-          {/* Header - Always visible */}
-          <div className="flex items-center gap-3 mb-3">
-            <span
-              role="img"
-              aria-label="Project icon"
-              style={{
-                fontSize: `${iconSize}rem`,
-                transition: 'font-size 0.3s ease',
-              }}
-            >
+          {/* Header Row */}
+          <div className="relative flex items-start gap-3 mb-2">
+            {/* Icon */}
+            <span className={`flex-shrink-0 mt-0.5 ${showFullDetails ? 'text-3xl' : 'text-2xl'}`}>
               {icon || '🎯'}
             </span>
-            <h3
-              className="font-semibold flex-1 leading-tight"
-              style={{
-                fontSize: isLowZoom ? '0.875rem' : '1.125rem',
-                transition: 'font-size 0.3s ease',
-              }}
-            >
-              {project.title}
-            </h3>
+            
+            {/* Title - Show short_title if available, full title at high zoom */}
+            <div className="flex-1 min-w-0">
+              <h3 className={`font-semibold text-white leading-tight ${showFullDetails ? 'text-base' : 'text-sm'} ${showFullDetails ? '' : 'line-clamp-2'}`}>
+                {showActions 
+                  ? project.title 
+                  : (project.short_title || project.title)
+                }
+              </h3>
+              {/* Show short title as subtitle at high zoom */}
+              {showActions && project.short_title && (
+                <p className="text-xs text-slate-400 mt-0.5">
+                  ({project.short_title})
+                </p>
+              )}
+            </div>
+
+            {/* Progress Circle */}
+            <CircularProgress progress={progressPercentage} size={showFullDetails ? 44 : 36} />
           </div>
 
-          {/* Priority Indicator - Show at medium+ zoom */}
-          <div
-            className="transition-all duration-300"
-            style={{
-              opacity: isLowZoom ? 0 : 1,
-              transform: isLowZoom ? 'scale(0.8)' : 'scale(1)',
-              maxHeight: isLowZoom ? '0px' : '100px',
-              overflow: 'hidden',
-            }}
-          >
-            <PriorityIndicator project={project} />
-          </div>
+          {/* Goal Section - Show at very high zoom */}
+          {showFullDetails && project.goal && (
+            <div className="mt-3 p-2 bg-white/5 rounded-lg">
+              <p className="text-xs font-medium text-blue-400 mb-1">🎯 Goal</p>
+              <p className="text-xs text-slate-300 line-clamp-3">{project.goal}</p>
+            </div>
+          )}
 
-          {/* Milestone Count - Show at medium+ zoom */}
-          <div
-            className="transition-all duration-300"
-            style={{
-              opacity: isLowZoom ? 0 : 1,
-              transform: isLowZoom ? 'scale(0.8)' : 'scale(1)',
-              maxHeight: isLowZoom ? '0px' : '100px',
-              overflow: 'hidden',
-            }}
-          >
-            <MilestoneInfo
-              milestoneCount={milestone_count}
-              completedCount={completed_milestone_count}
-            />
-          </div>
+          {/* Why Section - Show at very high zoom */}
+          {showFullDetails && project.why && (
+            <div className="mt-2 p-2 bg-white/5 rounded-lg">
+              <p className="text-xs font-medium text-purple-400 mb-1">💡 Why</p>
+              <p className="text-xs text-slate-300 line-clamp-2">{project.why}</p>
+            </div>
+          )}
 
-          {/* Progress Section - Show at medium+ zoom */}
-          <div
-            className="transition-all duration-300"
-            style={{
-              marginTop: isLowZoom ? '0' : '24px',
-              opacity: isLowZoom ? 0 : 1,
-              transform: isLowZoom ? 'scale(0.8)' : 'scale(1)',
-              maxHeight: isLowZoom ? '0px' : '200px',
-              overflow: 'hidden',
-            }}
-          >
-            <EnhancedProgressBar
-              progress={progressPercentage}
-              northStar={northStar}
-            />
-          </div>
+          {/* Details Section */}
+          {showDetails && (
+            <div className="mt-3 pt-2 border-t border-white/5">
+              {/* Milestone Badge */}
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <Target className="w-3 h-3" />
+                <span>
+                  {milestone_count || 0} milestone{(milestone_count || 0) !== 1 ? 's' : ''}
+                </span>
+                {northStar && (
+                  <>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-blue-400 truncate max-w-[100px]" title={northStar.title}>
+                      ⭐ {northStar.title}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
-          {/* Action Buttons - Show at high zoom only */}
+          {/* Action Buttons - Row layout to prevent overlap */}
           <div
-            className="flex gap-2 transition-all duration-300"
-            style={{
-              marginTop: isHighZoom ? '16px' : '0',
-              opacity: isHighZoom ? 1 : 0,
-              transform: isHighZoom ? 'scale(1)' : 'scale(0.8)',
-              maxHeight: isHighZoom ? '100px' : '0px',
-              overflow: 'hidden',
-            }}
+            className={`
+              mt-2 pt-2 border-t border-white/5
+              flex items-center gap-2
+              transition-all duration-200
+              ${showActions ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+            `}
+            style={{ height: showActions ? 'auto' : (selected ? 'auto' : '0'), overflow: 'hidden' }}
           >
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 data.onViewMilestones();
               }}
-              className="flex-1 text-white hover:bg-white/10 border-0"
+              className="flex items-center justify-center gap-1 py-1.5 px-3 
+                         bg-white/5 hover:bg-white/10 rounded-lg 
+                         text-xs text-slate-300 hover:text-white 
+                         transition-colors"
             >
-              <ChevronRight className="w-4 h-4 mr-1" />
-              Milestones
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
+              <ChevronRight className="w-3 h-3" />
+              <span>Milestones</span>
+            </button>
+            <button
               onClick={(e) => {
                 e.stopPropagation();
-                data.onEdit();
+                // Just clicking the node selects it and opens the panel
+                // The panel now has inline editing
               }}
-              className="text-white hover:bg-white/10 border-0"
+              className="flex items-center justify-center gap-1 py-1.5 px-3 
+                         bg-white/5 hover:bg-white/10 rounded-lg 
+                         text-xs text-slate-300 hover:text-white 
+                         transition-colors"
+              title="View details and edit in panel"
             >
-              <Edit className="w-4 h-4" />
-            </Button>
+              <Edit className="w-3 h-3" />
+              <span>Details</span>
+            </button>
           </div>
         </div>
 
-        {/* Enhanced shadow for depth when selected */}
+        {/* Selected shadow */}
         {selected && (
-          <div className="absolute inset-0 -z-10">
-            <div
-              className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-40 h-6 bg-black/20 rounded-full blur-lg"
-              style={{
-                animation: "shadow-pulse 2s ease-in-out infinite",
-              }}
-            />
-          </div>
+          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-blue-500/20 rounded-full blur-md" />
         )}
       </div>
 
@@ -330,27 +296,25 @@ export const ShortTermProjectNode = React.memo(function ({
       <Handle
         type="target"
         position={Position.Left}
-        className="bg-blue-500 border-2 border-white shadow-lg hover:bg-blue-600 cursor-grab active:cursor-grabbing"
+        className="!bg-blue-500 !border-2 !border-white !shadow-lg hover:!bg-blue-400 transition-colors"
         style={{
-          left: -15,
-          width: '30px',
-          height: '30px',
+          left: -8,
+          width: '16px',
+          height: '16px',
           borderRadius: '50%'
         }}
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="bg-green-500 border-2 border-white shadow-lg hover:bg-green-600 cursor-grab active:cursor-grabbing"
+        className="!bg-emerald-500 !border-2 !border-white !shadow-lg hover:!bg-emerald-400 transition-colors"
         style={{
-          right: -15,
-          width: '30px',
-          height: '30px',
+          right: -8,
+          width: '16px',
+          height: '16px',
           borderRadius: '50%'
         }}
       />
     </div>
   );
 });
-
-// Enhanced ShortTermProjectNode - ready for modern journey mapping

@@ -43,6 +43,7 @@ export function EditProjectDialog({
   const [icon, setIcon] = useState("🎯");
   const [formData, setFormData] = useState({
     title: "",
+    short_title: "",
     goal: "",
     why: "",
     description: "",
@@ -54,6 +55,7 @@ export function EditProjectDialog({
       setIcon((project as any).icon || "🎯");
       setFormData({
         title: project.title || "",
+        short_title: project.short_title || "",
         goal: project.goal || "",
         why: project.why || "",
         description: project.description || "",
@@ -76,6 +78,7 @@ export function EditProjectDialog({
     try {
       const updatedData = {
         title: formData.title.trim(),
+        short_title: formData.short_title.trim() || undefined,
         goal: formData.goal.trim() || undefined,
         why: formData.why.trim() || undefined,
         description: formData.description.trim() || undefined,
@@ -139,6 +142,29 @@ export function EditProjectDialog({
               />
               <p className="text-xs text-muted-foreground">
                 {formData.title.length}/500 characters
+              </p>
+            </div>
+
+            {/* Short Title */}
+            <div className="space-y-2">
+              <Label htmlFor="short_title">
+                Short Title
+              </Label>
+              <p className="text-sm text-slate-500">
+                A shorter name for compact displays (e.g., on the map). Leave empty to use full title.
+              </p>
+              <Input
+                id="short_title"
+                placeholder="e.g., 'Learn Piano' instead of 'Learn to play piano by December'"
+                value={formData.short_title}
+                onChange={(e) =>
+                  setFormData({ ...formData, short_title: e.target.value })
+                }
+                maxLength={50}
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                {formData.short_title.length}/50 characters
               </p>
             </div>
 

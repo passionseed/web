@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { AssessmentAnswers, DirectionFinderResult, AssessmentStep } from '@/types/direction-finder';
+import { AssessmentAnswers, DirectionFinderResult, AssessmentStep, Message } from '@/types/direction-finder';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CoreAssessment } from './CoreAssessment';
-import { AIConversation, Message } from './AIConversation';
+import { AIConversation } from './AIConversation';
 import { DirectionResults } from './DirectionResults';
 import { getDirectionFinderResults, getDirectionFinderResultById } from '@/app/actions/save-direction';
-import { Database } from 'lucide-react';
+import { Database, Settings } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DirectionFinderFlowProps {
   onComplete: (result: DirectionFinderResult) => void;
@@ -24,7 +25,7 @@ const STEPS_ORDER: AssessmentStep[] = [
   'results'
 ];
 
-  export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlowProps) {
+export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlowProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<AssessmentAnswers>>({});
   const [result, setResult] = useState<DirectionFinderResult | null>(null);
@@ -34,6 +35,7 @@ const STEPS_ORDER: AssessmentStep[] = [
   // DEV: Saved sessions state
   const [devSessions, setDevSessions] = useState<{ id: string; user_id: string; created_at: string }[]>([]);
   const [loadingDevSession, setLoadingDevSession] = useState(false);
+  const [model, setModel] = useState<string | undefined>(undefined);
 
   // DEV: Load sessions list on mount (dev only)
   useEffect(() => {
@@ -146,6 +148,7 @@ const STEPS_ORDER: AssessmentStep[] = [
           history={chatHistory}
           onHistoryChange={setChatHistory}
           onBack={handleBack}
+          model={model}
         />
       );
     }
@@ -157,6 +160,8 @@ const STEPS_ORDER: AssessmentStep[] = [
           answers={answers as AssessmentAnswers}
           onComplete={() => onComplete(result)}
           onBack={handleBackFromResults}
+          chatHistory={chatHistory}
+          model={model}
         />
       );
     }
@@ -187,37 +192,55 @@ const STEPS_ORDER: AssessmentStep[] = [
 
       {/* DEV: Load Saved Session */}
       {process.env.NODE_ENV === 'development' && (
-        <details className="mb-4 text-xs bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-2">
-          <summary className="cursor-pointer text-yellow-400 font-bold flex items-center gap-2">
-            <Database className="w-3 h-3" /> DEV: Load Saved Session
-          </summary>
-          <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-            {devSessions.length === 0 && <p className="text-slate-500">No saved sessions found.</p>}
-            {devSessions.map(s => (
-              <button
-                key={s.id}
-                onClick={async () => {
-                  setLoadingDevSession(true);
-                  try {
-                    const full = await getDirectionFinderResultById(s.id);
-                    setAnswers(full.answers);
-                    setResult(full.result);
-                    setCurrentStepIndex(STEPS_ORDER.indexOf('results'));
-                  } catch (e) {
-                    console.error('Failed to load session', e);
-                  }
-                  setLoadingDevSession(false);
-                }}
-                disabled={loadingDevSession}
-                className="w-full text-left p-2 bg-slate-800 hover:bg-slate-700 rounded text-slate-300"
-              >
-                <span className="text-white">{s.id.slice(0, 8)}...</span>
-                <span className="text-slate-500 ml-2">({s.user_id.slice(0, 8)}...)</span>
-                <span className="text-slate-600 ml-2">{new Date(s.created_at).toLocaleDateString()}</span>
-              </button>
-            ))}
+        <div className="flex gap-2 mb-4">
+          <details className="flex-1 text-xs bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-2">
+            <summary className="cursor-pointer text-yellow-400 font-bold flex items-center gap-2">
+              <Database className="w-3 h-3" /> DEV: Load Saved Session
+            </summary>
+            {/* ... keeping existing content ... */}
+            <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+              {devSessions.length === 0 && <p className="text-slate-500">No saved sessions found.</p>}
+              {devSessions.map(s => (
+                <button
+                  key={s.id}
+                  onClick={async () => {
+                    setLoadingDevSession(true);
+                    try {
+                      const full = await getDirectionFinderResultById(s.id);
+                      setAnswers(full.answers);
+                      setResult(full.result);
+                      setCurrentStepIndex(STEPS_ORDER.indexOf('results'));
+                    } catch (e) {
+                      console.error('Failed to load session', e);
+                    }
+                    setLoadingDevSession(false);
+                  }}
+                  disabled={loadingDevSession}
+                  className="w-full text-left p-2 bg-slate-800 hover:bg-slate-700 rounded text-slate-300"
+                >
+                  <span className="text-white">{s.id.slice(0, 8)}...</span>
+                  <span className="text-slate-500 ml-2">({s.user_id.slice(0, 8)}...)</span>
+                  <span className="text-slate-600 ml-2">{new Date(s.created_at).toLocaleDateString()}</span>
+                </button>
+              ))}
+            </div>
+          </details>
+          
+          <div className="w-[200px]">
+            <Select value={model} onValueChange={setModel}>
+              <SelectTrigger className="h-full bg-slate-900 border-slate-700 text-xs">
+                <Settings className="w-3 h-3 mr-2 text-slate-400" />
+                <SelectValue placeholder="Select AI Model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="google/gemini-2.5-flash">Gemini 2.5 Flash (Default)</SelectItem>
+                <SelectItem value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</SelectItem>
+                <SelectItem value="deepseek-v3">DeepSeek V3</SelectItem>
+                <SelectItem value="deepseek/deepseek-r1">DeepSeek R1 (Reasoner)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </details>
+        </div>
       )}
 
       {/* Main Content Area */}

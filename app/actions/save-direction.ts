@@ -1,11 +1,13 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { AssessmentAnswers, DirectionFinderResult } from "@/types/direction-finder";
+import { AssessmentAnswers, DirectionFinderResult, Message } from "@/types/direction-finder";
+import { summarizeConversation } from "@/lib/ai/education-advisor";
 
 export async function saveDirectionFinderResult(
   answers: AssessmentAnswers,
-  result: DirectionFinderResult
+  result: DirectionFinderResult,
+  chatHistory?: Message[]
 ) {
   const supabase = await createClient();
   const {
@@ -16,12 +18,27 @@ export async function saveDirectionFinderResult(
     throw new Error("User not authenticated");
   }
 
+  let chatContext = "";
+  if (chatHistory && chatHistory.length > 0) {
+    try {
+      chatContext = await summarizeConversation(chatHistory, answers);
+    } catch (e) {
+      console.warn("Failed to summarize conversation:", e);
+    }
+  }
+
+  // Convert Message[] to jsonb-friendly format (remove undefined)
+  // Message is already simple object: { id, role, content }
+  const safeHistory = chatHistory ? chatHistory : [];
+
   const { data, error } = await supabase
     .from("direction_finder_results")
     .insert({
       user_id: user.id,
       answers,
       result,
+      chat_history: safeHistory,
+      chat_context: chatContext,
     })
     .select()
     .single();

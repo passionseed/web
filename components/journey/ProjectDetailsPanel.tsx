@@ -1,6 +1,7 @@
 /**
- * ProjectDetailsPanel - Inline panel for viewing project details in sidebar
+ * ProjectDetailsPanel - Inline panel for viewing AND editing project details
  * Includes tabs for overview, milestones, journals, and reflections
+ * Now supports inline editing instead of modal
  */
 
 "use client";
@@ -13,6 +14,9 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   BookOpen,
   Target,
@@ -26,6 +30,8 @@ import {
   CheckCircle2,
   Circle,
   AlertCircle,
+  X,
+  Save,
 } from "lucide-react";
 import {
   getProjectById,
@@ -45,16 +51,16 @@ import { toast } from "sonner";
 
 interface ProjectDetailsPanelProps {
   projectId: string | null;
-  onEdit: () => void;
   onAddReflection: () => void;
   onAddMilestone: () => void;
+  onProjectUpdated?: () => void;
 }
 
 export function ProjectDetailsPanel({
   projectId,
-  onEdit,
   onAddReflection,
   onAddMilestone,
+  onProjectUpdated,
 }: ProjectDetailsPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [project, setProject] = useState<ProjectWithMilestones | null>(null);
@@ -64,11 +70,38 @@ export function ProjectDetailsPanel({
   );
   const [reflections, setReflections] = useState<ProjectReflection[]>([]);
 
+  // Inline editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    short_title: "",
+    goal: "",
+    why: "",
+    description: "",
+    icon: "🎯",
+  });
+
   useEffect(() => {
     if (projectId) {
       loadProjectData();
+      setIsEditing(false); // Reset edit mode when project changes
     }
   }, [projectId]);
+
+  // Initialize edit form when project loads
+  useEffect(() => {
+    if (project) {
+      setEditForm({
+        title: project.title || "",
+        short_title: project.short_title || "",
+        goal: project.goal || "",
+        why: project.why || "",
+        description: project.description || "",
+        icon: project.icon || "🎯",
+      });
+    }
+  }, [project]);
 
   const loadProjectData = async () => {
     if (!projectId) return;
@@ -77,22 +110,20 @@ export function ProjectDetailsPanel({
     try {
       // Check if this is a university example project (starts with "milestone-")
       if (projectId.startsWith('milestone-')) {
-        // This is a mock university project, show a placeholder message
         setProject(null);
         setMilestones([]);
-        setJournals([]);
+        setJournals({});
         setReflections([]);
         setIsLoading(false);
         return;
       }
 
-      // Load project data first
       const projectData = await getProjectById(projectId);
       if (!projectData) {
         console.warn(`Project with ID ${projectId} not found`);
         setProject(null);
         setMilestones([]);
-        setJournals([]);
+        setJournals({});
         setReflections([]);
         setIsLoading(false);
         return;
@@ -100,7 +131,6 @@ export function ProjectDetailsPanel({
       
       setProject(projectData);
 
-      // Load other data with individual error handling
       const [milestonesData, journalsData] = await Promise.all([
         getProjectMilestones(projectId),
         getProjectJournals(projectId),
@@ -109,13 +139,12 @@ export function ProjectDetailsPanel({
       setMilestones(milestonesData);
       setJournals(journalsData);
 
-      // Load reflections separately with error handling
       try {
         const reflectionsData = await getProjectReflections(projectId);
         setReflections(reflectionsData);
       } catch (reflectionError) {
-        console.warn("Could not load reflections, continuing without them:", reflectionError);
-        setReflections([]); // Set empty array as fallback
+        console.warn("Could not load reflections:", reflectionError);
+        setReflections([]);
       }
     } catch (error) {
       console.error("Error loading project data:", error);
@@ -123,6 +152,49 @@ export function ProjectDetailsPanel({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!project || !editForm.title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateProjectDetails(project.id, {
+        title: editForm.title.trim(),
+        short_title: editForm.short_title.trim() || undefined,
+        goal: editForm.goal.trim() || undefined,
+        why: editForm.why.trim() || undefined,
+        description: editForm.description.trim() || undefined,
+        icon: editForm.icon,
+      });
+      
+      toast.success("Project updated!");
+      setIsEditing(false);
+      loadProjectData();
+      onProjectUpdated?.();
+    } catch (error) {
+      console.error("Error saving project:", error);
+      toast.error("Failed to save changes");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (project) {
+      setEditForm({
+        title: project.title || "",
+        short_title: project.short_title || "",
+        goal: project.goal || "",
+        why: project.why || "",
+        description: project.description || "",
+        icon: project.icon || "🎯",
+      });
+    }
+    setIsEditing(false);
   };
 
   if (isLoading) {
@@ -134,7 +206,6 @@ export function ProjectDetailsPanel({
   }
 
   if (!project) {
-    // Check if this is a university example project
     if (projectId?.startsWith('milestone-')) {
       return (
         <div className="h-full flex flex-col bg-slate-900">
@@ -146,18 +217,12 @@ export function ProjectDetailsPanel({
               University Example Milestone
             </h3>
             <p className="text-slate-400 text-sm max-w-sm">
-              This is a sample milestone for demonstrating university pathway planning. 
-              In a real journey map, you would see detailed milestone information, 
-              progress tracking, and reflection tools here.
+              This is a sample milestone for demonstrating university pathway planning.
             </p>
-            <div className="mt-6 text-xs text-slate-500">
-              💡 Create your own journey map to track real milestones
-            </div>
           </div>
         </div>
       );
     }
-    
     return null;
   }
 
@@ -182,76 +247,186 @@ export function ProjectDetailsPanel({
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-800">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              {/* Emoji Icon with Quick Edit */}
-              <EmojiPicker
-                value={project.icon || "🎯"}
-                onSelect={async (emoji) => {
-                  try {
-                    await updateProjectDetails(
-                      project.id,
-                      project.title,
-                      project.goal || "",
-                      project.why || "",
-                      project.description || "",
-                      emoji
-                    );
-                    toast.success("Icon updated");
-                    loadProjectData(); // Reload to show new icon
-                  } catch (error) {
-                    console.error("Error updating icon:", error);
-                    toast.error("Failed to update icon");
+      {/* Header - View Mode */}
+      {!isEditing && (
+        <div className="p-4 border-b border-slate-800">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <EmojiPicker
+                  value={project.icon || "🎯"}
+                  onSelect={async (emoji) => {
+                    try {
+                      await updateProjectDetails(project.id, { icon: emoji });
+                      toast.success("Icon updated");
+                      loadProjectData();
+                      onProjectUpdated?.();
+                    } catch (error) {
+                      console.error("Error updating icon:", error);
+                      toast.error("Failed to update icon");
+                    }
+                  }}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-3xl p-1 h-auto hover:bg-slate-800 rounded-lg transition-colors"
+                      title="Click to change icon"
+                    >
+                      {project.icon || "🎯"}
+                    </Button>
                   }
-                }}
+                />
+                <h2 className="text-lg font-bold text-slate-100">
+                  {project.title}
+                </h2>
+              </div>
+              {project.short_title && (
+                <p className="text-xs text-slate-400 mb-2">({project.short_title})</p>
+              )}
+              <Badge className={statusStyle}>{project.status}</Badge>
+            </div>
+            <Button
+              onClick={() => setIsEditing(true)}
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-slate-200"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {project.description && (
+            <p className="text-sm text-slate-400 mb-3">{project.description}</p>
+          )}
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400">Overall Progress</span>
+              <span className="text-slate-300 font-medium">
+                {progressPercentage}%
+              </span>
+            </div>
+            <Progress value={progressPercentage} className="h-2" />
+          </div>
+        </div>
+      )}
+
+      {/* Header - Edit Mode */}
+      {isEditing && (
+        <div className="p-4 border-b border-slate-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-100">Edit Project</h2>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleCancelEdit}
+                variant="ghost"
+                size="sm"
+                className="text-slate-400 hover:text-slate-200"
+                disabled={isSaving}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {/* Icon */}
+            <div className="flex items-center gap-3">
+              <EmojiPicker
+                value={editForm.icon}
+                onSelect={(emoji) => setEditForm({ ...editForm, icon: emoji })}
                 trigger={
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="text-3xl p-1 h-auto hover:bg-slate-800 rounded-lg transition-colors"
-                    title="Click to change icon"
+                    className="text-2xl p-2 h-auto"
                   >
-                    {project.icon || "🎯"}
+                    {editForm.icon}
                   </Button>
                 }
               />
-              <h2 className="text-lg font-bold text-slate-100">
-                {project.title}
-              </h2>
+              <span className="text-xs text-slate-400">Click to change icon</span>
             </div>
-            <Badge className={statusStyle}>{project.status}</Badge>
+
+            {/* Title */}
+            <div>
+              <Label className="text-xs text-slate-400">Title *</Label>
+              <Input
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                placeholder="Project title"
+                className="mt-1 bg-slate-800 border-slate-700"
+                maxLength={500}
+              />
+            </div>
+
+            {/* Short Title */}
+            <div>
+              <Label className="text-xs text-slate-400">Short Title</Label>
+              <Input
+                value={editForm.short_title}
+                onChange={(e) => setEditForm({ ...editForm, short_title: e.target.value })}
+                placeholder="Short display name for map"
+                className="mt-1 bg-slate-800 border-slate-700"
+                maxLength={50}
+              />
+            </div>
+
+            {/* Goal */}
+            <div>
+              <Label className="text-xs text-slate-400">Goal</Label>
+              <Textarea
+                value={editForm.goal}
+                onChange={(e) => setEditForm({ ...editForm, goal: e.target.value })}
+                placeholder="What do you want to achieve?"
+                className="mt-1 bg-slate-800 border-slate-700 resize-none"
+                rows={2}
+              />
+            </div>
+
+            {/* Why */}
+            <div>
+              <Label className="text-xs text-slate-400">Why</Label>
+              <Textarea
+                value={editForm.why}
+                onChange={(e) => setEditForm({ ...editForm, why: e.target.value })}
+                placeholder="Why is this important?"
+                className="mt-1 bg-slate-800 border-slate-700 resize-none"
+                rows={2}
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label className="text-xs text-slate-400">Description</Label>
+              <Textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="Additional details"
+                className="mt-1 bg-slate-800 border-slate-700 resize-none"
+                rows={3}
+              />
+            </div>
           </div>
-          <Button
-            onClick={onEdit}
-            variant="ghost"
-            size="sm"
-            className="text-slate-400 hover:text-slate-200"
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
         </div>
+      )}
 
-        {project.description && (
-          <p className="text-sm text-slate-400 mb-3">{project.description}</p>
-        )}
-
-        {/* Progress Overview */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">Overall Progress</span>
-            <span className="text-slate-300 font-medium">
-              {progressPercentage}%
-            </span>
-          </div>
-          <Progress value={progressPercentage} className="h-2" />
-        </div>
-      </div>
-
-      {/* Tabs Content */}
-      <ScrollArea className="flex-1">
+      {/* Tabs Content - Hide when editing */}
+      {!isEditing && (
+        <ScrollArea className="flex-1">
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="w-full grid grid-cols-4 bg-slate-800/50 m-4">
             <TabsTrigger value="overview" className="text-xs">
@@ -527,6 +702,7 @@ export function ProjectDetailsPanel({
           </TabsContent>
         </Tabs>
       </ScrollArea>
+      )}
     </div>
   );
 }
