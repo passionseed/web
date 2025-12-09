@@ -561,13 +561,13 @@ function JourneyMapCanvasInner({
               ) : selectedProjectId ? (
                 <ProjectDetailsPanel
                   projectId={selectedProjectId}
-                  onEdit={() => handleEditProject(selectedProjectId)}
                   onAddReflection={() =>
                     toast.info("Reflection dialog coming soon!")
                   }
                   onAddMilestone={() =>
                     toast.info("Milestone dialog coming soon!")
                   }
+                  onProjectUpdated={refreshProjects}
                 />
               ) : (
                 <MainQuestPanel

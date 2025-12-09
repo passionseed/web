@@ -102,6 +102,7 @@ export interface JourneyProject {
   id: string;
   user_id: string;
   title: string;
+  short_title: string | null;
   description: string | null;
   goal: string | null;
   why: string | null;
@@ -398,6 +399,7 @@ export interface ProjectCreateData {
 
 export interface ProjectUpdateData {
   title?: string;
+  short_title?: string;
   description?: string;
   goal?: string;
   why?: string;

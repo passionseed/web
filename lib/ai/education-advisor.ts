@@ -5,10 +5,62 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { StudentProfile, RecommendedUniversity } from "@/types/education";
 import { AssessmentAnswers, DirectionFinderResult } from "@/types/direction-finder";
+import { createOpenAI } from "@ai-sdk/openai";
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
 });
+
+const deepseek = createOpenAI({
+  baseURL: 'https://api.deepseek.com',
+  apiKey: process.env.DEEPSEEK_API_KEY || "",
+});
+
+function getModel(modelName?: string) {
+  if (!modelName) return google("gemini-2.5-flash");
+  
+  if (modelName.includes('deepseek')) {
+    // Basic mapping based on user request names
+    if (modelName.includes('r1')) return deepseek('deepseek-reasoner');
+    return deepseek('deepseek-chat'); 
+  }
+  
+  // Handle specific google models if provided with prefix or just name
+  if (modelName.includes('lite')) return google('gemini-2.0-flash-lite-preview-02-05'); // Using preview for now as 2.5 lite might not be standard yet or use closest
+  
+  if (modelName === 'google/gemini-2.5-flash-lite') return google('gemini-2.0-flash-lite-preview-02-05'); // fallback
+  
+  return google("gemini-2.5-flash");
+}
+
+export async function summarizeConversation(
+  history: { role: 'user' | 'assistant'; content: string }[],
+  answers: AssessmentAnswers
+): Promise<string> {
+  try {
+    const prompt = `
+      Summarize this conversation between an education advisor and a student.
+      Capture the key insights about the student's preferences, the advice given, and any specific direction decided.
+      
+      Student Context:
+      ${JSON.stringify(answers, null, 2)}
+      
+      Conversation:
+      ${history.map(m => `${m.role}: ${m.content}`).join('\n')}
+    `;
+
+    const { object } = await generateObject({
+      model: google("gemini-2.5-flash"), // Use fast model for summary
+      schema: z.object({ summary: z.string() }),
+      prompt,
+    });
+    
+    return object.summary;
+  } catch (error) {
+    console.error("Error summarizing:", error);
+    return "Conversation data saved without summary.";
+  }
+}
 
 export async function recommendUniversities(
   profile: StudentProfile,
@@ -59,13 +111,14 @@ export async function recommendUniversities(
 
 export async function conductDirectionConversation(
   history: { role: 'user' | 'assistant'; content: string }[],
-  answers: AssessmentAnswers
+  answers: AssessmentAnswers,
+  modelName?: string
 ): Promise<{ messages: string[]; options: string[] }> {
   try {
     console.log("conductDirectionConversation called");
     console.log("History length:", history.length);
     console.log("Answers keys:", Object.keys(answers));
-    console.log("API Key present:", !!(process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY));
+    console.log("Model:", modelName || "default");
 
     const systemPrompt = `
       You are a cool, casual mentor helping a high school student find their future path. You are NOT a stiff professor. Use emojis and keeping it high-energy.
@@ -95,7 +148,7 @@ export async function conductDirectionConversation(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"),
+      model: getModel(modelName),
       system: systemPrompt,
       messages: history,
       schema: z.object({
@@ -121,7 +174,8 @@ export async function conductDirectionConversation(
 
 export async function generateDirectionProfile(
   history: { role: 'user' | 'assistant'; content: string }[],
-  answers: AssessmentAnswers
+  answers: AssessmentAnswers,
+  modelName?: string
 ): Promise<DirectionFinderResult> {
   try {
     const prompt = `
@@ -141,7 +195,7 @@ export async function generateDirectionProfile(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"),
+      model: getModel(modelName),
       schema: z.object({
         profile: z.object({
           energizers: z.array(z.string()),
@@ -162,10 +216,10 @@ export async function generateDirectionProfile(
             skill: z.number().min(0).max(100),
           }),
           exploration_steps: z.array(z.object({
-            type: z.enum(['camp', 'study', 'activity', 'person']),
-            description: z.string(),
-            reason: z.string().optional(),
-          })),
+            type: z.enum(['project', 'study', 'activity', 'community']).describe("The type of milestone project"),
+            description: z.string().describe("Title of the project or milestone"),
+            reason: z.string().optional().describe("Why this project matters"),
+          })).describe("3-4 suggested projects or milestones to help the student progress in this direction"),
           first_step: z.string(),
         })),
         programs: z.array(z.object({

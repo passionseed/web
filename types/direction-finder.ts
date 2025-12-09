@@ -95,3 +95,9 @@ export type AssessmentStep =
   | 'ai_intro'
   | 'ai_chat'
   | 'results';
+
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}

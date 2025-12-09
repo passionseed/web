@@ -347,12 +347,13 @@ export async function updateProjectPosition(
 }
 
 /**
- * Update project details (goal, why, description, icon)
+ * Update project details (goal, why, description, icon, short_title)
  */
 export async function updateProjectDetails(
   projectId: string,
   data: {
     title?: string;
+    short_title?: string;
     goal?: string;
     why?: string;
     description?: string;
