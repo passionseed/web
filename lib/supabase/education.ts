@@ -1,10 +1,10 @@
 import { createClient } from '@/utils/supabase/client'
-import { 
-  University, 
-  UserUniversityTarget, 
-  UserInterestPriority, 
+import {
+  University,
+  UserUniversityTarget,
+  UserInterestPriority,
   AIRoadmap,
-  SimpleRoadmap 
+  SimpleRoadmap
 } from '@/types/education'
 
 const supabase = createClient()
@@ -123,7 +123,7 @@ export async function getUserUniversityTargets(userId: string): Promise<UserUniv
 }
 
 export async function saveUserUniversityTargets(
-  userId: string, 
+  userId: string,
   universities: { university_id: string; priority_rank: 1 | 2 | 3 }[]
 ): Promise<UserUniversityTarget[]> {
   // First, delete existing targets for this user
@@ -323,7 +323,7 @@ export async function getUniversityExampleMaps(universityId: string) {
     .select('*')
     .eq('university_id', universityId)
     .order('created_at', { ascending: false })
-  
+
   if (error) {
     if (error.code === '42P01') {
       console.warn('University example maps table missing, skipping.')
@@ -332,7 +332,7 @@ export async function getUniversityExampleMaps(universityId: string) {
     console.error('Error fetching university example maps:', error)
     return []
   }
-  
+
   return data || []
 }
 
@@ -342,11 +342,110 @@ export async function getUniversityExampleMapById(mapId: string) {
     .select('*')
     .eq('id', mapId)
     .single()
-  
+
   if (error) {
     console.error('Error fetching university example map:', error)
     return null
   }
-  
+
   return data
+}
+
+// =====================================
+// THAILAND ADMISSION PLANS
+// =====================================
+
+export async function getThailandUniversities(): Promise<University[]> {
+  const { data, error } = await supabase
+    .from('thailand_admission_plans')
+    .select('university_name_th')
+
+  if (error) {
+    console.error('Error fetching Thailand universities:', error)
+    return []
+  }
+
+  // Get unique universities
+  const uniqueNames = Array.from(new Set(data.map(item => item.university_name_th))).sort();
+
+  return uniqueNames.map((name, index) => ({
+    id: `th-${index}`, // Temporary ID needed for University interface
+    name: name,
+    country: 'Thailand',
+    city: 'Thailand', // Placeholder
+  }));
+}
+
+export async function getProgramsForUniversity(universityName: string) {
+  const { data, error } = await supabase
+    .from('thailand_admission_plans')
+    .select('*')
+    .eq('university_name_th', universityName)
+    .order('curriculum_name_th')
+
+  if (error) {
+    console.error(`Error fetching programs for ${universityName}:`, error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function searchThailandUniversities(query: string): Promise<University[]> {
+  if (!query || query.length < 2) return [];
+
+  const { data, error } = await supabase
+    .from('thailand_admission_plans')
+    .select('university_name_th')
+    .ilike('university_name_th', `%${query}%`)
+    .limit(20);
+
+  if (error) {
+    console.error('Error searching Thailand universities:', error)
+    return []
+  }
+
+  // Get unique universities
+  const uniqueNames = Array.from(new Set(data.map(item => item.university_name_th))).sort();
+
+  return uniqueNames.map((name, index) => ({
+    id: `th-search-${index}-${Date.now()}`,
+    name: name,
+    country: 'Thailand',
+    city: 'Thailand',
+  }));
+}
+
+export async function searchThailandCurriculums(query: string) {
+  if (!query || query.length < 2) return [];
+
+  const { data, error } = await supabase
+    .from('thailand_admission_plans')
+    .select('*')
+    .or(`curriculum_name_th.ilike.%${query}%,curriculum_name_en.ilike.%${query}%,university_name_th.ilike.%${query}%`)
+    .limit(50);
+
+  if (error) {
+    console.error('Error searching Thailand curriculums:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function browseThailandCurriculums() {
+  // Fetch a random set or purely ID based for browsing
+  // Since random is hard in Supabase without function, we'll just fetch a range or distinct
+  // For now, let's fetch a diverse set by just taking latest or simple limit
+  const { data, error } = await supabase
+    .from('thailand_admission_plans')
+    .select('*')
+    .limit(30);
+
+  if (error) {
+    console.error('Error browsing Thailand curriculums:', error)
+    return []
+  }
+
+  return data || []
 }
