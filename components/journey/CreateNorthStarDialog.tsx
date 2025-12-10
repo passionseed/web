@@ -18,6 +18,7 @@ import {
   Languages,
   Compass,
 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/language-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,7 +39,11 @@ import {
 } from "@/lib/ai/north-star-enhancer";
 import { addMonths, format } from "date-fns";
 import { EducationalPathwayFlow } from "@/components/education/EducationalPathwayFlow";
-import { getAllUniversities } from "@/lib/supabase/education";
+import {
+  getAllUniversities,
+  getThailandUniversities,
+  browseThailandCurriculums,
+} from "@/lib/supabase/education";
 import {
   University,
   SimpleRoadmap,
@@ -60,28 +65,26 @@ interface SMARTMilestone {
 const translations = {
   en: {
     headerTitle: "Create North Star",
-    step0Title: "Design Your\nFuture Self",
-    step0Subtitle:
-      '"The future belongs to those who believe in the beauty of their dreams."',
+    step0Title: "Design Your Future",
+    step0Subtitle: '"The best way to predict the future is to create it."',
     startBtn: "Start Designing",
     step1Title: "What's the Dream?",
-    step1Subtitle:
-      "Where do you see yourself in 3 years? Be bold. Be specific.",
+    step1Subtitle: "Where do you see yourself in 3 years?",
     step1Placeholder:
       "I want to be a software engineer building tools that help people learn...",
     enhanceBtn: "Enhance with AI",
     aiSuggestion: "AI Suggestion",
-    useThis: "Use This",
+    useThis: "Use This Version",
     keepMine: "Keep Mine",
-    step2Title: "The Roadmap",
-    step2Subtitle: "Break it down. What are the major checkpoints?",
+    step2Title: "Key Milestones",
+    step2Subtitle: "Break it down into big steps",
     generateBtn: "Generate with AI",
     milestonePlaceholder: "Milestone title...",
     addMilestone: "Add Milestone",
-    step3Title: "The Why",
-    step3Subtitle: "What areas of life does this impact?",
+    step3Title: "Life Aspects",
+    step3Subtitle: "What areas does this impact?",
     step4Title: "Design Your Star",
-    step4Subtitle: "Make it unique. This is your beacon.",
+    step4Subtitle: "Make it unique to you",
     colorTheme: "Color Theme",
     points: "Points",
     innerRadius: "Inner Radius",
@@ -100,26 +103,61 @@ const translations = {
     eduLoadError: "Failed to load universities",
     createSuccess: "North Star created successfully!",
     createError: "Failed to create North Star",
+    findDirection: "Find your direction",
+    findDirectionDesc: "Discover your passion with our interactive Ikigai tool",
+    duration: "5–10 mins",
+    chooseUni: "Choose your university goal",
+    chooseUniDesc: "For students who already have a clear target",
+    backToDirection: "Back to Direction Profile",
   },
   th: {
     headerTitle: "สร้างดาวเหนือ",
-    step0Title: "ออกแบบตัวตน\nในอนาคตของคุณ",
-    step0Subtitle: '"อนาคตเป็นของผู้ที่เชื่อในความงามของความฝัน"',
+    step0Title: "ออกแบบอนาคต\nของคุณ",
+    step0Subtitle: '"วิธีที่ดีที่สุดในการทำนายอนาคตคือการสร้างมันขึ้นมา"',
     startBtn: "เริ่มออกแบบ",
     step1Title: "ความฝันของคุณคืออะไร?",
-    step1Subtitle:
-      "คุณเห็นตัวเองเป็นอย่างไรในอีก 3 ปีข้างหน้า? กล้าที่จะฝัน ระบุให้ชัดเจน",
+    step1Subtitle: "คุณเห็นตัวเองเป็นอย่างไรในอีก 3 ปีข้างหน้า?",
     step1Placeholder:
       "ฉันอยากเป็นวิศวกรซอฟต์แวร์ที่สร้างเครื่องมือช่วยให้ผู้คนเรียนรู้...",
     enhanceBtn: "ปรับปรุงด้วย AI",
     aiSuggestion: "คำแนะนำจาก AI",
-    useThis: "ใช้ข้อความนี้",
+    useThis: "ใช้เวอร์ชันนี้",
     keepMine: "ใช้ของฉัน",
-    step2Title: "แผนที่การเดินทาง",
-    step2Subtitle: "แบ่งย่อยเป้าหมาย จุดตรวจสอบสำคัญคืออะไร?",
+    step2Title: "เป้าหมายสำคัญ",
+    step2Subtitle: "แบ่งย่อยเป็นขั้นตอนใหญ่ๆ",
+    generateBtn: "สร้างด้วย AI",
+    milestonePlaceholder: "ชื่อเป้าหมายย่อย...",
+    addMilestone: "เพิ่มเป้าหมายย่อย",
+    step3Title: "ด้านของชีวิต",
+    step3Subtitle: "เรื่องนี้ส่งผลต่อด้านใดของชีวิตบ้าง?",
+    step4Title: "ออกแบบดาวของคุณ",
+    step4Subtitle: "ทำให้เป็นเอกลักษณ์ นี่คือแสงนำทางของคุณ",
+    colorTheme: "ธีมสี",
+    points: "จำนวนแฉก",
+    innerRadius: "รัศมีภายใน",
+    step5Title: "ตั้งชื่อตำนานของคุณ",
+    step5Subtitle: "ตั้งชื่อให้กับบทนี้ของชีวิตคุณ",
+    namePlaceholder: "เช่น ปีแห่งการเติบโต",
+    launchBtn: "ปล่อยดาวเหนือ",
+    launching: "กำลังปล่อย...",
+    back: "ย้อนกลับ",
+    next: "ถัดไป",
+    nameError: "กรุณาตั้งชื่อดาวเหนือของคุณ!",
+    visionError: "กรุณาอธิบายวิสัยทัศน์ของคุณก่อน!",
+    milestonesGenerated: "สร้างเป้าหมายย่อยเรียบร้อยแล้ว!",
+    milestonesError: "ไม่สามารถสร้างเป้าหมายย่อยได้",
+    aiError: "การปรับปรุงด้วย AI ล้มเหลว",
+    eduLoadError: "ไม่สามารถโหลดข้อมูลมหาวิทยาลัยได้",
+    createSuccess: "สร้างดาวเหนือสำเร็จ!",
+    createError: "ไม่สามารถสร้างดาวเหนือได้",
+    findDirection: "ค้นหาทิศทางของคุณ",
+    findDirectionDesc: "ค้นหาความหลงใหลด้วยเครื่องมือ Ikigai ของเรา",
+    duration: "5–10 นาที",
+    chooseUni: "เลือกเป้าหมายมหาวิทยาลัย",
+    chooseUniDesc: "สำหรับนักเรียนที่มีเป้าหมายชัดเจนแล้ว",
+    backToDirection: "กลับไปที่โปรไฟล์ทิศทาง",
   },
 };
-const t = translations["en"]; // TODO: Dynamic locale
 interface CreateNorthStarDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -135,6 +173,9 @@ export function CreateNorthStarDialog({
   userEducationLevel = "university",
   defaultOpenDirectionFinder = false,
 }: CreateNorthStarDialogProps) {
+  const { language } = useLanguage();
+  const t = translations[language] || translations["en"];
+
   // State
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -161,7 +202,8 @@ export function CreateNorthStarDialog({
 
   // Direction Finder State
   const [showDirectionFinder, setShowDirectionFinder] = useState(false);
-  const [directionFinderResult, setDirectionFinderResult] = useState<DirectionFinderResult | null>(null);
+  const [directionFinderResult, setDirectionFinderResult] =
+    useState<DirectionFinderResult | null>(null);
 
   // Reset on open
   useEffect(() => {
@@ -180,7 +222,7 @@ export function CreateNorthStarDialog({
   const handleNext = async () => {
     // Validation
     if (currentStep === 1 && !formData.visionQuestion.trim()) {
-      toast.error("Please describe your vision first!");
+      toast.error(t.visionError);
       return;
     }
 
@@ -215,7 +257,7 @@ export function CreateNorthStarDialog({
         setShowVisionComparison(true);
       }
     } catch (e) {
-      toast.error("AI enhancement failed");
+      toast.error(t.aiError);
     } finally {
       setIsAiLoading(false);
     }
@@ -235,10 +277,10 @@ export function CreateNorthStarDialog({
           measurable: "",
         }));
         setFormData((prev) => ({ ...prev, milestones: newMilestones }));
-        toast.success("Milestones generated!");
+        toast.success(t.milestonesGenerated);
       }
     } catch (e) {
-      toast.error("Failed to generate milestones");
+      toast.error(t.milestonesError);
     } finally {
       setIsAiLoading(false);
     }
@@ -247,11 +289,38 @@ export function CreateNorthStarDialog({
   const startEducationalPathway = async () => {
     setLoadingUniversities(true);
     try {
-      const data = await getAllUniversities();
-      setUniversities(data);
+      // Use Thailand admission data for browsing
+      let initialData = await browseThailandCurriculums();
+
+      if (!initialData || initialData.length === 0) {
+        const fallbackData = await getAllUniversities();
+        initialData = fallbackData;
+      }
+
+      const universities: University[] = initialData.map(
+        (item: any, index: number) => ({
+          id: item.id ? `curr-${item.id}` : `curr-${index}-${Date.now()}`,
+          name: item.university_name_th || item.name,
+          short_name:
+            item.curriculum_name_en ||
+            item.curriculum_name_th ||
+            item.short_name,
+          description: item.curriculum_name_th
+            ? `${item.curriculum_name_th} (${item.curriculum_name_en})`
+            : item.description,
+          country: "Thailand",
+          city: "Thailand",
+          admission_requirements: item.total_plan
+            ? `${item.total_plan}`
+            : undefined,
+          website_url: item.website_url,
+        })
+      );
+
+      setUniversities(universities);
       setShowEducationalPathway(true);
     } catch (error) {
-      toast.error("Failed to load universities");
+      toast.error(t.eduLoadError);
     } finally {
       setLoadingUniversities(false);
     }
@@ -277,22 +346,26 @@ export function CreateNorthStarDialog({
   const handleDirectionFinderComplete = (result: DirectionFinderResult) => {
     setDirectionFinderResult(result);
     setShowDirectionFinder(false);
-    
+
     // Use the Ikigai profile and direction vectors to populate the vision
-    const vision = `My Ikigai is to leverage my strengths in ${result.profile.strengths.join(", ")} and my passion for ${result.profile.energizers.join(", ")} to address ${result.profile.values.join(", ")}. I aim to explore paths like ${result.vectors[0]?.name || 'my chosen direction'}.`;
+    const vision = `My Ikigai is to leverage my strengths in ${result.profile.strengths.join(", ")} and my passion for ${result.profile.energizers.join(", ")} to address ${result.profile.values.join(", ")}. I aim to explore paths like ${result.vectors[0]?.name || "my chosen direction"}.`;
 
     // Pre-populate milestones from the first direction's exploration_steps
     const explorationSteps = result.vectors[0]?.exploration_steps || [];
-    const milestones: SMARTMilestone[] = explorationSteps.slice(0, 5).map((step, idx) => {
-      const startDate = new Date(Date.now() + idx * 30 * 24 * 60 * 60 * 1000);
-      const dueDate = new Date(Date.now() + (idx + 1) * 30 * 24 * 60 * 60 * 1000);
-      return {
-        title: step.description,
-        startDate: startDate.toISOString().split('T')[0],
-        dueDate: dueDate.toISOString().split('T')[0],
-        measurable: step.reason || 'Complete this step',
-      };
-    });
+    const milestones: SMARTMilestone[] = explorationSteps
+      .slice(0, 5)
+      .map((step, idx) => {
+        const startDate = new Date(Date.now() + idx * 30 * 24 * 60 * 60 * 1000);
+        const dueDate = new Date(
+          Date.now() + (idx + 1) * 30 * 24 * 60 * 60 * 1000
+        );
+        return {
+          title: step.description,
+          startDate: startDate.toISOString().split("T")[0],
+          dueDate: dueDate.toISOString().split("T")[0],
+          measurable: step.reason || "Complete this step",
+        };
+      });
 
     setFormData((prev) => ({
       ...prev,
@@ -310,7 +383,7 @@ export function CreateNorthStarDialog({
 
   const handleSubmit = async () => {
     if (!formData.title.trim()) {
-      toast.error("Please name your North Star!");
+      toast.error(t.nameError);
       return;
     }
 
@@ -358,12 +431,12 @@ export function CreateNorthStarDialog({
         }
       }
 
-      toast.success("North Star created successfully!");
+      toast.success(t.createSuccess);
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to create North Star");
+      toast.error(t.createError);
     } finally {
       setIsSubmitting(false);
     }
@@ -392,7 +465,7 @@ export function CreateNorthStarDialog({
           </Button>
           <div className="flex flex-col">
             <span className="text-sm text-slate-400 font-medium tracking-wider uppercase">
-              Create North Star
+              {t.headerTitle}
             </span>
             <div className="flex gap-1 mt-1">
               {[0, 1, 2, 3, 4, 5].map((s) => (
@@ -457,11 +530,11 @@ export function CreateNorthStarDialog({
                       <Sparkles className="w-24 h-24 text-amber-400 relative z-10" />
                     </div>
                     <div className="space-y-4">
-                      <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent">
-                        Design Your Future
+                      <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent pb-2 leading-[1.2]">
+                        {t.step0Title}
                       </h2>
                       <p className="text-xl text-slate-400 max-w-lg mx-auto leading-relaxed">
-                        "The best way to predict the future is to create it."
+                        {t.step0Subtitle}
                       </p>
                     </div>
                     <Button
@@ -469,7 +542,7 @@ export function CreateNorthStarDialog({
                       onClick={handleNext}
                       className="h-14 px-10 text-lg rounded-full bg-white text-slate-950 hover:bg-slate-200 transition-all hover:scale-105"
                     >
-                      Start Designing <ChevronRight className="ml-2" />
+                      {t.startBtn} <ChevronRight className="ml-2" />
                     </Button>
                   </div>
                 )}
@@ -478,10 +551,8 @@ export function CreateNorthStarDialog({
                 {currentStep === 1 && (
                   <div className="space-y-8">
                     <div className="text-center space-y-2">
-                      <h2 className="text-3xl font-bold">What's the Dream?</h2>
-                      <p className="text-slate-400">
-                        Where do you see yourself in 3 years?
-                      </p>
+                      <h2 className="text-3xl font-bold">{t.step1Title}</h2>
+                      <p className="text-slate-400">{t.step1Subtitle}</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -491,12 +562,12 @@ export function CreateNorthStarDialog({
                         className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
                       >
                         <Compass className="w-6 h-6 text-blue-400" />
-                        <span className="font-semibold">Find your direction</span>
+                        <span className="font-semibold">{t.findDirection}</span>
                         <span className="text-xs text-slate-500 font-normal text-center px-2">
-                          Discover your passion with our interactive Ikigai tool
+                          {t.findDirectionDesc}
                         </span>
                         <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-medium">
-                          5–10 mins
+                          {t.duration}
                         </span>
                       </Button>
                       <Button
@@ -505,9 +576,9 @@ export function CreateNorthStarDialog({
                         className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
                       >
                         <Map className="w-6 h-6 text-green-400" />
-                        <span className="font-semibold">Choose your university goal</span>
+                        <span className="font-semibold">{t.chooseUni}</span>
                         <span className="text-xs text-slate-500 font-normal">
-                          For students who already have a clear target
+                          {t.chooseUniDesc}
                         </span>
                       </Button>
                     </div>
@@ -522,7 +593,7 @@ export function CreateNorthStarDialog({
                             visionQuestion: e.target.value,
                           })
                         }
-                        placeholder="I want to build a startup that solves..."
+                        placeholder={t.step1Placeholder}
                         className="relative min-h-[200px] text-lg p-6 bg-slate-900/90 border-slate-700 rounded-xl focus:border-blue-500 transition-all resize-none"
                       />
                       <Button
@@ -537,14 +608,14 @@ export function CreateNorthStarDialog({
                         ) : (
                           <Wand2 className="w-4 h-4 mr-2" />
                         )}
-                        Enhance with AI
+                        {t.enhanceBtn}
                       </Button>
                     </div>
 
                     {showVisionComparison && (
                       <div className="bg-slate-900/50 border border-purple-500/30 rounded-xl p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex items-center gap-2 text-purple-400 font-medium">
-                          <Sparkles className="w-4 h-4" /> AI Suggestion
+                          <Sparkles className="w-4 h-4" /> {t.aiSuggestion}
                         </div>
                         <p className="text-slate-300 italic leading-relaxed">
                           "{aiEnhancedVision}"
@@ -561,14 +632,14 @@ export function CreateNorthStarDialog({
                             }}
                             className="bg-purple-600 hover:bg-purple-700"
                           >
-                            Use This Version
+                            {t.useThis}
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setShowVisionComparison(false)}
                           >
-                            Keep Mine
+                            {t.keepMine}
                           </Button>
                         </div>
                       </div>
@@ -580,10 +651,8 @@ export function CreateNorthStarDialog({
                 {currentStep === 2 && (
                   <div className="space-y-8">
                     <div className="text-center space-y-2">
-                      <h2 className="text-3xl font-bold">Key Milestones</h2>
-                      <p className="text-slate-400">
-                        Break it down into big steps
-                      </p>
+                      <h2 className="text-3xl font-bold">{t.step2Title}</h2>
+                      <p className="text-slate-400">{t.step2Subtitle}</p>
                     </div>
 
                     {directionFinderResult && (
@@ -592,7 +661,8 @@ export function CreateNorthStarDialog({
                         onClick={goBackToDirectionResults}
                         className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
                       >
-                        <ChevronLeft className="w-4 h-4 mr-1" /> Back to Direction Profile
+                        <ChevronLeft className="w-4 h-4 mr-1" />{" "}
+                        {t.backToDirection}
                       </Button>
                     )}
 
@@ -615,7 +685,7 @@ export function CreateNorthStarDialog({
                                 setFormData({ ...formData, milestones: newM });
                               }}
                               className="bg-slate-900 border-slate-700"
-                              placeholder="Milestone title..."
+                              placeholder={t.milestonePlaceholder}
                             />
                             <div className="flex gap-2">
                               <Input
@@ -670,7 +740,7 @@ export function CreateNorthStarDialog({
                         }
                         className="w-full border-dashed border-slate-700 hover:bg-slate-800 hover:text-white"
                       >
-                        <Plus className="w-4 h-4 mr-2" /> Add Milestone
+                        <Plus className="w-4 h-4 mr-2" /> {t.addMilestone}
                       </Button>
 
                       <div className="flex justify-center pt-4">
@@ -685,7 +755,7 @@ export function CreateNorthStarDialog({
                           ) : (
                             <Wand2 className="w-4 h-4 mr-2" />
                           )}
-                          Generate with AI
+                          {t.generateBtn}
                         </Button>
                       </div>
                     </div>
@@ -696,10 +766,8 @@ export function CreateNorthStarDialog({
                 {currentStep === 3 && (
                   <div className="space-y-8">
                     <div className="text-center space-y-2">
-                      <h2 className="text-3xl font-bold">Life Aspects</h2>
-                      <p className="text-slate-400">
-                        What areas does this impact?
-                      </p>
+                      <h2 className="text-3xl font-bold">{t.step3Title}</h2>
+                      <p className="text-slate-400">{t.step3Subtitle}</p>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -752,8 +820,8 @@ export function CreateNorthStarDialog({
                 {currentStep === 4 && (
                   <div className="space-y-8">
                     <div className="text-center space-y-2">
-                      <h2 className="text-3xl font-bold">Design Your Star</h2>
-                      <p className="text-slate-400">Make it unique to you</p>
+                      <h2 className="text-3xl font-bold">{t.step4Title}</h2>
+                      <p className="text-slate-400">{t.step4Subtitle}</p>
                     </div>
 
                     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
@@ -804,10 +872,8 @@ export function CreateNorthStarDialog({
                 {currentStep === 5 && (
                   <div className="text-center space-y-8">
                     <div className="space-y-2">
-                      <h2 className="text-3xl font-bold">Name Your Star</h2>
-                      <p className="text-slate-400">
-                        Give it a powerful title
-                      </p>
+                      <h2 className="text-3xl font-bold">{t.step5Title}</h2>
+                      <p className="text-slate-400">{t.step5Subtitle}</p>
                     </div>
 
                     <div className="max-w-md mx-auto">
@@ -816,7 +882,7 @@ export function CreateNorthStarDialog({
                         onChange={(e) =>
                           setFormData({ ...formData, title: e.target.value })
                         }
-                        placeholder="e.g. Operation: Mars Colonization"
+                        placeholder={t.namePlaceholder}
                         className="text-center text-2xl h-16 bg-slate-900 border-slate-700 rounded-xl focus:border-white focus:ring-white transition-all"
                         autoFocus
                       />
@@ -834,7 +900,7 @@ export function CreateNorthStarDialog({
                         ) : (
                           <>
                             <Rocket className="w-6 h-6 mr-2" />
-                            Launch North Star
+                            {t.launchBtn}
                           </>
                         )}
                       </Button>

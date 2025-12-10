@@ -1,15 +1,27 @@
-import { useState, useEffect } from 'react';
-import { University, SimpleRoadmap, EducationalFlowData, RecommendedUniversity } from '@/types/education';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Loader2, CheckCircle, Sparkles } from 'lucide-react';
+import { useState, useEffect } from "react";
+import {
+  University,
+  SimpleRoadmap,
+  EducationalFlowData,
+  RecommendedUniversity,
+} from "@/types/education";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  CheckCircle,
+  Sparkles,
+} from "lucide-react";
 
-import { UniversityPicker } from './UniversityPicker';
-import { InterestPriorityList } from './InterestPriorityList';
-import { RoadmapDisplay } from './RoadmapDisplay';
-import { DirectionFinderFlow } from './direction-finder/DirectionFinderFlow';
-import { DirectionFinderResult } from '@/types/direction-finder';
+import { UniversityPicker } from "./UniversityPicker";
+import { InterestPriorityList } from "./InterestPriorityList";
+import { RoadmapDisplay } from "./RoadmapDisplay";
+import { DirectionFinderFlow } from "./direction-finder/DirectionFinderFlow";
+import { DirectionFinderResult } from "@/types/direction-finder";
+import { searchThailandCurriculums } from "@/lib/supabase/education";
 
 interface EducationalPathwayFlowProps {
   vision: string;
@@ -18,7 +30,12 @@ interface EducationalPathwayFlowProps {
   onCancel: () => void;
 }
 
-type FlowStep = 'universities' | 'recommendation' | 'interests' | 'roadmap' | 'complete';
+type FlowStep =
+  | "universities"
+  | "recommendation"
+  | "interests"
+  | "roadmap"
+  | "complete";
 
 interface InterestItem {
   id: string;
@@ -30,60 +47,81 @@ export function EducationalPathwayFlow({
   vision,
   universities,
   onComplete,
-  onCancel
+  onCancel,
 }: EducationalPathwayFlowProps) {
-  const [currentStep, setCurrentStep] = useState<FlowStep>('universities');
-  const [selectedUniversities, setSelectedUniversities] = useState<University[]>([]);
+  const [currentStep, setCurrentStep] = useState<FlowStep>("universities");
+  const [selectedUniversities, setSelectedUniversities] = useState<
+    University[]
+  >([]);
   const [interests, setInterests] = useState<InterestItem[]>([]);
-  const [generatedRoadmap, setGeneratedRoadmap] = useState<SimpleRoadmap | null>(null);
+  const [generatedRoadmap, setGeneratedRoadmap] =
+    useState<SimpleRoadmap | null>(null);
   const [isGeneratingRoadmap, setIsGeneratingRoadmap] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recommendations, setRecommendations] = useState<RecommendedUniversity[]>([]);
+  const [recommendations, setRecommendations] = useState<
+    RecommendedUniversity[]
+  >([]);
 
   const steps = [
-    { id: 'universities', title: 'Choose Universities', description: 'Select your top 3 university choices' },
-    { id: 'interests', title: 'Set Priorities', description: 'Add and prioritize your interests' },
-    { id: 'roadmap', title: 'Your Roadmap', description: 'AI-generated path to your goals' },
-    { id: 'complete', title: 'Complete', description: 'Finalize your educational pathway' }
+    {
+      id: "universities",
+      title: "Choose Universities",
+      description: "Select your top 3 university choices",
+    },
+    {
+      id: "interests",
+      title: "Set Priorities",
+      description: "Add and prioritize your interests",
+    },
+    {
+      id: "roadmap",
+      title: "Your Roadmap",
+      description: "AI-generated path to your goals",
+    },
+    {
+      id: "complete",
+      title: "Complete",
+      description: "Finalize your educational pathway",
+    },
   ];
 
   // Helper to map current step to progress index
   const getProgressIndex = () => {
-    if (currentStep === 'recommendation') return 0;
-    return steps.findIndex(step => step.id === currentStep);
+    if (currentStep === "recommendation") return 0;
+    return steps.findIndex((step) => step.id === currentStep);
   };
-  
+
   const progress = ((getProgressIndex() + 1) / steps.length) * 100;
 
   const canProceedFromUniversities = selectedUniversities.length === 3;
   const canProceedFromInterests = interests.length > 0;
 
   const handleNext = async () => {
-    if (currentStep === 'universities' && canProceedFromUniversities) {
-      setCurrentStep('interests');
-    } else if (currentStep === 'interests' && canProceedFromInterests) {
+    if (currentStep === "universities" && canProceedFromUniversities) {
+      setCurrentStep("interests");
+    } else if (currentStep === "interests" && canProceedFromInterests) {
       await generateRoadmap();
-    } else if (currentStep === 'roadmap') {
+    } else if (currentStep === "roadmap") {
       const flowData: EducationalFlowData & { roadmap: SimpleRoadmap } = {
         vision,
         selectedUniversities,
-        interests: interests.map(i => i.name),
-        roadmap: generatedRoadmap!
+        interests: interests.map((i) => i.name),
+        roadmap: generatedRoadmap!,
       };
       onComplete(flowData);
     }
   };
 
   const handleBack = () => {
-    if (currentStep === 'universities') {
+    if (currentStep === "universities") {
       // Go back to edit vision statement
       onCancel();
-    } else if (currentStep === 'recommendation') {
-      setCurrentStep('universities');
-    } else if (currentStep === 'interests') {
-      setCurrentStep('universities');
-    } else if (currentStep === 'roadmap') {
-      setCurrentStep('interests');
+    } else if (currentStep === "recommendation") {
+      setCurrentStep("universities");
+    } else if (currentStep === "interests") {
+      setCurrentStep("universities");
+    } else if (currentStep === "roadmap") {
+      setCurrentStep("interests");
     }
   };
 
@@ -93,33 +131,38 @@ export function EducationalPathwayFlow({
     const newInterests: InterestItem[] = [];
 
     // Try to find universities from the matched programs
-    result.programs.forEach(program => {
-      const matchedUni = universities.find(u => 
-        program.name.toLowerCase().includes(u.name.toLowerCase()) || 
-        u.name.toLowerCase().includes(program.name.toLowerCase())
+    result.programs.forEach((program) => {
+      const matchedUni = universities.find(
+        (u) =>
+          program.name.toLowerCase().includes(u.name.toLowerCase()) ||
+          u.name.toLowerCase().includes(program.name.toLowerCase())
       );
-      
-      if (matchedUni && !newSelections.find(u => u.id === matchedUni.id) && newSelections.length < 3) {
+
+      if (
+        matchedUni &&
+        !newSelections.find((u) => u.id === matchedUni.id) &&
+        newSelections.length < 3
+      ) {
         newSelections.push(matchedUni);
       }
-      
+
       // Add program name as interest
-      if (!newInterests.find(i => i.name === program.name)) {
+      if (!newInterests.find((i) => i.name === program.name)) {
         newInterests.push({
           id: Date.now().toString() + Math.random(),
           name: program.name,
-          priority: newInterests.length + 1
+          priority: newInterests.length + 1,
         });
       }
     });
 
     // Also add direction vectors as interests
-    result.vectors.forEach(vector => {
-      if (!newInterests.find(i => i.name === vector.name)) {
+    result.vectors.forEach((vector) => {
+      if (!newInterests.find((i) => i.name === vector.name)) {
         newInterests.push({
           id: Date.now().toString() + Math.random(),
           name: vector.name,
-          priority: newInterests.length + 1
+          priority: newInterests.length + 1,
         });
       }
     });
@@ -127,43 +170,76 @@ export function EducationalPathwayFlow({
     if (newSelections.length > 0) {
       setSelectedUniversities(newSelections);
     }
-    
+
     if (newInterests.length > 0) {
       setInterests(newInterests);
     }
 
     // Move to next step (universities selection to confirm/edit)
-    setCurrentStep('universities');
+    setCurrentStep("universities");
   };
 
   const handleSelectRecommendation = (rec: RecommendedUniversity) => {
     // Find matching university in the list if possible, or create a temporary one
     // For now, we'll try to match by name or just use the name
-    const matchedUni = universities.find(u => u.name.toLowerCase().includes(rec.universityName.toLowerCase()));
-    
+    const matchedUni = universities.find((u) =>
+      u.name.toLowerCase().includes(rec.universityName.toLowerCase())
+    );
+
     if (matchedUni) {
-      if (!selectedUniversities.find(u => u.id === matchedUni.id)) {
-         if (selectedUniversities.length < 3) {
-             setSelectedUniversities([...selectedUniversities, matchedUni]);
-         } else {
-             // Replace the last one or handle full list
-             const newSelection = [...selectedUniversities];
-             newSelection[2] = matchedUni;
-             setSelectedUniversities(newSelection);
-         }
+      if (!selectedUniversities.find((u) => u.id === matchedUni.id)) {
+        if (selectedUniversities.length < 3) {
+          setSelectedUniversities([...selectedUniversities, matchedUni]);
+        } else {
+          // Replace the last one or handle full list
+          const newSelection = [...selectedUniversities];
+          newSelection[2] = matchedUni;
+          setSelectedUniversities(newSelection);
+        }
       }
     }
-    
+
     // Also add the faculty/major to interests if not present
     const interestName = `${rec.faculty} - ${rec.major}`;
-    if (!interests.find(i => i.name === interestName)) {
-        setInterests(prev => [
-            ...prev, 
-            { id: Date.now().toString(), name: interestName, priority: prev.length + 1 }
-        ]);
+    if (!interests.find((i) => i.name === interestName)) {
+      setInterests((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          name: interestName,
+          priority: prev.length + 1,
+        },
+      ]);
     }
 
-    setCurrentStep('universities');
+    setCurrentStep("universities");
+  };
+
+  const handlePickerSearch = async (query: string): Promise<University[]> => {
+    try {
+      const currResults = await searchThailandCurriculums(query);
+
+      // Transform curriculum results into University-like structure
+      const currUniversities = currResults.map((item: any, index: number) => ({
+        id: item.id ? `curr-${item.id}` : `curr-${index}-${Date.now()}`,
+        name: item.university_name_th,
+        short_name: item.curriculum_name_en || item.curriculum_name_th,
+        description: item.curriculum_name_th
+          ? `${item.curriculum_name_th} (${item.curriculum_name_en}) - ${item.level_name_th}`
+          : item.description,
+        country: "Thailand",
+        city: "Thailand",
+        admission_requirements: item.total_plan
+          ? `${item.total_plan}`
+          : undefined,
+        website_url: item.website_url,
+      })) as University[];
+
+      return currUniversities.slice(0, 50);
+    } catch (e) {
+      console.error("Search error in flow", e);
+      return [];
+    }
   };
 
   const generateRoadmap = async () => {
@@ -173,29 +249,29 @@ export function EducationalPathwayFlow({
     setError(null);
 
     try {
-      const response = await fetch('/api/education/roadmap/generate', {
-        method: 'POST',
+      const response = await fetch("/api/education/roadmap/generate", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           vision_statement: vision,
           top_university: selectedUniversities[0], // First choice university
           primary_interest: interests[0]?.name,
-          secondary_interests: interests.slice(1).map(i => i.name)
+          secondary_interests: interests.slice(1).map((i) => i.name),
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate roadmap');
+        throw new Error("Failed to generate roadmap");
       }
 
       const data = await response.json();
       setGeneratedRoadmap(data.roadmap);
-      setCurrentStep('roadmap');
+      setCurrentStep("roadmap");
     } catch (err) {
-      console.error('Error generating roadmap:', err);
-      setError('Failed to generate roadmap. Please try again.');
+      console.error("Error generating roadmap:", err);
+      setError("Failed to generate roadmap. Please try again.");
     } finally {
       setIsGeneratingRoadmap(false);
     }
@@ -223,16 +299,20 @@ export function EducationalPathwayFlow({
                 Cancel
               </Button>
             </div>
-            
+
             {/* Progress - Hide in recommendation mode */}
-            {currentStep !== 'recommendation' && (
+            {currentStep !== "recommendation" && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Step {getProgressIndex() + 1} of {steps.length}</span>
-                  <span className="text-slate-400">{Math.round(progress)}% Complete</span>
+                  <span className="text-slate-400">
+                    Step {getProgressIndex() + 1} of {steps.length}
+                  </span>
+                  <span className="text-slate-400">
+                    {Math.round(progress)}% Complete
+                  </span>
                 </div>
                 <Progress value={progress} className="h-2" />
-                
+
                 {/* Step titles */}
                 <div className="grid grid-cols-4 gap-2 mt-4">
                   {steps.map((step, index) => (
@@ -240,8 +320,8 @@ export function EducationalPathwayFlow({
                       key={step.id}
                       className={`text-center p-2 rounded ${
                         getProgressIndex() >= index
-                          ? 'bg-blue-600/20 text-blue-400'
-                          : 'bg-slate-800 text-slate-500'
+                          ? "bg-blue-600/20 text-blue-400"
+                          : "bg-slate-800 text-slate-500"
                       }`}
                     >
                       <div className="text-xs font-medium">{step.title}</div>
@@ -263,19 +343,22 @@ export function EducationalPathwayFlow({
 
       {/* Step Content */}
       <div className="min-h-[400px]">
-        {currentStep === 'universities' && (
+        {currentStep === "universities" && (
           <Card className="bg-slate-900 border-slate-700">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-white text-lg">Choose Your Top 3 Universities</CardTitle>
+                <CardTitle className="text-white text-lg">
+                  Choose Your Top 3 Universities
+                </CardTitle>
                 <p className="text-slate-400 text-sm">
-                  Select exactly 3 universities you'd like to attend, in order of preference.
+                  Select exactly 3 universities you'd like to attend, in order
+                  of preference.
                 </p>
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
-                onClick={() => setCurrentStep('recommendation')}
+                onClick={() => setCurrentStep("recommendation")}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 Help me choose
@@ -287,26 +370,30 @@ export function EducationalPathwayFlow({
                 selectedUniversities={selectedUniversities}
                 onSelectionChange={setSelectedUniversities}
                 maxSelections={3}
+                onSearch={handlePickerSearch}
               />
             </CardContent>
           </Card>
         )}
 
-        {currentStep === 'recommendation' && (
-           <div className="space-y-6">
-             <DirectionFinderFlow 
-               onComplete={handleDirectionFinderComplete}
-               onCancel={() => setCurrentStep('universities')}
-             />
-           </div>
+        {currentStep === "recommendation" && (
+          <div className="space-y-6">
+            <DirectionFinderFlow
+              onComplete={handleDirectionFinderComplete}
+              onCancel={() => setCurrentStep("universities")}
+            />
+          </div>
         )}
 
-        {currentStep === 'interests' && (
+        {currentStep === "interests" && (
           <Card className="bg-slate-900 border-slate-700">
             <CardHeader className="pb-3">
-              <CardTitle className="text-white text-lg">Set Your Interest Priorities</CardTitle>
+              <CardTitle className="text-white text-lg">
+                Set Your Interest Priorities
+              </CardTitle>
               <p className="text-slate-400 text-sm">
-                Add your interests and arrange them by priority. Your top interest will be the focus of your roadmap.
+                Add your interests and arrange them by priority. Your top
+                interest will be the focus of your roadmap.
               </p>
             </CardHeader>
             <CardContent className="pt-0">
@@ -318,7 +405,7 @@ export function EducationalPathwayFlow({
           </Card>
         )}
 
-        {currentStep === 'roadmap' && (
+        {currentStep === "roadmap" && (
           <div className="space-y-6">
             {isGeneratingRoadmap ? (
               <Card className="bg-slate-900 border-slate-700">
@@ -345,9 +432,7 @@ export function EducationalPathwayFlow({
                   <p className="text-slate-400 mb-4">
                     Failed to generate roadmap. Please try again.
                   </p>
-                  <Button onClick={generateRoadmap}>
-                    Try Again
-                  </Button>
+                  <Button onClick={generateRoadmap}>Try Again</Button>
                 </CardContent>
               </Card>
             )}
@@ -365,7 +450,7 @@ export function EducationalPathwayFlow({
       )}
 
       {/* Navigation */}
-      {currentStep !== 'recommendation' && (
+      {currentStep !== "recommendation" && (
         <Card className="bg-slate-900 border-slate-700">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
@@ -376,7 +461,7 @@ export function EducationalPathwayFlow({
                 className="border-slate-600"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                {currentStep === 'universities' ? 'Edit Vision' : 'Back'}
+                {currentStep === "universities" ? "Edit Vision" : "Back"}
               </Button>
 
               <div className="text-center">
@@ -390,14 +475,15 @@ export function EducationalPathwayFlow({
               <Button
                 onClick={handleNext}
                 disabled={
-                  (currentStep === 'universities' && !canProceedFromUniversities) ||
-                  (currentStep === 'interests' && !canProceedFromInterests) ||
+                  (currentStep === "universities" &&
+                    !canProceedFromUniversities) ||
+                  (currentStep === "interests" && !canProceedFromInterests) ||
                   isGeneratingRoadmap ||
-                  (currentStep === 'roadmap' && !generatedRoadmap)
+                  (currentStep === "roadmap" && !generatedRoadmap)
                 }
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {currentStep === 'roadmap' ? (
+                {currentStep === "roadmap" ? (
                   <>
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Complete Setup

@@ -37,17 +37,28 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         setLanguage(savedLang);
       }
 
-      // 2. Try Supabase user_metadata (truth)
+      // 2. Try Supabase user_settings table (truth)
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (user?.user_metadata?.language) {
-        const dbLang = user.user_metadata.language as Language;
-        if (dbLang === "en" || dbLang === "th") {
-          setLanguage(dbLang);
-          // Sync local storage if different
-          if (dbLang !== savedLang) {
-            localStorage.setItem("app-language", dbLang);
+
+      if (user) {
+        // Use RPC to safe-get settings (creates row if missing)
+        const { data: settings } = await supabase.rpc(
+          "get_or_create_user_settings",
+          {
+            request_user_id: user.id,
+          }
+        );
+
+        if (settings?.language) {
+          const dbLang = settings.language as Language;
+          if (dbLang === "en" || dbLang === "th") {
+            setLanguage(dbLang);
+            // Sync local storage if different
+            if (dbLang !== savedLang) {
+              localStorage.setItem("app-language", dbLang);
+            }
           }
         }
       }
@@ -63,13 +74,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLanguage(lang);
     localStorage.setItem("app-language", lang);
 
-    // Persist to DB
-    const { error } = await supabase.auth.updateUser({
-      data: { language: lang },
-    });
+    // Persist to DB table
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error("Failed to save language preference:", error);
+    if (user) {
+      const { error } = await supabase
+        .from("user_settings")
+        .upsert({ user_id: user.id, language: lang }); // Upsert handles insert/update
+
+      if (error) {
+        console.error("Failed to save language preference:", error);
+      }
     }
   };
 

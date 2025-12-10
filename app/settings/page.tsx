@@ -41,9 +41,14 @@ export default function SettingsPage() {
 
   const handleThemeChange = async (newTheme: string) => {
     setTheme(newTheme);
-    await supabase.auth.updateUser({
-      data: { theme: newTheme },
-    });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("user_settings")
+        .upsert({ user_id: user.id, theme: newTheme });
+    }
   };
 
   const settingsSections = [
