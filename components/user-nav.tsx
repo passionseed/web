@@ -160,12 +160,7 @@ export function UserNav({ user }: UserNavProps) {
               <span>Dashboard</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/me/tree">
-              <Leaf className="mr-2 h-4 w-4" />
-              <span>Passion Tree Garden</span>
-            </Link>
-          </DropdownMenuItem>
+
           {isAdmin && (
             <DropdownMenuItem asChild>
               <Link href="/admin">
@@ -176,17 +171,17 @@ export function UserNav({ user }: UserNavProps) {
           )}
           <DropdownMenuItem asChild>
             <Link
-              href="https://instagram.com/passion_seed.th"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/contact"
             >
               <MessageCircle className="mr-2 h-4 w-4" />
               <span>Talk to Us</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+          <DropdownMenuItem asChild>
+            <Link href="/settings">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

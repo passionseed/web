@@ -107,12 +107,6 @@ function JourneyMapCanvasInner({
     setIsNavigationExpanded,
   } = useJourneyMapState();
 
-  // Zoom level state
-  const [zoomLevel, setZoomLevel] = React.useState<"low" | "medium" | "high">(
-    "medium"
-  );
-  const [numericZoom, setNumericZoom] = React.useState<number>(1);
-
   // North Star dialog state
   const [createNorthStarOpen, setCreateNorthStarOpen] = React.useState(false);
   const [editNorthStarOpen, setEditNorthStarOpen] = React.useState(false);
@@ -182,15 +176,6 @@ function JourneyMapCanvasInner({
   const { syncStatus, syncMessage, handleNodeDragStop, hasPendingSave } = usePositionSync(
     updateProjectPositionLocal,
     updateNorthStarPositionLocal
-  );
-
-  // Handle zoom changes from the canvas
-  const handleZoomChange = useCallback(
-    (zoomLevel: "low" | "medium" | "high", numericZoom: number) => {
-      setZoomLevel(zoomLevel);
-      setNumericZoom(numericZoom);
-    },
-    []
   );
 
   // Panel refs
@@ -346,7 +331,6 @@ function JourneyMapCanvasInner({
       },
       paths,
       northStars,
-      numericZoom
     );
   }, [
     projects,
@@ -361,7 +345,6 @@ function JourneyMapCanvasInner({
     handleEditNorthStar,
     handleCreateProjectForNorthStar,
     handleQuickStatusChange,
-    numericZoom,
   ]);
 
   // Update ReactFlow nodes/edges when map data changes
@@ -497,7 +480,6 @@ function JourneyMapCanvasInner({
             onCreateProject={openCreateDialog}
             onCreateNorthStar={openCreateNorthStarDialog}
             onProjectPathCreated={handleProjectPathCreated}
-            onZoomChange={handleZoomChange}
             northStars={northStars}
             onEditNorthStar={handleEditNorthStar}
             onViewNorthStarDetails={(id) => {

@@ -112,7 +112,8 @@ export async function recommendUniversities(
 export async function conductDirectionConversation(
   history: { role: 'user' | 'assistant'; content: string }[],
   answers: AssessmentAnswers,
-  modelName?: string
+  modelName?: string,
+  language: 'en' | 'th' = 'en'
 ): Promise<{ messages: string[]; options: string[] }> {
   try {
     console.log("conductDirectionConversation called");
@@ -121,13 +122,23 @@ export async function conductDirectionConversation(
     console.log("Model:", modelName || "default");
 
     const systemPrompt = `
-      You are a cool, casual mentor helping a high school student find their future path. You are NOT a stiff professor. Use emojis and keeping it high-energy.
+      You are a cool, casual mentor helping a high school student find their future path.
+      Language: ${language === 'th' ? 'Thai (Informal, encouraging, like a supportive senior/P\')' : 'English'}
       
-      Your Goal: 
-      Connect their "Inner Ikigai" (Passion + Skill, which we know from the assessment) to their "Outer Ikigai" (What the World Needs + What They Can Be Paid For).
+      Your Identity:
+      - Name: "P'Seed" (if Thai) or "Seed" (if English)
+      - Tone: Casual, empathetic, insightful, enthusiastic. Like a supportive older sibling.
+      - Goal: Help the student reflect on their assessment answers to find their "North Star" (future direction).
       
       Student Assessment Context (Inner Ikigai):
       ${JSON.stringify(answers, null, 2)}
+
+      Conversation Rules:
+      1. Keep messages short (2-3 sentences max).
+      2. Ask ONE thought-provoking question at a time.
+      3. Focus on "Why" and "How" to dig deeper into their interests.
+      4. Synthesize their answers to show you understand.
+      5. If in Thai, use particles like "ครับ/ค่ะ" but keep it friendly/semi-casual.
       
       Strategy:
       1. If this is the start: Hype up their strengths/interests! Then immediately ask a question to bridge to the real world.
@@ -175,23 +186,69 @@ export async function conductDirectionConversation(
 export async function generateDirectionProfile(
   history: { role: 'user' | 'assistant'; content: string }[],
   answers: AssessmentAnswers,
-  modelName?: string
+  modelName?: string,
+  language: 'en' | 'th' = 'en'
 ): Promise<DirectionFinderResult> {
   try {
     const prompt = `
       Based on the student's assessment data and the conversation history, generate a comprehensive Direction Profile.
       
+      Language: ${language === 'th' ? 'Thai' : 'English'}
+      
       Assessment Data:
       ${JSON.stringify(answers, null, 2)}
       
       Conversation History:
-      ${history.map(m => `${m.role}: ${m.content}`).join('\n')}
+      ${JSON.stringify(history, null, 2)}
       
-      Generate a JSON object with:
-      1. Ikigai Profile (Energizers, Strengths, Values, Reality)
-      2. 3 Direction Vectors (distinct paths). IMPORTANT: Calculate 'match_scores' (0-100) for 'passion' (interest) and 'skill' (ability) based on the user's answers. 'overall' is the average.
-      3. 3 Matched Programs (specific university programs or general fields)
-      4. Suggested Commitments (micro-actions)
+      Output JSON format:
+      {
+        "profile": {
+          "energizers": ["List 3 specific things that give them energy"],
+          "strengths": ["List 3 core strengths"],
+          "values": ["List 3 core values"],
+          "reality": ["List 3 aspects of reality/market they care about"]
+        },
+        "vectors": [
+          {
+            "name": "Creative/Cool/Inspiring Role Title",
+            "fit_reason": {
+              "interest_alignment": "One sentence on why this fits their interests",
+              "strength_alignment": "One sentence on why this fits their strengths",
+              "value_alignment": "One sentence on why this fits their values"
+            },
+            "match_scores": {
+              "overall": 85,
+              "passion": 85,
+              "skill": 90
+            },
+            "exploration_steps": [
+              { "type": "activity", "description": "Specific project/activity idea 1", "reason": "Why this matters" },
+              { "type": "study", "description": "Specific study idea 2", "reason": "Why this matters" },
+              { "type": "camp", "description": "Specific camp/event idea 3", "reason": "Why this matters" }
+            ],
+            "first_step": "The very first micro-step to take today"
+          }
+          // ... generate 3 vectors total
+        ],
+        "programs": [
+          {
+            "name": "Program Name",
+            "match_level": "High",
+            "match_percentage": 90,
+            "reason": "Why this program fits",
+            "deadline": "YYYY-MM-DD",
+            "application_link": "https://example.com"
+          }
+        ],
+        "commitments": {
+          "this_week": ["Commitment 1", "Commitment 2"],
+          "this_month": ["Commitment 1", "Commitment 2"]
+        }
+      }
+      
+      IMPORTANT: Ensure the JSON is valid. Do not include markdown formatting.
+      If Language is Thai, all content in the JSON values MUST be in Thai.
     `;
 
     const { object } = await generateObject({
@@ -216,7 +273,7 @@ export async function generateDirectionProfile(
             skill: z.number().min(0).max(100),
           }),
           exploration_steps: z.array(z.object({
-            type: z.enum(['project', 'study', 'activity', 'community']).describe("The type of milestone project"),
+            type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe("The type of milestone project"),
             description: z.string().describe("Title of the project or milestone"),
             reason: z.string().optional().describe("Why this project matters"),
           })).describe("3-4 suggested projects or milestones to help the student progress in this direction"),

@@ -61,7 +61,7 @@ export interface DirectionVector {
     skill: number; // 0-100
   };
   exploration_steps: {
-    type: 'camp' | 'study' | 'activity' | 'person';
+    type: 'camp' | 'study' | 'activity' | 'person' | 'project' | 'community';
     description: string;
     reason?: string;
   }[];

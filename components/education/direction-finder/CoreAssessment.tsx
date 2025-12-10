@@ -1,4 +1,6 @@
 import { AssessmentStep, AssessmentAnswers } from '@/types/direction-finder';
+import { translations } from '@/lib/i18n/direction-finder';
+import type { Language } from '@/lib/i18n/direction-finder';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,9 +17,10 @@ interface CoreAssessmentProps {
   onAnswer: (answers: Partial<AssessmentAnswers>) => void;
   onNext: () => void;
   onBack: () => void;
+  lang: Language;
 }
 
-const QuestionWrapper = ({ title, subtitle, children, canProceed = true, onBack, onNext }: any) => (
+const QuestionWrapper = ({ title, subtitle, children, canProceed = true, onBack, onNext, backLabel, nextLabel }: any) => (
   <div className="space-y-6">
     <div className="space-y-2">
       <h3 className="text-xl font-semibold text-white">{title}</h3>
@@ -32,7 +35,7 @@ const QuestionWrapper = ({ title, subtitle, children, canProceed = true, onBack,
         onClick={onBack}
         className="text-slate-400 hover:text-white"
       >
-        <ChevronLeft className="w-4 h-4 mr-2" /> Back
+        <ChevronLeft className="w-4 h-4 mr-2" /> {backLabel || 'Back'}
       </Button>
       <div className="flex gap-2">
         {process.env.NODE_ENV === 'development' && (
@@ -52,14 +55,15 @@ const QuestionWrapper = ({ title, subtitle, children, canProceed = true, onBack,
             !canProceed && "opacity-50 cursor-not-allowed"
           )}
         >
-          Next <ChevronRight className="ml-2 w-4 h-4" />
+          {nextLabel || 'Next'} <ChevronRight className="ml-2 w-4 h-4" />
         </Button>
       </div>
     </div>
   </div>
 );
 
-export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: CoreAssessmentProps) {
+export function CoreAssessment({ step, answers, onAnswer, onNext, onBack, lang }: CoreAssessmentProps) {
+  const t = translations[lang];
   const [localAnswers, setLocalAnswers] = useState<Partial<AssessmentAnswers>>(answers);
   const [customSkill, setCustomSkill] = useState("");
 
@@ -87,18 +91,18 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     return (
       <div className="text-center space-y-6 py-8 animate-in zoom-in duration-300">
         <div className="text-4xl">🧭</div>
-        <h2 className="text-2xl font-bold text-white">Student Direction Finder</h2>
+        <h2 className="text-2xl font-bold text-white">{t.intro.title}</h2>
         <p className="text-slate-300 max-w-md mx-auto">
-          Quick assessment of what you love and what you're good at.
+          {t.intro.description}
           <br/>
-          <span className="text-sm text-slate-400 mt-2 block">Time: 5-7 minutes</span>
+          <span className="text-sm text-slate-400 mt-2 block">{t.intro.time}</span>
         </p>
         <div className="flex gap-4 justify-center">
           <Button variant="ghost" onClick={onBack} className="text-slate-400 hover:text-white">
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button onClick={onNext} size="lg" className="bg-white/10 hover:bg-white/20 text-white border border-white/10">
-            Start Assessment <ChevronRight className="ml-2 w-4 h-4" />
+            {t.intro.start_button} <ChevronRight className="ml-2 w-4 h-4" />
           </Button>
         </div>
       </div>
@@ -107,53 +111,43 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
   // Q1: Time Flies When... (Select Top 3)
   if (step === 'q1') {
-    const options = [
-      "Creating/building something (art, code, crafts, music)",
-      "Helping or teaching someone",
-      "Competing (sports, games, debates)",
-      "Deep learning (research, reading, exploring)",
-      "Organizing/planning",
-      "Performing for others",
-      "Solving puzzles/problems",
-      "Leading or influencing others",
-      "Analyzing strategies/systems",
-      "Exploring nature/outdoors"
-    ];
-    
+    // Use keys from dictionary for stability
+    const optionKeys = Object.keys(t.questions.q1.options) as Array<keyof typeof t.questions.q1.options>;
     const currentSelection = localAnswers.q1_time_flies || [];
     
-    const toggleSelection = (option: string) => {
-      if (currentSelection.includes(option)) {
-        updateAnswer('q1_time_flies', currentSelection.filter(i => i !== option));
+    const toggleSelection = (key: string) => {
+      // We store the KEY now, not the full text
+      if (currentSelection.includes(key)) {
+        updateAnswer('q1_time_flies', currentSelection.filter(i => i !== key));
       } else if (currentSelection.length < 3) {
-        updateAnswer('q1_time_flies', [...currentSelection, option]);
+        updateAnswer('q1_time_flies', [...currentSelection, key]);
       }
     };
 
     return (
       <QuestionWrapper 
-        title="Time Flies When..." 
-        subtitle={`Select your top activities (1-3) (${currentSelection.length}/3 selected)`}
+        title={t.questions.q1.title} 
+        subtitle={`${t.questions.q1.subtitle} (${currentSelection.length}/3)`}
         canProceed={currentSelection.length >= 1 && currentSelection.length <= 3}
         onBack={onBack}
         onNext={onNext}
       >
         <div className="grid gap-3">
-          {options.map((option) => (
+          {optionKeys.map((key) => (
             <div 
-              key={option}
-              onClick={() => toggleSelection(option)}
+              key={key as string}
+              onClick={() => toggleSelection(key as string)}
               className={cn(
                 "p-4 rounded-lg border cursor-pointer transition-all flex items-center justify-between",
-                currentSelection.includes(option) 
+                currentSelection.includes(key as string) 
                   ? "bg-blue-600/20 border-blue-500 text-white" 
                   : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500"
               )}
             >
-              <span>{option}</span>
-              {currentSelection.includes(option) && (
+              <span>{t.questions.q1.options[key as keyof typeof t.questions.q1.options]}</span>
+              {currentSelection.includes(key as string) && (
                 <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                  #{currentSelection.indexOf(option) + 1}
+                  #{currentSelection.indexOf(key as string) + 1}
                 </span>
               )}
             </div>
@@ -165,44 +159,37 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
   // Q2: Energy Check (Pick 3)
   if (step === 'q2') {
-    const options = [
-      "🛠️ Making things with my hands",
-      "💡 Working with ideas and concepts",
-      "👥 Collaborating with people",
-      "📊 Organizing systems and data",
-      "🎨 Creative expression",
-      "🏃 Physical activity",
-      "🎯 Leading or teaching"
-    ];
+    const optionKeys = Object.keys(t.questions.q2.options) as Array<keyof typeof t.questions.q2.options>;
+
     const currentSelection = localAnswers.q2_energy_sources || [];
 
     return (
       <QuestionWrapper 
-        title="Energy Check" 
-        subtitle={`Which give you ENERGY? Pick 3 (${currentSelection.length}/3)`}
+        title={t.questions.q2.title} 
+        subtitle={`${t.questions.q2.subtitle} (${currentSelection.length}/3)`}
         canProceed={currentSelection.length === 3}
         onBack={onBack}
         onNext={onNext}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {options.map((option) => (
+          {optionKeys.map((key) => (
             <div 
-              key={option}
+              key={key as string}
               onClick={() => {
-                if (currentSelection.includes(option)) {
-                  updateAnswer('q2_energy_sources', currentSelection.filter(i => i !== option));
+                if (currentSelection.includes(key as string)) {
+                  updateAnswer('q2_energy_sources', currentSelection.filter(i => i !== key));
                 } else if (currentSelection.length < 3) {
-                  updateAnswer('q2_energy_sources', [...currentSelection, option]);
+                  updateAnswer('q2_energy_sources', [...currentSelection, key as string]);
                 }
               }}
               className={cn(
                 "p-4 rounded-lg border cursor-pointer transition-all",
-                currentSelection.includes(option) 
+                currentSelection.includes(key) 
                   ? "bg-green-600/20 border-green-500 text-white" 
                   : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500"
               )}
             >
-              {option}
+              {t.questions.q2.options[key as keyof typeof t.questions.q2.options]}
             </div>
           ))}
         </div>
@@ -266,36 +253,37 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
     return (
       <QuestionWrapper 
-        title="Work Style" 
-        subtitle="Click to show your preference"
+        title={t.questions.q3.title} 
+        subtitle={t.questions.q3.subtitle}
         onBack={onBack}
         onNext={onNext}
+        lang={lang}
       >
         <div className="space-y-6 bg-slate-900/30 p-4 rounded-lg border border-slate-800">
           {renderClicker(
             'indoor_outdoor', 
-            { label: 'Indoor', icon: Home }, 
-            { label: 'Outdoor', icon: Sun }
+            { label: t.questions.q3.labels.indoor, icon: Home }, 
+            { label: t.questions.q3.labels.outdoor, icon: Sun }
           )}
           {renderClicker(
             'structured_flexible', 
-            { label: 'Structured', icon: Calendar }, 
-            { label: 'Flexible', icon: Sparkles }
+            { label: t.questions.q3.labels.structured, icon: Calendar }, 
+            { label: t.questions.q3.labels.flexible, icon: Sparkles }
           )}
           {renderClicker(
             'solo_team', 
-            { label: 'Solo', icon: User }, 
-            { label: 'Team', icon: Users }
+            { label: t.questions.q3.labels.solo, icon: User }, 
+            { label: t.questions.q3.labels.team, icon: Users }
           )}
           {renderClicker(
             'hands_on_theory', 
-            { label: 'Hands-on', icon: Wrench }, 
-            { label: 'Theory', icon: Lightbulb }
+            { label: t.questions.q3.labels.hands_on, icon: Wrench }, 
+            { label: t.questions.q3.labels.theory, icon: Lightbulb }
           )}
           {renderClicker(
             'routine_challenge', 
-            { label: 'Routine', icon: Clock }, 
-            { label: 'Challenge', icon: Mountain }
+            { label: t.questions.q3.labels.routine, icon: Clock }, 
+            { label: t.questions.q3.labels.challenge, icon: Mountain }
           )}
         </div>
       </QuestionWrapper>
@@ -305,11 +293,13 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
   // Q4: Subject Love (Matrix: Love vs Capable)
   if (step === 'q4') {
     const categories = {
-      "STEM": ["Math/Logic", "Science (Bio/Chem/Phys)", "Technology/Coding", "Engineering/Building"],
-      "Creative": ["Visual Arts/Design", "Performing Arts", "Writing/Communication"],
-      "Social": ["Psychology/Human Behavior", "Business/Entrepreneurship", "Healthcare/Medicine", "Education/Teaching", "Social Issues/Politics"],
-      "Other": ["Sports/Athletics", "Food/Culinary", "Fashion/Style", "Gaming/Esports"]
+      [t.questions.q4.categories.stem]: ["math_logic", "science", "technology", "engineering"],
+      [t.questions.q4.categories.creative]: ["visual_arts", "performing_arts", "writing"],
+      [t.questions.q4.categories.social]: ["psychology", "business", "healthcare", "education", "social_issues"],
+      [t.questions.q4.categories.other]: ["sports", "food", "fashion", "gaming"]
     };
+    // Map keys to displayed subjects
+    const subjectMap = t.questions.q4.subjects;
 
     const selections = localAnswers.q4_subject_interests || [];
 
@@ -345,11 +335,12 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
     return (
       <QuestionWrapper 
-        title="Subject Matrix" 
-        subtitle="For subjects you like, rate how much you LOVE it vs how CAPABLE you are."
+        title={t.questions.q4.title} 
+        subtitle={t.questions.q4.subtitle}
         canProceed={selections.length > 0}
         onBack={onBack}
         onNext={onNext}
+        lang={lang}
       >
         <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
           {sortedSubjects.map(({ category, subject }) => {
@@ -367,7 +358,10 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
               >
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
-                    <span className={selection ? "text-white font-medium" : "text-slate-400"}>{subject}</span>
+                    <span className={selection ? "text-white font-medium" : "text-slate-400"}>
+                      {/* Display translated subject name */}
+                      {subjectMap[subject as keyof typeof subjectMap] || subject}
+                    </span>
                     <span className="text-[10px] text-slate-500 uppercase tracking-wider">{category}</span>
                   </div>
                 </div>
@@ -377,7 +371,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
                     {/* Love Rating */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <Heart className="w-4 h-4 text-pink-500" /> Love / Interest
+                        <Heart className="w-4 h-4 text-pink-500" /> {t.questions.q4.labels.love}
                       </div>
                       <div className="flex gap-2">
                         {[1, 2, 3, 4, 5].map(rating => (
@@ -400,7 +394,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
                     {/* Capable Rating */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <Zap className="w-4 h-4 text-yellow-500" /> Capable / Skill
+                        <Zap className="w-4 h-4 text-yellow-500" /> {t.questions.q4.labels.capable}
                       </div>
                       <div className="flex gap-2">
                         {[1, 2, 3, 4, 5].map(rating => (
@@ -432,52 +426,52 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
   // Q5: Flow State
   if (step === 'q5') {
     const flowData = localAnswers.q5_flow_state || { activity: '', engaging_factors: [] };
-    const factors = [
-      "It challenged me just right", "I was creating something", "I was with people I like",
-      "I was learning something new", "I had clear goals/progress", "I had freedom to do it my way",
-      "It helped someone", "It was competitive/playful"
-    ];
+    // Map keys for factors
+    const factorKeys = Object.keys(t.questions.q5.factors) as Array<keyof typeof t.questions.q5.factors>;
 
     return (
       <QuestionWrapper 
-        title="Flow State Memory" 
-        subtitle="Describe the last time you were so absorbed you lost track of time"
+        title={t.questions.q5.title} 
+        subtitle={t.questions.q5.subtitle}
         canProceed={!!flowData.activity && flowData.engaging_factors.length > 0}
         onBack={onBack}
         onNext={onNext}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
       >
         <div className="space-y-6">
           <div className="space-y-2">
-            <Label>What were you doing?</Label>
+            <Label>{t.questions.q5.activity_label}</Label>
             <Textarea 
               value={flowData.activity}
               onChange={(e) => updateAnswer('q5_flow_state', { ...flowData, activity: e.target.value })}
-              placeholder="e.g. Editing a video for my friend's birthday..."
+              placeholder={t.questions.q5.activity_placeholder}
               className="bg-slate-800 border-slate-700"
             />
           </div>
           <div className="space-y-2">
-            <Label>What made it engaging? (Pick top 2)</Label>
+            <Label>{t.questions.q5.factors_label}</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {factors.map(factor => (
+              {factorKeys.map(key => (
                 <div 
-                  key={factor}
+                  key={key as string}
                   onClick={() => {
                     const current = flowData.engaging_factors;
-                    if (current.includes(factor)) {
-                      updateAnswer('q5_flow_state', { ...flowData, engaging_factors: current.filter(f => f !== factor) });
+                    // Store key
+                    if (current.includes(key as string)) {
+                      updateAnswer('q5_flow_state', { ...flowData, engaging_factors: current.filter(f => f !== key) });
                     } else if (current.length < 2) {
-                      updateAnswer('q5_flow_state', { ...flowData, engaging_factors: [...current, factor] });
+                      updateAnswer('q5_flow_state', { ...flowData, engaging_factors: [...current, key as string] });
                     }
                   }}
                   className={cn(
                     "p-3 rounded border cursor-pointer text-sm",
-                    flowData.engaging_factors.includes(factor)
+                    flowData.engaging_factors.includes(key)
                       ? "bg-purple-600/20 border-purple-500 text-white"
                       : "bg-slate-800 border-slate-700 text-slate-400"
                   )}
                 >
-                  {factor}
+                  {t.questions.q5.factors[key as keyof typeof t.questions.q5.factors]}
                 </div>
               ))}
             </div>
@@ -492,16 +486,16 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     return (
       <div className="text-center space-y-6 py-12 animate-in zoom-in duration-300">
         <div className="text-4xl">💪</div>
-        <h2 className="text-2xl font-bold text-white">Part 2: What You're Good At</h2>
+        <h2 className="text-2xl font-bold text-white">{t.part2.title}</h2>
         <p className="text-slate-300">
-          Now let's look at your natural strengths and skills.
+          {t.part2.description}
         </p>
         <div className="flex gap-4 justify-center">
           <Button variant="ghost" onClick={onBack} className="text-slate-400 hover:text-white">
-            <ChevronLeft className="w-4 h-4 mr-2" /> Back
+            <ChevronLeft className="w-4 h-4 mr-2" /> {t.common.back}
           </Button>
           <Button onClick={onNext} size="lg" className="bg-white/10 hover:bg-white/20 text-white border border-white/10">
-            Continue <ChevronRight className="ml-2 w-4 h-4" />
+            {t.common.continue} <ChevronRight className="ml-2 w-4 h-4" />
           </Button>
         </div>
       </div>
@@ -511,23 +505,28 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
   // Q6: Strongest Skills (Pick 5 + Custom)
   if (step === 'q6') {
     const skillCategories = {
-      "Creative": ["Visual design", "Writing/storytelling", "Original ideas", "Artistic/musical"],
-      "Analytical": ["Math/logic", "Research", "Problem-solving", "Pattern spotting"],
-      "Technical": ["Tech/computers", "Building/fixing", "Systems thinking", "Coding"],
-      "People": ["Explaining clearly", "Empathy", "Public speaking", "Making people comfortable"],
-      "Organizational": ["Planning", "Detail-oriented", "Leading projects", "Focus"],
-      "Physical": ["Athletics", "Manual precision", "Endurance"]
+      [t.questions.q6.categories.creative]: ["visual_design", "writing", "original_ideas", "artistic"],
+      [t.questions.q6.categories.analytical]: ["math", "research", "problem_solving", "pattern_spotting"],
+      [t.questions.q6.categories.technical]: ["tech", "building", "systems", "coding"],
+      [t.questions.q6.categories.people]: ["explaining", "empathy", "public_speaking", "comforting"],
+      [t.questions.q6.categories.organizational]: ["planning", "detail", "leading", "focus"],
+      [t.questions.q6.categories.physical]: ["athletics", "manual", "endurance"]
     };
+    
+    // Map keys to displayed skills
+    const skillMap = t.questions.q6.skills;
     
     const selectedSkills = localAnswers.q6_strongest_skills || [];
 
     return (
       <QuestionWrapper 
-        title="Strongest Skills" 
-        subtitle={`Select your top 5 strengths (${selectedSkills.length}/5)`}
+        title={t.questions.q6.title} 
+        subtitle={`${t.questions.q6.subtitle} (${selectedSkills.length}/5)`}
         canProceed={selectedSkills.length === 5}
         onBack={onBack}
         onNext={onNext}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
       >
         <div className="space-y-4">
           {/* Custom Input */}
@@ -535,12 +534,12 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
             <Input 
               value={customSkill}
               onChange={(e) => setCustomSkill(e.target.value)}
-              placeholder="Add a custom skill..."
+              placeholder={t.questions.q6.custom_placeholder}
               className="bg-slate-800 border-slate-700"
               onKeyDown={(e) => e.key === 'Enter' && addCustomSkill()}
             />
             <Button onClick={addCustomSkill} disabled={!customSkill.trim() || selectedSkills.length >= 5} variant="secondary">
-              Add
+              {t.questions.q6.add_button}
             </Button>
           </div>
 
@@ -566,7 +565,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
                           : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
                       )}
                     >
-                      {skill}
+                      {skillMap[skill as keyof typeof skillMap] || skill}
                     </div>
                   ))}
                 </div>
@@ -579,7 +578,7 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
             <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
               {selectedSkills.map(skill => (
                 <Badge key={skill} variant="secondary" className="bg-green-900/30 text-green-300 hover:bg-green-900/50 cursor-pointer" onClick={() => updateAnswer('q6_strongest_skills', selectedSkills.filter(s => s !== skill))}>
-                  {skill} <span className="ml-1 text-xs">×</span>
+                  {skillMap[skill as keyof typeof skillMap] || skill} <span className="ml-1 text-xs">×</span>
                 </Badge>
               ))}
             </div>
@@ -591,40 +590,38 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
   // Q7: Proud Moments
   if (step === 'q7') {
-    const options = [
-      "Excelled in a tough subject", "Created something people loved", "Led a successful project/team",
-      "Taught yourself something difficult", "Helped someone through a hard time", "Won a competition/award",
-      "Built or fixed something", "Performed well under pressure", "Stuck with something long-term"
-    ];
+    const optionKeys = Object.keys(t.questions.q7.options) as Array<keyof typeof t.questions.q7.options>;
     const selected = localAnswers.q7_proud_moments || [];
 
     return (
       <QuestionWrapper 
-        title="Proud Moments" 
-        subtitle="What have you accomplished that made you proud? (Pick up to 3)"
+        title={t.questions.q7.title} 
+        subtitle={t.questions.q7.subtitle}
         canProceed={selected.length > 0}
         onBack={onBack}
         onNext={onNext}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
       >
         <div className="grid gap-2">
-          {options.map(option => (
+          {optionKeys.map(key => (
             <div 
-              key={option}
+              key={key as string}
               onClick={() => {
-                if (selected.includes(option)) {
-                  updateAnswer('q7_proud_moments', selected.filter(s => s !== option));
+                if (selected.includes(key)) {
+                  updateAnswer('q7_proud_moments', selected.filter(s => s !== key));
                 } else if (selected.length < 3) {
-                  updateAnswer('q7_proud_moments', [...selected, option]);
+                  updateAnswer('q7_proud_moments', [...selected, key]);
                 }
               }}
               className={cn(
                 "p-3 rounded border cursor-pointer",
-                selected.includes(option)
+                selected.includes(key)
                   ? "bg-amber-600/20 border-amber-500 text-white"
                   : "bg-slate-800 border-slate-700 text-slate-300"
               )}
             >
-              {option}
+              {t.questions.q7.options[key]}
             </div>
           ))}
         </div>
@@ -632,18 +629,26 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     );
   }
 
-  // Q8-Q13 Simplified for brevity but fully functional
+  // Q8-Q13 Simplified
   if (step === 'q8') {
-    const options = ["Reading", "Videos/demos", "Hands-on doing", "One-on-one mentoring", "Structured classes", "Trial and error"];
+    const optionKeys = Object.keys(t.questions.q8.options) as Array<keyof typeof t.questions.q8.options>;
     const selected = localAnswers.q8_learning_style || [];
     return (
-      <QuestionWrapper title="Learning Style" subtitle="How do you learn best? (Pick 2)" canProceed={selected.length === 2} onBack={onBack} onNext={onNext}>
+      <QuestionWrapper 
+        title={t.questions.q8.title} 
+        subtitle={t.questions.q8.subtitle} 
+        canProceed={selected.length === 2} 
+        onBack={onBack} 
+        onNext={onNext}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
+      >
         <div className="grid grid-cols-2 gap-3">
-          {options.map(opt => (
-            <div key={opt} onClick={() => {
-              if (selected.includes(opt)) updateAnswer('q8_learning_style', selected.filter(s => s !== opt));
-              else if (selected.length < 2) updateAnswer('q8_learning_style', [...selected, opt]);
-            }} className={cn("p-4 rounded border cursor-pointer text-center", selected.includes(opt) ? "bg-blue-600/20 border-blue-500" : "bg-slate-800 border-slate-700")}>{opt}</div>
+          {optionKeys.map(key => (
+            <div key={key as string} onClick={() => {
+              if (selected.includes(key)) updateAnswer('q8_learning_style', selected.filter(s => s !== key));
+              else if (selected.length < 2) updateAnswer('q8_learning_style', [...selected, key]);
+            }} className={cn("p-4 rounded border cursor-pointer text-center", selected.includes(key) ? "bg-blue-600/20 border-blue-500" : "bg-slate-800 border-slate-700")}>{t.questions.q8.options[key]}</div>
           ))}
         </div>
       </QuestionWrapper>
@@ -651,16 +656,23 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
   }
 
   if (step === 'q9') {
-    const options = ["Tech help", "Creative ideas", "Explaining concepts", "Organizing", "Emotional support", "Homework help", "Making/fixing", "Decisions", "Entertainment", "Sports"];
+    const optionKeys = Object.keys(t.questions.q9.options) as Array<keyof typeof t.questions.q9.options>;
     const selected = localAnswers.q9_help_requests || [];
     return (
-      <QuestionWrapper title="What People Ask For" subtitle="What do others ask you for help with? (Select all that apply)" onBack={onBack} onNext={onNext}>
+      <QuestionWrapper 
+        title={t.questions.q9.title} 
+        subtitle={t.questions.q9.subtitle} 
+        onBack={onBack} 
+        onNext={onNext}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
+      >
         <div className="grid grid-cols-2 gap-2">
-          {options.map(opt => (
-            <div key={opt} onClick={() => {
-              if (selected.includes(opt)) updateAnswer('q9_help_requests', selected.filter(s => s !== opt));
-              else updateAnswer('q9_help_requests', [...selected, opt]);
-            }} className={cn("p-3 rounded border cursor-pointer text-sm", selected.includes(opt) ? "bg-purple-600/20 border-purple-500" : "bg-slate-800 border-slate-700")}>{opt}</div>
+          {optionKeys.map(key => (
+            <div key={key as string} onClick={() => {
+              if (selected.includes(key)) updateAnswer('q9_help_requests', selected.filter(s => s !== key));
+              else updateAnswer('q9_help_requests', [...selected, key]);
+            }} className={cn("p-3 rounded border cursor-pointer text-sm", selected.includes(key) ? "bg-purple-600/20 border-purple-500" : "bg-slate-800 border-slate-700")}>{t.questions.q9.options[key]}</div>
           ))}
         </div>
       </QuestionWrapper>
@@ -669,25 +681,35 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
   if (step === 'q10') {
     const data = localAnswers.q10_fast_learner || { is_fast_learner: false };
+    const speedKeys = Object.keys(t.questions.q10.speed) as Array<keyof typeof t.questions.q10.speed>;
+    
     return (
-      <QuestionWrapper title="Fast Learner Moment" subtitle="Is there something you picked up way faster than others?" canProceed={!data.is_fast_learner || (!!data.topic && !!data.speed)} onBack={onBack} onNext={onNext}>
+      <QuestionWrapper 
+        title={t.questions.q10.title} 
+        subtitle={t.questions.q10.subtitle} 
+        canProceed={!data.is_fast_learner || (!!data.topic && !!data.speed)} 
+        onBack={onBack} 
+        onNext={onNext}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
+      >
         <div className="space-y-6">
           <div className="flex gap-4">
-            <Button variant={data.is_fast_learner ? "default" : "outline"} onClick={() => updateAnswer('q10_fast_learner', { ...data, is_fast_learner: true })}>Yes</Button>
-            <Button variant={!data.is_fast_learner ? "default" : "outline"} onClick={() => updateAnswer('q10_fast_learner', { is_fast_learner: false })}>No</Button>
+            <Button variant={data.is_fast_learner ? "default" : "outline"} onClick={() => updateAnswer('q10_fast_learner', { ...data, is_fast_learner: true })}>{t.questions.q10.yes}</Button>
+            <Button variant={!data.is_fast_learner ? "default" : "outline"} onClick={() => updateAnswer('q10_fast_learner', { is_fast_learner: false })}>{t.questions.q10.no}</Button>
           </div>
           {data.is_fast_learner && (
             <div className="space-y-4 animate-in fade-in">
               <div className="space-y-2">
-                <Label>What was it?</Label>
-                <Input value={data.topic || ''} onChange={e => updateAnswer('q10_fast_learner', { ...data, topic: e.target.value })} placeholder="e.g. Learning to edit videos" />
+                <Label>{t.questions.q10.what_label}</Label>
+                <Input value={data.topic || ''} onChange={e => updateAnswer('q10_fast_learner', { ...data, topic: e.target.value })} placeholder={t.questions.q10.what_placeholder} />
               </div>
               <div className="space-y-2">
-                <Label>How much faster?</Label>
+                <Label>{t.questions.q10.how_much_label}</Label>
                 <div className="flex gap-2">
-                  {['bit', 'noticeably', 'way'].map(s => (
-                    <div key={s} onClick={() => updateAnswer('q10_fast_learner', { ...data, speed: s })} 
-                      className={cn("px-4 py-2 rounded border cursor-pointer capitalize", data.speed === s ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700")}>{s} faster</div>
+                  {speedKeys.map(key => (
+                    <div key={key as string} onClick={() => updateAnswer('q10_fast_learner', { ...data, speed: key })} 
+                      className={cn("px-4 py-2 rounded border cursor-pointer capitalize", data.speed === key ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700")}>{t.questions.q10.speed[key]}</div>
                   ))}
                 </div>
               </div>
@@ -703,15 +725,21 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
   if (step === 'q12') {
     const ratings = localAnswers.q12_confidence || { creative: 3, analytical: 3, technical: 3, people: 3, organizational: 3, physical: 3 };
-    const areas = ["Creative", "Analytical", "Technical", "People", "Organizational", "Physical"];
+    const areaKeys = Object.keys(t.questions.q12.areas) as Array<keyof typeof t.questions.q12.areas>;
     return (
-      <QuestionWrapper title="Confidence Rating" subtitle="Rate your overall confidence in each area" onBack={onBack} onNext={onNext}>
+      <QuestionWrapper 
+        title={t.questions.q12.title} 
+        subtitle={t.questions.q12.subtitle} 
+        onBack={onBack} 
+        onNext={onNext}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
+      >
         <div className="space-y-4">
-          {areas.map(area => {
-            const key = area.toLowerCase() as keyof typeof ratings;
+          {areaKeys.map(key => {
             return (
-              <div key={area} className="flex items-center justify-between">
-                <span className="text-slate-300">{area}</span>
+              <div key={key as string} className="flex items-center justify-between">
+                <span className="text-slate-300">{t.questions.q12.areas[key]}</span>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map(star => (
                     <Star key={star} className={cn("w-6 h-6 cursor-pointer", star <= ratings[key] ? "fill-amber-400 text-amber-400" : "text-slate-700")} 
@@ -728,20 +756,28 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
 
   if (step === 'q13') {
     return (
-      <QuestionWrapper title="Recognition Pattern" subtitle="What do people often compliment you on?" canProceed={!!localAnswers.q13_recognition} onBack={onBack} onNext={onNext}>
+      <QuestionWrapper 
+        title={t.questions.q13.title} 
+        subtitle={t.questions.q13.subtitle} 
+        canProceed={!!localAnswers.q13_recognition} 
+        onBack={onBack} 
+        onNext={onNext}
+        backLabel={t.common.back}
+        nextLabel={t.common.next}
+      >
         <div className="space-y-4">
           <Textarea 
             value={localAnswers.q13_recognition || ''} 
             onChange={e => updateAnswer('q13_recognition', e.target.value)}
-            placeholder="e.g. Being calm under pressure, my drawings..."
+            placeholder={t.questions.q13.placeholder}
             className="min-h-[150px] bg-slate-800 border-slate-700"
           />
           <div className="flex items-center gap-2">
             <Checkbox id="none" onCheckedChange={(checked) => {
-              if (checked) updateAnswer('q13_recognition', "People don't really give me specific compliments");
+              if (checked) updateAnswer('q13_recognition', t.questions.q13.none_label);
               else updateAnswer('q13_recognition', "");
             }} />
-            <Label htmlFor="none" className="text-slate-400">People don't really give me specific compliments</Label>
+            <Label htmlFor="none" className="text-slate-400">{t.questions.q13.none_label}</Label>
           </div>
         </div>
       </QuestionWrapper>
@@ -752,16 +788,16 @@ export function CoreAssessment({ step, answers, onAnswer, onNext, onBack }: Core
     return (
       <div className="text-center space-y-6 py-12 animate-in zoom-in duration-300">
         <div className="text-4xl">🤖</div>
-        <h2 className="text-2xl font-bold text-white">Assessment Complete!</h2>
+        <h2 className="text-2xl font-bold text-white">{t.ai_intro.title}</h2>
         <p className="text-slate-300 max-w-md mx-auto">
-          Great job! Now for the final step: a quick 5-minute chat with our AI advisor to connect the dots and build your profile.
+          {t.ai_intro.description}
         </p>
         <div className="flex gap-4 justify-center">
           <Button variant="ghost" onClick={onBack} className="text-slate-400 hover:text-white">
-            <ChevronLeft className="w-4 h-4 mr-2" /> Back
+            <ChevronLeft className="w-4 h-4 mr-2" /> {t.common.back}
           </Button>
           <Button onClick={onNext} size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-            Start Conversation <ChevronRight className="ml-2 w-4 h-4" />
+            {t.ai_intro.button} <ChevronRight className="ml-2 w-4 h-4" />
           </Button>
         </div>
       </div>

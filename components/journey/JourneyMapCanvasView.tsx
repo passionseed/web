@@ -132,40 +132,6 @@ export function JourneyMapCanvasView({
   onEditNorthStar,
   onViewNorthStarDetails,
 }: JourneyMapCanvasViewProps) {
-  const { getZoom } = useReactFlow();
-
-  // Zoom level state - track both numeric and categorical
-  const [currentZoom, setCurrentZoom] = useState<number>(1);
-  const [currentZoomLevel, setCurrentZoomLevel] = useState<ZoomLevel>("medium");
-
-  // Helper function to determine zoom level
-  const getZoomLevel = useCallback((zoom: number): ZoomLevel => {
-    if (zoom < 0.75) return "low";
-    if (zoom >= 1.25) return "high";
-    return "medium";
-  }, []);
-
-  // Monitor zoom changes with ReactFlow's viewport change handler
-  useEffect(() => {
-    const updateZoomLevel = () => {
-      const zoom = getZoom();
-      const newZoomLevel = getZoomLevel(zoom);
-
-      // Update numeric zoom for smooth transitions
-      setCurrentZoom(zoom);
-
-      // Update categorical zoom level if changed
-      if (newZoomLevel !== currentZoomLevel) {
-        setCurrentZoomLevel(newZoomLevel);
-        onZoomChange?.(newZoomLevel, zoom);
-      }
-    };
-
-    // Check zoom level periodically - using shorter interval for smoother updates
-    const interval = setInterval(updateZoomLevel, 50);
-    return () => clearInterval(interval);
-  }, [getZoom, getZoomLevel, currentZoomLevel, onZoomChange]);
-
   // Center on user node (0,0) on initial load
   const { setCenter } = useReactFlow();
   useEffect(() => {
@@ -336,8 +302,6 @@ export function JourneyMapCanvasView({
           onConnect={onConnect}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          fitView
-          fitViewOptions={FLOW_CONFIG.FIT_VIEW_OPTIONS}
           minZoom={FLOW_CONFIG.MIN_ZOOM}
           maxZoom={FLOW_CONFIG.MAX_ZOOM}
           defaultEdgeOptions={{

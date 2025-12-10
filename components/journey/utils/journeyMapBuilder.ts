@@ -50,7 +50,6 @@ export function buildJourneyMap(
   callbacks: MapBuilderCallbacks,
   projectPaths: ProjectPath[] = [],
   northStars: NorthStar[] = [],
-  numericZoom: number = 1
 ): MapBuilderResult {
   const newNodes: Node[] = [];
   const newEdges: Edge[] = [];
@@ -95,8 +94,7 @@ export function buildJourneyMap(
         project,
         position,
         linkedCount,
-        callbacks,
-        numericZoom
+        callbacks
       )
     );
 
@@ -178,22 +176,32 @@ export function buildJourneyMap(
       return indexA - indexB;
     });
 
-    // Calculate positions along line from user center (0,0) to North Star
+    // Calculate positions for linked projects
     sortedItems.forEach((item, index) => {
-      const position = calculatePositionAlongLine(
-        { x: 0, y: 0 }, // User center
-        northStarPos, // North Star entity position
-        index,
-        sortedItems.length
-      );
+      let position: { x: number; y: number };
+
+      // PRIORITY 1: Use saved position if available
+      if (item.project.position_x !== null && item.project.position_y !== null) {
+        position = {
+          x: item.project.position_x,
+          y: item.project.position_y,
+        };
+      } else {
+        // PRIORITY 2: Calculate S-Curve position for new/unsaved projects
+        position = calculateSCurvePosition(
+          { x: 0, y: 0 }, // User center
+          northStarPos, // North Star entity position
+          index,
+          sortedItems.length
+        );
+      }
 
       newNodes.push(
         createShortTermNode(
           item.project,
           position,
           northStarEntity,
-          callbacks,
-          numericZoom
+          callbacks
         )
       );
 
@@ -247,7 +255,6 @@ export function buildJourneyMap(
         position,
         undefined, // Legacy North Star projects don't use the sky overlay
         callbacks,
-        numericZoom
       )
     );
   });
@@ -294,7 +301,6 @@ function createNorthStarNode(
   position: { x: number; y: number },
   linkedProjectCount: number,
   callbacks: MapBuilderCallbacks,
-  numericZoom: number = 1
 ): Node {
   return {
     id: project.id,
@@ -305,7 +311,6 @@ function createNorthStarNode(
       icon: project.icon || "🎯",
       linkedProjectCount,
       hasRecentActivity: checkRecentActivity(project),
-      numericZoom,
       onViewMilestones: () => callbacks.onViewMilestones(project.id),
       onEdit: () => callbacks.onEditProject(project.id),
       onReflect: () => callbacks.onAddReflection(project.id),
@@ -320,7 +325,6 @@ function createShortTermNode(
   position: { x: number; y: number },
   northStar: NorthStar | undefined,
   callbacks: MapBuilderCallbacks,
-  numericZoom: number = 1
 ): Node {
   return {
     id: project.id,
@@ -332,7 +336,6 @@ function createShortTermNode(
       hasRecentActivity: checkRecentActivity(project),
       isMainQuest: project.metadata?.is_main_quest === true,
       northStar,
-      numericZoom,
       onViewMilestones: () => callbacks.onViewMilestones(project.id),
       onEdit: () => callbacks.onEditProject(project.id),
     },
@@ -420,7 +423,6 @@ function createNorthStarEntityNode(
   position: { x: number; y: number },
   linkedProjectCount: number,
   callbacks: MapBuilderCallbacks,
-  numericZoom: number = 1
 ): Node {
   return {
     id: northStar.id,
@@ -430,7 +432,6 @@ function createNorthStarEntityNode(
       northStar,
       linkedProjectCount,
       hasRecentActivity: false, // Could be enhanced with activity tracking
-      numericZoom,
       onEdit: () => callbacks.onEditNorthStar?.(northStar),
       onViewDetails: () => callbacks.onViewNorthStarDetails?.(northStar.id),
       onUpdateProgress: () => {
@@ -455,7 +456,6 @@ function createUniversityGoalNode(
   position: { x: number; y: number },
   linkedProjectCount: number,
   callbacks: MapBuilderCallbacks,
-  numericZoom: number = 1
 ): Node {
   return {
     id: northStar.id,
@@ -465,7 +465,6 @@ function createUniversityGoalNode(
       northStar,
       linkedProjectCount,
       hasRecentActivity: false,
-      numericZoom,
       onEdit: () => callbacks.onEditNorthStar?.(northStar),
       onViewDetails: () => callbacks.onViewNorthStarDetails?.(northStar.id),
       onCreateProject: () =>
@@ -526,33 +525,72 @@ function createNorthStarEntityEdge(sourceId: string, targetId: string): Edge {
 }
 
 /**
- * Calculate position along a line between two points
+ * Calculate position along an S-curve (ZigZag) between two points
  * Used to align milestone projects between user center and North Star
+ * Creates a visual path like: Left -> Right -> Left (as moving up)
  */
-function calculatePositionAlongLine(
+function calculateSCurvePosition(
   start: { x: number; y: number },
   end: { x: number; y: number },
   index: number,
   totalCount: number
 ): { x: number; y: number } {
-  // Position projects evenly spaced along the line
-  // Start at 20% from user, end at 80% to North Star (to avoid overlap)
-  const startPercent = 0.2;
-  const endPercent = 0.8;
+  // Position projects evenly spaced vertically
+  // Start closer to user center (25%) and end closer to North Star (75%)
+  const startPercent = 0.25;
+  const endPercent = 0.75;
   const availableRange = endPercent - startPercent;
 
   let t: number;
   if (totalCount === 1) {
     // Single project: place at midpoint
-    t = startPercent + availableRange / 2;
+    t = 0.5;
   } else {
     // Multiple projects: distribute evenly
     t = startPercent + (index / (totalCount - 1)) * availableRange;
   }
 
+  // Linear interpolation for main trajectory
+  const baseX = start.x + (end.x - start.x) * t;
+  const baseY = start.y + (end.y - start.y) * t;
+
+  // Add ZigZag/S-Curve offset
+  // We want to oscillate left and right relative to the main line
+  // Magnitude of oscillation (how wide the S-curve is)
+  const amplitude = 250; 
+  
+  // Calculate which side to swing to based on index
+  // Even index = Left (-), Odd index = Right (+)
+  // We use Math.pow(-1, index) to toggle sign
+  // But strictly speaking, an S-curve is usually a Sine wave. 
+  // Let's use a Sine wave for smoother curves if many points, 
+  // or a simple alternating offset for the "ZigZag" look requested.
+  // The user image shows distinct nodes left and right.
+  // Let's go with alternating offset.
+  
+  // Direction vector of the line
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  
+  // Perpendicular vector (normalized)
+  const len = Math.sqrt(dx*dx + dy*dy);
+  const perpX = -dy / (len || 1);
+  const perpY = dx / (len || 1);
+  
+  // Alternating factor: -1 for even, +1 for odd (or vice versa)
+  // Let's start Left (-1) for index 0 (closest to user) as per commonly intuitive "start"
+  // User image: Center -> Bottom Node (Left?) -> Mid Node (Right) -> Top Node (Left)
+  // If we have 3 nodes: 0, 1, 2
+  // 0: Left, 1: Right, 2: Left
+  const side = index % 2 === 0 ? -1 : 1;
+  
+  // Apply offset perpendicular to the main line
+  const offsetX = perpX * amplitude * side;
+  const offsetY = perpY * amplitude * side;
+
   return {
-    x: start.x + (end.x - start.x) * t,
-    y: start.y + (end.y - start.y) * t,
+    x: baseX + offsetX,
+    y: baseY + offsetY,
   };
 }
 

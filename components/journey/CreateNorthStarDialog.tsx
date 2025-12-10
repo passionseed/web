@@ -491,11 +491,12 @@ export function CreateNorthStarDialog({
                         className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
                       >
                         <Compass className="w-6 h-6 text-blue-400" />
-                        <span className="font-semibold">
-                          I'm not sure yet...
+                        <span className="font-semibold">Find your direction</span>
+                        <span className="text-xs text-slate-500 font-normal text-center px-2">
+                          Discover your passion with our interactive Ikigai tool
                         </span>
-                        <span className="text-xs text-slate-500 font-normal">
-                          Help me find my direction
+                        <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-medium">
+                          5–10 mins
                         </span>
                       </Button>
                       <Button
@@ -504,9 +505,9 @@ export function CreateNorthStarDialog({
                         className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
                       >
                         <Map className="w-6 h-6 text-green-400" />
-                        <span className="font-semibold">I know my path!</span>
+                        <span className="font-semibold">Choose your university goal</span>
                         <span className="text-xs text-slate-500 font-normal">
-                          Search universities & faculties
+                          For students who already have a clear target
                         </span>
                       </Button>
                     </div>

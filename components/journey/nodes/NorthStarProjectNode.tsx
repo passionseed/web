@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, Position, useStore } from "@xyflow/react";
 import { Star, ChevronRight, Edit, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -35,7 +35,7 @@ export function NorthStarProjectNode({
   data,
   selected = false,
 }: NorthStarProjectNodeProps) {
-  const { project, icon, linkedProjectCount, hasRecentActivity, numericZoom = 1 } = data;
+  const { project, icon, linkedProjectCount, hasRecentActivity } = data;
   const progressPercentage = project.progress_percentage || 0;
 
   // Extract North Star enhancement data
@@ -50,12 +50,13 @@ export function NorthStarProjectNode({
   const shapeData = NORTH_STAR_SHAPES.find((s) => s.value === northStarShape);
   const colorData = NORTH_STAR_COLORS.find((c) => c.value === northStarColor);
 
-  // Calculate zoom-responsive dimensions (optimized)
-  const nodeWidth = 320; // Fixed width for better performance
-
+  // Optimize zoom handling by accessing internal store directly
+  // This prevents re-renders of the entire map when zoom changes
+  const zoom = useStore((s) => s.transform[2]);
+  
   // Simplified zoom level detection
-  const isLowZoom = numericZoom < 0.8;
-  const isHighZoom = numericZoom >= 1.2;
+  const isLowZoom = zoom < 0.8;
+  const isHighZoom = zoom >= 1.2;
 
   // Fixed icon size for performance
   const iconSize = 3;

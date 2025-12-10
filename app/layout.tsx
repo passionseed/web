@@ -11,6 +11,7 @@ import ServiceWorkerRegistration from "@/components/service-worker";
 import ErrorBoundary from "@/components/error-boundary";
 import { DevHealthCheck } from "@/components/dev-health-check";
 import { TOSAcceptanceModal } from "@/components/TOSAcceptanceModal";
+import { LanguageProvider } from "@/lib/i18n/language-context";
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],
@@ -93,14 +94,16 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ErrorBoundary>
-            <Layout>{children}</Layout>
-            <Toaster />
-            <DevHealthCheck />
-            <TOSAcceptanceModal />
-            {/* ServiceWorker temporarily disabled to fix localhost errors */}
-            {/* <ServiceWorkerRegistration /> */}
-          </ErrorBoundary>
+          <LanguageProvider>
+            <ErrorBoundary>
+              <Layout>{children}</Layout>
+              <Toaster />
+              <DevHealthCheck />
+              <TOSAcceptanceModal />
+              {/* ServiceWorker temporarily disabled to fix localhost errors */}
+              {/* <ServiceWorkerRegistration /> */}
+            </ErrorBoundary>
+          </LanguageProvider>
         </ThemeProvider>
         <Analytics />
       </body>
