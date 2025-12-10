@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AssessmentAnswers, DirectionFinderResult, AssessmentStep, Message } from '@/types/direction-finder';
+import { translations, Language } from '@/lib/i18n/direction-finder';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -25,12 +26,15 @@ const STEPS_ORDER: AssessmentStep[] = [
   'results'
 ];
 
+import { useLanguage } from '@/lib/i18n/language-context';
+
 export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlowProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<AssessmentAnswers>>({});
   const [result, setResult] = useState<DirectionFinderResult | null>(null);
   const [chatHistory, setChatHistory] = useState<Message[] | undefined>(undefined);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { language: lang, setLanguage: setLang } = useLanguage();
   
   // DEV: Saved sessions state
   const [devSessions, setDevSessions] = useState<{ id: string; user_id: string; created_at: string }[]>([]);
@@ -149,6 +153,7 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
           onHistoryChange={setChatHistory}
           onBack={handleBack}
           model={model}
+          lang={lang}
         />
       );
     }
@@ -162,6 +167,7 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
           onBack={handleBackFromResults}
           chatHistory={chatHistory}
           model={model}
+          lang={lang}
         />
       );
     }
@@ -173,6 +179,7 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
         onAnswer={handleAnswer}
         onNext={handleNext}
         onBack={handleBack}
+        lang={lang}
       />
     );
   };
@@ -184,7 +191,17 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
         <div className="space-y-2 mb-6">
           <div className="flex justify-between text-sm text-slate-400">
             <span>Step {currentStepIndex + 1} of {STEPS_ORDER.length}</span>
-            <span>{Math.round(progress)}%</span>
+            <div className="flex gap-4 items-center">
+              <span>{Math.round(progress)}%</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLang(lang === 'en' ? 'th' : 'en')}
+                className="h-6 px-2 text-xs border border-white/10 hover:bg-white/10"
+              >
+                {lang === 'en' ? '🇹🇭 TH' : '🇬🇧 EN'}
+              </Button>
+            </div>
           </div>
           <Progress value={progress} className="h-2" />
         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AssessmentAnswers, DirectionFinderResult, Message } from '@/types/direction-finder';
+import { translations, Language } from '@/lib/i18n/direction-finder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,10 +19,12 @@ interface AIConversationProps {
   onHistoryChange?: (messages: Message[]) => void;
   onBack: () => void;
   model?: string;
+  lang: Language;
   className?: string;
 }
 
-export function AIConversation({ answers, onComplete, history, onHistoryChange, onBack, model, className }: AIConversationProps) {
+export function AIConversation({ answers, onComplete, history, onHistoryChange, onBack, model, lang, className }: AIConversationProps) {
+  const t = translations[lang];
   const [messages, setMessages] = useState<Message[]>(history || []);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -68,7 +71,8 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
       const response = await conductDirectionConversation(
         currentHistory, 
         answers,
-        model
+        model,
+        lang
       );
 
       // Simulate "human" typing and message splitting
@@ -117,7 +121,7 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
         content: m.content
       }));
       
-      const result = await generateDirectionProfile(apiHistory, answers, model);
+      const result = await generateDirectionProfile(apiHistory, answers, model, lang);
       onComplete(result);
     } catch (error) {
       console.error('Error generating profile:', error);
@@ -137,8 +141,8 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
             <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
-            <CardTitle className="text-base text-white">Education Advisor</CardTitle>
-            <p className="text-xs text-slate-400">Helping you find your direction</p>
+            <CardTitle className="text-base text-white">{t.ai_chat.title}</CardTitle>
+            <p className="text-xs text-slate-400">{t.ai_chat.subtitle}</p>
           </div>
         </div>
         {messages.length > 4 && (
@@ -149,11 +153,11 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
           >
             {isGeneratingProfile ? (
               <>
-                <Loader2 className="w-3 h-3 mr-2 animate-spin" /> Generating Profile...
+                <Loader2 className="w-3 h-3 mr-2 animate-spin" /> {t.ai_chat.generating}
               </>
             ) : (
               <>
-                <Sparkles className="w-3 h-3 mr-2" /> View Results
+                <Sparkles className="w-3 h-3 mr-2" /> {t.ai_chat.view_results}
               </>
             )}
           </Button>
@@ -226,7 +230,7 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your answer..."
+              placeholder={t.ai_chat.input_placeholder}
               className="bg-slate-800 border-slate-700 focus-visible:ring-blue-500 min-h-[44px] max-h-[120px] resize-none py-3"
               disabled={isGeneratingProfile || isTyping}
               onKeyDown={(e) => {
@@ -253,7 +257,7 @@ export function AIConversation({ answers, onComplete, history, onHistoryChange, 
             className="text-xs bg-black/50 border-white/20 text-white backdrop-blur-md"
             title="Log context to console"
           >
-            Log Context
+            {t.ai_chat.log_context}
           </Button>
           <div className="hidden group-hover:block absolute right-0 top-full mt-2 w-96 p-4 bg-black/90 text-xs font-mono text-green-400 rounded-lg border border-green-900 shadow-2xl max-h-[500px] overflow-auto whitespace-pre-wrap">
              {/* We can make this a proper dialog or just log to console as implemented above for simplicity, 

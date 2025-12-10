@@ -1,4 +1,5 @@
 import { DirectionFinderResult, AssessmentAnswers } from '@/types/direction-finder';
+import { translations, Language } from '@/lib/i18n/direction-finder';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -31,9 +32,11 @@ interface DirectionResultsProps {
   onBack: () => void;
   chatHistory?: Message[];
   model?: string;
+  lang: Language;
 }
 
-export function DirectionResults({ result: initialResult, answers, onComplete, onBack, chatHistory: initialHistory, model }: DirectionResultsProps) {
+export function DirectionResults({ result: initialResult, answers, onComplete, onBack, chatHistory: initialHistory, model, lang }: DirectionResultsProps) {
+  const t = translations[lang];
   const [result, setResult] = useState(initialResult);
   const [history, setHistory] = useState<Message[] | undefined>(initialHistory);
   const [isRefining, setIsRefining] = useState(false);
@@ -137,7 +140,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
         className="absolute top-0 left-0 z-10 text-slate-400 hover:text-white"
         data-hide-on-share="true"
       >
-        <ArrowLeft className="w-4 h-4 mr-2" /> Back
+        <ArrowLeft className="w-4 h-4 mr-2" /> {t.common.back}
       </Button>
 
       {/* Refine Button */}
@@ -145,7 +148,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
            <Dialog open={isRefining} onOpenChange={setIsRefining}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2 border-purple-500/30 hover:bg-purple-500/10 text-purple-300">
-                <MessageSquare className="w-4 h-4" /> Refine with AI
+                <MessageSquare className="w-4 h-4" /> {t.results.refine_button}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl h-[80vh] p-0 bg-slate-950 border-slate-800 flex flex-col overflow-hidden">
@@ -161,6 +164,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
                 }}
                 onBack={() => setIsRefining(false)}
                 model={model}
+                lang={lang}
                 className="h-full border-0"
               />
             </DialogContent>
@@ -177,11 +181,11 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
           </div>
           
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-3">
-            Your Direction Profile
+            {t.results.title}
           </h2>
           
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Based on your unique interests, strengths, and values—here's your personalized roadmap.
+            {t.results.subtitle}
           </p>
         </div>
       </div>
@@ -194,7 +198,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
             <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-500/30">
               <Zap className="w-6 h-6 text-blue-400" />
             </div>
-            <h3 className="text-sm font-bold text-blue-300 uppercase tracking-wider">What You Love</h3>
+            <h3 className="text-sm font-bold text-blue-300 uppercase tracking-wider">{t.results.energizers_title}</h3>
           </div>
           <div className="space-y-2">
             {result.profile.energizers.map((item, i) => (
@@ -212,7 +216,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
             <div className="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center border border-green-500/30">
               <TrendingUp className="w-6 h-6 text-green-400" />
             </div>
-            <h3 className="text-sm font-bold text-green-300 uppercase tracking-wider">Your Strengths</h3>
+            <h3 className="text-sm font-bold text-green-300 uppercase tracking-wider">{t.results.strengths_title}</h3>
           </div>
           <div className="space-y-2">
             {result.profile.strengths.map((item, i) => (
@@ -230,7 +234,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
             <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center border border-purple-500/30">
               <Target className="w-6 h-6 text-purple-400" />
             </div>
-            <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">What You Value</h3>
+            <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">{t.results.values_title}</h3>
           </div>
           <div className="space-y-2">
             {result.profile.values.map((item, i) => (
@@ -247,7 +251,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
-          <h3 className="text-2xl font-bold text-white">Your Top 3 Directions</h3>
+          <h3 className="text-2xl font-bold text-white">{t.results.directions_title}</h3>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
         </div>
 
@@ -275,7 +279,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
                   </h4>
                   {idx === 0 && (
                     <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 px-2 py-0.5 text-xs font-semibold">
-                      Best Match
+                      {t.results.best_match}
                     </Badge>
                   )}
                 </div>
@@ -284,7 +288,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
                 <div className="space-y-3 bg-slate-950/40 p-3 rounded-xl border border-slate-800/50">
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="flex items-center gap-1.5 text-pink-300 font-medium"><Heart className="w-3 h-3 fill-pink-500/20" /> Passion Match</span>
+                      <span className="flex items-center gap-1.5 text-pink-300 font-medium"><Heart className="w-3 h-3 fill-pink-500/20" /> {t.results.passion_match}</span>
                       <span className="text-white font-bold">{vector.match_scores?.passion || 92}%</span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -298,7 +302,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
 
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="flex items-center gap-1.5 text-emerald-300 font-medium"><Zap className="w-3 h-3 fill-emerald-500/20" /> Skill Match</span>
+                      <span className="flex items-center gap-1.5 text-emerald-300 font-medium"><Zap className="w-3 h-3 fill-emerald-500/20" /> {t.results.skill_match}</span>
                       <span className="text-white font-bold">{vector.match_scores?.skill || 88}%</span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -314,7 +318,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
                 {/* Suggested Milestones (formerly Exploration Steps) */}
                 <div className="pt-2">
                   <h5 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <MapIcon className="w-3 h-3 text-purple-400" /> Suggested Projects
+                    <MapIcon className="w-3 h-3 text-purple-400" /> {t.results.suggested_projects}
                   </h5>
                   <div className="relative pl-4 space-y-4 border-l border-slate-800 ml-1.5 space-y-4">
                     {vector.exploration_steps.map((step, i) => (
@@ -332,7 +336,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
                          onClick={onComplete}
                          className="w-full text-left bg-transparent border border-dashed border-slate-700 p-2 rounded-lg text-xs text-slate-400 hover:text-white hover:border-slate-500 hover:bg-slate-800/30 transition-all flex items-center gap-2"
                       >
-                        <Plus className="w-3 h-3" /> Add to my roadmap...
+                        <Plus className="w-3 h-3" /> {t.results.add_roadmap}
                       </button>
                     </div>
                   </div>
@@ -341,7 +345,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
 
               {/* First Step */}
               <div className="mt-4 pt-3 border-t border-slate-800/50 text-xs">
-                <p className="font-medium text-green-400 mb-0.5 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Start Here:</p>
+                <p className="font-medium text-green-400 mb-0.5 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t.results.start_here}</p>
                 <p className="text-slate-300 leading-relaxed">{vector.first_step}</p>
               </div>
             </div>
@@ -352,16 +356,16 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
       {/* Journey Map CTA */}
       <div className="text-center space-y-4 p-8 bg-gradient-to-br from-purple-900/20 via-slate-900 to-blue-900/20 border border-purple-500/20 rounded-3xl">
         <Sparkles className="w-10 h-10 text-purple-400 mx-auto animate-pulse" />
-        <h3 className="text-2xl font-bold text-white">Ready to Start Your Journey?</h3>
+        <h3 className="text-2xl font-bold text-white">{t.results.journey_cta_title}</h3>
         <p className="text-slate-400 max-w-lg mx-auto">
-          Your personalized Journey Map is waiting. It will guide you step-by-step towards your North Star.
+          {t.results.journey_cta_desc}
         </p>
         <Button 
           size="lg"
           onClick={onComplete}
           className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 shadow-lg shadow-purple-500/25 text-lg px-8 py-6"
         >
-          Go to My Journey Map <ArrowRight className="w-5 h-5" />
+          {t.results.journey_cta_button} <ArrowRight className="w-5 h-5" />
         </Button>
       </div>
 
@@ -375,7 +379,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
           className="gap-2 border-slate-700 hover:bg-slate-800 hover:text-white text-slate-300"
         >
           {isSaving ? <Sparkles className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />} 
-          Save Profile
+          {t.common.save}
         </Button>
         <Button 
           size="lg"
@@ -384,7 +388,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
           className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25"
         >
           {isSharing ? <Sparkles className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} 
-          Share Results
+          {t.results.share_button}
         </Button>
       </div>
     </div>

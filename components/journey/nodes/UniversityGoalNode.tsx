@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, Position, useStore } from "@xyflow/react";
 import { GraduationCap, MapPin, Building2, ExternalLink, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ interface UniversityGoalNodeProps {
     northStar: NorthStar;
     linkedProjectCount?: number;
     hasRecentActivity?: boolean;
-    numericZoom?: number;
     onClick?: () => void;
     onEdit?: () => void;
     onViewDetails?: () => void;
@@ -57,10 +56,12 @@ export const UniversityGoalNode = React.memo(function UniversityGoalNode({
     northStar,
     linkedProjectCount = 0,
     hasRecentActivity = false,
-    numericZoom = 1,
     onEdit,
     onCreateProject
   } = data;
+
+  // Optimize zoom handling
+  const zoom = useStore((s) => s.transform[2]);
 
   const progressPercentage = northStar.progress_percentage || 0;
   
@@ -108,15 +109,15 @@ export const UniversityGoalNode = React.memo(function UniversityGoalNode({
         aria-label={`University Goal: ${northStar.title} - ${progressPercentage}% progress`}
         style={{
           filter: filterEffect,
-          opacity: numericZoom < 0.5 ? Math.max(0.4, numericZoom * 1.2) : 1
+          opacity: zoom < 0.5 ? Math.max(0.4, zoom * 1.2) : 1
         }}
       >
         {/* Large circular background with university theme */}
         <div
           className="relative rounded-full flex flex-col items-center justify-center text-center transition-all duration-300 overflow-hidden"
           style={{
-            width: `${Math.max(280, Math.min(360, 300 + (numericZoom - 1) * 20))}px`,
-            height: `${Math.max(280, Math.min(360, 300 + (numericZoom - 1) * 20))}px`,
+            width: `${Math.max(280, Math.min(360, 300 + (zoom - 1) * 20))}px`,
+            height: `${Math.max(280, Math.min(360, 300 + (zoom - 1) * 20))}px`,
             background: 'linear-gradient(135deg, #1e3a8a 0%, #172554 50%, #1e3a8a 100%)', // Blue theme for university
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
             border: '4px solid #60a5fa'
@@ -158,7 +159,7 @@ export const UniversityGoalNode = React.memo(function UniversityGoalNode({
           <div className="mb-4 transition-all duration-300 bg-blue-900/50 p-6 rounded-full border border-blue-400/30">
             <GraduationCap 
               className="text-blue-200"
-              size={Math.max(60, Math.min(100, 80 + (numericZoom - 1) * 20))}
+              size={Math.max(60, Math.min(100, 80 + (zoom - 1) * 20))}
             />
           </div>
 
@@ -174,12 +175,12 @@ export const UniversityGoalNode = React.memo(function UniversityGoalNode({
           </p>
 
           {/* Medium Zoom (>= 0.75): Tags and Creation Date */}
-          {numericZoom >= 0.75 && (
+          {zoom >= 0.75 && (
             <div
               className="transition-all duration-300 ease-in-out"
               style={{
-                opacity: Math.min(1, (numericZoom - 0.75) / 0.25),
-                transform: `scale(${Math.min(1, 0.8 + (numericZoom - 0.75) * 0.8)})`
+                opacity: Math.min(1, (zoom - 0.75) / 0.25),
+                transform: `scale(${Math.min(1, 0.8 + (zoom - 0.75) * 0.8)})`
               }}
             >
               {/* Tags removed as they are not in NorthStar type */}
@@ -187,12 +188,12 @@ export const UniversityGoalNode = React.memo(function UniversityGoalNode({
           )}
 
           {/* High Zoom (>= 1.25): Progress */}
-          {numericZoom >= 1.25 && (
+          {zoom >= 1.25 && (
             <div
               className="text-blue-200 text-sm transition-all duration-300 ease-in-out mt-2"
               style={{
-                opacity: Math.min(1, (numericZoom - 1.25) / 0.25),
-                transform: `scale(${Math.min(1, 0.8 + (numericZoom - 1.25) * 0.8)})`
+                opacity: Math.min(1, (zoom - 1.25) / 0.25),
+                transform: `scale(${Math.min(1, 0.8 + (zoom - 1.25) * 0.8)})`
               }}
             >
               Admission Probability: {progressPercentage}%

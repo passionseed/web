@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, Position, useStore } from "@xyflow/react";
 import { ChevronRight, Edit, Sparkles, Target } from "lucide-react";
 import { JourneyProject, NorthStar } from "@/types/journey";
 import { NORTH_STAR_COLORS } from "@/constants/sdg";
@@ -23,7 +23,6 @@ interface ShortTermProjectNodeProps {
     northStar?: NorthStar;
     milestone_count?: number;
     completed_milestone_count?: number;
-    numericZoom?: number;
     onViewMilestones: () => void;
     onEdit: () => void;
   };
@@ -77,22 +76,28 @@ export const ShortTermProjectNode = React.memo(function ({
   data,
   selected = false,
 }: ShortTermProjectNodeProps) {
-  const { project, icon, hasRecentActivity, isMainQuest, northStar, milestone_count, numericZoom = 1 } = data;
+  // Optimize zoom handling
+  const zoom = useStore((s) => s.transform[2]);
+  const isLowZoom = zoom < 0.8;
+  const isHighZoom = zoom >= 1.2;
+  const isVeryHighZoom = zoom >= 1.5;
+
+  const { project, northStar, icon, hasRecentActivity, isMainQuest, milestone_count } = data;
 
   const progressPercentage = project.progress_percentage || 0;
   const northStarColor = northStar ? NORTH_STAR_COLORS.find(c => c.value === northStar.north_star_color)?.color : null;
 
   // Partial inverse scaling - nodes grow with zoom but not 1:1
   // At zoom 1: scale 1, at zoom 2: scale ~0.85 (grows to ~1.7x instead of 2x)
-  const inverseScale = Math.max(0.85, 1 / Math.pow(numericZoom, 0.3));
+  const inverseScale = Math.max(0.85, 1 / Math.pow(zoom, 0.3));
   
   // Base node width - larger for better visibility
   const nodeWidth = 260;
 
   // Determine detail level based on zoom
-  const showDetails = numericZoom >= 0.8;
-  const showActions = numericZoom >= 1.2;
-  const showFullDetails = numericZoom >= 1.5; // Show goal/description at very high zoom
+  const showDetails = isLowZoom === false; // showDetails was numericZoom >= 0.8 which is roughly !isLowZoom
+  const showActions = isHighZoom; 
+  const showFullDetails = isVeryHighZoom; 
 
   return (
     <div 

@@ -160,16 +160,6 @@ export function getNodePosition(
       y: project.position_y,
     };
     
-    // Check if saved position is too close to center (where username appears)
-    const distanceFromCenter = Math.sqrt(savedPosition.x * savedPosition.x + savedPosition.y * savedPosition.y);
-    if (distanceFromCenter < NODE_LAYOUT.MIN_RADIUS_FROM_CENTER) {
-      // If saved position is too close to center, use calculated position instead
-      const radius = isNorthStar
-        ? NODE_LAYOUT.NORTH_STAR_RADIUS
-        : NODE_LAYOUT.SHORT_TERM_RADIUS;
-      return calculateCircularPosition(index, totalCount, radius);
-    }
-    
     return savedPosition;
   }
 
