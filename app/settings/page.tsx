@@ -28,10 +28,64 @@ import { useTheme } from "next-themes";
 import { Label } from "@/components/ui/label";
 
 import { createClient } from "@/utils/supabase/client";
+import { useLanguage } from "@/lib/i18n/language-context";
+
+const translations = {
+  en: {
+    headerTitle: "Settings",
+    headerDesc: "Manage your account settings and preferences.",
+    preferences: "Preferences",
+    preferencesDesc: "Customize your experience.",
+    language: "Language",
+    languageDesc: "Select your preferred language.",
+    appearance: "Appearance",
+    appearanceDesc: "Switch between light and dark mode.",
+    sections: {
+      profile: {
+        title: "Profile",
+        desc: "Manage your public profile and personal details",
+      },
+      account: {
+        title: "Account",
+        desc: "Security and data settings (Coming Soon)",
+      },
+      notifications: {
+        title: "Notifications",
+        desc: "Manage your alerts (Coming Soon)",
+      },
+    },
+  },
+  th: {
+    headerTitle: "ตั้งค่า",
+    headerDesc: "จัดการการตั้งค่าบัญชีและความชอบของคุณ",
+    preferences: "ความชอบ",
+    preferencesDesc: "ปรับแต่งประสบการณ์การใช้งานของคุณ",
+    language: "ภาษา",
+    languageDesc: "เลือกภาษาที่คุณต้องการ",
+    appearance: "รูปลักษณ์",
+    appearanceDesc: "เปลี่ยนระหว่างโหมดสว่างและโหมดมืด",
+    sections: {
+      profile: {
+        title: "โปรไฟล์",
+        desc: "จัดการโปรไฟล์สาธารณะและข้อมูลส่วนตัว",
+      },
+      account: {
+        title: "บัญชี",
+        desc: "การตั้งค่าความปลอดภัยและข้อมูล (เร็วๆ นี้)",
+      },
+      notifications: {
+        title: "การแจ้งเตือน",
+        desc: "จัดการการแจ้งเตือนของคุณ (เร็วๆ นี้)",
+      },
+    },
+  },
+};
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { language } = useLanguage();
+  const t = translations[language] || translations["en"];
   const [mounted, setMounted] = useState(false);
   const supabase = createClient();
 
@@ -53,8 +107,8 @@ export default function SettingsPage() {
 
   const settingsSections = [
     {
-      title: "Profile",
-      description: "Manage your public profile and personal details",
+      title: t.sections.profile.title,
+      description: t.sections.profile.desc,
       icon: User,
       href: "/profile",
       color: "text-blue-500",
@@ -72,10 +126,8 @@ export default function SettingsPage() {
           </AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t.headerTitle}</h1>
+          <p className="text-muted-foreground">{t.headerDesc}</p>
         </div>
       </div>
 
@@ -83,18 +135,18 @@ export default function SettingsPage() {
         {/* General Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Preferences</CardTitle>
-            <CardDescription>Customize your experience.</CardDescription>
+            <CardTitle>{t.preferences}</CardTitle>
+            <CardDescription>{t.preferencesDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Language */}
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label className="text-base font-medium flex items-center gap-2">
-                  <Globe className="w-4 h-4" /> Language
+                  <Globe className="w-4 h-4" /> {t.language}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Select your preferred language.
+                  {t.languageDesc}
                 </p>
               </div>
               <LanguagePicker />
@@ -104,10 +156,10 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label className="text-base font-medium flex items-center gap-2">
-                  <Palette className="w-4 h-4" /> Appearance
+                  <Palette className="w-4 h-4" /> {t.appearance}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Switch between light and dark mode.
+                  {t.appearanceDesc}
                 </p>
               </div>
               <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
@@ -169,13 +221,13 @@ export default function SettingsPage() {
               <CardTitle className="text-xl font-medium">
                 <div className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-green-500" />
-                  Account
+                  {t.sections.account.title}
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-base">
-                Security and data settings (Coming Soon)
+                {t.sections.account.desc}
               </CardDescription>
             </CardContent>
           </Card>
@@ -186,13 +238,13 @@ export default function SettingsPage() {
               <CardTitle className="text-xl font-medium">
                 <div className="flex items-center gap-2">
                   <Bell className="h-5 w-5 text-orange-500" />
-                  Notifications
+                  {t.sections.notifications.title}
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-base">
-                Manage your alerts (Coming Soon)
+                {t.sections.notifications.desc}
               </CardDescription>
             </CardContent>
           </Card>
