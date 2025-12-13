@@ -416,14 +416,20 @@ export async function searchThailandUniversities(query: string): Promise<Univers
   }));
 }
 
-export async function searchThailandCurriculums(query: string) {
+export async function searchThailandCurriculums(query: string, level?: string) {
   if (!query || query.length < 2) return [];
 
-  const { data, error } = await supabase
+  let dbQuery = supabase
     .from('thailand_admission_plans')
     .select('*')
     .or(`curriculum_name_th.ilike.%${query}%,curriculum_name_en.ilike.%${query}%,university_name_th.ilike.%${query}%`)
     .limit(50);
+
+  if (level) {
+    dbQuery = dbQuery.eq('level_name_th', level);
+  }
+
+  const { data, error } = await dbQuery;
 
   if (error) {
     console.error('Error searching Thailand curriculums:', error)

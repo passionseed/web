@@ -3,7 +3,15 @@
 export interface University {
   id: string;
   name: string;
+  name_th?: string;
+  name_en?: string;
   short_name?: string;
+  short_name_th?: string;
+  short_name_en?: string;
+  category?: string;
+  is_international?: boolean;
+  university_name_th?: string;
+  university_name_en?: string;
   country?: string;
   state?: string;
   city?: string;
