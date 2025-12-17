@@ -110,19 +110,19 @@ export function NodeViewPanel({
   // Check if student can resubmit based on assessment settings and attempt count
   const canResubmit = (() => {
     if (!isFailed) return false; // Only allow resubmit if failed
-    
+
     const assessment = selectedNode?.data.node_assessments?.[0];
     if (!assessment) return false;
-    
+
     // If multiple attempts are disabled, no resubmission allowed
     if (!(assessment.metadata?.allow_multiple_attempts ?? true)) {
       return false;
     }
-    
+
     // Check if student has exceeded max attempts
     const maxAttempts = assessment.metadata?.max_attempts || 3;
     const attemptCount = submissionsWithGrades.length;
-    
+
     return attemptCount < maxAttempts;
   })();
 
@@ -134,17 +134,17 @@ export function NodeViewPanel({
   //   they should NOT see the form (they should be able to proceed)
   const showAssessmentForm = (() => {
     // Basic conditions for showing form
-    const basicConditions = 
+    const basicConditions =
       canResubmit ||
       (hasStarted && !isSubmittedAndPending && !isPassed) ||
       isInProgress;
-    
+
     // For group assessments with submitted status, don't show form if they have submissions
     // (this means they got auto-submissions from group member)
     if (assessment?.is_group_assessment && isSubmittedAndPending && submissionsWithGrades.length > 0) {
       return false; // Don't show form, let them proceed
     }
-    
+
     return basicConditions;
   })();
 
@@ -167,7 +167,6 @@ export function NodeViewPanel({
       try {
         // Check if this map is associated with a team
         const teamMapInfo = await getTeamMapClassroomInfo(mapId);
-        console.log("Team map info:", teamMapInfo);
 
         if (teamMapInfo.isTeamMap && teamMapInfo.classroomId) {
           setIsTeamMap(true);
@@ -197,8 +196,6 @@ export function NodeViewPanel({
   }, [mapId, currentUser]);
 
   useEffect(() => {
-    console.log("🔄 NodeViewPanel: selectedNode changed, ID:", selectedNode?.id);
-    
     // sync editable copy when selection changes
     setEditableNodeData(nodeData || null);
     // Immediately clear state when selectedNode changes to prevent stale data
@@ -221,7 +218,6 @@ export function NodeViewPanel({
   // Separate effect to clear state when no node is selected - optimize to only fire when needed
   useEffect(() => {
     if (!selectedNode) {
-      console.log("🧹 NodeViewPanel: No node selected, clearing state");
       setProgress(null);
       setSubmissionsWithGrades([]);
       setAssessmentAnswer("");
@@ -234,8 +230,6 @@ export function NodeViewPanel({
 
     setIsLoading(true);
     try {
-      console.log("📊 Loading progress for node:", selectedNode.id);
-
       // Validate required data before proceeding
       if (!selectedNode.id || !currentUser.id) {
         console.error("Missing required IDs:", {
@@ -258,9 +252,6 @@ export function NodeViewPanel({
 
       // Handle different progress states
       if (!progressData) {
-        console.log(
-          "📝 No progress found - student hasn't started this node yet (or access denied)"
-        );
         setProgress(null);
         setSubmissionsWithGrades([]);
         return;
@@ -276,11 +267,8 @@ export function NodeViewPanel({
             selectedNode.data.node_assessments[0].id
           );
 
-          console.log("📋 Fetched submissions:", fetchedSubmissions);
-
           // Handle empty submissions array
           if (!fetchedSubmissions || fetchedSubmissions.length === 0) {
-            console.log("📝 No submissions found for this progress");
             setSubmissionsWithGrades([]);
             return;
           }
@@ -293,11 +281,9 @@ export function NodeViewPanel({
 
               try {
                 if (!submission.id) {
-                  console.warn("Submission missing ID:", submission);
                   return { submission, grade: null };
                 }
 
-                console.log("🔍 Fetching grade for submission:", submission.id);
                 gradeData = await getSubmissionGrade(submission.id);
               } catch (error) {
                 // Silently handle 406 errors - students may not have permission to read grades
@@ -314,7 +300,6 @@ export function NodeViewPanel({
 
           setSubmissionsWithGrades(submissionsWithGradesData);
         } catch (submissionError) {
-          console.warn("Error loading submissions:", submissionError);
           // Don't fail the entire load if submissions can't be fetched
           setSubmissionsWithGrades([]);
         }
@@ -322,8 +307,6 @@ export function NodeViewPanel({
         // No assessment or no progress - clear submissions
         setSubmissionsWithGrades([]);
       }
-
-      console.log("✅ Progress and submissions loaded successfully");
     } catch (error) {
       console.error("❌ Error loading progress:", error);
 
@@ -441,7 +424,6 @@ export function NodeViewPanel({
 
     setIsStarting(true);
     try {
-      console.log("🚀 Starting node progress...");
       const newProgress = await startNodeProgress(
         currentUser.id,
         selectedNode.id,
@@ -460,8 +442,6 @@ export function NodeViewPanel({
         description:
           "Time tracking has begun. Good luck on your learning journey!",
       });
-
-      console.log("✅ Node started successfully:", newProgress);
     } catch (error) {
       console.error("❌ Error starting node:", error);
 
@@ -515,7 +495,6 @@ export function NodeViewPanel({
 
     setIsSubmitting(true);
     try {
-      console.log("✅ Marking node as complete...");
       // For nodes without assessments, directly mark as "passed" since no grading is needed
       const updatedProgress = await updateNodeProgress(
         mapId,
@@ -537,8 +516,6 @@ export function NodeViewPanel({
         title: "Node completed!",
         description: "Great job! You can now continue to the next node.",
       });
-
-      console.log("✅ Node marked as complete:", updatedProgress);
     } catch (error) {
       console.error("❌ Error marking node as complete:", error);
 
@@ -663,10 +640,10 @@ export function NodeViewPanel({
 
         if (answeredQuestions < expectedQuestions) {
           const isRandomized = assessment.metadata?.randomize_questions;
-          const description = isRandomized 
+          const description = isRandomized
             ? `Please answer all ${expectedQuestions} questions shown to you before submitting.`
             : `Please answer all ${expectedQuestions} questions before submitting.`;
-            
+
           toast({
             title: "Incomplete quiz",
             description,
@@ -676,8 +653,6 @@ export function NodeViewPanel({
         }
 
         submissionData.quiz_answers = quizAnswers;
-        console.log("🤖 Submitting quiz for auto-grading...");
-        console.log("📝 Quiz answers being submitted:", quizAnswers);
       } else if (assessment.assessment_type === "file_upload") {
         if (!fileUrls || fileUrls.length === 0) {
           toast({
@@ -744,7 +719,6 @@ export function NodeViewPanel({
         return;
       }
 
-      console.log("📤 Creating assessment submission:", submissionData);
       await createAssessmentSubmission(submissionData);
 
       // Clear form data after successful submission
@@ -821,9 +795,7 @@ export function NodeViewPanel({
   }
 
   // Render team-specific components for team maps
-  console.log({ isTeamMap, teamId, classroomRole }, "teaxx");
   if (isTeamMap) {
-    console.log("Rendering team-specific components");
     const isInstructorOrTAForTeam =
       classroomRole === "instructor" || classroomRole === "ta";
 
@@ -878,7 +850,6 @@ export function NodeViewPanel({
     }
 
     // Show team view for students/team members (only if teamId is available)
-    console.log(teamId, "idtxx");
     if (teamId) {
       return (
         <TeamNodeViewPanel
@@ -981,6 +952,7 @@ export function NodeViewPanel({
                   {assessment && (
                     <AssessmentSection
                       nodeId={selectedNode.id}
+                      mapId={mapId}
                       assessment={assessment}
                       canResubmit={canResubmit}
                       showAssessmentForm={false} // Instructors don't submit
@@ -1030,8 +1002,8 @@ export function NodeViewPanel({
       {/* Content Section - Scrollable */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {hasStarted ||
-        nodeData?.node_type === "text" ||
-        nodeData?.node_type === "comment" ? (
+          nodeData?.node_type === "text" ||
+          nodeData?.node_type === "comment" ? (
           <div className="p-4 space-y-6 min-h-full">
             {nodeData?.node_type === "text" ? (
               <div className="p-4">
@@ -1132,6 +1104,7 @@ export function NodeViewPanel({
                 {assessment && (
                   <AssessmentSection
                     nodeId={selectedNode.id}
+                    mapId={mapId}
                     assessment={assessment}
                     canResubmit={canResubmit}
                     showAssessmentForm={showAssessmentForm}
@@ -1151,11 +1124,10 @@ export function NodeViewPanel({
         ) : (
           <div className="p-8 text-center flex flex-col justify-center min-h-full">
             <div
-              className={`w-20 h-20 mx-auto ${
-                isNodeUnlocked
+              className={`w-20 h-20 mx-auto ${isNodeUnlocked
                   ? "bg-gradient-to-br from-blue-100 to-blue-200"
                   : "bg-gradient-to-br from-gray-100 to-gray-200"
-              } rounded-full flex items-center justify-center mb-6`}
+                } rounded-full flex items-center justify-center mb-6`}
             >
               {isNodeUnlocked ? (
                 <Play className="h-10 w-10 text-blue-600" />

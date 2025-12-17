@@ -135,14 +135,14 @@ export function InlineGradingForm({
           Rating (optional)
         </Label>
         <Select
-          value={rating?.toString() || ""}
-          onValueChange={(value) => setRating(value ? parseInt(value) : null)}
+          value={rating?.toString() || "no-rating"}
+          onValueChange={(value) => setRating(value === "no-rating" ? null : parseInt(value))}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select rating (1-5)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No rating</SelectItem>
+            <SelectItem value="no-rating">No rating</SelectItem>
             <SelectItem value="1">⭐ 1 Star</SelectItem>
             <SelectItem value="2">⭐⭐ 2 Stars</SelectItem>
             <SelectItem value="3">⭐⭐⭐ 3 Stars</SelectItem>

@@ -20,6 +20,7 @@ export interface AssessmentEditorProps {
   // Optional props to support auto-saving temporary nodes
   nodeData?: any;
   mapId?: string;
+  isSeedMap?: boolean; // NEW: Flag to indicate if this is a seed map
 }
 
 export interface QuestionFormProps {

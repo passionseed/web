@@ -11,6 +11,10 @@ import { TeamNodeProgress, TeamMemberProgress } from "@/lib/supabase/team-progre
 // Main component props
 export interface MapViewerProps {
   map: FullLearningMap;
+  // Optional seed room context for completion tracking
+  seedRoomId?: string;
+  seedTitle?: string;
+  seedId?: string;
 }
 
 // User role types

@@ -965,8 +965,9 @@ export function MapViewer({ map }: MapViewerProps) {
   );
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full">
+    <ResizablePanelGroup id="map-viewer-original-panels" direction="horizontal" className="h-full">
       <ResizablePanel
+        id="map-viewer-original-left-panel"
         ref={leftPanelRef}
         defaultSize={70}
         minSize={35}
@@ -1165,6 +1166,7 @@ export function MapViewer({ map }: MapViewerProps) {
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel
+        id="map-viewer-original-right-panel"
         ref={rightPanelRef}
         defaultSize={30}
         minSize={5}

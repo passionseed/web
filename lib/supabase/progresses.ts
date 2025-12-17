@@ -40,13 +40,6 @@ export async function getStudentProgress(
   nodeId: string,
   mapId?: string
 ): Promise<StudentProgress | null> {
-  console.log(
-    "📊 [Progress] Loading progress for node:",
-    nodeId,
-    "mapId:",
-    mapId
-  );
-
   if (!mapId) {
     console.warn(
       "⚠️ [Progress] No mapId provided, cannot fetch progress reliably"
@@ -55,12 +48,7 @@ export async function getStudentProgress(
   }
 
   try {
-    console.log("🔄 [Progress] Using API client for progress fetch");
     const result = await getNodeProgress(mapId, nodeId);
-    console.log(
-      "✅ [Progress] Successfully fetched progress:",
-      result?.status || "not_started"
-    );
     return result;
   } catch (error) {
     console.error("❌ [Progress] Error fetching progress:", error);
@@ -78,15 +66,8 @@ export async function loadAllProgress(
   const cacheKey = createCacheKey('map-progress', mapId);
   
   return dedupeRequest(cacheKey, async () => {
-    console.log("🗺️ [Progress] Loading all progress for map:", mapId);
-
     try {
       const result = await getMapProgress(mapId);
-      console.log(
-        "✅ [Progress] Successfully loaded progress for",
-        Object.keys(result).length,
-        "nodes"
-      );
       return result;
     } catch (error) {
       console.error("❌ [Progress] Error loading all progress:", error);
@@ -103,12 +84,6 @@ export const startNodeProgress = async (
   nodeId: string,
   mapId?: string
 ): Promise<StudentProgress | null> => {
-  console.log("🚀 [Progress] Starting node progress:", {
-    userId,
-    nodeId,
-    mapId,
-  });
-
   if (!mapId) {
     console.warn("⚠️ [Progress] No mapId provided, cannot start progress");
     return null;
@@ -116,7 +91,6 @@ export const startNodeProgress = async (
 
   try {
     const result = await apiStartNodeProgress(mapId, nodeId);
-    console.log("✅ [Progress] Successfully started progress");
     return result;
   } catch (error) {
     console.error("❌ [Progress] Error starting node progress:", error);
@@ -132,11 +106,8 @@ export const submitNodeProgress = async (
   mapId: string,
   nodeId: string
 ): Promise<StudentProgress | null> => {
-  console.log("📤 [Progress] Submitting node progress:", { mapId, nodeId });
-
   try {
     const result = await apiSubmitNodeProgress(mapId, nodeId);
-    console.log("✅ [Progress] Successfully submitted progress");
     return result;
   } catch (error) {
     console.error("❌ [Progress] Error submitting node progress:", error);

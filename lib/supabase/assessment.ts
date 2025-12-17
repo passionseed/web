@@ -72,6 +72,9 @@ export const updateAssessmentMetadata = async (
   metadata: Record<string, any>
 ): Promise<NodeAssessment> => {
   const supabase = createClient();
+
+  console.log("Updating assessment metadata:", { id, metadata });
+
   const { data, error } = await supabase
     .from("node_assessments")
     .update({ metadata })
@@ -81,8 +84,16 @@ export const updateAssessmentMetadata = async (
 
   if (error) {
     console.error("Error updating assessment metadata:", error);
-    throw new Error("Could not update assessment metadata.");
+    console.error("Error details:", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    });
+    throw new Error(`Could not update assessment metadata: ${error.message || 'Unknown error'}`);
   }
+
+  console.log("Successfully updated assessment metadata:", data);
   return data;
 };
 
@@ -153,8 +164,6 @@ export const createAssessmentSubmission = async (
 ): Promise<AssessmentSubmission> => {
   const supabase = createClient();
 
-  console.log("📝 Creating assessment submission:", submissionData);
-
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
@@ -167,8 +176,6 @@ export const createAssessmentSubmission = async (
   // Check if this is a group assessment and handle accordingly
   if (submissionData.assessment_id) {
     try {
-      console.log("🔍 Checking if assessment is a group assessment...");
-      
       // Get assessment details to check if it's a group assessment
       const { data: assessment, error: assessmentError } = await supabase
         .from("node_assessments")
@@ -179,25 +186,19 @@ export const createAssessmentSubmission = async (
       if (assessmentError) {
         console.warn("⚠️ Could not fetch assessment details:", assessmentError);
       } else if (assessment?.is_group_assessment) {
-        console.log("👥 This is a group assessment, checking user's group...");
-        
         // Get the user's group for this assessment
         const { getUserAssessmentGroup } = await import("./assessment-groups");
         const userGroup = await getUserAssessmentGroup(assessment.id, user.id);
-        
+
         if (userGroup) {
-          console.log("✅ User is in group:", userGroup.group_name);
           enhancedSubmissionData = {
             ...enhancedSubmissionData,
             assessment_group_id: userGroup.id,
             submitted_for_group: true,
           };
-          console.log("🔄 Enhanced submission data for group:", enhancedSubmissionData);
         } else {
           console.warn("⚠️ User is not assigned to a group for this assessment");
         }
-      } else {
-        console.log("📝 This is an individual assessment");
       }
     } catch (groupError) {
       console.error("❌ Error checking group status:", groupError);
@@ -230,16 +231,8 @@ export const createAssessmentSubmission = async (
     throw new Error(`Could not create assessment submission: ${error.message}`);
   }
 
-  console.log("✅ Assessment submission created:", data);
-  
-  // Log group submission details
-  if (data.submitted_for_group && data.assessment_group_id) {
-    console.log("🎉 Group submission created! The database trigger will automatically create submissions for other group members.");
-  }
-
   // Update progress status based on assessment type
   try {
-    console.log("📈 Updating progress status...");
 
     // For now, try to get mapId and nodeId from the progress record
     const { data: progressRecord, error: progressError } = await supabase
@@ -266,7 +259,6 @@ export const createAssessmentSubmission = async (
       if (mapId) {
         // For checklist assessments, automatically pass the student
         if (data.node_assessments.assessment_type === "checklist") {
-          console.log("✅ Auto-passing checklist assessment...");
           await updateNodeProgress(mapId, progressRecord.node_id, "passed", {
             submitted_at: new Date().toISOString(),
           });
@@ -279,8 +271,6 @@ export const createAssessmentSubmission = async (
         await submitNodeProgressLegacy(data.progress_id);
       }
     }
-
-    console.log("✅ Progress status updated successfully");
   } catch (progressError) {
     console.error("❌ Failed to update progress status:", progressError);
     // Don't throw here - submission was successful, progress update is secondary
@@ -288,7 +278,6 @@ export const createAssessmentSubmission = async (
 
   // For quiz assessments, automatically grade the submission
   if (data.node_assessments.assessment_type === "quiz" && data.quiz_answers) {
-    console.log("🤖 Auto-grading quiz submission...");
     await autoGradeQuizSubmission(data);
   }
 

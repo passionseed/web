@@ -31,11 +31,13 @@ import {
   Flame,
   Brain,
   Target,
+  Award,
 } from "lucide-react";
 import Link from "next/link";
 import { Project } from "@/types/project";
 import { PortalVinyl } from "@/components/song-of-the-day/portal-vinyl";
 import { MilestoneList } from "@/components/milestones/MilestoneList";
+import { BadgeGallery } from "@/components/profile/BadgeGallery";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
@@ -411,19 +413,37 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 bg-gradient-to-br from-violet-900 to-purple-800 text-white">
+        <Card className="col-span-1 bg-gradient-to-br from-yellow-900 to-orange-900 text-white overflow-hidden">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center text-lg md:text-xl">
-              <Star className="mr-2 h-4 w-4 md:h-5 md:w-5 text-yellow-400" />
-              Your Skills
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center text-lg md:text-xl">
+                <Award className="mr-2 h-4 w-4 md:h-5 md:w-5 text-yellow-400" />
+                Achievement Badges
+              </CardTitle>
+              <Button
+                asChild
+                size="sm"
+                variant="ghost"
+                className="text-yellow-300 hover:text-yellow-100 hover:bg-yellow-800/30"
+              >
+                <Link href="/profile">
+                  View All
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </Link>
+              </Button>
+            </div>
             <CardDescription className="text-white/70 text-xs md:text-sm">
-              Skills you're developing
+              Badges earned from completing seeds
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {/* Placeholder for skills */}
-            <p className="text-white/70 text-sm">Coming soon...</p>
+          <CardContent className="max-h-[400px] overflow-y-auto">
+            {user?.id && (
+              <BadgeGallery
+                userId={user.id}
+                showTitle={false}
+                maxDisplay={6}
+              />
+            )}
           </CardContent>
         </Card>
       </div>

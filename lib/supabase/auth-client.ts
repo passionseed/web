@@ -44,7 +44,8 @@ export const checkClientAuth = async (
 
 
     if (roleError) {
-      console.error("Error checking user roles:", roleError);
+      console.error("Error checking user roles:", roleError.message || roleError);
+      console.error("Error details:", { code: roleError.code, details: roleError.details, hint: roleError.hint });
       return {
         user,
         isAuthenticated: true,

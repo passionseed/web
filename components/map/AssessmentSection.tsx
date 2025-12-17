@@ -29,6 +29,8 @@ import {
   getUserAssessmentGroup,
   getGroupMembersSubmissionStatus,
 } from "@/lib/supabase/assessment-groups";
+import { getSeedRoomAssessmentGroup, isSeedMap } from "@/lib/supabase/seed-groups";
+import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -75,14 +77,15 @@ interface AssessmentSectionProps {
     fileName?: string[],
     checklistData?: Record<string, boolean>
   ) => void;
-  submissionsWithGrades: { submission: any; grade: any }[]; // Adjust type as needed
+  submissionsWithGrades: { submission: any; grade: any }[]; // Adjust type as needed;
   nodeId: string;
+  mapId: string; // Add mapId to detect seed maps
   progressStatus?:
-    | "not_started"
-    | "in_progress"
-    | "submitted"
-    | "passed"
-    | "failed";
+  | "not_started"
+  | "in_progress"
+  | "submitted"
+  | "passed"
+  | "failed";
 }
 
 const renderQuizQuestion = (
@@ -159,6 +162,7 @@ export function AssessmentSection({
   onSubmit,
   submissionsWithGrades,
   nodeId,
+  mapId,
   progressStatus,
 }: AssessmentSectionProps) {
   const [isFileRequired, setIsFileRequired] = useState(false);
@@ -243,7 +247,24 @@ export function AssessmentSection({
       setLoadingGroup(true);
       try {
         console.log("👥 Loading user's group for assessment:", assessment.id);
-        const group = await getUserAssessmentGroup(assessment.id, user.id);
+
+        // Check if this is a seed map
+        const supabase = createClient();
+        const { data: mapData } = await supabase
+          .from('learning_maps')
+          .select('map_type, parent_seed_id')
+          .eq('id', mapId)
+          .single();
+
+        let group;
+        if (mapData && isSeedMap(mapData)) {
+          console.log("🌱 Seed map detected, using seed room members as group");
+          group = await getSeedRoomAssessmentGroup(assessment.id, user.id);
+        } else {
+          console.log("📚 Classroom map, using assessment groups");
+          group = await getUserAssessmentGroup(assessment.id, user.id);
+        }
+
         setUserGroup(group);
         console.log("✅ User group loaded:", group);
 
@@ -281,7 +302,7 @@ export function AssessmentSection({
     };
 
     loadUserGroup();
-  }, [assessment.id, assessment.is_group_assessment, user, toast]);
+  }, [assessment.id, assessment.is_group_assessment, user, mapId, toast]);
 
   // Check if file is required for submission
   const validateSubmission = () => {
@@ -387,7 +408,7 @@ export function AssessmentSection({
                 {displayQuestions.length !== 1 ? "s" : ""}
                 {assessment.metadata?.randomize_questions &&
                   displayQuestions.length !==
-                    (assessment.quiz_questions?.length || 0) && (
+                  (assessment.quiz_questions?.length || 0) && (
                     <span className="text-xs ml-1">
                       (of {assessment.quiz_questions?.length || 0})
                     </span>
@@ -424,60 +445,60 @@ export function AssessmentSection({
                     <div className="space-y-1">
                       {groupMembersStatus.length > 0
                         ? groupMembersStatus.map((member) => {
-                            const isCurrentUser = member.user_id === user?.id;
-                            return (
-                              <div
-                                key={member.user_id}
-                                className="flex items-center gap-2 text-sm"
-                              >
-                                {member.has_submitted ? (
-                                  <CheckCircle className="h-3 w-3 text-green-600" />
-                                ) : (
-                                  <Circle className="h-3 w-3 text-gray-400" />
-                                )}
-                                <span
-                                  className={
-                                    member.has_submitted
-                                      ? "text-green-700"
-                                      : "text-blue-700"
-                                  }
-                                >
-                                  {member.full_name ||
-                                    member.username ||
-                                    "Unknown User"}
-                                  {isCurrentUser && (
-                                    <span className="text-blue-500 ml-1">
-                                      (You)
-                                    </span>
-                                  )}
-                                  {member.has_submitted && (
-                                    <span className="text-green-600 ml-2 text-xs">
-                                      ✓ Submitted
-                                    </span>
-                                  )}
-                                </span>
-                              </div>
-                            );
-                          })
-                        : // Fallback to original display if submission status not loaded
-                          userGroup.members.map((member) => (
+                          const isCurrentUser = member.user_id === user?.id;
+                          return (
                             <div
                               key={member.user_id}
                               className="flex items-center gap-2 text-sm"
                             >
-                              <UserCheck className="h-3 w-3 text-blue-600" />
-                              <span className="text-blue-700">
+                              {member.has_submitted ? (
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Circle className="h-3 w-3 text-gray-400" />
+                              )}
+                              <span
+                                className={
+                                  member.has_submitted
+                                    ? "text-green-700"
+                                    : "text-blue-700"
+                                }
+                              >
                                 {member.full_name ||
                                   member.username ||
                                   "Unknown User"}
-                                {member.user_id === user?.id && (
+                                {isCurrentUser && (
                                   <span className="text-blue-500 ml-1">
                                     (You)
                                   </span>
                                 )}
+                                {member.has_submitted && (
+                                  <span className="text-green-600 ml-2 text-xs">
+                                    ✓ Submitted
+                                  </span>
+                                )}
                               </span>
                             </div>
-                          ))}
+                          );
+                        })
+                        : // Fallback to original display if submission status not loaded
+                        userGroup.members.map((member) => (
+                          <div
+                            key={member.user_id}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <UserCheck className="h-3 w-3 text-blue-600" />
+                            <span className="text-blue-700">
+                              {member.full_name ||
+                                member.username ||
+                                "Unknown User"}
+                              {member.user_id === user?.id && (
+                                <span className="text-blue-500 ml-1">
+                                  (You)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        ))}
                     </div>
                   </div>
                 ) : (
@@ -520,7 +541,7 @@ export function AssessmentSection({
           progressStatus === "failed" &&
           (assessment.metadata?.allow_multiple_attempts ?? true) &&
           submissionsWithGrades.length >=
-            (assessment.metadata?.max_attempts || 3) && (
+          (assessment.metadata?.max_attempts || 3) && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start gap-3">
                 <X className="h-5 w-5 text-red-600 mt-0.5" />
@@ -651,42 +672,42 @@ export function AssessmentSection({
               {(assessment.metadata?.question ||
                 assessment.metadata?.prompt ||
                 assessment.assessment_type === "quiz") && (
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0">
-                      <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-blue-900 mb-2">
-                        {assessment.assessment_type === "quiz"
-                          ? "Quiz Instructions"
-                          : "Assessment Instructions"}
-                      </p>
-                      <div className="text-sm text-blue-800 whitespace-pre-wrap space-y-2">
-                        {assessment.metadata?.question && (
-                          <p>{assessment.metadata.question}</p>
-                        )}
-                        {assessment.metadata?.prompt && (
-                          <p>{assessment.metadata.prompt}</p>
-                        )}
-                        {assessment.assessment_type === "quiz" &&
-                          assessment.metadata?.quiz_description && (
-                            <p>{assessment.metadata.quiz_description}</p>
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0">
+                        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-blue-900 mb-2">
+                          {assessment.assessment_type === "quiz"
+                            ? "Quiz Instructions"
+                            : "Assessment Instructions"}
+                        </p>
+                        <div className="text-sm text-blue-800 whitespace-pre-wrap space-y-2">
+                          {assessment.metadata?.question && (
+                            <p>{assessment.metadata.question}</p>
                           )}
-                        {assessment.assessment_type === "quiz" &&
-                          !assessment.metadata?.question &&
-                          !assessment.metadata?.prompt &&
-                          !assessment.metadata?.quiz_description && (
-                            <p>
-                              Complete the quiz below. Answer all questions to
-                              the best of your ability.
-                            </p>
+                          {assessment.metadata?.prompt && (
+                            <p>{assessment.metadata.prompt}</p>
                           )}
+                          {assessment.assessment_type === "quiz" &&
+                            assessment.metadata?.quiz_description && (
+                              <p>{assessment.metadata.quiz_description}</p>
+                            )}
+                          {assessment.assessment_type === "quiz" &&
+                            !assessment.metadata?.question &&
+                            !assessment.metadata?.prompt &&
+                            !assessment.metadata?.quiz_description && (
+                              <p>
+                                Complete the quiz below. Answer all questions to
+                                the best of your ability.
+                              </p>
+                            )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Attempt Information */}
               {submissionsWithGrades.length === 0 && (
@@ -878,7 +899,7 @@ export function AssessmentSection({
                     progressStatus === "failed" &&
                     (assessment.metadata?.allow_multiple_attempts ?? true) &&
                     submissionsWithGrades.length >=
-                      (assessment.metadata?.max_attempts || 3)) ||
+                    (assessment.metadata?.max_attempts || 3)) ||
                   // Prevent submission for single attempt assessments that already have a submission
                   (!(assessment.metadata?.allow_multiple_attempts ?? true) &&
                     submissionsWithGrades.length > 0)

@@ -1,543 +1,461 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Upload,
-  Save,
-  User,
-  Mail,
-  Calendar,
-  Edit2,
-  School,
-  GraduationCap,
-  Building,
-  Loader2,
-  Camera,
-  X,
-} from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Upload, Save, User, Mail, Calendar, Edit, School, GraduationCap, Building } from 'lucide-react'
+import { toast } from 'sonner'
+import { MentorAvailabilitySettings } from '@/components/profile/MentorAvailabilitySettings'
+import { BadgeGallery } from '@/components/profile/BadgeGallery'
 
 interface UserProfile {
-  id: string;
-  email: string | null;
-  full_name: string | null;
-  username: string;
-  avatar_url: string | null;
-  date_of_birth: string | null;
-  discord_id: string | null;
-  education_level: "high_school" | "university" | "unaffiliated" | null;
-  created_at: string | null;
-  updated_at: string | null;
+  id: string
+  email: string | null
+  full_name: string | null
+  username: string
+  avatar_url: string | null
+  date_of_birth: string | null
+  discord_id: string | null
+  education_level: 'high_school' | 'university' | 'unaffiliated' | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const supabase = createClient();
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isInstructor, setIsInstructor] = useState(false)
+  const supabase = createClient()
 
   // Form states
-  const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [discordId, setDiscordId] = useState("");
-  const [educationLevel, setEducationLevel] = useState<
-    "high_school" | "university" | "unaffiliated"
-  >("high_school");
+  const [fullName, setFullName] = useState('')
+  const [username, setUsername] = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
+  const [discordId, setDiscordId] = useState('')
+  const [educationLevel, setEducationLevel] = useState<'high_school' | 'university' | 'unaffiliated'>('high_school')
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    fetchProfile()
+  }, [])
 
   const createProfile = async (user: any) => {
     try {
       const { data: newProfile, error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .insert({
           id: user.id,
           email: user.email,
-          full_name:
-            user.user_metadata?.full_name || user.user_metadata?.name || null,
-          username:
-            user.user_metadata?.preferred_username ||
-            user.email?.split("@")[0] ||
-            `user_${user.id.slice(0, 8)}`,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+          username: user.user_metadata?.preferred_username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
           avatar_url: user.user_metadata?.avatar_url || null,
-          education_level: "high_school",
+          education_level: 'high_school',
         })
-        .select("*")
-        .single();
+        .select('*')
+        .single()
 
       if (error) {
-        console.error("Error creating profile:", error);
-        toast.error("Failed to create profile");
-        return;
+        console.error('Error creating profile:', error)
+        toast.error('Failed to create profile')
+        return
       }
 
-      setProfile(newProfile);
-      setFullName(newProfile.full_name || "");
-      setUsername(newProfile.username || "");
-      setDateOfBirth(newProfile.date_of_birth || "");
-      setDiscordId(newProfile.discord_id || "");
-      setEducationLevel(newProfile.education_level || "high_school");
-      toast.success("Profile created successfully!");
+      setProfile(newProfile)
+      setFullName(newProfile.full_name || '')
+      setUsername(newProfile.username || '')
+      setDateOfBirth(newProfile.date_of_birth || '')
+      setDiscordId(newProfile.discord_uid || '')
+      setEducationLevel(newProfile.education_level || 'high_school')
+      toast.success('Profile created successfully!')
     } catch (error) {
-      console.error("Profile creation error:", error);
-      toast.error("Failed to create profile");
+      console.error('Profile creation error:', error)
+      toast.error('Failed to create profile')
     }
-  };
+  }
 
   const fetchProfile = async () => {
     try {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
       if (authError || !user) {
-        toast.error("Please log in to view your profile");
-        return;
+        toast.error('Please log in to view your profile')
+        return
       }
 
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
 
       if (profileError) {
-        if (profileError.code === "PGRST116") {
+        if (profileError.code === 'PGRST116') {
           // Profile doesn't exist, create one
-          await createProfile(user);
+          await createProfile(user)
         } else {
-          console.error("Error fetching profile:", profileError);
-          toast.error("Failed to load profile");
+          console.error('Error fetching profile:', profileError)
+          toast.error('Failed to load profile')
         }
-        return;
+        return
       }
 
-      setProfile(profileData);
-      setFullName(profileData.full_name || "");
-      setUsername(profileData.username || "");
-      setDateOfBirth(profileData.date_of_birth || "");
-      setDiscordId(profileData.discord_id || "");
-      setEducationLevel(profileData.education_level || "high_school");
+      setProfile(profileData)
+      setFullName(profileData.full_name || '')
+      setUsername(profileData.username || '')
+      setDateOfBirth(profileData.date_of_birth || '')
+      setDiscordId(profileData.discord_uid || '')
+      setEducationLevel(profileData.education_level || 'high_school')
+
+      // Check if user is instructor or admin
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['instructor', 'admin'])
+        .single()
+
+      setIsInstructor(!!roleData)
     } catch (error) {
-      console.error("Profile fetch error:", error);
-      toast.error("Failed to load profile");
+      console.error('Profile fetch error:', error)
+      toast.error('Failed to load profile')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleAvatarUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
 
-    setUploading(true);
+    setUploading(true)
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const formData = new FormData()
+      formData.append('file', file)
 
-      const response = await fetch("/api/upload/avatar", {
-        method: "POST",
+      const response = await fetch('/api/upload/avatar', {
+        method: 'POST',
         body: formData,
-      });
+      })
 
-      const result = await response.json();
+      const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || "Upload failed");
+        throw new Error(result.error || 'Upload failed')
       }
 
       // Update local state with new avatar URL
-      setProfile((prev) =>
-        prev ? { ...prev, avatar_url: result.fileUrl } : null
-      );
-      toast.success("Avatar updated successfully!");
+      setProfile(prev => prev ? { ...prev, avatar_url: result.fileUrl } : null)
+      toast.success('Avatar updated successfully!')
     } catch (error) {
-      console.error("Avatar upload error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to upload avatar"
-      );
+      console.error('Avatar upload error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to upload avatar')
     } finally {
-      setUploading(false);
+      setUploading(false)
     }
-  };
+  }
 
   const handleSaveProfile = async () => {
-    if (!profile) return;
+    if (!profile) return
 
-    setSaving(true);
+    setSaving(true)
     try {
       const { error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({
           full_name: fullName || null,
           username: username,
           date_of_birth: dateOfBirth || null,
-          discord_id: discordId || null,
+          discord_uid: discordId || null,
           education_level: educationLevel,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", profile.id);
+        .eq('id', profile.id)
 
       if (error) {
-        throw new Error("Failed to update profile");
+        throw new Error('Failed to update profile')
       }
 
       // Update local state
-      setProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              full_name: fullName || null,
-              username,
-              date_of_birth: dateOfBirth || null,
-              discord_id: discordId || null,
-              education_level: educationLevel,
-              updated_at: new Date().toISOString(),
-            }
-          : null
-      );
+      setProfile(prev => prev ? {
+        ...prev,
+        full_name: fullName || null,
+        username,
+        date_of_birth: dateOfBirth || null,
+        discord_id: discordId || null,
+        education_level: educationLevel,
+        updated_at: new Date().toISOString(),
+      } : null)
 
-      setIsEditing(false);
-      toast.success("Profile updated successfully!");
+      setIsEditing(false)
+      toast.success('Profile updated successfully!')
     } catch (error) {
-      console.error("Profile save error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to save profile"
-      );
+      console.error('Profile save error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to save profile')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handleCancelEdit = () => {
     if (profile) {
-      setFullName(profile.full_name || "");
-      setUsername(profile.username || "");
-      setDateOfBirth(profile.date_of_birth || "");
-      setDiscordId(profile.discord_id || "");
-      setEducationLevel(profile.education_level || "high_school");
+      setFullName(profile.full_name || '')
+      setUsername(profile.username || '')
+      setDateOfBirth(profile.date_of_birth || '')
+      setDiscordId(profile.discord_uid || '')
+      setEducationLevel(profile.education_level || 'high_school')
     }
-    setIsEditing(false);
-  };
-
-  const EducationCard = ({
-    type,
-    level,
-    icon: Icon,
-    title,
-    description,
-  }: {
-    type: string;
-    level: string;
-    icon: any;
-    title: string;
-    description: string;
-  }) => (
-    <div
-      onClick={() => isEditing && setEducationLevel(level as any)}
-      className={cn(
-        "relative flex flex-col items-start p-4 rounded-xl border-2 transition-all duration-200",
-        isEditing
-          ? "cursor-pointer hover:border-primary/50 hover:bg-accent/50"
-          : "opacity-75",
-        educationLevel === level
-          ? "border-primary bg-primary/5"
-          : "border-transparent bg-muted/50"
-      )}
-    >
-      <div
-        className={cn(
-          "p-2 rounded-lg mb-3",
-          educationLevel === level
-            ? "bg-primary text-primary-foreground"
-            : "bg-background text-muted-foreground"
-        )}
-      >
-        <Icon className="w-5 h-5" />
-      </div>
-      <h3 className="font-semibold">{title}</h3>
-      <p className="text-sm text-muted-foreground mt-1">{description}</p>
-    </div>
-  );
+    setIsEditing(false)
+  }
 
   if (loading) {
     return (
-      <div className="container max-w-5xl py-10">
-        <div className="flex items-center gap-6 mb-8">
-          <div className="h-24 w-24 rounded-full bg-muted animate-pulse" />
-          <div className="space-y-2">
-            <div className="h-8 w-48 bg-muted animate-pulse rounded" />
-            <div className="h-4 w-32 bg-muted animate-pulse rounded" />
-          </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardContent className="p-8">
+              <div className="animate-pulse space-y-4">
+                <div className="h-24 w-24 bg-gray-300 rounded-full mx-auto"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-300 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    );
+    )
   }
 
   if (!profile) {
     return (
-      <div className="container flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Profile not found</h2>
-          <p className="text-muted-foreground">
-            Please try logging out and back in.
-          </p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <p>Profile not found. Please try logging out and back in.</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="container max-w-5xl py-10 space-y-8 animate-in fade-in duration-500">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between pb-8 border-b">
-        <div className="flex items-center gap-6">
-          <div className="relative group">
-            <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
-              <AvatarImage
-                src={profile.avatar_url || "/placeholder-user.jpg"}
-              />
-              <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                {profile.full_name?.charAt(0) ||
-                  profile.username?.charAt(0) ||
-                  "U"}
-              </AvatarFallback>
-            </Avatar>
-            <label
-              htmlFor="avatar-upload"
-              className={cn(
-                "absolute inset-0 flex items-center justify-center bg-black/60 text-white rounded-full opacity-0 transition-opacity cursor-pointer",
-                (uploading || isEditing) && "group-hover:opacity-100"
-              )}
-            >
-              {uploading ? (
-                <Loader2 className="w-6 h-6 animate-spin" />
-              ) : (
-                <Camera className="w-6 h-6" />
-              )}
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                disabled={uploading}
-                className="hidden"
-              />
-            </label>
-          </div>
-
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {profile.full_name || profile.username}
-            </h1>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <span className="font-medium text-foreground">
-                @{profile.username}
-              </span>
-              <span>•</span>
-              <span>{profile.email}</span>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        <Card>
+          <CardHeader className="text-center">
+            <div className="relative inline-block">
+              <Avatar className="h-24 w-24 mx-auto">
+                <AvatarImage 
+                  src={profile.avatar_url || '/placeholder-user.jpg'} 
+                  alt="Profile picture" 
+                />
+                <AvatarFallback className="text-2xl">
+                  {profile.full_name?.charAt(0) || profile.username?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              
+              <label 
+                htmlFor="avatar-upload" 
+                className="absolute bottom-0 right-0 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-full cursor-pointer transition-colors"
+              >
+                <Upload className="h-4 w-4" />
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
             </div>
-            {profile.created_at && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  Joined{" "}
-                  {new Date(profile.created_at).toLocaleDateString(undefined, {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </span>
+            
+            <CardTitle className="mt-4">
+              {isEditing ? 'Edit Profile' : (profile.full_name || profile.username)}
+            </CardTitle>
+            
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Mail className="h-4 w-4" />
+              {profile.email}
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {uploading && (
+              <div className="text-center text-sm text-muted-foreground">
+                Uploading avatar...
               </div>
             )}
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          {isEditing ? (
-            <>
-              <Button
-                onClick={handleSaveProfile}
-                disabled={saving}
-                className="flex-1 md:flex-none"
-              >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                Save Changes
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleCancelEdit}
-                disabled={saving}
-                className="flex-1 md:flex-none"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <Button
-              onClick={() => setIsEditing(true)}
-              variant="outline"
-              className="flex-1 md:flex-none"
-            >
-              <Edit2 className="w-4 h-4 mr-2" />
-              Edit Profile
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <div className="grid gap-8 md:grid-cols-3">
-        {/* Left Column: Personal Info */}
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>
-                Update your personal details and public profile info.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="fullName"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      disabled={!isEditing}
-                      className="pl-9"
-                      placeholder="Your full name"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-3 text-muted-foreground text-sm">
-                      @
-                    </span>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      disabled={!isEditing}
-                      className="pl-8"
-                      placeholder="username"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    disabled={!isEditing}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="discordId">Discord ID</Label>
-                  <Input
-                    id="discordId"
-                    value={discordId}
-                    onChange={(e) => setDiscordId(e.target.value)}
-                    disabled={!isEditing}
-                    placeholder="username#0000"
-                  />
-                </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="Enter your full name"
+                />
               </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Details</CardTitle>
-              <CardDescription>
-                Manage your account settings and preferences.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Email Address</p>
-                    <p className="text-sm text-muted-foreground">
-                      {profile.email}
-                    </p>
-                  </div>
-                  <Button variant="ghost" size="sm" disabled>
-                    Managed by Auth Provider
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="Enter your username"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="discordId">Discord User ID (UID)</Label>
+                <Input
+                  id="discordId"
+                  value={discordId}
+                  onChange={(e) => setDiscordId(e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="Enter your Discord User ID"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Education Level</Label>
+                <div className="grid grid-cols-1 gap-3 max-w-md">
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'high_school' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => isEditing && setEducationLevel('high_school')}
+                    disabled={!isEditing}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <School className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">High School</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Currently in high school
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'university' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => isEditing && setEducationLevel('university')}
+                    disabled={!isEditing}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <GraduationCap className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">University</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Currently in university
+                        </div>
+                      </div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant={educationLevel === 'unaffiliated' ? "default" : "outline"}
+                    className="h-auto p-4 justify-start text-left"
+                    onClick={() => isEditing && setEducationLevel('unaffiliated')}
+                    disabled={!isEditing}
+                  >
+                    <div className="flex items-start gap-3 w-full">
+                      <Building className="h-5 w-5 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-sm">Unaffiliated</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Not currently in formal education
+                        </div>
+                      </div>
+                    </div>
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-        {/* Right Column: Education & Status */}
-        <div className="space-y-6">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>Education Level</CardTitle>
-              <CardDescription>Where are you in your journey?</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <EducationCard
-                type="radio"
-                level="high_school"
-                icon={School}
-                title="High School"
-                description="Currently appearing for high school exams"
-              />
-              <EducationCard
-                type="radio"
-                level="university"
-                icon={GraduationCap}
-                title="University"
-                description="Pursuing a bachelors or masters degree"
-              />
-              <EducationCard
-                type="radio"
-                level="unaffiliated"
-                icon={Building}
-                title="Unaffiliated"
-                description="Not currently enrolled in an institution"
-              />
-            </CardContent>
-          </Card>
-        </div>
+            <div className="flex gap-3 pt-4">
+              {isEditing ? (
+                <>
+                  <Button 
+                    onClick={handleSaveProfile} 
+                    disabled={saving || !username.trim()}
+                    className="flex-1"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancelEdit}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button 
+                  onClick={() => setIsEditing(true)}
+                  className="flex-1"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              )}
+            </div>
+
+            {profile.created_at && (
+              <div className="text-sm text-muted-foreground text-center pt-4 border-t">
+                <Calendar className="h-4 w-4 inline mr-2" />
+                Member since {new Date(profile.created_at).toLocaleDateString()}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Badge Gallery */}
+        {profile && (
+          <div className="mt-8">
+            <Card>
+              <CardContent className="p-6">
+                <BadgeGallery userId={profile.id} showTitle={true} />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Mentor Availability Settings - Only for Instructors */}
+        {isInstructor && profile && (
+          <div className="mt-6">
+            <MentorAvailabilitySettings userId={profile.id} />
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }
