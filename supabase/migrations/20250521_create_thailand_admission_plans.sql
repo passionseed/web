@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS public.thailand_admission_plans (
-    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     curriculum_id text,
     curriculum_name_th text,
     curriculum_name_en text,
@@ -13,18 +13,21 @@ CREATE TABLE IF NOT EXISTS public.thailand_admission_plans (
 ALTER TABLE public.thailand_admission_plans ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Allow read access to authenticated users
+DROP POLICY IF EXISTS "Thailand admission plans are viewable by authenticated users" ON public.thailand_admission_plans;
 CREATE POLICY "Thailand admission plans are viewable by authenticated users" 
 ON public.thailand_admission_plans FOR SELECT 
 TO authenticated 
 USING (true);
 
 -- Policy: Allow read access to anon users (optional, if needed for public pages)
+DROP POLICY IF EXISTS "Thailand admission plans are viewable by anon users" ON public.thailand_admission_plans;
 CREATE POLICY "Thailand admission plans are viewable by anon users" 
 ON public.thailand_admission_plans FOR SELECT 
 TO anon 
 USING (true);
 
 -- Policy: Allow insert/update/delete only by service role or specific admins (simplified for now)
+DROP POLICY IF EXISTS "Service role can manage thailand admission plans" ON public.thailand_admission_plans;
 CREATE POLICY "Service role can manage thailand admission plans" 
 ON public.thailand_admission_plans 
 TO service_role 
