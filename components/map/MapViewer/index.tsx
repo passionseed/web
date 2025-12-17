@@ -36,8 +36,10 @@ import { useMapNavigation } from "./hooks/useMapNavigation";
 import { usePanelManagement } from "./hooks/usePanelManagement";
 import { useSubmissionData } from "./hooks/useSubmissionData";
 import { getProgressStats, getNodeStatus } from "./utils/mapProgressUtils";
+import { SeedCompletionModal } from "@/components/seeds/SeedCompletionModal";
+import { markSeedRoomCompleted, checkSeedRoomCompletion, isEndNode } from "@/lib/supabase/seed-completion";
 
-function MapViewer({ map }: MapViewerProps) {
+function MapViewer({ map, seedRoomId, seedTitle, seedId }: MapViewerProps) {
   // Basic state
   const [selectedNode, setSelectedNode] = useState<MapViewerNode | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -45,6 +47,12 @@ function MapViewer({ map }: MapViewerProps) {
   const [classroomRole, setClassroomRole] = useState<string | null>(null);
   const [isTeamMap, setIsTeamMap] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
+
+  // Seed completion state
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [hasCompletedSeed, setHasCompletedSeed] = useState(false);
+  const [completionId, setCompletionId] = useState<string | null>(null);
+  const [completionDate, setCompletionDate] = useState<string | null>(null);
 
   // Panel refs
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -66,22 +74,20 @@ function MapViewer({ map }: MapViewerProps) {
 
   const roleFromClassroom =
     classroomRole === "instructor" ||
-    classroomRole === "TA" ||
-    classroomRole === "student"
+      classroomRole === "TA" ||
+      classroomRole === "student"
       ? (classroomRole as UserRole)
       : null;
 
   const userRole: UserRole = roleFromClassroom ?? globalUserRole;
   const isInstructorOrTA = userRole === "instructor" || userRole === "TA";
 
-  console.log(
-    "🗺️ [MapViewer] Rendering map:",
-    map.title,
-    "for user:",
-    authUser?.email,
-    "as",
-    userRole
-  );
+  // Debug: Check if seed room props are received
+  console.log("🌱 [MapViewer] Seed Room Props:", {
+    seedRoomId,
+    seedTitle,
+    hasSeedRoom: !!seedRoomId,
+  });
 
   // Custom hooks
   const { progressMap, loadAllProgress, isLoading: isProgressLoading } = useMapProgress(
@@ -139,9 +145,7 @@ function MapViewer({ map }: MapViewerProps) {
         showHint={true}
         showEditButton={true}
         onDataChange={(updatedData) => {
-          if (isInstructorOrTA && updatedData) {
-            console.log("Comment node updated:", updatedData);
-          }
+          // Comment node data updated
         }}
       />
     ),
@@ -234,6 +238,95 @@ function MapViewer({ map }: MapViewerProps) {
     getUser();
   }, []);
 
+  // Check if user has already completed this seed
+  useEffect(() => {
+    const checkCompletion = async () => {
+      if (seedRoomId && currentUser) {
+        const { completed, completion } = await checkSeedRoomCompletion(seedRoomId, currentUser.id);
+        if (completed) {
+          setHasCompletedSeed(true);
+          console.log("🎉 [MapViewer] User has already completed this seed");
+        }
+      }
+    };
+    checkCompletion();
+  }, [seedRoomId, currentUser]);
+
+  // Watch for end node completion when progressMap updates
+  useEffect(() => {
+    const checkEndNodeCompletion = async () => {
+      console.log("🔍 [MapViewer] Progress map updated, checking for end node completion", {
+        hasSeedRoomId: !!seedRoomId,
+        hasCurrentUser: !!currentUser,
+        hasSelectedNode: !!selectedNode,
+        hasCompletedSeed,
+        selectedNodeId: selectedNode?.id,
+        selectedNodeTitle: selectedNode?.data?.title,
+        nodeType: selectedNode?.data?.node_type,
+        progressMapSize: Object.keys(progressMap).length,
+      });
+
+      // Only check for seed completion if this is a seed room
+      if (seedRoomId && currentUser && selectedNode && !hasCompletedSeed) {
+        const nodeData = selectedNode.data;
+
+        // Check if the current node is an end node
+        if (isEndNode(nodeData.node_type)) {
+          console.log("🏁 [MapViewer] This is an END NODE!");
+
+          // Check if the node has been passed (for nodes with assessments) or just visited
+          const nodeProgress = progressMap[selectedNode.id];
+          console.log("📊 [MapViewer] Node progress details:", {
+            nodeProgress,
+            status: nodeProgress?.status,
+            statusType: typeof nodeProgress?.status,
+            allProgressKeys: nodeProgress ? Object.keys(nodeProgress) : [],
+            rawProgress: JSON.stringify(nodeProgress, null, 2),
+          });
+
+          // Check for multiple possible completion statuses
+          const isNodeCompleted =
+            nodeProgress?.status === "passed" ||
+            nodeProgress?.status === "submitted" ||
+            nodeProgress?.status === "failed"; // Include failed to show completion modal even if they didn't pass
+
+          console.log("✅ [MapViewer] Is node completed?", isNodeCompleted, "| Status:", nodeProgress?.status);
+
+          if (isNodeCompleted) {
+            console.log("🎉 [MapViewer] End node completed! Marking seed as complete");
+
+            // Mark the seed as completed
+            const { error } = await markSeedRoomCompleted(
+              seedRoomId,
+              currentUser.id,
+              selectedNode.id
+            );
+
+            if (error) {
+              console.error("❌ [MapViewer] Error marking seed complete:", error);
+            } else {
+              console.log("✅ [MapViewer] Seed marked as complete, showing modal");
+              setHasCompletedSeed(true);
+              setShowCompletionModal(true);
+            }
+          } else {
+            console.log("⏳ [MapViewer] End node not yet completed. Current status:", nodeProgress?.status);
+          }
+        } else {
+          console.log("ℹ️ [MapViewer] Not an end node, node type:", nodeData.node_type);
+        }
+      } else {
+        // Log why we're not checking
+        if (!seedRoomId) console.log("⚠️ [MapViewer] No seedRoomId");
+        if (!currentUser) console.log("⚠️ [MapViewer] No currentUser");
+        if (!selectedNode) console.log("⚠️ [MapViewer] No selectedNode");
+        if (hasCompletedSeed) console.log("⚠️ [MapViewer] Already completed seed");
+      }
+    };
+
+    checkEndNodeCompletion();
+  }, [progressMap, seedRoomId, currentUser, selectedNode, hasCompletedSeed]);
+
   // Check if map is a team map and get classroom role
   useEffect(() => {
     const checkTeamMapAndRole = async () => {
@@ -269,14 +362,51 @@ function MapViewer({ map }: MapViewerProps) {
 
   // Handle selection changes
   const onSelectionChange = useCallback(
-    (params: OnSelectionChangeParams) => {
+    async (params: OnSelectionChangeParams) => {
       const selected = params.nodes[0];
       const newSelectedNode = selected as MapViewerNode || null;
 
       setSelectedNode(newSelectedNode);
       handleSelectionChange(newSelectedNode);
+
+      // DEBUG: Log node info when selected
+      if (newSelectedNode) {
+        const nodeType = newSelectedNode.data.node_type || "learning (default)";
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log("📍 NODE SELECTED:", newSelectedNode.data.title);
+        console.log("🔖 Node Type:", nodeType);
+        console.log("🏠 Seed Room ID:", seedRoomId || "NOT IN SEED ROOM");
+        console.log("👤 Current User:", currentUser?.email || "Not logged in");
+        console.log("✅ Has Completed:", hasCompletedSeed);
+        console.log("📦 Assessments:", newSelectedNode.data.node_assessments?.length || 0);
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      }
+
+      // Check if this is an end node without assessments (text/info end node)
+      if (
+        seedRoomId &&
+        currentUser &&
+        newSelectedNode &&
+        !hasCompletedSeed &&
+        isEndNode(newSelectedNode.data.node_type) &&
+        (!newSelectedNode.data.node_assessments || newSelectedNode.data.node_assessments.length === 0)
+      ) {
+        console.log("🏁 [MapViewer] End node without assessment selected! Marking seed as complete");
+
+        // Mark the seed as completed immediately
+        const { error } = await markSeedRoomCompleted(
+          seedRoomId,
+          currentUser.id,
+          newSelectedNode.id
+        );
+
+        if (!error) {
+          setHasCompletedSeed(true);
+          setShowCompletionModal(true);
+        }
+      }
     },
-    [handleSelectionChange]
+    [handleSelectionChange, seedRoomId, currentUser, hasCompletedSeed]
   );
 
   // Calculate progress statistics
@@ -287,66 +417,154 @@ function MapViewer({ map }: MapViewerProps) {
     ? getNodeStatus(map, progressMap, selectedNode.id, isTeamMap, userRole).isUnlocked
     : true;
 
+  // Wrapped callback to trigger progress reload and check for end node completion
+  const handleProgressUpdate = useCallback(async () => {
+    console.log("🔄 [MapViewer] handleProgressUpdate called - reloading progress");
+    await loadAllProgress();
+
+    // Check for end node completion immediately after reload
+    if (seedRoomId && currentUser && selectedNode && !hasCompletedSeed) {
+      const nodeData = selectedNode.data as MapNode;
+
+      if (isEndNode(nodeData.node_type)) {
+        console.log("🏁 [MapViewer] End node detected in handleProgressUpdate!");
+
+        // Give a tiny delay for progressMap to update
+        setTimeout(async () => {
+          const updatedProgress = progressMap[selectedNode.id];
+
+          // Check for multiple possible completion statuses
+          const isCompleted =
+            updatedProgress?.status === "passed" ||
+            updatedProgress?.status === "submitted" ||
+            updatedProgress?.status === "failed"; // Include failed to show completion modal
+
+          console.log("📊 [MapViewer] Node progress after reload:", {
+            updatedProgress,
+            status: updatedProgress?.status,
+            isCompleted,
+            rawProgress: JSON.stringify(updatedProgress, null, 2),
+          });
+
+          if (isCompleted) {
+            console.log("🎉 [MapViewer] Marking seed as complete NOW!");
+            const { data, error } = await markSeedRoomCompleted(seedRoomId, currentUser.id, selectedNode.id);
+
+            if (!error && data) {
+              setHasCompletedSeed(true);
+              setCompletionId(data.id);
+              setCompletionDate(data.completed_at);
+              setShowCompletionModal(true);
+              console.log("✅ [MapViewer] Modal should appear now!");
+            } else {
+              console.error("❌ [MapViewer] Error marking complete:", error);
+            }
+          } else {
+            console.log("⏳ [MapViewer] Not completed yet. Status:", updatedProgress?.status);
+          }
+        }, 500);
+      }
+    }
+  }, [loadAllProgress, seedRoomId, currentUser, selectedNode, hasCompletedSeed, progressMap]);
+
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full">
-      <ResizablePanel
-        ref={leftPanelRef}
-        defaultSize={PANEL_SIZES.LEFT_DEFAULT}
-        minSize={PANEL_SIZES.LEFT_MIN}
-        maxSize={PANEL_SIZES.LEFT_MAX}
-        className="transition-all duration-300 ease-in-out relative flex flex-col"
-      >
-        {/* Map Container - Takes up full space */}
-        <div className="flex-1">
-          <MapCanvas
-            nodes={reactFlowNodes}
-            edges={reactFlowEdges}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onSelectionChange={onSelectionChange}
+    <>
+      <ResizablePanelGroup id="map-viewer-index-panels" direction="horizontal" className="h-full">
+        <ResizablePanel
+          id="map-viewer-index-left-panel"
+          ref={leftPanelRef}
+          defaultSize={PANEL_SIZES.LEFT_DEFAULT}
+          minSize={PANEL_SIZES.LEFT_MIN}
+          maxSize={PANEL_SIZES.LEFT_MAX}
+          className="transition-all duration-300 ease-in-out relative flex flex-col"
+        >
+          {/* Map Container - Takes up full space */}
+          <div className="flex-1">
+            <MapCanvas
+              nodes={reactFlowNodes}
+              edges={reactFlowEdges}
+              nodeTypes={nodeTypes}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onSelectionChange={onSelectionChange}
+            />
+          </div>
+
+          {/* Navigation Guide */}
+          <NavigationGuide
+            isExpanded={isNavigationExpanded}
+            onToggle={() => setIsNavigationExpanded(!isNavigationExpanded)}
+            progressStats={progressStats}
+            progressMap={progressMap}
+            isTeamMap={isTeamMap}
+            isInstructorOrTA={isInstructorOrTA}
           />
-        </div>
 
-        {/* Navigation Guide */}
-        <NavigationGuide
-          isExpanded={isNavigationExpanded}
-          onToggle={() => setIsNavigationExpanded(!isNavigationExpanded)}
-          progressStats={progressStats}
-          progressMap={progressMap}
-          isTeamMap={isTeamMap}
-          isInstructorOrTA={isInstructorOrTA}
+          {/* DEBUG: Test button to force modal */}
+          {seedRoomId && (
+            <div className="absolute top-4 right-4 z-50">
+              <button
+                onClick={() => {
+                  console.log("🧪 TEST: Forcing modal to show");
+                  setShowCompletionModal(true);
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg font-bold"
+              >
+                TEST MODAL
+              </button>
+            </div>
+          )}
+        </ResizablePanel>
+
+        <ResizableHandle withHandle id="map-viewer-resize-handle" />
+
+        <ResizablePanel
+          id="map-viewer-index-right-panel"
+          ref={rightPanelRef}
+          defaultSize={PANEL_SIZES.RIGHT_DEFAULT}
+          minSize={PANEL_SIZES.RIGHT_MIN}
+          maxSize={PANEL_SIZES.RIGHT_MAX}
+          className="transition-all duration-300 ease-in-out relative"
+        >
+          <MapSidebar
+            selectedNode={selectedNode}
+            mapId={map.id}
+            onProgressUpdate={handleProgressUpdate}
+            isNodeUnlocked={selectedNodeUnlocked}
+            userRole={userRole}
+            isInstructorOrTA={isInstructorOrTA}
+            isPanelMinimized={isPanelMinimized}
+            onTogglePanelSize={togglePanelSize}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+
+      {/* Seed Completion Modal - Outside panel structure for proper z-index */}
+      {seedRoomId && seedTitle && (
+        <SeedCompletionModal
+          open={showCompletionModal}
+          onOpenChange={setShowCompletionModal}
+          seedTitle={seedTitle}
+          seedId={seedId}
+          roomId={seedRoomId}
+          completionId={completionId || undefined}
+          userId={currentUser?.id}
+          userName={currentUser?.user_metadata?.full_name || currentUser?.email || "Student"}
+          completionDate={completionDate ? new Date(completionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : undefined}
+          onContinue={() => {
+            // Continue exploring
+          }}
         />
-      </ResizablePanel>
-
-      <ResizableHandle withHandle />
-
-      <ResizablePanel
-        ref={rightPanelRef}
-        defaultSize={PANEL_SIZES.RIGHT_DEFAULT}
-        minSize={PANEL_SIZES.RIGHT_MIN}
-        maxSize={PANEL_SIZES.RIGHT_MAX}
-        className="transition-all duration-300 ease-in-out relative"
-      >
-        <MapSidebar
-          selectedNode={selectedNode}
-          mapId={map.id}
-          onProgressUpdate={loadAllProgress}
-          isNodeUnlocked={selectedNodeUnlocked}
-          userRole={userRole}
-          isInstructorOrTA={isInstructorOrTA}
-          isPanelMinimized={isPanelMinimized}
-          onTogglePanelSize={togglePanelSize}
-        />
-      </ResizablePanel>
-    </ResizablePanelGroup>
+      )}
+    </>
   );
 }
 
 // Wrapper component that provides ReactFlow context and includes CSS
-export function MapViewerWithProvider({ map }: MapViewerProps) {
+export function MapViewerWithProvider({ map, seedRoomId, seedTitle }: MapViewerProps) {
   return (
     <ReactFlowProvider>
+      <MapViewer map={map} seedRoomId={seedRoomId} seedTitle={seedTitle} />
       <style jsx global>{`
         /* ================================
      Tunables
@@ -555,8 +773,6 @@ export function MapViewerWithProvider({ map }: MapViewerProps) {
           }
         }
       `}</style>
-
-      <MapViewer map={map} />
     </ReactFlowProvider>
   );
 }

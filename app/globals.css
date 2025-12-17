@@ -4,6 +4,37 @@
 @tailwind components;
 @tailwind utilities;
 
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.origin-left {
+  transform-origin: left;
+}
+
+/* Game Box Hover Animation */
+.game-box-container {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  transform-origin: left;
+}
+
+.group:hover .game-box-container {
+  transform: rotateY(-160deg);
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -55,10 +86,12 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground font-sans;
     font-family: var(--font-libre-franklin), var(--font-bai-jamjuree), sans-serif;
   }
+
   h1,
   h2,
   h3,
@@ -68,6 +101,7 @@
     @apply font-heading font-bold;
     font-family: var(--font-libre-franklin), var(--font-krub), sans-serif;
   }
+
   code,
   pre,
   a {
@@ -86,9 +120,11 @@
   0% {
     background-position: 0% 0%;
   }
+
   50% {
     background-position: 0% 100%;
   }
+
   100% {
     background-position: 0% 0%;
   }
@@ -96,21 +132,25 @@
 
 /* Floating Island Animations for MapViewer */
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
   }
+
   50% {
     transform: translateY(-8px) rotate(1deg);
   }
 }
 
 @keyframes float-success {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
     filter: brightness(1) saturate(1.2) hue-rotate(0deg);
   }
+
   50% {
     transform: translateY(-12px) rotate(-1deg);
     filter: brightness(1.1) saturate(1.3) hue-rotate(5deg);
@@ -118,11 +158,13 @@
 }
 
 @keyframes float-failed {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
     filter: brightness(0.9) saturate(1.1);
   }
+
   50% {
     transform: translateY(-6px) rotate(0.5deg);
     filter: brightness(0.95) saturate(1.2);
@@ -130,11 +172,13 @@
 }
 
 @keyframes float-submitted {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
     filter: brightness(1) saturate(1.1) hue-rotate(0deg);
   }
+
   50% {
     transform: translateY(-10px) rotate(-0.5deg);
     filter: brightness(1.05) saturate(1.2) hue-rotate(-5deg);
@@ -142,15 +186,18 @@
 }
 
 @keyframes float-progress {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg) scale(1);
     filter: brightness(1) saturate(1.1);
   }
+
   25% {
     transform: translateY(-5px) rotate(0.5deg) scale(1.02);
     filter: brightness(1.05) saturate(1.2);
   }
+
   75% {
     transform: translateY(-5px) rotate(-0.5deg) scale(0.98);
     filter: brightness(1.03) saturate(1.15);
@@ -158,15 +205,18 @@
 }
 
 @keyframes float-particle-1 {
+
   0%,
   100% {
     transform: translateY(0px) translateX(0px) scale(1);
     opacity: 0.6;
   }
+
   33% {
     transform: translateY(-20px) translateX(10px) scale(1.2);
     opacity: 1;
   }
+
   66% {
     transform: translateY(-40px) translateX(-5px) scale(0.8);
     opacity: 0.4;
@@ -174,11 +224,13 @@
 }
 
 @keyframes float-particle-2 {
+
   0%,
   100% {
     transform: translateY(0px) translateX(0px) scale(0.8);
     opacity: 0.4;
   }
+
   50% {
     transform: translateY(-30px) translateX(-15px) scale(1.1);
     opacity: 0.8;
@@ -186,15 +238,18 @@
 }
 
 @keyframes float-particle-3 {
+
   0%,
   100% {
     transform: translateY(0px) translateX(0px) scale(1);
     opacity: 0.5;
   }
+
   40% {
     transform: translateY(-25px) translateX(20px) scale(1.3);
     opacity: 0.9;
   }
+
   80% {
     transform: translateY(-50px) translateX(5px) scale(0.6);
     opacity: 0.3;
@@ -202,11 +257,13 @@
 }
 
 @keyframes shadow-pulse {
+
   0%,
   100% {
     transform: translateX(-50%) scale(1);
     opacity: 0.2;
   }
+
   50% {
     transform: translateX(-50%) scale(1.1);
     opacity: 0.3;
@@ -214,10 +271,12 @@
 }
 
 @keyframes pulse-slow {
+
   0%,
   100% {
     opacity: 0.7;
   }
+
   50% {
     opacity: 1;
   }
@@ -275,11 +334,13 @@
 
 /* Sky Bridge Animations */
 @keyframes float-bridge {
+
   0%,
   100% {
     transform: translateY(0px);
     filter: brightness(1);
   }
+
   50% {
     transform: translateY(-2px);
     filter: brightness(1.05);
@@ -287,23 +348,28 @@
 }
 
 @keyframes rope-sway {
+
   0%,
   100% {
     transform: rotate(0deg);
   }
+
   25% {
     transform: rotate(1deg);
   }
+
   75% {
     transform: rotate(-1deg);
   }
 }
 
 @keyframes float-knot {
+
   0%,
   100% {
     transform: translateY(0px) scale(1);
   }
+
   50% {
     transform: translateY(-1px) scale(1.1);
   }
@@ -331,7 +397,8 @@
 
 /* Sky bridge hover effects */
 .sky-bridge-group:hover .sky-bridge-main {
-  stroke: #deb887 !important; /* Lighter wood color on hover */
+  stroke: #deb887 !important;
+  /* Lighter wood color on hover */
   stroke-width: 10;
   filter: brightness(1.1) saturate(1.2);
 }
@@ -369,9 +436,17 @@
   transform-style: preserve-3d;
 }
 
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
 /* Additional 3D transform utilities */
 .rotate-y-12 {
   transform: rotateY(12deg);
+}
+
+.rotate-y-20 {
+  transform: rotateY(20deg);
 }
 
 .rotate-x-2 {
@@ -384,6 +459,7 @@
     transform: translateX(-40px) rotate(0deg);
     opacity: 0;
   }
+
   100% {
     transform: translateX(64px) rotate(3deg);
     opacity: 1;
@@ -394,6 +470,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -403,9 +480,31 @@
   0% {
     transform: rotateY(0deg) rotateX(0deg);
   }
+
   100% {
     transform: rotateY(12deg) rotateX(-2deg);
   }
+}
+
+/* Game Box 3D Hover Effects */
+.game-box-container {
+  transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transform-style: preserve-3d;
+  transform-origin: left;
+  will-change: transform;
+}
+
+.group:hover .game-box-container {
+  transform: rotateY(-160deg);
+}
+
+/* Optimize for 3D transforms */
+.game-box-container,
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 /* Remove conflicting CSS hover rule */
@@ -443,6 +542,7 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }

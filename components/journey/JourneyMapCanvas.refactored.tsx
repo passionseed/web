@@ -211,9 +211,10 @@ function JourneyMapCanvasInner({
   // ========================================
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full bg-slate-950">
+    <ResizablePanelGroup id="journey-map-refactored-panels" direction="horizontal" className="h-full bg-slate-950">
       {/* Left Panel - Main Map Canvas */}
       <ResizablePanel
+        id="journey-map-refactored-left-panel"
         ref={leftPanelRef}
         defaultSize={PANEL_SIZES.LEFT_DEFAULT}
         minSize={PANEL_SIZES.LEFT_MIN}
@@ -241,6 +242,7 @@ function JourneyMapCanvasInner({
 
       {/* Right Panel - Project Details */}
       <ResizablePanel
+        id="journey-map-refactored-right-panel"
         ref={rightPanelRef}
         defaultSize={PANEL_SIZES.RIGHT_DEFAULT}
         minSize={PANEL_SIZES.RIGHT_MIN}

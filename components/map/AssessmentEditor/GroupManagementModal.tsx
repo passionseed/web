@@ -23,12 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Users, 
-  Shuffle, 
-  Plus, 
-  Trash2, 
-  UserPlus, 
+import {
+  Users,
+  Shuffle,
+  Plus,
+  Trash2,
+  UserPlus,
   UserMinus,
   RotateCcw,
   Loader2,
@@ -110,11 +110,21 @@ export function GroupManagementModal({
 
   const loadData = useCallback(async () => {
     if (!assessment.id) return;
-    
+
+    // Don't try to load data for temporary assessments (not yet saved)
+    if (assessment.id.startsWith('temp_')) {
+      console.log('⏭️ Skipping group data load for temporary assessment');
+      setGroups([]);
+      setStudents([]);
+      setUnassignedStudents([]);
+      setMapContext(null);
+      return;
+    }
+
     setLoading(true);
     try {
       console.log("📊 Loading group management data...");
-      
+
       // Load groups, students, and map context in parallel
       const [groupsData, studentsData, mapContextData] = await Promise.all([
         getAssessmentGroups(assessment.id),
@@ -137,11 +147,11 @@ export function GroupManagementModal({
       const unassigned = studentsData.filter(
         student => !assignedUserIds.has(student.user_id)
       );
-      
+
       console.log("🔍 Assigned user IDs:", Array.from(assignedUserIds));
       console.log("👥 All students:", studentsData.map(s => ({ id: s.user_id, name: s.full_name })));
       console.log("📋 Unassigned students:", unassigned.map(s => ({ id: s.user_id, name: s.full_name })));
-      
+
       setUnassignedStudents(unassigned);
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -165,12 +175,12 @@ export function GroupManagementModal({
       setLoading(true);
       try {
         console.log("🔀 Auto-shuffling groups (preserving locked groups)...");
-        
+
         // Get students from unlocked groups + unassigned students
         const studentsToShuffle: Student[] = [];
         const preservedGroups: AssessmentGroupWithMembers[] = [];
         const preservedGroupNames = new Set<string>();
-        
+
         groups.forEach(group => {
           if (lockedGroupNames.has(group.group_name)) {
             // Keep locked groups as-is
@@ -184,16 +194,16 @@ export function GroupManagementModal({
             });
           }
         });
-        
+
         // Add unassigned students to shuffle pool
         studentsToShuffle.push(...unassignedStudents);
-        
+
         console.log(`💾 Preserving ${preservedGroups.length} locked groups: ${Array.from(preservedGroupNames).join(', ')}`);
         console.log(`🔄 Shuffling ${studentsToShuffle.length} students from ${groups.length - preservedGroups.length} unlocked groups`);
-        
+
         // First, create all groups with both preserved and shuffled
         const allGroupsData: GroupData[] = [];
-        
+
         // Add preserved groups first (they keep their exact composition)
         preservedGroups.forEach(group => {
           allGroupsData.push({
@@ -201,18 +211,18 @@ export function GroupManagementModal({
             member_ids: group.members.map(member => member.user_id),
           });
         });
-        
+
         // Create shuffled groups for remaining students if any
         if (studentsToShuffle.length > 0) {
           // Calculate how many shuffled groups we need
           const targetSize = assessment.target_group_size || 3;
           const allowUneven = assessment.allow_uneven_groups ?? true;
-          
+
           if (allowUneven) {
             // Use smart distribution to avoid groups of size 1
             const remainder = studentsToShuffle.length % targetSize;
             let shuffledGroups: Student[][];
-            
+
             if (remainder === 0) {
               // Perfect division
               const numGroups = studentsToShuffle.length / targetSize;
@@ -230,13 +240,13 @@ export function GroupManagementModal({
               const numFullGroups = Math.floor(studentsToShuffle.length / targetSize);
               shuffledGroups = Array.from({ length: numFullGroups + 1 }, () => [] as Student[]);
             }
-            
+
             // Distribute students evenly
             studentsToShuffle.forEach((student, index) => {
               const groupIndex = index % shuffledGroups.length;
               shuffledGroups[groupIndex].push(student);
             });
-            
+
             // Add shuffled groups to the data
             shuffledGroups.forEach((groupStudents) => {
               if (groupStudents.length > 0) {
@@ -250,13 +260,13 @@ export function GroupManagementModal({
             // Strict mode: only full groups
             const numFullGroups = Math.floor(studentsToShuffle.length / targetSize);
             const shuffledGroups = Array.from({ length: numFullGroups }, () => [] as Student[]);
-            
+
             // Only assign students to full groups
             for (let i = 0; i < numFullGroups * targetSize; i++) {
               const groupIndex = Math.floor(i / targetSize);
               shuffledGroups[groupIndex].push(studentsToShuffle[i]);
             }
-            
+
             shuffledGroups.forEach((groupStudents) => {
               allGroupsData.push({
                 group_name: `Group ${allGroupsData.length + 1}`,
@@ -265,10 +275,10 @@ export function GroupManagementModal({
             });
           }
         }
-        
+
         // Clear all existing groups and create new ones
         await deleteAssessmentGroups(assessment.id);
-        
+
         if (allGroupsData.length > 0) {
           await updateAssessmentGroupsManual({
             assessment_id: assessment.id,
@@ -278,10 +288,10 @@ export function GroupManagementModal({
 
         // Preserve locked group names (they will be applied after data loads)
         // Don't clear lockedGroupNames since we want to maintain the lock state
-        
-        toast({ 
-          title: "Groups shuffled successfully!", 
-          description: `${preservedGroups.length} groups were preserved, others shuffled` 
+
+        toast({
+          title: "Groups shuffled successfully!",
+          description: `${preservedGroups.length} groups were preserved, others shuffled`
         });
         setHasUnsavedChanges(false);
         await loadData();
@@ -301,7 +311,7 @@ export function GroupManagementModal({
       setLoading(true);
       try {
         console.log("🔀 Auto-shuffling groups...");
-        
+
         await createAssessmentGroupsShuffle({
           assessment_id: assessment.id,
           target_group_size: assessment.target_group_size || 3,
@@ -335,9 +345,9 @@ export function GroupManagementModal({
     setLoading(true);
     try {
       console.log("🗑️ Resetting all groups...");
-      
+
       await deleteAssessmentGroups(assessment.id);
-      
+
       toast({ title: "All groups deleted successfully!" });
       setHasUnsavedChanges(false);
       await loadData();
@@ -376,7 +386,7 @@ export function GroupManagementModal({
 
     setGroups(updatedGroups);
     setHasUnsavedChanges(true);
-    
+
     // Update unassigned students
     setUnassignedStudents(prev => prev.filter(s => s.user_id !== studentId));
   }, [groups, students, unassignedStudents]);
@@ -405,7 +415,7 @@ export function GroupManagementModal({
     try {
       console.log("💾 Saving manual group changes...");
       console.log("📋 Current groups state:", groups);
-      
+
       const groupsData: GroupData[] = groups.map((group, index) => ({
         group_name: group.group_name || `Group ${index + 1}`,
         member_ids: group.members.map(member => member.user_id),
@@ -424,7 +434,7 @@ export function GroupManagementModal({
 
       // Add a small delay to ensure database operations are complete
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       await loadData();
       onGroupsUpdated();
     } catch (error) {
@@ -450,7 +460,7 @@ export function GroupManagementModal({
       created_by: '',
       members: []
     };
-    
+
     setGroups(prevGroups => [...prevGroups, newGroup]);
     setHasUnsavedChanges(true);
     toast({ title: `Created ${newGroup.group_name}` });
@@ -479,7 +489,7 @@ export function GroupManagementModal({
     setUnassignedStudents(prev => [...prev, ...membersToUnassign]);
     setHasUnsavedChanges(true);
 
-    toast({ 
+    toast({
       title: `Deleted ${groupToDelete.group_name}`,
       description: `${membersToUnassign.length} students moved to unassigned`
     });
@@ -489,13 +499,13 @@ export function GroupManagementModal({
     setLockedGroupNames(prev => {
       const newSet = new Set(prev);
       const wasLocked = newSet.has(groupName);
-      
+
       if (wasLocked) {
         newSet.delete(groupName);
       } else {
         newSet.add(groupName);
       }
-      
+
       // Use setTimeout to avoid calling toast during render
       setTimeout(() => {
         if (wasLocked) {
@@ -504,7 +514,7 @@ export function GroupManagementModal({
           toast({ title: `Locked ${groupName}`, description: "Group will be excluded from shuffle" });
         }
       }, 0);
-      
+
       return newSet;
     });
   }, [toast]);
@@ -515,7 +525,7 @@ export function GroupManagementModal({
     }
 
     const confirmMessage = `Convert this map to classroom-exclusive?\n\nThis will:\n• Make the map private to this classroom\n• Enable group management features\n• Allow you to create assessment groups\n\nThis action cannot be undone.`;
-    
+
     if (!confirm(confirmMessage)) {
       return;
     }
@@ -562,10 +572,10 @@ export function GroupManagementModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div 
-          className="border" 
-          style={{ 
-            maxHeight: "50vh", 
+        <div
+          className="border"
+          style={{
+            maxHeight: "50vh",
             overflowY: "scroll",
             scrollbarWidth: "auto", // Firefox
             msOverflowStyle: "scrollbar" // IE/Edge
@@ -586,7 +596,7 @@ export function GroupManagementModal({
                 {/* Group Settings */}
                 <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
                   <h4 className="font-medium text-sm">Group Setup</h4>
-                  
+
 
                   {/* Target Group Size */}
                   <div className="space-y-2">
@@ -602,7 +612,7 @@ export function GroupManagementModal({
                       onChange={(e) => {
                         const inputValue = e.target.value;
                         setGroupSizeInput(inputValue);
-                        
+
                         // Update assessment only if it's a valid number
                         if (inputValue !== '') {
                           const value = parseInt(inputValue, 10);
@@ -614,7 +624,7 @@ export function GroupManagementModal({
                       onBlur={(e) => {
                         const value = parseInt(e.target.value, 10);
                         let finalValue: number;
-                        
+
                         if (isNaN(value) || value < 2) {
                           finalValue = 2;
                         } else if (value > 20) {
@@ -622,7 +632,7 @@ export function GroupManagementModal({
                         } else {
                           finalValue = value;
                         }
-                        
+
                         setGroupSizeInput(finalValue.toString());
                         onAssessmentChange?.({ ...assessment, target_group_size: finalValue });
                       }}
@@ -638,7 +648,7 @@ export function GroupManagementModal({
                     <Checkbox
                       id="allow_uneven_groups"
                       checked={assessment.allow_uneven_groups ?? true}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         onAssessmentChange?.({ ...assessment, allow_uneven_groups: checked as boolean })
                       }
                     />
@@ -681,11 +691,10 @@ export function GroupManagementModal({
                     disabled={loading || !hasUnsavedChanges || students.length === 0}
                     size="sm"
                     variant={hasUnsavedChanges ? "default" : "outline"}
-                    className={`flex items-center gap-2 ${
-                      hasUnsavedChanges 
-                        ? "bg-orange-600 hover:bg-orange-700 text-white" 
+                    className={`flex items-center gap-2 ${hasUnsavedChanges
+                        ? "bg-orange-600 hover:bg-orange-700 text-white"
                         : ""
-                    }`}
+                      }`}
                   >
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -723,7 +732,7 @@ export function GroupManagementModal({
                       <>
                         <p className="text-lg font-medium mb-2">Group management not available</p>
                         <p className="text-sm">This assessment is not part of a classroom-exclusive learning map.</p>
-                        
+
                         {mapContext && !mapContext.is_classroom_exclusive && classroomId && (
                           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
                             <p className="text-sm font-medium text-blue-900 mb-2">
@@ -757,13 +766,12 @@ export function GroupManagementModal({
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
                     {groups.map((group, groupIndex) => (
-                      <Card 
-                        key={group.id} 
-                        className={`relative ${
-                          lockedGroupNames.has(group.group_name) 
-                            ? "border-orange-200 bg-orange-50/30" 
+                      <Card
+                        key={group.id}
+                        className={`relative ${lockedGroupNames.has(group.group_name)
+                            ? "border-orange-200 bg-orange-50/30"
                             : ""
-                        }`}
+                          }`}
                       >
                         <CardHeader className="pb-2">
                           <CardTitle className="text-lg flex items-center justify-between">
@@ -776,11 +784,10 @@ export function GroupManagementModal({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => toggleGroupLock(group.id, group.group_name)}
-                                className={`h-6 w-6 p-0 ${
-                                  lockedGroupNames.has(group.group_name)
+                                className={`h-6 w-6 p-0 ${lockedGroupNames.has(group.group_name)
                                     ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                                }`}
+                                  }`}
                                 title={lockedGroupNames.has(group.group_name) ? "Unlock group" : "Lock group"}
                               >
                                 {lockedGroupNames.has(group.group_name) ? (
@@ -844,47 +851,47 @@ export function GroupManagementModal({
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-2 md:grid-cols-2">
-                          {unassignedStudents.map((student) => (
-                            <div
-                              key={student.user_id}
-                              className="flex items-center justify-between p-2 bg-yellow-50 border border-yellow-200 rounded"
-                            >
-                              <span className="text-sm text-yellow-800">
-                                {student.full_name || student.username || student.email}
-                              </span>
-                              <div className="flex gap-1">
-                                {groups.length <= 7 ? (
-                                  // Show buttons for 7 or fewer groups
-                                  groups.map((_, groupIndex) => (
-                                    <Button
-                                      key={groupIndex}
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => moveStudentToGroup(student.user_id, groupIndex)}
-                                      className="h-6 px-2 text-xs"
-                                    >
-                                      G{groupIndex + 1}
-                                    </Button>
-                                  ))
-                                ) : (
-                                  // Show dropdown for 8 or more groups
-                                  <Select onValueChange={(value) => moveStudentToGroup(student.user_id, parseInt(value))}>
-                                    <SelectTrigger className="h-6 w-24 text-xs">
-                                      <SelectValue placeholder="Group" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {groups.map((group, groupIndex) => (
-                                        <SelectItem key={groupIndex} value={groupIndex.toString()}>
-                                          {group.group_name || `Group ${groupIndex + 1}`}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              </div>
+                        {unassignedStudents.map((student) => (
+                          <div
+                            key={student.user_id}
+                            className="flex items-center justify-between p-2 bg-yellow-50 border border-yellow-200 rounded"
+                          >
+                            <span className="text-sm text-yellow-800">
+                              {student.full_name || student.username || student.email}
+                            </span>
+                            <div className="flex gap-1">
+                              {groups.length <= 7 ? (
+                                // Show buttons for 7 or fewer groups
+                                groups.map((_, groupIndex) => (
+                                  <Button
+                                    key={groupIndex}
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => moveStudentToGroup(student.user_id, groupIndex)}
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    G{groupIndex + 1}
+                                  </Button>
+                                ))
+                              ) : (
+                                // Show dropdown for 8 or more groups
+                                <Select onValueChange={(value) => moveStudentToGroup(student.user_id, parseInt(value))}>
+                                  <SelectTrigger className="h-6 w-24 text-xs">
+                                    <SelectValue placeholder="Group" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {groups.map((group, groupIndex) => (
+                                      <SelectItem key={groupIndex} value={groupIndex.toString()}>
+                                        {group.group_name || `Group ${groupIndex + 1}`}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -908,7 +915,7 @@ export function GroupManagementModal({
                     <p className="font-medium">Group management not available</p>
                     <p className="text-sm mt-2">This assessment is not part of a classroom-exclusive learning map.</p>
                     <p className="text-sm">Group management is only available for assessments within classroom maps.</p>
-                    
+
                     {mapContext && !mapContext.is_classroom_exclusive && classroomId && (
                       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <p className="text-sm font-medium text-blue-900 mb-2">
@@ -939,36 +946,35 @@ export function GroupManagementModal({
                   </div>
                 ) : (
                   <div className="grid gap-2">
-                      {students.map((student) => {
-                        const isAssigned = !unassignedStudents.some(u => u.user_id === student.user_id);
-                        const assignedGroup = groups.find(group => 
-                          group.members.some(member => member.user_id === student.user_id)
-                        );
+                    {students.map((student) => {
+                      const isAssigned = !unassignedStudents.some(u => u.user_id === student.user_id);
+                      const assignedGroup = groups.find(group =>
+                        group.members.some(member => member.user_id === student.user_id)
+                      );
 
-                        return (
-                          <div
-                            key={student.user_id}
-                            className={`flex items-center justify-between p-3 border rounded ${
-                              isAssigned ? 'bg-green-50 border-green-200' : 'bg-gray-50'
+                      return (
+                        <div
+                          key={student.user_id}
+                          className={`flex items-center justify-between p-3 border rounded ${isAssigned ? 'bg-green-50 border-green-200' : 'bg-gray-50'
                             }`}
-                          >
-                            <div>
-                              <span className="font-medium">
-                                {student.full_name || student.username || "Unknown"}
-                              </span>
-                              <span className="text-sm text-muted-foreground ml-2">
-                                ({student.email})
-                              </span>
-                            </div>
-                            {isAssigned && assignedGroup && (
-                              <Badge variant="default">
-                                {assignedGroup.group_name}
-                              </Badge>
-                            )}
+                        >
+                          <div>
+                            <span className="font-medium">
+                              {student.full_name || student.username || "Unknown"}
+                            </span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                              ({student.email})
+                            </span>
                           </div>
-                        );
-                      })}
-                    </div>
+                          {isAssigned && assignedGroup && (
+                            <Badge variant="default">
+                              {assignedGroup.group_name}
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </TabsContent>

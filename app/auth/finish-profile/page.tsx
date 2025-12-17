@@ -296,7 +296,11 @@ export default function FinishProfilePage() {
 
       if (profileError) {
         console.error("Error updating profile:", profileError);
-        alert("Error updating profile: " + profileError.message);
+        const errorMessage = profileError.message || 
+                            profileError.hint || 
+                            JSON.stringify(profileError) || 
+                            "An unknown error occurred";
+        alert("Error updating profile: " + errorMessage);
         setSubmitting(false);
         return;
       }
@@ -329,7 +333,11 @@ export default function FinishProfilePage() {
 
         if (skillsError) {
           console.error("Error saving skills:", skillsError);
-          alert("Error saving skills: " + skillsError.message);
+          const errorMessage = skillsError.message || 
+                              skillsError.hint || 
+                              JSON.stringify(skillsError) || 
+                              "An unknown error occurred";
+          alert("Error saving skills: " + errorMessage);
           setSubmitting(false);
           return;
         }

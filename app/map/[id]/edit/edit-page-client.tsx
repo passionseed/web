@@ -57,7 +57,7 @@ import { RawDataView } from "@/components/map/RawDataView";
 import { ImageUpload } from "@/components/map/ImageUpload";
 import { CoverImageMaker } from "@/components/map/CoverImageMaker";
 
-export default function EditMapPage() {
+export default function EditMapPage({ map: initialMapData }: { map?: FullLearningMap }) {
   console.log(
     "🚀🚀🚀 EDITMAP COMPONENT MOUNTING - THIS SHOULD ALWAYS APPEAR 🚀🚀🚀"
   );
@@ -78,8 +78,8 @@ export default function EditMapPage() {
     setIsMounted(true);
   }, []);
 
-  const [initialMap, setInitialMap] = useState<FullLearningMap | null>(null);
-  const [map, setMap] = useState<FullLearningMap | null>(null);
+  const [initialMap, setInitialMap] = useState<FullLearningMap | null>(initialMapData ? JSON.parse(JSON.stringify(initialMapData)) : null);
+  const [map, setMap] = useState<FullLearningMap | null>(initialMapData || null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -116,6 +116,8 @@ export default function EditMapPage() {
   }, [mapId, router, toast]);
 
   useEffect(() => {
+    // Always fetch the complete map data with nodes, regardless of initialMapData
+    // The initialMapData from server is just basic map info for access checks
     setIsLoading(true);
     fetchMap();
   }, [fetchMap]);
@@ -159,16 +161,16 @@ export default function EditMapPage() {
     setMap((prev) =>
       prev
         ? {
-            ...prev,
-            cover_image_url: imageData.url,
-            cover_image_blurhash: imageData.blurhash,
-            cover_image_key: imageData.fileName,
-            cover_image_updated_at: new Date().toISOString(),
-            // Clear old metadata.coverImage if it exists
-            metadata: prev.metadata
-              ? { ...prev.metadata, coverImage: undefined }
-              : undefined,
-          }
+          ...prev,
+          cover_image_url: imageData.url,
+          cover_image_blurhash: imageData.blurhash,
+          cover_image_key: imageData.fileName,
+          cover_image_updated_at: new Date().toISOString(),
+          // Clear old metadata.coverImage if it exists
+          metadata: prev.metadata
+            ? { ...prev.metadata, coverImage: undefined }
+            : undefined,
+        }
         : null
     );
 
@@ -176,15 +178,15 @@ export default function EditMapPage() {
     setInitialMap((prev) =>
       prev
         ? {
-            ...prev,
-            cover_image_url: imageData.url,
-            cover_image_blurhash: imageData.blurhash,
-            cover_image_key: imageData.fileName,
-            cover_image_updated_at: new Date().toISOString(),
-            metadata: prev.metadata
-              ? { ...prev.metadata, coverImage: undefined }
-              : undefined,
-          }
+          ...prev,
+          cover_image_url: imageData.url,
+          cover_image_blurhash: imageData.blurhash,
+          cover_image_key: imageData.fileName,
+          cover_image_updated_at: new Date().toISOString(),
+          metadata: prev.metadata
+            ? { ...prev.metadata, coverImage: undefined }
+            : undefined,
+        }
         : null
     );
   };
@@ -239,21 +241,21 @@ export default function EditMapPage() {
     setMap((prev) =>
       prev
         ? {
-            ...prev,
-            cover_image_url: null,
-            cover_image_blurhash: null,
-            cover_image_key: null,
-            cover_image_updated_at: null,
-            metadata: prev.metadata
-              ? { ...prev.metadata, coverImage: undefined }
-              : undefined,
-          }
+          ...prev,
+          cover_image_url: null,
+          cover_image_blurhash: null,
+          cover_image_key: null,
+          cover_image_updated_at: null,
+          metadata: prev.metadata
+            ? { ...prev.metadata, coverImage: undefined }
+            : undefined,
+        }
         : null
     );
   };
 
-  // Check if there are unsaved changes
-  const hasUnsavedChanges = useMemo(() => {
+  // Simple check if there are unsaved changes (will be replaced with more accurate check below)
+  const hasUnsavedChangesSimple = useMemo(() => {
     if (!map || !initialMap) return false;
     return JSON.stringify(map) !== JSON.stringify(initialMap);
   }, [map, initialMap]);
@@ -537,7 +539,7 @@ export default function EditMapPage() {
           node.difficulty !== initialNode.difficulty ||
           node.sprite_url !== initialNode.sprite_url ||
           JSON.stringify(node.metadata) !==
-            JSON.stringify(initialNode.metadata) ||
+          JSON.stringify(initialNode.metadata) ||
           (node as any).node_type !== (initialNode as any).node_type;
 
         return nodeChanged;
@@ -759,8 +761,8 @@ export default function EditMapPage() {
         const initialAssessment = initialNode?.node_assessments?.[0] || null;
 
         // Created assessment (either truly new OR has temporary ID meaning it's not yet saved)
-        if ((!initialAssessment && currentAssessment) || 
-            (currentAssessment && currentAssessment.id?.startsWith("temp_"))) {
+        if ((!initialAssessment && currentAssessment) ||
+          (currentAssessment && currentAssessment.id?.startsWith("temp_"))) {
           const assessmentToCreate = {
             node_id: node.id,
             assessment_type: currentAssessment.assessment_type,
@@ -832,22 +834,22 @@ export default function EditMapPage() {
           (initialAssessment.assessment_type !==
             currentAssessment.assessment_type ||
             JSON.stringify(initialAssessment.metadata) !==
-              JSON.stringify(currentAssessment.metadata) ||
+            JSON.stringify(currentAssessment.metadata) ||
             initialAssessment.points_possible !==
-              currentAssessment.points_possible ||
+            currentAssessment.points_possible ||
             initialAssessment.is_graded !== currentAssessment.is_graded ||
             initialAssessment.is_group_assessment !==
-              currentAssessment.is_group_assessment ||
+            currentAssessment.is_group_assessment ||
             initialAssessment.group_formation_method !==
-              currentAssessment.group_formation_method ||
+            currentAssessment.group_formation_method ||
             initialAssessment.group_submission_mode !==
-              currentAssessment.group_submission_mode ||
+            currentAssessment.group_submission_mode ||
             initialAssessment.target_group_size !==
-              currentAssessment.target_group_size ||
+            currentAssessment.target_group_size ||
             initialAssessment.allow_uneven_groups !==
-              currentAssessment.allow_uneven_groups ||
+            currentAssessment.allow_uneven_groups ||
             JSON.stringify(initialAssessment.groups_config) !==
-              JSON.stringify(currentAssessment.groups_config))
+            JSON.stringify(currentAssessment.groups_config))
         ) {
           const assessmentToUpdate = {
             id: initialAssessment.id,
@@ -911,7 +913,7 @@ export default function EditMapPage() {
             }
             return false;
           });
-          
+
           questionsToDelete.forEach((iq) => {
             batchUpdate.quizQuestions.delete.push(iq.id!);
             console.log("🗑️ Adding quiz question to delete:", iq.id);
@@ -920,26 +922,26 @@ export default function EditMapPage() {
           // Updated questions - only process questions that exist in both states with changes
           const questionsToUpdate = currentQuestions.filter((cq) => {
             if (!cq.id || cq.id.startsWith("temp_")) return false;
-            
+
             const iq = initialQuestions.find((q) => q.id === cq.id);
             if (!iq) {
               // Question exists in current but not initial - either newly created or state sync issue
               console.log("⚠️ Question in current but not initial state - skipping update:", cq.id);
               return false;
             }
-            
+
             // Compare the questions for changes
             const hasChanges = (
               cq.question_text !== iq.question_text ||
               cq.correct_option !== iq.correct_option ||
               JSON.stringify(cq.options) !== JSON.stringify(iq.options)
             );
-            
+
             if (hasChanges) {
               console.log("📝 Question has changes:", cq.id);
               return true;
             }
-            
+
             return false;
           });
 
@@ -983,6 +985,43 @@ export default function EditMapPage() {
       );
     }
   }, [map, initialMap]);
+
+  // More accurate check for unsaved changes using batch update logic
+  const hasUnsavedChanges = useMemo(() => {
+    if (!map || !initialMap) return false;
+
+    // First do a quick string comparison
+    if (JSON.stringify(map) === JSON.stringify(initialMap)) return false;
+
+    // If strings differ, check if there are actual changes that need saving
+    try {
+      const batchUpdate = generateBatchUpdate();
+      if (!batchUpdate) return false;
+
+      const hasChanges =
+        Object.keys(batchUpdate.map).length > 0 ||
+        batchUpdate.nodes.create.length > 0 ||
+        batchUpdate.nodes.update.length > 0 ||
+        batchUpdate.nodes.delete.length > 0 ||
+        batchUpdate.paths.create.length > 0 ||
+        batchUpdate.paths.delete.length > 0 ||
+        batchUpdate.content.create.length > 0 ||
+        batchUpdate.content.update.length > 0 ||
+        batchUpdate.content.delete.length > 0 ||
+        batchUpdate.assessments.create.length > 0 ||
+        batchUpdate.assessments.update.length > 0 ||
+        batchUpdate.assessments.delete.length > 0 ||
+        batchUpdate.quizQuestions.create.length > 0 ||
+        batchUpdate.quizQuestions.update.length > 0 ||
+        batchUpdate.quizQuestions.delete.length > 0;
+
+      return hasChanges;
+    } catch (error) {
+      console.error("Error checking for changes:", error);
+      // If we can't determine, fall back to simple comparison
+      return hasUnsavedChangesSimple;
+    }
+  }, [map, initialMap, generateBatchUpdate, hasUnsavedChangesSimple]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1169,9 +1208,13 @@ export default function EditMapPage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <Button asChild variant="ghost" size="sm">
-                <Link href={map?.category === "journey" ? "/me" : `/map/${mapId}`}>
+                <Link href={
+                  map?.map_type === 'seed' && map?.parent_seed_id
+                    ? `/seeds/${map.parent_seed_id}`
+                    : map?.category === "journey" ? "/me" : `/map/${mapId}`
+                }>
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  {map?.category === "journey" ? "Back to Portal" : "Back to Map"}
+                  {map?.map_type === 'seed' ? "Back to Seed" : map?.category === "journey" ? "Back to Portal" : "Back to Map"}
                 </Link>
               </Button>
               <div className="h-6 w-px bg-border" />

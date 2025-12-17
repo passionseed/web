@@ -56,12 +56,20 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
+  Trophy,
 } from "lucide-react";
 import FloatingEdge from "@/components/map/FloatingEdge";
+import { SeedCompletionModal } from "@/components/seeds/SeedCompletionModal";
+import { SeedLeaderboard } from "@/components/seeds/SeedLeaderboard";
+import { markSeedRoomCompleted, checkSeedRoomCompletion, isEndNode } from "@/lib/supabase/seed-completion";
 import { isEditable } from "@/lib/dom/is-editable";
 
 interface MapViewerProps {
   map: FullLearningMap;
+  seedRoomId?: string;
+  seedTitle?: string;
+  seedId?: string;
+  roomSettingsComponent?: React.ReactNode;
 }
 
 const edgeTypes = {
@@ -104,7 +112,7 @@ const miniMapConfig = {
   offsetScale: 5,
 };
 
-export function MapViewer({ map }: MapViewerProps) {
+export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComponent }: MapViewerProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
@@ -121,6 +129,22 @@ export function MapViewer({ map }: MapViewerProps) {
   const [isTeamMap, setIsTeamMap] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
   const reactFlowInstance = useReactFlow();
+
+  // Seed completion state
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [hasCompletedSeed, setHasCompletedSeed] = useState(false);
+  const [showCompletionBanner, setShowCompletionBanner] = useState(false);
+  const [completionData, setCompletionData] = useState<{
+    completionId: string;
+    completionDate: string;
+    nodeId: string;
+  } | null>(null);
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Role detection for instructor/TA functionality
   const { user: authUser, userRoles, isAuthenticated } = useAuth();
@@ -154,14 +178,6 @@ export function MapViewer({ map }: MapViewerProps) {
     );
   }, [userRole]);
 
-  console.log(
-    "🗺️ [MapViewer] Rendering map:",
-    map.title,
-    "for user:",
-    authUser?.email,
-    "as",
-    userRole
-  );
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
 
@@ -285,6 +301,74 @@ export function MapViewer({ map }: MapViewerProps) {
     };
     getUser();
   }, []);
+
+  // Check if user has already completed this seed
+  useEffect(() => {
+    const checkCompletion = async () => {
+      if (seedRoomId && currentUser) {
+        const { completed, completion } = await checkSeedRoomCompletion(
+          seedRoomId,
+          currentUser.id
+        );
+        if (completed && completion) {
+          setHasCompletedSeed(true);
+          setShowCompletionBanner(true);
+          setCompletionData({
+            completionId: completion.id,
+            completionDate: completion.completed_at,
+            nodeId: completion.completed_node_id || "",
+          });
+        }
+      }
+    };
+    checkCompletion();
+  }, [seedRoomId, currentUser]);
+
+  // Watch for end node completion when progressMap updates
+  useEffect(() => {
+    const checkEndNodeCompletion = async () => {
+      // Only check for seed completion if this is a seed room
+      if (seedRoomId && currentUser && selectedNode && !hasCompletedSeed) {
+        const nodeData = selectedNode.data;
+
+        // Check if the current node is an end node
+        if (isEndNode(nodeData.node_type)) {
+          // Check if the node has been passed (for nodes with assessments) or just visited
+          const nodeProgress = progressMap[selectedNode.id];
+
+          // Check for multiple possible completion statuses
+          const isNodeCompleted =
+            nodeProgress?.status === "passed" ||
+            nodeProgress?.status === "submitted" ||
+            nodeProgress?.status === "failed"; // Include failed to show completion modal even if they didn't pass
+
+          if (isNodeCompleted) {
+            // Mark the seed as completed
+            const { data, error } = await markSeedRoomCompleted(
+              seedRoomId,
+              currentUser.id,
+              selectedNode.id
+            );
+
+            if (error) {
+              console.error("❌ [MapViewer] Error marking seed complete:", error);
+            } else if (data) {
+              setHasCompletedSeed(true);
+              setCompletionData({
+                completionId: data.id,
+                completionDate: data.completed_at,
+                nodeId: data.completed_node_id || "",
+              });
+              setShowCompletionModal(true);
+            }
+          }
+        }
+      }
+    };
+
+    checkEndNodeCompletion();
+  }, [progressMap, seedRoomId, currentUser, selectedNode, hasCompletedSeed]);
+
 
   const loadAllProgress = useCallback(async () => {
     if (!currentUser) return;
@@ -563,11 +647,10 @@ export function MapViewer({ map }: MapViewerProps) {
         requirementBadge = (
           <div className="absolute -top-2 -left-2 z-50">
             <div
-              className={`rounded-full p-1 text-xs font-bold shadow-lg ${
-                requirement === "all"
-                  ? "bg-purple-500 text-white"
-                  : "bg-blue-500 text-white"
-              }`}
+              className={`rounded-full p-1 text-xs font-bold shadow-lg ${requirement === "all"
+                ? "bg-purple-500 text-white"
+                : "bg-blue-500 text-white"
+                }`}
               title={`Submission requirement: ${requirement === "all" ? "All team members" : "Any team member"}`}
             >
               {requirement === "all" ? "👥" : "👤"}
@@ -615,11 +698,10 @@ export function MapViewer({ map }: MapViewerProps) {
             gradingIndicator = (
               <div className="absolute -top-2 -right-2 z-50">
                 <div
-                  className={`rounded-full p-1 text-xs font-bold shadow-lg ${
-                    pendingCount > 0
-                      ? "bg-orange-500 text-white animate-pulse"
-                      : "bg-green-500 text-white"
-                  }`}
+                  className={`rounded-full p-1 text-xs font-bold shadow-lg ${pendingCount > 0
+                    ? "bg-orange-500 text-white animate-pulse"
+                    : "bg-green-500 text-white"
+                    }`}
                 >
                   {pendingCount > 0 ? pendingCount : submissionCount}
                 </div>
@@ -946,257 +1028,316 @@ export function MapViewer({ map }: MapViewerProps) {
     [reactFlowInstance, isPanelMinimized]
   );
 
+  if (!isMounted) {
+    return <div className="h-full w-full bg-neutral-950 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+    </div>;
+  }
+
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full">
-      <ResizablePanel
-        ref={leftPanelRef}
-        defaultSize={70}
-        minSize={35}
-        maxSize={85}
-        className="transition-all duration-300 ease-in-out relative flex flex-col"
-      >
-        {/* Instructor View Indicator */}
-        {isInstructorOrTA && (
-          <div className="absolute bottom-0 left-0 z-10 bg-gray-800 text-muted-foreground px-4 py-2 rounded-tr-lg shadow-lg flex items-center gap-2 ">
-            <Info className="h-4 w-4" />
-            <span className="text-xs font-medium">
-              Instructor View - All Nodes Unlocked
-            </span>
+    <div className="h-full flex flex-col">
+      {/* Completion Banner */}
+      {showCompletionBanner && hasCompletedSeed && seedTitle && (
+        <div
+          onClick={() => setShowCompletionModal(true)}
+          className="mt-[64px] bg-gradient-to-r from-yellow-500/20 via-yellow-400/20 to-yellow-500/20 border-b-2 border-yellow-500/50 px-6 py-3 cursor-pointer hover:from-yellow-500/30 hover:via-yellow-400/30 hover:to-yellow-500/30 transition-colors z-50 flex-none"
+        >
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-3">
+              <Trophy className="w-5 h-5 text-yellow-400" />
+              <span className="text-yellow-100 font-medium">
+                🎉 Congratulations! You completed <span className="font-bold">{seedTitle}</span>
+              </span>
+            </div>
+            <button className="text-yellow-300 hover:text-yellow-100 text-sm font-medium">
+              View Certificate →
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Map Container - Takes up full space */}
-        <div className="flex-1">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onSelectionChange={onSelectionChange}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            fitView
-            nodesDraggable={false}
-            nodesConnectable={false}
-            elementsSelectable={true}
-            panOnScroll
-            panOnDrag={[0, 1, 2]}
-            attributionPosition="bottom-left"
-            aria-label="Interactive learning map"
+      <ResizablePanelGroup id="map-viewer-panels" direction="horizontal" className="flex-1">
+        <ResizablePanel
+          id="map-viewer-left-panel"
+          ref={leftPanelRef}
+          defaultSize={70}
+          minSize={35}
+          maxSize={85}
+          className="transition-all duration-300 ease-in-out relative flex flex-col"
+        >
+          {/* Instructor View Indicator */}
+          {isInstructorOrTA && (
+            <div className="absolute bottom-0 left-0 z-10 bg-gray-800 text-muted-foreground px-4 py-2 rounded-tr-lg shadow-lg flex items-center gap-2 ">
+              <Info className="h-4 w-4" />
+              <span className="text-xs font-medium">
+                Instructor View - All Nodes Unlocked
+              </span>
+            </div>
+          )}
+
+          {/* Seed Leaderboard - Only show in seed rooms */}
+          {seedRoomId && authUser?.id && (
+            <SeedLeaderboard roomId={seedRoomId} userId={authUser.id} />
+          )}
+
+          {/* Map Container - Takes up full space */}
+          <div className="flex-1">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onSelectionChange={onSelectionChange}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              fitView
+              nodesDraggable={false}
+              nodesConnectable={false}
+              elementsSelectable={true}
+              panOnScroll
+              panOnDrag={[0, 1, 2]}
+              attributionPosition="bottom-left"
+              aria-label="Interactive learning map"
+            >
+              <Background gap={20} size={1} color="#94a3b8" />
+              <MiniMap
+                {...miniMapConfig}
+                style={{
+                  ...miniMapConfig.style,
+                  background: "rgba(255, 255, 255, 0.9)",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                }}
+              />
+            </ReactFlow>
+          </div>
+
+          {/* Navigation Guide & Progress Stats - Bottom */}
+          {isNavigationExpanded && (
+            <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 shadow-lg">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  Navigation Guide & Progress
+                </h3>
+                <button
+                  onClick={() => setIsNavigationExpanded(false)}
+                  className="p-1 hover:bg-muted/50 rounded transition-colors"
+                  aria-label="Hide navigation guide"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Progress Statistics */}
+              <div className="mb-4 bg-muted/30 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground mb-2 font-medium">
+                  {isTeamMap && isInstructorOrTA
+                    ? "Team Progress Overview"
+                    : "Progress Overview"}
+                </div>
+
+                {isTeamMap && (
+                  <div className="mb-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-2">
+                        <span className="text-blue-500">👤</span>
+                        Single requirement
+                      </span>
+                      <span className="font-medium">
+                        {getProgressStats().singleRequirement.completed}/
+                        {getProgressStats().singleRequirement.total}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-2">
+                        <span className="text-purple-500">👥</span>
+                        All requirement
+                      </span>
+                      <span className="font-medium">
+                        {getProgressStats().allRequirement.completed}/
+                        {getProgressStats().allRequirement.total}
+                      </span>
+                    </div>
+                    <div className="h-1 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                        style={{
+                          width: `${(getProgressStats().totalCompleted / getProgressStats().totalNodes) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span>{getProgressStats().totalCompleted} Completed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span>
+                      {
+                        Object.values(progressMap).filter(
+                          (p) =>
+                            p.status === "submitted" ||
+                            (p as any)?.status === "submitted"
+                        ).length
+                      }{" "}
+                      Submitted
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                    <span>
+                      {
+                        Object.values(progressMap).filter(
+                          (p) =>
+                            p.status === "in_progress" ||
+                            (p as any)?.status === "in_progress"
+                        ).length
+                      }{" "}
+                      In Progress
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                    <span className="text-muted-foreground">
+                      {getProgressStats().totalNodes} Total
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Instructions */}
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Select Node</span>
+                    <span className="text-muted-foreground">Click</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Next Node</span>
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      Tab
+                    </kbd>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Previous Node</span>
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      Shift+Tab
+                    </kbd>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Pan Map</span>
+                    <span className="text-muted-foreground">Drag</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Zoom</span>
+                    <span className="text-muted-foreground">Mouse Wheel</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Deselect</span>
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      Esc
+                    </kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Toggle Navigation Guide Button - Fixed Bottom Right */}
+          <button
+            onClick={() => setIsNavigationExpanded(!isNavigationExpanded)}
+            className="absolute bottom-4 right-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg hover:bg-muted/50 transition-colors"
+            aria-expanded={isNavigationExpanded}
+            title={
+              isNavigationExpanded
+                ? "Hide navigation guide"
+                : "Show navigation guide"
+            }
           >
-            <Background gap={20} size={1} color="#94a3b8" />
-            <MiniMap
-              {...miniMapConfig}
-              style={{
-                ...miniMapConfig.style,
-                background: "rgba(255, 255, 255, 0.9)",
-                border: "1px solid #e2e8f0",
-                borderRadius: "8px",
-              }}
-            />
-          </ReactFlow>
-        </div>
+            {isNavigationExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <Info className="h-4 w-4" />
+            )}
+          </button>
 
-        {/* Navigation Guide & Progress Stats - Bottom */}
-        {isNavigationExpanded && (
-          <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t p-4 shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                Navigation Guide & Progress
-              </h3>
-              <button
-                onClick={() => setIsNavigationExpanded(false)}
-                className="p-1 hover:bg-muted/50 rounded transition-colors"
-                aria-label="Hide navigation guide"
-              >
-                <ChevronDown className="h-4 w-4" />
-              </button>
-            </div>
+          {/* Room Settings Component - Rendered LAST in panel to ensure z-index stacking above map */}
+          {roomSettingsComponent}
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel
+          id="map-viewer-right-panel"
+          ref={rightPanelRef}
+          defaultSize={30}
+          minSize={5}
+          maxSize={65}
+          className="transition-all duration-300 ease-in-out relative"
+        >
+          {/* Panel Minimize/Maximize Button */}
+          <button
+            onClick={togglePanelSize}
+            className="absolute top-2 right-2 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg hover:bg-muted/50 transition-colors"
+            title={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
+            aria-label={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
+          >
+            {isPanelMinimized ? (
+              <ChevronLeft className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
 
-            {/* Progress Statistics */}
-            <div className="mb-4 bg-muted/30 rounded-lg p-3">
-              <div className="text-xs text-muted-foreground mb-2 font-medium">
-                {isTeamMap && isInstructorOrTA
-                  ? "Team Progress Overview"
-                  : "Progress Overview"}
-              </div>
-
-              {isTeamMap && (
-                <div className="mb-3 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-2">
-                      <span className="text-blue-500">👤</span>
-                      Single requirement
-                    </span>
-                    <span className="font-medium">
-                      {getProgressStats().singleRequirement.completed}/
-                      {getProgressStats().singleRequirement.total}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-2">
-                      <span className="text-purple-500">👥</span>
-                      All requirement
-                    </span>
-                    <span className="font-medium">
-                      {getProgressStats().allRequirement.completed}/
-                      {getProgressStats().allRequirement.total}
-                    </span>
-                  </div>
-                  <div className="h-1 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-                      style={{
-                        width: `${(getProgressStats().totalCompleted / getProgressStats().totalNodes) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span>{getProgressStats().totalCompleted} Completed</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <span>
-                    {
-                      Object.values(progressMap).filter(
-                        (p) =>
-                          p.status === "submitted" ||
-                          (p as any)?.status === "submitted"
-                      ).length
-                    }{" "}
-                    Submitted
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                  <span>
-                    {
-                      Object.values(progressMap).filter(
-                        (p) =>
-                          p.status === "in_progress" ||
-                          (p as any)?.status === "in_progress"
-                      ).length
-                    }{" "}
-                    In Progress
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                  <span className="text-muted-foreground">
-                    {getProgressStats().totalNodes} Total
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation Instructions */}
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Select Node</span>
-                  <span className="text-muted-foreground">Click</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Next Node</span>
-                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                    Tab
-                  </kbd>
-                </div>
-                <div className="flex justify-between">
-                  <span>Previous Node</span>
-                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                    Shift+Tab
-                  </kbd>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Pan Map</span>
-                  <span className="text-muted-foreground">Drag</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Zoom</span>
-                  <span className="text-muted-foreground">Mouse Wheel</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Deselect</span>
-                  <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                    Esc
-                  </kbd>
-                </div>
-              </div>
-            </div>
+          <div className="h-full flex flex-col overflow-hidden">
+            {!isPanelMinimized && (
+              <NodeViewPanel
+                key={selectedNode?.id || "no-selection"} // Force remount on node change
+                selectedNode={selectedNode}
+                mapId={map.id}
+                onProgressUpdate={loadAllProgress}
+                isNodeUnlocked={
+                  selectedNode ? isNodeUnlocked(selectedNode.id) : true
+                }
+                userRole={userRole}
+                isInstructorOrTA={isInstructorOrTA}
+              />
+            )}
           </div>
-        )}
+        </ResizablePanel>
 
-        {/* Toggle Navigation Guide Button - Fixed Bottom Right */}
-        <button
-          onClick={() => setIsNavigationExpanded(!isNavigationExpanded)}
-          className="absolute bottom-4 right-4 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg hover:bg-muted/50 transition-colors"
-          aria-expanded={isNavigationExpanded}
-          title={
-            isNavigationExpanded
-              ? "Hide navigation guide"
-              : "Show navigation guide"
-          }
-        >
-          {isNavigationExpanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <Info className="h-4 w-4" />
-          )}
-        </button>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel
-        ref={rightPanelRef}
-        defaultSize={30}
-        minSize={5}
-        maxSize={65}
-        className="transition-all duration-300 ease-in-out relative"
-      >
-        {/* Panel Minimize/Maximize Button */}
-        <button
-          onClick={togglePanelSize}
-          className="absolute top-2 right-2 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg p-2 shadow-lg hover:bg-muted/50 transition-colors"
-          title={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
-          aria-label={isPanelMinimized ? "Maximize panel" : "Minimize panel"}
-        >
-          {isPanelMinimized ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </button>
-
-        <div className="h-full flex flex-col overflow-hidden">
-          {!isPanelMinimized && (
-            <NodeViewPanel
-              key={selectedNode?.id || "no-selection"} // Force remount on node change
-              selectedNode={selectedNode}
-              mapId={map.id}
-              onProgressUpdate={loadAllProgress}
-              isNodeUnlocked={
-                selectedNode ? isNodeUnlocked(selectedNode.id) : true
+        {/* Seed Completion Modal */}
+        {showCompletionModal && seedTitle && seedRoomId && completionData && currentUser && (
+          <SeedCompletionModal
+            open={showCompletionModal}
+            onOpenChange={(open) => {
+              setShowCompletionModal(open);
+              // Show banner when modal is closed
+              if (!open && hasCompletedSeed) {
+                setShowCompletionBanner(true);
               }
-              userRole={userRole}
-              isInstructorOrTA={isInstructorOrTA}
-            />
-          )}
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+            }}
+            seedTitle={seedTitle}
+            seedId={seedId || ""}
+            roomId={seedRoomId}
+            completionId={completionData.completionId}
+            userId={currentUser.id}
+            userName={currentUser.user_metadata?.full_name || currentUser.email || "Student"}
+            completionDate={completionData.completionDate}
+          />
+        )}
+      </ResizablePanelGroup>
+    </div>
   );
 }
 
 // Wrapper component that provides ReactFlow context
-export function MapViewerWithProvider({ map }: MapViewerProps) {
+export function MapViewerWithProvider({ map, seedRoomId, seedTitle, seedId, roomSettingsComponent }: MapViewerProps) {
   return (
     <ReactFlowProvider>
       <style jsx global>{`
@@ -1411,7 +1552,13 @@ export function MapViewerWithProvider({ map }: MapViewerProps) {
         }
       `}</style>
 
-      <MapViewer map={map} />
+      <MapViewer
+        map={map}
+        seedRoomId={seedRoomId}
+        seedTitle={seedTitle}
+        seedId={seedId}
+        roomSettingsComponent={roomSettingsComponent}
+      />
     </ReactFlowProvider>
   );
 }

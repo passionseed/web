@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Play,
   Lock,
+  Trophy,
 } from "lucide-react";
 
 import { GameNodeProps } from "../types";
@@ -80,6 +81,21 @@ export function GameNode({
           title={`Submission requirement: ${requirement === "all" ? "All team members" : "Any team member"}`}
         >
           {requirement === "all" ? "👥" : "👤"}
+        </div>
+      </div>
+    );
+  }
+
+  // End node indicator - Golden trophy badge
+  let endNodeBadge = null;
+  if (data.node_type === "end") {
+    endNodeBadge = (
+      <div className="absolute -top-3 -right-3 z-50 animate-bounce">
+        <div
+          className="rounded-full p-2 text-xs font-bold shadow-lg bg-gradient-to-br from-yellow-400 via-amber-500 to-yellow-600 border-2 border-yellow-300"
+          title="End Node - Completing this will mark the seed as finished!"
+        >
+          <Trophy className="h-4 w-4 text-white" />
         </div>
       </div>
     );
@@ -250,6 +266,9 @@ export function GameNode({
 
         {/* Submission Requirement Badge */}
         {requirementBadge}
+
+        {/* End Node Badge */}
+        {endNodeBadge}
 
         {/* Sprite Image */}
         <img
