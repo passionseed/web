@@ -939,9 +939,10 @@ export function UniversityExampleJourneyCanvas({
       {/* Main Canvas */}
       <div className="flex-1 h-full">
         <ReactFlowProvider>
-          <ResizablePanelGroup direction="horizontal" className="h-full">
+          <ResizablePanelGroup id="university-journey-panels" direction="horizontal" className="h-full">
             {/* Main Journey Canvas */}
             <ResizablePanel
+              id="university-journey-left-panel"
               defaultSize={isPanelMinimized ? 85 : 70}
               minSize={50}
               className="relative h-full"
@@ -1048,6 +1049,7 @@ export function UniversityExampleJourneyCanvas({
 
             {/* Side Panel */}
             <ResizablePanel
+              id="university-journey-right-panel"
               ref={panelRef}
               defaultSize={isPanelMinimized ? 15 : 30}
               minSize={15}

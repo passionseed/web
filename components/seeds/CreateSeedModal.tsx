@@ -21,6 +21,7 @@ interface CreateSeedModalProps {
 
 export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
     const [title, setTitle] = useState("");
+    const [slogan, setSlogan] = useState("");
     const [description, setDescription] = useState("");
     const [mapId, setMapId] = useState("");
     const [minStudents, setMinStudents] = useState(1);
@@ -78,32 +79,26 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
         setLoading(true);
 
         try {
-            const supabase = createClient();
-            const {
-                data: { user },
-            } = await supabase.auth.getUser();
+            // 1. Create the seed via API (handles map cloning/creation)
+            const response = await fetch("/api/seeds/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title,
+                    slogan,
+                    description,
+                    categoryId: selectedCategory || null,
+                    sourceMapId: mapId === "blank" ? null : mapId || null, // If mapId is blank, it means blank map
+                }),
+            });
 
-            if (!user) {
-                toast.error("You must be logged in to create a seed");
-                return;
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to create seed");
             }
 
-            let categoryId = selectedCategory;
-
-            // 1. Create the seed record
-            const { data: seed, error: seedError } = await supabase
-                .from("seeds")
-                .insert({
-                    title,
-                    description,
-                    map_id: mapId,
-                    created_by: user.id,
-                    category_id: categoryId || null,
-                })
-                .select()
-                .single();
-
-            if (seedError) throw seedError;
+            const seed = data.seed;
 
             // 2. Upload cover image if selected
             if (selectedImage && seed) {
@@ -149,19 +144,25 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="map">Select Map</Label>
-                        <Select value={mapId} onValueChange={setMapId}>
-                            <SelectTrigger className="w-full p-2 rounded-md bg-neutral-800 border border-neutral-700 text-white">
-                                <SelectValue placeholder="Select a learning map" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-neutral-800 border-neutral-700 text-white">
-                                {maps.map((map) => (
-                                    <SelectItem key={map.id} value={map.id}>
-                                        {map.title}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Label htmlFor="map">Base Map</Label>
+                        <div className="space-y-2">
+                            <Select value={mapId} onValueChange={setMapId}>
+                                <SelectTrigger className="w-full p-2 rounded-md bg-neutral-800 border border-neutral-700 text-white">
+                                    <SelectValue placeholder="Select a base map (Optional)" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-neutral-800 border-neutral-700 text-white">
+                                    <SelectItem value="blank">Start with Blank Map</SelectItem>
+                                    {maps.map((map) => (
+                                        <SelectItem key={map.id} value={map.id}>
+                                            {map.title}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-neutral-400">
+                                {mapId && mapId !== "blank" ? "Selected map will be cloned as a starting point." : "A new blank map will be created for this seed."}
+                            </p>
+                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -203,12 +204,23 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="slogan">Slogan (Optional)</Label>
+                        <Input
+                            id="slogan"
+                            value={slogan}
+                            onChange={(e) => setSlogan(e.target.value)}
+                            placeholder="Catchy phrase for the hero section..."
+                            className="bg-neutral-800 border-neutral-700"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Description (Markdown Supported)</Label>
                         <Textarea
                             id="description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Brief description..."
+                            placeholder="Detailed description..."
                             className="bg-neutral-800 border-neutral-700"
                         />
                     </div>

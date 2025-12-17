@@ -54,7 +54,9 @@ export function ClassroomDashboard() {
       // Fetch user's classroom memberships (works for all roles)
       const response = await fetch("/api/classrooms");
       if (!response.ok) {
-        throw new Error("Failed to fetch classrooms");
+        const errorText = await response.text();
+        console.error("Classrooms API error:", response.status, errorText);
+        throw new Error(`Failed to fetch classrooms: ${response.status}`);
       }
 
       const memberships: ClassroomMembership[] = await response.json();

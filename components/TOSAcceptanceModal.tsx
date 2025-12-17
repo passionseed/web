@@ -38,7 +38,8 @@ export function TOSAcceptanceModal() {
         .single();
 
       if (error) {
-        console.error("Error checking TOS acceptance:", error);
+        console.error("Error checking TOS acceptance:", error.message || error);
+        console.error("Error details:", { code: error.code, details: error.details, hint: error.hint });
         return;
       }
 

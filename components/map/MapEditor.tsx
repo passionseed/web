@@ -2466,9 +2466,10 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
   return (
     <div className="h-full w-full">
-      <ResizablePanelGroup direction="horizontal" className="h-full">
+      <ResizablePanelGroup id="map-editor-panels" direction="horizontal" className="h-full">
         {/* Main Canvas Area */}
         <ResizablePanel
+          id="map-editor-left-panel"
           ref={leftPanelRef}
           defaultSize={getSelectedNode() ? 65 : 100}
           minSize={40}
@@ -2839,6 +2840,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
               className="w-1.5 bg-border hover:bg-primary/20 transition-colors"
             />
             <ResizablePanel
+              id="map-editor-right-panel"
               ref={rightPanelRef}
               defaultSize={35}
               minSize={25}
@@ -2851,7 +2853,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   onNodeDataChange={handleNodeDataChange}
                   onNodeDelete={handleDeleteNode}
                   onEditingStateChange={setIsEditingNode}
-                  mapId={map.id}
+                  isSeedMap={map.map_type === 'seed' || map.parent_seed_id != null}
                 />
               </div>
             </ResizablePanel>

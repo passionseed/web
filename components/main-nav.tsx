@@ -2,12 +2,27 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 
 export function MainNav() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const handleSeedsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      const activeRoom = localStorage.getItem('activeSeedRoom');
+      if (activeRoom) {
+        router.push(`/seeds/room/${activeRoom}`);
+      } else {
+        router.push('/seeds');
+      }
+    }
+    setMenuOpen(false);
+  };
 
   return (
     <div className="relative flex items-center justify-between w-full sm:px-4 lg:px-8 min-h-16">
@@ -61,13 +76,13 @@ export function MainNav() {
               >
                 My Journey
               </Link>
-              <Link
+              <a
                 href="/seeds"
-                className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
-                onClick={() => setMenuOpen(false)}
+                className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md cursor-pointer"
+                onClick={handleSeedsClick}
               >
                 Seeds
-              </Link>
+              </a>
             </nav>
           </SheetContent>
         </Sheet>
@@ -117,12 +132,13 @@ export function MainNav() {
         >
           My Journey
         </Link>
-        <Link
+        <a
           href="/seeds"
-          className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+          className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap cursor-pointer"
+          onClick={handleSeedsClick}
         >
           Seeds
-        </Link>
+        </a>
       </nav>
       {/* Mobile nav */}
       {/* The mobile nav is now handled by the Sheet component */}

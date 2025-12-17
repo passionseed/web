@@ -136,9 +136,9 @@ export interface AssignmentGroupWithProgress extends AssignmentGroup {
 // CLASSROOM-EXCLUSIVE MAPS TYPES
 // ========================================
 
-export type MapType = 'public' | 'private' | 'classroom_exclusive';
+export type MapType = 'public' | 'private' | 'classroom_exclusive' | 'seed';
 
-export type ClassroomMapFeatureType = 
+export type ClassroomMapFeatureType =
   | 'live_collaboration'
   | 'auto_assessment'
   | 'peer_review'
@@ -194,6 +194,7 @@ export interface ExtendedLearningMap {
   creator_id: string;
   map_type: MapType;
   parent_classroom_id: string | null;
+  parent_seed_id: string | null;
   visibility: string;
   created_at: string;
   updated_at: string;
@@ -338,7 +339,7 @@ export interface ClassroomWithMaps extends Classroom {
 
 export interface ClassroomWithAll
   extends ClassroomWithMembers,
-    ClassroomWithMaps {
+  ClassroomWithMaps {
   assignments: (ClassroomAssignment & {
     source_map?: {
       id: string;

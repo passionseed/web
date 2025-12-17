@@ -6,14 +6,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NodeAssessment, GroupSubmissionMode } from "@/types/map";
-import { ChevronDown, ChevronUp, Users, Settings } from "lucide-react";
+import { ChevronDown, ChevronUp, Users, Settings, Trophy } from "lucide-react";
+
+type SeedAssessmentType = 'competition' | 'teamwork';
 
 interface QuizSettingsProps {
   assessment: NodeAssessment;
   onGradingChange: (field: 'is_graded' | 'points_possible', value: boolean | number | null) => void;
   onGroupSettingsChange: (field: string, value: any) => void;
   onManageGroups: () => void;
+  isSeedMap?: boolean; // New prop to identify seed maps
 }
 
 export function QuizSettings({
@@ -21,6 +25,7 @@ export function QuizSettings({
   onGradingChange,
   onGroupSettingsChange,
   onManageGroups,
+  isSeedMap = false,
 }: QuizSettingsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [questionsInputValue, setQuestionsInputValue] = useState<string>("");
@@ -53,10 +58,19 @@ export function QuizSettings({
       parts.push(`${maxAttempts} attempts`);
     }
 
-    if (assessment.is_group_assessment) {
-      parts.push('Group work');
+    if (isSeedMap) {
+      const seedType = (assessment.metadata?.seed_assessment_type as SeedAssessmentType) || 'competition';
+      if (seedType === 'competition') {
+        parts.push('Competition');
+      } else {
+        parts.push('Team work');
+      }
     } else {
-      parts.push('Individual');
+      if (assessment.is_group_assessment) {
+        parts.push('Group work');
+      } else {
+        parts.push('Individual');
+      }
     }
 
     return parts.join(' · ');
@@ -283,60 +297,150 @@ export function QuizSettings({
             )}
           </div>
 
-          {/* Group Assessment Configuration - More compact */}
+          {/* Group Assessment Configuration / Seed Type - More compact */}
           <div className="space-y-2 pt-2 border-t">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_group_assessment"
-                checked={assessment.is_group_assessment || false}
-                onCheckedChange={(checked) =>
-                  onGroupSettingsChange('is_group_assessment', checked as boolean)
-                }
-              />
-              <Label htmlFor="is_group_assessment" className="text-xs font-normal flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                Group work
-              </Label>
-            </div>
-
-            {assessment.is_group_assessment && (
-              <div className="ml-5 space-y-2">
-                {/* Group Submission Mode - Inline */}
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Submission:</Label>
-                  <RadioGroup
-                    value={assessment.group_submission_mode || 'all_members'}
-                    onValueChange={(value) =>
-                      onGroupSettingsChange('group_submission_mode', value as GroupSubmissionMode)
+            {isSeedMap ? (
+              // Seed Map: Dropdown for Competition vs Team work
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Type:</Label>
+                <Select
+                  value={(assessment.metadata?.seed_assessment_type as SeedAssessmentType) || 'competition'}
+                  onValueChange={(value: SeedAssessmentType) => {
+                    onGroupSettingsChange('metadata', {
+                      ...assessment.metadata,
+                      seed_assessment_type: value
+                    });
+                    // If switching to teamwork, enable group assessment
+                    if (value === 'teamwork') {
+                      onGroupSettingsChange('is_group_assessment', true);
+                    } else {
+                      // If switching to competition, disable group assessment
+                      onGroupSettingsChange('is_group_assessment', false);
                     }
-                    className="space-y-1"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="all_members" id="all_members" className="h-3 w-3" />
-                      <Label htmlFor="all_members" className="text-xs font-normal">
-                        Everyone submits
-                      </Label>
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="competition">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-3 w-3" />
+                        Competition
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="teamwork">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-3 w-3" />
+                        Team work
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground">
+                  {(assessment.metadata?.seed_assessment_type as SeedAssessmentType) === 'competition'
+                    ? 'Everyone submits individually with leaderboard'
+                    : 'Students work in teams'}
+                </p>
+
+                {/* Team work options (only show if teamwork is selected) */}
+                {(assessment.metadata?.seed_assessment_type as SeedAssessmentType) === 'teamwork' && (
+                  <div className="ml-3 space-y-2 border-l-2 border-muted pl-3">
+                    {/* Group Submission Mode */}
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-muted-foreground">Submission:</Label>
+                      <RadioGroup
+                        value={assessment.group_submission_mode || 'all_members'}
+                        onValueChange={(value) =>
+                          onGroupSettingsChange('group_submission_mode', value as GroupSubmissionMode)
+                        }
+                        className="space-y-1"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="all_members" id="all_members" className="h-3 w-3" />
+                          <Label htmlFor="all_members" className="text-xs font-normal">
+                            Everyone submits
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="single_submission" id="single_submission" className="h-3 w-3" />
+                          <Label htmlFor="single_submission" className="text-xs font-normal">
+                            One per group
+                          </Label>
+                        </div>
+                      </RadioGroup>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="single_submission" id="single_submission" className="h-3 w-3" />
-                      <Label htmlFor="single_submission" className="text-xs font-normal">
-                        One per group
-                      </Label>
-                    </div>
-                  </RadioGroup>
+
+                    {/* Manage Groups Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 h-7 text-xs"
+                      onClick={onManageGroups}
+                    >
+                      <Users className="h-3 w-3" />
+                      Manage Groups
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Regular Map: Original Group work checkbox
+              <>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_group_assessment"
+                    checked={assessment.is_group_assessment || false}
+                    onCheckedChange={(checked) =>
+                      onGroupSettingsChange('is_group_assessment', checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="is_group_assessment" className="text-xs font-normal flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    Group work
+                  </Label>
                 </div>
 
-                {/* Manage Groups Button - Smaller */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1 h-7 text-xs"
-                  onClick={onManageGroups}
-                >
-                  <Users className="h-3 w-3" />
-                  Manage Groups
-                </Button>
-              </div>
+                {assessment.is_group_assessment && (
+                  <div className="ml-5 space-y-2">
+                    {/* Group Submission Mode - Inline */}
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-muted-foreground">Submission:</Label>
+                      <RadioGroup
+                        value={assessment.group_submission_mode || 'all_members'}
+                        onValueChange={(value) =>
+                          onGroupSettingsChange('group_submission_mode', value as GroupSubmissionMode)
+                        }
+                        className="space-y-1"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="all_members" id="all_members" className="h-3 w-3" />
+                          <Label htmlFor="all_members" className="text-xs font-normal">
+                            Everyone submits
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="single_submission" id="single_submission" className="h-3 w-3" />
+                          <Label htmlFor="single_submission" className="text-xs font-normal">
+                            One per group
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Manage Groups Button - Smaller */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 h-7 text-xs"
+                      onClick={onManageGroups}
+                    >
+                      <Users className="h-3 w-3" />
+                      Manage Groups
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

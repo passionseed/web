@@ -47,6 +47,8 @@ export interface LearningMap {
   cover_image_blurhash?: string | null; // Blurhash for instant placeholder
   cover_image_key?: string | null; // B2 file key for deletion
   cover_image_updated_at?: string | null; // When image was last updated
+  map_type?: 'public' | 'private' | 'classroom_exclusive' | 'seed'; // Type of map
+  parent_seed_id?: string | null; // If map_type is 'seed', this links to the seed
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
   nodes?: MapNode[]; // Optional relation
@@ -62,7 +64,7 @@ export interface MapNode {
   difficulty: number;
   sprite_url: string | null;
   metadata: Record<string, any> | null; // jsonb
-  node_type?: "learning" | "text" | "comment"; // Added node_type field with comment support
+  node_type?: "learning" | "text" | "comment" | "end"; // Added node_type field with comment and end support
   created_at: string; // timestamp with time zone
   updated_at: string; // timestamp with time zone
   node_content?: NodeContent[]; // Changed from 'content' to 'node_content'

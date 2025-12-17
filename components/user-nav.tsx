@@ -74,7 +74,8 @@ export function UserNav({ user }: UserNavProps) {
           // Profile doesn't exist, create one
           await createProfile();
         } else {
-          console.error('Error fetching profile:', error);
+          console.error('Error fetching profile:', error.message || error);
+          console.error('Error details:', { code: error.code, details: error.details, hint: error.hint });
         }
         return;
       }
