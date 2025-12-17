@@ -17,7 +17,7 @@ COMMENT ON COLUMN public.map_nodes.node_type IS 'Type of node: ''learning'' for 
 
 -- Create a table to track seed completion for individual students
 CREATE TABLE IF NOT EXISTS public.seed_room_completions (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   room_id uuid NOT NULL,
   user_id uuid NOT NULL,
   completed_at timestamp with time zone DEFAULT now(),
@@ -38,18 +38,22 @@ ALTER TABLE public.seed_room_completions ENABLE ROW LEVEL SECURITY;
 -- Create RLS policies for seed_room_completions
 
 -- Users can view their own completions
+-- Users can view their own completions
+DROP POLICY IF EXISTS "Users can view their own seed completions" ON public.seed_room_completions;
 CREATE POLICY "Users can view their own seed completions" ON public.seed_room_completions
 FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
 
 -- Users can insert their own completions
+DROP POLICY IF EXISTS "Users can insert their own seed completions" ON public.seed_room_completions;
 CREATE POLICY "Users can insert their own seed completions" ON public.seed_room_completions
 FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
 -- Mentors, admins, and instructors can view all completions for rooms they have access to
+DROP POLICY IF EXISTS "Mentors and admins can view all seed completions" ON public.seed_room_completions;
 CREATE POLICY "Mentors and admins can view all seed completions" ON public.seed_room_completions
 FOR SELECT
 TO authenticated

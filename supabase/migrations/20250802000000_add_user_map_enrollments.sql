@@ -1,7 +1,7 @@
 -- Individual user enrollments in learning maps
 -- This table tracks when a user starts/joins a learning map adventure
 CREATE TABLE public.user_map_enrollments (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   map_id uuid NOT NULL,
   enrolled_at timestamp with time zone DEFAULT now(),

@@ -1,6 +1,6 @@
 -- Content for each map node (video, slides, text)
 CREATE TABLE public.node_content (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   node_id uuid NOT NULL,
   content_type text NOT NULL CHECK (content_type = ANY (ARRAY['video'::text, 'canva_slide'::text, 'text_with_images'::text])),
   content_url text, -- For video links, canva links
@@ -12,7 +12,7 @@ CREATE TABLE public.node_content (
 
 -- Defines the assessment for a node
 CREATE TABLE public.node_assessments (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   node_id uuid NOT NULL,
   assessment_type text NOT NULL CHECK (assessment_type = ANY (ARRAY['quiz'::text, 'text_answer'::text, 'image_upload'::text, 'file_upload'::text])),
   PRIMARY KEY (id),
@@ -21,7 +21,7 @@ CREATE TABLE public.node_assessments (
 
 -- For quiz-type assessments
 CREATE TABLE public.quiz_questions (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   assessment_id uuid NOT NULL,
   question_text text NOT NULL,
   options jsonb, -- e.g., [{"option": "A", "text": "Answer A"}, {"option": "B", "text": "Answer B"}]
@@ -32,7 +32,7 @@ CREATE TABLE public.quiz_questions (
 
 -- Tracks a student's progress at each node
 CREATE TABLE public.student_node_progress (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   node_id uuid NOT NULL,
   status text NOT NULL DEFAULT 'not_started'::text CHECK (status = ANY (ARRAY['not_started'::text, 'in_progress'::text, 'submitted'::text, 'passed'::text, 'failed'::text])),
@@ -47,7 +47,7 @@ CREATE TABLE public.student_node_progress (
 
 -- Stores student submissions for assessments
 CREATE TABLE public.assessment_submissions (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   progress_id uuid NOT NULL,
   assessment_id uuid NOT NULL,
   -- For different submission types
@@ -63,7 +63,7 @@ CREATE TABLE public.assessment_submissions (
 
 -- For TA/Instructor grading and feedback
 CREATE TABLE public.submission_grades (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   submission_id uuid NOT NULL,
   graded_by uuid NOT NULL,
   grade text NOT NULL CHECK (grade = ANY (ARRAY['pass'::text, 'fail'::text])),
@@ -77,7 +77,7 @@ CREATE TABLE public.submission_grades (
 
 -- Leaderboard for students who have passed a node
 CREATE TABLE public.node_leaderboard (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   node_id uuid NOT NULL,
   user_id uuid NOT NULL,
   rank integer NOT NULL,

@@ -105,6 +105,54 @@ const CATEGORIES = [
     en: "Fine Arts",
     search: "Bachelor of Fine Arts",
   },
+  {
+    id: "economics",
+    th: "เศรษฐศาสตร์",
+    en: "Economics",
+    search: "Bachelor of Economics",
+  },
+  {
+    id: "pol-sci",
+    th: "รัฐศาสตร์",
+    en: "Political Science",
+    search: "Bachelor of Political Science",
+  },
+  {
+    id: "dentistry",
+    th: "ทันตแพทยศาสตร์",
+    en: "Dentistry",
+    search: "Doctor of Dental Surgery",
+  },
+  {
+    id: "pharmacy",
+    th: "เภสัชศาสตร์",
+    en: "Pharmacy",
+    search: "Doctor of Pharmacy",
+  },
+  {
+    id: "allied-health",
+    th: "สหเวชศาสตร์",
+    en: "Allied Health Sciences",
+    search: "Bachelor of Science",
+  }, // Usually B.Sc
+  {
+    id: "psychology",
+    th: "จิตวิทยา",
+    en: "Psychology",
+    search: "Bachelor of Science",
+  }, // Often B.Sc or B.A
+  {
+    id: "public-health",
+    th: "สาธารณสุขศาสตร์",
+    en: "Public Health",
+    search: "Bachelor of Public Health",
+  },
+  {
+    id: "veterinary",
+    th: "สัตวแพทยศาสตร์",
+    en: "Veterinary Science",
+    search: "Doctor of Veterinary Medicine",
+  },
   { id: "others", th: "อื่นๆ / ค้นหา", en: "Others / Search", search: "" },
 ];
 
