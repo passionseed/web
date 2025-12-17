@@ -10,7 +10,7 @@ BEGIN
         -- Delete the room if it's empty
         DELETE FROM seed_rooms WHERE id = OLD.room_id;
         RAISE NOTICE 'Deleted empty room: %', OLD.room_id;
-    END IF;;
+    END IF;
     
     RETURN OLD;
 END;

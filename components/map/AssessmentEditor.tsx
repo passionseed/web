@@ -34,6 +34,7 @@ export function AssessmentEditor({
   assessment,
   onAssessmentChange,
   mapId,
+  isSeedMap = false,
 }: AssessmentEditorProps) {
   const { toast } = useToast();
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -478,6 +479,7 @@ export function AssessmentEditor({
                 onGradingChange={handleGradingChange}
                 onGroupSettingsChange={handleGroupSettingsChange}
                 onManageGroups={() => setIsGroupModalOpen(true)}
+                isSeedMap={isSeedMap}
               />
             </>
           )}
@@ -500,6 +502,7 @@ export function AssessmentEditor({
                 onGradingChange={handleGradingChange}
                 onGroupSettingsChange={handleGroupSettingsChange}
                 onManageGroups={() => setIsGroupModalOpen(true)}
+                isSeedMap={isSeedMap}
               />
             </>
           )}
@@ -514,6 +517,7 @@ export function AssessmentEditor({
                 onGradingChange={handleGradingChange}
                 onGroupSettingsChange={handleGroupSettingsChange}
                 onManageGroups={() => setIsGroupModalOpen(true)}
+                isSeedMap={isSeedMap}
               />
             </>
           )}

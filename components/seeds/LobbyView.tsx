@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { SeedRoom, Seed } from "@/types/seeds";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Copy, Users, Play, LogOut } from "lucide-react";
+import { Copy, Users, Play, LogOut, GraduationCap, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +15,7 @@ interface LobbyViewProps {
     seed: Seed;
     currentUser: any;
     isAdmin?: boolean;
+    isInstructor?: boolean;
 }
 
 interface Member {
@@ -30,15 +31,80 @@ interface Member {
     };
 }
 
-export function LobbyView({ room, seed, currentUser, isAdmin }: LobbyViewProps) {
+export function LobbyView({ room, seed, currentUser, isAdmin, isInstructor }: LobbyViewProps) {
     const [members, setMembers] = useState<Member[]>([]);
     const [currentRoom, setCurrentRoom] = useState(room);
+    const [mentorLoading, setMentorLoading] = useState(false);
     const supabase = createClient();
     const router = useRouter();
     const isHost = currentUser.id === room.host_id;
 
+    // Admin and instructor can start the lobby and navigate back
+    const canManageLobby = isAdmin || isInstructor;
+    const canStartLobby = isHost || canManageLobby;
+
+    // Mentor management
+    const isMentor = currentRoom.mentor_id === currentUser.id;
+    const hasMentor = !!currentRoom.mentor_id;
+
+    const handleAssignMentor = async () => {
+        setMentorLoading(true);
+        try {
+            // Check if room already has a mentor
+            const { data: roomData, error: checkError } = await supabase
+                .from("seed_rooms")
+                .select("mentor_id")
+                .eq("id", room.id)
+                .single();
+
+            if (checkError) throw checkError;
+
+            if (roomData.mentor_id) {
+                toast.error("This room already has a mentor assigned");
+                setMentorLoading(false);
+                return;
+            }
+
+            const { error } = await supabase
+                .from("seed_rooms")
+                .update({ mentor_id: currentUser.id })
+                .eq("id", room.id)
+                .eq("mentor_id", null); // Only update if mentor_id is still null
+
+            if (error) throw error;
+
+            setCurrentRoom({ ...currentRoom, mentor_id: currentUser.id });
+            toast.success("You are now the mentor for this room!");
+        } catch (error: any) {
+            console.error("Error assigning mentor:", error);
+            toast.error(error.message || "Failed to assign as mentor");
+        } finally {
+            setMentorLoading(false);
+        }
+    };
+
+    const handleUnassignMentor = async () => {
+        setMentorLoading(true);
+        try {
+            const { error } = await supabase
+                .from("seed_rooms")
+                .update({ mentor_id: null })
+                .eq("id", room.id);
+
+            if (error) throw error;
+
+            setCurrentRoom({ ...currentRoom, mentor_id: null });
+            toast.success("Mentor unassigned");
+        } catch (error: any) {
+            console.error("Error unassigning mentor:", error);
+            toast.error(error.message || "Failed to unassign mentor");
+        } finally {
+            setMentorLoading(false);
+        }
+    };
+
     const handleAdminReturn = () => {
-        // For admins, navigate to seeds with a special flag to bypass redirect
+        // For admins/instructors, navigate to seeds with a special flag to bypass redirect
         router.push("/seeds?admin=true");
     };
 
@@ -76,7 +142,8 @@ export function LobbyView({ room, seed, currentUser, isAdmin }: LobbyViewProps) 
                 (payload) => {
                     setCurrentRoom(payload.new as SeedRoom);
                     if (payload.new.status === "active") {
-                        router.refresh();
+                        // Navigate all participants to the seed map
+                        router.push(`/seeds/room/${room.join_code}`);
                     }
                 }
             )
@@ -123,6 +190,8 @@ export function LobbyView({ room, seed, currentUser, isAdmin }: LobbyViewProps) 
             toast.error("Failed to start journey");
         } else {
             toast.success("Journey started!");
+            // Navigate to the seed map page
+            router.push(`/seeds/room/${room.join_code}`);
         }
     };
 
@@ -221,14 +290,14 @@ export function LobbyView({ room, seed, currentUser, isAdmin }: LobbyViewProps) 
                     </div>
                 </div>
 
-                {isAdmin && (
+                {canManageLobby && (
                     <div className="mb-6">
                         <Button
                             onClick={handleAdminReturn}
                             variant="outline"
                             className="w-full border-neutral-700 text-neutral-300 hover:bg-neutral-800"
                         >
-                            Return to Seeds Menu (Admin)
+                            Return to Seeds Menu
                         </Button>
                     </div>
                 )}
@@ -285,7 +354,7 @@ export function LobbyView({ room, seed, currentUser, isAdmin }: LobbyViewProps) 
                         >
                             View Seed Details
                         </Button>
-                        {isHost && (
+                        {canStartLobby && (
                             <Button
                                 onClick={handleStart}
                                 disabled={members.length < currentRoom.min_students}
@@ -297,7 +366,7 @@ export function LobbyView({ room, seed, currentUser, isAdmin }: LobbyViewProps) 
                         )}
                     </div>
 
-                    {isHost && members.length < currentRoom.min_students && (
+                    {canStartLobby && members.length < currentRoom.min_students && (
                         <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4">
                             <p className="text-center text-sm text-yellow-200">
                                 Need {currentRoom.min_students - members.length} more {currentRoom.min_students - members.length === 1 ? "student" : "students"} to start
@@ -308,7 +377,7 @@ export function LobbyView({ room, seed, currentUser, isAdmin }: LobbyViewProps) 
                         </div>
                     )}
 
-                    {!isHost && (
+                    {!canStartLobby && (
                         <div className="text-center text-neutral-400 py-2">
                             <p className="text-sm">Waiting for host to start...</p>
                             {members.length < currentRoom.min_students && (

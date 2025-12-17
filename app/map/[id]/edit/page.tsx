@@ -25,7 +25,7 @@ async function checkEditAccess(mapId: string) {
   // SECURITY: Verify the map exists first
   const { data: existingMap, error: mapError } = await supabase
     .from("learning_maps")
-    .select("id, creator_id, title, category")
+    .select("id, creator_id, title, category, map_type, parent_seed_id")
     .eq("id", mapId)
     .single();
 
@@ -33,9 +33,6 @@ async function checkEditAccess(mapId: string) {
     console.error("Map not found or error fetching map:", mapError);
     redirect("/map");
   }
-
-  // SECURITY: Check if user is the creator
-  const isCreator = existingMap.creator_id === user.id;
 
   // SECURITY: Check if user has admin or instructor role
   const { data: roles, error: roleError } = await supabase
@@ -49,6 +46,16 @@ async function checkEditAccess(mapId: string) {
   }
 
   const isAdmin = roles?.some((r) => r.role === "admin") ?? false;
+
+  // SECURITY: Restrict access to seed maps - only admins can edit seed maps directly
+  if (existingMap.map_type === 'seed' && !isAdmin) {
+    console.log(`User ${user.id} attempted to edit seed map ${mapId} without admin access`);
+    redirect("/map");
+  }
+
+  // SECURITY: Check if user is the creator
+  const isCreator = existingMap.creator_id === user.id;
+
   const isInstructor = roles?.some((r) => r.role === "instructor") ?? false;
 
   // SECURITY: Check if user is an editor of this map
@@ -92,8 +99,8 @@ export default async function EditMapPage({
   const { id } = await params;
 
   // Check access before rendering
-  await checkEditAccess(id);
+  const { map } = await checkEditAccess(id);
 
   // If we get here, user has proper access
-  return <EditMapPageClient />;
+  return <EditMapPageClient map={map} />;
 }

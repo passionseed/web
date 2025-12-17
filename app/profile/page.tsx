@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Upload, Save, User, Mail, Calendar, Edit, School, GraduationCap, Building } from 'lucide-react'
 import { toast } from 'sonner'
+import { MentorAvailabilitySettings } from '@/components/profile/MentorAvailabilitySettings'
+import { BadgeGallery } from '@/components/profile/BadgeGallery'
 
 interface UserProfile {
   id: string
@@ -29,6 +31,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [isInstructor, setIsInstructor] = useState(false)
   const supabase = createClient()
 
   // Form states
@@ -67,7 +70,7 @@ export default function ProfilePage() {
       setFullName(newProfile.full_name || '')
       setUsername(newProfile.username || '')
       setDateOfBirth(newProfile.date_of_birth || '')
-      setDiscordId(newProfile.discord_id || '')
+      setDiscordId(newProfile.discord_uid || '')
       setEducationLevel(newProfile.education_level || 'high_school')
       toast.success('Profile created successfully!')
     } catch (error) {
@@ -106,8 +109,18 @@ export default function ProfilePage() {
       setFullName(profileData.full_name || '')
       setUsername(profileData.username || '')
       setDateOfBirth(profileData.date_of_birth || '')
-      setDiscordId(profileData.discord_id || '')
+      setDiscordId(profileData.discord_uid || '')
       setEducationLevel(profileData.education_level || 'high_school')
+
+      // Check if user is instructor or admin
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['instructor', 'admin'])
+        .single()
+
+      setIsInstructor(!!roleData)
     } catch (error) {
       console.error('Profile fetch error:', error)
       toast.error('Failed to load profile')
@@ -158,7 +171,7 @@ export default function ProfilePage() {
           full_name: fullName || null,
           username: username,
           date_of_birth: dateOfBirth || null,
-          discord_id: discordId || null,
+          discord_uid: discordId || null,
           education_level: educationLevel,
           updated_at: new Date().toISOString(),
         })
@@ -194,7 +207,7 @@ export default function ProfilePage() {
       setFullName(profile.full_name || '')
       setUsername(profile.username || '')
       setDateOfBirth(profile.date_of_birth || '')
-      setDiscordId(profile.discord_id || '')
+      setDiscordId(profile.discord_uid || '')
       setEducationLevel(profile.education_level || 'high_school')
     }
     setIsEditing(false)
@@ -316,13 +329,13 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="discordId">Discord Username</Label>
+                <Label htmlFor="discordId">Discord User ID (UID)</Label>
                 <Input
                   id="discordId"
                   value={discordId}
                   onChange={(e) => setDiscordId(e.target.value)}
                   disabled={!isEditing}
-                  placeholder="Enter your Discord username"
+                  placeholder="Enter your Discord User ID"
                 />
               </div>
 
@@ -424,6 +437,24 @@ export default function ProfilePage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Badge Gallery */}
+        {profile && (
+          <div className="mt-8">
+            <Card>
+              <CardContent className="p-6">
+                <BadgeGallery userId={profile.id} showTitle={true} />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Mentor Availability Settings - Only for Instructors */}
+        {isInstructor && profile && (
+          <div className="mt-6">
+            <MentorAvailabilitySettings userId={profile.id} />
+          </div>
+        )}
       </div>
     </div>
   )

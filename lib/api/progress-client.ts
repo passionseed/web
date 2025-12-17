@@ -46,7 +46,7 @@ export interface UpdateProgressResponse {
 async function isTeamMap(mapId: string): Promise<boolean> {
   try {
     const supabase = createClient();
-    
+
     const { data, error } = await supabase
       .from("classroom_team_maps")
       .select("map_id")
@@ -73,12 +73,10 @@ export async function getMapProgress(
   mapId: string
 ): Promise<Record<string, TeamNodeProgress | StudentProgress>> {
   try {
-    console.log("🔍 [Progress Client] Fetching map progress for:", mapId);
     const supabase = createClient();
 
     // First check if this is a team map
     const isTeam = await isTeamMap(mapId);
-    console.log("📊 [Progress Client] Map type:", isTeam ? "team" : "individual");
 
     if (isTeam) {
       // Use the RPC function for team progress
@@ -98,10 +96,6 @@ export async function getMapProgress(
       }
 
       if (!allProgress) {
-        console.log(
-          "✅ [Progress Client] No team progress data returned for map:",
-          mapId
-        );
         return {};
       }
 
@@ -111,16 +105,10 @@ export async function getMapProgress(
         progressMap[progress.node_id] = progress;
       });
 
-      console.log("✅ [Progress Client] Team progress fetched:", {
-        mapId,
-        progressCount: allProgress.length,
-      });
-
       return progressMap;
     } else {
       // Use the API endpoint for individual progress
-      console.log("📊 [Progress Client] Fetching individual progress via API");
-      
+
       const response = await fetch(`/api/maps/${mapId}/progress`, {
         method: "GET",
         headers: {
@@ -147,11 +135,6 @@ export async function getMapProgress(
         return {};
       }
 
-      console.log("✅ [Progress Client] Individual progress fetched:", {
-        mapId,
-        progressCount: Object.keys(result.data.progress_map).length,
-      });
-
       return result.data.progress_map;
     }
   } catch (error) {
@@ -170,10 +153,6 @@ export async function getNodeProgress(
   nodeId: string
 ): Promise<StudentProgress | null> {
   try {
-    console.log("📊 [Progress Client] Fetching node progress:", {
-      mapId,
-      nodeId,
-    });
 
     const response = await fetch(
       `/api/maps/${mapId}/progress?node_id=${nodeId}`,
@@ -205,11 +184,6 @@ export async function getNodeProgress(
       return null;
     }
 
-    console.log("✅ [Progress Client] Node progress fetched:", {
-      nodeId,
-      status: result.data?.status || "not_started",
-    });
-
     return result.data;
   } catch (error) {
     console.error("❌ [Progress Client] Error fetching node progress:", error);
@@ -231,12 +205,6 @@ export async function updateNodeProgress(
   } = {}
 ): Promise<StudentProgress | null> {
   try {
-    console.log("🔄 [Progress Client] Updating node progress:", {
-      mapId,
-      nodeId,
-      status,
-      options,
-    });
 
     const response = await fetch(`/api/maps/${mapId}/progress`, {
       method: "POST",
@@ -270,13 +238,6 @@ export async function updateNodeProgress(
       console.error("❌ [Progress Client] API returned error:", result.error);
       return null;
     }
-
-    console.log("✅ [Progress Client] Node progress updated:", {
-      nodeId,
-      oldStatus: "unknown",
-      newStatus: result.data.status,
-      message: result.message,
-    });
 
     return result.data;
   } catch (error) {

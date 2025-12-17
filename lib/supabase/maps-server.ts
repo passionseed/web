@@ -143,10 +143,11 @@ export const getMapsWithStatsServer = async (
   // Simple query for server-side rendering - focus on public maps and user's own maps
   const offset = page * limit;
 
-  // Get count first
+  // Get count first - exclude seed maps
   let countQuery = supabase
     .from("learning_maps")
-    .select("id", { count: 'exact', head: true });
+    .select("id", { count: 'exact', head: true })
+    .neq("map_type", "seed");
 
   if (!user) {
     countQuery = countQuery.eq("visibility", "public");
@@ -216,7 +217,8 @@ export const getMapsWithStatsServer = async (
       cover_image_url,
       cover_image_blurhash,
       cover_image_key,
-      cover_image_updated_at
+      cover_image_updated_at,
+      map_type
     `);
 
   if (!user) {
@@ -226,6 +228,7 @@ export const getMapsWithStatsServer = async (
   }
 
   const { data, error } = await dataQuery
+    .neq("map_type", "seed")
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -270,9 +273,9 @@ export const getMapsWithStatsServer = async (
     throw new Error("Could not fetch learning maps.");
   }
 
-  // Filter out personal journey maps from public listings
-  const filteredData = (data || []).filter(map => 
-    !map.metadata?.is_personal_journey
+  // Filter out personal journey maps and seed maps from public listings
+  const filteredData = (data || []).filter(map =>
+    !map.metadata?.is_personal_journey && map.map_type !== 'seed'
   );
 
   // Transform data (simplified for server-side - no complex calculations)

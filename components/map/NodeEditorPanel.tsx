@@ -38,6 +38,7 @@ interface NodeEditorPanelProps {
   onNodeDataChange: (nodeId: string, data: Partial<MapNode>) => void;
   onNodeDelete?: (nodeId: string) => void;
   onEditingStateChange?: (isEditing: boolean) => void;
+  isSeedMap?: boolean; // NEW: Flag to indicate if this is a seed map
 }
 
 export function NodeEditorPanel({
@@ -45,6 +46,7 @@ export function NodeEditorPanel({
   onNodeDataChange,
   onNodeDelete,
   onEditingStateChange,
+  isSeedMap = false,
 }: NodeEditorPanelProps) {
   const { toast } = useToast();
   const [nodeData, setNodeData] = useState<Partial<MapNode>>({});
@@ -447,6 +449,48 @@ export function NodeEditorPanel({
                     }
                   />
                 </div>
+
+                {/* Node Type Selector - Only show for seed maps or always show */}
+                {!isTextNode && (
+                  <div className="space-y-2">
+                    <Label htmlFor="node_type">Node Type</Label>
+                    <select
+                      id="node_type"
+                      value={(selectedNode?.data as any)?.node_type || "learning"}
+                      onChange={(e) => {
+                        const newType = e.target.value as "learning" | "text" | "comment" | "end";
+                        if (selectedNode) {
+                          onNodeDataChange(selectedNode.id, {
+                            node_type: newType,
+                          });
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="learning">🎯 Learning Node</option>
+                      <option value="text">📝 Text/Label</option>
+                      <option value="comment">💬 Comment</option>
+                      <option value="end">🏁 End Node (Completion)</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      {((selectedNode?.data as any)?.node_type) === "end" && (
+                        <span className="text-amber-600 font-medium">
+                          ⚠️ When students complete this node, they will see a congratulations popup marking the seed as finished.
+                        </span>
+                      )}
+                      {((selectedNode?.data as any)?.node_type) === "learning" && (
+                        "Standard interactive node with content and assessments"
+                      )}
+                      {((selectedNode?.data as any)?.node_type) === "text" && (
+                        "Text label for annotations and information"
+                      )}
+                      {((selectedNode?.data as any)?.node_type) === "comment" && (
+                        "Comment node for notes and reminders"
+                      )}
+                    </p>
+                  </div>
+                )}
+
                 {isTextNode && (
                   <>
                     {/* Text Styling Options for Text Nodes */}
@@ -831,6 +875,7 @@ export function NodeEditorPanel({
                         selectedNode.data.node_assessments?.[0] || null
                       }
                       onAssessmentChange={handleAssessmentChange}
+                      isSeedMap={isSeedMap}
                     />
                   </div>
                 </TabsContent>

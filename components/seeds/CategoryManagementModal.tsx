@@ -100,7 +100,11 @@ export function CategoryManagementModal({ isOpen, onClose, onCategoryCreated }: 
             onCategoryCreated?.();
         } catch (error: any) {
             console.error("Error creating category:", error);
-            toast.error(error.message || "Failed to create category");
+            const errorMessage = error?.message || 
+                               error?.hint || 
+                               JSON.stringify(error) || 
+                               "Failed to create category";
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -127,7 +131,11 @@ export function CategoryManagementModal({ isOpen, onClose, onCategoryCreated }: 
             onCategoryCreated?.();
         } catch (error: any) {
             console.error("Error deleting category:", error);
-            toast.error(error.message || "Failed to delete category");
+            const errorMessage = error?.message || 
+                               error?.hint || 
+                               JSON.stringify(error) || 
+                               "Failed to delete category";
+            toast.error(errorMessage);
         } finally {
             setDeleteConfirmOpen(false);
             setCategoryToDelete(null);
@@ -176,7 +184,11 @@ export function CategoryManagementModal({ isOpen, onClose, onCategoryCreated }: 
             onCategoryCreated?.();
         } catch (error: any) {
             console.error("Error updating category:", error);
-            toast.error(error.message || "Failed to update category");
+            const errorMessage = error?.message || 
+                               error?.hint || 
+                               JSON.stringify(error) || 
+                               "Failed to update category";
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }

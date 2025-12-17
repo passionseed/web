@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Trash2, Eye, RefreshCw } from "lucide-react";
+import { Users, Trash2, Eye, RefreshCw, GraduationCap, UserCheck } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import {
@@ -24,9 +24,21 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
     const [lobbies, setLobbies] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{ roomId: string; joinCode: string } | null>(null);
+    const [mentorLoading, setMentorLoading] = useState<string | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const supabase = createClient();
 
+    // Get current user on mount
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setCurrentUserId(user?.id || null);
+        };
+        getUser();
+    }, []);
+
     const fetchLobbies = async () => {
+        console.log("🔄 Fetching lobbies...");
         setLoading(true);
         const { data, error } = await supabase
             .from("seed_rooms")
@@ -42,6 +54,7 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
             console.error("Error fetching lobbies:", error);
             toast.error("Failed to load lobbies");
         } else {
+            console.log(`✅ Fetched ${data?.length || 0} rooms`);
             // Count members for each room
             const lobbiesWithCounts = await Promise.all(
                 (data || []).map(async (room) => {
@@ -53,6 +66,7 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
                     return { ...room, memberCount: count || 0 };
                 })
             );
+            console.log("Lobbies with counts:", lobbiesWithCounts);
             setLobbies(lobbiesWithCounts);
         }
         setLoading(false);
@@ -68,10 +82,21 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
         const { roomId, joinCode } = deleteConfirm;
         console.log("Attempting to delete room:", roomId, joinCode);
 
-        const { error } = await supabase
+        // First check if room exists
+        const { data: beforeDelete } = await supabase
+            .from("seed_rooms")
+            .select("id, join_code, status")
+            .eq("id", roomId)
+            .single();
+        console.log("Room before delete:", beforeDelete);
+
+        const { error, data: deleteResult } = await supabase
             .from("seed_rooms")
             .delete()
-            .eq("id", roomId);
+            .eq("id", roomId)
+            .select();
+
+        console.log("Delete result:", deleteResult);
 
         if (error) {
             console.error("Delete error:", error);
@@ -83,12 +108,71 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
             });
             toast.error(`Failed to delete lobby: ${error.message}`);
         } else {
-            console.log("Successfully deleted room");
+            console.log("Successfully deleted room, rows affected:", deleteResult?.length);
+
+            // Verify it's actually deleted
+            const { data: afterDelete } = await supabase
+                .from("seed_rooms")
+                .select("id")
+                .eq("id", roomId)
+                .single();
+            console.log("Room after delete (should be null):", afterDelete);
+
             toast.success("Lobby deleted");
-            fetchLobbies();
+            await fetchLobbies();
         }
 
         setDeleteConfirm(null);
+    };
+
+    const handleAssignMentor = async (roomId: string) => {
+        if (!currentUserId) return;
+        setMentorLoading(roomId);
+        try {
+            // Update mentor_id only if it's currently null (atomic operation)
+            const { data, error } = await supabase
+                .from("seed_rooms")
+                .update({ mentor_id: currentUserId })
+                .eq("id", roomId)
+                .is("mentor_id", null) // Use .is() for NULL checks, not .eq()
+                .select();
+
+            if (error) throw error;
+
+            // Check if any rows were affected
+            if (!data || data.length === 0) {
+                toast.error("This room already has a mentor assigned");
+                setMentorLoading(null);
+                return;
+            }
+
+            toast.success("You are now the mentor for this room!");
+            fetchLobbies();
+        } catch (error: any) {
+            console.error("Error assigning mentor:", error);
+            toast.error(error?.message || "Failed to assign as mentor");
+        } finally {
+            setMentorLoading(null);
+        }
+    };
+
+    const handleUnassignMentor = async (roomId: string) => {
+        setMentorLoading(roomId);
+        try {
+            const { error } = await supabase
+                .from("seed_rooms")
+                .update({ mentor_id: null })
+                .eq("id", roomId);
+
+            if (error) throw error;
+            toast.success("Mentor unassigned");
+            fetchLobbies();
+        } catch (error: any) {
+            console.error("Error unassigning mentor:", error);
+            toast.error(error.message || "Failed to unassign mentor");
+        } finally {
+            setMentorLoading(null);
+        }
     };
 
     useEffect(() => {
@@ -145,8 +229,8 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
                                                 {lobby.join_code}
                                             </span>
                                             <span className={`px-2 py-1 rounded-full text-xs ${lobby.status === "waiting"
-                                                    ? "bg-yellow-600 text-white"
-                                                    : "bg-green-600 text-white"
+                                                ? "bg-yellow-600 text-white"
+                                                : "bg-green-600 text-white"
                                                 }`}>
                                                 {lobby.status}
                                             </span>
@@ -164,6 +248,41 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
                                             </span>
                                         </div>
                                     </div>
+
+                                    {/* Mentor Section */}
+                                    <div className="flex items-center gap-2 mr-4">
+                                        {lobby.mentor_id ? (
+                                            lobby.mentor_id === currentUserId ? (
+                                                <Button
+                                                    onClick={() => handleUnassignMentor(lobby.id)}
+                                                    disabled={mentorLoading === lobby.id}
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="gap-2 border-emerald-600 text-emerald-400"
+                                                >
+                                                    <UserCheck className="w-4 h-4" />
+                                                    {mentorLoading === lobby.id ? "..." : "You (Mentor)"}
+                                                </Button>
+                                            ) : (
+                                                <span className="flex items-center gap-1 text-sm text-emerald-400">
+                                                    <UserCheck className="w-4 h-4" />
+                                                    Mentor Assigned
+                                                </span>
+                                            )
+                                        ) : (
+                                            <Button
+                                                onClick={() => handleAssignMentor(lobby.id)}
+                                                disabled={mentorLoading === lobby.id}
+                                                variant="outline"
+                                                size="sm"
+                                                className="gap-2 border-neutral-600 text-neutral-400 hover:border-emerald-600 hover:text-emerald-400"
+                                            >
+                                                <GraduationCap className="w-4 h-4" />
+                                                {mentorLoading === lobby.id ? "..." : "Become Mentor"}
+                                            </Button>
+                                        )}
+                                    </div>
+
                                     <Button
                                         onClick={() => handleDeleteClick(lobby.id, lobby.join_code)}
                                         variant="destructive"

@@ -217,3 +217,11 @@ Authentication middleware in `middleware.ts` handles:
 - Validate user input in API routes
 - Use proper error handling to avoid information leakage
 - Follow Supabase authentication best practices
+
+## Module Resolution Rules
+- When working with components that have both `Component.tsx` and `Component/index.tsx`:
+  1. ALWAYS check which version is imported in the consuming files
+  2. Use grep/search to find actual import statements
+  3. Ask for clarification if unclear
+## Known Duplicate Components
+- MapViewer: Two versions exist. Check imports before editing!

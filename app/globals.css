@@ -436,9 +436,17 @@
   transform-style: preserve-3d;
 }
 
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
 /* Additional 3D transform utilities */
 .rotate-y-12 {
   transform: rotateY(12deg);
+}
+
+.rotate-y-20 {
+  transform: rotateY(20deg);
 }
 
 .rotate-x-2 {
@@ -476,6 +484,27 @@
   100% {
     transform: rotateY(12deg) rotateX(-2deg);
   }
+}
+
+/* Game Box 3D Hover Effects */
+.game-box-container {
+  transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transform-style: preserve-3d;
+  transform-origin: left;
+  will-change: transform;
+}
+
+.group:hover .game-box-container {
+  transform: rotateY(-160deg);
+}
+
+/* Optimize for 3D transforms */
+.game-box-container,
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 /* Remove conflicting CSS hover rule */
