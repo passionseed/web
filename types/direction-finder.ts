@@ -55,6 +55,11 @@ export interface DirectionVector {
     strength_alignment: string;
     value_alignment: string;
   };
+  differentiators?: {
+    main_focus: string;
+    knowledge_base: string[];
+    skill_tree: string[];
+  };
   match_scores: {
     overall: number; // 0-100
     passion: number; // 0-100
@@ -68,7 +73,7 @@ export interface DirectionVector {
   first_step: string;
 }
 
-export interface MatchedProgram {
+export interface RecommendedProgram {
   name: string;
   match_level: 'High' | 'Good' | 'Stretch';
   match_percentage: number;
@@ -77,24 +82,48 @@ export interface MatchedProgram {
   application_link?: string;
 }
 
+export interface MilestoneEvaluation {
+  stepIndex: number;
+  originalDescription?: string; // To track what it was
+  description?: string; // User edited description
+  theoryScore: number; // 0-100
+  practiceScore: number; // 0-100
+  obstacle: string;
+  plan: string;
+}
+
+export interface Commitment {
+  agreedToViewDaily: boolean;
+  duolingoMode: boolean; // Email reminders
+}
+
+export interface ActionPlan {
+  selectedVectorIndex: number;
+  evaluations: MilestoneEvaluation[];
+  commitment: Commitment;
+}
+
 export interface DirectionFinderResult {
   profile: IkigaiProfile;
   vectors: DirectionVector[];
-  programs: MatchedProgram[];
+  programs: RecommendedProgram[];
   commitments: {
     this_week: string[];
     this_month: string[];
   };
+  actionPlan?: ActionPlan;
 }
 
-export type AssessmentStep = 
+export type AssessmentStep =
   | 'intro'
   | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' // Part 1
   | 'part2_intro'
   | 'q6' | 'q7' | 'q8' | 'q9' | 'q10' | 'q12' | 'q13' // Part 2
   | 'ai_intro'
   | 'ai_chat'
-  | 'results';
+  | 'results'
+  | 'milestone_eval'
+  | 'commitment';
 
 export interface Message {
   id: string;

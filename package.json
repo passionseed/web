@@ -17,6 +17,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^1.0.32",
     "@ai-sdk/google": "^2.0.42",
     "@ai-sdk/openai": "^2.0.80",
     "@ai-sdk/react": "^2.0.100",
