@@ -28,6 +28,7 @@ import {
   createJourneyProject,
   createProjectPath,
 } from "@/lib/supabase/journey";
+import { useDirectionFinder } from "../education/direction-finder/direction-finder-context";
 import { StarGenerator } from "@/components/ui/star-generator";
 import {
   createDefaultStarConfig,
@@ -204,6 +205,8 @@ export function CreateNorthStarDialog({
   const [showDirectionFinder, setShowDirectionFinder] = useState(false);
   const [directionFinderResult, setDirectionFinderResult] =
     useState<DirectionFinderResult | null>(null);
+
+  const { hasResult, isLoading: isDirectionLoading } = useDirectionFinder();
 
   // Reset on open
   useEffect(() => {
@@ -511,6 +514,7 @@ export function CreateNorthStarDialog({
                 <DirectionFinderFlow
                   onComplete={handleDirectionFinderComplete}
                   onCancel={() => setShowDirectionFinder(false)}
+                  isReviewMode={hasResult}
                 />
               </motion.div>
             ) : (
@@ -547,6 +551,28 @@ export function CreateNorthStarDialog({
                   </div>
                 )}
 
+                {/* Gated Access Message */}
+                {currentStep === 0 && !isDirectionLoading && !hasResult && (
+                  <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-8 space-y-6">
+                    <Sparkles className="w-16 h-16 text-yellow-400 animate-pulse" />
+                    <h3 className="text-2xl font-bold text-white">
+                      Unlock Your North Star
+                    </h3>
+                    <p className="text-slate-400 max-w-md">
+                      Before you can design your future, let's find your
+                      direction specifically tailored to you.
+                    </p>
+                    <Button
+                      size="lg"
+                      onClick={() => setShowDirectionFinder(true)}
+                      className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-8"
+                    >
+                      Take Assessment First{" "}
+                      <ChevronRight className="ml-2 w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+
                 {/* STEP 1: VISION */}
                 {currentStep === 1 && (
                   <div className="space-y-8">
@@ -562,13 +588,21 @@ export function CreateNorthStarDialog({
                         className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
                       >
                         <Compass className="w-6 h-6 text-blue-400" />
-                        <span className="font-semibold">{t.findDirection}</span>
+                        <span className="font-semibold">
+                          {hasResult
+                            ? "View Direction Profile"
+                            : t.findDirection}
+                        </span>
                         <span className="text-xs text-slate-500 font-normal text-center px-2">
-                          {t.findDirectionDesc}
+                          {hasResult
+                            ? "See your Ikigai & Paths"
+                            : t.findDirectionDesc}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-medium">
-                          {t.duration}
-                        </span>
+                        {!hasResult && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-medium">
+                            {t.duration}
+                          </span>
+                        )}
                       </Button>
                       <Button
                         variant="outline"

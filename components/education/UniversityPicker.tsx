@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDirectionFinder } from "./direction-finder/direction-finder-context";
 
 interface UniversityPickerProps {
   universities: University[]; // Initial list (can be browse list)
@@ -319,6 +320,52 @@ export function UniversityPicker({
     setDisplayedUniversities([]);
     setView("categories");
   };
+
+  // Gate: Check Direction Finder Result
+  const { hasResult, isLoading: isDirectionLoading } = useDirectionFinder();
+
+  if (isDirectionLoading) {
+    return (
+      <div className="p-12 text-center text-slate-500">Checking profile...</div>
+    );
+  }
+
+  if (!hasResult) {
+    return (
+      <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center sm:p-12">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-transparent" />
+        <div className="relative z-10 flex flex-col items-center gap-4 max-w-md mx-auto">
+          <div className="rounded-full bg-blue-500/10 p-4 mb-2">
+            <Sparkles className="h-8 w-8 text-blue-400" />
+          </div>
+          <h3 className="text-2xl font-bold text-white">
+            Unlock Smart Recommendations
+          </h3>
+          <p className="text-slate-400">
+            To see tailored university and curriculum recommendations, we need
+            to know a bit about you first. Take our quick 5-minute assessment to
+            find your North Star.
+          </p>
+          <Button
+            size="lg"
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() =>
+              (window.location.href = "/education/direction-finder")
+            }
+          >
+            Start Assessment
+          </Button>
+        </div>
+        {/* Blur effect for the content behind (simulated) */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-20 blur-md grayscale"
+          aria-hidden="true"
+        >
+          {/* We could render a fake list here but simple blocked state is cleaner */}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

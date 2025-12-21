@@ -6,31 +6,30 @@ import { z } from "zod";
 import { StudentProfile, RecommendedUniversity } from "@/types/education";
 import { AssessmentAnswers, DirectionFinderResult } from "@/types/direction-finder";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createDeepSeek } from '@ai-sdk/deepseek';
 
+const deepseek = createDeepSeek({
+  apiKey: process.env.DEEPSEEK_API_KEY ?? '',
+});
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
 });
 
-const deepseek = createOpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY || "",
-});
-
 function getModel(modelName?: string) {
-  if (!modelName) return google("gemini-2.5-flash");
-  
+  if (!modelName) return google("gemini-3-flash-preview");
+
   if (modelName.includes('deepseek')) {
     // Basic mapping based on user request names
     if (modelName.includes('r1')) return deepseek('deepseek-reasoner');
-    return deepseek('deepseek-chat'); 
+    return deepseek('deepseek-chat');
   }
-  
+
   // Handle specific google models if provided with prefix or just name
   if (modelName.includes('lite')) return google('gemini-2.0-flash-lite-preview-02-05'); // Using preview for now as 2.5 lite might not be standard yet or use closest
-  
+
   if (modelName === 'google/gemini-2.5-flash-lite') return google('gemini-2.0-flash-lite-preview-02-05'); // fallback
-  
-  return google("gemini-2.5-flash");
+
+  return google("gemini-3-flash-preview");
 }
 
 export async function summarizeConversation(
@@ -50,13 +49,20 @@ export async function summarizeConversation(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"), // Use fast model for summary
+      model: google("gemini-3-flash-preview"), // Use fast model for summary
       schema: z.object({ summary: z.string() }),
       prompt,
     });
-    
+
     return object.summary;
-  } catch (error) {
+  } catch (error: any) {
+    const errorMessage = error?.message || error?.toString() || "";
+
+    if (errorMessage.toLowerCase().includes("quota") || errorMessage.includes("429") || errorMessage.toLowerCase().includes("rate limit")) {
+      console.warn("AI Quota exceeded during summary generation. Skipping summary.");
+      return "Conversation data saved without summary (Quota exceeded).";
+    }
+
     console.error("Error summarizing:", error);
     return "Conversation data saved without summary.";
   }
@@ -87,7 +93,7 @@ export async function recommendUniversities(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"),
+      model: google("gemini-3-flash-preview"),
       schema: z.object({
         recommendations: z.array(
           z.object({
@@ -169,13 +175,23 @@ export async function conductDirectionConversation(
     });
 
     return object;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in direction conversation:", error);
-    // @ts-ignore
-    if (error.response) {
-        // @ts-ignore
-        console.error("Error response:", JSON.stringify(error.response, null, 2));
+
+    // Check for specific error types
+    const errorMessage = error?.message || error?.toString() || "";
+
+    if (errorMessage.toLowerCase().includes("quota") || errorMessage.includes("429") || errorMessage.toLowerCase().includes("rate limit")) {
+      return {
+        messages: ["I'm a bit overwhelmed right now (high traffic). 🧊", "Please give me a minute to cool down before trying again!"],
+        options: ["Try again in 1 min", "Check Usage"]
+      };
     }
+
+    if (error.response) {
+      console.error("Error response:", JSON.stringify(error.response, null, 2));
+    }
+
     return {
       messages: ["I'm having a bit of trouble connecting right now. 🔌", "Could you tell me a bit more about what you're looking for?"],
       options: ["I want to find a major", "I'm lost", "Just exploring"]
@@ -216,6 +232,11 @@ export async function generateDirectionProfile(
               "interest_alignment": "One sentence on why this fits their interests",
               "strength_alignment": "One sentence on why this fits their strengths",
               "value_alignment": "One sentence on why this fits their values"
+            },
+            "differentiators": {
+              "main_focus": "Short phrase describing the core focus (e.g. Building, Researching, Helping)",
+              "knowledge_base": ["Subject 1", "Subject 2"],
+              "skill_tree": ["Skill 1", "Skill 2"]
             },
             "match_scores": {
               "overall": 85,
@@ -267,6 +288,11 @@ export async function generateDirectionProfile(
             strength_alignment: z.string(),
             value_alignment: z.string(),
           }),
+          differentiators: z.object({
+            main_focus: z.string(),
+            knowledge_base: z.array(z.string()),
+            skill_tree: z.array(z.string()),
+          }).optional(),
           match_scores: z.object({
             overall: z.number().min(0).max(100),
             passion: z.number().min(0).max(100),

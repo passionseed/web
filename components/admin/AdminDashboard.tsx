@@ -13,7 +13,16 @@ import { AdminStatsOverview } from "./AdminStatsOverview";
 import { AdminUserManagement } from "./AdminUserManagement";
 import { AdminMapsManagement } from "./AdminMapsManagement";
 import { AdminJourneyPeek } from "./AdminJourneyPeek";
-import { Users, Activity, Settings, BarChart3, Eye, Archive } from "lucide-react";
+import { AdminDirectionFinder } from "./AdminDirectionFinder";
+import {
+  Users,
+  Activity,
+  Settings,
+  BarChart3,
+  Eye,
+  Archive,
+  Compass,
+} from "lucide-react";
 
 export function AdminDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -37,6 +46,13 @@ export function AdminDashboard() {
           <TabsTrigger value="maps" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Maps Management
+          </TabsTrigger>
+          <TabsTrigger
+            value="direction-finder"
+            className="flex items-center gap-2"
+          >
+            <Compass className="h-4 w-4" />
+            Direction Results
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -68,6 +84,10 @@ export function AdminDashboard() {
             key={`maps-${refreshKey}`}
             onDataReload={handleDataReload}
           />
+        </TabsContent>
+
+        <TabsContent value="direction-finder" className="space-y-4">
+          <AdminDirectionFinder />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
@@ -110,12 +130,13 @@ export function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-slate-400">
-                        Add, edit, and organize universities that students can select.
+                        Add, edit, and organize universities that students can
+                        select.
                       </p>
                     </CardContent>
                   </Card>
                 </a>
-                
+
                 <a href="/admin/archive/ai" className="block">
                   <Card className="cursor-pointer hover:bg-slate-800/50 transition-colors">
                     <CardHeader className="pb-3">
@@ -126,7 +147,8 @@ export function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-slate-400">
-                        Configure AI behavior for different use cases like roadmap generation.
+                        Configure AI behavior for different use cases like
+                        roadmap generation.
                       </p>
                     </CardContent>
                   </Card>
@@ -134,7 +156,9 @@ export function AdminDashboard() {
 
                 <Card className="opacity-50 cursor-not-allowed">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-slate-500">Learning Resources</CardTitle>
+                    <CardTitle className="text-lg text-slate-500">
+                      Learning Resources
+                    </CardTitle>
                     <CardDescription>
                       Coming soon - Manage learning resources
                     </CardDescription>

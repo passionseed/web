@@ -1,6 +1,11 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Space_Mono, Libre_Franklin, Krub, Bai_Jamjuree } from "next/font/google";
+import {
+  Space_Mono,
+  Libre_Franklin,
+  Krub,
+  Bai_Jamjuree,
+} from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -12,6 +17,7 @@ import ErrorBoundary from "@/components/error-boundary";
 import { DevHealthCheck } from "@/components/dev-health-check";
 import { TOSAcceptanceModal } from "@/components/TOSAcceptanceModal";
 import { LanguageProvider } from "@/lib/i18n/language-context";
+import { DirectionFinderProvider } from "@/components/education/direction-finder/direction-finder-context";
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],
@@ -87,7 +93,9 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable}`}>
+      <body
+        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable}`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -95,14 +103,16 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <ErrorBoundary>
-              <Layout>{children}</Layout>
-              <Toaster />
-              <DevHealthCheck />
-              <TOSAcceptanceModal />
-              {/* ServiceWorker temporarily disabled to fix localhost errors */}
-              {/* <ServiceWorkerRegistration /> */}
-            </ErrorBoundary>
+            <DirectionFinderProvider>
+              <ErrorBoundary>
+                <Layout>{children}</Layout>
+                <Toaster />
+                <DevHealthCheck />
+                <TOSAcceptanceModal />
+                {/* ServiceWorker temporarily disabled to fix localhost errors */}
+                {/* <ServiceWorkerRegistration /> */}
+              </ErrorBoundary>
+            </DirectionFinderProvider>
           </LanguageProvider>
         </ThemeProvider>
         <Analytics />

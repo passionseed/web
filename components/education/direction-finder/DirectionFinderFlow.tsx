@@ -1,129 +1,321 @@
-import { useState, useEffect } from 'react';
-import { AssessmentAnswers, DirectionFinderResult, AssessmentStep, Message } from '@/types/direction-finder';
-import { translations, Language } from '@/lib/i18n/direction-finder';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { CoreAssessment } from './CoreAssessment';
-import { AIConversation } from './AIConversation';
-import { DirectionResults } from './DirectionResults';
-import { getDirectionFinderResults, getDirectionFinderResultById } from '@/app/actions/save-direction';
-import { Database, Settings } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState, useEffect, Suspense } from "react";
+import {
+  AssessmentAnswers,
+  DirectionFinderResult,
+  AssessmentStep,
+  Message,
+  DirectionVector,
+  ActionPlan,
+  MilestoneEvaluation,
+  Commitment,
+} from "@/types/direction-finder";
+import { translations, Language } from "@/lib/i18n/direction-finder";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { CoreAssessment } from "./CoreAssessment";
+import { AIConversation } from "./AIConversation";
+import { DirectionResults } from "./DirectionResults";
+import { MilestoneEvaluator } from "./MilestoneEvaluator";
+import { CommitmentContract } from "./CommitmentContract";
+import {
+  getDirectionFinderResults,
+  getDirectionFinderResultById,
+  saveDirectionFinderResult,
+  getUserDirectionFinderResult,
+} from "@/app/actions/save-direction";
+import { Database, Settings, RefreshCw } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 interface DirectionFinderFlowProps {
   onComplete: (result: DirectionFinderResult) => void;
   onCancel: () => void;
+  isReviewMode?: boolean;
 }
 
 const STEPS_ORDER: AssessmentStep[] = [
-  'intro',
-  'q1', 'q2', 'q3', 'q4', 'q5',
-  'part2_intro',
-  'q6', 'q7', 'q8', 'q9', 'q10', 'q12', 'q13',
-  'ai_intro',
-  'ai_chat',
-  'results'
+  "intro",
+  "q1",
+  "q2",
+  "q3",
+  "q4",
+  "q5",
+  "part2_intro",
+  "q6",
+  "q7",
+  "q8",
+  "q9",
+  "q10",
+  "q12",
+  "q13",
+  "ai_intro",
+  "ai_chat",
+  "results",
+  "milestone_eval",
+  "commitment",
 ];
 
-import { useLanguage } from '@/lib/i18n/language-context';
+import { useLanguage } from "@/lib/i18n/language-context";
 
-export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlowProps) {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+export function DirectionFinderFlow({
+  onComplete,
+  onCancel,
+  isReviewMode = false,
+}: DirectionFinderFlowProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="text-center p-8 text-slate-500">Loading flow...</div>
+      }
+    >
+      <DirectionFinderFlowContent
+        onComplete={onComplete}
+        onCancel={onCancel}
+        isReviewMode={isReviewMode}
+      />
+    </Suspense>
+  );
+}
+
+function DirectionFinderFlowContent({
+  onComplete,
+  onCancel,
+  isReviewMode,
+}: DirectionFinderFlowProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // URL State Sync
+  const stepParam = searchParams.get("step");
+  const initialStepIndex = stepParam
+    ? Math.max(0, STEPS_ORDER.indexOf(stepParam as AssessmentStep))
+    : 0;
+
+  const [currentStepIndex, setCurrentStepIndex] = useState(
+    initialStepIndex !== -1 ? initialStepIndex : 0
+  );
   const [answers, setAnswers] = useState<Partial<AssessmentAnswers>>({});
   const [result, setResult] = useState<DirectionFinderResult | null>(null);
-  const [chatHistory, setChatHistory] = useState<Message[] | undefined>(undefined);
+  const [chatHistory, setChatHistory] = useState<Message[] | undefined>(
+    undefined
+  );
+  // New State for Action Plan
+  const [selectedVector, setSelectedVector] = useState<DirectionVector | null>(
+    null
+  );
+  const [selectedVectorIndex, setSelectedVectorIndex] = useState<number>(-1);
+  const [actionPlan, setActionPlan] = useState<ActionPlan | undefined>(
+    undefined
+  );
+
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isCheckingServer, setIsCheckingServer] = useState(true);
+  const [serverDataId, setServerDataId] = useState<string | null>(null);
   const { language: lang, setLanguage: setLang } = useLanguage();
-  
+
   // DEV: Saved sessions state
-  const [devSessions, setDevSessions] = useState<{ id: string; user_id: string; created_at: string }[]>([]);
+  const [devSessions, setDevSessions] = useState<
+    { id: string; user_id: string; created_at: string }[]
+  >([]);
   const [loadingDevSession, setLoadingDevSession] = useState(false);
   const [model, setModel] = useState<string | undefined>(undefined);
 
+  // Sync state to URL
+  const updateStep = (index: number) => {
+    setCurrentStepIndex(index);
+    const params = new URLSearchParams(searchParams.toString());
+    const stepName = STEPS_ORDER[index];
+    if (stepName) {
+      params.set("step", stepName);
+      router.push(`${pathname}?${params.toString()}`);
+    }
+  };
+
+  // 1. Check Server Persistent Data on Mount
+  useEffect(() => {
+    const checkServer = async () => {
+      try {
+        setIsCheckingServer(true);
+        const data = await getUserDirectionFinderResult();
+        if (data) {
+          // Found existing result!
+          setAnswers(data.answers);
+          setResult(data.result);
+          if (data.chat_history) {
+            setChatHistory(data.chat_history);
+          }
+          if (data.result.actionPlan) {
+            setActionPlan(data.result.actionPlan);
+            // Restore selection if exists
+            const idx = data.result.actionPlan.selectedVectorIndex;
+            if (idx >= 0 && data.result.vectors[idx]) {
+              setSelectedVector(data.result.vectors[idx]);
+              setSelectedVectorIndex(idx);
+            }
+          }
+          setServerDataId(data.id);
+
+          // If we have a result, we should be on the results page unless explicitly overriding via URL or internal state?
+          // But usually we want to show results.
+          if (!result && !searchParams.get("step")) {
+            // Only set if not already set locally
+            setCurrentStepIndex(STEPS_ORDER.indexOf("results"));
+          }
+        }
+      } catch (e) {
+        console.error("Failed to check server data", e);
+      } finally {
+        setIsCheckingServer(false);
+      }
+    };
+    checkServer();
+  }, []);
+
+  // 2. Load LocalStorage Progress (if no server result or if continuing)
+  useEffect(() => {
+    if (result) return; // If we have result, ignore local storage progress for now? or maybe merge?
+
+    const saved = localStorage.getItem("direction_finder_progress");
+    if (saved) {
+      try {
+        const { step, answers: savedAnswers, history } = JSON.parse(saved);
+        // Only restore step if URL param is NOT set (URL takes precedence)
+        if (!stepParam && step !== undefined) setCurrentStepIndex(step);
+        if (savedAnswers) setAnswers(savedAnswers);
+        if (history) setChatHistory(history);
+      } catch (e) {
+        console.error("Failed to load progress", e);
+      }
+    }
+    setIsLoaded(true);
+  }, [result, stepParam]);
+
   // DEV: Load sessions list on mount (dev only)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       getDirectionFinderResults(10).then(setDevSessions).catch(console.error);
     }
   }, []);
 
-  // Load progress on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('direction_finder_progress');
-    if (saved) {
-      try {
-        const { step, answers: savedAnswers, history } = JSON.parse(saved);
-        if (step !== undefined) setCurrentStepIndex(step);
-        if (savedAnswers) setAnswers(savedAnswers);
-        if (history) setChatHistory(history);
-      } catch (e) {
-        console.error('Failed to load progress', e);
-      }
-    }
-    setIsLoaded(true);
-  }, []);
-
   // Save progress on change
   useEffect(() => {
-    if (!isLoaded) return;
-    
+    if (!isLoaded || isCheckingServer) return;
+
     // Don't save if we are on the results page (completed)
     // But do save if we are in chat or any other step
-    if (result) return; 
+    if (result && currentStepIndex === STEPS_ORDER.indexOf("results")) return;
 
     // Don't save if we are on the very first intro step and haven't done anything
     if (currentStepIndex === 0 && Object.keys(answers).length === 0) return;
 
-    localStorage.setItem('direction_finder_progress', JSON.stringify({
-      step: currentStepIndex,
-      answers,
-      history: chatHistory
-    }));
-  }, [currentStepIndex, answers, chatHistory, isLoaded, result]);
+    localStorage.setItem(
+      "direction_finder_progress",
+      JSON.stringify({
+        step: currentStepIndex,
+        answers,
+        history: chatHistory,
+      })
+    );
+  }, [
+    currentStepIndex,
+    answers,
+    chatHistory,
+    isLoaded,
+    result,
+    isCheckingServer,
+  ]);
 
   // Clear progress on completion or explicit cancel (optional, typically we keep it until finished)
   const clearProgress = () => {
-      localStorage.removeItem('direction_finder_progress');
+    localStorage.removeItem("direction_finder_progress");
   };
 
   const currentStep = STEPS_ORDER[currentStepIndex];
   const progress = ((currentStepIndex + 1) / STEPS_ORDER.length) * 100;
 
   const handleAnswer = (stepAnswers: Partial<AssessmentAnswers>) => {
-    setAnswers(prev => ({ ...prev, ...stepAnswers }));
+    setAnswers((prev) => ({ ...prev, ...stepAnswers }));
   };
 
   const handleNext = () => {
     if (currentStepIndex < STEPS_ORDER.length - 1) {
-      setCurrentStepIndex(prev => prev + 1);
+      updateStep(currentStepIndex + 1);
     }
   };
 
   const handleBack = () => {
     if (currentStepIndex > 0) {
-      setCurrentStepIndex(prev => prev - 1);
+      updateStep(currentStepIndex - 1);
     } else {
       onCancel();
     }
   };
 
-  const handleAIComplete = (finalResult: DirectionFinderResult) => {
-    clearProgress();
+  const handleAIComplete = async (finalResult: DirectionFinderResult) => {
     setResult(finalResult);
-    setCurrentStepIndex(STEPS_ORDER.indexOf('results'));
-    // Do NOT call onComplete here anymore. 
-    // Let the user review the results first.
+
+    // Save to Server
+    try {
+      const savedData = await saveDirectionFinderResult(
+        answers as AssessmentAnswers,
+        finalResult,
+        chatHistory,
+        serverDataId || undefined
+      );
+      if (savedData?.id) {
+        setServerDataId(savedData.id);
+      }
+      clearProgress();
+      toast.success("Profile saved!");
+    } catch (e) {
+      console.error("Failed to save result", e);
+      toast.error("Failed to save profile, but here are your results.");
+    }
+
+    updateStep(STEPS_ORDER.indexOf("results"));
+  };
+
+  const handleStartNewSession = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to start a new session? Current progress will be cleared from this view."
+      )
+    ) {
+      setAnswers({});
+      setResult(null);
+      setChatHistory(undefined);
+      setServerDataId(null);
+      // Reset action plan state
+      setSelectedVector(null);
+      setSelectedVectorIndex(-1);
+      setActionPlan(undefined);
+
+      clearProgress();
+      updateStep(0); // Go to intro
+    }
   };
 
   const handleBackFromResults = () => {
-    console.log("handleBackFromResults called. chatHistory:", chatHistory?.length);
+    // If in Review Mode, "Back" means exit (cancel), NOT go to chat
+    if (isReviewMode) {
+      onCancel();
+      return;
+    }
+
     // If we have chat history, go back to AI chat
     if (chatHistory && chatHistory.length > 0) {
-      const aiChatIndex = STEPS_ORDER.indexOf('ai_chat');
-      console.log("Going to ai_chat at index:", aiChatIndex);
+      const aiChatIndex = STEPS_ORDER.indexOf("ai_chat");
       if (aiChatIndex !== -1) {
-        setCurrentStepIndex(aiChatIndex);
+        updateStep(aiChatIndex);
         return;
       }
     }
@@ -131,10 +323,9 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
     // Go to the last answered questionnaire step, or ai_intro if we have answers
     if (Object.keys(answers).length > 0) {
       // User has answers, go to ai_intro so they can start the AI chat
-      const aiIntroIndex = STEPS_ORDER.indexOf('ai_intro');
-      console.log("Has answers, going to ai_intro at index:", aiIntroIndex);
+      const aiIntroIndex = STEPS_ORDER.indexOf("ai_intro");
       if (aiIntroIndex !== -1) {
-        setCurrentStepIndex(aiIntroIndex);
+        updateStep(aiIntroIndex);
         return;
       }
     }
@@ -142,11 +333,85 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
     handleBack();
   };
 
+  const handleRetake = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to edit your answers? This will restart the AI analysis."
+      )
+    ) {
+      setResult(null);
+      // Go to Q1 to let them edit
+      updateStep(STEPS_ORDER.indexOf("q1"));
+    }
+  };
+
+  // --- New Handlers for Action Phase ---
+
+  const handleSelectPath = (vector: DirectionVector, index: number) => {
+    setSelectedVector(vector);
+    setSelectedVectorIndex(index);
+    updateStep(STEPS_ORDER.indexOf("milestone_eval"));
+  };
+
+  const handleEvaluationComplete = (evaluations: MilestoneEvaluation[]) => {
+    // Save partial plan state?
+    setActionPlan((prev) => ({
+      selectedVectorIndex: selectedVectorIndex,
+      evaluations,
+      commitment: prev?.commitment || {
+        agreedToViewDaily: false,
+        duolingoMode: false,
+      },
+    }));
+    updateStep(STEPS_ORDER.indexOf("commitment"));
+  };
+
+  const handleCommitmentComplete = async (commitment: Commitment) => {
+    if (!result) return;
+
+    const finalPlan: ActionPlan = {
+      selectedVectorIndex,
+      evaluations: actionPlan?.evaluations || [],
+      commitment,
+    };
+
+    const updatedResult: DirectionFinderResult = {
+      ...result,
+      actionPlan: finalPlan,
+    };
+
+    setResult(updatedResult);
+    setActionPlan(finalPlan);
+
+    // Final Save
+    try {
+      await saveDirectionFinderResult(
+        answers as AssessmentAnswers,
+        updatedResult,
+        chatHistory,
+        serverDataId || undefined
+      );
+      toast.success("Journey started! Commitment saved.");
+      onComplete(updatedResult); // Call parent onComplete
+    } catch (error) {
+      console.error("Failed to save commitment", error);
+      toast.error("Failed to save commitment");
+    }
+  };
+
   // Render content based on current step
   const renderContent = () => {
-    if (currentStep === 'ai_chat') {
+    if (isCheckingServer) {
       return (
-        <AIConversation 
+        <div className="flex h-[300px] items-center justify-center text-slate-500">
+          Loading your profile...
+        </div>
+      );
+    }
+
+    if (currentStep === "ai_chat") {
+      return (
+        <AIConversation
           answers={answers as AssessmentAnswers}
           onComplete={handleAIComplete}
           history={chatHistory}
@@ -158,22 +423,59 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
       );
     }
 
-    if (currentStep === 'results' && result) {
+    if (currentStep === "results" && result) {
       return (
-        <DirectionResults 
-          result={result} 
-          answers={answers as AssessmentAnswers}
-          onComplete={() => onComplete(result)}
-          onBack={handleBackFromResults}
-          chatHistory={chatHistory}
-          model={model}
-          lang={lang}
+        <div className="relative">
+          <div className="absolute top-0 right-1/2 translate-x-1/2 md:translate-x-0 md:right-0 z-10 mt-12 md:mt-0">
+            {!isReviewMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRetake}
+                className="text-slate-500 hover:text-white text-xs"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" /> Edit Answers
+              </Button>
+            )}
+          </div>
+          <DirectionResults
+            result={result}
+            answers={answers as AssessmentAnswers}
+            onComplete={() => {}} // Remove redundant onComplete here if logical flow is via Select Path now
+            onBack={handleBackFromResults}
+            onRefine={() => updateStep(STEPS_ORDER.indexOf("ai_chat"))}
+            chatHistory={chatHistory}
+            model={model}
+            lang={lang}
+            resultId={serverDataId || undefined}
+            onStartNew={handleStartNewSession}
+            onSelect={handleSelectPath}
+          />
+        </div>
+      );
+    }
+
+    if (currentStep === "milestone_eval" && selectedVector) {
+      return (
+        <MilestoneEvaluator
+          vector={selectedVector}
+          onComplete={handleEvaluationComplete}
+          onBack={() => updateStep(STEPS_ORDER.indexOf("results"))}
+        />
+      );
+    }
+
+    if (currentStep === "commitment") {
+      return (
+        <CommitmentContract
+          onComplete={handleCommitmentComplete}
+          onBack={() => updateStep(STEPS_ORDER.indexOf("milestone_eval"))}
         />
       );
     }
 
     return (
-      <CoreAssessment 
+      <CoreAssessment
         step={currentStep}
         answers={answers}
         onAnswer={handleAnswer}
@@ -186,29 +488,35 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
-      {/* Header with Progress */}
-      {currentStep !== 'results' && (
-        <div className="space-y-2 mb-6">
-          <div className="flex justify-between text-sm text-slate-400">
-            <span>Step {currentStepIndex + 1} of {STEPS_ORDER.length}</span>
-            <div className="flex gap-4 items-center">
-              <span>{Math.round(progress)}%</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLang(lang === 'en' ? 'th' : 'en')}
-                className="h-6 px-2 text-xs border border-white/10 hover:bg-white/10"
-              >
-                {lang === 'en' ? '🇹🇭 TH' : '🇬🇧 EN'}
-              </Button>
+      {/* Header with Progress - Hide in Review Mode */}
+      {currentStep !== "results" &&
+        currentStep !== "milestone_eval" &&
+        currentStep !== "commitment" &&
+        !isCheckingServer &&
+        !isReviewMode && (
+          <div className="space-y-2 mb-6">
+            <div className="flex justify-between text-sm text-slate-400">
+              <span>
+                Step {currentStepIndex + 1} of {STEPS_ORDER.length}
+              </span>
+              <div className="flex gap-4 items-center">
+                <span>{Math.round(progress)}%</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLang(lang === "en" ? "th" : "en")}
+                  className="h-6 px-2 text-xs border border-white/10 hover:bg-white/10"
+                >
+                  {lang === "en" ? "🇹🇭 TH" : "🇬🇧 EN"}
+                </Button>
+              </div>
             </div>
+            <Progress value={progress} className="h-2" />
           </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-      )}
+        )}
 
       {/* DEV: Load Saved Session */}
-      {process.env.NODE_ENV === 'development' && (
+      {process.env.NODE_ENV === "development" && (
         <div className="flex gap-2 mb-4">
           <details className="flex-1 text-xs bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-2">
             <summary className="cursor-pointer text-yellow-400 font-bold flex items-center gap-2">
@@ -216,8 +524,10 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
             </summary>
             {/* ... keeping existing content ... */}
             <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-              {devSessions.length === 0 && <p className="text-slate-500">No saved sessions found.</p>}
-              {devSessions.map(s => (
+              {devSessions.length === 0 && (
+                <p className="text-slate-500">No saved sessions found.</p>
+              )}
+              {devSessions.map((s) => (
                 <button
                   key={s.id}
                   onClick={async () => {
@@ -226,9 +536,20 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
                       const full = await getDirectionFinderResultById(s.id);
                       setAnswers(full.answers);
                       setResult(full.result);
-                      setCurrentStepIndex(STEPS_ORDER.indexOf('results'));
+                      if (full.chat_history) setChatHistory(full.chat_history);
+                      // Restore action plan if exists
+                      if (full.result.actionPlan) {
+                        setActionPlan(full.result.actionPlan);
+                        const idx = full.result.actionPlan.selectedVectorIndex;
+                        if (idx >= 0 && full.result.vectors[idx]) {
+                          setSelectedVector(full.result.vectors[idx]);
+                          setSelectedVectorIndex(idx);
+                        }
+                      }
+
+                      updateStep(STEPS_ORDER.indexOf("results"));
                     } catch (e) {
-                      console.error('Failed to load session', e);
+                      console.error("Failed to load session", e);
                     }
                     setLoadingDevSession(false);
                   }}
@@ -236,34 +557,40 @@ export function DirectionFinderFlow({ onComplete, onCancel }: DirectionFinderFlo
                   className="w-full text-left p-2 bg-slate-800 hover:bg-slate-700 rounded text-slate-300"
                 >
                   <span className="text-white">{s.id.slice(0, 8)}...</span>
-                  <span className="text-slate-500 ml-2">({s.user_id.slice(0, 8)}...)</span>
-                  <span className="text-slate-600 ml-2">{new Date(s.created_at).toLocaleDateString()}</span>
+                  {/* ... */}
                 </button>
               ))}
             </div>
           </details>
-          
-          <div className="w-[200px]">
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger className="h-full bg-slate-900 border-slate-700 text-xs">
-                <Settings className="w-3 h-3 mr-2 text-slate-400" />
-                <SelectValue placeholder="Select AI Model" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="google/gemini-2.5-flash">Gemini 2.5 Flash (Default)</SelectItem>
-                <SelectItem value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</SelectItem>
-                <SelectItem value="deepseek-v3">DeepSeek V3</SelectItem>
-                <SelectItem value="deepseek/deepseek-r1">DeepSeek R1 (Reasoner)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
+          {/* ... Model Selector ... */}
+          {currentStep === "ai_chat" && (
+            <div className="w-[200px] animate-in fade-in slide-in-from-top-2">
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger className="h-full bg-slate-900 border-slate-700 text-xs">
+                  <Settings className="w-3 h-3 mr-2 text-slate-400" />
+                  <SelectValue placeholder="Select AI Model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="google/gemini-3-flash-preview">
+                    Gemini 3 Flash
+                  </SelectItem>
+                  <SelectItem value="google/gemini-2.5-flash-lite">
+                    Gemini 2.5 Flash Lite
+                  </SelectItem>
+                  <SelectItem value="deepseek-v3">DeepSeek V3</SelectItem>
+                  <SelectItem value="deepseek/deepseek-r1">
+                    DeepSeek R1 (Reasoner)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="min-h-[500px]">
-        {renderContent()}
-      </div>
+      <div className="min-h-[500px]">{renderContent()}</div>
     </div>
   );
 }

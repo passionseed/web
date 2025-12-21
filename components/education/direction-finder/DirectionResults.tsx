@@ -1,13 +1,17 @@
-import { DirectionFinderResult, AssessmentAnswers } from '@/types/direction-finder';
-import { translations, Language } from '@/lib/i18n/direction-finder';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowRight, 
-  Share2, 
-  Sparkles, 
-  Heart, 
-  Zap, 
+import {
+  DirectionFinderResult,
+  AssessmentAnswers,
+  DirectionVector,
+} from "@/types/direction-finder";
+import { translations, Language } from "@/lib/i18n/direction-finder";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowRight,
+  Share2,
+  Sparkles,
+  Heart,
+  Zap,
   Target,
   TrendingUp,
   CheckCircle2,
@@ -15,15 +19,14 @@ import {
   Save,
   Plus,
   Map as MapIcon,
-  MessageSquare
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { useState, useEffect, useRef } from 'react';
-import { saveDirectionFinderResult } from '@/app/actions/save-direction';
-import { toPng } from 'html-to-image';
-import { Message } from '@/types/direction-finder';
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
-import { AIConversation } from './AIConversation';
+  MessageSquare,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useState, useEffect, useRef } from "react";
+import { saveDirectionFinderResult } from "@/app/actions/save-direction";
+import { toPng } from "html-to-image";
+import { Message } from "@/types/direction-finder";
+import { AIConversation } from "./AIConversation";
 
 interface DirectionResultsProps {
   result: DirectionFinderResult;
@@ -33,38 +36,59 @@ interface DirectionResultsProps {
   chatHistory?: Message[];
   model?: string;
   lang: Language;
+  onRefine?: () => void;
+  resultId?: string;
+  onStartNew?: () => void;
+  onSelect?: (vector: DirectionVector, index: number) => void;
 }
 
-export function DirectionResults({ result: initialResult, answers, onComplete, onBack, chatHistory: initialHistory, model, lang }: DirectionResultsProps) {
+export function DirectionResults({
+  result: initialResult,
+  answers,
+  onComplete,
+  onBack,
+  chatHistory: initialHistory,
+  model,
+  lang,
+  onRefine,
+  resultId,
+  onStartNew,
+  onSelect,
+}: DirectionResultsProps) {
   const t = translations[lang];
   const [result, setResult] = useState(initialResult);
   const [history, setHistory] = useState<Message[] | undefined>(initialHistory);
-  const [isRefining, setIsRefining] = useState(false);
+  // Remove isRefining since we use parent navigation now
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [hasAutoSaved, setHasAutoSaved] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  // Sync result if prop changes
+  useEffect(() => {
+    setResult(initialResult);
+  }, [initialResult]);
+
   // Auto-save on mount
   useEffect(() => {
     const autoSave = async () => {
       if (hasAutoSaved) return;
-      
+
       try {
-        await saveDirectionFinderResult(answers, result, history);
+        await saveDirectionFinderResult(answers, result, history, resultId);
         setHasAutoSaved(true);
       } catch (error) {
         console.error("Auto-save failed:", error);
       }
     };
-    
+
     autoSave();
-  }, [answers, result, hasAutoSaved, history]);
+  }, [answers, result, hasAutoSaved, history, resultId]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await saveDirectionFinderResult(answers, result, history);
+      await saveDirectionFinderResult(answers, result, history, resultId);
       toast.success("Profile saved successfully!");
     } catch (error) {
       toast.error("Failed to save profile");
@@ -75,39 +99,44 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
 
   const handleShare = async () => {
     if (!resultsRef.current) return;
-    
+
     setIsSharing(true);
     try {
       // Generate image
-      const dataUrl = await toPng(resultsRef.current, { 
+      const dataUrl = await toPng(resultsRef.current, {
         cacheBust: true,
-        backgroundColor: '#020617', // slate-950
+        backgroundColor: "#020617", // slate-950
         filter: (node) => {
           // Exclude elements with data-hide-on-share attribute
-          if (node instanceof HTMLElement && node.getAttribute('data-hide-on-share') === 'true') {
+          if (
+            node instanceof HTMLElement &&
+            node.getAttribute("data-hide-on-share") === "true"
+          ) {
             return false;
           }
           return true;
         },
         style: {
-          padding: '40px', // Add some padding to the image
-        }
+          padding: "40px", // Add some padding to the image
+        },
       });
-      
+
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], 'direction-profile.png', { type: 'image/png' });
+      const file = new File([blob], "direction-profile.png", {
+        type: "image/png",
+      });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
-            title: 'My Direction Profile',
-            text: 'Check out my direction profile!',
+            title: "My Direction Profile",
+            text: "Check out my direction profile!",
             files: [file],
           });
           toast.success("Shared successfully!");
         } catch (shareError) {
-          if ((shareError as Error).name !== 'AbortError') {
-            console.error('Error sharing:', shareError);
+          if ((shareError as Error).name !== "AbortError") {
+            console.error("Error sharing:", shareError);
             downloadImage(dataUrl);
             toast.success("Image saved to device!");
           }
@@ -117,7 +146,7 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
         toast.success("Image saved to device!");
       }
     } catch (error) {
-      console.error('Failed to generate image:', error);
+      console.error("Failed to generate image:", error);
       toast.error("Failed to generate image");
     } finally {
       setIsSharing(false);
@@ -125,17 +154,20 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
   };
 
   const downloadImage = (dataUrl: string) => {
-    const link = document.createElement('a');
-    link.download = 'direction-profile.png';
+    const link = document.createElement("a");
+    link.download = "direction-profile.png";
     link.href = dataUrl;
     link.click();
   };
 
   return (
-    <div ref={resultsRef} className="space-y-12 max-w-7xl mx-auto pb-12 relative">
-      {/* Back Button */}
-      <Button 
-        variant="ghost" 
+    <div
+      ref={resultsRef}
+      className="space-y-12 max-w-7xl mx-auto pb-12 relative"
+    >
+      {/* Back Button - Only show if standard onBack behavior is desired or if we want to allow going 'back' from review mode to selection */}
+      <Button
+        variant="ghost"
         onClick={onBack}
         className="absolute top-0 left-0 z-10 text-slate-400 hover:text-white"
         data-hide-on-share="true"
@@ -143,47 +175,44 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
         <ArrowLeft className="w-4 h-4 mr-2" /> {t.common.back}
       </Button>
 
-      {/* Refine Button */}
-      <div className="absolute top-0 right-0 z-10" data-hide-on-share="true">
-           <Dialog open={isRefining} onOpenChange={setIsRefining}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 border-purple-500/30 hover:bg-purple-500/10 text-purple-300">
-                <MessageSquare className="w-4 h-4" /> {t.results.refine_button}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl h-[80vh] p-0 bg-slate-950 border-slate-800 flex flex-col overflow-hidden">
-               <DialogTitle className="sr-only">Refine Direction with AI</DialogTitle>
-              <AIConversation
-                answers={answers}
-                history={history}
-                onHistoryChange={setHistory}
-                onComplete={(newResult) => {
-                  setResult(newResult);
-                  setIsRefining(false);
-                  toast.success("Profile updated!");
-                }}
-                onBack={() => setIsRefining(false)}
-                model={model}
-                lang={lang}
-                className="h-full border-0"
-              />
-            </DialogContent>
-          </Dialog>
+      {/* Refine / AI Chat Toggle / New Session */}
+      <div
+        className="absolute top-0 right-0 z-10 flex gap-2"
+        data-hide-on-share="true"
+      >
+        {onStartNew && (
+          <Button
+            variant="ghost"
+            onClick={onStartNew}
+            className="text-slate-400 hover:text-white hover:bg-slate-800"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Chat
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          onClick={onRefine}
+          className="gap-2 border-purple-500/30 hover:bg-purple-500/10 text-purple-300"
+        >
+          <MessageSquare className="w-4 h-4" />{" "}
+          {t.results.refine_button || "Refine with AI"}
+        </Button>
       </div>
 
       {/* Hero Section with Ikigai Visualization */}
       <div className="text-center space-y-6 relative pt-8">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-600/10 via-transparent to-transparent blur-3xl pointer-events-none" />
-        
+
         <div className="relative">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 mb-4 animate-pulse">
             <Sparkles className="w-10 h-10 text-purple-400" />
           </div>
-          
+
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-3">
             {t.results.title}
           </h2>
-          
+
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
             {t.results.subtitle}
           </p>
@@ -198,11 +227,16 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
             <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-500/30">
               <Zap className="w-6 h-6 text-blue-400" />
             </div>
-            <h3 className="text-sm font-bold text-blue-300 uppercase tracking-wider">{t.results.energizers_title}</h3>
+            <h3 className="text-sm font-bold text-blue-300 uppercase tracking-wider">
+              {t.results.energizers_title}
+            </h3>
           </div>
           <div className="space-y-2">
             {result.profile.energizers.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-blue-100 bg-blue-950/30 px-3 py-2 rounded-lg">
+              <div
+                key={i}
+                className="flex items-center gap-2 text-sm text-blue-100 bg-blue-950/30 px-3 py-2 rounded-lg"
+              >
                 <Heart className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
                 <span>{item}</span>
               </div>
@@ -216,11 +250,16 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
             <div className="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center border border-green-500/30">
               <TrendingUp className="w-6 h-6 text-green-400" />
             </div>
-            <h3 className="text-sm font-bold text-green-300 uppercase tracking-wider">{t.results.strengths_title}</h3>
+            <h3 className="text-sm font-bold text-green-300 uppercase tracking-wider">
+              {t.results.strengths_title}
+            </h3>
           </div>
           <div className="space-y-2">
             {result.profile.strengths.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-green-100 bg-green-950/30 px-3 py-2 rounded-lg">
+              <div
+                key={i}
+                className="flex items-center gap-2 text-sm text-green-100 bg-green-950/30 px-3 py-2 rounded-lg"
+              >
                 <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
                 <span>{item}</span>
               </div>
@@ -234,11 +273,16 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
             <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center border border-purple-500/30">
               <Target className="w-6 h-6 text-purple-400" />
             </div>
-            <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">{t.results.values_title}</h3>
+            <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">
+              {t.results.values_title}
+            </h3>
           </div>
           <div className="space-y-2">
             {result.profile.values.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-purple-100 bg-purple-950/30 px-3 py-2 rounded-lg">
+              <div
+                key={i}
+                className="flex items-center gap-2 text-sm text-purple-100 bg-purple-950/30 px-3 py-2 rounded-lg"
+              >
                 <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                 <span>{item}</span>
               </div>
@@ -251,24 +295,30 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
-          <h3 className="text-2xl font-bold text-white">{t.results.directions_title}</h3>
+          <h3 className="text-2xl font-bold text-white">
+            {t.results.directions_title}
+          </h3>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {result.vectors.map((vector, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className={`group relative flex flex-col border rounded-2xl p-5 transition-all hover:shadow-lg ${
-                idx === 0 
-                  ? 'bg-gradient-to-br from-purple-900/30 to-blue-900/20 border-purple-500/50 ring-2 ring-purple-500/20' 
-                  : 'bg-slate-900/60 border-slate-700/50 hover:border-slate-600'
+                idx === 0
+                  ? "bg-gradient-to-br from-purple-900/30 to-blue-900/20 border-purple-500/50 ring-2 ring-purple-500/20"
+                  : "bg-slate-900/60 border-slate-700/50 hover:border-slate-600"
               }`}
             >
               {/* Rank Badge */}
-              <div className={`absolute -top-3 -left-3 w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-base shadow-lg border-2 border-slate-900 ${
-                idx === 0 ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-slate-700'
-              }`}>
+              <div
+                className={`absolute -top-3 -left-3 w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-base shadow-lg border-2 border-slate-900 ${
+                  idx === 0
+                    ? "bg-gradient-to-br from-purple-500 to-pink-500"
+                    : "bg-slate-700"
+                }`}
+              >
                 {idx + 1}
               </div>
 
@@ -288,66 +338,126 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
                 <div className="space-y-3 bg-slate-950/40 p-3 rounded-xl border border-slate-800/50">
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="flex items-center gap-1.5 text-pink-300 font-medium"><Heart className="w-3 h-3 fill-pink-500/20" /> {t.results.passion_match}</span>
-                      <span className="text-white font-bold">{vector.match_scores?.passion || 92}%</span>
+                      <span className="flex items-center gap-1.5 text-pink-300 font-medium">
+                        <Heart className="w-3 h-3 fill-pink-500/20" />{" "}
+                        {t.results.passion_match}
+                      </span>
+                      <span className="text-white font-bold">
+                        {vector.match_scores?.passion || 92}%
+                      </span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-gradient-to-r from-pink-600 to-rose-500 rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${vector.match_scores?.passion || 92}%` }}
+                        style={{
+                          width: `${vector.match_scores?.passion || 92}%`,
+                        }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 pl-1">{vector.fit_reason.interest_alignment}</p>
+                    <p className="text-[10px] text-slate-400 pl-1">
+                      {vector.fit_reason.interest_alignment}
+                    </p>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="flex items-center gap-1.5 text-emerald-300 font-medium"><Zap className="w-3 h-3 fill-emerald-500/20" /> {t.results.skill_match}</span>
-                      <span className="text-white font-bold">{vector.match_scores?.skill || 88}%</span>
+                      <span className="flex items-center gap-1.5 text-emerald-300 font-medium">
+                        <Zap className="w-3 h-3 fill-emerald-500/20" />{" "}
+                        {t.results.skill_match}
+                      </span>
+                      <span className="text-white font-bold">
+                        {vector.match_scores?.skill || 88}%
+                      </span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${vector.match_scores?.skill || 88}%` }}
+                        style={{
+                          width: `${vector.match_scores?.skill || 88}%`,
+                        }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 pl-1">{vector.fit_reason.strength_alignment}</p>
+                    <p className="text-[10px] text-slate-400 pl-1">
+                      {vector.fit_reason.strength_alignment}
+                    </p>
                   </div>
                 </div>
-                
-                {/* Suggested Milestones (formerly Exploration Steps) */}
-                <div className="pt-2">
-                  <h5 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <MapIcon className="w-3 h-3 text-purple-400" /> {t.results.suggested_projects}
-                  </h5>
-                  <div className="relative pl-4 space-y-4 border-l border-slate-800 ml-1.5 space-y-4">
-                    {vector.exploration_steps.map((step, i) => (
-                      <div key={i} className="relative">
-                        <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-900 border-2 border-purple-500/50 group-hover:border-purple-500 transition-colors" />
-                        <div className="bg-slate-800/50 p-2.5 rounded-lg border border-slate-800 hover:border-slate-700 transition-all">
-                          <p className="text-xs text-slate-200 leading-relaxed font-medium">{step.description}</p>
+
+                {/* Differentiators (New) */}
+                {vector.differentiators && (
+                  <div className="space-y-3 pt-2">
+                    {/* Main Focus */}
+                    <div className="bg-slate-800/30 p-2.5 rounded-lg border border-slate-800">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">
+                        Main Focus
+                      </p>
+                      <p className="text-sm font-medium text-white">
+                        {vector.differentiators.main_focus}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Knowledge */}
+                      <div className="bg-slate-800/30 p-2.5 rounded-lg border border-slate-800">
+                        <p className="text-[10px] uppercase tracking-wider text-blue-400 font-bold mb-1 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Knowledge
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {vector.differentiators.knowledge_base.map((k, i) => (
+                            <span
+                              key={i}
+                              className="text-[10px] bg-blue-900/40 text-blue-200 px-1.5 py-0.5 rounded border border-blue-500/20"
+                            >
+                              {k}
+                            </span>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                    {/* Visual cue for user to add to their plan */}
-                    <div className="relative opacity-50 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute -left-[21px] top-1.5 w-3 h-3 rounded-full bg-slate-900 border-2 border-dashed border-slate-600" />
-                      <button 
-                         onClick={onComplete}
-                         className="w-full text-left bg-transparent border border-dashed border-slate-700 p-2 rounded-lg text-xs text-slate-400 hover:text-white hover:border-slate-500 hover:bg-slate-800/30 transition-all flex items-center gap-2"
-                      >
-                        <Plus className="w-3 h-3" /> {t.results.add_roadmap}
-                      </button>
+
+                      {/* Skills */}
+                      <div className="bg-slate-800/30 p-2.5 rounded-lg border border-slate-800">
+                        <p className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold mb-1 flex items-center gap-1">
+                          <Zap className="w-3 h-3" /> Skills
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {vector.differentiators.skill_tree.map((k, i) => (
+                            <span
+                              key={i}
+                              className="text-[10px] bg-emerald-900/40 text-emerald-200 px-1.5 py-0.5 rounded border border-emerald-500/20"
+                            >
+                              {k}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* Suggested Milestones removed in favor of Interactive Planner */}
               </div>
 
               {/* First Step */}
               <div className="mt-4 pt-3 border-t border-slate-800/50 text-xs">
-                <p className="font-medium text-green-400 mb-0.5 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t.results.start_here}</p>
-                <p className="text-slate-300 leading-relaxed">{vector.first_step}</p>
+                <p className="font-medium text-green-400 mb-0.5 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> {t.results.start_here}
+                </p>
+                <p className="text-slate-300 leading-relaxed">
+                  {vector.first_step}
+                </p>
               </div>
+
+              {/* Select Button */}
+              {onSelect && (
+                <div className="mt-4 pt-3 border-t border-slate-800/50">
+                  <Button
+                    onClick={() => onSelect(vector, idx)}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    Select This Path <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -356,11 +466,13 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
       {/* Journey Map CTA */}
       <div className="text-center space-y-4 p-8 bg-gradient-to-br from-purple-900/20 via-slate-900 to-blue-900/20 border border-purple-500/20 rounded-3xl">
         <Sparkles className="w-10 h-10 text-purple-400 mx-auto animate-pulse" />
-        <h3 className="text-2xl font-bold text-white">{t.results.journey_cta_title}</h3>
+        <h3 className="text-2xl font-bold text-white">
+          {t.results.journey_cta_title}
+        </h3>
         <p className="text-slate-400 max-w-lg mx-auto">
           {t.results.journey_cta_desc}
         </p>
-        <Button 
+        <Button
           size="lg"
           onClick={onComplete}
           className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 shadow-lg shadow-purple-500/25 text-lg px-8 py-6"
@@ -370,24 +482,35 @@ export function DirectionResults({ result: initialResult, answers, onComplete, o
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8" data-hide-on-share="true">
-        <Button 
-          variant="outline" 
+      <div
+        className="flex flex-col sm:flex-row justify-center gap-4 pt-8"
+        data-hide-on-share="true"
+      >
+        <Button
+          variant="outline"
           size="lg"
           onClick={handleSave}
           disabled={isSaving}
           className="gap-2 border-slate-700 hover:bg-slate-800 hover:text-white text-slate-300"
         >
-          {isSaving ? <Sparkles className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />} 
+          {isSaving ? (
+            <Sparkles className="w-5 h-5 animate-spin" />
+          ) : (
+            <Save className="w-5 h-5" />
+          )}
           {t.common.save}
         </Button>
-        <Button 
+        <Button
           size="lg"
           onClick={handleShare}
           disabled={isSharing}
           className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25"
         >
-          {isSharing ? <Sparkles className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} 
+          {isSharing ? (
+            <Sparkles className="w-5 h-5 animate-spin" />
+          ) : (
+            <Share2 className="w-5 h-5" />
+          )}
           {t.results.share_button}
         </Button>
       </div>
