@@ -486,7 +486,7 @@ export function CreateNorthStarDialog({
 
       {/* Main Content Area */}
       <div className="flex-1 relative z-10 overflow-y-auto">
-        <div className="min-h-full flex flex-col items-center justify-center p-6">
+        <div className="min-h-full flex flex-col items-center justify-start py-10 px-6">
           <AnimatePresence mode="wait">
             {showEducationalPathway ? (
               <motion.div
@@ -524,7 +524,7 @@ export function CreateNorthStarDialog({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                className="w-full max-w-3xl"
+                className="w-full max-w-3xl my-auto"
               >
                 {/* STEP 0: WELCOME */}
                 {currentStep === 0 && (

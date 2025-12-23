@@ -233,9 +233,9 @@ export const translations = {
         placeholder: "e.g. Being calm under pressure, my drawings...",
         none_label: "People don't really give me specific compliments",
       },
-      },
-      // ai_intro moved to top level
-  
+    },
+    // ai_intro moved to top level
+
     ai_intro: {
       title: "Assessment Complete!",
       description: "Great job! Now for the final step: a quick 5-minute chat with our AI advisor to connect the dots and build your profile.",
@@ -252,6 +252,12 @@ export const translations = {
       passion_match: "Passion Match",
       skill_match: "Skill Match",
       suggested_projects: "Suggested Projects",
+      rarity_label: "Rarity",
+      faculty_label: "Recommended Faculty",
+      focus_label: "Main Focus",
+      skills_label: "Required Skills",
+      expand_details: "View Details",
+      collapse_details: "Collapse",
       add_roadmap: "Add to my roadmap...",
       start_here: "Start Here:",
       journey_cta_title: "Ready to Start Your Journey?",
@@ -520,6 +526,12 @@ export const translations = {
       passion_match: "คะแนนความชอบ",
       skill_match: "คะแนนความถนัด",
       suggested_projects: "โปรเจกต์แนะนำ",
+      rarity_label: "ความหายาก",
+      faculty_label: "คณะที่แนะนำ",
+      focus_label: "จุดเน้นหลัก",
+      skills_label: "ทักษะที่จำเป็น",
+      expand_details: "ดูรายละเอียด",
+      collapse_details: "ย่อรายละเอียด",
       add_roadmap: "เพิ่มลงในแผนที่ของฉัน...",
       start_here: "เริ่มตรงนี้:",
       journey_cta_title: "พร้อมเริ่มการเดินทางหรือยัง?",

@@ -238,6 +238,12 @@ export async function generateDirectionProfile(
               "knowledge_base": ["Subject 1", "Subject 2"],
               "skill_tree": ["Skill 1", "Skill 2"]
             },
+            "rarity": "Legendary",
+            "recommended_faculty": "Specific Faculty/Major Name",
+            "match_context": {
+                "passion_context": "You light up when discussing...", 
+                "skill_context": "Your natural ability to..."
+            },
             "match_scores": {
               "overall": 85,
               "passion": 85,
@@ -269,7 +275,8 @@ export async function generateDirectionProfile(
       }
       
       IMPORTANT: Ensure the JSON is valid. Do not include markdown formatting.
-      If Language is Thai, all content in the JSON values MUST be in Thai.
+      If Language is Thai, all content in the JSON values MUST be in Thai. 
+      For Rarity: Assign based on how unique/niche this combination is. 'Rare' (Common but good), 'Epic' (Strong niche), 'Legendary' (Very specific/unique combo), 'Mythical' (One of a kind/Visionary).
     `;
 
     const { object } = await generateObject({
@@ -283,6 +290,12 @@ export async function generateDirectionProfile(
         }),
         vectors: z.array(z.object({
           name: z.string(),
+          rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
+          recommended_faculty: z.string().optional(),
+          match_context: z.object({
+            passion_context: z.string(),
+            skill_context: z.string(),
+          }).optional(),
           fit_reason: z.object({
             interest_alignment: z.string(),
             strength_alignment: z.string(),
