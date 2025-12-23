@@ -60,6 +60,12 @@ export interface DirectionVector {
     knowledge_base: string[];
     skill_tree: string[];
   };
+  rarity?: 'Rare' | 'Epic' | 'Legendary' | 'Mythical';
+  recommended_faculty?: string;
+  match_context?: {
+    passion_context: string;
+    skill_context: string;
+  };
   match_scores: {
     overall: number; // 0-100
     passion: number; // 0-100

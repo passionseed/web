@@ -85,12 +85,58 @@ export function DirectionResults({
     autoSave();
   }, [answers, result, hasAutoSaved, history, resultId]);
 
+  // Helper to capture image with consistent settings
+  const generateProfileImage = async (node: HTMLElement) => {
+    // 1. Force a desktop-like width for the capture to prevent mobile layout clipping
+    const scale = 2; // Higher quality
+    const targetWidth = 1200; // Force desktop width for the image
+
+    // We need to temporarily style the node to ensure it renders at full width
+    // or use the 'style' option in toPng.
+
+    return await toPng(node, {
+      cacheBust: true,
+      backgroundColor: "#020617", // slate-950
+      pixelRatio: scale,
+      width: targetWidth,
+      height: node.offsetHeight, // Explicitly capture full height
+      style: {
+        width: `${targetWidth}px`,
+        height: "auto",
+        maxWidth: "none", // Override any max-width constraints
+        transform: "none", // Avoid transform issues
+        margin: "0", // Reset margins
+        padding: "40px", // Add padding to the captured image itself
+      },
+      filter: (n) => {
+        // Exclude elements with data-hide-on-share attribute
+        if (
+          n instanceof HTMLElement &&
+          n.getAttribute("data-hide-on-share") === "true"
+        ) {
+          return false;
+        }
+        return true;
+      },
+    });
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // 1. Save to DB first
       await saveDirectionFinderResult(answers, result, history, resultId);
-      toast.success("Profile saved successfully!");
+
+      // 2. Download Image
+      if (resultsRef.current) {
+        const dataUrl = await generateProfileImage(resultsRef.current);
+        downloadImage(dataUrl);
+        toast.success("Profile saved & image downloaded!");
+      } else {
+        toast.success("Profile saved!");
+      }
     } catch (error) {
+      console.error("Save error:", error);
       toast.error("Failed to save profile");
     } finally {
       setIsSaving(false);
@@ -102,24 +148,7 @@ export function DirectionResults({
 
     setIsSharing(true);
     try {
-      // Generate image
-      const dataUrl = await toPng(resultsRef.current, {
-        cacheBust: true,
-        backgroundColor: "#020617", // slate-950
-        filter: (node) => {
-          // Exclude elements with data-hide-on-share attribute
-          if (
-            node instanceof HTMLElement &&
-            node.getAttribute("data-hide-on-share") === "true"
-          ) {
-            return false;
-          }
-          return true;
-        },
-        style: {
-          padding: "40px", // Add some padding to the image
-        },
-      });
+      const dataUrl = await generateProfileImage(resultsRef.current);
 
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "direction-profile.png", {
@@ -155,7 +184,7 @@ export function DirectionResults({
 
   const downloadImage = (dataUrl: string) => {
     const link = document.createElement("a");
-    link.download = "direction-profile.png";
+    link.download = `direction-profile-${new Date().toISOString().split("T")[0]}.png`;
     link.href = dataUrl;
     link.click();
   };
@@ -209,7 +238,7 @@ export function DirectionResults({
             <Sparkles className="w-10 h-10 text-purple-400" />
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-3">
+          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-3 py-2 leading-relaxed">
             {t.results.title}
           </h2>
 
