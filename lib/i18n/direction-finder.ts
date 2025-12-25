@@ -268,7 +268,7 @@ export const translations = {
     },
     ai_chat: {
       title: "Education Advisor",
-      subtitle: "Helping you find your direction",
+      subtitle: "Connecting your Inner Ikigai (Passion & Skills) to Real-World Careers (Outer Ikigai)",
       view_results: "View Results",
       generating: "Generating Profile...",
       input_placeholder: "Type your answer...",
@@ -542,7 +542,7 @@ export const translations = {
     },
     ai_chat: {
       title: "ที่ปรึกษาด้านการศึกษา",
-      subtitle: "ผู้ช่วยค้นหาเส้นทางที่ใช่ของคุณ",
+      subtitle: "เชื่อมโยงสิ่งที่รัก/ถนัด (Inner Ikigai) สู่โลกแห่งความเป็นจริงและอาชีพ (Outer Ikigai)",
       view_results: "ดูผลลัพธ์",
       generating: "กำลังสร้างโปรไฟล์...",
       input_placeholder: "พิมพ์คำตอบของคุณ...",

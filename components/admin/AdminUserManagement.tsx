@@ -1,21 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
 import { UserRole } from "@/lib/supabase/auth-client";
 import { RoleManagementDialog } from "./RoleManagementDialog";
-import {
-  Users,
-  Search,
-  Edit2,
-} from "lucide-react";
+import { Users, Search, Edit2 } from "lucide-react";
 
 interface UserWithRoles {
   id: string;
@@ -35,7 +50,9 @@ interface AdminUserManagementProps {
   onDataReload?: () => void;
 }
 
-export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) {
+export function AdminUserManagement({
+  onDataReload,
+}: AdminUserManagementProps) {
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,15 +61,21 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = !searchTerm || 
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      !searchTerm ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.profiles?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRole = selectedRole === "all" || 
-      user.user_roles.some(role => role.role === selectedRole);
-    
+      user.profiles?.username
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      user.profiles?.full_name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+    const matchesRole =
+      selectedRole === "all" ||
+      user.user_roles.some((role) => role.role === selectedRole);
+
     return matchesSearch && matchesRole;
   });
 
@@ -63,9 +86,9 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
   const loadUsers = async () => {
     try {
       setLoading(true);
-      
+
       const response = await fetch("/api/admin/users");
-      
+
       if (response.ok) {
         const usersData = await response.json();
         setUsers(usersData);
@@ -93,21 +116,35 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
 
   const getRoleBadgeVariant = (role: UserRole) => {
     switch (role) {
-      case "admin": return "destructive";
-      case "instructor": return "default";
-      case "TA": return "secondary";
-      case "student": return "outline";
-      default: return "outline";
+      case "admin":
+        return "destructive";
+      case "instructor":
+        return "default";
+      case "TA":
+        return "secondary";
+      case "student":
+        return "outline";
+      case "beta-tester":
+        return "default";
+      default:
+        return "outline";
     }
   };
 
   const getRoleDisplayName = (role: UserRole) => {
     switch (role) {
-      case "TA": return "moderator";
-      case "admin": return "admin";
-      case "instructor": return "instructor";
-      case "student": return "student";
-      default: return role;
+      case "TA":
+        return "moderator";
+      case "admin":
+        return "admin";
+      case "instructor":
+        return "instructor";
+      case "student":
+        return "student";
+      case "beta-tester":
+        return "beta";
+      default:
+        return role;
     }
   };
 
@@ -119,9 +156,7 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
             <Users className="h-5 w-5" />
             User Management
           </CardTitle>
-          <CardDescription>
-            Loading user accounts and roles...
-          </CardDescription>
+          <CardDescription>Loading user accounts and roles...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center p-8">
@@ -141,14 +176,17 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
             User Management
           </CardTitle>
           <CardDescription>
-            View and manage user accounts, roles, and profile information. Admins cannot assign admin roles to other users.
+            View and manage user accounts, roles, and profile information.
+            Admins cannot assign admin roles to other users.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Search and Filter */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1">
-              <Label htmlFor="search" className="text-sm font-medium">Search Users</Label>
+              <Label htmlFor="search" className="text-sm font-medium">
+                Search Users
+              </Label>
               <div className="relative mt-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -161,7 +199,9 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
               </div>
             </div>
             <div className="md:w-48">
-              <Label htmlFor="role-filter" className="text-sm font-medium">Filter by Role</Label>
+              <Label htmlFor="role-filter" className="text-sm font-medium">
+                Filter by Role
+              </Label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger className="mt-1 h-10">
                   <SelectValue placeholder="All roles" />
@@ -171,17 +211,19 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
                   <SelectItem value="instructor">Instructor</SelectItem>
                   <SelectItem value="TA">Moderator</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="beta-tester">Beta Tester</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          
+
           {/* Results summary */}
           <div className="mb-4">
             <p className="text-sm text-muted-foreground">
               Showing {filteredUsers.length} of {users.length} users
               {searchTerm && ` matching "${searchTerm}"`}
-              {selectedRole !== "all" && ` with role "${selectedRole === "TA" ? "moderator" : selectedRole}"`}
+              {selectedRole !== "all" &&
+                ` with role "${selectedRole === "TA" ? "moderator" : selectedRole}"`}
             </p>
           </div>
 
@@ -203,7 +245,9 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          {user.profiles?.full_name || user.profiles?.username || "Unknown"}
+                          {user.profiles?.full_name ||
+                            user.profiles?.username ||
+                            "Unknown"}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           @{user.profiles?.username || "no-username"}
@@ -217,13 +261,15 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
                           <Badge
                             key={index}
                             variant={getRoleBadgeVariant(roleData.role)}
-                            className="text-xs capitalize"
+                            className={`text-xs capitalize ${roleData.role === "beta-tester" ? "bg-purple-500 hover:bg-purple-600 border-none text-white" : ""}`}
                           >
                             {getRoleDisplayName(roleData.role)}
                           </Badge>
                         ))}
                         {user.user_roles.length === 0 && (
-                          <Badge variant="outline" className="text-xs">No roles</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            No roles
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -250,7 +296,10 @@ export function AdminUserManagement({ onDataReload }: AdminUserManagementProps) 
                 ))}
                 {filteredUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={5}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No users found matching your criteria
                     </TableCell>
                   </TableRow>

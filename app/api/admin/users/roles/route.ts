@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 
 async function checkAdminAccess() {
   const supabase = await createClient();
-  
+
   const {
     data: { user },
     error,
@@ -47,7 +47,7 @@ async function logAdminActivity(
 
 export async function POST(request: Request) {
   const adminUser = await checkAdminAccess();
-  
+
   if (!adminUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!["student", "TA", "instructor", "admin"].includes(role)) {
+    if (!["student", "TA", "instructor", "admin", "beta-tester"].includes(role)) {
       return NextResponse.json(
         { error: "Invalid role" },
         { status: 400 }
@@ -145,9 +145,9 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: `Role ${role} ${action === "add" ? "added to" : "removed from"} user successfully` 
+    return NextResponse.json({
+      success: true,
+      message: `Role ${role} ${action === "add" ? "added to" : "removed from"} user successfully`
     });
 
   } catch (error) {
