@@ -23,7 +23,9 @@ import {
 import {
   conductDirectionConversation,
   generateDirectionProfile,
-} from "@/lib/ai/education-advisor";
+  generateDirectionProfileCore,
+  generateDirectionProfileDetails,
+} from "@/app/actions/advisor-actions";
 import { toast } from "sonner";
 import { marked } from "marked";
 import { cn } from "@/lib/utils";
@@ -53,7 +55,10 @@ export function AIConversation({
   const [messages, setMessages] = useState<Message[]>(history || []);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isGeneratingProfile, setIsGeneratingProfile] = useState(false);
+  // const [isGeneratingProfile, setIsGeneratingProfile] = useState(false); // Deprecated for loadingStage
+  const [loadingStage, setLoadingStage] = useState<"none" | "core" | "details">(
+    "none"
+  );
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -190,24 +195,52 @@ export function AIConversation({
   };
 
   const handleFinish = async () => {
-    setIsGeneratingProfile(true);
+    // setIsGeneratingProfile(true);
+    setLoadingStage("core");
     try {
       const apiHistory = messages.map((m) => ({
         role: m.role,
         content: m.content,
       }));
 
-      const result = await generateDirectionProfile(
+      // Step 1: Core
+      const coreResult = await generateDirectionProfileCore(
         apiHistory,
         answers,
         model,
         lang
       );
-      onComplete(result);
-    } catch (error) {
+
+      setLoadingStage("details");
+
+      // Step 2: Details
+      const detailsResult = await generateDirectionProfileDetails(
+        coreResult,
+        answers,
+        model,
+        lang
+      );
+
+      // Merge
+      const finalResult: DirectionFinderResult = {
+        ...(coreResult as any),
+        ...(detailsResult as any),
+      };
+
+      onComplete(finalResult);
+    } catch (error: any) {
       console.error("Error generating profile:", error);
-      toast.error("Failed to generate profile");
-      setIsGeneratingProfile(false);
+      if (
+        error.message?.includes("unexpected response") ||
+        error.message?.includes("504")
+      ) {
+        toast.error(
+          "Generation timed out. Please try again or use a faster model."
+        );
+      } else {
+        toast.error("Failed to generate profile. Please try again.");
+      }
+      setLoadingStage("none");
     }
   };
 
@@ -241,13 +274,15 @@ export function AIConversation({
         {messages.length > 4 && (
           <Button
             onClick={handleFinish}
-            disabled={isGeneratingProfile || isTyping}
+            disabled={loadingStage !== "none" || isTyping}
             className="bg-green-600 hover:bg-green-700 text-xs h-8"
           >
-            {isGeneratingProfile ? (
+            {loadingStage !== "none" ? (
               <>
                 <Loader2 className="w-3 h-3 mr-2 animate-spin" />{" "}
-                {t.ai_chat.generating}
+                {loadingStage === "core"
+                  ? "Analyzing..."
+                  : "Finding Programs..."}
               </>
             ) : (
               <>
@@ -424,7 +459,7 @@ export function AIConversation({
               onChange={(e) => setInput(e.target.value)}
               placeholder={t.ai_chat.input_placeholder}
               className="bg-slate-800 border-slate-700 focus-visible:ring-blue-500 min-h-[44px] max-h-[120px] resize-none py-3"
-              disabled={isGeneratingProfile || isTyping}
+              disabled={loadingStage !== "none" || isTyping}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -435,7 +470,7 @@ export function AIConversation({
             <Button
               type="submit"
               size="icon"
-              disabled={!input.trim() || isTyping || isGeneratingProfile}
+              disabled={!input.trim() || isTyping || loadingStage !== "none"}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Send className="w-4 h-4" />
@@ -486,7 +521,7 @@ export function AIConversation({
                 <br />
                 Typing: {isTyping ? "Yes" : "No"}
                 <br />
-                Generating: {isGeneratingProfile ? "Yes" : "No"}
+                Generating: {loadingStage !== "none" ? "Yes" : "No"}
                 <br />
                 <strong>
                   Result: {messages.length > 4 ? "VISIBLE" : "HIDDEN"}
