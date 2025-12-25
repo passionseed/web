@@ -1,15 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { UserRole } from "@/lib/supabase/auth-client";
-import { Loader2, Shield, GraduationCap, Users, BookOpen, Save, X } from "lucide-react";
+import {
+  Loader2,
+  Shield,
+  GraduationCap,
+  Users,
+  BookOpen,
+  Save,
+  X,
+  FlaskConical,
+} from "lucide-react";
 
 interface UserWithRoles {
   id: string;
@@ -32,7 +55,12 @@ interface RoleManagementDialogProps {
 }
 
 // Only show roles that admins can assign to others (exclude admin role)
-const ASSIGNABLE_ROLES: { role: UserRole; label: string; description: string; icon: any }[] = [
+const ASSIGNABLE_ROLES: {
+  role: UserRole;
+  label: string;
+  description: string;
+  icon: any;
+}[] = [
   {
     role: "student",
     label: "Student",
@@ -57,7 +85,7 @@ export function RoleManagementDialog({
   open,
   onOpenChange,
   user,
-  onRoleUpdated
+  onRoleUpdated,
 }: RoleManagementDialogProps) {
   const [loading, setLoading] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -91,9 +119,12 @@ export function RoleManagementDialog({
     return null;
   }
 
-  const currentRoles = new Set(user.user_roles.map(r => r.role));
-  const assignableRoles = user.user_roles.filter(r => ASSIGNABLE_ROLES.some(ar => ar.role === r.role));
+  const currentRoles = new Set(user.user_roles.map((r) => r.role));
+  const assignableRoles = user.user_roles.filter((r) =>
+    ASSIGNABLE_ROLES.some((ar) => ar.role === r.role)
+  );
   const primaryRole = assignableRoles.length > 0 ? assignableRoles[0].role : "";
+  const isBetaTester = user.user_roles.some((r) => r.role === "beta-tester");
 
   const handleRoleChange = async (newRole: UserRole) => {
     if (loading || !newRole) return;
@@ -139,7 +170,48 @@ export function RoleManagementDialog({
       console.error("Error updating role:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update role",
+        description:
+          error instanceof Error ? error.message : "Failed to update role",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBetaStatusChange = async (enabled: boolean) => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/admin/users/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          role: "beta-tester",
+          action: enabled ? "add" : "remove",
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Beta tester status ${enabled ? "enabled" : "disabled"} successfully`,
+        });
+        onRoleUpdated();
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update beta status");
+      }
+    } catch (error) {
+      console.error("Error updating beta status:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update beta status",
         variant: "destructive",
       });
     } finally {
@@ -178,7 +250,8 @@ export function RoleManagementDialog({
       console.error("Error updating profile:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update profile",
+        description:
+          error instanceof Error ? error.message : "Failed to update profile",
         variant: "destructive",
       });
     } finally {
@@ -188,11 +261,18 @@ export function RoleManagementDialog({
 
   const getRoleBadgeVariant = (role: UserRole) => {
     switch (role) {
-      case "admin": return "destructive";
-      case "instructor": return "default";
-      case "TA": return "secondary";
-      case "student": return "outline";
-      default: return "outline";
+      case "admin":
+        return "destructive";
+      case "instructor":
+        return "default";
+      case "TA":
+        return "secondary";
+      case "student":
+        return "outline";
+      case "beta-tester":
+        return "default";
+      default:
+        return "outline";
     }
   };
 
@@ -202,7 +282,8 @@ export function RoleManagementDialog({
         <DialogHeader>
           <DialogTitle>Edit User Profile & Role</DialogTitle>
           <DialogDescription>
-            Update profile information and role for {user.profiles?.full_name || user.email}
+            Update profile information and role for{" "}
+            {user.profiles?.full_name || user.email}
           </DialogDescription>
         </DialogHeader>
 
@@ -210,7 +291,9 @@ export function RoleManagementDialog({
           {/* Current User Info */}
           <div className="p-4 border rounded-lg bg-muted/50">
             <div className="font-medium">
-              {user.profiles?.full_name || user.profiles?.username || "Unknown User"}
+              {user.profiles?.full_name ||
+                user.profiles?.username ||
+                "Unknown User"}
             </div>
             <div className="text-sm text-muted-foreground">{user.email}</div>
             <div className="flex gap-1 mt-2 flex-wrap">
@@ -218,7 +301,7 @@ export function RoleManagementDialog({
                 <Badge
                   key={index}
                   variant={getRoleBadgeVariant(roleData.role)}
-                  className="text-xs"
+                  className={`text-xs ${roleData.role === "beta-tester" ? "bg-purple-500 hover:bg-purple-600 border-none text-white" : ""}`}
                 >
                   {roleData.role === "TA" ? "moderator" : roleData.role}
                 </Badge>
@@ -242,7 +325,7 @@ export function RoleManagementDialog({
                 {editingProfile ? <X className="h-4 w-4" /> : "Edit"}
               </Button>
             </div>
-            
+
             {editingProfile ? (
               <div className="space-y-3">
                 <div>
@@ -250,7 +333,12 @@ export function RoleManagementDialog({
                   <Input
                     id="username"
                     value={profileData.username}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        username: e.target.value,
+                      }))
+                    }
                     placeholder="Enter username"
                     disabled={loading}
                   />
@@ -260,7 +348,12 @@ export function RoleManagementDialog({
                   <Input
                     id="full_name"
                     value={profileData.full_name}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, full_name: e.target.value }))}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        full_name: e.target.value,
+                      }))
+                    }
                     placeholder="Enter full name"
                     disabled={loading}
                   />
@@ -271,7 +364,11 @@ export function RoleManagementDialog({
                     disabled={loading}
                     size="sm"
                   >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
                     Save
                   </Button>
                   <Button
@@ -293,76 +390,112 @@ export function RoleManagementDialog({
             ) : (
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Username:</span> {user.profiles?.username || "Not set"}
+                  <span className="text-muted-foreground">Username:</span>{" "}
+                  {user.profiles?.username || "Not set"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Full Name:</span> {user.profiles?.full_name || "Not set"}
+                  <span className="text-muted-foreground">Full Name:</span>{" "}
+                  {user.profiles?.full_name || "Not set"}
                 </div>
               </div>
             )}
           </div>
 
           {/* Role Management */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <h4 className="font-medium">Role Assignment</h4>
-            <div>
-              <Label htmlFor="role-select">Primary Role</Label>
-              <Select
-                value={selectedRole || primaryRole}
-                onValueChange={(value) => {
-                  setSelectedRole(value as UserRole);
-                  handleRoleChange(value as UserRole);
-                }}
-                disabled={loading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ASSIGNABLE_ROLES.map((roleInfo) => {
-                    const Icon = roleInfo.icon;
-                    return (
-                      <SelectItem key={roleInfo.role} value={roleInfo.role}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          <span>{roleInfo.label}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                Admins cannot assign admin roles to other users
-              </p>
+
+            {/* Primary Role Selector */}
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="role-select">Primary Role</Label>
+                <Select
+                  value={selectedRole || primaryRole}
+                  onValueChange={(value) => {
+                    setSelectedRole(value as UserRole);
+                    handleRoleChange(value as UserRole);
+                  }}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASSIGNABLE_ROLES.map((roleInfo) => {
+                      const Icon = roleInfo.icon;
+                      return (
+                        <SelectItem key={roleInfo.role} value={roleInfo.role}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" />
+                            <span>{roleInfo.label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Admins cannot assign admin roles to other users
+                </p>
+              </div>
+
+              {/* Role descriptions */}
+              <div className="grid gap-2">
+                {ASSIGNABLE_ROLES.map((roleInfo) => {
+                  const Icon = roleInfo.icon;
+                  const isSelected =
+                    (selectedRole || primaryRole) === roleInfo.role;
+
+                  return (
+                    <div
+                      key={roleInfo.role}
+                      className={`p-3 border rounded-lg transition-colors ${
+                        isSelected
+                          ? "bg-primary/5 border-primary"
+                          : "bg-muted/20"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{roleInfo.label}</span>
+                        {isSelected && (
+                          <Badge variant="outline" className="text-xs">
+                            Current
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {roleInfo.description}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Role descriptions */}
-            <div className="grid gap-2">
-              {ASSIGNABLE_ROLES.map((roleInfo) => {
-                const Icon = roleInfo.icon;
-                const isSelected = (selectedRole || primaryRole) === roleInfo.role;
-                
-                return (
-                  <div
-                    key={roleInfo.role}
-                    className={`p-3 border rounded-lg transition-colors ${
-                      isSelected ? 'bg-primary/5 border-primary' : 'bg-muted/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{roleInfo.label}</span>
-                      {isSelected && (
-                        <Badge variant="outline" className="text-xs">Current</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {roleInfo.description}
-                    </p>
+            {/* Special Access Sections */}
+            <div className="space-y-3 pt-2 border-t">
+              <h5 className="text-sm font-medium">Special Access</h5>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4 text-purple-500" />
+                    <Label htmlFor="beta-access" className="font-medium">
+                      Beta Tester Access
+                    </Label>
                   </div>
-                );
-              })}
+                  <p className="text-sm text-muted-foreground">
+                    Grants access to experimental features and beta versions
+                  </p>
+                </div>
+                <Switch
+                  id="beta-access"
+                  checked={isBetaTester}
+                  onCheckedChange={handleBetaStatusChange}
+                  disabled={loading}
+                />
+              </div>
             </div>
           </div>
         </div>

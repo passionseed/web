@@ -4,8 +4,10 @@
  * Uses Gemini API to help users clarify vision and generate milestones
  * Rate limited: 1 enhancement per North Star creation session
  */
+"use server";
 
 import { GoogleGenAI } from "@google/genai";
+
 
 const AI_PROMPTS = {
   enhanceVision: (vision: string, language: "en" | "th") => {
@@ -85,9 +87,9 @@ export async function enhanceVision(
   }
 
   try {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
-      console.error("NEXT_PUBLIC_GEMINI_API_KEY not found");
+      console.error("GOOGLE_GENERATIVE_AI_API_KEY not found");
       return { success: false, error: "AI service not configured" };
     }
 
@@ -126,9 +128,9 @@ export async function generateMilestones(
   }
 
   try {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
-      console.error("NEXT_PUBLIC_GEMINI_API_KEY not found");
+      console.error("GOOGLE_GENERATIVE_AI_API_KEY not found");
       return { success: false, error: "AI service not configured" };
     }
 

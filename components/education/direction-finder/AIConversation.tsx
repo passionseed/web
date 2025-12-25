@@ -121,7 +121,7 @@ export function AIConversation({
 
   // Initial greeting if no history
   useEffect(() => {
-    if (!history && !hasStartedRef.current) {
+    if ((!history || history.length === 0) && !hasStartedRef.current) {
       hasStartedRef.current = true;
       handleAIResponse(
         [
