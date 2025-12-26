@@ -103,8 +103,14 @@ export const translations = {
       },
       q5: {
         title: "Flow State Memory",
-        subtitle: "Describe the last time you were so absorbed you lost track of time",
-        activity_label: "What were you doing?",
+        subtitle: "Choose a question that helps you remember your flow state:",
+        prompts: [
+          "Describe the last time you were so absorbed you lost track of time",
+          "What activity would you do for free, just because you love it?",
+          "What topic could you research for 3 hours without getting bored?",
+          "What was the most fun project you've ever worked on?",
+        ],
+        activity_label: "Your Answer:",
         activity_placeholder: "e.g. Editing a video for my friend's birthday...",
         factors_label: "What made it engaging? (Pick top 2)",
         factors: {
@@ -379,8 +385,14 @@ export const translations = {
       },
       q5: {
         title: "ช่วงเวลา Flow State",
-        subtitle: "เล่าถึงครั้งล่าสุดที่คุณจดจ่อกับอะไรบางอย่างจนลืมเวลา",
-        activity_label: "ตอนนั้นคุณกำลังทำอะไร?",
+        subtitle: "เลือกคำถามที่ช่วยให้คุณนึกถึงช่วงเวลาที่ 'อิน' ที่สุด:",
+        prompts: [
+          "เล่าถึงครั้งล่าสุดที่คุณจดจ่อกับอะไรบางอย่างจนลืมเวลา",
+          "กิจกรรมอะไรที่คุณยอมทำให้ฟรีๆ เพียงเพราะคุณรักมัน?",
+          "หัวข้ออะไรที่คุณค้นคว้าได้เป็นชั่วโมงๆ โดยไม่รู้สึกเบื่อ?",
+          "โปรเจกต์ไหนที่คุณทำแล้วสนุกที่สุดเท่าที่เคยทำมา?",
+        ],
+        activity_label: "คำตอบของคุณ:",
         activity_placeholder: "เช่น ตัดต่อวิดีโอวันเกิดให้เพื่อน...",
         factors_label: "ทำไมถึงรู้สึกอิน? (เลือก 2 ข้อ)",
         factors: {

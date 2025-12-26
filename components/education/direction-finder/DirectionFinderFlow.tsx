@@ -572,10 +572,10 @@ function DirectionFinderFlowContent({
                   <SelectValue placeholder="Select AI Model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="google/gemini-3-flash-preview">
+                  <SelectItem value="google/gemini-2.5-flash">
                     Gemini 3 Flash
                   </SelectItem>
-                  <SelectItem value="google/gemini-2.5-flash-lite">
+                  <SelectItem value="google/gemini-2.5-flash">
                     Gemini 2.5 Flash Lite
                   </SelectItem>
                   <SelectItem value="deepseek-v3">DeepSeek V3</SelectItem>

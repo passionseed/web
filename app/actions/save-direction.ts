@@ -6,7 +6,7 @@ import { summarizeConversation } from "@/lib/ai/education-advisor";
 
 export async function saveDirectionFinderResult(
   answers: AssessmentAnswers,
-  result: DirectionFinderResult,
+  result: DirectionFinderResult | null,
   chatHistory?: Message[],
   id?: string
 ) {

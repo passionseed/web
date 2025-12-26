@@ -19,7 +19,7 @@ const google = createGoogleGenerativeAI({
 export const maxDuration = 60;
 
 function getModel(modelName?: string) {
-  if (!modelName) return google("gemini-3-flash-preview");
+  if (!modelName) return google("gemini-2.5-flash");
 
   if (modelName.includes('deepseek')) {
     // Basic mapping based on user request names
@@ -28,11 +28,11 @@ function getModel(modelName?: string) {
   }
 
   // Handle specific google models if provided with prefix or just name
-  if (modelName.includes('lite')) return google('gemini-2.0-flash-lite-preview-02-05'); // Using preview for now as 2.5 lite might not be standard yet or use closest
+  // if (modelName.includes('lite')) return google('gemini-2.0-flash-lite-preview-02-05'); // Using preview for now as 2.5 lite might not be standard yet or use closest
 
-  if (modelName === 'google/gemini-2.5-flash-lite') return google('gemini-2.0-flash-lite-preview-02-05'); // fallback
+  // if (modelName === 'google/gemini-2.5-flash-lite') return google('gemini-2.0-flash-lite-preview-02-05'); // fallback
 
-  return google("gemini-3-flash-preview");
+  return google("gemini-2.5-flash");
 }
 
 export async function summarizeConversation(
@@ -52,7 +52,7 @@ export async function summarizeConversation(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-3-flash-preview"), // Use fast model for summary
+      model: google("gemini-2.5-flash"), // Use fast model for summary
       schema: z.object({ summary: z.string() }),
       prompt,
     });
@@ -96,7 +96,7 @@ export async function recommendUniversities(
     `;
 
     const { object } = await generateObject({
-      model: google("gemini-3-flash-preview"),
+      model: google("gemini-2.5-flash"),
       schema: z.object({
         recommendations: z.array(
           z.object({

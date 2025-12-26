@@ -22,6 +22,7 @@ import {
   Mountain,
   Heart,
   Zap,
+  Shuffle,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -97,6 +98,7 @@ export function CoreAssessment({
   const [localAnswers, setLocalAnswers] =
     useState<Partial<AssessmentAnswers>>(answers);
   const [customSkill, setCustomSkill] = useState("");
+  const [q5PromptIndex, setQ5PromptIndex] = useState(0);
 
   const addCustomSkill = () => {
     const selectedSkills = localAnswers.q6_strongest_skills || [];
@@ -448,7 +450,7 @@ export function CoreAssessment({
     return (
       <QuestionWrapper
         title={t.questions.q4.title}
-        subtitle={t.questions.q4.subtitle}
+        subtitle={`${t.questions.q4.subtitle} (${selections.length}/5)`}
         canProceed={selections.length > 0}
         onBack={onBack}
         onNext={onNext}
@@ -465,7 +467,9 @@ export function CoreAssessment({
                   "p-4 rounded-lg border cursor-pointer transition-all flex flex-col gap-3",
                   selection
                     ? "bg-slate-800 border-blue-500"
-                    : "bg-slate-900 border-slate-800 hover:border-slate-600"
+                    : selections.length >= 5
+                      ? "opacity-50 cursor-not-allowed bg-slate-900 border-slate-800"
+                      : "bg-slate-900 border-slate-800 hover:border-slate-600"
                 )}
               >
                 <div className="flex items-center justify-between">
@@ -570,19 +574,47 @@ export function CoreAssessment({
         nextLabel={t.common.next}
       >
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Label>{t.questions.q5.activity_label}</Label>
-            <Textarea
-              value={flowData.activity}
-              onChange={(e) =>
-                updateAnswer("q5_flow_state", {
-                  ...flowData,
-                  activity: e.target.value,
-                })
-              }
-              placeholder={t.questions.q5.activity_placeholder}
-              className="bg-slate-800 border-slate-700"
-            />
+          <div className="space-y-4">
+            <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <Label className="text-base text-slate-200">
+                    {(t.questions.q5 as any).prompts
+                      ? (t.questions.q5 as any).prompts[q5PromptIndex]
+                      : t.questions.q5.subtitle}
+                  </Label>
+                </div>
+                {(t.questions.q5 as any).prompts &&
+                  (t.questions.q5 as any).prompts.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setQ5PromptIndex(
+                          (prev) =>
+                            (prev + 1) % (t.questions.q5 as any).prompts.length
+                        )
+                      }
+                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-400/10 shrink-0"
+                    >
+                      <Shuffle className="w-4 h-4 mr-2" />
+                      {t.common.skip || "Switch"}
+                    </Button>
+                  )}
+              </div>
+
+              <Textarea
+                value={flowData.activity}
+                onChange={(e) =>
+                  updateAnswer("q5_flow_state", {
+                    ...flowData,
+                    activity: e.target.value,
+                  })
+                }
+                placeholder={t.questions.q5.activity_placeholder}
+                className="bg-slate-900 border-slate-800 min-h-[100px]"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label>{t.questions.q5.factors_label}</Label>
