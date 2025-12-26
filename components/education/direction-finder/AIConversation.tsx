@@ -56,6 +56,7 @@ export function AIConversation({
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   // const [isGeneratingProfile, setIsGeneratingProfile] = useState(false); // Deprecated for loadingStage
+  const [showIntro, setShowIntro] = useState(!history || history.length === 0);
   const [loadingStage, setLoadingStage] = useState<"none" | "core" | "details">(
     "none"
   );
@@ -120,7 +121,10 @@ export function AIConversation({
   }, [messages, onHistoryChange]);
 
   // Initial greeting if no history
-  useEffect(() => {
+
+  // Handle intro start
+  const handleStartChat = () => {
+    setShowIntro(false);
     if ((!history || history.length === 0) && !hasStartedRef.current) {
       hasStartedRef.current = true;
       handleAIResponse(
@@ -130,7 +134,7 @@ export function AIConversation({
         true
       );
     }
-  }, []);
+  };
 
   const simulateTyping = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
@@ -271,7 +275,38 @@ export function AIConversation({
             <p className="text-xs text-slate-400">{t.ai_chat.subtitle}</p>
           </div>
         </div>
-        {messages.length > 4 && (
+        <div className="flex items-center gap-3">
+          {messages.filter((m) => m.role === "user").length < 6 &&
+            !showIntro && (
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                  Analysis Progress
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                      style={{
+                        width: `${Math.min(100, (messages.filter((m) => m.role === "user").length / 6) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs text-blue-400 font-bold">
+                    {Math.round(
+                      Math.min(
+                        100,
+                        (messages.filter((m) => m.role === "user").length / 6) *
+                          100
+                      )
+                    )}
+                    %
+                  </span>
+                </div>
+              </div>
+            )}
+        </div>
+
+        {messages.filter((m) => m.role === "user").length >= 6 && (
           <Button
             onClick={handleFinish}
             disabled={loadingStage !== "none" || isTyping}
@@ -293,191 +328,255 @@ export function AIConversation({
         )}
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-          <div className="space-y-4 pb-4">
-            {messages.map((msg, index) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"} group relative`}
-              >
-                {msg.role === "assistant" && (
-                  <Avatar className="w-8 h-8 border border-slate-700 shrink-0">
+      {showIntro ? (
+        <CardContent className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-900/50">
+          <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
+            <div className="bg-gradient-to-br from-purple-500 to-blue-600 w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <Bot className="w-8 h-8 text-white" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">
+                {lang === "th" ? "คุยกับพี่ Seed AI" : "Chat with Seed AI"}
+              </h3>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                {lang === "th"
+                  ? "ผมจะช่วยวิเคราะห์สิ่งที่คุณชอบ ค้นหาจุดแข็ง และแนะนำคณะที่ใช่สำหรับคุณ ลองคุยกันดูนะครับ!"
+                  : "I'll help analyze your interests, find your strengths, and recommend the best faculties for you. Let's chat!"}
+              </p>
+            </div>
+
+            <div className="grid gap-3 text-left">
+              <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50 flex gap-3 items-start">
+                <span className="bg-blue-500/10 text-blue-400 p-1 rounded">
+                  1
+                </span>
+                <span className="text-xs text-slate-300">
+                  {lang === "th"
+                    ? "ตอบคำถามสั้นๆ เกี่ยวกับตัวคุณ"
+                    : "Answer short questions about yourself"}
+                </span>
+              </div>
+              <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50 flex gap-3 items-start">
+                <span className="bg-purple-500/10 text-purple-400 p-1 rounded">
+                  2
+                </span>
+                <span className="text-xs text-slate-300">
+                  {lang === "th"
+                    ? "ค้นหาจุดแข็งและสิ่งที่เหมาะกับคุณ"
+                    : "Discover your strengths and best fits"}
+                </span>
+              </div>
+              <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50 flex gap-3 items-start">
+                <span className="bg-green-500/10 text-green-400 p-1 rounded">
+                  3
+                </span>
+                <span className="text-xs text-slate-300">
+                  {lang === "th"
+                    ? "รับคำแนะนำเส้นทางที่ใช่สำหรับคุณ"
+                    : "Get personalized pathway recommendations"}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleStartChat}
+              className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base shadow-lg shadow-blue-900/20"
+            >
+              {lang === "th" ? "เริ่มคุยเลย" : "Start Chatting"}
+            </Button>
+          </div>
+        </CardContent>
+      ) : (
+        <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+            <div className="space-y-4 pb-4">
+              {messages.map((msg, index) => (
+                <div
+                  key={msg.id}
+                  className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"} group relative`}
+                >
+                  {msg.role === "assistant" && (
+                    <Avatar className="w-8 h-8 border border-slate-700 shrink-0">
+                      <AvatarFallback className="bg-slate-800 text-purple-400">
+                        AI
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+
+                  <div
+                    className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed relative ${
+                      msg.role === "user"
+                        ? "bg-blue-600 text-white rounded-tr-none"
+                        : "bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700"
+                    }`}
+                  >
+                    {editingId === msg.id ? (
+                      <div className="min-w-[200px]">
+                        <Textarea
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="bg-blue-700/50 border-blue-400/30 text-white min-h-[60px] text-sm mb-2 focus-visible:ring-offset-0"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={cancelEditing}
+                            className="h-6 text-xs hover:bg-white/10 text-white/70 hover:text-white"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => saveEdit(msg.id)}
+                            className="h-6 text-xs bg-white text-blue-600 hover:bg-blue-50"
+                          >
+                            Save & Regenerate
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className="prose prose-invert prose-sm max-w-none [&>p]:m-0 [&>p]:leading-relaxed"
+                          dangerouslySetInnerHTML={{
+                            __html: marked.parse(msg.content) as string,
+                          }}
+                        />
+                        {/* Edit Button for User Messages */}
+                        {msg.role === "user" && !isTyping && (
+                          <button
+                            onClick={() => startEditing(msg)}
+                            className="absolute -left-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-slate-800 rounded-full text-slate-500 hover:text-white"
+                            title="Edit message"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {msg.role === "user" && (
+                    <Avatar className="w-8 h-8 border border-slate-700 shrink-0">
+                      <AvatarFallback className="bg-slate-800 text-blue-400">
+                        Me
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              ))}
+
+              {isTyping && (
+                <div className="flex gap-3">
+                  <Avatar className="w-8 h-8 border border-slate-700">
                     <AvatarFallback className="bg-slate-800 text-purple-400">
                       AI
                     </AvatarFallback>
                   </Avatar>
-                )}
-
-                <div
-                  className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed relative ${
-                    msg.role === "user"
-                      ? "bg-blue-600 text-white rounded-tr-none"
-                      : "bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700"
-                  }`}
-                >
-                  {editingId === msg.id ? (
-                    <div className="min-w-[200px]">
-                      <Textarea
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        className="bg-blue-700/50 border-blue-400/30 text-white min-h-[60px] text-sm mb-2 focus-visible:ring-offset-0"
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={cancelEditing}
-                          className="h-6 text-xs hover:bg-white/10 text-white/70 hover:text-white"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => saveEdit(msg.id)}
-                          className="h-6 text-xs bg-white text-blue-600 hover:bg-blue-50"
-                        >
-                          Save & Regenerate
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        className="prose prose-invert prose-sm max-w-none [&>p]:m-0 [&>p]:leading-relaxed"
-                        dangerouslySetInnerHTML={{
-                          __html: marked.parse(msg.content) as string,
-                        }}
-                      />
-                      {/* Edit Button for User Messages */}
-                      {msg.role === "user" && !isTyping && (
-                        <button
-                          onClick={() => startEditing(msg)}
-                          className="absolute -left-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-slate-800 rounded-full text-slate-500 hover:text-white"
-                          title="Edit message"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {msg.role === "user" && (
-                  <Avatar className="w-8 h-8 border border-slate-700 shrink-0">
-                    <AvatarFallback className="bg-slate-800 text-blue-400">
-                      Me
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            ))}
-
-            {isTyping && (
-              <div className="flex gap-3">
-                <Avatar className="w-8 h-8 border border-slate-700">
-                  <AvatarFallback className="bg-slate-800 text-purple-400">
-                    AI
-                  </AvatarFallback>
-                </Avatar>
-                <div className="bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-700 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" />
-                  <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce delay-100" />
-                  <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce delay-200" />
-                </div>
-              </div>
-            )}
-
-            {!isTyping &&
-              messages.length > 0 &&
-              messages[messages.length - 1].role === "assistant" && (
-                <div className="flex justify-start pl-11">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      // Regenerate last response
-                      const lastUserMsgIndex = messages.findLastIndex(
-                        (m) => m.role === "user"
-                      );
-                      if (lastUserMsgIndex !== -1) {
-                        // Keep history up to and including the last user message
-                        const partialHistory = messages.slice(
-                          0,
-                          lastUserMsgIndex + 1
-                        );
-                        setMessages(partialHistory);
-                        // Trigger AI response based on this history
-                        const apiHistory = partialHistory.map((m) => ({
-                          role: m.role,
-                          content: m.content,
-                        }));
-                        handleAIResponse(apiHistory);
-                      } else {
-                        // No user messages found (initial greeting case)
-                        setMessages([]);
-                        handleAIResponse([
-                          { role: "user", content: "Start conversation" },
-                        ]);
-                      }
-                    }}
-                    className="text-xs text-slate-500 hover:text-slate-300 h-6 px-2"
-                  >
-                    <RefreshCw className="w-3 h-3 mr-1" /> Regenerate
-                  </Button>
+                  <div className="bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-700 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" />
+                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce delay-100" />
+                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce delay-200" />
+                  </div>
                 </div>
               )}
 
-            {/* Options Buttons */}
-            {!isTyping && currentOptions.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2 pl-11">
-                {currentOptions.map((option, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSend(option)}
-                    className="px-4 py-2 bg-slate-800 hover:bg-blue-600/20 border border-slate-600 hover:border-blue-500 text-slate-200 hover:text-blue-200 text-sm rounded-full transition-all text-left animate-in fade-in slide-in-from-bottom-2 duration-300"
-                    style={{ animationDelay: `${idx * 100}ms` }}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+              {!isTyping &&
+                messages.length > 0 &&
+                messages[messages.length - 1].role === "assistant" && (
+                  <div className="flex justify-start pl-11">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        // Regenerate last response
+                        const lastUserMsgIndex = messages.findLastIndex(
+                          (m) => m.role === "user"
+                        );
+                        if (lastUserMsgIndex !== -1) {
+                          // Keep history up to and including the last user message
+                          const partialHistory = messages.slice(
+                            0,
+                            lastUserMsgIndex + 1
+                          );
+                          setMessages(partialHistory);
+                          // Trigger AI response based on this history
+                          const apiHistory = partialHistory.map((m) => ({
+                            role: m.role,
+                            content: m.content,
+                          }));
+                          handleAIResponse(apiHistory);
+                        } else {
+                          // No user messages found (initial greeting case)
+                          setMessages([]);
+                          handleAIResponse([
+                            { role: "user", content: "Start conversation" },
+                          ]);
+                        }
+                      }}
+                      className="text-xs text-slate-500 hover:text-slate-300 h-6 px-2"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" /> Regenerate
+                    </Button>
+                  </div>
+                )}
 
-        <div className="p-4 border-t border-slate-800 bg-slate-900/50 backdrop-blur-sm">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend(input);
-            }}
-            className="flex gap-2"
-          >
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={t.ai_chat.input_placeholder}
-              className="bg-slate-800 border-slate-700 focus-visible:ring-blue-500 min-h-[44px] max-h-[120px] resize-none py-3"
-              disabled={loadingStage !== "none" || isTyping}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(input);
-                }
+              {/* Options Buttons */}
+              {!isTyping && currentOptions.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2 pl-11">
+                  {currentOptions.map((option, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setInput(option);
+                        // Focus the textarea - tricky with React controlled components sometimes,
+                        // checking next render usually works but simplest is just setting state
+                      }}
+                      className="px-4 py-2 bg-slate-800 hover:bg-blue-600/20 border border-slate-600 hover:border-blue-500 text-slate-200 hover:text-blue-200 text-sm rounded-full transition-all text-left animate-in fade-in slide-in-from-bottom-2 duration-300"
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+          <div className="p-4 border-t border-slate-800 bg-slate-900/50 backdrop-blur-sm">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSend(input);
               }}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={!input.trim() || isTyping || loadingStage !== "none"}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="flex gap-2"
             >
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
-        </div>
-      </CardContent>
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={t.ai_chat.input_placeholder}
+                className="bg-slate-800 border-slate-700 focus-visible:ring-blue-500 min-h-[44px] max-h-[120px] resize-none py-3"
+                disabled={loadingStage !== "none" || isTyping}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(input);
+                  }
+                }}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={!input.trim() || isTyping || loadingStage !== "none"}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+          </div>
+        </CardContent>
+      )}
 
       {/* Dev Debug View */}
       {process.env.NODE_ENV === "development" && (
@@ -517,14 +616,19 @@ export function AIConversation({
                 View Result Logic:
               </strong>
               <div className="text-gray-400">
-                Messages: {messages.length} / 5 (Required)
+                User Messages:{" "}
+                {messages.filter((m) => m.role === "user").length} / 6
+                (Required)
                 <br />
                 Typing: {isTyping ? "Yes" : "No"}
                 <br />
                 Generating: {loadingStage !== "none" ? "Yes" : "No"}
                 <br />
                 <strong>
-                  Result: {messages.length > 4 ? "VISIBLE" : "HIDDEN"}
+                  Result:{" "}
+                  {messages.filter((m) => m.role === "user").length >= 6
+                    ? "VISIBLE"
+                    : "HIDDEN"}
                 </strong>
               </div>
             </div>
