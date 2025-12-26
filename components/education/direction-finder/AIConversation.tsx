@@ -251,7 +251,7 @@ export function AIConversation({
   return (
     <Card
       className={cn(
-        "h-[600px] flex flex-col bg-slate-900 border-slate-700",
+        "h-[600px] flex flex-col bg-slate-900 border-slate-700 relative overflow-hidden",
         className
       )}
     >
@@ -640,6 +640,49 @@ export function AIConversation({
             </div>
           </div>
         </details>
+      )}
+      {/* Loading Overlay */}
+      {loadingStage !== "none" && (
+        <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 space-y-8 animate-in fade-in duration-500">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-full border-4 border-slate-800" />
+            <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-t-transparent border-r-transparent border-b-transparent border-l-blue-500 animate-spin" />
+            <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-t-purple-500 border-r-transparent border-b-transparent border-l-transparent animate-spin delay-150 duration-1000" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Bot className="w-8 h-8 text-white animate-pulse" />
+            </div>
+          </div>
+
+          <div className="text-center space-y-3 max-w-xs">
+            <h3 className="text-xl font-bold text-white animate-pulse">
+              {loadingStage === "core"
+                ? lang === "th"
+                  ? "กำลังวิเคราะห์ตัวตนของคุณ..."
+                  : "Analyzing your unique profile..."
+                : lang === "th"
+                  ? "กำลังคัดเลือกคณะที่ใช่..."
+                  : "Curating your personalized programs..."}
+            </h3>
+            <p className="text-slate-400 text-sm">
+              {loadingStage === "core"
+                ? lang === "th"
+                  ? "พี่ Seed AI กำลังประมวลผลคำตอบของคุณ"
+                  : "Connecting the dots from our chat"
+                : lang === "th"
+                  ? "กำลังหาข้อมูลคณะและมหาวิทยาลัยที่เหมาะกับคุณ"
+                  : "Matching you with top universities"}
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <div
+              className={`h-1.5 rounded-full transition-all duration-500 ${loadingStage === "core" ? "w-12 bg-blue-500" : "w-4 bg-blue-500/30"}`}
+            />
+            <div
+              className={`h-1.5 rounded-full transition-all duration-500 ${loadingStage === "details" ? "w-12 bg-purple-500" : "w-4 bg-purple-500/30"}`}
+            />
+          </div>
+        </div>
       )}
     </Card>
   );
