@@ -55,15 +55,22 @@ export default async function ProjectDetailPage({
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <Button
-          variant="ghost"
-          className="mb-4 pl-0 hover:pl-2 transition-all"
-          asChild
-        >
-          <Link href="/ps/projects">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
-          </Link>
-        </Button>
+        <div className="flex justify-between items-center mb-4">
+          <Button
+            variant="ghost"
+            className="pl-0 hover:pl-2 transition-all"
+            asChild
+          >
+            <Link href="/ps/projects">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/ps/projects/${project.id}/feedback`}>
+              Feedback Hub
+            </Link>
+          </Button>
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-4">
