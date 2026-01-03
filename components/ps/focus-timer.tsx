@@ -1,42 +1,40 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { PSTask, createFocusSession, updateTaskStatus } from "@/actions/ps";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Square, CheckCircle, Timer } from "lucide-react";
-import { createFocusSession } from "@/actions/ps";
+import { Play, Pause, Square, CheckCircle, Timer, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface FocusTimerProps {
-  taskId: string;
-  taskTitle: string;
+  tasks: PSTask[];
   onSessionSaved?: () => void;
   initialDuration?: number;
 }
 
 export function FocusTimer({
-  taskId,
-  taskTitle,
+  tasks,
   onSessionSaved,
   initialDuration = 25,
 }: FocusTimerProps) {
-  const [mode, setMode] = useState<"setup" | "running" | "paused" | "finished">(
+  const [mode, setMode] = useState<"setup" | "running" | "paused" | "timesup" | "finished">(
     "setup"
   );
   const [duration, setDuration] = useState(initialDuration); // minutes
   const [timeLeft, setTimeLeft] = useState(initialDuration * 60); // seconds
   const [notes, setNotes] = useState("");
+  const [completedInSession, setCompletedInSession] = useState<Set<string>>(new Set());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     // Initialize audio
-    audioRef.current = new Audio("/sounds/alarm.mp3"); // Ensure this exists or use a robust fallback/online url
-    // Alternatively, just visual alert if no sound file
+    audioRef.current = new Audio("/sounds/alarm.mp3");
   }, []);
 
   useEffect(() => {
@@ -44,7 +42,7 @@ export function FocusTimer({
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            handleTimerComplete();
+            handleTimesUp();
             return 0;
           }
           return prev - 1;
@@ -59,18 +57,16 @@ export function FocusTimer({
     };
   }, [mode]);
 
+  const handleTimesUp = () => {
+    setMode("timesup");
+    if (timerRef.current) clearInterval(timerRef.current);
+    // Play sound
+    // try { audioRef.current?.play(); } catch (e) { }
+  };
+
   const handleTimerComplete = () => {
     setMode("finished");
     if (timerRef.current) clearInterval(timerRef.current);
-    // Play sound
-    // try { audioRef.current?.play(); } catch (e) { console.error("Audio play failed", e); }
-    // Since we don't have the file guaranteed, let's rely on toast
-    toast({
-      title: "Focus Time Complete!",
-      description: "Great job! Take a break and review what you accomplished.",
-      duration: 10000,
-    });
-    // System notification could optionally be added here
   };
 
   const startTimer = () => {
@@ -92,18 +88,51 @@ export function FocusTimer({
     setTimeLeft(duration * 60);
   };
 
+  const addFocusTime = (minutes: number) => {
+    setDuration(prev => prev + minutes);
+    setTimeLeft(minutes * 60);
+    setMode("running");
+  };
+
+  const toggleTaskCompletion = (taskId: string) => {
+    setCompletedInSession(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const actualMinutes = Math.max(1, Math.round((duration * 60 - timeLeft) / 60));
+
   const handleSaveSession = async () => {
     try {
-      await createFocusSession(taskId, duration, notes);
+      // Determine which tasks to mark as done
+      // Logic: If user manually selected some tasks, only mark those. 
+      // If user selected NONE, mark ALL (assuming implicit completion of session goal).
+      const tasksToMarkDone = completedInSession.size > 0
+        ? tasks.filter(t => completedInSession.has(t.id))
+        : tasks;
+
+      // Save session for all tasks (focus time applies to all focused tasks regardless of completion)
+      // Mark selected tasks as done
+      await Promise.all([
+        ...tasks.map(task => createFocusSession(task.id, actualMinutes, notes)),
+        ...tasksToMarkDone.map(task => updateTaskStatus(task.id, "done", task.project_id))
+      ]);
+
       toast({
         title: "Session Saved",
-        description: "Your focus session has been recorded.",
+        description: `Focus session recorded. ${tasksToMarkDone.length} tasks marked done.`,
       });
       if (onSessionSaved) onSessionSaved();
     } catch (error) {
@@ -121,7 +150,23 @@ export function FocusTimer({
         <div className="space-y-2 text-center">
           <Timer className="w-12 h-12 mx-auto text-primary" />
           <h3 className="text-lg font-medium">Start Focus Session</h3>
-          <p className="text-sm text-muted-foreground">Task: {taskTitle}</p>
+
+          <div className="text-sm text-muted-foreground w-full">
+            Focusing on:
+            <div className="bg-muted/50 p-2 rounded-md mt-2 max-h-48 overflow-y-auto text-left space-y-1">
+              {tasks.map((t) => {
+                return (
+                  <div
+                    key={t.id}
+                    className="font-medium truncate text-sm p-2 rounded flex items-center gap-2 transition-all hover:bg-muted/80"
+                  >
+                    <div className="w-4 h-4 rounded-full border border-muted-foreground flex items-center justify-center shrink-0" />
+                    {t.goal}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -156,13 +201,34 @@ export function FocusTimer({
     );
   }
 
+  if (mode === "timesup") {
+    return (
+      <div className="space-y-8 py-8 text-center">
+        <div className="space-y-2">
+          <Timer className="w-16 h-16 mx-auto text-orange-500 animate-pulse" />
+          <h3 className="text-2xl font-bold">Focus time's up!</h3>
+          <p className="text-muted-foreground">Great work staying focused.</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Button variant="outline" size="lg" onClick={() => addFocusTime(5)}>
+            <Play className="mr-2 h-4 w-4" /> Add 5 min
+          </Button>
+          <Button size="lg" onClick={handleTimerComplete}>
+            Take a Break
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (mode === "finished") {
     return (
       <div className="space-y-4 py-4">
         <div className="text-center space-y-2">
           <CheckCircle className="w-16 h-16 mx-auto text-green-500" />
           <h3 className="text-xl font-bold">Session Complete!</h3>
-          <p className="text-muted-foreground">{duration} minutes of focus.</p>
+          <p className="text-muted-foreground">{actualMinutes} minutes focused ({duration}m planned).</p>
         </div>
 
         <div className="space-y-2">
@@ -188,9 +254,28 @@ export function FocusTimer({
         {formatTime(timeLeft)}
       </div>
 
-      <div className="text-center">
-        <p className="text-sm text-muted-foreground mb-1">Focusing on:</p>
-        <p className="font-medium">{taskTitle}</p>
+      <div className="text-center w-full max-w-sm px-4">
+        <p className="text-sm text-muted-foreground mb-2">Focusing on {tasks.length} tasks (tap to complete):</p>
+        <div className="bg-muted/30 p-4 rounded-lg space-y-2 max-h-48 overflow-y-auto">
+          {tasks.map((t) => {
+            const isMarkedDone = completedInSession.has(t.id);
+            return (
+              <div
+                key={t.id}
+                className={`
+                        font-medium truncate text-sm p-2 rounded cursor-pointer transition-all flex items-center gap-2
+                        ${isMarkedDone ? 'bg-green-500/10 text-muted-foreground line-through decoration-green-500 decoration-2' : 'hover:bg-muted/50'}
+                    `}
+                onClick={() => toggleTaskCompletion(t.id)}
+              >
+                <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isMarkedDone ? 'bg-green-500 border-green-500' : 'border-muted-foreground'}`}>
+                  {isMarkedDone && <Check className="w-3 h-3 text-white" />}
+                </div>
+                {t.goal}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -216,11 +301,10 @@ export function FocusTimer({
 
         <Button
           size="icon"
-          variant="destructive"
-          className="h-12 w-12 rounded-full"
-          onClick={stopTimer}
+          className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600 text-white"
+          onClick={handleTimerComplete}
         >
-          <Square className="h-6 w-6 fill-current" />
+          <Check className="h-6 w-6" />
         </Button>
       </div>
     </div>

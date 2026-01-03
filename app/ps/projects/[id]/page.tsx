@@ -52,71 +52,117 @@ export default async function ProjectDetailPage({
   const progressPercent =
     totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
+  // Parse theme color
+  const theme = project.theme_color as any;
+  const headerStyle = theme ? {
+    background: theme.bg,
+    color: theme.labelStyle?.color || 'white'
+  } : {
+    background: 'linear-gradient(to right, #1f2937, #111827)'
+  };
+
+  const accentColor = theme?.labelStyle?.borderColor || '#3b82f6'; // default blue-500
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <Button
-            variant="ghost"
-            className="pl-0 hover:pl-2 transition-all"
-            asChild
-          >
-            <Link href="/ps/projects">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href={`/ps/projects/${project.id}/feedback`}>
-              Feedback Hub
-            </Link>
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          className="mb-4 pl-0 hover:pl-2 transition-all"
+          asChild
+        >
+          <Link href="/ps/projects">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
+          </Link>
+        </Button>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight">
-              {project.name}
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              {project.description}
-            </p>
-            {project.goal && (
-              <div className="bg-muted/30 p-4 rounded-lg border">
-                <h3 className="font-semibold mb-1">Goal</h3>
-                <p>{project.goal}</p>
-              </div>
-            )}
-            {project.why && (
-              <div className="bg-muted/30 p-4 rounded-lg border">
-                <h3 className="font-semibold mb-1">Why</h3>
-                <p>{project.why}</p>
-              </div>
-            )}
-          </div>
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+            <div className="space-y-4 max-w-2xl">
+              {project.spotify_track_name && (
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-sm font-medium border border-white/20">
+                  <span className="opacity-70">Theme Song:</span>
+                  <span>{project.spotify_track_name}</span>
+                  {project.spotify_artist_name && <span className="opacity-70">• {project.spotify_artist_name}</span>}
+                </div>
+              )}
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight font-handwriting">
+                {project.name}
+              </h1>
+              <p className="text-xl opacity-90 leading-relaxed max-w-xl">
+                {project.description}
+              </p>
+            </div>
 
-          <div className="lg:col-span-1">
-            <div className="bg-card border rounded-lg p-6 shadow-sm">
-              <h3 className="font-semibold text-lg mb-4">Progress</h3>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground">Completion</span>
-                <span className="font-bold">{progressPercent}%</span>
+            {/* Progress Circle or Indicator in Header */}
+            <div className="flex flex-col items-end gap-2 shrink-0 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20">
+              <span className="text-sm font-medium opacity-80">Project Progress</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-bold">{progressPercent}%</span>
               </div>
-              <div className="w-full bg-secondary h-2.5 rounded-full overflow-hidden">
+              <div className="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
                 <div
-                  className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
+                  className="h-full bg-white transition-all duration-1000 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                {completedTasks} of {totalTasks} tasks completed
-              </div>
+              <span className="text-xs opacity-70 mt-1">{completedTasks} of {totalTasks} tasks done</span>
             </div>
           </div>
         </div>
+
+        {/* Decorative elements */}
+        <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
       </div>
 
-      <div className="border-t pt-8">
-        <TaskList tasks={project.ps_tasks} projectId={project.id} />
+      <div className="container mx-auto py-12 px-4 space-y-12">
+        {/* Context Grid */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {project.goal && (
+            <div
+              className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all hover:shadow-md"
+            >
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 text-primary" style={{ color: accentColor }}>
+                <span>🎯</span> Goal
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {project.goal}
+              </p>
+            </div>
+          )}
+
+          {project.why && (
+            <div
+              className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all hover:shadow-md"
+            >
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 text-primary" style={{ color: accentColor }}>
+                <span>🌱</span> Why
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {project.why}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Tasks Section */}
+        <div className="space-y-6">
+
+
+          <div className="bg-muted/10 rounded-xl p-1">
+            <TaskList tasks={project.ps_tasks} projectId={project.id} themeColor={theme} />
+          </div>
+        </div>
       </div>
     </div>
   );
