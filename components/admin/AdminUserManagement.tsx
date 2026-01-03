@@ -126,6 +126,8 @@ export function AdminUserManagement({
         return "outline";
       case "beta-tester":
         return "default";
+      case "passion-seed-team":
+        return "default";
       default:
         return "outline";
     }
@@ -143,6 +145,8 @@ export function AdminUserManagement({
         return "student";
       case "beta-tester":
         return "beta";
+      case "passion-seed-team":
+        return "Passion Seed Team";
       default:
         return role;
     }
@@ -212,6 +216,7 @@ export function AdminUserManagement({
                   <SelectItem value="TA">Moderator</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="beta-tester">Beta Tester</SelectItem>
+                  <SelectItem value="passion-seed-team">Passion Seed Team</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -261,7 +266,12 @@ export function AdminUserManagement({
                           <Badge
                             key={index}
                             variant={getRoleBadgeVariant(roleData.role)}
-                            className={`text-xs capitalize ${roleData.role === "beta-tester" ? "bg-purple-500 hover:bg-purple-600 border-none text-white" : ""}`}
+                            className={`text-xs capitalize ${roleData.role === "beta-tester"
+                                ? "bg-purple-500 hover:bg-purple-600 border-none text-white"
+                                : roleData.role === "passion-seed-team"
+                                  ? "bg-rose-500 hover:bg-rose-600 border-none text-white"
+                                  : ""
+                              }`}
                           >
                             {getRoleDisplayName(roleData.role)}
                           </Badge>

@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!["student", "TA", "instructor", "admin", "beta-tester"].includes(role)) {
+    if (!["student", "TA", "instructor", "admin", "beta-tester", "passion-seed-team"].includes(role)) {
       return NextResponse.json(
         { error: "Invalid role" },
         { status: 400 }
