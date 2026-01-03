@@ -11,6 +11,7 @@ export interface VinylColorScheme {
   labelStyle: {
     background: string;
     borderColor: string;
+    color?: string;
   };
 }
 
@@ -56,7 +57,7 @@ export const extractColorsFromImage = (coverImage: string): Promise<ColorInfo[]>
           const alpha = data[i + 3];
 
           if (alpha > 128) {
-            const key = `${Math.floor(r/10)*10},${Math.floor(g/10)*10},${Math.floor(b/10)*10}`;
+            const key = `${Math.floor(r / 10) * 10},${Math.floor(g / 10) * 10},${Math.floor(b / 10) * 10}`;
             colorMap.set(key, (colorMap.get(key) || 0) + 1);
           }
         }
@@ -102,9 +103,9 @@ export const getVinylColorsFromCover = async (coverImage: string): Promise<Vinyl
     const colors = await extractColorsFromImage(coverImage);
 
     const fallbackColors = [
-      { r: 100, g: 100, b: 100 },
-      { r: 60, g: 60, b: 60 },
-      { r: 30, g: 30, b: 30 }
+      { r: 100, g: 100, b: 100, luminance: 100 },
+      { r: 60, g: 60, b: 60, luminance: 60 },
+      { r: 30, g: 30, b: 30, luminance: 30 }
     ];
 
     const selectedColors = colors.length >= 3 ? colors : fallbackColors;
@@ -118,12 +119,18 @@ export const getVinylColorsFromCover = async (coverImage: string): Promise<Vinyl
     const brightColor = selectedColors[selectedColors.length - 1];
     const grooveColor = `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.6)`;
 
+    // Calculate text color based on luminance (bright background -> dark text, dark background -> light text)
+    // Default luminance threshold is 128
+    const labelLuminance = brightColor.luminance ?? (0.299 * brightColor.r + 0.587 * brightColor.g + 0.114 * brightColor.b);
+    const textColor = labelLuminance > 140 ? "#171717" : "#ffffff"; // Using 140 for slightly better contrast preference
+
     return {
       bg,
       grooveStyle: { borderColor: grooveColor },
       labelStyle: {
-        background: `linear-gradient(135deg, rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.8), rgba(${Math.max(0, brightColor.r-50)}, ${Math.max(0, brightColor.g-50)}, ${Math.max(0, brightColor.b-50)}, 0.9))`,
-        borderColor: `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.7)`
+        background: `linear-gradient(135deg, rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.8), rgba(${Math.max(0, brightColor.r - 50)}, ${Math.max(0, brightColor.g - 50)}, ${Math.max(0, brightColor.b - 50)}, 0.9))`,
+        borderColor: `rgba(${brightColor.r}, ${brightColor.g}, ${brightColor.b}, 0.7)`,
+        color: textColor
       }
     };
   } catch (error) {
@@ -133,7 +140,8 @@ export const getVinylColorsFromCover = async (coverImage: string): Promise<Vinyl
       grooveStyle: { borderColor: 'rgba(156, 163, 175, 0.6)' },
       labelStyle: {
         background: 'linear-gradient(135deg, #991b1b, #7f1d1d)',
-        borderColor: '#b91c1c'
+        borderColor: '#b91c1c',
+        color: '#ffffff'
       }
     };
   }
