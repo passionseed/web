@@ -1,15 +1,25 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { checkClientAuth } from "@/lib/supabase/auth-client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 
 export function MainNav() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hasBuildAccess, setHasBuildAccess] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      const { hasRole } = await checkClientAuth("passion-seed-team");
+      setHasBuildAccess(!!hasRole);
+    };
+    checkAccess();
+  }, []);
 
   const handleSeedsClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -83,6 +93,15 @@ export function MainNav() {
               >
                 Seeds
               </a>
+              {hasBuildAccess && (
+                <Link
+                  href="/build"
+                  className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Build
+                </Link>
+              )}
             </nav>
           </SheetContent>
         </Sheet>
@@ -139,6 +158,14 @@ export function MainNav() {
         >
           Seeds
         </a>
+        {hasBuildAccess && (
+          <Link
+            href="/build"
+            className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+          >
+            Build
+          </Link>
+        )}
       </nav>
       {/* Mobile nav */}
       {/* The mobile nav is now handled by the Sheet component */}
