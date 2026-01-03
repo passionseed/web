@@ -131,10 +131,10 @@ export function BadgeDetailModal({
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent
-                    className="max-w-2xl border-2 border-yellow-500/50 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-900/20 p-0 overflow-hidden"
+                    className="max-w-2xl max-h-[90vh] border-2 border-yellow-500/50 bg-gradient-to-br from-neutral-900 via-neutral-900 to-yellow-900/20 p-0 overflow-hidden flex flex-col"
                     onPointerDownOutside={(e) => e.preventDefault()}
                 >
-                    <div className="p-8">
+                    <div className="p-8 overflow-y-auto custom-scrollbar">
                         <DialogHeader className="mb-6">
                             <motion.div
                                 initial={{ opacity: 0, y: -20 }}

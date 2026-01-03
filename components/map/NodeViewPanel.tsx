@@ -41,11 +41,18 @@ import {
   getUserClassroomRoleClient,
 } from "@/lib/supabase/maps";
 
+import {
+  claimNode,
+  getNodeClaimStatus,
+  adminUnclaimNode,
+} from "@/app/actions/team-actions";
+
 interface NodeViewPanelProps {
   // React Flow Node requires a generic that extends Record<string, unknown>
   // MapNode doesn't include an index signature, so intersect with Record to satisfy the constraint
   selectedNode: Node<Record<string, unknown> & MapNode> | null;
   mapId: string;
+  seedRoomId?: string; // Added for team functionality
   onProgressUpdate?: () => void;
   isNodeUnlocked?: boolean;
   userRole?: "instructor" | "TA" | "student" | "admin";
@@ -60,6 +67,7 @@ interface SubmissionWithGrade {
 export function NodeViewPanel({
   selectedNode,
   mapId,
+  seedRoomId,
   onProgressUpdate,
   isNodeUnlocked = true,
   userRole = "student",
@@ -78,7 +86,39 @@ export function NodeViewPanel({
   const [isTeamMap, setIsTeamMap] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [classroomRole, setClassroomRole] = useState<string | null>(null);
+  const [claimStatus, setClaimStatus] = useState<{
+    claimed: boolean;
+    isMe: boolean;
+    claimant: any;
+  } | null>(null);
   const { toast } = useToast();
+
+  // Load claim status for team assignments
+  useEffect(() => {
+    console.log('[NodeViewPanel useEffect] Checking claim status...', {
+      hasTeamGroupId: !!selectedNode?.data.team_group_id,
+      hasSeedRoomId: !!seedRoomId,
+      nodeId: selectedNode?.id
+    });
+
+    if (selectedNode?.data.team_group_id && seedRoomId) {
+      // Reset status while loading
+      console.log('[NodeViewPanel useEffect] Fetching claim status for team node...');
+      setClaimStatus(null);
+      getNodeClaimStatus(seedRoomId, selectedNode.id)
+        .then((status) => {
+          console.log('[NodeViewPanel useEffect] Received claim status:', status);
+          setClaimStatus(status);
+        })
+        .catch((err) => {
+          console.error("[NodeViewPanel useEffect] Failed to load claim status", err);
+          setClaimStatus(null);
+        });
+    } else {
+      console.log('[NodeViewPanel useEffect] Not a team node or no seedRoomId, clearing claim status');
+      setClaimStatus(null);
+    }
+  }, [selectedNode?.id, seedRoomId]);
 
   const nodeData = selectedNode?.data;
   const [editableNodeData, setEditableNodeData] = useState<MapNode | null>(
@@ -794,6 +834,146 @@ export function NodeViewPanel({
     return <NoNodeSelectedView />;
   }
 
+  // Team Assignment Logic Gates
+  const handleClaim = async () => {
+    console.log('[CLIENT handleClaim] Starting claim process...', { seedRoomId, selectedNodeId: selectedNode?.id });
+
+    if (!seedRoomId || !selectedNode) {
+      console.log('[CLIENT handleClaim] Missing required data:', { seedRoomId, hasSelectedNode: !!selectedNode });
+      return;
+    }
+
+    try {
+      console.log('[CLIENT handleClaim] Calling claimNode server action...');
+      await claimNode(seedRoomId, selectedNode.id);
+
+      console.log('[CLIENT handleClaim] Fetching updated claim status...');
+      const status = await getNodeClaimStatus(seedRoomId, selectedNode.id);
+      setClaimStatus(status);
+
+      console.log('[CLIENT handleClaim] Success!', status);
+      toast({ title: "Role Claimed!", description: "You are now assigned to this part." });
+    } catch (err: any) {
+      console.error('[CLIENT handleClaim] Error:', err);
+      toast({
+        title: "Claim Failed",
+        description: err.message || "Could not claim node.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUnassign = async () => {
+    if (!seedRoomId || !selectedNode || !claimStatus?.claimant) return;
+    try {
+      await adminUnclaimNode(seedRoomId, selectedNode.id, claimStatus.claimant.user_id); // Assuming we have user_id in claimant object from action
+      // Refetch
+      const status = await getNodeClaimStatus(seedRoomId, selectedNode.id);
+      setClaimStatus(status);
+      toast({ title: "Unassigned", description: "Role is now free." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+
+
+  // Debug: Log team node status
+  useEffect(() => {
+    if (selectedNode) {
+      console.log('[NodeViewPanel] Selected node debug:', {
+        nodeId: selectedNode.id,
+        nodeTitle: selectedNode.data.node_title,
+        hasTeamGroupId: !!selectedNode.data.team_group_id,
+        teamGroupId: selectedNode.data.team_group_id,
+        teamRoleName: selectedNode.data.team_role_name,
+        hasSeedRoomId: !!seedRoomId,
+        seedRoomId: seedRoomId,
+        claimStatus: claimStatus
+      });
+    }
+  }, [selectedNode, seedRoomId, claimStatus]);
+
+  if (selectedNode.data.team_group_id && seedRoomId) {
+    // 1. Loading state for claim check? 
+    // If we assume claimStatus is null means loading OR not claimed, we might flash.
+    // Ideally we track loadingClaimStatus. For now assuming null = unclaimed or loading.
+    // But we need to know if we fetched it. check effect dependency.
+
+    // If Unclaimed
+    if (claimStatus && !claimStatus.claimed) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4 animate-in fade-in">
+          <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
+            <CheckSquare className="w-8 h-8 text-blue-500" />
+          </div>
+          <h2 className="text-2xl font-bold">Team Assignment</h2>
+          <p className="text-muted-foreground max-w-sm">
+            This task is part of a team effort. To work on it, you must claim this role.
+          </p>
+
+          {selectedNode.data.team_role_image_url && (
+            <div className="w-full max-w-sm mb-2 aspect-video relative rounded-lg overflow-hidden bg-muted border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedNode.data.team_role_image_url}
+                alt="Role"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          <div className="bg-muted p-4 rounded-lg border w-full max-w-sm">
+            <p className="font-semibold text-sm mb-1">Role: {selectedNode.data.team_role_name || "Team Member"}</p>
+            <p className="text-xs text-muted-foreground">Once claimed, only you can submit work for this part.</p>
+          </div>
+          <Button onClick={handleClaim} size="lg" className="w-full max-w-sm">
+            Claim This Role
+          </Button>
+        </div>
+      );
+    }
+
+    // If Claimed by Other
+    if (claimStatus && claimStatus.claimed && !claimStatus.isMe) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4 animate-in fade-in">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+            <Lock className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-red-500">Locked</h2>
+          <p className="text-muted-foreground">
+            This part is assigned to another team member.
+          </p>
+
+          {claimStatus.claimant && (
+            <div className="flex items-center gap-3 bg-card border p-3 rounded-xl shadow-sm mt-4">
+              <img
+                src={claimStatus.claimant.avatar_url || "https://github.com/shadcn.png"}
+                alt="Avatar"
+                className="w-10 h-10 rounded-full bg-muted"
+              />
+              <div className="text-left">
+                <p className="font-bold text-sm">{claimStatus.claimant.full_name || claimStatus.claimant.username || "Unknown"}</p>
+                <p className="text-xs text-muted-foreground">Assigned Team Member</p>
+              </div>
+            </div>
+          )}
+
+          {/* Admin/Host Override */}
+          {(userRole === 'instructor' || userRole === 'admin') && (
+            <div className="mt-8 pt-8 border-t w-full max-w-sm">
+              <p className="text-xs text-muted-foreground mb-2">Instructor Actions</p>
+              <Button variant="destructive" variant="outline" onClick={handleUnassign} className="w-full">
+                Unassign User (Force)
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+  }
+
   // Render team-specific components for team maps
   if (isTeamMap) {
     const isInstructorOrTAForTeam =
@@ -1125,8 +1305,8 @@ export function NodeViewPanel({
           <div className="p-8 text-center flex flex-col justify-center min-h-full">
             <div
               className={`w-20 h-20 mx-auto ${isNodeUnlocked
-                  ? "bg-gradient-to-br from-blue-100 to-blue-200"
-                  : "bg-gradient-to-br from-gray-100 to-gray-200"
+                ? "bg-gradient-to-br from-blue-100 to-blue-200"
+                : "bg-gradient-to-br from-gray-100 to-gray-200"
                 } rounded-full flex items-center justify-center mb-6`}
             >
               {isNodeUnlocked ? (

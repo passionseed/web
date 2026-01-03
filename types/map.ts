@@ -71,6 +71,11 @@ export interface MapNode {
   node_assessments?: NodeAssessment[]; // Changed from 'assessment' to 'node_assessments' and made it an array
   node_paths_source?: NodePath[]; // Added missing relation
   node_paths_destination?: NodePath[]; // Added missing relation
+
+  // Teamwork Assignment Fields
+  team_group_id?: string; // If set, this node is part of a team assignment
+  team_role_name?: string; // Name of the role (e.g. "Front-end Dev") where team_group_id matches and node_id is unique per role
+  team_role_image_url?: string; // Optional image for the role
 }
 
 export interface TeamMap {

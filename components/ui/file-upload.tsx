@@ -145,6 +145,7 @@ export function FileUpload({
     },
     [accept, maxSize]
   );
+
   // Helper to compress PDF before upload
   const compressPDF = useCallback(
     async (file: File): Promise<File> => {
@@ -175,7 +176,6 @@ export function FileUpload({
         });
 
         // Save with compression (lossless object stream optimization)
-        // Save with compression
         const compressedBytes = await pdfDoc.save({
           useObjectStreams: true,
           addDefaultPage: false,
@@ -235,6 +235,102 @@ export function FileUpload({
           variant: "default",
         });
         // Return original file if compression fails
+        return file;
+      }
+    },
+    [toast]
+  );
+
+  // Helper to compress Image before upload
+  const compressImage = useCallback(
+    async (file: File): Promise<File> => {
+      try {
+        console.log(`🖼️ Starting Image compression for: ${file.name}`);
+        console.log(`📦 Original size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+
+        setUploadProgress({
+          stage: "preparing",
+          percentage: 10,
+          message: "Compressing Image...",
+        });
+
+        // Create an image element to load the file
+        const img = document.createElement("img");
+        const objectUrl = URL.createObjectURL(file);
+
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = objectUrl;
+        });
+
+        // Calculate new dimensions (max 1920px width/height)
+        const MAX_DIMENSION = 1920;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIMENSION) / width);
+            width = MAX_DIMENSION;
+          } else {
+            width = Math.round((width * MAX_DIMENSION) / height);
+            height = MAX_DIMENSION;
+          }
+        }
+
+        // Create canvas and draw image
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) throw new Error("Could not get canvas context");
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to blob (JPEG with 0.8 quality)
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, "image/jpeg", 0.8);
+        });
+
+        URL.revokeObjectURL(objectUrl);
+
+        if (!blob) throw new Error("Conversion to blob failed");
+
+        // Create new File object
+        const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        });
+
+        // Calculate compression stats
+        const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
+        const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2);
+        const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(1);
+
+        console.log(`✅ Image compression complete!`);
+        console.log(`   Original: ${originalSizeMB}MB`);
+        console.log(`   Compressed: ${compressedSizeMB}MB`);
+        console.log(`   Reduction: ${compressionRatio}%`);
+
+        setUploadProgress({
+          stage: "preparing",
+          percentage: 30,
+          message: "Image optimized!",
+        });
+
+        if (compressedFile.size < file.size) {
+          toast({
+            title: "Image Compressed",
+            description: `Reduced by ${compressionRatio}%`,
+          });
+          return compressedFile;
+        }
+
+        return file; // Return original if compression actually made it larger (unlikely for photos)
+      } catch (error) {
+        console.error("Image compression failed:", error);
         return file;
       }
     },
@@ -484,9 +580,13 @@ export function FileUpload({
         if (file.type === "application/pdf" && uploadEndpoint === "documents") {
           console.log("🗜️ Compressing PDF before upload...");
           fileToUpload = await compressPDF(file);
-          console.log("✅ Compression complete, uploading compressed file");
+          console.log("✅ PDF Compression complete");
+        } else if (file.type.startsWith("image/")) {
+          console.log("🗜️ Compressing Image before upload...");
+          fileToUpload = await compressImage(file);
+          console.log("✅ Image Compression complete");
         } else {
-          console.log("⏭️ Skipping compression (not a document PDF)");
+          console.log("⏭️ Skipping compression");
         }
 
         // For large files, use chunked upload to bypass Vercel's 4MB limit
@@ -845,11 +945,10 @@ export function FileUpload({
         {/* Upload progress */}
         {(isUploading || hasError) && (
           <div
-            className={`p-6 border-2 rounded-lg ${
-              hasError
-                ? "border-red-300 bg-red-50"
-                : "border-blue-300 bg-blue-50"
-            }`}
+            className={`p-6 border-2 rounded-lg ${hasError
+              ? "border-red-300 bg-red-50"
+              : "border-blue-300 bg-blue-50"
+              }`}
           >
             <div className="flex items-center gap-3 mb-4">
               {hasError ? (
@@ -859,9 +958,8 @@ export function FileUpload({
               )}
               <div className="flex-1">
                 <p
-                  className={`text-sm font-medium ${
-                    hasError ? "text-red-900" : "text-blue-900"
-                  }`}
+                  className={`text-sm font-medium ${hasError ? "text-red-900" : "text-blue-900"
+                    }`}
                 >
                   {uploadProgress?.message}
                 </p>
@@ -920,36 +1018,32 @@ export function FileUpload({
           {/* Full upload interface when no files and not uploading */}
           {uploadedFiles.length === 0 && !isUploading && (
             <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
-                isDragging
-                  ? "border-blue-400 bg-blue-50"
-                  : disabled
-                    ? "border-gray-200 bg-gray-50"
-                    : "border-gray-300 hover:border-gray-400 cursor-pointer"
-              }`}
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${isDragging
+                ? "border-blue-400 bg-blue-50"
+                : disabled
+                  ? "border-gray-200 bg-gray-50"
+                  : "border-gray-300 hover:border-gray-400 cursor-pointer"
+                }`}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onClick={() => !disabled && fileInputRef.current?.click()}
             >
               <Upload
-                className={`h-8 w-8 mx-auto mb-4 ${
-                  disabled ? "text-gray-400" : "text-gray-500"
-                }`}
+                className={`h-8 w-8 mx-auto mb-4 ${disabled ? "text-gray-400" : "text-gray-500"
+                  }`}
               />
 
               <div className="space-y-2">
                 <p
-                  className={`text-sm font-medium ${
-                    disabled ? "text-gray-400" : "text-gray-700"
-                  }`}
+                  className={`text-sm font-medium ${disabled ? "text-gray-400" : "text-gray-700"
+                    }`}
                 >
                   {isDragging ? "Drop your file here" : "Upload your file"}
                 </p>
                 <p
-                  className={`text-xs ${
-                    disabled ? "text-gray-300" : "text-gray-500"
-                  }`}
+                  className={`text-xs ${disabled ? "text-gray-300" : "text-gray-500"
+                    }`}
                 >
                   Drag and drop or click to browse
                   <br />

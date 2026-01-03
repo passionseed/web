@@ -12,7 +12,7 @@ import {
   NodeAssessment,
   QuizQuestion,
 } from "@/types/map";
-import { Trash2, MapPin } from "lucide-react";
+import { Trash2, MapPin, Users, Copy } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,13 +30,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ContentEditor } from "./ContentEditor";
 import { AssessmentEditor } from "./AssessmentEditor";
 import { SpritePickerDialog } from "./SpritePickerDialog";
+import { FileUpload } from "@/components/ui/file-upload";
 import { updateNode } from "@/lib/supabase/nodes";
+import { createTeamPart } from "@/app/actions/team-actions";
 import { useToast } from "@/components/ui/use-toast";
 
 interface NodeEditorPanelProps {
-  selectedNode: Node<MapNode> | null;
+  selectedNode: Node<MapNode & Record<string, unknown>> | null;
   onNodeDataChange: (nodeId: string, data: Partial<MapNode>) => void;
   onNodeDelete?: (nodeId: string) => void;
+  onNodeAdd?: (node: MapNode) => void; // New callback
   onEditingStateChange?: (isEditing: boolean) => void;
   isSeedMap?: boolean; // NEW: Flag to indicate if this is a seed map
 }
@@ -46,6 +49,7 @@ export function NodeEditorPanel({
   onNodeDataChange,
   onNodeDelete,
   onEditingStateChange,
+  onNodeAdd,
   isSeedMap = false,
 }: NodeEditorPanelProps) {
   const { toast } = useToast();
@@ -358,6 +362,37 @@ export function NodeEditorPanel({
     }
   }, [selectedNode, onNodeDelete]);
 
+  // Handle adding a team part
+  const handleAddTeamPart = async () => {
+    if (!selectedNode || !onNodeAdd) return;
+    try {
+      const result = await createTeamPart(selectedNode.id);
+      if (result.success && result.node) {
+        toast({ title: "Team Part Created", description: "Created a linked node for team assignment." });
+        onNodeAdd(result.node);
+        // Also update current node to reflect team_group_id if it was just generated
+        if (result.node.team_group_id !== selectedNode.data.team_group_id) {
+          onNodeDataChange(selectedNode.id, { team_group_id: result.node.team_group_id });
+          setNodeData(prev => ({ ...prev, team_group_id: result.node.team_group_id }));
+        }
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleConvertToTeam = async () => {
+    // Generate a new group ID and set roles
+    if (!selectedNode) return;
+    const groupId = crypto.randomUUID();
+    const updates = { team_group_id: groupId, team_role_name: "Part 1" };
+    onNodeDataChange(selectedNode.id, updates);
+    setNodeData(prev => ({ ...prev, ...updates }));
+    await updateNode(selectedNode.id, updates);
+    toast({ title: "Team Mode Enabled", description: "This node is now a team assignment." });
+  };
+
+
   if (!selectedNode) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-muted/10">
@@ -450,6 +485,91 @@ export function NodeEditorPanel({
                   />
                 </div>
 
+                {/* Team Assignment Settings */}
+                {!isTextNode && (
+                  <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-500" />
+                      Team Assignment
+                    </Label>
+
+                    {!nodeData.team_group_id ? (
+                      <Button size="sm" variant="outline" className="w-full" onClick={handleConvertToTeam}>
+                        Enable Team Mode (Split Assignment)
+                      </Button>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="role_name" className="text-xs">Role Name (e.g. Researcher)</Label>
+                          <Input
+                            id="role_name"
+                            value={nodeData.team_role_name || ""}
+                            onChange={handleInputChange("team_role_name")}
+                            onBlur={(e) => {
+                              // Persist on blur
+                              if (selectedNode) updateNode(selectedNode.id, { team_role_name: e.target.value });
+                            }}
+                            className="h-8 text-xs"
+                            placeholder="Role Name"
+                          />
+                        </div>
+                        <div className="text-xs text-muted-foreground flex gap-2 items-center">
+                          <span>Group ID:</span>
+                          <code className="bg-muted px-1 rounded">{nodeData.team_group_id.slice(0, 8)}...</code>
+                        </div>
+                        {onNodeAdd && (
+                          <Button size="sm" variant="secondary" className="w-full h-8 text-xs" onClick={handleAddTeamPart}>
+                            <Copy className="w-3 h-3 mr-1" />
+                            Duplicate as Team Part
+                          </Button>
+                        )}
+
+                        <div className="space-y-2 pt-2 border-t">
+                          <Label className="text-xs">Role Image</Label>
+                          {nodeData.team_role_image_url ? (
+                            <div className="space-y-2">
+                              <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-muted">
+                                <img
+                                  src={nodeData.team_role_image_url}
+                                  alt="Role"
+                                  className="h-full w-full object-cover"
+                                />
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute right-2 top-2 h-6 w-6"
+                                  onClick={() => {
+                                    if (selectedNode) {
+                                      updateNode(selectedNode.id, { team_role_image_url: "" });
+                                      setNodeData(prev => ({ ...prev, team_role_image_url: "" }));
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <FileUpload
+                              nodeId={selectedNode.id}
+                              onUploadComplete={(url) => {
+                                if (selectedNode) {
+                                  updateNode(selectedNode.id, { team_role_image_url: url });
+                                  setNodeData(prev => ({ ...prev, team_role_image_url: url }));
+                                  toast({ title: "Image Uploaded", description: "Role image updated successfully." });
+                                }
+                              }}
+                              accept=".jpg,.jpeg,.png,.webp"
+                              uploadEndpoint="images"
+                              className="border-dashed"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Node Type Selector - Only show for seed maps or always show */}
                 {!isTextNode && (
                   <div className="space-y-2">
@@ -468,8 +588,6 @@ export function NodeEditorPanel({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="learning">🎯 Learning Node</option>
-                      <option value="text">📝 Text/Label</option>
-                      <option value="comment">💬 Comment</option>
                       <option value="end">🏁 End Node (Completion)</option>
                     </select>
                     <p className="text-xs text-muted-foreground">

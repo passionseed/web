@@ -110,7 +110,7 @@ export function BadgeGallery({ userId, showTitle = true, maxDisplay }: BadgeGall
             )}
 
             {/* Badge Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 mt-4">
                 {displayedBadges.map((badge, index) => (
                     <BadgeCard
                         key={badge.id}

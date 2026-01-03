@@ -242,9 +242,8 @@ const CustomNode = React.memo(
         />
 
         <div
-          className={`relative transition-transform duration-200 cursor-pointer ${
-            selected ? "scale-110" : ""
-          }`}
+          className={`relative transition-transform duration-200 cursor-pointer ${selected ? "scale-110" : ""
+            }`}
           onClick={handleClick}
         >
           {/* Selection indicator */}
@@ -257,16 +256,14 @@ const CustomNode = React.memo(
             src={spriteUrl}
             alt={data.title}
             loading="lazy" // Improve performance
-            className={`w-max h-max object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200 ${
-              selected ? "brightness-110 saturate-120" : "brightness-100"
-            }`}
+            className={`w-max h-max object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200 ${selected ? "brightness-110 saturate-120" : "brightness-100"
+              }`}
           />
 
           {/* Node label */}
           <div
-            className={`absolute -top-8 -right-10 transform transition-all duration-200 ${
-              selected ? "scale-105" : ""
-            } group/label`}
+            className={`absolute -top-8 -right-10 transform transition-all duration-200 ${selected ? "scale-105" : ""
+              } group/label`}
           >
             <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 shadow-lg hover:shadow-xl transition-all duration-200 min-w-[80px] max-w-[180px]">
               <div className="text-xs font-bold text-card-foreground text-center break-words line-clamp-2 leading-snug">
@@ -375,11 +372,10 @@ const TextNode = React.memo(
 
     const containerClassName = `
     relative min-w-32 min-h-8 p-2 rounded-lg border-2 transition-all duration-200
-    ${
-      selected
+    ${selected
         ? "border-blue-400 bg-blue-50/80 shadow-lg scale-105"
         : "border-gray-200 bg-white/90 hover:bg-white shadow-sm"
-    }
+      }
     ${isEditing ? "border-blue-500 shadow-md" : ""}
     backdrop-blur-sm
   `.trim();
@@ -1225,7 +1221,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
       const groupHeight = maxY - minY;
       const distanceFromOriginal = Math.sqrt(
         Math.pow(basePastePosition.x - originalCenter.x, 2) +
-          Math.pow(basePastePosition.y - originalCenter.y, 2)
+        Math.pow(basePastePosition.y - originalCenter.y, 2)
       );
 
       // If pasting too close to original, add offset
@@ -2701,7 +2697,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 if (dragStartPos) {
                   const distance = Math.sqrt(
                     Math.pow(event.clientX - dragStartPos.x, 2) +
-                      Math.pow(event.clientY - dragStartPos.y, 2)
+                    Math.pow(event.clientY - dragStartPos.y, 2)
                   );
                   setDragDistance(distance);
                   // Only log drag distance at key thresholds to avoid spam
@@ -2851,8 +2847,30 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 <NodeEditorPanel
                   selectedNode={getSelectedNode()}
                   onNodeDataChange={handleNodeDataChange}
-                  onNodeDelete={handleDeleteNode}
-                  onEditingStateChange={setIsEditingNode}
+                  onNodeDelete={(nodeId) => {
+                    onNodesDelete([{ id: nodeId } as Node]);
+                  }}
+                  onEditingStateChange={(isEditing) => {
+                    // Optional: disable keyboard shortcuts while editing text inputs
+                  }}
+                  onNodeAdd={(newNode) => {
+                    const appNode: any = {
+                      id: newNode.id,
+                      position: (newNode.metadata as any)?.position || { x: 0, y: 0 },
+                      data: newNode,
+                      type: "default",
+                      draggable: true,
+                      connectable: true,
+                      selectable: true,
+                      selected: false,
+                      style: NODE_STYLE
+                    };
+                    setNodes((nds) => [...nds, appNode]);
+                    handleMapChange({
+                      ...map,
+                      map_nodes: [...map.map_nodes, newNode]
+                    });
+                  }}
                   isSeedMap={map.map_type === 'seed' || map.parent_seed_id != null}
                 />
               </div>
