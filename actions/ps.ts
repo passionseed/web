@@ -1,8 +1,10 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+
 import { revalidatePath } from "next/cache";
 import { UserRole } from "@/lib/supabase/auth-client";
+import { VinylColorScheme } from "@/utils/color-extraction";
 
 // Types
 export interface PSProject {
@@ -14,6 +16,13 @@ export interface PSProject {
     created_by: string;
     created_at: string;
     updated_at: string;
+    // Spotify Integration
+    spotify_track_id?: string | null;
+    spotify_track_name?: string | null;
+    spotify_artist_name?: string | null;
+    spotify_album_cover_url?: string | null;
+    theme_color?: any | null; // using any for jsonb to avoid strict typing issues for now
+    preview_url?: string | null;
 }
 
 export interface PSTask {
@@ -80,6 +89,23 @@ export async function createProject(formData: FormData) {
     const goal = formData.get("goal") as string;
     const why = formData.get("why") as string;
 
+    // Spotify fields
+    const spotifyTrackId = formData.get("spotify_track_id") as string;
+    const spotifyTrackName = formData.get("spotify_track_name") as string;
+    const spotifyArtistName = formData.get("spotify_artist_name") as string;
+    const spotifyAlbumCoverUrl = formData.get("spotify_album_cover_url") as string;
+    const previewUrl = formData.get("preview_url") as string;
+
+    let themeColor = null;
+    const themeColorStr = formData.get("theme_color") as string;
+    if (themeColorStr) {
+        try {
+            themeColor = JSON.parse(themeColorStr);
+        } catch (e) {
+            console.error("Failed to parse theme color", e);
+        }
+    }
+
     const supabase = await createClient();
     const { error } = await supabase.from("ps_projects").insert({
         name,
@@ -87,6 +113,12 @@ export async function createProject(formData: FormData) {
         goal,
         why,
         created_by: userId,
+        spotify_track_id: spotifyTrackId || null,
+        spotify_track_name: spotifyTrackName || null,
+        spotify_artist_name: spotifyArtistName || null,
+        spotify_album_cover_url: spotifyAlbumCoverUrl || null,
+        preview_url: previewUrl || null,
+        theme_color: themeColor,
     });
 
     if (error) throw error;
@@ -190,4 +222,53 @@ export async function createFocusSession(
 
     if (error) throw error;
     // May not need revalidate path immediately unless we show session history on the same page
+}
+// Leaderboard
+export async function getWeeklyLeaderboard() {
+    await checkPSRole();
+    const supabase = await createClient();
+
+    // Get start of the week (Monday)
+    const now = new Date();
+    const day = now.getDay(); // 0 (Sun) - 6 (Sat)
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const startOfWeek = new Date(now.setDate(diff));
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const { data: sessions, error } = await supabase
+        .from("ps_focus_sessions")
+        .select("user_id, duration_minutes")
+        .gte("created_at", startOfWeek.toISOString());
+
+    if (error) throw error;
+
+    // Aggregate by user
+    const userMap = new Map<string, number>();
+    sessions?.forEach((session) => {
+        const uid = session.user_id;
+        if (uid) {
+            userMap.set(uid, (userMap.get(uid) || 0) + session.duration_minutes);
+        }
+    });
+
+    if (userMap.size === 0) return [];
+
+    // Fetch profiles
+    const userIds = Array.from(userMap.keys());
+    const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, username, avatar_url")
+        .in("id", userIds);
+
+    if (profilesError) throw profilesError;
+
+    // Combine data
+    const leaderboard = profiles?.map(profile => ({
+        userId: profile.id,
+        name: profile.full_name || profile.username || "Unknown",
+        avatarUrl: profile.avatar_url,
+        totalMinutes: userMap.get(profile.id) || 0
+    })).sort((a, b) => b.totalMinutes - a.totalMinutes); // Sort descending
+
+    return leaderboard || [];
 }
