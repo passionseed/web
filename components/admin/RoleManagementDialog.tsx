@@ -32,6 +32,7 @@ import {
   Save,
   X,
   FlaskConical,
+  Sprout,
 } from "lucide-react";
 
 interface UserWithRoles {
@@ -61,25 +62,25 @@ const ASSIGNABLE_ROLES: {
   description: string;
   icon: any;
 }[] = [
-  {
-    role: "student",
-    label: "Student",
-    description: "Can access learning maps and participate in classrooms",
-    icon: BookOpen,
-  },
-  {
-    role: "TA",
-    label: "Moderator",
-    description: "Can assist in classrooms and help with grading",
-    icon: Users,
-  },
-  {
-    role: "instructor",
-    label: "Instructor",
-    description: "Can create and manage classrooms and assignments",
-    icon: GraduationCap,
-  },
-];
+    {
+      role: "student",
+      label: "Student",
+      description: "Can access learning maps and participate in classrooms",
+      icon: BookOpen,
+    },
+    {
+      role: "TA",
+      label: "Moderator",
+      description: "Can assist in classrooms and help with grading",
+      icon: Users,
+    },
+    {
+      role: "instructor",
+      label: "Instructor",
+      description: "Can create and manage classrooms and assignments",
+      icon: GraduationCap,
+    },
+  ];
 
 export function RoleManagementDialog({
   open,
@@ -125,6 +126,7 @@ export function RoleManagementDialog({
   );
   const primaryRole = assignableRoles.length > 0 ? assignableRoles[0].role : "";
   const isBetaTester = user.user_roles.some((r) => r.role === "beta-tester");
+  const isPassionSeedMember = user.user_roles.some((r) => r.role === "passion-seed-team");
 
   const handleRoleChange = async (newRole: UserRole) => {
     if (loading || !newRole) return;
@@ -219,6 +221,46 @@ export function RoleManagementDialog({
     }
   };
 
+  const handlePassionSeedStatusChange = async (enabled: boolean) => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/admin/users/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          role: "passion-seed-team",
+          action: enabled ? "add" : "remove",
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Passion Seed Team status ${enabled ? "enabled" : "disabled"} successfully`,
+        });
+        onRoleUpdated();
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update Passion Seed Team status");
+      }
+    } catch (error) {
+      console.error("Error updating Passion Seed Team status:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update Passion Seed Team status",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleProfileUpdate = async () => {
     if (loading) return;
 
@@ -287,7 +329,7 @@ export function RoleManagementDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
           {/* Current User Info */}
           <div className="p-4 border rounded-lg bg-muted/50">
             <div className="font-medium">
@@ -304,6 +346,7 @@ export function RoleManagementDialog({
                   className={`text-xs ${roleData.role === "beta-tester" ? "bg-purple-500 hover:bg-purple-600 border-none text-white" : ""}`}
                 >
                   {roleData.role === "TA" ? "moderator" : roleData.role}
+                  {roleData.role === "passion-seed-team" && " (Team)"}
                 </Badge>
               ))}
               {user.user_roles.length === 0 && (
@@ -449,11 +492,10 @@ export function RoleManagementDialog({
                   return (
                     <div
                       key={roleInfo.role}
-                      className={`p-3 border rounded-lg transition-colors ${
-                        isSelected
-                          ? "bg-primary/5 border-primary"
-                          : "bg-muted/20"
-                      }`}
+                      className={`p-3 border rounded-lg transition-colors ${isSelected
+                        ? "bg-primary/5 border-primary"
+                        : "bg-muted/20"
+                        }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Icon className="h-4 w-4 text-muted-foreground" />
@@ -493,6 +535,26 @@ export function RoleManagementDialog({
                   id="beta-access"
                   checked={isBetaTester}
                   onCheckedChange={handleBetaStatusChange}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Sprout className="h-4 w-4 text-rose-500" />
+                    <Label htmlFor="passion-seed" className="font-medium">
+                      Passion Seed Team
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Grants access to internal team features and administrative tools
+                  </p>
+                </div>
+                <Switch
+                  id="passion-seed"
+                  checked={isPassionSeedMember}
+                  onCheckedChange={handlePassionSeedStatusChange}
                   disabled={loading}
                 />
               </div>
