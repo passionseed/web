@@ -22,17 +22,17 @@ export function BadgeCard({ badge, onClick, delay = 0 }: BadgeCardProps) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay, type: "spring", duration: 0.5 }}
-            whileHover={{ scale: 1.05, y: -2 }}
+            whileHover={{ scale: 1.05 }}
             onClick={onClick}
-            className="relative group cursor-pointer"
+            className="relative group cursor-pointer pt-2"
         >
             {/* Card Container */}
-            <div className="relative p-3 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-800 border border-neutral-700 hover:border-yellow-500/50 transition-all duration-300 shadow-md hover:shadow-yellow-900/20">
+            <div className="relative p-4 pb-3 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-800 border border-neutral-700 hover:border-yellow-500/50 transition-all duration-300 shadow-md hover:shadow-yellow-900/20 overflow-hidden">
                 {/* Glow effect on hover */}
                 <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/0 to-orange-500/0 group-hover:from-yellow-500/5 group-hover:to-orange-500/5 rounded-xl transition-all duration-300" />
 
                 {/* Badge Display */}
-                <div className="relative flex flex-col items-center gap-2 mt-2">
+                <div className="relative flex flex-col items-center gap-2">
                     <BadgeTemplate
                         badgeData={badge.badge_data}
                         size="small"

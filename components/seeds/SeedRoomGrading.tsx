@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { gradeTeamSubmission } from "@/app/actions/team-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -300,6 +301,8 @@ export function SeedRoomGrading({ roomId, mapId }: SeedRoomGradingProps) {
     setGradebookMatrix(matrix);
   };
 
+  // ... (keep structure)
+
   const handleGradeSubmission = async (submissionId: string, grade: "pass" | "fail", points: number | null, comments: string) => {
     try {
       setGrading(true);
@@ -318,7 +321,22 @@ export function SeedRoomGrading({ roomId, mapId }: SeedRoomGradingProps) {
         }
       }
 
-      // Call grading API
+      // 1. Try Team Grading Action First
+      try {
+        const teamResult = await gradeTeamSubmission(submissionId, grade, comments, points);
+        if (teamResult.success && teamResult.team) {
+          toast.success(`Team Graded: Applied to ${teamResult.gradedCount} students.`);
+          loadGradingData();
+          setSelectedSubmission(null);
+          setShowGradingModal(false);
+          setGrading(false);
+          return;
+        }
+      } catch (err) {
+        console.log("Not a team submission or team grading failed, falling back to standard...", err);
+      }
+
+      // 2. Standard Grading API Fallback
       const response = await fetch(`/api/seeds/rooms/${roomId}/grading`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

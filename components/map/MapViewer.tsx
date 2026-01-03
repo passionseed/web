@@ -45,6 +45,7 @@ import {
   getUserTeamForMap,
 } from "@/lib/supabase/maps";
 import { getTeamProgressForInstructor } from "@/lib/supabase/team-progress";
+import { getAllSeedRoomClaims, getStudentLocationsInRoom } from "@/app/actions/team-actions";
 import {
   CheckCircle,
   Clock,
@@ -128,6 +129,8 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
   const [classroomRole, setClassroomRole] = useState<string | null>(null);
   const [isTeamMap, setIsTeamMap] = useState(false);
   const [teamId, setTeamId] = useState<string | null>(null);
+  const [teamClaims, setTeamClaims] = useState<Record<string, any>>({});
+  const [studentLocations, setStudentLocations] = useState<Record<string, any[]>>({});
   const reactFlowInstance = useReactFlow();
 
   // Seed completion state
@@ -423,18 +426,57 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
   useEffect(() => {
     if (currentUser) {
       loadAllProgress();
+
+      // Load team claims and locations if in a seed room
+      if (seedRoomId) {
+        const fetchData = async () => {
+          try {
+            const [claims, locations] = await Promise.all([
+              getAllSeedRoomClaims(seedRoomId),
+              getStudentLocationsInRoom(seedRoomId)
+            ]);
+            setTeamClaims(claims);
+            setStudentLocations(locations);
+          } catch (err) {
+            console.error("Error loading room data:", err);
+          }
+        };
+        fetchData();
+      }
+
       if (isInstructorOrTA) {
         loadAllSubmissions();
 
         // Set up periodic refresh for real-time updates (every 30 seconds)
         const interval = setInterval(() => {
           loadAllSubmissions();
+          if (seedRoomId) {
+            Promise.all([
+              getAllSeedRoomClaims(seedRoomId),
+              getStudentLocationsInRoom(seedRoomId)
+            ]).then(([claims, locations]) => {
+              setTeamClaims(claims);
+              setStudentLocations(locations);
+            });
+          }
         }, 30000);
 
         return () => clearInterval(interval);
+      } else if (seedRoomId) {
+        // For students, also refresh locations periodically
+        const interval = setInterval(() => {
+          Promise.all([
+            getAllSeedRoomClaims(seedRoomId),
+            getStudentLocationsInRoom(seedRoomId)
+          ]).then(([claims, locations]) => {
+            setTeamClaims(claims);
+            setStudentLocations(locations);
+          });
+        }, 10000); // More frequent updates for students (10s) to see movement
+        return () => clearInterval(interval);
       }
     }
-  }, [currentUser, map, isInstructorOrTA]);
+  }, [currentUser, map, isInstructorOrTA, seedRoomId]);
 
   // Check if map is a team map and get classroom role
   useEffect(() => {
@@ -711,6 +753,64 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
         }
       }
 
+      // Team Member Avatar Bubble (Assigned)
+      let claimAvatar = null;
+      if (teamClaims[data.id]) {
+        const claimant = teamClaims[data.id];
+        const initial = claimant.full_name ? claimant.full_name.charAt(0).toUpperCase() : "?";
+
+        claimAvatar = (
+          <div className="absolute -top-3 -right-3 z-50 animate-bounce-slow">
+            <div
+              className="relative rounded-full border-2 border-white shadow-lg overflow-hidden w-8 h-8 bg-blue-100 flex items-center justify-center"
+              title={`Assigned to: ${claimant.full_name || claimant.username}`}
+            >
+              {claimant.avatar_url ? (
+                <img src={claimant.avatar_url} alt={claimant.username} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-blue-800">{initial}</span>
+              )}
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-blue-500 rounded-full border border-white" title="Owner"></div>
+            </div>
+          </div>
+        );
+      }
+
+      // Visiting Students Avatars
+      // Show up to 3 visiting students, then +N count
+      let visitingAvatars = null;
+      if (studentLocations[data.id] && studentLocations[data.id].length > 0) {
+        const visitors = studentLocations[data.id].filter(p => !teamClaims[data.id] || p.id !== teamClaims[data.id].user_id); // Filter out owner if they are visiting their own node (optional, duplicate avatar check)
+
+        if (visitors.length > 0) {
+          visitingAvatars = (
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-40 flex -space-x-2 pointer-events-none">
+              {visitors.slice(0, 3).map((visitor: any, i: number) => (
+                <div
+                  key={visitor.id}
+                  className="relative w-6 h-6 rounded-full border border-white shadow-md overflow-hidden bg-slate-100 z-10 transition-transform hover:z-20 hover:scale-125"
+                  style={{ zIndex: 10 - i }}
+                  title={`Visiting: ${visitor.full_name || visitor.username}`}
+                >
+                  {visitor.avatar_url ? (
+                    <img src={visitor.avatar_url} alt={visitor.username} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-slate-600">
+                      {(visitor.full_name || visitor.username || "?").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {visitors.length > 3 && (
+                <div className="relative w-6 h-6 rounded-full border border-white shadow-md bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-600 z-0">
+                  +{visitors.length - 3}
+                </div>
+              )}
+            </div>
+          );
+        }
+      }
+
       return (
         <div className="relative inline-block group w-fit h-fit">
           {/* Connection handles - visible but non-interactive in viewer mode */}
@@ -786,6 +886,12 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
                 className={`absolute inset-0 ${glowEffect} rounded-full animate-pulse-slow`}
               />
             )}
+
+            {/* Assigned Member Avatar */}
+            {claimAvatar}
+
+            {/* Visiting Students Avatars */}
+            {visitingAvatars}
 
             {/* Grading Indicator for Instructors/TAs */}
             {gradingIndicator}
@@ -1300,6 +1406,7 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
                 key={selectedNode?.id || "no-selection"} // Force remount on node change
                 selectedNode={selectedNode}
                 mapId={map.id}
+                seedRoomId={seedRoomId} // Pass seedRoomId here
                 onProgressUpdate={loadAllProgress}
                 isNodeUnlocked={
                   selectedNode ? isNodeUnlocked(selectedNode.id) : true
