@@ -1,3 +1,4 @@
+import React from "react";
 import { cn } from "@/lib/utils";
 import { PSTask } from "@/actions/ps";
 
@@ -22,19 +23,34 @@ export function StatsPaper({
     .filter((t: any) => t.status !== "done")
     .slice(0, 5);
 
+  // Calculate dynamic translation height based on visible list items
+  const headingLines = 1; // "Side B: Tracks"
+  const visibleListItems = incompleteTasks.length + (tasks.length > 5 ? 1 : 0);
+
+  // Base 40px for 0-4 items. Add 20px per item above 4.
+  // Actually, the user said "0-4 tasks = translate 40px".
+  // So if visibleListItems <= 4, dist = 40.
+  // If 5 items, dist = 60.
+  // If 6 items (max 5 + 1 hidden msg), dist = 80.
+  const extraItems = Math.max(0, visibleListItems - 4);
+  const translateDist = 60 + extraItems * 24;
+
   return (
     <div
       className={cn(
         "bg-[#fdfbf6] shadow-sm border border-neutral-200/60 p-6 flex flex-col font-handwriting relative overflow-hidden transition-all duration-500 ease-out group/paper",
         variant === "integrated"
-          ? "absolute left-2 right-2 top-12 pt-[280px] pb-8 rounded-b-sm -z-10 origin-top shadow-md group-hover/cassette:translate-y-[40px] rotate-1 group-hover/cassette:rotate-0"
+          ? "absolute left-2 right-2 top-12 pt-[220px] pb-8 rounded-b-sm -z-10 origin-top shadow-md group-hover/cassette:translate-y-[var(--hover-translate)] rotate-1 group-hover/cassette:rotate-0 "
           : "w-full min-h-[600px] rounded-sm rotate-1 hover:rotate-0 shadow-md hover:shadow-lg",
         className
       )}
-      style={{
-        // Subtle texture pattern
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
-      }}
+      style={
+        {
+          // Subtle texture pattern
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
+          "--hover-translate": `${translateDist}px`,
+        } as React.CSSProperties
+      }
     >
       {/* Folded Corner Effect */}
       <div
@@ -45,7 +61,7 @@ export function StatsPaper({
       {/* Stats Section */}
       <div
         className={cn(
-          "flex flex-row justify-center items-center gap-4 transition-opacity duration-300 absolute inset-x-0 px-4 box-border",
+          "flex flex-row justify-center items-center gap-4 transition-opacity duration-300 absolute inset-x-0 px-4 bottom-10 box-border",
           variant === "integrated"
             ? "pt-[250px] group-hover/cassette:opacity-0"
             : "top-8 h-auto static opacity-100 mb-8"
@@ -80,9 +96,9 @@ export function StatsPaper({
       {/* Tasks List Section */}
       <div
         className={cn(
-          "flex flex-col transition-opacity duration-300 box-border w-full",
+          "flex flex-col transition-opacity duration-300 box-border w-full justify-end",
           variant === "integrated"
-            ? "absolute inset-0 p-6 pt-[240px] opacity-0 group-hover/cassette:opacity-100"
+            ? "absolute inset-0 p-5 opacity-0 group-hover/cassette:opacity-100"
             : "static opacity-100 pt-0 flex-1"
         )}
       >

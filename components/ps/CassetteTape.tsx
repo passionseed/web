@@ -177,11 +177,11 @@ export function CassetteTape({
         </div>
 
         {/* Play Button Overlay (Hover) */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cassette:opacity-100 transition-opacity bg-black/20 rounded-xl pointer-events-none">
+        {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cassette:opacity-100 transition-opacity bg-black/20 rounded-xl pointer-events-none">
           <div className="bg-primary text-primary-foreground p-3 rounded-full shadow-lg transform scale-90 group-hover/cassette:scale-110 transition-transform">
             <Play className="w-6 h-6 fill-current" />
           </div>
-        </div>
+        </div> */}
       </Link>
     </div>
   );

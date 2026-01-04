@@ -71,9 +71,17 @@ export function useTA() {
   return useAuth("TA");
 }
 
+
 /**
  * Hook for checking admin role
  */
 export function useAdmin() {
   return useAuth("admin");
+}
+
+/**
+ * Hook for checking passion-seed-team role
+ */
+export function usePassionSeedTeam() {
+  return useAuth("passion-seed-team");
 }
