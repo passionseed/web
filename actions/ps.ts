@@ -35,6 +35,7 @@ export interface PSTask {
     user_id: string | null;
     created_at: string;
     updated_at: string;
+    feedback_count?: number;
 }
 
 export interface PSFocusSession {
@@ -128,20 +129,34 @@ export async function createProject(formData: FormData) {
 export async function getProject(id: string) {
     await checkPSRole();
     const supabase = await createClient();
+    // We need to fetch tasks with their feedback links count
     const { data, error } = await supabase
         .from("ps_projects")
-        .select("*, ps_tasks(*)")
+        .select(`
+            *,
+            ps_tasks (
+                *,
+                ps_feedback_task_links (count)
+            )
+        `)
         .eq("id", id)
         .single();
 
     if (error) throw error;
+
     // Sort tasks manually or update query if needed
     if (data && data.ps_tasks) {
+        // Flatten count
+        data.ps_tasks = data.ps_tasks.map((t: any) => ({
+            ...t,
+            feedback_count: t.ps_feedback_task_links?.[0]?.count || 0
+        }));
+
         data.ps_tasks.sort((a: any, b: any) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
     }
-    return data as PSProject & { ps_tasks: PSTask[] };
+    return data as PSProject & { ps_tasks: (PSTask & { feedback_count?: number })[] };
 }
 
 // Tasks
@@ -151,19 +166,31 @@ export async function createTask(formData: FormData) {
     const goal = formData.get("goal") as string;
     const difficulty = parseInt(formData.get("difficulty") as string) || 1;
     const notes = formData.get("notes") as string;
+    const submissionId = formData.get("submissionId") as string;
 
     const supabase = await createClient();
-    const { error } = await supabase.from("ps_tasks").insert({
+    const { data: task, error } = await supabase.from("ps_tasks").insert({
         project_id: projectId,
         goal,
         difficulty,
         notes,
         user_id: userId,
         status: "todo",
-    });
+    }).select().single();
 
     if (error) throw error;
+
+    if (submissionId && task) {
+        await supabase.from("ps_feedback_task_links").insert({
+            submission_id: submissionId,
+            task_id: task.id
+        });
+    }
+
     revalidatePath(`/ps/projects/${projectId}`);
+    if (submissionId) {
+        revalidatePath(`/ps/projects/${projectId}/feedback`);
+    }
 }
 
 export async function updateTaskStatus(taskId: string, status: string, projectId: string) {
