@@ -74,6 +74,9 @@ export function TaskList({ tasks, projectId, themeColor }: TaskListProps) {
   const [newDifficulty, setNewDifficulty] = useState([1]);
   const [editDifficulty, setEditDifficulty] = useState([1]);
 
+  // State to track if we are over the drop zone to disable drop animation
+  const [isOverDropZone, setIsOverDropZone] = useState(false);
+
   const collectionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const currentOverIdRef = useRef<string | null>(null);
   const { toast } = useToast();
@@ -129,6 +132,7 @@ export function TaskList({ tasks, projectId, themeColor }: TaskListProps) {
     setActiveId(active.id as string);
     // Start collection with the dragged task
     setCollectedTaskIds(new Set([active.id as string]));
+    setIsOverDropZone(false);
   };
 
   const handleDragOver = (event: DragEndEvent) => {
@@ -139,12 +143,16 @@ export function TaskList({ tasks, projectId, themeColor }: TaskListProps) {
     if (!over) {
       if (collectionTimerRef.current) clearTimeout(collectionTimerRef.current);
       currentOverIdRef.current = null;
+      setIsOverDropZone(false);
       return;
     }
 
     // Optimization: prevent running logic if still over same item
     if (overId === currentOverIdRef.current) return;
     currentOverIdRef.current = overId || null;
+
+    // Update drop zone state
+    setIsOverDropZone(overId === "focus-drop-zone");
 
     // Clear any pending collection if we moved to something else
     if (collectionTimerRef.current) {
@@ -198,8 +206,6 @@ export function TaskList({ tasks, projectId, themeColor }: TaskListProps) {
     // Clear collection after drag ends
     setCollectedTaskIds(new Set());
   };
-
-
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -324,7 +330,7 @@ export function TaskList({ tasks, projectId, themeColor }: TaskListProps) {
 
         </div>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={isOverDropZone ? null : undefined}>
           {activeId ? (
             <div className="relative">
               {/* Render stack effect for collected items */}
