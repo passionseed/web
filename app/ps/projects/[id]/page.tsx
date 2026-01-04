@@ -67,76 +67,85 @@ export default async function ProjectDetailPage({
   const theme = project.theme_color as any;
   const bgStyle = theme
     ? {
-        background: `linear-gradient(to bottom, ${theme.bg} 0%, transparent 100%)`,
-      }
+      background: `linear-gradient(to bottom, ${theme.bg} 0%, transparent 100%)`,
+    }
     : {
-        background: "linear-gradient(to bottom, #1f2937 0%, transparent 100%)",
-      };
+      background: "linear-gradient(to bottom, #1f2937 0%, transparent 100%)",
+    };
   const accentColor = theme?.labelStyle?.borderColor || "#3b82f6";
 
   return (
-    <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
-      {/* Background Ambience */}
-      <div
-        className="absolute top-0 left-0 right-0 h-[600px] opacity-10 -z-10"
-        style={bgStyle}
-      />
+    <div className="container mx-auto py-8">
+      <div className="mb-8">
+        <Button
+          variant="ghost"
+          className="mb-4 pl-0 hover:pl-2 transition-all"
+          asChild
+        >
+          <Link href="/ps/projects">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
+          </Link>
+        </Button>
 
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-12">
-          <Button
-            variant="ghost"
-            className="pl-0 hover:pl-2 transition-all"
-            asChild
-          >
-            <Link href="/ps/projects">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
-            </Link>
-          </Button>
-          <ProjectGuide />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 mb-16 items-start">
-          {/* Left: Cassette & Context */}
-          <div className="space-y-12">
-            <div className="flex justify-center lg:justify-start">
-              <CassetteTape
-                project={project}
-                stats={completeStats}
-                hidePaper={true}
-              />
-            </div>
-
-            {/* Context Cards */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {project.goal && (
-                <div className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <svg
-                      className="w-16 h-16"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                  </div>
-                  <h3
-                    className="text-lg font-semibold mb-2 flex items-center gap-2 text-primary"
-                    style={{ color: accentColor }}
-                  >
-                    <span>🎯</span> Goal
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {project.goal}
-                  </p>
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+            <div className="space-y-4 max-w-2xl">
+              {project.spotify_track_name && (
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-sm font-medium border border-white/20">
+                  <span className="opacity-70">Theme Song:</span>
+                  <span>{project.spotify_track_name}</span>
+                  {project.spotify_artist_name && <span className="opacity-70">• {project.spotify_artist_name}</span>}
                 </div>
               )}
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight font-handwriting">
+                {project.name}
+              </h1>
+              <p className="text-xl opacity-90 leading-relaxed max-w-xl">
+                {project.description}
+              </p>
+            </div>
+
+            {/* Progress Circle or Indicator in Header */}
+            <div className="flex flex-col items-end gap-2 shrink-0 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20">
+              <span className="text-sm font-medium opacity-80">Project Progress</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-bold">{progressPercent}%</span>
+              </div>
+              <div className="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white transition-all duration-1000 ease-out"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <span className="text-xs opacity-70 mt-1">{completedTasks} of {totalTasks} tasks done</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Decorative elements */}
+        <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+      </div>
+
+      <div className="container mx-auto py-12 px-4 space-y-12">
+        {/* Context Grid */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {project.goal && (
+            <div
+              className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all hover:shadow-md"
+            >
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 text-primary" style={{ color: accentColor }}>
+                <span>🎯</span> Goal
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {project.goal}
+              </p>
+            </div>
+          )}
 
               {project.why && (
                 <div className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
@@ -169,19 +178,19 @@ export default async function ProjectDetailPage({
             </div>
           </div>
 
-          {/* Right: Stats Paper (Standalone) */}
-          <div className="lg:sticky lg:top-8 order-first lg:order-last">
-            <StatsPaper
-              stats={completeStats}
-              tasks={project.ps_tasks}
-              variant="standalone"
-              className="transform rotate-1 hover:rotate-0 transition-transform duration-300"
-            />
-          </div>
-        </div>
+          {/* Right: Stats Paper (Standalone) */ }
+  <div className="lg:sticky lg:top-8 order-first lg:order-last">
+    <StatsPaper
+      stats={completeStats}
+      tasks={project.ps_tasks}
+      variant="standalone"
+      className="transform rotate-1 hover:rotate-0 transition-transform duration-300"
+    />
+  </div>
+        </div >
 
-        {/* Tasks Section */}
-        <div className="space-y-6 max-w-5xl mx-auto lg:mx-0">
+    {/* Tasks Section */ }
+    < div className = "space-y-6 max-w-5xl mx-auto lg:mx-0" >
           <h3 className="text-2xl font-bold font-handwriting opacity-80 pl-2">
             Track List
           </h3>
@@ -192,8 +201,8 @@ export default async function ProjectDetailPage({
               themeColor={theme}
             />
           </div>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 }
