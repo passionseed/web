@@ -1,9 +1,9 @@
 import { getProjectsWithStats, createProject } from "@/actions/ps";
 import { CassetteTape } from "@/components/ps/CassetteTape";
-import { CreateProjectModal } from "@/components/ps/CreateProjectModal";
 import { redirect } from "next/navigation";
 import { getUserRolesClient } from "@/lib/supabase/auth-client";
 import { createClient } from "@/utils/supabase/server";
+import { DynamicCreateProjectModal } from "@/components/ps/DynamicCreateProjectModal";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
             Manage your passion projects and track progress.
           </p>
         </div>
-        <CreateProjectModal />
+        <DynamicCreateProjectModal />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
