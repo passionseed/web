@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS public.ps_feedback_task_links (
 );
 
 -- Triggers
+-- Triggers
+DROP TRIGGER IF EXISTS update_ps_feedback_forms_updated_at ON public.ps_feedback_forms;
 CREATE TRIGGER update_ps_feedback_forms_updated_at
     BEFORE UPDATE ON public.ps_feedback_forms
     FOR EACH ROW
@@ -76,10 +78,12 @@ ALTER TABLE public.ps_feedback_task_links ENABLE ROW LEVEL SECURITY;
 -- Public read access via token (TODO: Might need a function or separate logic, but simple READ is acceptable if ID is known? No, we filter by token usually)
 -- Actually, strict RLS: anon can read if they have the token? But typically we query by token.
 -- Let's allow public read for active forms to facilitate the public page.
+DROP POLICY IF EXISTS "Public read active forms" ON public.ps_feedback_forms;
 CREATE POLICY "Public read active forms" ON public.ps_feedback_forms
     FOR SELECT
     USING (is_active = true); -- Basic public access. We rely on the random token in URL for obscurity if needed, but 'public' implies public.
 
+DROP POLICY IF EXISTS "Team full access forms" ON public.ps_feedback_forms;
 CREATE POLICY "Team full access forms" ON public.ps_feedback_forms
     FOR ALL
     USING (
@@ -91,6 +95,7 @@ CREATE POLICY "Team full access forms" ON public.ps_feedback_forms
     );
 
 -- ps_form_fields
+DROP POLICY IF EXISTS "Public read fields of active forms" ON public.ps_form_fields;
 CREATE POLICY "Public read fields of active forms" ON public.ps_form_fields
     FOR SELECT
     USING (
@@ -101,6 +106,7 @@ CREATE POLICY "Public read fields of active forms" ON public.ps_form_fields
         )
     );
 
+DROP POLICY IF EXISTS "Team full access fields" ON public.ps_form_fields;
 CREATE POLICY "Team full access fields" ON public.ps_form_fields
     FOR ALL
     USING (
@@ -113,6 +119,7 @@ CREATE POLICY "Team full access fields" ON public.ps_form_fields
 
 -- ps_submissions
 -- Public INSERT policy (Anonymous)
+DROP POLICY IF EXISTS "Public insert submissions" ON public.ps_submissions;
 CREATE POLICY "Public insert submissions" ON public.ps_submissions
     FOR INSERT
     WITH CHECK (true); -- Anyone can submit. Note: Need to validate form_id validity in app logic or trigger if strictly enforcing 'active' form here.
@@ -121,6 +128,7 @@ CREATE POLICY "Public insert submissions" ON public.ps_submissions
 -- Included in public insert usually, but if we want to restrict based on 'require_auth' in DB, it's complex in RLS.
 -- Easier to enforce in App Layer: if require_auth, ensure auth.uid() is present.
 
+DROP POLICY IF EXISTS "Team read submissions" ON public.ps_submissions;
 CREATE POLICY "Team read submissions" ON public.ps_submissions
     FOR SELECT
     USING (
@@ -131,6 +139,7 @@ CREATE POLICY "Team read submissions" ON public.ps_submissions
         )
     );
 
+DROP POLICY IF EXISTS "Team update submissions" ON public.ps_submissions;
 CREATE POLICY "Team update submissions" ON public.ps_submissions
     FOR UPDATE
     USING (
@@ -141,6 +150,7 @@ CREATE POLICY "Team update submissions" ON public.ps_submissions
         )
     );
 -- Submissions deletion? Typically team only.
+DROP POLICY IF EXISTS "Team delete submissions" ON public.ps_submissions;
 CREATE POLICY "Team delete submissions" ON public.ps_submissions
     FOR DELETE
     USING (
@@ -153,6 +163,7 @@ CREATE POLICY "Team delete submissions" ON public.ps_submissions
 -- Users can read their own submissions? Maybe later.
 
 -- ps_submission_answers
+DROP POLICY IF EXISTS "Public insert answers" ON public.ps_submission_answers;
 CREATE POLICY "Public insert answers" ON public.ps_submission_answers
     FOR INSERT
     WITH CHECK (
@@ -164,6 +175,7 @@ CREATE POLICY "Public insert answers" ON public.ps_submission_answers
         )
     );
 
+DROP POLICY IF EXISTS "Team read answers" ON public.ps_submission_answers;
 CREATE POLICY "Team read answers" ON public.ps_submission_answers
     FOR SELECT
     USING (
@@ -175,6 +187,7 @@ CREATE POLICY "Team read answers" ON public.ps_submission_answers
     );
 
 -- ps_feedback_task_links
+DROP POLICY IF EXISTS "Team full access links" ON public.ps_feedback_task_links;
 CREATE POLICY "Team full access links" ON public.ps_feedback_task_links
     FOR ALL
     USING (

@@ -272,3 +272,89 @@ export async function getWeeklyLeaderboard() {
 
     return leaderboard || [];
 }
+
+// Stats
+export async function getProjectStats(projectId: string) {
+    await checkPSRole();
+    const supabase = await createClient();
+
+    // 1. Feedback Count
+    const { data: forms } = await supabase
+        .from("ps_feedback_forms")
+        .select("id")
+        .eq("project_id", projectId);
+
+    let feedbackCount = 0;
+    if (forms && forms.length > 0) {
+        const formIds = forms.map((f) => f.id);
+        const { count, error } = await supabase
+            .from("ps_submissions")
+            .select("*", { count: "exact", head: true })
+            .in("form_id", formIds);
+
+        if (!error) feedbackCount = count || 0;
+    }
+
+    // 2. Focus Time
+    const { data: tasks } = await supabase
+        .from("ps_tasks")
+        .select("id")
+        .eq("project_id", projectId);
+
+    let totalFocusMinutes = 0;
+    if (tasks && tasks.length > 0) {
+        const taskIds = tasks.map((t) => t.id);
+        const { data: sessions, error } = await supabase
+            .from("ps_focus_sessions")
+            .select("duration_minutes")
+            .in("task_id", taskIds);
+
+        if (!error && sessions) {
+            totalFocusMinutes = sessions.reduce((sum, s) => sum + s.duration_minutes, 0);
+        }
+    }
+
+
+    return {
+        feedbackCount,
+        totalFocusMinutes
+    };
+}
+
+export async function getProjectsWithStats() {
+    await checkPSRole();
+    const supabase = await createClient();
+
+    // 1. Fetch Projects
+    const { data: projects, error } = await supabase
+        .from("ps_projects")
+        .select("*, ps_tasks(*)")
+        .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+    if (!projects) return [];
+
+    // 2. Fetch Stats for all projects
+    // Optimization: Depending on scale, we might want to do one big query or aggregation.
+    // For now, let's map parallel since n is small.
+    // Ideally user DB view or dedicated stats table.
+
+    const projectsWithStats = await Promise.all(projects.map(async (p) => {
+        const stats = await getProjectStats(p.id);
+
+        // Calculate progress locally since we have tasks
+        const totalTasks = p.ps_tasks.length;
+        const completedTasks = p.ps_tasks.filter((t: any) => t.status === "done").length;
+        const progressPercent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+
+        return {
+            ...p,
+            stats: {
+                ...stats,
+                progressPercent
+            }
+        };
+    }));
+
+    return projectsWithStats;
+}
