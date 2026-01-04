@@ -1,7 +1,7 @@
 import { getProject, getProjectStats } from "@/actions/ps";
 import { TaskList } from "@/components/ps/task-list";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
@@ -95,6 +95,12 @@ export default async function ProjectDetailPage({
             </Link>
           </Button>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2" asChild>
+              <Link href={`/ps/projects/${project.id}/feedback`}>
+                <MessageSquare className="h-4 w-4" />
+                Feedback Hub
+              </Link>
+            </Button>
             <EditProjectDialog project={project} />
             <ProjectGuide />
           </div>

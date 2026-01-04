@@ -69,7 +69,12 @@ export function CassetteTape({
     >
       {/* Stats Paper (Integrated Mode) - Behind */}
       {!hidePaper && stats && (
-        <StatsPaper stats={stats} tasks={tasks} variant="integrated" />
+        <StatsPaper
+          stats={stats}
+          tasks={tasks}
+          variant="integrated"
+          projectId={project.id}
+        />
       )}
 
       <Link
