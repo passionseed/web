@@ -75,17 +75,18 @@ export default async function ProjectDetailPage({
   const accentColor = theme?.labelStyle?.borderColor || "#3b82f6";
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <Button
-          variant="ghost"
-          className="mb-4 pl-0 hover:pl-2 transition-all"
-          asChild
-        >
-          <Link href="/ps/projects">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
-          </Link>
-        </Button>
+    <div style={bgStyle} className="min-h-screen">
+      <div className="container mx-auto py-8">
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            className="mb-4 pl-0 hover:pl-2 transition-all"
+            asChild
+          >
+            <Link href="/ps/projects">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
+            </Link>
+          </Button>
 
           <div className="flex flex-col md:flex-row justify-between items-end gap-6">
             <div className="space-y-4 max-w-2xl">
@@ -147,50 +148,48 @@ export default async function ProjectDetailPage({
             </div>
           )}
 
-              {project.why && (
-                <div className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <svg
-                      className="w-16 h-16"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
-                  </div>
-                  <h3
-                    className="text-lg font-semibold mb-2 flex items-center gap-2 text-primary"
-                    style={{ color: accentColor }}
-                  >
-                    <span>🌱</span> Why
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {project.why}
-                  </p>
-                </div>
-              )}
+          {project.why && (
+            <div className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg
+                  className="w-16 h-16"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+              </div>
+              <h3
+                className="text-lg font-semibold mb-2 flex items-center gap-2 text-primary"
+                style={{ color: accentColor }}
+              >
+                <span>🌱</span> Why
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {project.why}
+              </p>
             </div>
+          )}
+
+          {/* Right: Stats Paper (Inside Grid) */}
+          <div className="lg:sticky lg:top-8 order-first lg:order-last">
+            <StatsPaper
+              stats={completeStats}
+              tasks={project.ps_tasks}
+              variant="standalone"
+              className="transform rotate-1 hover:rotate-0 transition-transform duration-300"
+            />
           </div>
+        </div>
 
-          {/* Right: Stats Paper (Standalone) */ }
-  <div className="lg:sticky lg:top-8 order-first lg:order-last">
-    <StatsPaper
-      stats={completeStats}
-      tasks={project.ps_tasks}
-      variant="standalone"
-      className="transform rotate-1 hover:rotate-0 transition-transform duration-300"
-    />
-  </div>
-        </div >
-
-    {/* Tasks Section */ }
-    < div className = "space-y-6 max-w-5xl mx-auto lg:mx-0" >
+        {/* Tasks Section (Inside Container) */}
+        <div className="space-y-6 max-w-5xl mx-auto lg:mx-0">
           <h3 className="text-2xl font-bold font-handwriting opacity-80 pl-2">
             Track List
           </h3>
@@ -201,8 +200,8 @@ export default async function ProjectDetailPage({
               themeColor={theme}
             />
           </div>
-        </div >
-      </div >
-    </div >
+        </div>
+      </div>
+    </div>
   );
 }
