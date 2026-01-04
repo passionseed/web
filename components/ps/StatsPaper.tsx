@@ -1,6 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { PSTask } from "@/actions/ps";
+import Link from "next/link";
 
 interface StatsPaperProps {
   stats: {
@@ -11,6 +12,7 @@ interface StatsPaperProps {
   tasks?: PSTask[];
   className?: string;
   variant?: "integrated" | "standalone"; // integrated = absolute positioning for cassette, standalone = static
+  projectId?: string;
 }
 
 export function StatsPaper({
@@ -18,6 +20,7 @@ export function StatsPaper({
   tasks = [],
   className,
   variant = "integrated",
+  projectId,
 }: StatsPaperProps) {
   const incompleteTasks = tasks
     .filter((t: any) => t.status !== "done")
@@ -34,6 +37,13 @@ export function StatsPaper({
   // If 6 items (max 5 + 1 hidden msg), dist = 80.
   const extraItems = Math.max(0, visibleListItems - 4);
   const translateDist = 60 + extraItems * 24;
+
+  const FeedbackContent = (
+    <div className="flex items-center gap-1.5 text-neutral-600">
+      <span className="text-sm">💬</span>
+      <span className="text-sm font-bold font-mono">{stats.feedbackCount}</span>
+    </div>
+  );
 
   return (
     <div
@@ -67,12 +77,18 @@ export function StatsPaper({
             : "top-8 h-auto static opacity-100 mb-8"
         )}
       >
-        <div className="flex items-center gap-1.5 text-neutral-600">
-          <span className="text-sm">💬</span>
-          <span className="text-sm font-bold font-mono">
-            {stats.feedbackCount}
-          </span>
-        </div>
+        {projectId ? (
+          <Link
+            href={`/ps/projects/${projectId}/feedback`}
+            className="hover:bg-neutral-100 p-1 -m-1 rounded transition-colors group/feedback relative z-20"
+            title="Go to Feedback Hub"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {FeedbackContent}
+          </Link>
+        ) : (
+          FeedbackContent
+        )}
 
         <div className="w-px h-3 bg-neutral-300/50" />
 
