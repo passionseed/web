@@ -223,6 +223,56 @@ export async function createFocusSession(
     if (error) throw error;
     // May not need revalidate path immediately unless we show session history on the same page
 }
+
+export async function updateProject(formData: FormData) {
+    const userId = await checkPSRole();
+    const projectId = formData.get("projectId") as string;
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+    const goal = formData.get("goal") as string;
+    const why = formData.get("why") as string;
+
+    // Spotify fields
+    const spotifyTrackId = formData.get("spotify_track_id") as string;
+    const spotifyTrackName = formData.get("spotify_track_name") as string;
+    const spotifyArtistName = formData.get("spotify_artist_name") as string;
+    const spotifyAlbumCoverUrl = formData.get("spotify_album_cover_url") as string;
+    const previewUrl = formData.get("preview_url") as string;
+
+    const supabase = await createClient();
+
+    const updateData: any = {
+        name,
+        description,
+        goal,
+        why,
+        updated_at: new Date().toISOString(),
+        spotify_track_id: spotifyTrackId || null,
+        spotify_track_name: spotifyTrackName || null,
+        spotify_artist_name: spotifyArtistName || null,
+        spotify_album_cover_url: spotifyAlbumCoverUrl || null,
+        preview_url: previewUrl || null,
+    };
+
+    const themeColorStr = formData.get("theme_color") as string;
+    if (themeColorStr) {
+        try {
+            updateData.theme_color = JSON.parse(themeColorStr);
+        } catch (e) {
+            console.error("Failed to parse theme color", e);
+        }
+    }
+
+
+    const { error } = await supabase
+        .from("ps_projects")
+        .update(updateData)
+        .eq("id", projectId); // Ensure RLS or checkPSRole is sufficient, usually checkPSRole is enough for this app context
+
+    if (error) throw error;
+    revalidatePath(`/ps/projects/${projectId}`);
+    revalidatePath("/ps/projects");
+}
 // Leaderboard
 export async function getWeeklyLeaderboard() {
     await checkPSRole();

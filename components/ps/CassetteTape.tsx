@@ -11,12 +11,14 @@ interface CassetteTapeProps {
     totalFocusMinutes: number;
   };
   hidePaper?: boolean;
+  className?: string; // Allow overriding width/size
 }
 
 export function CassetteTape({
   project,
   stats,
   hidePaper = false,
+  ...props
 }: CassetteTapeProps) {
   // Use hash of project ID to pick a random color for the label to add variety if no theme color
   const colors = [
@@ -57,11 +59,14 @@ export function CassetteTape({
 
   const isCustomTheme = !!theme;
 
-  // Tasks for the paper list
   const tasks = (project as any).ps_tasks || [];
 
   return (
-    <div className="relative group/cassette w-full max-w-[320px] mx-auto perspective-1000">
+    <div
+      className={`relative group/cassette w-full mx-auto perspective-1000 ${
+        props.className || "max-w-[320px]"
+      }`}
+    >
       {/* Stats Paper (Integrated Mode) - Behind */}
       {!hidePaper && stats && (
         <StatsPaper stats={stats} tasks={tasks} variant="integrated" />
