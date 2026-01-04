@@ -13,9 +13,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/utils/supabase/client";
-import { LogOut, Settings, User, Leaf, MessageCircle, Shield, LayoutDashboard } from "lucide-react";
+import {
+  LogOut,
+  Settings,
+  User,
+  Leaf,
+  MessageCircle,
+  Shield,
+  LayoutDashboard,
+} from "lucide-react";
 import Link from "next/link";
-import { useAdmin } from "@/hooks/use-auth";
+import { useAdmin, usePassionSeedTeam } from "@/hooks/use-auth";
 
 interface UserProfile {
   avatar_url: string | null;
@@ -31,24 +39,25 @@ export function UserNav({ user }: UserNavProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const supabase = createClient();
   const { hasRole: isAdmin } = useAdmin();
+  const { hasRole: isPSTeam } = usePassionSeedTeam();
 
   useEffect(() => {
     if (user?.id) {
       fetchProfile();
-      
+
       // Subscribe to profile changes
       const channel = supabase
-        .channel('profile-changes')
+        .channel("profile-changes")
         .on(
-          'postgres_changes',
+          "postgres_changes",
           {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'profiles',
+            event: "UPDATE",
+            schema: "public",
+            table: "profiles",
             filter: `id=eq.${user.id}`,
           },
           (payload) => {
-            setProfile(prev => prev ? { ...prev, ...payload.new } : null);
+            setProfile((prev) => (prev ? { ...prev, ...payload.new } : null));
           }
         )
         .subscribe();
@@ -64,25 +73,29 @@ export function UserNav({ user }: UserNavProps) {
 
     try {
       const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('avatar_url, full_name, username')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("avatar_url, full_name, username")
+        .eq("id", user.id)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           // Profile doesn't exist, create one
           await createProfile();
         } else {
-          console.error('Error fetching profile:', error.message || error);
-          console.error('Error details:', { code: error.code, details: error.details, hint: error.hint });
+          console.error("Error fetching profile:", error.message || error);
+          console.error("Error details:", {
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+          });
         }
         return;
       }
 
       setProfile(profileData);
     } catch (error) {
-      console.error('Profile fetch error:', error);
+      console.error("Profile fetch error:", error);
     }
   };
 
@@ -91,25 +104,29 @@ export function UserNav({ user }: UserNavProps) {
 
     try {
       const { data: newProfile, error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .insert({
           id: user.id,
           email: user.email,
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-          username: user.user_metadata?.preferred_username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+          full_name:
+            user.user_metadata?.full_name || user.user_metadata?.name || null,
+          username:
+            user.user_metadata?.preferred_username ||
+            user.email?.split("@")[0] ||
+            `user_${user.id.slice(0, 8)}`,
           avatar_url: user.user_metadata?.avatar_url || null,
         })
-        .select('avatar_url, full_name, username')
+        .select("avatar_url, full_name, username")
         .single();
 
       if (error) {
-        console.error('Error creating profile:', error);
+        console.error("Error creating profile:", error);
         return;
       }
 
       setProfile(newProfile);
     } catch (error) {
-      console.error('Profile creation error:', error);
+      console.error("Profile creation error:", error);
     }
   };
 
@@ -122,16 +139,23 @@ export function UserNav({ user }: UserNavProps) {
   };
 
   return (
-    <DropdownMenu suppressHydrationWarning>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={profile?.avatar_url || user?.user_metadata?.avatar_url || "/placeholder-user.jpg"}
+              src={
+                profile?.avatar_url ||
+                user?.user_metadata?.avatar_url ||
+                "/placeholder-user.jpg"
+              }
               alt="User"
             />
             <AvatarFallback>
-              {profile?.full_name?.charAt(0) || profile?.username?.charAt(0) || user?.user_metadata?.name?.charAt(0) || "U"}
+              {profile?.full_name?.charAt(0) ||
+                profile?.username?.charAt(0) ||
+                user?.user_metadata?.name?.charAt(0) ||
+                "U"}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -140,7 +164,10 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {profile?.full_name || profile?.username || user?.user_metadata?.name || "User"}
+              {profile?.full_name ||
+                profile?.username ||
+                user?.user_metadata?.name ||
+                "User"}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
@@ -170,10 +197,16 @@ export function UserNav({ user }: UserNavProps) {
               </Link>
             </DropdownMenuItem>
           )}
+          {isPSTeam && (
+            <DropdownMenuItem asChild>
+              <Link href="/ps/projects">
+                <Leaf className="mr-2 h-4 w-4" />
+                <span>Passion Seed</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild>
-            <Link
-              href="/contact"
-            >
+            <Link href="/contact">
               <MessageCircle className="mr-2 h-4 w-4" />
               <span>Talk to Us</span>
             </Link>
