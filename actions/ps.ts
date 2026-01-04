@@ -35,7 +35,6 @@ export interface PSTask {
     user_id: string | null;
     created_at: string;
     updated_at: string;
-    feedback_count?: number;
 }
 
 export interface PSFocusSession {
@@ -166,7 +165,7 @@ export async function createTask(formData: FormData) {
     const goal = formData.get("goal") as string;
     const difficulty = parseInt(formData.get("difficulty") as string) || 1;
     const notes = formData.get("notes") as string;
-    const submissionId = formData.get("submissionId") as string;
+    const submissionId = formData.get("submissionId") as string | null;
 
     const supabase = await createClient();
     const { data: task, error } = await supabase.from("ps_tasks").insert({
@@ -217,6 +216,22 @@ export async function updateTask(formData: FormData) {
     const { error } = await supabase
         .from("ps_tasks")
         .update({ goal, difficulty, notes })
+        .eq("id", taskId);
+
+    if (error) throw error;
+    revalidatePath(`/ps/projects/${projectId}`);
+}
+
+
+
+// ... existing code ...
+
+export async function updateTaskDate(taskId: string, date: string | null, projectId: string) {
+    await checkPSRole();
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("ps_tasks")
+        .update({ scheduled_date: date })
         .eq("id", taskId);
 
     if (error) throw error;
