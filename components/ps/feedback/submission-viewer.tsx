@@ -4,12 +4,9 @@ import {
   PSSubmission,
   updateSubmissionInternal,
   linkSubmissionToTask,
-  getProjects,
 } from "@/actions/ps-feedback";
-// We need to fetch tasks for linking, maybe pass them or fetch dynamically
-import { getProject } from "@/actions/ps-feedback";
 // wait, we need tasks list. Reuse getProject from ps.ts?
-import { getProject as getProjectData } from "@/actions/ps";
+import { getProject as getProjectData, createTask } from "@/actions/ps";
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -21,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Star, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { Star, Link as LinkIcon, ExternalLink, Plus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -235,9 +232,65 @@ export function SubmissionViewer({
                 variant="secondary"
                 onClick={handleLinkTask}
                 disabled={!linkTaskId}
+                title="Link existing task"
               >
                 <LinkIcon className="h-4 w-4" />
               </Button>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    title="Create new task from feedback"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Task from Feedback</DialogTitle>
+                  </DialogHeader>
+                  <form
+                    action={async (formData) => {
+                      formData.append("projectId", projectId);
+                      formData.append("submissionId", submission.id);
+                      await createTask(formData);
+                      toast({
+                        title: "Created",
+                        description: "Task created and linked.",
+                      });
+                      // Optional: Refresh tasks list so it appears in dropdown immediately?
+                      // It might need a reload or state update.
+                      // For now, simple toast.
+                    }}
+                  >
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Goal</label>
+                        <input
+                          name="goal"
+                          required
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          defaultValue={`Address Feedback: ${submission.ps_submission_answers?.[0]?.answer_text?.slice(0, 30) || "User Input"}...`}
+                        />
+                      </div>
+                      <input type="hidden" name="difficulty" value="1" />
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Notes</label>
+                        <Textarea
+                          name="notes"
+                          defaultValue={`Feedback from user:\n\n${submission.ps_submission_answers?.map((a) => `${a.field_label}: ${a.answer_text || a.answer_boolean}`).join("\n")}`}
+                          rows={6}
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">
+                        Create Linked Task
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
