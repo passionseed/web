@@ -68,11 +68,11 @@ export default async function ProjectDetailPage({
   const theme = project.theme_color as any;
   const bgStyle = theme
     ? {
-        background: `linear-gradient(to bottom, ${theme.bg} 0%, transparent 100%)`,
-      }
+      background: `linear-gradient(to bottom, ${theme.bg} 0%, transparent 100%)`,
+    }
     : {
-        background: "linear-gradient(to bottom, #1f2937 0%, transparent 100%)",
-      };
+      background: "linear-gradient(to bottom, #1f2937 0%, transparent 100%)",
+    };
   const accentColor = theme?.labelStyle?.borderColor || "#3b82f6";
 
   return (
@@ -192,7 +192,7 @@ export default async function ProjectDetailPage({
         </div>
 
         {/* Tasks Section */}
-        <div className="space-y-6 max-w-5xl mx-auto lg:mx-0">
+        <div className="space-y-6 w-full">
           <h3 className="text-2xl font-bold font-handwriting opacity-80 pl-2">
             Track List
           </h3>
@@ -201,6 +201,7 @@ export default async function ProjectDetailPage({
               tasks={project.ps_tasks}
               projectId={project.id}
               themeColor={theme}
+              initialDate={new Date()}
             />
           </div>
         </div>
