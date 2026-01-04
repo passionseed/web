@@ -8,6 +8,7 @@ import { createClient } from "@/utils/supabase/server";
 import { CassetteTape } from "@/components/ps/CassetteTape";
 import { ProjectGuide } from "@/components/ps/project-guide";
 import { StatsPaper } from "@/components/ps/StatsPaper";
+import { EditProjectDialog } from "@/components/ps/EditProjectDialog";
 
 export const dynamic = "force-dynamic";
 
@@ -93,10 +94,13 @@ export default async function ProjectDetailPage({
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
             </Link>
           </Button>
-          <ProjectGuide />
+          <div className="flex items-center gap-2">
+            <EditProjectDialog project={project} />
+            <ProjectGuide />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 mb-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-12 mb-16 items-start">
           {/* Left: Cassette & Context */}
           <div className="space-y-12">
             <div className="flex justify-center lg:justify-start">
@@ -104,6 +108,7 @@ export default async function ProjectDetailPage({
                 project={project}
                 stats={completeStats}
                 hidePaper={true}
+                className="max-w-[420px]"
               />
             </div>
 
