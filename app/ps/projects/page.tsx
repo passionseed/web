@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { getUserRolesClient } from "@/lib/supabase/auth-client";
 import { createClient } from "@/utils/supabase/server";
 import { DynamicCreateProjectModal } from "@/components/ps/DynamicCreateProjectModal";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +38,12 @@ export default async function ProjectsPage() {
 
   return (
     <div className="container mx-auto py-8">
+      <div className="mb-6">
+        <Link href="/build" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Builds
+        </Link>
+      </div>
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>

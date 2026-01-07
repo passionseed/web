@@ -4,26 +4,27 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { PSTask } from "@/actions/ps";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  MoreHorizontal,
-  Play,
-  CheckCircle2,
-  Circle,
-  Clock,
-  Trash2,
-  Edit2,
-  GripVertical,
-  MessageSquare,
+    MoreHorizontal,
+    Play,
+    CheckCircle2,
+    Circle,
+    Clock,
+    Trash2,
+    Edit2,
+    GripVertical,
+    MessageSquare,
 } from "lucide-react";
 
 interface DraggableTaskProps {
@@ -36,18 +37,24 @@ interface DraggableTaskProps {
     onFocus: (task: PSTask) => void;
     getDifficultyColor: (diff: number) => string;
     getStatusIcon: (status: string) => React.ReactNode;
+    members?: any[]; // Using any to avoid importing the full type here for simplicity, or we can export it from actions/ps
+    currentUserId?: string;
 }
 
 // Separated visual component for reuse in DragOverlay
-export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChange, onDelete, onEdit, onFocus, getDifficultyColor, getStatusIcon }: DraggableTaskProps & { isOverlay?: boolean }) {
+export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChange, onDelete, onEdit, onFocus, getDifficultyColor, getStatusIcon, members, currentUserId }: DraggableTaskProps & { isOverlay?: boolean }) {
+    const isAssignedToMe = currentUserId && (task.assigned_to === currentUserId || (!task.assigned_to && task.user_id === currentUserId));
+    const assignee = members?.find(m => m.user_id === (task.assigned_to || task.user_id));
+
     return (
         <Card
             className={`relative group overflow-hidden flex flex-col transition-all bg-card border-l-4
             ${isOverlay ? 'shadow-2xl rotate-2 scale-105 cursor-grabbing z-50 ring-2 ring-primary w-[220px]' : 'hover:shadow-md cursor-grab active:cursor-grabbing w-full'}
             ${isCollected && !isOverlay ? 'opacity-0 pointer-events-none' : ''}
             ${isOverdue && !isOverlay ? 'border-red-400 dark:border-red-900' : ''}
+            ${!isOverlay && isAssignedToMe ? 'bg-primary/5 border-l-primary' : ''}
             `}
-            style={{ borderLeftColor: task.status === 'done' ? '#22c55e' : task.status === 'in_progress' ? '#3b82f6' : undefined }}
+            style={{ borderLeftColor: task.status === 'done' ? '#22c55e' : task.status === 'in_progress' ? '#3b82f6' : isAssignedToMe ? undefined : undefined }}
         >
             <CardContent className="p-2 flex flex-col gap-1.5 relative">
                 <div className="flex justify-between items-start gap-1">
@@ -57,11 +64,17 @@ export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChan
                         {task.goal}
                     </p>
 
-                    <div className="flex gap-0.5 shrink-0">
+                    <div className="flex gap-1 shrink-0 items-start">
+                        {assignee && !isAssignedToMe && (
+                            <Avatar className="h-5 w-5 border border-background">
+                                <AvatarImage src={assignee.user?.avatar_url || ""} />
+                                <AvatarFallback className="text-[9px]">{assignee.user?.username?.[0] || "?"}</AvatarFallback>
+                            </Avatar>
+                        )}
                         {!isOverlay && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-5 w-5 -mt-1 -mr-1 text-muted-foreground hover:text-foreground">
+                                    <Button variant="ghost" size="icon" className="h-5 w-5 -mt-1 -mr-1 text-muted-foreground hover:text-foreground" suppressHydrationWarning>
                                         <MoreHorizontal className="h-3 w-3" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -136,48 +149,48 @@ export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChan
 export function DraggableTask(props: DraggableTaskProps) {
     const { task, isCollected, isOverdue } = props;
 
-  // Only use draggable hooks if NOT collected (collected items shouldn't be draggable themselves to avoid conflict,
-  // or maybe they should? For now, let's keep them draggable but if they are dimmed it implies they are "in" the stack)
-  // Actually, user might want to drag a collected item OUT of a stack?
-  // For simplicity, regular items are draggable.
+    // Only use draggable hooks if NOT collected (collected items shouldn't be draggable themselves to avoid conflict,
+    // or maybe they should? For now, let's keep them draggable but if they are dimmed it implies they are "in" the stack)
+    // Actually, user might want to drag a collected item OUT of a stack?
+    // For simplicity, regular items are draggable.
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef: setDragRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id: task.id,
-    data: task,
-  });
+    const {
+        attributes,
+        listeners,
+        setNodeRef: setDragRef,
+        transform,
+        isDragging,
+    } = useDraggable({
+        id: task.id,
+        data: task,
+    });
 
-  const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: task.id,
-    data: task,
-  });
+    const { setNodeRef: setDropRef, isOver } = useDroppable({
+        id: task.id,
+        data: task,
+    });
 
-  const setNodeRef = (node: HTMLElement | null) => {
-    setDragRef(node);
-    setDropRef(node);
-  };
+    const setNodeRef = (node: HTMLElement | null) => {
+        setDragRef(node);
+        setDropRef(node);
+    };
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0 : 1, // Hide original when dragging (overlay will show)
-    zIndex: isDragging ? 50 : undefined,
-  };
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        opacity: isDragging ? 0 : 1, // Hide original when dragging (overlay will show)
+        zIndex: isDragging ? 50 : undefined,
+    };
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="h-full"
-      suppressHydrationWarning={true}
-    >
-      <TaskCard {...props} />
-    </div>
-  );
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className="h-full"
+            suppressHydrationWarning={true}
+        >
+            <TaskCard {...props} />
+        </div>
+    );
 }
