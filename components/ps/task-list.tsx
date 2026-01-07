@@ -8,7 +8,16 @@ import {
     updateTaskStatus,
     createTask,
     updateTaskDate,
+    PSProjectMember,
 } from "@/actions/ps";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,9 +65,12 @@ import {
 
 interface TaskListProps {
     tasks: PSTask[];
-    projectId: string;
+    projectId?: string; // Optional if global view
     themeColor?: any;
     initialDate?: Date;
+    isMember?: boolean;
+    members?: PSProjectMember[];
+    currentUserId?: string;
 }
 
 interface CommonTaskProps {
@@ -68,6 +80,8 @@ interface CommonTaskProps {
     onFocus: (task: PSTask) => void;
     getDifficultyColor: (diff: number) => string;
     getStatusIcon: (status: string) => React.ReactNode;
+    members?: PSProjectMember[];
+    currentUserId?: string;
 }
 
 const getDayStyles = (date: Date) => {
@@ -155,8 +169,8 @@ function DayColumn({
                         size="sm"
                         variant="default"
                         className="w-full gap-2 shadow-sm"
-                        onClick={() => onFocusDay(tasks.filter(t => t.status !== 'done'))}
-                        disabled={tasks.filter(t => t.status !== 'done').length === 0}
+                        onClick={() => onFocusDay(tasks.filter(t => t.status !== 'done' && (t.assigned_to === commonProps.currentUserId || (!t.assigned_to && t.user_id === commonProps.currentUserId))))}
+                        disabled={tasks.filter(t => t.status !== 'done' && (t.assigned_to === commonProps.currentUserId || (!t.assigned_to && t.user_id === commonProps.currentUserId))).length === 0}
                     >
                         <Play className="w-3 h-3" /> Start Focus
                     </Button>
@@ -218,7 +232,7 @@ function UnscheduledArea({
     );
 }
 
-export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskListProps) {
+export function TaskList({ tasks, projectId, themeColor, initialDate, isMember = true, members = [], currentUserId }: TaskListProps) {
     const [currentWeekStart, setCurrentWeekStart] = useState(() =>
         startOfWeek(initialDate || new Date(), { weekStartsOn: 1 })
     );
@@ -248,6 +262,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
 
     const [newDifficulty, setNewDifficulty] = useState([1]);
     const [editDifficulty, setEditDifficulty] = useState([1]);
+    const [assignee, setAssignee] = useState<string>(currentUserId || "");
 
     const { toast } = useToast();
 
@@ -256,7 +271,10 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
     // Handlers
     const handleStatusChange = async (taskId: string, newStatus: string) => {
         try {
-            await updateTaskStatus(taskId, newStatus, projectId);
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            // Use task's project_id if available (global view), fallback to prop
+            await updateTaskStatus(taskId, newStatus, task.project_id || projectId!);
         } catch (e) {
             toast({ variant: "destructive", description: "Failed to update status." });
         }
@@ -265,7 +283,9 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
     const handleDelete = async (taskId: string) => {
         if (!confirm("Delete this task?")) return;
         try {
-            await deleteTask(taskId, projectId);
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            await deleteTask(taskId, task.project_id || projectId!);
             toast({ title: "Deleted" });
         } catch (e) {
             toast({ variant: "destructive", description: "Failed to delete task." });
@@ -278,6 +298,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
         onEdit: (task) => {
             setEditingTask(task);
             setEditDifficulty([task.difficulty]);
+            setAssignee(task.assigned_to || task.user_id || "");
         },
         onFocus: (task) => setActiveTasksForFocus([task]),
         getDifficultyColor: (diff: number) => {
@@ -291,7 +312,9 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                 case "in_progress": return <Clock className="h-5 w-5 text-blue-500" />;
                 default: return <Circle className="h-5 w-5 text-gray-400" />;
             }
-        }
+        },
+        members,
+        currentUserId
     };
 
     // Drag Handlers
@@ -321,7 +344,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                     addOptimisticTask({ type: 'update', taskId: task.id, date: null });
                 });
                 try {
-                    await updateTaskDate(task.id, null, projectId);
+                    await updateTaskDate(task.id, null, task.project_id || projectId!);
                     toast({ description: "Moved to Unscheduled" });
                 } catch (e) {
                     toast({ variant: "destructive", description: "Failed to unschedule" });
@@ -339,7 +362,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                     addOptimisticTask({ type: 'update', taskId: task.id, date: dateStr });
                 });
                 try {
-                    await updateTaskDate(task.id, dateStr, projectId);
+                    await updateTaskDate(task.id, dateStr, task.project_id || projectId!);
                     toast({ description: `Moved to ${dateStr}` });
                 } catch (e) {
                     toast({ variant: "destructive", description: "Failed to move task" });
@@ -406,7 +429,9 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                     tasks={unscheduledTasks}
                     isOver={overId === "unscheduled-pool"}
                     onAddTask={() => {
+                        if (!isMember || !projectId) return;
                         setAddTaskDate(null);
+                        setAssignee(currentUserId || "");
                         setIsAddTaskOpen(true);
                     }}
                     commonProps={commonTaskProps}
@@ -425,7 +450,9 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                                 tasks={dayTasks}
                                 isOver={overId === `day-${dateStr}`}
                                 onAddTask={(d) => {
+                                    if (!isMember || !projectId) return;
                                     setAddTaskDate(d);
+                                    setAssignee(currentUserId || "");
                                     setIsAddTaskOpen(true);
                                 }}
                                 onFocusDay={setActiveTasksForFocus}
@@ -447,7 +474,9 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                         </DialogHeader>
                         <form
                             action={async (formData) => {
-                                formData.append("projectId", projectId);
+                                if (projectId) formData.append("projectId", projectId);
+                                // If no projectId, we can't create task here yet
+
                                 if (addTaskDate) {
                                     formData.append("scheduledDate", format(addTaskDate, "yyyy-MM-dd"));
                                 }
@@ -473,6 +502,27 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                                     <input type="hidden" name="difficulty" value={newDifficulty[0]} />
                                 </div>
                                 <div className="space-y-2">
+                                    <Label>Assign To</Label>
+                                    <Select name="assignedTo" defaultValue={currentUserId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select member" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {members.map((m) => (
+                                                <SelectItem key={m.user_id} value={m.user_id}>
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-5 w-5">
+                                                            <AvatarImage src={m.user?.avatar_url || ""} />
+                                                            <AvatarFallback>{m.user?.username?.[0] || "?"}</AvatarFallback>
+                                                        </Avatar>
+                                                        {m.user?.full_name || m.user?.username || "Unknown"}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
                                     <Label>Notes</Label>
                                     <Textarea name="notes" placeholder="Details..." />
                                 </div>
@@ -489,7 +539,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                         {editingTask && (
                             <form action={async (formData) => {
                                 formData.append("taskId", editingTask.id);
-                                formData.append("projectId", projectId);
+                                formData.append("projectId", editingTask.project_id || projectId!);
                                 await updateTask(formData);
                                 setEditingTask(null);
                                 toast({ title: "Updated" });
@@ -505,6 +555,27 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                                         <input type="hidden" name="difficulty" value={editDifficulty[0]} />
                                     </div>
                                     <div className="space-y-2">
+                                        <Label>Assign To</Label>
+                                        <Select name="assignedTo" defaultValue={editingTask.assigned_to || editingTask.user_id || ""}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select member" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {members.map((m) => (
+                                                    <SelectItem key={m.user_id} value={m.user_id}>
+                                                        <div className="flex items-center gap-2">
+                                                            <Avatar className="h-5 w-5">
+                                                                <AvatarImage src={m.user?.avatar_url || ""} />
+                                                                <AvatarFallback>{m.user?.username?.[0] || "?"}</AvatarFallback>
+                                                            </Avatar>
+                                                            {m.user?.full_name || m.user?.username || "Unknown"}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
                                         <Label>Notes</Label>
                                         <Textarea name="notes" defaultValue={editingTask.notes || ""} />
                                     </div>
@@ -516,8 +587,15 @@ export function TaskList({ tasks, projectId, themeColor, initialDate }: TaskList
                 </Dialog>
 
                 {/* Focus Timer */}
-                <Dialog open={activeTasksForFocus.length > 0} onOpenChange={(o) => !o && setActiveTasksForFocus([])}>
-                    <DialogContent>
+                <Dialog open={activeTasksForFocus.length > 0} onOpenChange={(o) => {
+                    // Only allow closing via the specific close handlers inside the component which will call setActiveTasksForFocus([])
+                    // But onOpenChange is called by generic escape key etc.
+                    // We can check if it's strictly necessary.
+                    // Actually, if we use onInteractOutside preventDefault, user can't click outside.
+                    // We should still allow them to close it if they really want to, maybe via a button inside.
+                    if (!o) setActiveTasksForFocus([]);
+                }}>
+                    <DialogContent onInteractOutside={(e) => e.preventDefault()}>
                         <DialogTitle className="sr-only">Focus Session</DialogTitle>
                         <FocusTimer tasks={activeTasksForFocus} onSessionSaved={() => setActiveTasksForFocus([])} />
                     </DialogContent>

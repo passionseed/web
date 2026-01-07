@@ -23,6 +23,7 @@ export interface PSProject {
     spotify_album_cover_url?: string | null;
     theme_color?: any | null; // using any for jsonb to avoid strict typing issues for now
     preview_url?: string | null;
+    paper_text?: string | null;
 }
 
 export interface PSTask {
@@ -33,8 +34,21 @@ export interface PSTask {
     difficulty: number;
     notes: string | null;
     user_id: string | null;
+    assigned_to: string | null;
+    scheduled_date: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface PSProjectMember {
+    user_id: string;
+    role: string;
+    joined_at: string;
+    user?: {
+        full_name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+    };
 }
 
 export interface PSFocusSession {
@@ -107,7 +121,7 @@ export async function createProject(formData: FormData) {
     }
 
     const supabase = await createClient();
-    const { error } = await supabase.from("ps_projects").insert({
+    const { data: project, error } = await supabase.from("ps_projects").insert({
         name,
         description,
         goal,
@@ -119,10 +133,74 @@ export async function createProject(formData: FormData) {
         spotify_album_cover_url: spotifyAlbumCoverUrl || null,
         preview_url: previewUrl || null,
         theme_color: themeColor,
+    }).select().single();
+
+    if (error) throw error;
+
+    // Auto-join creator as member (admin role could be added later, default 'member' is fine for now or 'owner')
+    if (project) {
+        await supabase.from("ps_project_members").insert({
+            project_id: project.id,
+            user_id: userId,
+            role: 'owner'
+        });
+    }
+
+    revalidatePath("/ps/projects");
+}
+
+export async function joinProject(projectId: string) {
+    const userId = await checkPSRole();
+    const supabase = await createClient();
+
+    // Check if already a member
+    const { data: existing } = await supabase
+        .from("ps_project_members")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("user_id", userId)
+        .single();
+
+    if (existing) return;
+
+    const { error } = await supabase.from("ps_project_members").insert({
+        project_id: projectId,
+        user_id: userId,
+        role: 'member'
     });
 
     if (error) throw error;
-    revalidatePath("/ps/projects");
+    revalidatePath(`/ps/projects/${projectId}`);
+}
+
+export async function getProjectMembers(projectId: string) {
+    await checkPSRole();
+    const supabase = await createClient();
+
+    const { data: members, error } = await supabase
+        .from("ps_project_members")
+        .select("*")
+        .eq("project_id", projectId);
+
+    if (error) throw error;
+
+    if (!members || members.length === 0) return [];
+
+    // Fetch profiles
+    const userIds = members.map(m => m.user_id);
+    const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, username, avatar_url")
+        .in("id", userIds);
+
+    // Merge profile data
+    return members.map(m => {
+        const profile = profiles?.find(p => p.id === m.user_id);
+        return {
+            ...m,
+            user: profile || { full_name: "Unknown", username: "Unknown", avatar_url: null }
+        };
+    }) as PSProjectMember[];
 }
 
 export async function getProject(id: string) {
@@ -158,6 +236,34 @@ export async function getProject(id: string) {
     return data as PSProject & { ps_tasks: (PSTask & { feedback_count?: number })[] };
 }
 
+export async function getUserTasks() {
+    const userId = await checkPSRole();
+    const supabase = await createClient();
+
+    // Fetch tasks assigned to the user OR created by the user (if unassigned? usually assignments matter more)
+    // "shows all task for only the user" -> likely assigned items.
+    // Let's get tasks where assigned_to = userId OR (assigned_to IS NULL AND user_id = userId)
+    const { data, error } = await supabase
+        .from("ps_tasks")
+        .select(`
+            *,
+            ps_projects (
+                name,
+                theme_color
+            )
+        `)
+        .or(`assigned_to.eq.${userId},and(assigned_to.is.null,user_id.eq.${userId})`)
+        // Maybe user wants done tasks too? "Seven days box" usually implies calendar view.
+        // Calendar view usually needs ALL tasks to show history.
+        // But "tasks for the user" usually implies Todo.
+        // If it's a 7-day view, we surely want to see tasks scheduled for those days regardless of status?
+        // Let's fetch all, client can filter.
+        .order("scheduled_date", { ascending: true }); // optimize for calendar
+
+    if (error) throw error;
+    return data as (PSTask & { ps_projects: { name: string, theme_color: any } })[];
+}
+
 // Tasks
 export async function createTask(formData: FormData) {
     const userId = await checkPSRole();
@@ -167,13 +273,16 @@ export async function createTask(formData: FormData) {
     const notes = formData.get("notes") as string;
     const submissionId = formData.get("submissionId") as string | null;
 
+    const assignedTo = formData.get("assignedTo") as string || userId; // Default to creator if not specified
+
     const supabase = await createClient();
     const { data: task, error } = await supabase.from("ps_tasks").insert({
         project_id: projectId,
         goal,
         difficulty,
         notes,
-        user_id: userId,
+        user_id: userId, // Creator
+        assigned_to: assignedTo, // Assignee
         status: "todo",
     }).select().single();
 
@@ -213,9 +322,16 @@ export async function updateTask(formData: FormData) {
     const notes = formData.get("notes") as string;
 
     const supabase = await createClient();
+    const assignedTo = formData.get("assignedTo") as string;
+
+    const updatePayload: any = { goal, difficulty, notes };
+    if (assignedTo) {
+        updatePayload.assigned_to = assignedTo;
+    }
+
     const { error } = await supabase
         .from("ps_tasks")
-        .update({ goal, difficulty, notes })
+        .update(updatePayload)
         .eq("id", taskId);
 
     if (error) throw error;
@@ -449,4 +565,62 @@ export async function getProjectsWithStats() {
     }));
 
     return projectsWithStats;
+}
+
+export async function updatePaperText(projectId: string, text: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("ps_projects")
+        .update({ paper_text: text, updated_at: new Date().toISOString() })
+        .eq("id", projectId);
+
+    if (error) throw error;
+}
+
+import { createAdminClient } from "@/utils/supabase/admin";
+
+export async function getWeeklyFocusStats() {
+    await checkPSRole();
+    const supabase = await createClient();
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const { data: sessions, error } = await supabase
+        .from("ps_focus_sessions")
+        .select(`
+            duration_minutes,
+            created_at,
+            user_id
+        `)
+        .gte("created_at", sevenDaysAgo.toISOString())
+        .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    // Fetch user details - use same approach as getWeeklyLeaderboard
+    const userIds = Array.from(new Set(sessions.map((s) => s.user_id).filter(Boolean))) as string[];
+
+    const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, username, avatar_url")
+        .in("id", userIds);
+
+    // Build userMap with fallback
+    const userMap = new Map();
+    if (profiles && profiles.length > 0) {
+        profiles.forEach(profile => {
+            userMap.set(profile.id, profile.full_name || profile.username || profile.id.substring(0, 8));
+        });
+    }
+
+    // Add fallback for any user IDs without profiles
+    userIds.forEach(id => {
+        if (!userMap.has(id)) {
+            userMap.set(id, id.substring(0, 8));
+        }
+    });
+
+    return { sessions: sessions || [], userMap: Object.fromEntries(userMap) };
 }

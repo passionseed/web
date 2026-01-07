@@ -58,7 +58,7 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" suppressHydrationWarning>
           <Edit className="h-4 w-4" />
           Edit Project
         </Button>

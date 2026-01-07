@@ -1,4 +1,4 @@
-import { getProject, getProjectStats } from "@/actions/ps";
+import { getProject, getProjectStats, joinProject, getProjectMembers } from "@/actions/ps";
 import { TaskList } from "@/components/ps/task-list";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare } from "lucide-react";
@@ -74,6 +74,14 @@ export default async function ProjectDetailPage({
       background: "linear-gradient(to bottom, #1f2937 0%, transparent 100%)",
     };
   const accentColor = theme?.labelStyle?.borderColor || "#3b82f6";
+  const members = await getProjectMembers(id);
+  const isMember = members.some((m) => m.user_id === user.id); // Assuming user.id is available from session or action check
+
+  const handleJoin = async () => {
+    "use server";
+    await joinProject(id);
+  };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-hidden">
@@ -95,13 +103,24 @@ export default async function ProjectDetailPage({
             </Link>
           </Button>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2" asChild>
-              <Link href={`/ps/projects/${project.id}/feedback`}>
-                <MessageSquare className="h-4 w-4" />
-                Feedback Hub
-              </Link>
-            </Button>
-            <EditProjectDialog project={project} />
+            {!isMember && (
+              <form action={handleJoin}>
+                <Button variant="default" className="shadow-lg bg-green-600 hover:bg-green-700">
+                  Join Project
+                </Button>
+              </form>
+            )}
+            {isMember && (
+              <>
+                <Button variant="outline" size="sm" className="gap-2" asChild>
+                  <Link href={`/ps/projects/${project.id}/feedback`}>
+                    <MessageSquare className="h-4 w-4" />
+                    Feedback Hub
+                  </Link>
+                </Button>
+                <EditProjectDialog project={project} />
+              </>
+            )}
             <ProjectGuide />
           </div>
         </div>
@@ -180,11 +199,12 @@ export default async function ProjectDetailPage({
             </div>
           </div>
 
-          {/* Right: Stats Paper (Standalone) */}
           <div className="lg:sticky lg:top-8 order-first lg:order-last">
             <StatsPaper
               stats={completeStats}
               tasks={project.ps_tasks}
+              paperText={project.paper_text}
+              projectId={project.id}
               variant="standalone"
               className="transform rotate-1 hover:rotate-0 transition-transform duration-300"
             />
@@ -202,6 +222,9 @@ export default async function ProjectDetailPage({
               projectId={project.id}
               themeColor={theme}
               initialDate={new Date()}
+              isMember={isMember}
+              members={members}
+              currentUserId={user.id}
             />
           </div>
         </div>

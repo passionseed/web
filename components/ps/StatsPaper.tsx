@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
+import { updatePaperText, PSTask } from "@/actions/ps";
 import { cn } from "@/lib/utils";
-import { PSTask } from "@/actions/ps";
 import Link from "next/link";
 
 interface StatsPaperProps {
@@ -15,6 +15,7 @@ interface StatsPaperProps {
   className?: string;
   variant?: "integrated" | "standalone"; // integrated = absolute positioning for cassette, standalone = static
   projectId?: string;
+  paperText?: string | null;
 }
 
 export function StatsPaper({
@@ -23,7 +24,23 @@ export function StatsPaper({
   className,
   variant = "integrated",
   projectId,
+  paperText,
 }: StatsPaperProps) {
+  const [text, setText] = useState(paperText || "");
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setText(newText);
+
+    if (projectId) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        updatePaperText(projectId, newText);
+      }, 1000);
+    }
+  };
+
   const incompleteTasks = tasks
     .filter((t: any) => t.status !== "done")
     .slice(0, 5);
@@ -33,10 +50,6 @@ export function StatsPaper({
   const visibleListItems = incompleteTasks.length + (tasks.length > 5 ? 1 : 0);
 
   // Base 40px for 0-4 items. Add 20px per item above 4.
-  // Actually, the user said "0-4 tasks = translate 40px".
-  // So if visibleListItems <= 4, dist = 40.
-  // If 5 items, dist = 60.
-  // If 6 items (max 5 + 1 hidden msg), dist = 80.
   const extraItems = Math.max(0, visibleListItems - 4);
   const translateDist = 60 + extraItems * 24;
 
@@ -64,19 +77,30 @@ export function StatsPaper({
         } as React.CSSProperties
       }
     >
+      {/* Interactive Text Area for Standalone Mode */}
+      {variant === "standalone" ? (
+        <textarea
+          className="absolute inset-0 w-full h-full bg-transparent p-8 pb-32 resize-none outline-none text-neutral-700 font-handwriting text-lg leading-relaxed z-10"
+          placeholder="Write your thoughts here..."
+          value={text}
+          onChange={handleTextChange}
+          spellCheck={false}
+        />
+      ) : null}
+
       {/* Folded Corner Effect */}
       <div
-        className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-neutral-200/50 to-transparent pointer-events-none"
+        className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-neutral-200/50 to-transparent pointer-events-none z-20"
         style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }}
       />
 
       {/* Stats Section */}
       <div
         className={cn(
-          "flex flex-row justify-center items-center gap-4 transition-opacity duration-300 absolute inset-x-0 px-4 bottom-10 box-border",
+          "flex flex-row justify-center items-center gap-4 transition-opacity duration-300 absolute inset-x-0 px-4 bottom-10 box-border z-20 pointer-events-none", // Added pointer-events-none to let click through to textarea if needed, but links need pointer-events-auto
           variant === "integrated"
             ? "pt-[250px] group-hover/cassette:opacity-0"
-            : "top-8 h-auto static opacity-100 mb-8"
+            : "top-8 h-auto static opacity-100 mb-8 pointer-events-auto" // Re-enable pointer events for stats
         )}
       >
         {projectId ? (
@@ -111,13 +135,17 @@ export function StatsPaper({
         </div>
       </div>
 
-      {/* Tasks List Section */}
+      {/* Tasks List Section - Only visible in integrated mode or at bottom of standalone */}
+      {/* Actually, if standalone has textarea covering everything, we might want to hide tasks or put them at bottom? */}
+      {/* User image showed "Side B: Tracks" at the bottom. So I will keep it at the bottom. */}
+      {/* I used absolute positioning for textarea with pb-32 to leave space at bottom. */}
+
       <div
         className={cn(
-          "flex flex-col transition-opacity duration-300 box-border w-full justify-end",
+          "flex flex-col transition-opacity duration-300 box-border w-full justify-end z-20 pointer-events-none", // pointer-events-none to not block textarea typing area above it
           variant === "integrated"
             ? "absolute inset-0 p-5 opacity-0 group-hover/cassette:opacity-100"
-            : "static opacity-100 pt-0 flex-1"
+            : "static opacity-100 pt-0 flex-1 justify-end pointer-events-auto" // Enable clicks on tasks if they are links/hoverable
         )}
       >
         <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-3 border-b border-dashed border-neutral-300 pb-1 flex justify-between items-end">

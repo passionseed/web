@@ -26,6 +26,8 @@ export function FocusTimer({
   );
   const [duration, setDuration] = useState(initialDuration); // minutes
   const [timeLeft, setTimeLeft] = useState(initialDuration * 60); // seconds
+  const [overtime, setOvertime] = useState(0); // seconds
+  const [baseTimeSaved, setBaseTimeSaved] = useState(false);
   const [notes, setNotes] = useState("");
   const [completedInSession, setCompletedInSession] = useState<Set<string>>(new Set());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,13 +42,12 @@ export function FocusTimer({
   useEffect(() => {
     if (mode === "running") {
       timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            handleTimesUp();
-            return 0;
-          }
-          return prev - 1;
-        });
+        setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    } else if (mode === "timesup") {
+      // Start overtime counting
+      timerRef.current = setInterval(() => {
+        setOvertime((prev) => prev + 1);
       }, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -57,9 +58,25 @@ export function FocusTimer({
     };
   }, [mode]);
 
-  const handleTimesUp = () => {
+  useEffect(() => {
+    if (timeLeft === 0 && mode === "running") {
+      handleTimesUp();
+    }
+  }, [timeLeft, mode]);
+
+  const handleTimesUp = async () => {
     setMode("timesup");
     if (timerRef.current) clearInterval(timerRef.current);
+
+    // Auto-save base time
+    try {
+      await Promise.all(tasks.map(task => createFocusSession(task.id, duration, "")));
+      setBaseTimeSaved(true);
+      toast({ title: "Time's Up!", description: "Session time recorded. You can now take a break or add overtime." });
+    } catch (e) {
+      console.error("Failed to auto-save base time", e);
+    }
+
     // Play sound
     // try { audioRef.current?.play(); } catch (e) { }
   };
@@ -112,27 +129,34 @@ export function FocusTimer({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const actualMinutes = Math.max(1, Math.round((duration * 60 - timeLeft) / 60));
+  const actualMinutes = Math.max(1, Math.round((duration * 60 - timeLeft + overtime) / 60));
 
   const handleSaveSession = async () => {
     try {
       // Determine which tasks to mark as done
-      // Logic: If user manually selected some tasks, only mark those. 
-      // If user selected NONE, mark ALL (assuming implicit completion of session goal).
-      const tasksToMarkDone = completedInSession.size > 0
-        ? tasks.filter(t => completedInSession.has(t.id))
-        : tasks;
+      // Logic: Only mark tasks explicitly selected by user.
+      const tasksToMarkDone = tasks.filter(t => completedInSession.has(t.id));
+
+      const overtimeMinutes = Math.round(overtime / 60);
+      const minutesToSave = baseTimeSaved ? Math.max(0, overtimeMinutes) : actualMinutes;
 
       // Save session for all tasks (focus time applies to all focused tasks regardless of completion)
-      // Mark selected tasks as done
-      await Promise.all([
-        ...tasks.map(task => createFocusSession(task.id, actualMinutes, notes)),
-        ...tasksToMarkDone.map(task => updateTaskStatus(task.id, "done", task.project_id))
-      ]);
+      // If base time was saved, only save overtime (if any)
+      // If base time wasn't saved (e.g. error or stopped early?), save full actualMinutes
+
+      const promises: Promise<any>[] = [];
+
+      if (minutesToSave > 0) {
+        promises.push(...tasks.map(task => createFocusSession(task.id, minutesToSave, notes)));
+      }
+
+      promises.push(...tasksToMarkDone.map(task => updateTaskStatus(task.id, "done", task.project_id)));
+
+      await Promise.all(promises);
 
       toast({
         title: "Session Saved",
-        description: `Focus session recorded. ${tasksToMarkDone.length} tasks marked done.`,
+        description: `Finalized. ${tasksToMarkDone.length} tasks marked done.`,
       });
       if (onSessionSaved) onSessionSaved();
     } catch (error) {
@@ -172,7 +196,7 @@ export function FocusTimer({
         <div className="space-y-4">
           <Label>Duration (minutes): {duration}</Label>
           <div className="flex gap-2 justify-center">
-            {[15, 25, 30, 45, 60, 90].map((m) => (
+            {[1, 5, 10, 15, 25, 30, 45, 60].map((m) => (
               <Button
                 key={m}
                 variant={duration === m ? "default" : "outline"}
@@ -186,7 +210,7 @@ export function FocusTimer({
           <div className="px-2">
             <Slider
               value={[duration]}
-              min={5}
+              min={1}
               max={180}
               step={5}
               onValueChange={(val) => setDuration(val[0])}
@@ -207,7 +231,11 @@ export function FocusTimer({
         <div className="space-y-2">
           <Timer className="w-16 h-16 mx-auto text-orange-500 animate-pulse" />
           <h3 className="text-2xl font-bold">Focus time's up!</h3>
+          <h3 className="text-2xl font-bold">Focus time's up!</h3>
           <p className="text-muted-foreground">Great work staying focused.</p>
+          <div className="text-xl font-mono text-orange-600 font-bold">
+            Overtime: +{formatTime(overtime)}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -228,7 +256,8 @@ export function FocusTimer({
         <div className="text-center space-y-2">
           <CheckCircle className="w-16 h-16 mx-auto text-green-500" />
           <h3 className="text-xl font-bold">Session Complete!</h3>
-          <p className="text-muted-foreground">{actualMinutes} minutes focused ({duration}m planned).</p>
+          <h3 className="text-xl font-bold">Session Complete!</h3>
+          <p className="text-muted-foreground">{actualMinutes} minutes focused ({duration}m planned{overtime > 0 ? ` + ${Math.round(overtime / 60)}m overtime` : ''}).</p>
         </div>
 
         <div className="space-y-2">
