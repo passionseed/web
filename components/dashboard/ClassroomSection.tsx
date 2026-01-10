@@ -123,6 +123,7 @@ export function ClassroomSection() {
   const studentClassrooms = getClassroomsByRole("student");
   const taClassrooms = getClassroomsByRole("ta");
 
+  // Not authenticated view
   if (!isAuthenticated) {
     return (
       <div className="mb-12">

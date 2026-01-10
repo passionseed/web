@@ -23,6 +23,7 @@ import {
   AlertCircle,
   User,
   GraduationCap,
+  Compass,
 } from "lucide-react";
 import { Classroom } from "@/types/classroom";
 import { CreateAssignmentModal } from "./CreateAssignmentModal";
@@ -38,6 +39,7 @@ import { ClassroomGrading } from "./ClassroomGrading";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import StudentMapsViewWrapper from "./StudentMapsViewWrapper";
+import { ClassroomDirectionFinder } from "./ClassroomDirectionFinder";
 
 interface ClassroomDetailsDashboardProps {
   classroom: Classroom & {
@@ -82,7 +84,6 @@ export function ClassroomDetailsDashboard({
   useEffect(() => {
     loadClassroomData();
   }, [classroom.id]);
-
 
   const loadClassroomData = async () => {
     try {
@@ -152,7 +153,8 @@ export function ClassroomDetailsDashboard({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const defaultTab = classroom.enable_assignments === false ? "maps" : "assignments";
+  const defaultTab =
+    classroom.enable_assignments === false ? "maps" : "assignments";
   const currentTab = searchParams?.get("tab") ?? defaultTab;
 
   const loadStudentsData = useCallback(async () => {
@@ -160,24 +162,37 @@ export function ClassroomDetailsDashboard({
     try {
       // Add cache busting to force fresh API call
       const cacheBuster = `?t=${Date.now()}`;
-      const studentsResponse = await fetch(`/api/classrooms/${classroom.id}/students${cacheBuster}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache'
+      const studentsResponse = await fetch(
+        `/api/classrooms/${classroom.id}/students${cacheBuster}`,
+        {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
         }
-      });
-      
+      );
+
       console.log("📡 [DEBUG] API Response status:", studentsResponse.status);
-      console.log("📡 [DEBUG] API Response headers:", Object.fromEntries(studentsResponse.headers.entries()));
-      
+      console.log(
+        "📡 [DEBUG] API Response headers:",
+        Object.fromEntries(studentsResponse.headers.entries())
+      );
+
       if (studentsResponse.ok) {
         const studentsData = await studentsResponse.json();
         console.log("📋 [DEBUG] Students data received in dashboard:");
         console.table(studentsData);
-        console.log("🔍 [DEBUG] Full students data:", JSON.stringify(studentsData, null, 2));
+        console.log(
+          "🔍 [DEBUG] Full students data:",
+          JSON.stringify(studentsData, null, 2)
+        );
         setStudents(studentsData);
       } else {
-        console.error("❌ [DEBUG] Failed to fetch students:", studentsResponse.status, studentsResponse.statusText);
+        console.error(
+          "❌ [DEBUG] Failed to fetch students:",
+          studentsResponse.status,
+          studentsResponse.statusText
+        );
         setStudents([]);
       }
     } catch (error) {
@@ -200,19 +215,21 @@ export function ClassroomDetailsDashboard({
   // Load students data when students tab is initially active
   useEffect(() => {
     if (currentTab === "students") {
-      console.log("🎯 [DEBUG] Students tab is initially active, loading students data...");
+      console.log(
+        "🎯 [DEBUG] Students tab is initially active, loading students data..."
+      );
       loadStudentsData();
     }
   }, [currentTab, loadStudentsData]);
 
   const handleTabChange = (value: string) => {
     console.log("🔀 [DEBUG] Tab changed to:", value);
-    
+
     // Load students data when students tab is clicked
     if (value === "students") {
       loadStudentsData();
     }
-    
+
     const params = new URLSearchParams(searchParams?.toString() || "");
     params.set("tab", value);
     const qs = params.toString();
@@ -221,11 +238,13 @@ export function ClassroomDetailsDashboard({
 
   // Redirect to maps tab if currently on assignments tab but assignments are disabled
   useEffect(() => {
-    if (classroom.enable_assignments === false && currentTab === "assignments") {
+    if (
+      classroom.enable_assignments === false &&
+      currentTab === "assignments"
+    ) {
       handleTabChange("maps");
     }
   }, [classroom.enable_assignments]);
-
 
   return (
     <div className="space-y-6">
@@ -278,24 +297,28 @@ export function ClassroomDetailsDashboard({
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold mb-2">
-              {stats.totalMembers}
-            </div>
+            <div className="text-2xl font-bold mb-2">{stats.totalMembers}</div>
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Students</span>
-                <span className="font-medium text-blue-600">{stats.totalStudents}</span>
+                <span className="font-medium text-blue-600">
+                  {stats.totalStudents}
+                </span>
               </div>
               {stats.totalInstructors > 0 && (
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Instructors</span>
-                  <span className="font-medium text-purple-600">{stats.totalInstructors}</span>
+                  <span className="font-medium text-purple-600">
+                    {stats.totalInstructors}
+                  </span>
                 </div>
               )}
               {stats.totalTAs > 0 && (
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">TAs</span>
-                  <span className="font-medium text-green-600">{stats.totalTAs}</span>
+                  <span className="font-medium text-green-600">
+                    {stats.totalTAs}
+                  </span>
                 </div>
               )}
             </div>
@@ -363,90 +386,109 @@ export function ClassroomDetailsDashboard({
             </TabsTrigger>
           )}
           {canManage && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
+          {canManage && (
+            <TabsTrigger
+              value="direction-results"
+              className="flex items-center gap-2"
+            >
+              <Compass className="h-4 w-4" />
+              Direction Results
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {classroom.enable_assignments !== false && (
           <TabsContent value="assignments" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">
-              {classroom.enable_assignments === false ? "Learning Maps" : "Assignments"}
-            </h3>
-            {canManage && classroom.enable_assignments !== false && (
-              <CreateAssignmentModal
-                classroomId={classroom.id}
-                onAssignmentCreated={loadClassroomData}
-                variant="outline"
-              />
-            )}
-          </div>
-
-          {classroom.enable_assignments === false ? (
-            // Show learning maps when assignments are disabled
-            <div className="space-y-4">
-              <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
-                    <BookOpen className="w-3 h-3 text-white" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-blue-900">Map-Based Progress Tracking</p>
-                    <p className="text-sm text-blue-700">
-                      Assignment system is disabled. Student progress is tracked through completion of linked learning maps. 
-                      Students work directly with maps and their progress is calculated based on node completion.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <ClassroomMapsManager 
-                classroomId={classroom.id}
-                canManage={canManage}
-                enableAssignments={classroom.enable_assignments !== false}
-                onMapsUpdated={loadClassroomData}
-              />
-            </div>
-          ) : loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="h-48 animate-pulse bg-muted" />
-              ))}
-            </div>
-          ) : assignments.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {assignments
-                .filter((assignment: any) => assignment.is_active)
-                .map((assignment: any) => (
-                  <AssignmentCard
-                    key={assignment.id}
-                    assignment={assignment}
-                    canManage={canManage}
-                    onAssignmentUpdated={loadClassroomData}
-                  />
-                ))}
-            </div>
-          ) : (
-            <Card className="p-8 text-center">
-              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No assignments yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first assignment to get started.
-              </p>
-              {canManage && (
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">
+                {classroom.enable_assignments === false
+                  ? "Learning Maps"
+                  : "Assignments"}
+              </h3>
+              {canManage && classroom.enable_assignments !== false && (
                 <CreateAssignmentModal
                   classroomId={classroom.id}
                   onAssignmentCreated={loadClassroomData}
+                  variant="outline"
                 />
               )}
-            </Card>
-          )}
-        </TabsContent>
+            </div>
+
+            {classroom.enable_assignments === false ? (
+              // Show learning maps when assignments are disabled
+              <div className="space-y-4">
+                <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
+                      <BookOpen className="w-3 h-3 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-blue-900">
+                        Map-Based Progress Tracking
+                      </p>
+                      <p className="text-sm text-blue-700">
+                        Assignment system is disabled. Student progress is
+                        tracked through completion of linked learning maps.
+                        Students work directly with maps and their progress is
+                        calculated based on node completion.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <ClassroomMapsManager
+                  classroomId={classroom.id}
+                  canManage={canManage}
+                  enableAssignments={classroom.enable_assignments !== false}
+                  onMapsUpdated={loadClassroomData}
+                />
+              </div>
+            ) : loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="h-48 animate-pulse bg-muted" />
+                ))}
+              </div>
+            ) : assignments.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {assignments
+                  .filter((assignment: any) => assignment.is_active)
+                  .map((assignment: any) => (
+                    <AssignmentCard
+                      key={assignment.id}
+                      assignment={assignment}
+                      canManage={canManage}
+                      onAssignmentUpdated={loadClassroomData}
+                    />
+                  ))}
+              </div>
+            ) : (
+              <Card className="p-8 text-center">
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  No assignments yet
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Create your first assignment to get started.
+                </p>
+                {canManage && (
+                  <CreateAssignmentModal
+                    classroomId={classroom.id}
+                    onAssignmentCreated={loadClassroomData}
+                  />
+                )}
+              </Card>
+            )}
+          </TabsContent>
         )}
 
         <TabsContent value="teams" className="space-y-4">
           <Tabs defaultValue="manage" className="space-y-6">
             <TabsList>
               <TabsTrigger value="manage">Team Management</TabsTrigger>
-              {canManage && <TabsTrigger value="grading">Team Grading</TabsTrigger>}
+              {canManage && (
+                <TabsTrigger value="grading">Team Grading</TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="manage">
@@ -459,7 +501,7 @@ export function ClassroomDetailsDashboard({
 
             {canManage && (
               <TabsContent value="grading">
-                <TeamGrading 
+                <TeamGrading
                   classroomId={classroom.id}
                   onGraded={() => {
                     // Optionally refresh data
@@ -483,14 +525,13 @@ export function ClassroomDetailsDashboard({
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Learning Maps</h3>
                 <p className="text-sm text-muted-foreground">
-                  {classroom.enable_assignments === false 
+                  {classroom.enable_assignments === false
                     ? "Link learning maps for student progress tracking"
-                    : "Link learning maps to create assignments from their nodes"
-                  }
+                    : "Link learning maps to create assignments from their nodes"}
                 </p>
               </div>
 
-              <ClassroomMapsManager 
+              <ClassroomMapsManager
                 classroomId={classroom.id}
                 canManage={canManage}
                 enableAssignments={classroom.enable_assignments !== false}
@@ -569,7 +610,6 @@ export function ClassroomDetailsDashboard({
           )}
         </TabsContent>
 
-
         {canManage && (
           <TabsContent value="grading" className="space-y-4">
             <ClassroomGrading
@@ -597,6 +637,15 @@ export function ClassroomDetailsDashboard({
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+        )}
+
+        {canManage && (
+          <TabsContent value="direction-results" className="space-y-4">
+            <ClassroomDirectionFinder classroomId={classroom.id} />
+            {/* <div className="p-4 border rounded">
+              Debugging: Feature disabled temporarily
+            </div> */}
           </TabsContent>
         )}
       </Tabs>
