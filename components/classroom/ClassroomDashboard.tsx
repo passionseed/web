@@ -54,9 +54,24 @@ export function ClassroomDashboard() {
       // Fetch user's classroom memberships (works for all roles)
       const response = await fetch("/api/classrooms");
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Classrooms API error:", response.status, errorText);
-        throw new Error(`Failed to fetch classrooms: ${response.status}`);
+        // Handle 401 Unauthorized - user not logged in
+        if (response.status === 401) {
+          console.log("User not authenticated, returning empty classrooms");
+          setClassrooms([]);
+          setUserCanCreateClassrooms(false);
+          return;
+        }
+
+        const errorData = await response.json().catch(() => null);
+        console.error("=== CLASSROOMS API ERROR ===");
+        console.error("Status:", response.status);
+        console.error("Error Data:", JSON.stringify(errorData, null, 2));
+        const errorMessage =
+          errorData?.message ||
+          errorData?.details ||
+          errorData?.error ||
+          `API Error ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       const memberships: ClassroomMembership[] = await response.json();
@@ -68,7 +83,8 @@ export function ClassroomDashboard() {
         // member_count is now provided by the API
         assignments: membership.classroom.assignments || [], // Will be fetched separately if needed
         assignment_count: membership.classroom.assignment_count || 0,
-        active_assignment_count: membership.classroom.active_assignment_count || 0,
+        active_assignment_count:
+          membership.classroom.active_assignment_count || 0,
       }));
 
       setClassrooms(classroomList);
@@ -85,7 +101,8 @@ export function ClassroomDashboard() {
       console.error("Load classrooms error:", error);
       toast({
         title: "Error",
-        description: "Failed to load classrooms",
+        description:
+          error instanceof Error ? error.message : "Failed to load classrooms",
         variant: "destructive",
       });
     } finally {

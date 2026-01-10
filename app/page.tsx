@@ -14,33 +14,9 @@ import { Map, ArrowRight, Sparkles, Play } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Check if logged-in user has completed their profile
-  if (user) {
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("full_name, username, date_of_birth")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || !profileData?.full_name || !profileData?.username || !profileData?.date_of_birth) {
-      // Profile incomplete, redirect to finish profile
-      redirect("/auth/finish-profile");
-    }
-
-    // Profile complete, redirect to /me
-    redirect("/me");
-  }
-
-  // Learning Maps Preview Component for non-logged-in users
-  const LearningMapsPreview = () => (
+// Learning Maps Preview Component for non-logged-in users - defined OUTSIDE to avoid hooks issues
+function LearningMapsPreview() {
+  return (
     <section className="container py-16 px-4 md:px-6 bg-black/50">
       <div className="text-center mb-12">
         <h2 className="text-3xl font-bold tracking-tighter mb-4 text-white">
@@ -93,7 +69,9 @@ export default async function Home() {
                   <span>{mapData.nodes}</span>
                 </div>
               </div>
-              <CardDescription className="text-gray-400">{mapData.description}</CardDescription>
+              <CardDescription className="text-gray-400">
+                {mapData.description}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -139,6 +117,37 @@ export default async function Home() {
       </div>
     </section>
   );
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Check if logged-in user has completed their profile
+  if (user) {
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("full_name, username, date_of_birth")
+      .eq("id", user.id)
+      .single();
+
+    if (
+      profileError ||
+      !profileData?.full_name ||
+      !profileData?.username ||
+      !profileData?.date_of_birth
+    ) {
+      // Profile incomplete, redirect to finish profile
+      redirect("/auth/finish-profile");
+    }
+
+    // Profile complete, redirect to /me
+    redirect("/me");
+  }
 
   return (
     <>

@@ -15,17 +15,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch user's classroom memberships with classroom details
+    // Fetch user's classroom memberships
     const { data: memberships, error: membershipsError } = await supabase
       .from("classroom_memberships")
-      .select(
-        `
-        id,
-        classroom_id,
-        user_id,
-        role,
-        joined_at,
-        classrooms (
+      .select("id, classroom_id, user_id, role, joined_at")
+      .eq("user_id", user.id)
+      .order("joined_at", { ascending: false });
+
+    if (membershipsError) {
+      console.error("=== CLASSROOM MEMBERSHIPS ERROR ===");
+      console.error("Message:", membershipsError.message);
+      console.error("Code:", membershipsError.code);
+      console.error("Details:", membershipsError.details);
+      console.error("Hint:", membershipsError.hint);
+      console.error("Full error:", JSON.stringify(membershipsError, null, 2));
+      return NextResponse.json(
+        {
+          error: "Failed to fetch classrooms",
+          message: membershipsError.message,
+          code: membershipsError.code,
+          details: membershipsError.details,
+          hint: membershipsError.hint
+        },
+        { status: 500 }
+      );
+    }
+
+    // Manually fetch classroom details for each membership to avoid recursion/relationship errors
+    const classroomIds = (memberships || []).map((m) => m.classroom_id);
+    let classroomsMap: Record<string, any> = {};
+
+    if (classroomIds.length > 0) {
+      const { data: classroomsData, error: classroomsError } = await supabase
+        .from("classrooms")
+        .select(`
           id,
           name,
           description,
@@ -35,22 +58,25 @@ export async function GET(request: NextRequest) {
           is_active,
           created_at,
           updated_at
-        )
-      `
-      )
-      .eq("user_id", user.id)
-      .order("joined_at", { ascending: false });
+        `)
+        .in("id", classroomIds);
 
-    if (membershipsError) {
-      console.error("Error fetching classroom memberships:", membershipsError);
-      return NextResponse.json(
-        { error: "Failed to fetch classrooms" },
-        { status: 500 }
-      );
+      if (classroomsError) {
+        console.error("Error fetching classrooms details:", classroomsError);
+        return NextResponse.json(
+          { error: "Failed to fetch classroom details", details: classroomsError },
+          { status: 500 }
+        );
+      }
+
+      classroomsMap = (classroomsData || []).reduce((acc, classroom) => {
+        acc[classroom.id] = classroom;
+        return acc;
+      }, {} as Record<string, any>);
     }
 
     // Get member counts for all classrooms
-    const classroomIds = (memberships || []).map((m) => m.classroom_id);
+    // const classroomIds is already defined above
 
     const memberCounts: Record<string, number> = {};
     const studentCounts: Record<string, number> = {};
@@ -82,20 +108,24 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to flatten the classroom object and add member counts
-    const transformedMemberships = (memberships || []).map((membership) => ({
-      id: membership.id,
-      classroom_id: membership.classroom_id,
-      user_id: membership.user_id,
-      role: membership.role,
-      joined_at: membership.joined_at,
-      classroom: {
-        ...membership.classrooms,
-        member_count: memberCounts[membership.classroom_id] || 0,
-        student_count: studentCounts[membership.classroom_id] || 0,
-        instructor_count: instructorCounts[membership.classroom_id] || 0,
-        ta_count: taCounts[membership.classroom_id] || 0,
-      },
-    }));
+    const transformedMemberships = (memberships || []).map((membership) => {
+      const classroomDetails = classroomsMap[membership.classroom_id] || {};
+
+      return {
+        id: membership.id,
+        classroom_id: membership.classroom_id,
+        user_id: membership.user_id,
+        role: membership.role,
+        joined_at: membership.joined_at,
+        classroom: {
+          ...classroomDetails,
+          member_count: memberCounts[membership.classroom_id] || 0,
+          student_count: studentCounts[membership.classroom_id] || 0,
+          instructor_count: instructorCounts[membership.classroom_id] || 0,
+          ta_count: taCounts[membership.classroom_id] || 0,
+        },
+      };
+    });
 
     return NextResponse.json(transformedMemberships);
   } catch (error) {
