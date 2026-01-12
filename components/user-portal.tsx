@@ -7,7 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import dynamic from "next/dynamic";
+
+const Tabs = dynamic(() => import("@/components/ui/tabs").then((mod) => mod.Tabs), {
+  ssr: false,
+  loading: () => <div className="w-full h-96 bg-muted/10 animate-pulse rounded-lg" />,
+});
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -590,10 +596,10 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                                   : null;
                               })
                               .filter(Boolean) as Array<{
-                              id: string;
-                              text: string;
-                              displayNotes: string;
-                            }>;
+                                id: string;
+                                text: string;
+                                displayNotes: string;
+                              }>;
 
                             if (topicsWithNotes.length === 0) {
                               return (
@@ -802,36 +808,36 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                             {(topic.satisfaction_rating ||
                               topic.progress_rating ||
                               topic.challenge_rating) && (
-                              <div className="grid grid-cols-3 gap-2 md:gap-3 mb-3 md:mb-4">
-                                <div className="text-center p-1.5 md:p-2 bg-pink-50 dark:bg-pink-900/20 rounded">
-                                  <Heart className="h-3 w-3 md:h-4 md:w-4 text-pink-500 mx-auto mb-0.5 md:mb-1" />
-                                  <div className="text-xs md:text-sm font-medium">
-                                    {topic.satisfaction_rating || 0}
+                                <div className="grid grid-cols-3 gap-2 md:gap-3 mb-3 md:mb-4">
+                                  <div className="text-center p-1.5 md:p-2 bg-pink-50 dark:bg-pink-900/20 rounded">
+                                    <Heart className="h-3 w-3 md:h-4 md:w-4 text-pink-500 mx-auto mb-0.5 md:mb-1" />
+                                    <div className="text-xs md:text-sm font-medium">
+                                      {topic.satisfaction_rating || 0}
+                                    </div>
+                                    <div className="text-[10px] md:text-xs text-muted-foreground">
+                                      Satisfaction
+                                    </div>
                                   </div>
-                                  <div className="text-[10px] md:text-xs text-muted-foreground">
-                                    Satisfaction
+                                  <div className="text-center p-1.5 md:p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                    <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-blue-500 mx-auto mb-0.5 md:mb-1" />
+                                    <div className="text-xs md:text-sm font-medium">
+                                      {topic.progress_rating || 0}
+                                    </div>
+                                    <div className="text-[10px] md:text-xs text-muted-foreground">
+                                      Progress
+                                    </div>
+                                  </div>
+                                  <div className="text-center p-1.5 md:p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
+                                    <Zap className="h-3 w-3 md:h-4 md:w-4 text-orange-500 mx-auto mb-0.5 md:mb-1" />
+                                    <div className="text-xs md:text-sm font-medium">
+                                      {topic.challenge_rating || 0}
+                                    </div>
+                                    <div className="text-[10px] md:text-xs text-muted-foreground">
+                                      Challenge
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="text-center p-1.5 md:p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-                                  <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-blue-500 mx-auto mb-0.5 md:mb-1" />
-                                  <div className="text-xs md:text-sm font-medium">
-                                    {topic.progress_rating || 0}
-                                  </div>
-                                  <div className="text-[10px] md:text-xs text-muted-foreground">
-                                    Progress
-                                  </div>
-                                </div>
-                                <div className="text-center p-1.5 md:p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
-                                  <Zap className="h-3 w-3 md:h-4 md:w-4 text-orange-500 mx-auto mb-0.5 md:mb-1" />
-                                  <div className="text-xs md:text-sm font-medium">
-                                    {topic.challenge_rating || 0}
-                                  </div>
-                                  <div className="text-[10px] md:text-xs text-muted-foreground">
-                                    Challenge
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                              )}
 
                             {/* Reflection Why */}
                             {topic.reflection_why && (
