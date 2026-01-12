@@ -21,11 +21,15 @@ export function FocusTimer({
   onSessionSaved,
   initialDuration = 25,
 }: FocusTimerProps) {
-  const [mode, setMode] = useState<"setup" | "running" | "paused" | "timesup" | "finished">(
-    "setup"
-  );
+  const [mode, setMode] = useState<"setup" | "running" | "paused" | "timesup" | "finished">("setup");
   const [duration, setDuration] = useState(initialDuration); // minutes
   const [timeLeft, setTimeLeft] = useState(initialDuration * 60); // seconds
+
+  // Robust timing states
+  const [targetTime, setTargetTime] = useState<number | null>(null);
+  const [pausedTimeRemaining, setPausedTimeRemaining] = useState<number | null>(null);
+  const [overtimeStartTime, setOvertimeStartTime] = useState<number | null>(null);
+
   const [overtime, setOvertime] = useState(0); // seconds
   const [baseTimeSaved, setBaseTimeSaved] = useState(false);
   const [notes, setNotes] = useState("");
@@ -39,16 +43,33 @@ export function FocusTimer({
     audioRef.current = new Audio("/sounds/alarm.mp3");
   }, []);
 
+  // Main Timer Effect (Running)
   useEffect(() => {
-    if (mode === "running") {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-      }, 1000);
-    } else if (mode === "timesup") {
-      // Start overtime counting
-      timerRef.current = setInterval(() => {
-        setOvertime((prev) => prev + 1);
-      }, 1000);
+    if (mode === "running" && targetTime) {
+      // Immediate update to prevent jump
+      const updateTimer = () => {
+        const now = Date.now();
+        const diff = Math.ceil((targetTime - now) / 1000);
+
+        if (diff <= 0) {
+          setTimeLeft(0);
+          handleTimesUp();
+        } else {
+          setTimeLeft(diff);
+        }
+      };
+
+      updateTimer(); // Initial call
+      timerRef.current = setInterval(updateTimer, 500); // 500ms for smoother UI updates logic (though displayed per sec)
+    } else if (mode === "timesup" && overtimeStartTime) {
+      // Overtime logic
+      const updateOvertime = () => {
+        const now = Date.now();
+        setOvertime(Math.floor((now - overtimeStartTime) / 1000));
+      };
+
+      updateOvertime();
+      timerRef.current = setInterval(updateOvertime, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
@@ -56,17 +77,16 @@ export function FocusTimer({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [mode]);
+  }, [mode, targetTime, overtimeStartTime]); // Dependencies for effect
 
-  useEffect(() => {
-    if (timeLeft === 0 && mode === "running") {
-      handleTimesUp();
-    }
-  }, [timeLeft, mode]);
+  // Don't need separate useEffect for timeLeft === 0 as it's handled in the tick
 
   const handleTimesUp = async () => {
+    // Only trigger if not already there to avoid race conditions
+    // (This is called active mode switch)
     setMode("timesup");
-    if (timerRef.current) clearInterval(timerRef.current);
+    setTargetTime(null);
+    setOvertimeStartTime(Date.now()); // Start counting overtime from NOW
 
     // Auto-save base time
     try {
@@ -77,8 +97,19 @@ export function FocusTimer({
       console.error("Failed to auto-save base time", e);
     }
 
-    // Play sound
-    // try { audioRef.current?.play(); } catch (e) { }
+    // Play sound with robust error handling
+    try {
+      if (audioRef.current) {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log("Audio playback failed:", error);
+          });
+        }
+      }
+    } catch (e) {
+      console.log("Audio playback error:", e);
+    }
   };
 
   const handleTimerComplete = () => {
@@ -86,29 +117,76 @@ export function FocusTimer({
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
+  // Direct save without summary screen
+  const handleTakeBreak = () => {
+    handleSaveSession();
+  };
+
   const startTimer = () => {
-    setTimeLeft(duration * 60);
+    const totalSeconds = duration * 60;
+    const target = Date.now() + totalSeconds * 1000;
+    setTargetTime(target);
+    setTimeLeft(totalSeconds);
     setMode("running");
   };
 
   const resumeTimer = () => {
-    setMode("running");
+    if (pausedTimeRemaining) {
+      const target = Date.now() + pausedTimeRemaining * 1000;
+      setTargetTime(target);
+      setMode("running");
+      setPausedTimeRemaining(null);
+    }
   };
 
   const pauseTimer = () => {
-    setMode("paused");
+    if (targetTime) {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((targetTime - now) / 1000));
+      setPausedTimeRemaining(remaining);
+      setTimeLeft(remaining); // Visual update
+      setTargetTime(null); // Clear target so effect doesn't run
+      setMode("paused");
+    }
   };
 
   const stopTimer = () => {
     setMode("setup");
+    setTargetTime(null);
+    setPausedTimeRemaining(null);
+    setOvertimeStartTime(null);
     if (timerRef.current) clearInterval(timerRef.current);
     setTimeLeft(duration * 60);
+    setOvertime(0);
   };
 
   const addFocusTime = (minutes: number) => {
+    const addedMillis = minutes * 60 * 1000;
+
+    // Update duration stats
     setDuration(prev => prev + minutes);
-    setTimeLeft(minutes * 60);
-    setMode("running");
+
+    if (mode === "running" && targetTime) {
+      setTargetTime(targetTime + addedMillis);
+      // timeLeft updates automatically via effect
+    } else if (mode === "paused" && pausedTimeRemaining) {
+      setPausedTimeRemaining(pausedTimeRemaining + minutes * 60);
+      setTimeLeft(pausedTimeRemaining + minutes * 60);
+    } else if (mode === "timesup") {
+      // If adding time during overtime, effectively "snoozing" or extending.
+      // Usually "Add 5 min" means "Extend session", so we go back to running?
+      // The UI button says "Add 5 min", currently logic was just + duration.
+      // The user requested logic?
+      // Previous logic: setDuration(+), setTimeLeft(min*60), setMode(running).
+      // This implies resetting the countdown. 
+
+      // Let's adopt that: Resets to running for X minutes.
+      const newTarget = Date.now() + addedMillis;
+      setTargetTime(newTarget);
+      setOvertime(0);
+      setOvertimeStartTime(null);
+      setMode("running");
+    }
   };
 
   const toggleTaskCompletion = (taskId: string) => {
@@ -242,7 +320,7 @@ export function FocusTimer({
           <Button variant="outline" size="lg" onClick={() => addFocusTime(5)}>
             <Play className="mr-2 h-4 w-4" /> Add 5 min
           </Button>
-          <Button size="lg" onClick={handleTimerComplete}>
+          <Button size="lg" onClick={handleTakeBreak}>
             Take a Break
           </Button>
         </div>
