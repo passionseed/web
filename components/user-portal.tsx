@@ -10,10 +10,7 @@ import {
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import dynamic from "next/dynamic";
 
-const Tabs = dynamic(() => import("@/components/ui/tabs").then((mod) => mod.Tabs), {
-  ssr: false,
-  loading: () => <div className="w-full h-96 bg-muted/10 animate-pulse rounded-lg" />,
-});
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +46,11 @@ import { useRouter } from "next/navigation";
 import { getMindmapReflections } from "@/lib/supabase/mindmap-reflections";
 import { useAuth } from "@/hooks/use-auth";
 import { MapNode, LearningMap } from "@/types/map";
+
+const Tabs = dynamic(() => import("@/components/ui/tabs").then((mod) => mod.Tabs), {
+  ssr: false,
+  loading: () => <div className="w-full h-96 bg-muted/10 animate-pulse rounded-lg" />,
+});
 
 interface MindmapReflection {
   id: string;

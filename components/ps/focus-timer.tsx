@@ -35,13 +35,39 @@ export function FocusTimer({
   const [notes, setNotes] = useState("");
   const [completedInSession, setCompletedInSession] = useState<Set<string>>(new Set());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Initialize audio
-    audioRef.current = new Audio("/sounds/alarm.mp3");
-  }, []);
+  const playNotificationSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+
+      const ctx = new AudioContext();
+
+      // Simple 3-beep alarm
+      const now = ctx.currentTime;
+      [0, 0.5, 1].forEach(offset => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now + offset); // A5
+        osc.frequency.exponentialRampToValueAtTime(440, now + offset + 0.1); // Drop pitch
+
+        gain.gain.setValueAtTime(0.3, now + offset);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.3);
+
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.3);
+      });
+
+    } catch (e) {
+      console.error("Failed to play alarm", e);
+    }
+  };
 
   // Main Timer Effect (Running)
   useEffect(() => {
@@ -97,19 +123,8 @@ export function FocusTimer({
       console.error("Failed to auto-save base time", e);
     }
 
-    // Play sound with robust error handling
-    try {
-      if (audioRef.current) {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.log("Audio playback failed:", error);
-          });
-        }
-      }
-    } catch (e) {
-      console.log("Audio playback error:", e);
-    }
+    // Play sound
+    playNotificationSound();
   };
 
   const handleTimerComplete = () => {
