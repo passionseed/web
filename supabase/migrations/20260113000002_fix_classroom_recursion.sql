@@ -1,4 +1,10 @@
 -- Create the function if it doesn't exist
+-- Drop policies depending on the old function signature first
+DROP POLICY IF EXISTS "manage_memberships_insert" ON public.classroom_memberships;
+DROP POLICY IF EXISTS "manage_memberships_update" ON public.classroom_memberships;
+DROP POLICY IF EXISTS "manage_memberships_delete" ON public.classroom_memberships;
+DROP POLICY IF EXISTS "view_memberships" ON public.classroom_memberships;
+
 -- Drop the old 2-parameter version if it exists
 DROP FUNCTION IF EXISTS public.is_classroom_instructor(UUID, UUID);
 
@@ -35,6 +41,28 @@ USING (
   OR
   -- Instructors can view all memberships in their classrooms (using security definer function)
   public.is_classroom_instructor(classroom_id)
+);
+
+-- Recreate management policies using the new function signature
+CREATE POLICY "manage_memberships_insert" ON public.classroom_memberships
+FOR INSERT
+TO authenticated
+WITH CHECK (
+    user_id = auth.uid() OR
+    public.is_classroom_instructor(classroom_id)
+);
+
+CREATE POLICY "manage_memberships_update" ON public.classroom_memberships
+FOR UPDATE
+TO authenticated
+USING (public.is_classroom_instructor(classroom_id));
+
+CREATE POLICY "manage_memberships_delete" ON public.classroom_memberships
+FOR DELETE
+TO authenticated
+USING (
+    user_id = auth.uid() OR
+    public.is_classroom_instructor(classroom_id)
 );
 
 -- Update profiles policy to use the function and avoid deep recursion
