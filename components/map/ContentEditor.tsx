@@ -70,6 +70,11 @@ const CONTENT_TYPE_CONFIG = {
     placeholder: "https://example.com/document.pdf or https://book-website.com",
     hint: "Files, books, documents, external resources",
   },
+  order_code: {
+    label: "🧩 Order Code",
+    placeholder: "",
+    hint: "Add code blocks that students need to rearrange",
+  },
 } as const;
 
 interface ContentEditorProps {
@@ -163,6 +168,23 @@ const validateContentForm = (
     errors.push("Description is required for resource links");
   }
 
+  if (contentType === "order_code") {
+    let blocks: string[] = [];
+    try {
+      blocks = JSON.parse(contentBody || "[]");
+    } catch {
+      errors.push("Invalid code blocks data");
+    }
+
+    if (blocks.length < 2) {
+      errors.push("Please add at least 2 code blocks");
+    }
+
+    if (blocks.some((b) => !b.trim())) {
+      errors.push("Code blocks cannot be empty");
+    }
+  }
+
   return errors;
 };
 
@@ -190,6 +212,17 @@ const ContentForm = ({
   const [contentBody, setContentBody] = useState(
     existingContent?.content_body || ""
   );
+  // State for order code blocks
+  const [codeBlocks, setCodeBlocks] = useState<string[]>(() => {
+    if (existingContent?.content_type === "order_code" && existingContent.content_body) {
+      try {
+        return JSON.parse(existingContent.content_body);
+      } catch {
+        return [""];
+      }
+    }
+    return [""];
+  });
   const [errors, setErrors] = useState<string[]>([]);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
@@ -239,7 +272,9 @@ const ContentForm = ({
         content_body:
           contentType === "text" || contentType === "resource_link"
             ? contentBody.trim()
-            : null,
+            : contentType === "order_code"
+              ? JSON.stringify(codeBlocks.filter((b) => b.trim()))
+              : null,
         display_order: existingContent?.display_order ?? contentCount,
         created_at: existingContent?.created_at || new Date().toISOString(),
       };
@@ -257,6 +292,7 @@ const ContentForm = ({
       contentTitle,
       contentUrl,
       contentBody,
+      codeBlocks,
       existingContent,
       nodeId,
       onSave,
@@ -349,58 +385,57 @@ const ContentForm = ({
       {(contentType === "video" ||
         contentType === "canva_slide" ||
         contentType === "resource_link") && (
-        <div className="space-y-3">
-          <Label
-            htmlFor="content_url"
-            className="text-sm font-semibold text-slate-700"
-          >
-            URL <span className="text-red-500">*</span>
-            <span className="text-xs text-slate-500 ml-2 font-normal">
-              ({config.hint})
-            </span>
-          </Label>
-          <Input
-            id="content_url"
-            value={contentUrl}
-            onChange={(e) => {
-              setContentUrl(e.target.value);
-              clearErrors();
-            }}
-            placeholder={config.placeholder}
-            className={`h-11 border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 transition-colors truncate ${
-              errors.some((e) => e.includes("URL"))
+          <div className="space-y-3">
+            <Label
+              htmlFor="content_url"
+              className="text-sm font-semibold text-slate-700"
+            >
+              URL <span className="text-red-500">*</span>
+              <span className="text-xs text-slate-500 ml-2 font-normal">
+                ({config.hint})
+              </span>
+            </Label>
+            <Input
+              id="content_url"
+              value={contentUrl}
+              onChange={(e) => {
+                setContentUrl(e.target.value);
+                clearErrors();
+              }}
+              placeholder={config.placeholder}
+              className={`h-11 border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 transition-colors truncate ${errors.some((e) => e.includes("URL"))
                 ? "border-red-400 focus:border-red-500"
                 : ""
-            }`}
-          />
+                }`}
+            />
 
-          {contentType === "video" && (
-            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg overflow-hidden">
-              <div className="text-green-600 mt-0.5 flex-shrink-0">🎯</div>
-              <div className="text-xs text-green-800 leading-relaxed break-words overflow-x-auto">
-                <strong>Supported platforms:</strong> YouTube, Vimeo,
-                SoundCloud, Twitter, Reddit, GIPHY, Flickr.
-                <br />
-                <strong>Pro tip:</strong> Most social media and video platform
-                URLs work automatically!
+            {contentType === "video" && (
+              <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg overflow-hidden">
+                <div className="text-green-600 mt-0.5 flex-shrink-0">🎯</div>
+                <div className="text-xs text-green-800 leading-relaxed break-words overflow-x-auto">
+                  <strong>Supported platforms:</strong> YouTube, Vimeo,
+                  SoundCloud, Twitter, Reddit, GIPHY, Flickr.
+                  <br />
+                  <strong>Pro tip:</strong> Most social media and video platform
+                  URLs work automatically!
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {contentType === "resource_link" && (
-            <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg overflow-hidden">
-              <div className="text-purple-600 mt-0.5 flex-shrink-0">📚</div>
-              <div className="text-xs text-purple-800 leading-relaxed break-words overflow-x-auto">
-                <strong>Examples:</strong> PDFs, Google Docs, GitHub repos,
-                books, articles, datasets, tools.
-                <br />
-                <strong>Tip:</strong> Add a clear description below to help
-                students understand what this resource is!
+            {contentType === "resource_link" && (
+              <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg overflow-hidden">
+                <div className="text-purple-600 mt-0.5 flex-shrink-0">📚</div>
+                <div className="text-xs text-purple-800 leading-relaxed break-words overflow-x-auto">
+                  <strong>Examples:</strong> PDFs, Google Docs, GitHub repos,
+                  books, articles, datasets, tools.
+                  <br />
+                  <strong>Tip:</strong> Add a clear description below to help
+                  students understand what this resource is!
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
 
       {/* File Upload for Images */}
       {contentType === "image" && (
@@ -499,13 +534,12 @@ const ContentForm = ({
               setContentBody(e.target.value);
               clearErrors();
             }}
-            className={`min-h-[120px] ${
-              errors.some(
-                (e) => e.includes("Content body") || e.includes("Description")
-              )
-                ? "border-red-500"
-                : ""
-            }`}
+            className={`min-h-[120px] ${errors.some(
+              (e) => e.includes("Content body") || e.includes("Description")
+            )
+              ? "border-red-500"
+              : ""
+              }`}
             placeholder={
               contentType === "resource_link"
                 ? "Describe what this resource is and why it's useful for students. e.g., 'Essential reading on machine learning fundamentals' or 'Python documentation for reference'"
@@ -533,6 +567,84 @@ const ContentForm = ({
           </div>
         </div>
       )}
+
+
+
+      {/* Order Code Editor */}
+      {
+        contentType === "order_code" && (
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold text-slate-700">
+              Code Blocks <span className="text-red-500">*</span>
+              <span className="text-xs text-slate-500 ml-2 font-normal">
+                ({config.hint})
+              </span>
+            </Label>
+
+            <div className="space-y-2">
+              {codeBlocks.map((block, index) => (
+                <div key={index} className="flex gap-2">
+                  <Textarea
+                    value={block}
+                    onChange={(e) => {
+                      const newBlocks = [...codeBlocks];
+                      newBlocks[index] = e.target.value;
+                      setCodeBlocks(newBlocks);
+                      setContentBody(JSON.stringify(newBlocks));
+                      clearErrors();
+
+                      // Auto-resize
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    // Initialize height on mount
+                    ref={(el) => {
+                      if (el) {
+                        el.style.height = 'auto';
+                        el.style.height = `${el.scrollHeight}px`;
+                      }
+                    }}
+                    placeholder={`Code block ${index + 1}`}
+                    className="font-mono text-sm min-h-[60px] resize-none overflow-hidden bg-slate-900 text-slate-100 border-slate-700"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => {
+                      const newBlocks = codeBlocks.filter((_, i) => i !== index);
+                      setCodeBlocks(newBlocks);
+                      setContentBody(JSON.stringify(newBlocks));
+                    }}
+                    disabled={codeBlocks.length <= 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCodeBlocks([...codeBlocks, ""]);
+              }}
+              className="w-full border-dashed"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Code Block
+            </Button>
+
+            <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg text-blue-800">
+              🧩 <strong>How it works:</strong> Define the blocks in the <strong>exact order</strong> you want them to appear.
+              Students can drag blocks to reorder them or nest them inside containers (blocks with braces).
+            </div>
+          </div>
+        )
+      }
 
       <div className="flex justify-end gap-2 pt-2">
         <Button
@@ -572,7 +684,7 @@ const ContentForm = ({
           )}
         </Button>
       </div>
-    </form>
+    </form >
   );
 };
 
@@ -586,7 +698,9 @@ const getContentPreview = (item: NodeContent): string => {
       text: "📝",
       image: "🖼️",
       pdf: "📄",
+
       resource_link: "🔗",
+      order_code: "🧩",
     };
     const icon = typeIcons[item.content_type] || "";
     return `${icon} ${item.content_title}`;
@@ -617,6 +731,14 @@ const getContentPreview = (item: NodeContent): string => {
       const descriptionPreview = item.content_body?.substring(0, 30) || "";
       const urlPreview = item.content_url?.substring(0, 25) || "";
       return `🔗 Resource: ${descriptionPreview}${descriptionPreview.length >= 30 ? "..." : ""} (${urlPreview}${urlPreview.length >= 25 ? "..." : ""})`;
+    },
+    order_code: () => {
+      try {
+        const blocks = JSON.parse(item.content_body || "[]");
+        return `🧩 Order Code: ${blocks.length} blocks`;
+      } catch {
+        return "🧩 Order Code";
+      }
     },
   };
 

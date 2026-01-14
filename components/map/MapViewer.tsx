@@ -561,7 +561,7 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
   };
 
   // Custom node component with sprite-based gamified design and floating animations
-  const nodeTypes = {
+  const nodeTypes = useMemo(() => ({
     default: ({
       data,
       selected,
@@ -574,7 +574,6 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
       const spriteUrl = data.sprite_url || "/islands/crystal.png";
 
       // Determine node state and styling
-      const overlayColor = "";
       let statusIcon = null;
       let glowEffect = "";
       let brightness = "brightness(1)";
@@ -598,155 +597,112 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
           glowEffect = "drop-shadow-[0_0_12px_rgba(34,197,94,0.6)]";
           statusIcon = <CheckCircle className="h-4 w-4 text-green-500" />;
           animationClass = "animate-float-success";
-        } else {
-          switch (status) {
-            case "failed":
-              glowEffect = "drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]";
-              statusIcon = <AlertTriangle className="h-4 w-4 text-red-500" />;
-              animationClass = "animate-float-failed";
-              break;
-            case "submitted":
-              glowEffect = "drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]";
-              statusIcon = <Clock className="h-4 w-4 text-blue-500" />;
-              animationClass = "animate-float-submitted";
-              break;
-            case "in_progress":
-              glowEffect = "drop-shadow-[0_0_12px_rgba(249,115,22,0.6)]";
-              statusIcon = (
-                <Clock className="h-4 w-4 text-orange-500 animate-pulse" />
-              );
-              animationClass = "animate-float-progress";
-              break;
-            case "not_started":
-              if (isUnlocked) {
-                statusIcon = <Play className="h-4 w-4 text-blue-400" />;
-                animationClass = "animate-float";
-              }
-              break;
-            case "passed":
-              // This should be handled by isCompleted above
-              break;
-          }
+        } else if (status === "failed") {
+          // Submitted but failed (needs retry)
+          glowEffect = "drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]";
+          statusIcon = <AlertTriangle className="h-4 w-4 text-red-500" />;
+          animationClass = "animate-shake";
+        } else if (status === "submitted") {
+          // Submitted awaiting grade (if not marked as complete by isNodeCompleted)
+          glowEffect = "drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]";
+          statusIcon = <Clock className="h-4 w-4 text-blue-500" />;
+          animationClass = "animate-float";
+        } else if (status === "in_progress") {
+          glowEffect = "drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]";
+          statusIcon = <Play className="h-4 w-4 text-amber-500" />;
+          animationClass = "animate-float";
         }
-      } else if (isUnlocked) {
-        statusIcon = <Play className="h-4 w-4 text-blue-400" />;
+      }
+
+      // If just unlocked but not started
+      if (isUnlocked && (!progress || !progress.status)) {
         animationClass = "animate-float";
       }
 
-      // Add grading indicators for instructors/TAs
+      // Instructor/TA grading indicator
       let gradingIndicator = null;
-      let submissionCount = 0;
-      let pendingCount = 0;
+      if (isInstructorOrTA) {
+        const needsGrading =
+          progress?.status === "submitted" &&
+          !(progress as any)?.grade &&
+          !(progress as any)?.is_graded;
+
+        if (needsGrading) {
+          gradingIndicator = (
+            <div className="absolute -top-3 -right-3 z-30 animate-bounce">
+              <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg border border-red-400">
+                GRADE
+              </div>
+            </div>
+          );
+        }
+      }
+
+      // Team Progress Info (for instructors viewing team maps)
       let memberProgressInfo = null;
+      if (isInstructorOrTA && isTeamMap && (progress as any)?.member_progress) {
+        const memberProgress = (progress as any).member_progress as any[];
+        const totalMembers = memberProgress.length;
+        const completedMembers = memberProgress.filter(
+          (m) => m.status === "passed" || m.status === "submitted"
+        ).length;
 
-      // Submission requirement indicator
-      const requirement = getSubmissionRequirement(data.id);
-      let requirementBadge = null;
+        const allCompleted = completedMembers === totalMembers;
+        const anyCompleted = completedMembers > 0;
 
-      if (isTeamMap && isUnlocked) {
-        requirementBadge = (
-          <div className="absolute -top-2 -left-2 z-50">
+        // Show a small pill indicating how many completed
+        const bgColor = allCompleted
+          ? "bg-green-500"
+          : anyCompleted
+            ? "bg-amber-500"
+            : "bg-slate-500";
+
+        memberProgressInfo = (
+          <div className="absolute -top-8 right-0 z-30 transform scale-90 origin-bottom-right">
             <div
-              className={`rounded-full p-1 text-xs font-bold shadow-lg ${requirement === "all"
-                ? "bg-purple-500 text-white"
-                : "bg-blue-500 text-white"
-                }`}
-              title={`Submission requirement: ${requirement === "all" ? "All team members" : "Any team member"}`}
+              className={`${bgColor} text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md border border-white/20 flex items-center gap-1`}
             >
-              {requirement === "all" ? "👥" : "👤"}
+              <span className="text-[9px]">👥</span>
+              {completedMembers}/{totalMembers}
             </div>
           </div>
         );
       }
 
-      if (isInstructorOrTA && data.id) {
-        if (isTeamMap && progress && progress.member_progress) {
-          // Show team member progress for team maps
-          const memberProgress = progress.member_progress;
-          const passedCount = memberProgress.filter(
-            (mp: any) => mp.status === "passed"
-          ).length;
-          const submittedCount = memberProgress.filter(
-            (mp: any) => mp.status === "submitted"
-          ).length;
-          const inProgressCount = memberProgress.filter(
-            (mp: any) => mp.status === "in_progress"
-          ).length;
-
-          memberProgressInfo = (
-            <div className="absolute -top-2 -right-2 z-50">
-              <div
-                className="rounded-full p-1 text-xs font-bold shadow-lg bg-blue-500 text-white"
-                title={`Team progress: ${passedCount} passed, ${submittedCount} submitted, ${inProgressCount} in progress`}
-              >
-                {memberProgress.length}
+      // Submission requirement badge (Little icon near the node to show distinct requirements)
+      let requirementBadge = null;
+      if (isTeamMap) {
+        const requirement = getSubmissionRequirement(data.id);
+        if (requirement === "all") {
+          requirementBadge = (
+            <div className="absolute top-0 -left-2 z-20" title="All members must submit">
+              <div className="bg-purple-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow border border-purple-400 font-bold">
+                A
               </div>
             </div>
           );
-        } else {
-          // Count submissions for individual progress
-          const nodeSubmissions = allSubmissions.filter(
-            (sub) => sub.node_assessments?.map_nodes?.id === data.id
-          );
-          submissionCount = nodeSubmissions.length;
-          pendingCount = nodeSubmissions.filter(
-            (sub) => sub.submission_grades.length === 0
-          ).length;
-
-          // Add grading badge if there are submissions
-          if (submissionCount > 0) {
-            gradingIndicator = (
-              <div className="absolute -top-2 -right-2 z-50">
-                <div
-                  className={`rounded-full p-1 text-xs font-bold shadow-lg ${pendingCount > 0
-                    ? "bg-orange-500 text-white animate-pulse"
-                    : "bg-green-500 text-white"
-                    }`}
-                >
-                  {pendingCount > 0 ? pendingCount : submissionCount}
-                </div>
-              </div>
-            );
-          }
         }
       }
 
       return (
-        <div className="relative inline-block group w-fit h-fit">
-          {/* Connection handles - visible but non-interactive in viewer mode */}
-          <Handle
-            type="target"
-            position={Position.Top}
-            className="w-3 h-3 bg-blue-500/20 border-2 border-blue-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none", display: "none" }}
-          />
-          <Handle
-            type="source"
-            position={Position.Bottom}
-            className="w-2 h-2 bg-green-500/20 border-2 border-green-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none", display: "none" }}
-          />
+        <div className={`relative group ${animationClass}`}>
           <Handle
             type="target"
             position={Position.Left}
-            className="w-2 h-2 bg-blue-500/20 border-2 border-blue-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none", display: "none" }}
+            className="!w-3 !h-3 !bg-slate-400/50 !border-2 !border-slate-600 !-left-2 transition-colors hover:!bg-slate-300"
+            style={{ opacity: 0 }} // Hide handles visually but keep functional
           />
           <Handle
             type="source"
             position={Position.Right}
-            className="w-2 h-2 bg-green-500/20 border-2 border-green-400/50 shadow-sm opacity-60"
-            style={{ pointerEvents: "none", display: "none" }}
+            className="!w-3 !h-3 !bg-slate-400/50 !border-2 !border-slate-600 !-right-2 transition-colors hover:!bg-slate-300"
+            style={{ opacity: 0 }}
           />
-          <div
-            className={`relative ${selected ? "scale-110 translate-y-3" : ""} transition-transform duration-300 cursor-pointer ${animationClass}`}
-            role="button"
-            tabIndex={isUnlocked ? 0 : -1}
-            aria-label={`${data.title} - ${isUnlocked ? "Available" : "Locked"} - Difficulty: ${data.difficulty} stars`}
-            aria-describedby={progress ? `progress-${data.id}` : undefined}
-          >
-            {/* Selection Shadow - Enhanced for flying islands */}
-            {selected && (
+
+          {/* Core Node Visuals */}
+          <div className="relative min-w-[64px] min-h-[64px] w-fit h-fit flex items-center justify-center">
+            {/* Background Atmosphere/Glow */}
+            {isUnlocked && (
               <div className="absolute inset-0 -z-10">
                 {/* Main shadow image */}
                 <img
@@ -848,13 +804,10 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
             )}
 
             {/* Screen Reader Description */}
-            {progress && (
-              <div id={`progress-${data.id}`} className="sr-only">
-                Progress: {progress.status.replace("_", " ")}
-                {progress.submitted_at &&
-                  `, Submitted: ${new Date(progress.submitted_at).toLocaleDateString()}`}
-              </div>
-            )}
+            <span className="sr-only">
+              {data.title} node, difficulty {data.difficulty}, status:{" "}
+              {progress?.status || "locked"}
+            </span>
           </div>
         </div>
       );
@@ -906,7 +859,7 @@ export function MapViewer({ map, seedRoomId, seedTitle, seedId, roomSettingsComp
         />
       );
     },
-  };
+  }), [progressMap, isInstructorOrTA, isTeamMap, map.map_nodes]);
 
   useEffect(() => {
     const transformedNodes = map.map_nodes.map((node) => {

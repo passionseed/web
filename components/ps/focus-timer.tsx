@@ -289,7 +289,7 @@ export function FocusTimer({
         <div className="space-y-4">
           <Label>Duration (minutes): {duration}</Label>
           <div className="flex gap-2 justify-center">
-            {[1, 5, 10, 15, 25, 30, 45, 60].map((m) => (
+            {[10, 25, 30, 45, 60].map((m) => (
               <Button
                 key={m}
                 variant={duration === m ? "default" : "outline"}
