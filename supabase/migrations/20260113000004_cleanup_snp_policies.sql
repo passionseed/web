@@ -9,6 +9,8 @@ DROP POLICY IF EXISTS "Users can manage own progress" ON "public"."student_node_
 -- Create clean, safe policies
 
 -- 1. Users can view their own progress
+DROP POLICY IF EXISTS "Users can view their own progress" ON "public"."student_node_progress";
+
 CREATE POLICY "Users can view their own progress" ON "public"."student_node_progress"
 FOR SELECT
 TO authenticated
@@ -17,23 +19,29 @@ USING (
 );
 
 -- 2. Instructors and Admins can view ALL progress
+DROP POLICY IF EXISTS "Instructors and Admins can view all progress" ON "public"."student_node_progress";
+
 CREATE POLICY "Instructors and Admins can view all progress" ON "public"."student_node_progress"
 FOR SELECT
 TO authenticated
 USING (
   EXISTS (
-    SELECT 1 FROM public.user_roles 
+    SELECT 1 FROM public.user_roles
     WHERE user_id = auth.uid() AND role IN ('instructor', 'admin')
   )
 );
 
 -- 3. Users can insert/update their own progress
+DROP POLICY IF EXISTS "Users can insert their own progress" ON "public"."student_node_progress";
+
 CREATE POLICY "Users can insert their own progress" ON "public"."student_node_progress"
 FOR INSERT
 TO authenticated
 WITH CHECK (
   auth.uid() = user_id
 );
+
+DROP POLICY IF EXISTS "Users can update their own progress" ON "public"."student_node_progress";
 
 CREATE POLICY "Users can update their own progress" ON "public"."student_node_progress"
 FOR UPDATE

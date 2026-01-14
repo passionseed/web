@@ -14,6 +14,8 @@ DROP POLICY IF EXISTS "leave_own_memberships" ON "public"."classroom_memberships
 -- What about "Join as student"? (INSERT).
 -- Students need to INSERT into classroom_memberships.
 -- Creating a safe INSERT policy:
+DROP POLICY IF EXISTS "Users can join classrooms" ON "public"."classroom_memberships";
+
 CREATE POLICY "Users can join classrooms" ON "public"."classroom_memberships"
 FOR INSERT
 TO authenticated
@@ -22,6 +24,8 @@ WITH CHECK (
 );
 
 -- Users needs to DELETE their own membership (Leave).
+DROP POLICY IF EXISTS "Users can leave classrooms" ON "public"."classroom_memberships";
+
 CREATE POLICY "Users can leave classrooms" ON "public"."classroom_memberships"
 FOR DELETE
 TO authenticated
