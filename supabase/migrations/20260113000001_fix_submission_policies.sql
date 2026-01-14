@@ -1,14 +1,20 @@
 -- Enable RLS
 ALTER TABLE public.assessment_submissions ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Instructors and Admins can view all submissions" ON public.assessment_submissions;
+DROP POLICY IF EXISTS "Students can view their own submissions" ON public.assessment_submissions;
+DROP POLICY IF EXISTS "Students can insert their own submissions" ON public.assessment_submissions;
+DROP POLICY IF EXISTS "Students can update their own submissions" ON public.assessment_submissions;
+
 -- Policy for Instructors and Admins to view all submissions
 CREATE POLICY "Instructors and Admins can view all submissions"
 ON public.assessment_submissions
 FOR SELECT
 USING (
   auth.uid() IN (
-    SELECT user_id 
-    FROM public.user_roles 
+    SELECT user_id
+    FROM public.user_roles
     WHERE role IN ('instructor', 'admin')
   )
 );
@@ -19,8 +25,8 @@ ON public.assessment_submissions
 FOR SELECT
 USING (
   progress_id IN (
-    SELECT id 
-    FROM public.student_node_progress 
+    SELECT id
+    FROM public.student_node_progress
     WHERE user_id = auth.uid()
   )
 );
@@ -31,8 +37,8 @@ ON public.assessment_submissions
 FOR INSERT
 WITH CHECK (
   progress_id IN (
-    SELECT id 
-    FROM public.student_node_progress 
+    SELECT id
+    FROM public.student_node_progress
     WHERE user_id = auth.uid()
   )
 );
@@ -43,14 +49,16 @@ ON public.assessment_submissions
 FOR UPDATE
 USING (
   progress_id IN (
-    SELECT id 
-    FROM public.student_node_progress 
+    SELECT id
+    FROM public.student_node_progress
     WHERE user_id = auth.uid()
   )
 );
 
 -- Ensure node_assessments is readable
 ALTER TABLE public.node_assessments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view node assessments" ON public.node_assessments;
 
 CREATE POLICY "Authenticated users can view node assessments"
 ON public.node_assessments

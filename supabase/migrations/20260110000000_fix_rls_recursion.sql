@@ -68,22 +68,24 @@ GRANT EXECUTE ON FUNCTION public.is_classroom_member(UUID, UUID) TO anon;
 -- Create helper function to check if user is instructor (also needs SECURITY DEFINER)
 DROP FUNCTION IF EXISTS public.is_classroom_instructor(UUID, UUID);
 
-CREATE OR REPLACE FUNCTION public.is_classroom_instructor(classroom_uuid UUID, user_uuid UUID)
+CREATE OR REPLACE FUNCTION public.is_classroom_instructor(lookup_classroom_id uuid)
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
-STABLE
 AS $$
-    SELECT EXISTS (
-        SELECT 1 FROM public.classrooms 
-        WHERE id = classroom_uuid 
-        AND instructor_id = user_uuid
-    );
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM public.classroom_memberships
+    WHERE classroom_id = lookup_classroom_id
+    AND user_id = auth.uid()
+    AND role IN ('instructor', 'ta')
+  );
+END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.is_classroom_instructor(UUID, UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_classroom_instructor(UUID, UUID) TO anon;
+GRANT EXECUTE ON FUNCTION public.is_classroom_instructor(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_classroom_instructor(uuid) TO anon;
 
 -- =====================================================
 -- STEP 3: Recreate all the policies using SECURITY DEFINER functions
@@ -101,32 +103,32 @@ USING (
 
 -- CLASSROOM_MEMBERSHIPS policies
 CREATE POLICY "view_memberships" ON public.classroom_memberships
-FOR SELECT 
+FOR SELECT
 TO authenticated
 USING (
-    user_id = auth.uid() OR 
-    public.is_classroom_instructor(classroom_id, auth.uid())
+    user_id = auth.uid() OR
+    public.is_classroom_instructor(classroom_id)
 );
 
 CREATE POLICY "manage_memberships_insert" ON public.classroom_memberships
 FOR INSERT
 TO authenticated
 WITH CHECK (
-    user_id = auth.uid() OR 
-    public.is_classroom_instructor(classroom_id, auth.uid())
+    user_id = auth.uid() OR
+    public.is_classroom_instructor(classroom_id)
 );
 
 CREATE POLICY "manage_memberships_update" ON public.classroom_memberships
 FOR UPDATE
 TO authenticated
-USING (public.is_classroom_instructor(classroom_id, auth.uid()));
+USING (public.is_classroom_instructor(classroom_id));
 
 CREATE POLICY "manage_memberships_delete" ON public.classroom_memberships
 FOR DELETE
 TO authenticated
 USING (
-    user_id = auth.uid() OR 
-    public.is_classroom_instructor(classroom_id, auth.uid())
+    user_id = auth.uid() OR
+    public.is_classroom_instructor(classroom_id)
 );
 
 -- CLASSROOM_ASSIGNMENTS policies

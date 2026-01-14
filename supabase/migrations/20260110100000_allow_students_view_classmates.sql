@@ -9,11 +9,11 @@ DROP POLICY IF EXISTS "view_memberships" ON public.classroom_memberships;
 
 -- Create the new expanded policy
 CREATE POLICY "view_memberships" ON public.classroom_memberships
-FOR SELECT 
+FOR SELECT
 TO authenticated
 USING (
     -- Allow if user is the instructor (via helper function)
-    public.is_classroom_instructor(classroom_id, auth.uid()) OR
+    public.is_classroom_instructor(classroom_id) OR
     -- OR if user is a member of the classroom (via helper function)
     public.is_classroom_member(classroom_id, auth.uid())
 );
