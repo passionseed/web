@@ -24,7 +24,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { StudentProfile, RecommendedUniversity } from "@/types/education";
-import { recommendUniversities } from "@/lib/ai/education-advisor";
+import { recommendUniversities } from "@/lib/ai/universityRecommender";
 import { toast } from "sonner";
 
 interface UniversityRecommendationQuestionnaireProps {
@@ -89,10 +89,7 @@ export function UniversityRecommendationQuestionnaire({
     setStep(step - 1);
   };
 
-  const toggleSelection = (
-    field: keyof StudentProfile,
-    value: string
-  ) => {
+  const toggleSelection = (field: keyof StudentProfile, value: string) => {
     setProfile((prev) => {
       const current = prev[field] as string[];
       if (current.includes(value)) {
@@ -139,7 +136,8 @@ export function UniversityRecommendationQuestionnaire({
             AI University Advisor
           </CardTitle>
           <p className="text-slate-400 text-sm">
-            Answer a few questions to get personalized university recommendations.
+            Answer a few questions to get personalized university
+            recommendations.
           </p>
         </CardHeader>
         <CardContent>
@@ -213,7 +211,9 @@ export function UniversityRecommendationQuestionnaire({
                   {CAMPUS_VIBE_OPTIONS.map((vibe) => (
                     <div
                       key={vibe}
-                      onClick={() => setProfile({ ...profile, campusVibe: vibe })}
+                      onClick={() =>
+                        setProfile({ ...profile, campusVibe: vibe })
+                      }
                       className={`p-3 rounded-lg border cursor-pointer transition-all ${
                         profile.campusVibe === vibe
                           ? "bg-purple-600/20 border-purple-500 text-purple-100"
@@ -232,7 +232,10 @@ export function UniversityRecommendationQuestionnaire({
                   placeholder="e.g. Bangkok, Chiang Mai, Near home..."
                   value={profile.preferredLocation}
                   onChange={(e) =>
-                    setProfile({ ...profile, preferredLocation: e.target.value })
+                    setProfile({
+                      ...profile,
+                      preferredLocation: e.target.value,
+                    })
                   }
                   className="bg-slate-800 border-slate-700 text-white"
                 />
@@ -267,12 +270,18 @@ export function UniversityRecommendationQuestionnaire({
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tech">Technology & Innovation</SelectItem>
+                    <SelectItem value="tech">
+                      Technology & Innovation
+                    </SelectItem>
                     <SelectItem value="healthcare">Healthcare</SelectItem>
                     <SelectItem value="business">Business & Finance</SelectItem>
-                    <SelectItem value="creative">Creative Arts & Media</SelectItem>
+                    <SelectItem value="creative">
+                      Creative Arts & Media
+                    </SelectItem>
                     <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="public_service">Public Service</SelectItem>
+                    <SelectItem value="public_service">
+                      Public Service
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -302,7 +311,10 @@ export function UniversityRecommendationQuestionnaire({
           )}
 
           {step < 3 ? (
-            <Button onClick={handleNext} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              onClick={handleNext}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>

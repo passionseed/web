@@ -3,10 +3,12 @@
 import { AssessmentAnswers } from "@/types/direction-finder";
 import {
     conductDirectionConversation as conductLogic,
+} from "@/lib/ai/conversationEngine";
+import {
     generateDirectionProfile as generateLogic,
     generateDirectionProfileCore as generateCoreLogic,
     generateDirectionProfileDetails as generateDetailsLogic,
-} from "@/lib/ai/education-advisor";
+} from "@/lib/ai/directionProfileEngine";
 import { DirectionFinderResult } from "@/types/direction-finder";
 
 export async function conductDirectionConversation(

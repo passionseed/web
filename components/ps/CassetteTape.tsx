@@ -64,7 +64,7 @@ export function CassetteTape({
   return (
     <div
       className={`relative group/cassette w-full mx-auto perspective-1000 ${
-        props.className || "max-w-[320px]"
+        props.className || "max-w-[420px]"
       }`}
     >
       {/* Stats Paper (Integrated Mode) - Behind */}
@@ -94,7 +94,7 @@ export function CassetteTape({
 
           {/* Top Label Area */}
           <div
-            className={`absolute top-[8%] left-[5%] right-[5%] h-[55%] rounded-md shadow-sm p-3 flex flex-col ${!isCustomTheme ? defaultLabelColor : ""}`}
+            className={`absolute top-[8%] left-[5%] right-[5%] h-[65%] rounded-md shadow-sm p-3 flex flex-col ${!isCustomTheme ? defaultLabelColor : ""}`}
             style={labelStyle}
           >
             {/* Handwritten-style Title */}
@@ -155,7 +155,7 @@ export function CassetteTape({
           </div>
 
           {/* Bottom Window Section - Adjusted for centering and overlap */}
-          <div className="absolute bottom-[12%] left-[15%] right-[15%] h-[20%] bg-neutral-900/40 rounded-full flex items-center justify-center gap-4 px-2 border border-neutral-700/50 relative overflow-hidden backdrop-blur-sm">
+          <div className="absolute bottom-[38%] left-[25%] right-[25%] h-[20%] bg-neutral-900/75 rounded-full flex items-center justify-center gap-4 p-2 border border-neutral-700/50  overflow-hidden backdrop-blur-sm">
             {/* Window Glass Reflection */}
             <div className="absolute top-0 left-10 w-20 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"></div>
 
