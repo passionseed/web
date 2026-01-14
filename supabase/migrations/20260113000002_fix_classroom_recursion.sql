@@ -1,3 +1,28 @@
+-- Create the function if it doesn't exist
+-- Drop the old 2-parameter version if it exists
+DROP FUNCTION IF EXISTS public.is_classroom_instructor(UUID, UUID);
+
+-- Function to check if current user is an instructor in a classroom
+-- SECURITY DEFINER allows it to bypass RLS on classroom_memberships
+CREATE OR REPLACE FUNCTION public.is_classroom_instructor(lookup_classroom_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM public.classroom_memberships
+    WHERE classroom_id = lookup_classroom_id
+    AND user_id = auth.uid()
+    AND role IN ('instructor', 'ta')
+  );
+END;
+$$;
+
+-- Grant execute permission with explicit signature
+GRANT EXECUTE ON FUNCTION public.is_classroom_instructor(uuid) TO authenticated;
+
 -- Update classroom_memberships policy to avoid recursion
 DROP POLICY IF EXISTS "Instructors can view all memberships in their classrooms" ON "public"."classroom_memberships";
 
