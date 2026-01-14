@@ -31,7 +31,7 @@ import {
   BatchMapUpdate,
 } from "@/lib/supabase/maps";
 import { MapCategory } from "@/types/map";
-import { Loader2, Trash2, ArrowLeft, RefreshCw, Save, Upload, Sparkles } from "lucide-react";
+import { Loader2, Trash2, ArrowLeft, RefreshCw, Save, Upload, Sparkles, Eye } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -56,6 +56,7 @@ import { MapEditorWithProvider as MapEditor } from "@/components/map/MapEditor";
 import { RawDataView } from "@/components/map/RawDataView";
 import { ImageUpload } from "@/components/map/ImageUpload";
 import { CoverImageMaker } from "@/components/map/CoverImageMaker";
+import { MapViewerWithProvider } from "@/components/map/MapViewer";
 
 export default function EditMapPage({ map: initialMapData }: { map?: FullLearningMap }) {
   console.log(
@@ -359,10 +360,10 @@ export default function EditMapPage({ map: initialMapData }: { map?: FullLearnin
     } catch (error) {
       console.error("❌ Batch save failed:", error);
       console.error("❌ Error details:", {
-        name: error?.name,
-        message: error?.message,
-        stack: error?.stack,
-        cause: error?.cause,
+        name: (error as any)?.name,
+        message: (error as any)?.message,
+        stack: (error as any)?.stack,
+        cause: (error as any)?.cause,
       });
 
       // Try to determine the specific failure point
@@ -1285,6 +1286,15 @@ export default function EditMapPage({ map: initialMapData }: { map?: FullLearnin
                 >
                   Visual Editor
                 </TabsTrigger>
+
+                <TabsTrigger
+                  value="view"
+                  className="data-[state=active]:bg-background"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View
+                </TabsTrigger>
+
                 <TabsTrigger
                   value="settings"
                   className="data-[state=active]:bg-background"
@@ -1308,12 +1318,20 @@ export default function EditMapPage({ map: initialMapData }: { map?: FullLearnin
                 <MapEditor
                   key={mapResetKey}
                   map={map}
-                  onMapChange={(newMap) => {
+                  onMapChange={(newMapParam) => {
+                    // Handle both value and function updates
+                    const newMap = typeof newMapParam === 'function'
+                      ? newMapParam(map)
+                      : newMapParam;
+
                     setMap(newMap);
+
+                    if (!newMap) return;
+
                     // When new nodes are created, also update initialMap to include them
                     // This ensures generateBatchUpdate can detect subsequent changes to newly created nodes
                     setInitialMap((prev) => {
-                      if (!prev || !newMap) return prev;
+                      if (!prev) return prev;
 
                       // Find newly created nodes (ones that exist in newMap but not in initialMap)
                       const initialNodeIds = new Set(
@@ -1343,6 +1361,16 @@ export default function EditMapPage({ map: initialMapData }: { map?: FullLearnin
                     });
                   }}
                 />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="view" className="h-full m-0 p-0 overflow-hidden relative">
+              <div className="h-full w-full bg-slate-950">
+                {map && (
+                  <MapViewerWithProvider
+                    map={map}
+                  />
+                )}
               </div>
             </TabsContent>
 

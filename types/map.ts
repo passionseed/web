@@ -115,7 +115,8 @@ export type ContentType =
   | "text"
   | "image"
   | "pdf"
-  | "resource_link";
+  | "resource_link"
+  | "order_code";
 
 export interface NodeContent {
   id: string; // uuid

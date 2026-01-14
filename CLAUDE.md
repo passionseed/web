@@ -224,4 +224,4 @@ Authentication middleware in `middleware.ts` handles:
   2. Use grep/search to find actual import statements
   3. Ask for clarification if unclear
 ## Known Duplicate Components
-- MapViewer: Two versions exist. Check imports before editing!
+- MapViewer: Two versions exist. Check imports before editing

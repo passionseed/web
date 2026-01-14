@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function GET(
   request: NextRequest,
@@ -41,11 +42,13 @@ export async function GET(
       email: user.email,
     });
 
+    const adminClient = createAdminClient();
+
     if (nodeId) {
       // Get progress for a specific node
       console.log("🎯 [Map Progress API] Fetching progress for node:", nodeId);
 
-      const { data: progress, error: progressError } = await supabase
+      const { data: progress, error: progressError } = await adminClient
         .from("student_node_progress")
         .select("*")
         .eq("user_id", user.id)
@@ -58,7 +61,7 @@ export async function GET(
           progressError
         );
         return NextResponse.json(
-          { error: "Failed to fetch progress" },
+          { error: "Failed to fetch progress", details: progressError },
           { status: 500 }
         );
       }
@@ -76,7 +79,7 @@ export async function GET(
       );
 
       // First get all nodes in this map
-      const { data: mapNodes, error: nodesError } = await supabase
+      const { data: mapNodes, error: nodesError } = await adminClient
         .from("map_nodes")
         .select("id")
         .eq("map_id", mapId);
@@ -87,15 +90,28 @@ export async function GET(
           nodesError
         );
         return NextResponse.json(
-          { error: "Failed to fetch map nodes" },
+          { error: "Failed to fetch map nodes", details: nodesError },
           { status: 500 }
         );
       }
 
       const nodeIds = mapNodes?.map((node) => node.id) || [];
 
+      if (nodeIds.length === 0) {
+        console.log("ℹ️ [Map Progress API] No nodes found for map, returning empty progress");
+        return NextResponse.json({
+          success: true,
+          data: {
+            map_id: mapId,
+            user_id: user.id,
+            progress_map: {},
+            all_progress: [],
+          },
+        });
+      }
+
       // Get progress for all nodes in this map
-      const { data: allProgress, error: progressError } = await supabase
+      const { data: allProgress, error: progressError } = await adminClient
         .from("student_node_progress")
         .select("*")
         .eq("user_id", user.id)
@@ -107,13 +123,13 @@ export async function GET(
           progressError
         );
         return NextResponse.json(
-          { error: "Failed to fetch progress data" },
+          { error: "Failed to fetch progress data", details: progressError },
           { status: 500 }
         );
       }
 
       // Create a map of node_id -> progress for easy lookup
-      const progressMap = {};
+      const progressMap: Record<string, any> = {};
       allProgress?.forEach((progress) => {
         progressMap[progress.node_id] = progress;
       });
@@ -194,6 +210,9 @@ export async function POST(
       );
     }
 
+    // Initialize Admin client for DB operations (bypass RLS)
+    const adminClient = createAdminClient();
+
     console.log("🎯 [Map Progress API] Creating/updating progress:", {
       user_id: user.id,
       node_id,
@@ -201,7 +220,7 @@ export async function POST(
     });
 
     // Upsert the progress record
-    const { data: progress, error: upsertError } = await supabase
+    const { data: progress, error: upsertError } = await adminClient
       .from("student_node_progress")
       .upsert(
         {

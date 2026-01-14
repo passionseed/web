@@ -6,14 +6,13 @@ import { Button } from "../ui/button";
 import Embed, { defaultProviders } from "react-tiny-oembed";
 import { CanvaEmbed } from "./CanvaEmbed";
 import { marked } from "marked";
+import { OrderCodeActivity } from "./OrderCodeActivity";
 
 // Configure marked options for security and consistency
 marked.setOptions({
   gfm: true, // GitHub Flavored Markdown
   breaks: true, // Convert line breaks to <br> tags
-  sanitizer: undefined, // We'll use our own HTML sanitization if needed
 });
-
 // Utility function to detect if content contains markdown syntax
 const containsMarkdownSyntax = (content: string): boolean => {
   const markdownPatterns = [
@@ -41,7 +40,7 @@ const processTextContent = (content: string): string => {
   // If content contains markdown syntax, parse as markdown
   if (containsMarkdownSyntax(content)) {
     try {
-      return marked.parse(content);
+      return marked.parse(content) as string;
     } catch (error) {
       console.error("Error parsing markdown:", error);
       // Fallback to raw content if markdown parsing fails
@@ -119,7 +118,7 @@ CustomImageComponent.displayName = "CustomImageComponent";
 // Video Embed Component - memoized to prevent re-renders
 const VideoEmbed = memo(({ contentUrl }: { contentUrl: string }) => {
   console.log("🎥 VideoEmbed rendering for URL:", contentUrl);
-  
+
   const embedOptions = useMemo(() => ({
     maxwidth: 800,
     maxheight: 450,
@@ -155,7 +154,7 @@ VideoEmbed.displayName = "VideoEmbed";
 // Image Component - memoized
 const ImageContent = memo(({ contentUrl }: { contentUrl: string }) => {
   console.log("🖼️ ImageContent rendering for URL:", contentUrl);
-  
+
   return (
     <div className="w-full">
       <div className="relative rounded-lg shadow-lg bg-white overflow-hidden">
@@ -432,14 +431,14 @@ export const renderContent = (content: NodeContent) => {
                   allow="fullscreen"
                 />
               </div>
-              
+
               {/* Alternative viewing options */}
               <div className="mt-4 p-4 bg-gray-50 rounded-lg border-t border-gray-200">
                 <div className="flex flex-col gap-4">
                   <p className="text-sm text-gray-600 text-center">
                     Choose your preferred viewing method:
                   </p>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {/* Direct browser viewer */}
                     <a
@@ -457,7 +456,7 @@ export const renderContent = (content: NodeContent) => {
                         Browser Viewer
                       </Button>
                     </a>
-                    
+
                     {/* Direct PDF link with viewer params */}
                     <a
                       href={`${contentUrl}#view=FitH&toolbar=1&navpanes=1`}
@@ -474,7 +473,7 @@ export const renderContent = (content: NodeContent) => {
                         Full Screen
                       </Button>
                     </a>
-                    
+
                     {/* Download option */}
                     <a
                       href={contentUrl}
@@ -556,6 +555,26 @@ export const renderContent = (content: NodeContent) => {
           </div>
         </div>
       );
+
+    case "order_code":
+      try {
+        const initialBlocks = JSON.parse(content.content_body || "[]");
+        return (
+          <div key={contentKey}>
+            {TitleSection}
+            <OrderCodeActivity
+              initialBlocks={initialBlocks}
+              title={contentTitle}
+            />
+          </div>
+        );
+      } catch (e) {
+        return (
+          <div key={contentKey} className="p-4 border border-red-200 rounded bg-red-50 text-red-600">
+            Error loading order code activity: Invalid data format.
+          </div>
+        );
+      }
 
     default:
       return (

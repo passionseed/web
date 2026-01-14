@@ -68,11 +68,11 @@ export const getSubmissionsForMap = async (
           username
         )
       ),
-      node_assessments (
+      node_assessments!inner (
         id,
         assessment_type,
         is_graded,
-        map_nodes (
+        map_nodes!inner (
           id,
           title,
           map_id
@@ -478,7 +478,7 @@ export const bulkGradeSubmissions = async (
   options: BulkGradeOptions
 ): Promise<BulkGradeResult> => {
   const { submissionIds, grade, comments, rating, pointsAwarded, userId } = options;
-  
+
   const result: BulkGradeResult = {
     successful: 0,
     failed: 0,
@@ -517,7 +517,7 @@ export const bulkGradeSubmissions = async (
   for (const submissionId of submissionIds) {
     try {
       result.totalProcessed++;
-      
+
       const progressId = submissionMap.get(submissionId);
       if (!progressId) {
         result.failed++;
@@ -642,7 +642,7 @@ export const getClassroomSubmissions = async (
 
   // Aggregate student data
   const studentMap = new Map();
-  
+
   transformedSubmissions.forEach((submission: any) => {
     const studentId = submission.student_user_id;
     if (!studentMap.has(studentId)) {
@@ -660,11 +660,11 @@ export const getClassroomSubmissions = async (
         graded_count: 0
       });
     }
-    
+
     const student = studentMap.get(studentId);
     student.submissions.push(submission);
     student.total_submissions++;
-    
+
     if (submission.status === "graded") {
       student.graded_submissions++;
       if (submission.points_awarded !== null) {
