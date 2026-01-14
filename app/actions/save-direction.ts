@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { AssessmentAnswers, DirectionFinderResult, Message } from "@/types/direction-finder";
-import { summarizeConversation } from "@/lib/ai/education-advisor";
+import { summarizeConversation } from "@/lib/ai/conversationEngine";
 
 export async function saveDirectionFinderResult(
   answers: AssessmentAnswers,
