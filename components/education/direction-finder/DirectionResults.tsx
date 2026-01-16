@@ -20,7 +20,10 @@ import {
   Plus,
   Map as MapIcon,
   MessageSquare,
+  RefreshCw,
+  History,
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { saveDirectionFinderResult } from "@/app/actions/save-direction";
@@ -40,6 +43,7 @@ interface DirectionResultsProps {
   resultId?: string;
   onStartNew?: () => void;
   onSelect?: (vector: DirectionVector, index: number) => void;
+  onRetake?: () => void;
 }
 
 export function DirectionResults({
@@ -54,6 +58,7 @@ export function DirectionResults({
   resultId,
   onStartNew,
   onSelect,
+  onRetake,
 }: DirectionResultsProps) {
   const t = translations[lang];
   const [result, setResult] = useState(initialResult);
@@ -227,6 +232,15 @@ export function DirectionResults({
           <MessageSquare className="w-4 h-4" />{" "}
           {t.results.refine_button || "Refine with AI"}
         </Button>
+        <Link href="/me/direction-history">
+          <Button
+            variant="ghost"
+            className="text-slate-400 hover:text-white hover:bg-slate-800"
+          >
+            <History className="w-4 h-4 mr-2" />
+            History
+          </Button>
+        </Link>
       </div>
 
       {/* Hero Section with Ikigai Visualization */}
@@ -543,6 +557,20 @@ export function DirectionResults({
           {t.results.share_button}
         </Button>
       </div>
+
+      {/* Retake Section */}
+      {onRetake && (
+        <div className="flex justify-center pb-8" data-hide-on-share="true">
+          <Button
+            variant="ghost"
+            onClick={onRetake}
+            className="gap-2 text-slate-500 hover:text-red-400 hover:bg-red-950/20 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retake Assessment
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -582,68 +582,87 @@ export function CreateNorthStarDialog({
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowDirectionFinder(true)}
-                        className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
-                      >
-                        <Compass className="w-6 h-6 text-blue-400" />
-                        <span className="font-semibold">
-                          {hasResult
-                            ? "View Direction Profile"
-                            : t.findDirection}
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm font-medium text-purple-400 text-center animate-pulse">
+                          If you don't know it yet...
                         </span>
-                        <span className="text-xs text-slate-500 font-normal text-center px-2">
-                          {hasResult
-                            ? "See your Ikigai & Paths"
-                            : t.findDirectionDesc}
-                        </span>
-                        {!hasResult && (
-                          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-medium">
-                            {t.duration}
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowDirectionFinder(true)}
+                          className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
+                        >
+                          <Compass className="w-6 h-6 text-blue-400" />
+                          <span className="font-semibold">
+                            {hasResult
+                              ? "View Direction Profile"
+                              : t.findDirection}
                           </span>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={startEducationalPathway}
-                        className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
-                      >
-                        <Map className="w-6 h-6 text-green-400" />
-                        <span className="font-semibold">{t.chooseUni}</span>
-                        <span className="text-xs text-slate-500 font-normal">
-                          {t.chooseUniDesc}
+                          <span className="text-xs text-slate-500 font-normal text-center px-2">
+                            {hasResult
+                              ? "See your Ikigai & Paths"
+                              : t.findDirectionDesc}
+                          </span>
+                          {!hasResult && (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-medium">
+                              {t.duration}
+                            </span>
+                          )}
+                        </Button>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm font-medium text-green-400 text-center">
+                          I have a clear vision
                         </span>
-                      </Button>
+                        <Button
+                          variant="outline"
+                          onClick={startEducationalPathway}
+                          className="h-auto py-4 flex flex-col items-center gap-2 border-slate-700 hover:bg-slate-800 hover:text-white"
+                        >
+                          <Map className="w-6 h-6 text-green-400" />
+                          <span className="font-semibold">{t.chooseUni}</span>
+                          <span className="text-xs text-slate-500 font-normal">
+                            {t.chooseUniDesc}
+                          </span>
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="relative group">
-                      <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
-                      <Textarea
-                        value={formData.visionQuestion}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            visionQuestion: e.target.value,
-                          })
-                        }
-                        placeholder={t.step1Placeholder}
-                        className="relative min-h-[200px] text-lg p-6 bg-slate-900/90 border-slate-700 rounded-xl focus:border-blue-500 transition-all resize-none"
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleEnhanceVision}
-                        disabled={isAiLoading || !formData.visionQuestion}
-                        className="absolute bottom-4 right-4 text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
-                      >
-                        {isAiLoading ? (
-                          <Sparkles className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Wand2 className="w-4 h-4 mr-2" />
-                        )}
-                        {t.enhanceBtn}
-                      </Button>
+                    <div className="space-y-3 pt-4 border-t border-slate-800/50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-blue-300">
+                          I know my dream!
+                        </span>
+                        <div className="h-px flex-1 bg-slate-800" />
+                      </div>
+                      <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
+                        <Textarea
+                          value={formData.visionQuestion}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              visionQuestion: e.target.value,
+                            })
+                          }
+                          placeholder={t.step1Placeholder}
+                          className="relative min-h-[200px] text-lg p-6 bg-slate-900/90 border-slate-700 rounded-xl focus:border-blue-500 transition-all resize-none"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleEnhanceVision}
+                          disabled={isAiLoading || !formData.visionQuestion}
+                          className="absolute bottom-4 right-4 text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
+                        >
+                          {isAiLoading ? (
+                            <Sparkles className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Wand2 className="w-4 h-4 mr-2" />
+                          )}
+                          {t.enhanceBtn}
+                        </Button>
+                      </div>
                     </div>
 
                     {showVisionComparison && (
