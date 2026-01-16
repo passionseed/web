@@ -70,7 +70,7 @@ export const translations = {
         },
       },
       q4: {
-        title: "Subject Matrix",
+        title: "Subject Love & Capability",
         subtitle: "For subjects you like, rate how much you LOVE it vs how CAPABLE you are.",
         labels: {
           love: "Love / Interest",
