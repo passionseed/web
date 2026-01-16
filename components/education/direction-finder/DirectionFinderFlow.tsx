@@ -426,18 +426,6 @@ function DirectionFinderFlowContent({
     if (currentStep === "results" && result) {
       return (
         <div className="relative">
-          <div className="absolute top-0 right-1/2 translate-x-1/2 md:translate-x-0 md:right-0 z-10 mt-12 md:mt-0">
-            {!isReviewMode && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRetake}
-                className="text-slate-500 hover:text-white text-xs"
-              >
-                <RefreshCw className="w-3 h-3 mr-1" /> Edit Answers
-              </Button>
-            )}
-          </div>
           <DirectionResults
             result={result}
             answers={answers as AssessmentAnswers}
@@ -450,6 +438,7 @@ function DirectionFinderFlowContent({
             resultId={serverDataId || undefined}
             onStartNew={handleStartNewSession}
             onSelect={handleSelectPath}
+            onRetake={handleRetake}
           />
         </div>
       );
