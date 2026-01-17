@@ -1,15 +1,18 @@
-import { AssessmentStep, AssessmentAnswers } from "@/types/direction-finder";
+import {
+  AssessmentStep,
+  AssessmentAnswers,
+  ZoneGridItem,
+  classifyZoneItem,
+} from "@/types/direction-finder";
 import { translations } from "@/lib/i18n/direction-finder";
 import type { Language } from "@/lib/i18n/direction-finder";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ChevronRight,
   ChevronLeft,
-  Star,
   Home,
   Sun,
   Calendar,
@@ -18,15 +21,18 @@ import {
   Users,
   Wrench,
   Lightbulb,
-  Clock,
-  Mountain,
-  Heart,
   Zap,
-  Shuffle,
+  Gauge,
+  GripVertical,
+  Star,
+  TrendingUp,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 
 interface CoreAssessmentProps {
   step: AssessmentStep;
@@ -37,32 +43,78 @@ interface CoreAssessmentProps {
   lang: Language;
 }
 
+// Reusable Question Wrapper
 const QuestionWrapper = ({
+  questionNumber,
+  totalQuestions = 6,
   title,
   subtitle,
+  emoji,
   children,
   canProceed = true,
   onBack,
   onNext,
-  backLabel,
-  nextLabel,
-}: any) => (
-  <div className="space-y-6">
+  backLabel = "Back",
+  nextLabel = "Next",
+  showDevSkip = true,
+}: {
+  questionNumber?: number;
+  totalQuestions?: number;
+  title: string;
+  subtitle?: string;
+  emoji?: string;
+  children: React.ReactNode;
+  canProceed?: boolean;
+  onBack: () => void;
+  onNext: () => void;
+  backLabel?: string;
+  nextLabel?: string;
+  showDevSkip?: boolean;
+}) => (
+  <div className="space-y-6 animate-in fade-in duration-300">
+    {/* Question Counter */}
+    {questionNumber && (
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-slate-400">
+          Question {questionNumber} of {totalQuestions}
+        </span>
+        <div className="flex gap-1">
+          {Array.from({ length: totalQuestions }).map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "w-8 h-1.5 rounded-full transition-all",
+                i < questionNumber ? "bg-blue-500" : "bg-slate-700"
+              )}
+            />
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* Title */}
     <div className="space-y-2">
-      <h3 className="text-xl font-semibold text-white">{title}</h3>
+      <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+        {emoji && <span>{emoji}</span>}
+        {title}
+      </h3>
       {subtitle && <p className="text-slate-400">{subtitle}</p>}
     </div>
+
+    {/* Content */}
     <div className="py-2">{children}</div>
+
+    {/* Navigation */}
     <div className="flex justify-between pt-4">
       <Button
         variant="ghost"
         onClick={onBack}
         className="text-slate-400 hover:text-white"
       >
-        <ChevronLeft className="w-4 h-4 mr-2" /> {backLabel || "Back"}
+        <ChevronLeft className="w-4 h-4 mr-2" /> {backLabel}
       </Button>
       <div className="flex gap-2">
-        {process.env.NODE_ENV === "development" && (
+        {process.env.NODE_ENV === "development" && showDevSkip && (
           <Button
             variant="ghost"
             onClick={onNext}
@@ -75,17 +127,88 @@ const QuestionWrapper = ({
           onClick={onNext}
           disabled={!canProceed}
           className={cn(
-            "bg-white/10 hover:bg-white/20 text-white border border-white/10",
+            "bg-blue-600 hover:bg-blue-700 text-white",
             !canProceed && "opacity-50 cursor-not-allowed"
           )}
         >
-          {nextLabel || "Next"} <ChevronRight className="ml-2 w-4 h-4" />
+          {nextLabel} <ChevronRight className="ml-2 w-4 h-4" />
         </Button>
       </div>
     </div>
   </div>
 );
 
+// ==========================================
+// DOMAIN OPTIONS FOR Q2 ZONE GRID
+// ==========================================
+const DOMAIN_OPTIONS = [
+  { key: "math", label: "Math/Logic", emoji: "🔢" },
+  { key: "science", label: "Science", emoji: "🔬" },
+  { key: "coding", label: "Coding/Tech", emoji: "💻" },
+  { key: "engineering", label: "Engineering", emoji: "⚙️" },
+  { key: "art", label: "Art/Design", emoji: "🎨" },
+  { key: "music", label: "Music", emoji: "🎵" },
+  { key: "writing", label: "Writing", emoji: "✍️" },
+  { key: "speaking", label: "Public Speaking", emoji: "🎤" },
+  { key: "sports", label: "Sports/Fitness", emoji: "⚽" },
+  { key: "business", label: "Business", emoji: "💼" },
+  { key: "psychology", label: "Psychology", emoji: "🧠" },
+  { key: "medicine", label: "Medicine/Health", emoji: "🏥" },
+  { key: "teaching", label: "Teaching", emoji: "📚" },
+  { key: "gaming", label: "Gaming/Esports", emoji: "🎮" },
+  { key: "cooking", label: "Cooking/Food", emoji: "🍳" },
+  { key: "fashion", label: "Fashion/Style", emoji: "👗" },
+  { key: "social", label: "Social Impact", emoji: "🌍" },
+  { key: "leadership", label: "Leadership", emoji: "👑" },
+];
+
+// ==========================================
+// ACTIVITY OPTIONS FOR Q1
+// ==========================================
+const ACTIVITY_OPTIONS = [
+  { key: "creating", label: "Creating/Building" },
+  { key: "helping", label: "Helping/Teaching" },
+  { key: "solving", label: "Problem Solving" },
+  { key: "competing", label: "Competing" },
+  { key: "learning", label: "Learning/Researching" },
+  { key: "performing", label: "Performing" },
+  { key: "leading", label: "Leading/Organizing" },
+  { key: "analyzing", label: "Analyzing" },
+];
+
+// ==========================================
+// REPUTATION OPTIONS FOR Q4
+// ==========================================
+const REPUTATION_OPTIONS = [
+  { key: "tech", label: "Tech/Computer stuff" },
+  { key: "creative", label: "Creative ideas" },
+  { key: "emotional", label: "Emotional support" },
+  { key: "explaining", label: "Explaining things clearly" },
+  { key: "organizing", label: "Organizing/Planning events" },
+  { key: "problem_solving", label: "Problem-solving" },
+  { key: "fun", label: "Making things fun" },
+  { key: "calm", label: "Staying calm under pressure" },
+  { key: "patterns", label: "Spotting patterns/details" },
+  { key: "design", label: "Design/Aesthetics" },
+  { key: "leadership", label: "Taking the lead" },
+  { key: "listening", label: "Being a good listener" },
+];
+
+// ==========================================
+// PROUD MOMENT TAGS FOR Q5
+// ==========================================
+const PROUD_TAGS = [
+  { key: "helped", label: "Helped others" },
+  { key: "achieved", label: "Won or achieved something" },
+  { key: "built", label: "Built/Created something" },
+  { key: "overcame", label: "Overcame difficulty" },
+  { key: "learned", label: "Learned something hard" },
+  { key: "recognized", label: "Got recognized" },
+];
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 export function CoreAssessment({
   step,
   answers,
@@ -97,46 +220,38 @@ export function CoreAssessment({
   const t = translations[lang];
   const [localAnswers, setLocalAnswers] =
     useState<Partial<AssessmentAnswers>>(answers);
-  const [customSkill, setCustomSkill] = useState("");
-  const [q5PromptIndex, setQ5PromptIndex] = useState(0);
-
-  const addCustomSkill = () => {
-    const selectedSkills = localAnswers.q6_strongest_skills || [];
-    if (
-      customSkill.trim() &&
-      !selectedSkills.includes(customSkill) &&
-      selectedSkills.length < 5
-    ) {
-      updateAnswer("q6_strongest_skills", [
-        ...selectedSkills,
-        customSkill.trim(),
-      ]);
-      setCustomSkill("");
-    }
-  };
 
   // Sync props to local state when step changes
   useEffect(() => {
     setLocalAnswers(answers);
   }, [step, answers]);
 
-  const updateAnswer = (key: keyof AssessmentAnswers, value: any) => {
+  const updateAnswer = <K extends keyof AssessmentAnswers>(
+    key: K,
+    value: AssessmentAnswers[K]
+  ) => {
     const newAnswers = { ...localAnswers, [key]: value };
     setLocalAnswers(newAnswers);
     onAnswer(newAnswers);
   };
 
-  // Intro Step
+  // ==========================================
+  // INTRO STEP
+  // ==========================================
   if (step === "intro") {
     return (
       <div className="text-center space-y-6 py-8 animate-in zoom-in duration-300">
-        <div className="text-4xl">🧭</div>
-        <h2 className="text-2xl font-bold text-white">{t.intro.title}</h2>
+        <div className="text-5xl">🧭</div>
+        <h2 className="text-2xl font-bold text-white">
+          {lang === "th" ? "ค้นหาเส้นทางที่ใช่" : "Find Your Direction"}
+        </h2>
         <p className="text-slate-300 max-w-md mx-auto">
-          {t.intro.description}
+          {lang === "th"
+            ? "ตอบคำถาม 6 ข้อสั้นๆ เพื่อค้นหาสิ่งที่คุณรักและถนัด"
+            : "Answer 6 quick questions to discover what you love and what you're good at"}
           <br />
           <span className="text-sm text-slate-400 mt-2 block">
-            {t.intro.time}
+            {lang === "th" ? "⏱️ ใช้เวลา 6-8 นาที" : "⏱️ Takes 6-8 minutes"}
           </span>
         </p>
         <div className="flex gap-4 justify-center">
@@ -150,998 +265,716 @@ export function CoreAssessment({
           <Button
             onClick={onNext}
             size="lg"
-            className="bg-white/10 hover:bg-white/20 text-white border border-white/10"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            {t.intro.start_button} <ChevronRight className="ml-2 w-4 h-4" />
+            {lang === "th" ? "เริ่มเลย" : "Let's Go"}{" "}
+            <ChevronRight className="ml-2 w-4 h-4" />
           </Button>
         </div>
       </div>
     );
   }
 
-  // Q1: Time Flies When... (Select Top 3)
+  // ==========================================
+  // Q1: ENERGY & FLOW DISCOVERY 🔥
+  // ==========================================
   if (step === "q1") {
-    // Use keys from dictionary for stability
-    const optionKeys = Object.keys(t.questions.q1.options) as Array<
-      keyof typeof t.questions.q1.options
-    >;
-    const currentSelection = localAnswers.q1_time_flies || [];
-
-    const toggleSelection = (key: string) => {
-      // We store the KEY now, not the full text
-      if (currentSelection.includes(key)) {
-        updateAnswer(
-          "q1_time_flies",
-          currentSelection.filter((i) => i !== key)
-        );
-      } else if (currentSelection.length < 3) {
-        updateAnswer("q1_time_flies", [...currentSelection, key]);
-      }
+    const flowData = localAnswers.q1_flow || {
+      description: "",
+      activities: [],
     };
+    const descriptionLength = flowData.description.trim().length;
+    const hasMinLength = descriptionLength >= 20;
+    const hasActivities = flowData.activities.length > 0;
 
     return (
       <QuestionWrapper
-        title={t.questions.q1.title}
-        subtitle={`${t.questions.q1.subtitle} (${currentSelection.length}/3)`}
-        canProceed={
-          currentSelection.length >= 1 && currentSelection.length <= 3
+        questionNumber={1}
+        title={lang === "th" ? "เวลาที่คุณ 'ลืมโลก'" : "When Time Flies"}
+        subtitle={
+          lang === "th"
+            ? "คิดถึงตอนที่คุณจดจ่อกับอะไรบางอย่างจนลืมเวลา คุณกำลังทำอะไรอยู่?"
+            : "Think of a time you were so absorbed in something you lost track of time. What were you doing?"
         }
+        emoji="🔥"
+        canProceed={hasMinLength && hasActivities}
         onBack={onBack}
         onNext={onNext}
-      >
-        <div className="grid gap-3">
-          {optionKeys.map((key) => (
-            <div
-              key={key as string}
-              onClick={() => toggleSelection(key as string)}
-              className={cn(
-                "p-4 rounded-lg border cursor-pointer transition-all flex items-center justify-between",
-                currentSelection.includes(key as string)
-                  ? "bg-blue-600/20 border-blue-500 text-white"
-                  : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500"
-              )}
-            >
-              <span>
-                {
-                  t.questions.q1.options[
-                    key as keyof typeof t.questions.q1.options
-                  ]
-                }
-              </span>
-              {currentSelection.includes(key as string) && (
-                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                  #{currentSelection.indexOf(key as string) + 1}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  // Q2: Energy Check (Pick 3)
-  if (step === "q2") {
-    const optionKeys = Object.keys(t.questions.q2.options) as Array<
-      keyof typeof t.questions.q2.options
-    >;
-
-    const currentSelection = localAnswers.q2_energy_sources || [];
-
-    return (
-      <QuestionWrapper
-        title={t.questions.q2.title}
-        subtitle={`${t.questions.q2.subtitle} (${currentSelection.length}/3)`}
-        canProceed={currentSelection.length === 3}
-        onBack={onBack}
-        onNext={onNext}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {optionKeys.map((key) => (
-            <div
-              key={key as string}
-              onClick={() => {
-                if (currentSelection.includes(key as string)) {
-                  updateAnswer(
-                    "q2_energy_sources",
-                    currentSelection.filter((i) => i !== key)
-                  );
-                } else if (currentSelection.length < 3) {
-                  updateAnswer("q2_energy_sources", [
-                    ...currentSelection,
-                    key as string,
-                  ]);
-                }
-              }}
-              className={cn(
-                "p-4 rounded-lg border cursor-pointer transition-all",
-                currentSelection.includes(key)
-                  ? "bg-green-600/20 border-green-500 text-white"
-                  : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500"
-              )}
-            >
-              {
-                t.questions.q2.options[
-                  key as keyof typeof t.questions.q2.options
-                ]
-              }
-            </div>
-          ))}
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  // Q3: Work Style (Clickers)
-  if (step === "q3") {
-    const styles = localAnswers.q3_work_style || {
-      indoor_outdoor: 50,
-      structured_flexible: 50,
-      solo_team: 50,
-      hands_on_theory: 50,
-      routine_challenge: 50,
-    };
-
-    const renderClicker = (
-      key: keyof typeof styles,
-      left: { label: string; icon: any },
-      right: { label: string; icon: any }
-    ) => {
-      const value = styles[key];
-
-      return (
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-slate-400 px-1">
-            <div className="flex items-center gap-1">
-              <left.icon className="w-3 h-3" /> {left.label}
-            </div>
-            <div className="flex items-center gap-1">
-              {right.label} <right.icon className="w-3 h-3" />
-            </div>
-          </div>
-          <div className="flex gap-1 h-10">
-            {[0, 25, 50, 75, 100].map((val) => {
-              const isSelected = val === value;
-              // Determine color based on side
-              let bgClass = "bg-slate-800 border-slate-700";
-              if (isSelected) {
-                if (val < 50)
-                  bgClass = "bg-blue-600 border-blue-500 text-white";
-                else if (val > 50)
-                  bgClass = "bg-purple-600 border-purple-500 text-white";
-                else bgClass = "bg-slate-600 border-slate-500 text-white";
-              }
-
-              return (
-                <button
-                  key={val}
-                  onClick={() =>
-                    updateAnswer("q3_work_style", { ...styles, [key]: val })
-                  }
-                  className={cn(
-                    "flex-1 rounded border transition-all hover:bg-slate-700",
-                    bgClass
-                  )}
-                />
-              );
-            })}
-          </div>
-        </div>
-      );
-    };
-
-    return (
-      <QuestionWrapper
-        title={t.questions.q3.title}
-        subtitle={t.questions.q3.subtitle}
-        onBack={onBack}
-        onNext={onNext}
-        lang={lang}
-      >
-        <div className="space-y-6 bg-slate-900/30 p-4 rounded-lg border border-slate-800">
-          {renderClicker(
-            "indoor_outdoor",
-            { label: t.questions.q3.labels.indoor, icon: Home },
-            { label: t.questions.q3.labels.outdoor, icon: Sun }
-          )}
-          {renderClicker(
-            "structured_flexible",
-            { label: t.questions.q3.labels.structured, icon: Calendar },
-            { label: t.questions.q3.labels.flexible, icon: Sparkles }
-          )}
-          {renderClicker(
-            "solo_team",
-            { label: t.questions.q3.labels.solo, icon: User },
-            { label: t.questions.q3.labels.team, icon: Users }
-          )}
-          {renderClicker(
-            "hands_on_theory",
-            { label: t.questions.q3.labels.hands_on, icon: Wrench },
-            { label: t.questions.q3.labels.theory, icon: Lightbulb }
-          )}
-          {renderClicker(
-            "routine_challenge",
-            { label: t.questions.q3.labels.routine, icon: Clock },
-            { label: t.questions.q3.labels.challenge, icon: Mountain }
-          )}
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  // Q4: Subject Love (Matrix: Love vs Capable)
-  if (step === "q4") {
-    const categories = {
-      [t.questions.q4.categories.stem]: [
-        "math_logic",
-        "science",
-        "technology",
-        "engineering",
-      ],
-      [t.questions.q4.categories.creative]: [
-        "visual_arts",
-        "performing_arts",
-        "writing",
-      ],
-      [t.questions.q4.categories.social]: [
-        "psychology",
-        "business",
-        "healthcare",
-        "education",
-        "social_issues",
-      ],
-      [t.questions.q4.categories.other]: [
-        "sports",
-        "food",
-        "fashion",
-        "gaming",
-      ],
-    };
-    // Map keys to displayed subjects
-    const subjectMap = t.questions.q4.subjects;
-
-    const selections = localAnswers.q4_subject_interests || [];
-
-    const toggleSubject = (subject: string) => {
-      const exists = selections.find((s) => s.subject === subject);
-      if (exists) {
-        updateAnswer(
-          "q4_subject_interests",
-          selections.filter((s) => s.subject !== subject)
-        );
-      } else {
-        if (selections.length >= 5) return; // Limit to 5
-        // Default to 3/3
-        updateAnswer("q4_subject_interests", [
-          ...selections,
-          { subject, love: 3, capable: 3 },
-        ]);
-      }
-    };
-
-    const updateRating = (
-      subject: string,
-      type: "love" | "capable",
-      value: number,
-      e: React.MouseEvent
-    ) => {
-      e.stopPropagation();
-      updateAnswer(
-        "q4_subject_interests",
-        selections.map((s) =>
-          s.subject === subject ? { ...s, [type]: value } : s
-        )
-      );
-    };
-
-    // Flatten and sort subjects
-    const allSubjects = Object.entries(categories).flatMap(([cat, subs]) =>
-      subs.map((sub) => ({ category: cat, subject: sub }))
-    );
-
-    const sortedSubjects = [...allSubjects].sort((a, b) => {
-      const aSelected = selections.find((s) => s.subject === a.subject);
-      const bSelected = selections.find((s) => s.subject === b.subject);
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return 0;
-    });
-
-    return (
-      <QuestionWrapper
-        title={t.questions.q4.title}
-        subtitle={`${t.questions.q4.subtitle} (${selections.length}/5)`}
-        canProceed={selections.length > 0}
-        onBack={onBack}
-        onNext={onNext}
-        lang={lang}
-      >
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
-          {sortedSubjects.map(({ category, subject }) => {
-            const selection = selections.find((s) => s.subject === subject);
-            return (
-              <div
-                key={subject}
-                onClick={() => toggleSubject(subject)}
-                className={cn(
-                  "p-4 rounded-lg border cursor-pointer transition-all flex flex-col gap-3",
-                  selection
-                    ? "bg-slate-800 border-blue-500"
-                    : selections.length >= 5
-                      ? "opacity-50 cursor-not-allowed bg-slate-900 border-slate-800"
-                      : "bg-slate-900 border-slate-800 hover:border-slate-600"
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span
-                      className={
-                        selection ? "text-white font-medium" : "text-slate-400"
-                      }
-                    >
-                      {/* Display translated subject name */}
-                      {subjectMap[subject as keyof typeof subjectMap] ||
-                        subject}
-                    </span>
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider">
-                      {category}
-                    </span>
-                  </div>
-                </div>
-
-                {selection && (
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700/50">
-                    {/* Love Rating */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <Heart className="w-4 h-4 text-pink-500" />{" "}
-                        {t.questions.q4.labels.love}
-                      </div>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <button
-                            key={rating}
-                            onClick={(e) =>
-                              updateRating(subject, "love", rating, e)
-                            }
-                            className={cn(
-                              "flex-1 h-10 rounded-md font-medium transition-all flex items-center justify-center text-sm",
-                              rating <= selection.love
-                                ? "bg-pink-600 text-white shadow-[0_0_10px_rgba(236,72,153,0.3)]"
-                                : "bg-slate-800 text-slate-500 hover:bg-slate-700"
-                            )}
-                          >
-                            {rating}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Capable Rating */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <Zap className="w-4 h-4 text-yellow-500" />{" "}
-                        {t.questions.q4.labels.capable}
-                      </div>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <button
-                            key={rating}
-                            onClick={(e) =>
-                              updateRating(subject, "capable", rating, e)
-                            }
-                            className={cn(
-                              "flex-1 h-10 rounded-md font-medium transition-all flex items-center justify-center text-sm",
-                              rating <= selection.capable
-                                ? "bg-yellow-600 text-white shadow-[0_0_10px_rgba(234,179,8,0.3)]"
-                                : "bg-slate-800 text-slate-500 hover:bg-slate-700"
-                            )}
-                          >
-                            {rating}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  // Q5: Flow State
-  if (step === "q5") {
-    const flowData = localAnswers.q5_flow_state || {
-      activity: "",
-      engaging_factors: [],
-    };
-    // Map keys for factors
-    const factorKeys = Object.keys(t.questions.q5.factors) as Array<
-      keyof typeof t.questions.q5.factors
-    >;
-
-    return (
-      <QuestionWrapper
-        title={t.questions.q5.title}
-        subtitle={t.questions.q5.subtitle}
-        canProceed={!!flowData.activity && flowData.engaging_factors.length > 0}
-        onBack={onBack}
-        onNext={onNext}
-        backLabel={t.common.back}
-        nextLabel={t.common.next}
       >
         <div className="space-y-6">
-          <div className="space-y-4">
-            <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50 space-y-3">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <Label className="text-base text-slate-200">
-                    {(t.questions.q5 as any).prompts
-                      ? (t.questions.q5 as any).prompts[q5PromptIndex]
-                      : t.questions.q5.subtitle}
-                  </Label>
-                </div>
-                {(t.questions.q5 as any).prompts &&
-                  (t.questions.q5 as any).prompts.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setQ5PromptIndex(
-                          (prev) =>
-                            (prev + 1) % (t.questions.q5 as any).prompts.length
-                        )
-                      }
-                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-400/10 shrink-0"
-                    >
-                      <Shuffle className="w-4 h-4 mr-2" />
-                      {t.common.skip || "Switch"}
-                    </Button>
-                  )}
-              </div>
-
-              <Textarea
-                value={flowData.activity}
-                onChange={(e) =>
-                  updateAnswer("q5_flow_state", {
-                    ...flowData,
-                    activity: e.target.value,
-                  })
-                }
-                placeholder={t.questions.q5.activity_placeholder}
-                className="bg-slate-900 border-slate-800 min-h-[100px]"
-              />
-            </div>
-          </div>
+          {/* Free Text */}
           <div className="space-y-2">
-            <Label>{t.questions.q5.factors_label}</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {factorKeys.map((key) => (
-                <div
-                  key={key as string}
-                  onClick={() => {
-                    const current = flowData.engaging_factors;
-                    // Store key
-                    if (current.includes(key as string)) {
-                      updateAnswer("q5_flow_state", {
-                        ...flowData,
-                        engaging_factors: current.filter((f) => f !== key),
-                      });
-                    } else if (current.length < 2) {
-                      updateAnswer("q5_flow_state", {
-                        ...flowData,
-                        engaging_factors: [...current, key as string],
-                      });
-                    }
-                  }}
-                  className={cn(
-                    "p-3 rounded border cursor-pointer text-sm",
-                    flowData.engaging_factors.includes(key)
-                      ? "bg-purple-600/20 border-purple-500 text-white"
-                      : "bg-slate-800 border-slate-700 text-slate-400"
-                  )}
-                >
-                  {
-                    t.questions.q5.factors[
-                      key as keyof typeof t.questions.q5.factors
-                    ]
-                  }
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  // Part 2 Intro
-  if (step === "part2_intro") {
-    return (
-      <div className="text-center space-y-6 py-12 animate-in zoom-in duration-300">
-        <div className="text-4xl">💪</div>
-        <h2 className="text-2xl font-bold text-white">{t.part2.title}</h2>
-        <p className="text-slate-300">{t.part2.description}</p>
-        <div className="flex gap-4 justify-center">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="text-slate-400 hover:text-white"
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" /> {t.common.back}
-          </Button>
-          <Button
-            onClick={onNext}
-            size="lg"
-            className="bg-white/10 hover:bg-white/20 text-white border border-white/10"
-          >
-            {t.common.continue} <ChevronRight className="ml-2 w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Q6: Strongest Skills (Pick 5 + Custom)
-  if (step === "q6") {
-    const skillCategories = {
-      [t.questions.q6.categories.creative]: [
-        "visual_design",
-        "writing",
-        "original_ideas",
-        "artistic",
-      ],
-      [t.questions.q6.categories.analytical]: [
-        "math",
-        "research",
-        "problem_solving",
-        "pattern_spotting",
-      ],
-      [t.questions.q6.categories.technical]: [
-        "tech",
-        "building",
-        "systems",
-        "coding",
-      ],
-      [t.questions.q6.categories.people]: [
-        "explaining",
-        "empathy",
-        "public_speaking",
-        "comforting",
-      ],
-      [t.questions.q6.categories.organizational]: [
-        "planning",
-        "detail",
-        "leading",
-        "focus",
-      ],
-      [t.questions.q6.categories.physical]: [
-        "athletics",
-        "manual",
-        "endurance",
-      ],
-    };
-
-    // Map keys to displayed skills
-    const skillMap = t.questions.q6.skills;
-
-    const selectedSkills = localAnswers.q6_strongest_skills || [];
-
-    return (
-      <QuestionWrapper
-        title={t.questions.q6.title}
-        subtitle={`${t.questions.q6.subtitle} (${selectedSkills.length}/5)`}
-        canProceed={selectedSkills.length === 5}
-        onBack={onBack}
-        onNext={onNext}
-        backLabel={t.common.back}
-        nextLabel={t.common.next}
-      >
-        <div className="space-y-4">
-          {/* Custom Input */}
-          <div className="flex gap-2">
-            <Input
-              value={customSkill}
-              onChange={(e) => setCustomSkill(e.target.value)}
-              placeholder={t.questions.q6.custom_placeholder}
-              className="bg-slate-800 border-slate-700"
-              onKeyDown={(e) => e.key === "Enter" && addCustomSkill()}
-            />
-            <Button
-              onClick={addCustomSkill}
-              disabled={!customSkill.trim() || selectedSkills.length >= 5}
-              variant="secondary"
-            >
-              {t.questions.q6.add_button}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[50vh] overflow-y-auto pr-2">
-            {Object.entries(skillCategories).map(([category, skills]) => (
-              <div key={category} className="space-y-2">
-                <h4 className="font-semibold text-green-400 text-sm">
-                  {category}
-                </h4>
-                <div className="space-y-1">
-                  {skills.map((skill) => (
-                    <div
-                      key={skill}
-                      onClick={() => {
-                        if (selectedSkills.includes(skill)) {
-                          updateAnswer(
-                            "q6_strongest_skills",
-                            selectedSkills.filter((s) => s !== skill)
-                          );
-                        } else if (selectedSkills.length < 5) {
-                          updateAnswer("q6_strongest_skills", [
-                            ...selectedSkills,
-                            skill,
-                          ]);
-                        }
-                      }}
-                      className={cn(
-                        "p-2 rounded border cursor-pointer text-sm transition-colors",
-                        selectedSkills.includes(skill)
-                          ? "bg-green-600/20 border-green-500 text-white"
-                          : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
-                      )}
-                    >
-                      {skillMap[skill as keyof typeof skillMap] || skill}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Selected Skills Summary */}
-          {selectedSkills.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
-              {selectedSkills.map((skill) => (
-                <Badge
-                  key={skill}
-                  variant="secondary"
-                  className="bg-green-900/30 text-green-300 hover:bg-green-900/50 cursor-pointer"
-                  onClick={() =>
-                    updateAnswer(
-                      "q6_strongest_skills",
-                      selectedSkills.filter((s) => s !== skill)
-                    )
-                  }
-                >
-                  {skillMap[skill as keyof typeof skillMap] || skill}{" "}
-                  <span className="ml-1 text-xs">×</span>
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  // Q7: Proud Moments
-  if (step === "q7") {
-    const optionKeys = Object.keys(t.questions.q7.options) as Array<
-      keyof typeof t.questions.q7.options
-    >;
-    const selected = localAnswers.q7_proud_moments || [];
-
-    return (
-      <QuestionWrapper
-        title={t.questions.q7.title}
-        subtitle={t.questions.q7.subtitle}
-        canProceed={selected.length > 0}
-        onBack={onBack}
-        onNext={onNext}
-        backLabel={t.common.back}
-        nextLabel={t.common.next}
-      >
-        <div className="grid gap-2">
-          {optionKeys.map((key) => (
-            <div
-              key={key as string}
-              onClick={() => {
-                if (selected.includes(key)) {
-                  updateAnswer(
-                    "q7_proud_moments",
-                    selected.filter((s) => s !== key)
-                  );
-                } else if (selected.length < 3) {
-                  updateAnswer("q7_proud_moments", [...selected, key]);
-                }
-              }}
-              className={cn(
-                "p-3 rounded border cursor-pointer",
-                selected.includes(key)
-                  ? "bg-amber-600/20 border-amber-500 text-white"
-                  : "bg-slate-800 border-slate-700 text-slate-300"
-              )}
-            >
-              {t.questions.q7.options[key]}
-            </div>
-          ))}
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  // Q8-Q13 Simplified
-  if (step === "q8") {
-    const optionKeys = Object.keys(t.questions.q8.options) as Array<
-      keyof typeof t.questions.q8.options
-    >;
-    const selected = localAnswers.q8_learning_style || [];
-    return (
-      <QuestionWrapper
-        title={t.questions.q8.title}
-        subtitle={t.questions.q8.subtitle}
-        canProceed={selected.length === 2}
-        onBack={onBack}
-        onNext={onNext}
-        backLabel={t.common.back}
-        nextLabel={t.common.next}
-      >
-        <div className="grid grid-cols-2 gap-3">
-          {optionKeys.map((key) => (
-            <div
-              key={key as string}
-              onClick={() => {
-                if (selected.includes(key))
-                  updateAnswer(
-                    "q8_learning_style",
-                    selected.filter((s) => s !== key)
-                  );
-                else if (selected.length < 2)
-                  updateAnswer("q8_learning_style", [...selected, key]);
-              }}
-              className={cn(
-                "p-4 rounded border cursor-pointer text-center",
-                selected.includes(key)
-                  ? "bg-blue-600/20 border-blue-500"
-                  : "bg-slate-800 border-slate-700"
-              )}
-            >
-              {t.questions.q8.options[key]}
-            </div>
-          ))}
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  if (step === "q9") {
-    const optionKeys = Object.keys(t.questions.q9.options) as Array<
-      keyof typeof t.questions.q9.options
-    >;
-    const selected = localAnswers.q9_help_requests || [];
-    return (
-      <QuestionWrapper
-        title={t.questions.q9.title}
-        subtitle={t.questions.q9.subtitle}
-        onBack={onBack}
-        onNext={onNext}
-        backLabel={t.common.back}
-        nextLabel={t.common.next}
-      >
-        <div className="grid grid-cols-2 gap-2">
-          {optionKeys.map((key) => (
-            <div
-              key={key as string}
-              onClick={() => {
-                if (selected.includes(key))
-                  updateAnswer(
-                    "q9_help_requests",
-                    selected.filter((s) => s !== key)
-                  );
-                else updateAnswer("q9_help_requests", [...selected, key]);
-              }}
-              className={cn(
-                "p-3 rounded border cursor-pointer text-sm",
-                selected.includes(key)
-                  ? "bg-purple-600/20 border-purple-500"
-                  : "bg-slate-800 border-slate-700"
-              )}
-            >
-              {t.questions.q9.options[key]}
-            </div>
-          ))}
-        </div>
-      </QuestionWrapper>
-    );
-  }
-
-  if (step === "q10") {
-    const data = localAnswers.q10_fast_learner || { is_fast_learner: false };
-    const speedKeys = Object.keys(t.questions.q10.speed) as Array<
-      keyof typeof t.questions.q10.speed
-    >;
-
-    return (
-      <QuestionWrapper
-        title={t.questions.q10.title}
-        subtitle={t.questions.q10.subtitle}
-        canProceed={!data.is_fast_learner || (!!data.topic && !!data.speed)}
-        onBack={onBack}
-        onNext={onNext}
-        backLabel={t.common.back}
-        nextLabel={t.common.next}
-      >
-        <div className="space-y-6">
-          <div className="flex gap-4">
-            <Button
-              variant={data.is_fast_learner ? "default" : "outline"}
-              onClick={() =>
-                updateAnswer("q10_fast_learner", {
-                  ...data,
-                  is_fast_learner: true,
+            <Textarea
+              value={flowData.description}
+              onChange={(e) =>
+                updateAnswer("q1_flow", {
+                  ...flowData,
+                  description: e.target.value,
                 })
               }
-            >
-              {t.questions.q10.yes}
-            </Button>
-            <Button
-              variant={!data.is_fast_learner ? "default" : "outline"}
-              onClick={() =>
-                updateAnswer("q10_fast_learner", { is_fast_learner: false })
+              placeholder={
+                lang === "th"
+                  ? "เช่น ตอนที่ผมตัดต่อวิดีโอให้เพื่อน ผมนั่งทำอยู่ 4 ชั่วโมงโดยไม่รู้ตัว..."
+                  : "e.g. I was editing a video for my friend's birthday. I spent 4 hours without realizing..."
               }
-            >
-              {t.questions.q10.no}
-            </Button>
+              className="bg-slate-900 border-slate-700 min-h-[120px] text-white"
+            />
+            <div className="flex justify-between text-xs">
+              <span
+                className={cn(
+                  "transition-colors",
+                  hasMinLength ? "text-green-400" : "text-slate-500"
+                )}
+              >
+                {descriptionLength}/20{" "}
+                {lang === "th" ? "ตัวอักษรขั้นต่ำ" : "min characters"}
+              </span>
+              {!hasMinLength && descriptionLength > 0 && (
+                <span className="text-amber-400">
+                  {lang === "th" ? "เล่าเพิ่มอีกนิดนะ!" : "Tell us a bit more!"}
+                </span>
+              )}
+            </div>
           </div>
-          {data.is_fast_learner && (
-            <div className="space-y-4 animate-in fade-in">
-              <div className="space-y-2">
-                <Label>{t.questions.q10.what_label}</Label>
-                <Input
-                  value={data.topic || ""}
-                  onChange={(e) =>
-                    updateAnswer("q10_fast_learner", {
-                      ...data,
-                      topic: e.target.value,
-                    })
-                  }
-                  placeholder={t.questions.q10.what_placeholder}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t.questions.q10.how_much_label}</Label>
-                <div className="flex gap-2">
-                  {speedKeys.map((key) => (
+
+          {/* Activity Checkboxes */}
+          <div className="space-y-3">
+            <Label className="text-slate-300">
+              {lang === "th"
+                ? "กิจกรรมนี้เกี่ยวกับ... (เลือกที่ใช่)"
+                : "This activity involved... (select all that apply)"}
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              {ACTIVITY_OPTIONS.map((option) => (
+                <div
+                  key={option.key}
+                  onClick={() => {
+                    const current = flowData.activities;
+                    const newActivities = current.includes(option.key)
+                      ? current.filter((a) => a !== option.key)
+                      : [...current, option.key];
+                    updateAnswer("q1_flow", {
+                      ...flowData,
+                      activities: newActivities,
+                    });
+                  }}
+                  className={cn(
+                    "p-3 rounded-lg border cursor-pointer transition-all text-sm",
+                    flowData.activities.includes(option.key)
+                      ? "bg-orange-600/20 border-orange-500 text-white"
+                      : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                  )}
+                >
+                  {lang === "th" ? getThaiLabel(option.key) : option.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </QuestionWrapper>
+    );
+  }
+
+  // ==========================================
+  // Q2: ZONE GRID 🎯
+  // ==========================================
+  if (step === "q2") {
+    const gridData = localAnswers.q2_zone_grid || { items: [] };
+    const selectedDomains = gridData.items.map((i) => i.domain);
+    const hasEnoughItems = gridData.items.length >= 3;
+
+    const addDomain = (domain: string) => {
+      if (selectedDomains.includes(domain)) return;
+      const newItem: ZoneGridItem = { domain, interest: 5, capability: 5 };
+      updateAnswer("q2_zone_grid", {
+        items: [...gridData.items, newItem],
+      });
+    };
+
+    const removeDomain = (domain: string) => {
+      updateAnswer("q2_zone_grid", {
+        items: gridData.items.filter((i) => i.domain !== domain),
+      });
+    };
+
+    const updateDomainRating = (
+      domain: string,
+      field: "interest" | "capability",
+      value: number
+    ) => {
+      updateAnswer("q2_zone_grid", {
+        items: gridData.items.map((i) =>
+          i.domain === domain ? { ...i, [field]: value } : i
+        ),
+      });
+    };
+
+    const getQuadrantInfo = (item: ZoneGridItem) => {
+      const quadrant = classifyZoneItem(item);
+      switch (quadrant) {
+        case "genius":
+          return {
+            label: "Zone of Genius ⭐",
+            color: "text-yellow-400",
+            bg: "bg-yellow-500/10",
+          };
+        case "growth":
+          return {
+            label: "Growth Edge 🌱",
+            color: "text-green-400",
+            bg: "bg-green-500/10",
+          };
+        case "trap":
+          return {
+            label: "Capability Trap ⚠️",
+            color: "text-orange-400",
+            bg: "bg-orange-500/10",
+          };
+        default:
+          return {
+            label: "Not a priority",
+            color: "text-slate-500",
+            bg: "bg-slate-800",
+          };
+      }
+    };
+
+    return (
+      <QuestionWrapper
+        questionNumber={2}
+        title={lang === "th" ? "Zone ที่คุณเก่ง" : "Your Zone"}
+        subtitle={
+          lang === "th"
+            ? "เลือกสิ่งที่คุณสนใจ แล้วให้คะแนนว่าชอบและถนัดแค่ไหน"
+            : "Pick areas you're interested in, then rate how much you ENJOY vs how CAPABLE you are"
+        }
+        emoji="🎯"
+        canProceed={hasEnoughItems}
+        onBack={onBack}
+        onNext={onNext}
+      >
+        <div className="space-y-6">
+          {/* Domain Chips Pool */}
+          <div className="space-y-2">
+            <Label className="text-slate-400 text-sm">
+              {lang === "th"
+                ? "เลือกอย่างน้อย 3 หัวข้อ"
+                : "Select at least 3 domains"}
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {DOMAIN_OPTIONS.map((domain) => {
+                const isSelected = selectedDomains.includes(domain.key);
+                return (
+                  <button
+                    key={domain.key}
+                    onClick={() =>
+                      isSelected
+                        ? removeDomain(domain.key)
+                        : addDomain(domain.key)
+                    }
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5",
+                      isSelected
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                    )}
+                  >
+                    <span>{domain.emoji}</span>
+                    <span>
+                      {lang === "th" ? getThaiDomain(domain.key) : domain.label}
+                    </span>
+                    {isSelected && <X className="w-3 h-3 ml-1" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Selected Domains with Sliders */}
+          {gridData.items.length > 0 && (
+            <div className="space-y-4">
+              <Label className="text-slate-300">
+                {lang === "th" ? "ให้คะแนนแต่ละหัวข้อ" : "Rate each domain"}
+              </Label>
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                {gridData.items.map((item) => {
+                  const domain = DOMAIN_OPTIONS.find(
+                    (d) => d.key === item.domain
+                  );
+                  const quadrantInfo = getQuadrantInfo(item);
+                  return (
                     <div
-                      key={key as string}
-                      onClick={() =>
-                        updateAnswer("q10_fast_learner", {
-                          ...data,
-                          speed: key,
-                        })
-                      }
+                      key={item.domain}
                       className={cn(
-                        "px-4 py-2 rounded border cursor-pointer capitalize",
-                        data.speed === key
-                          ? "bg-blue-600 border-blue-500"
-                          : "bg-slate-800 border-slate-700"
+                        "p-4 rounded-lg border border-slate-700 space-y-4",
+                        quadrantInfo.bg
                       )}
                     >
-                      {t.questions.q10.speed[key]}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span>{domain?.emoji}</span>
+                          <span className="font-medium text-white">
+                            {lang === "th"
+                              ? getThaiDomain(item.domain)
+                              : domain?.label || item.domain}
+                          </span>
+                        </div>
+                        <Badge
+                          className={cn(
+                            "text-xs",
+                            quadrantInfo.color,
+                            "bg-transparent border-0"
+                          )}
+                        >
+                          {quadrantInfo.label}
+                        </Badge>
+                      </div>
+
+                      {/* Interest Slider */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-pink-400">
+                            ❤️ {lang === "th" ? "ความชอบ" : "Interest"}:{" "}
+                            {item.interest}/10
+                          </span>
+                        </div>
+                        <Slider
+                          value={[item.interest]}
+                          min={1}
+                          max={10}
+                          step={1}
+                          onValueChange={([v]) =>
+                            updateDomainRating(item.domain, "interest", v)
+                          }
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Capability Slider */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-yellow-400">
+                            ⚡ {lang === "th" ? "ความถนัด" : "Capability"}:{" "}
+                            {item.capability}/10
+                          </span>
+                        </div>
+                        <Slider
+                          value={[item.capability]}
+                          min={1}
+                          max={10}
+                          step={1}
+                          onValueChange={([v]) =>
+                            updateDomainRating(item.domain, "capability", v)
+                          }
+                          className="w-full"
+                        />
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
+          )}
+
+          {/* Legend */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center gap-2 text-yellow-400">
+              <Star className="w-3 h-3" /> Zone of Genius (High/High)
+            </div>
+            <div className="flex items-center gap-2 text-green-400">
+              <TrendingUp className="w-3 h-3" /> Growth Edge (High Interest/Low
+              Skill)
+            </div>
+            <div className="flex items-center gap-2 text-orange-400">
+              <AlertTriangle className="w-3 h-3" /> Capability Trap (Low
+              Interest/High Skill)
+            </div>
+          </div>
+        </div>
+      </QuestionWrapper>
+    );
+  }
+
+  // ==========================================
+  // Q3: WORK STYLE ⚙️
+  // ==========================================
+  if (step === "q3") {
+    const workStyle = localAnswers.q3_work_style || {
+      indoor_outdoor: "neutral" as const,
+      structured_flexible: "neutral" as const,
+      solo_team: "neutral" as const,
+      hands_on_theory: "neutral" as const,
+      steady_fast: "neutral" as const,
+    };
+
+    type StyleKey = keyof typeof workStyle;
+    type StyleValue =
+      | "indoor"
+      | "outdoor"
+      | "structured"
+      | "flexible"
+      | "solo"
+      | "team"
+      | "hands_on"
+      | "theory"
+      | "steady"
+      | "fast"
+      | "neutral";
+
+    const renderToggle = (
+      key: StyleKey,
+      left: { value: StyleValue; label: string; icon: any },
+      right: { value: StyleValue; label: string; icon: any }
+    ) => {
+      const current = workStyle[key];
+      return (
+        <div className="flex items-center gap-2 p-3 bg-slate-800/50 rounded-lg">
+          {/* Left Option */}
+          <button
+            onClick={() =>
+              updateAnswer("q3_work_style", {
+                ...workStyle,
+                [key]: current === left.value ? "neutral" : left.value,
+              })
+            }
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 p-3 rounded-lg transition-all",
+              current === left.value
+                ? "bg-blue-600 text-white"
+                : "bg-slate-700 text-slate-400 hover:bg-slate-600"
+            )}
+          >
+            <left.icon className="w-4 h-4" />
+            <span className="text-sm">{left.label}</span>
+          </button>
+
+          {/* Divider */}
+          <span className="text-slate-600">|</span>
+
+          {/* Right Option */}
+          <button
+            onClick={() =>
+              updateAnswer("q3_work_style", {
+                ...workStyle,
+                [key]: current === right.value ? "neutral" : right.value,
+              })
+            }
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 p-3 rounded-lg transition-all",
+              current === right.value
+                ? "bg-purple-600 text-white"
+                : "bg-slate-700 text-slate-400 hover:bg-slate-600"
+            )}
+          >
+            <right.icon className="w-4 h-4" />
+            <span className="text-sm">{right.label}</span>
+          </button>
+        </div>
+      );
+    };
+
+    return (
+      <QuestionWrapper
+        questionNumber={3}
+        title={lang === "th" ? "สไตล์การทำงาน" : "How You Like to Work"}
+        subtitle={
+          lang === "th"
+            ? "คลิกเพื่อเลือกสิ่งที่คุณชอบมากกว่า"
+            : "Click to show your preferences"
+        }
+        emoji="⚙️"
+        onBack={onBack}
+        onNext={onNext}
+      >
+        <div className="space-y-4">
+          {renderToggle(
+            "indoor_outdoor",
+            {
+              value: "indoor",
+              label: lang === "th" ? "ในร่ม" : "Indoor",
+              icon: Home,
+            },
+            {
+              value: "outdoor",
+              label: lang === "th" ? "กลางแจ้ง" : "Outdoor",
+              icon: Sun,
+            }
+          )}
+          {renderToggle(
+            "structured_flexible",
+            {
+              value: "structured",
+              label: lang === "th" ? "มีแบบแผน" : "Structured",
+              icon: Calendar,
+            },
+            {
+              value: "flexible",
+              label: lang === "th" ? "ยืดหยุ่น" : "Flexible",
+              icon: Sparkles,
+            }
+          )}
+          {renderToggle(
+            "solo_team",
+            {
+              value: "solo",
+              label: lang === "th" ? "ทำคนเดียว" : "Solo",
+              icon: User,
+            },
+            {
+              value: "team",
+              label: lang === "th" ? "ทำเป็นทีม" : "Team",
+              icon: Users,
+            }
+          )}
+          {renderToggle(
+            "hands_on_theory",
+            {
+              value: "hands_on",
+              label: lang === "th" ? "ลงมือทำ" : "Hands-on",
+              icon: Wrench,
+            },
+            {
+              value: "theory",
+              label: lang === "th" ? "ทฤษฎี" : "Theory",
+              icon: Lightbulb,
+            }
+          )}
+          {renderToggle(
+            "steady_fast",
+            {
+              value: "steady",
+              label: lang === "th" ? "สม่ำเสมอ" : "Steady pace",
+              icon: Gauge,
+            },
+            {
+              value: "fast",
+              label: lang === "th" ? "ท้าทาย" : "Fast-paced",
+              icon: Zap,
+            }
           )}
         </div>
       </QuestionWrapper>
     );
   }
 
-  // Q11: Zone Activity (REMOVED - Duplicate of Q5)
-  // if (step === 'q11') { ... }
+  // ==========================================
+  // Q4: REPUTATION 💬
+  // ==========================================
+  if (step === "q4") {
+    const reputation = localAnswers.q4_reputation || [];
+    const hasEnough = reputation.length >= 1 && reputation.length <= 3;
 
-  if (step === "q12") {
-    const ratings = localAnswers.q12_confidence || {
-      creative: 3,
-      analytical: 3,
-      technical: 3,
-      people: 3,
-      organizational: 3,
-      physical: 3,
+    const toggleReputation = (key: string) => {
+      if (reputation.includes(key)) {
+        updateAnswer(
+          "q4_reputation",
+          reputation.filter((r) => r !== key)
+        );
+      } else if (reputation.length < 3) {
+        updateAnswer("q4_reputation", [...reputation, key]);
+      }
     };
-    const areaKeys = Object.keys(t.questions.q12.areas) as Array<
-      keyof typeof t.questions.q12.areas
-    >;
+
     return (
       <QuestionWrapper
-        title={t.questions.q12.title}
-        subtitle={t.questions.q12.subtitle}
+        questionNumber={4}
+        title={lang === "th" ? "ที่พึ่งของเพื่อน" : "Your Reputation"}
+        subtitle={
+          lang === "th"
+            ? "คนอื่นมักจะมาขอให้คุณช่วยเรื่องอะไร หรือชมว่าคุณเก่งเรื่องอะไร? (เลือก 1-3 ข้อ)"
+            : "What do people often ask you for help with OR compliment you about? (Pick 1-3)"
+        }
+        emoji="💬"
+        canProceed={hasEnough}
         onBack={onBack}
         onNext={onNext}
-        backLabel={t.common.back}
-        nextLabel={t.common.next}
       >
-        <div className="space-y-4">
-          {areaKeys.map((key) => {
-            return (
-              <div
-                key={key as string}
-                className="flex items-center justify-between"
-              >
-                <span className="text-slate-300">
-                  {t.questions.q12.areas[key]}
-                </span>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={cn(
-                        "w-6 h-6 cursor-pointer",
-                        star <= ratings[key]
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-slate-700"
-                      )}
-                      onClick={() =>
-                        updateAnswer("q12_confidence", {
-                          ...ratings,
-                          [key]: star,
-                        })
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {REPUTATION_OPTIONS.map((option) => (
+            <div
+              key={option.key}
+              onClick={() => toggleReputation(option.key)}
+              className={cn(
+                "p-3 rounded-lg border cursor-pointer transition-all text-sm",
+                reputation.includes(option.key)
+                  ? "bg-cyan-600/20 border-cyan-500 text-white"
+                  : reputation.length >= 3
+                    ? "bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed"
+                    : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+              )}
+            >
+              {lang === "th" ? getThaiReputation(option.key) : option.label}
+              {reputation.includes(option.key) && (
+                <span className="ml-2 text-cyan-400">✓</span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="text-sm text-slate-500 mt-4">
+          {lang === "th"
+            ? `เลือกแล้ว ${reputation.length}/3`
+            : `Selected ${reputation.length}/3`}
         </div>
       </QuestionWrapper>
     );
   }
 
-  if (step === "q13") {
+  // ==========================================
+  // Q5: PROUD MOMENT 🏆
+  // ==========================================
+  if (step === "q5") {
+    const proudData = localAnswers.q5_proud || { story: "", tags: [] };
+    const hasStory = proudData.story.trim().length >= 10;
+    const hasTags = proudData.tags.length > 0;
+
     return (
       <QuestionWrapper
-        title={t.questions.q13.title}
-        subtitle={t.questions.q13.subtitle}
-        canProceed={!!localAnswers.q13_recognition}
+        questionNumber={5}
+        title={lang === "th" ? "ความภูมิใจ" : "What Makes You Proud"}
+        subtitle={
+          lang === "th"
+            ? "เล่าถึงสิ่งที่คุณทำสำเร็จแล้วรู้สึกภูมิใจ (เรื่องเล็กหรือใหญ่ก็ได้)"
+            : "Describe something you accomplished that made you genuinely proud (big or small)"
+        }
+        emoji="🏆"
+        canProceed={hasStory && hasTags}
         onBack={onBack}
         onNext={onNext}
-        backLabel={t.common.back}
-        nextLabel={t.common.next}
+      >
+        <div className="space-y-6">
+          <Textarea
+            value={proudData.story}
+            onChange={(e) =>
+              updateAnswer("q5_proud", { ...proudData, story: e.target.value })
+            }
+            placeholder={
+              lang === "th"
+                ? "เช่น ตอนที่ผมสอนน้องๆ ในค่ายอาสา พวกเขาเข้าใจและยิ้มให้ ผมรู้สึกดีใจมาก..."
+                : "e.g. When I taught kids at a volunteer camp and they finally understood, seeing their smiles made me so happy..."
+            }
+            className="bg-slate-900 border-slate-700 min-h-[100px] text-white"
+          />
+
+          <div className="space-y-2">
+            <Label className="text-slate-300">
+              {lang === "th"
+                ? "ทำไมถึงรู้สึกภูมิใจ? (เลือก 1-2 ข้อ)"
+                : "What made it meaningful? (Pick 1-2)"}
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {PROUD_TAGS.map((tag) => (
+                <button
+                  key={tag.key}
+                  onClick={() => {
+                    const current = proudData.tags;
+                    const newTags = current.includes(tag.key)
+                      ? current.filter((t) => t !== tag.key)
+                      : current.length < 2
+                        ? [...current, tag.key]
+                        : current;
+                    updateAnswer("q5_proud", { ...proudData, tags: newTags });
+                  }}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-sm transition-all",
+                    proudData.tags.includes(tag.key)
+                      ? "bg-amber-600 text-white"
+                      : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                  )}
+                >
+                  {lang === "th" ? getThaiProudTag(tag.key) : tag.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </QuestionWrapper>
+    );
+  }
+
+  // ==========================================
+  // Q6: SECRET WEAPON ✨
+  // ==========================================
+  if (step === "q6") {
+    const uniqueData = localAnswers.q6_unique || {
+      description: "",
+      skipped: false,
+    };
+    const canProceed =
+      uniqueData.skipped || uniqueData.description.trim().length > 0;
+
+    return (
+      <QuestionWrapper
+        questionNumber={6}
+        title={lang === "th" ? "อาวุธลับ" : "Your Secret Weapon"}
+        subtitle={
+          lang === "th"
+            ? "มีอะไรพิเศษเกี่ยวกับตัวคุณไหม? เช่น เรียนรู้บางอย่างได้เร็วมาก หรือมีความสนใจที่แปลกใหม่?"
+            : "Is there something unique about you - maybe you learn certain things crazy fast, or you have an unusual combination of interests?"
+        }
+        emoji="✨"
+        canProceed={canProceed}
+        onBack={onBack}
+        onNext={onNext}
+        nextLabel={lang === "th" ? "วิเคราะห์ผล" : "Analyze"}
       >
         <div className="space-y-4">
           <Textarea
-            value={localAnswers.q13_recognition || ""}
-            onChange={(e) => updateAnswer("q13_recognition", e.target.value)}
-            placeholder={t.questions.q13.placeholder}
-            className="min-h-[150px] bg-slate-800 border-slate-700"
+            value={uniqueData.description}
+            onChange={(e) =>
+              updateAnswer("q6_unique", {
+                ...uniqueData,
+                description: e.target.value,
+                skipped: false,
+              })
+            }
+            placeholder={
+              lang === "th"
+                ? "เช่น ผมเรียนรู้ภาษาใหม่ได้เร็วมาก หรือ ผมชอบทั้งวิทย์และศิลป์..."
+                : "e.g. I pick up new languages really fast, or I'm into both science AND art..."
+            }
+            className="bg-slate-900 border-slate-700 min-h-[80px] text-white"
+            disabled={uniqueData.skipped}
           />
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-3">
             <Checkbox
-              id="none"
-              onCheckedChange={(checked) => {
-                if (checked)
-                  updateAnswer("q13_recognition", t.questions.q13.none_label);
-                else updateAnswer("q13_recognition", "");
-              }}
+              id="skip-unique"
+              checked={uniqueData.skipped}
+              onCheckedChange={(checked) =>
+                updateAnswer("q6_unique", {
+                  description: "",
+                  skipped: Boolean(checked),
+                })
+              }
             />
-            <Label htmlFor="none" className="text-slate-400">
-              {t.questions.q13.none_label}
-            </Label>
+            <label
+              htmlFor="skip-unique"
+              className="text-sm text-slate-400 cursor-pointer"
+            >
+              {lang === "th"
+                ? "นึกไม่ออกตอนนี้"
+                : "I can't think of anything right now"}
+            </label>
           </div>
         </div>
       </QuestionWrapper>
     );
   }
 
+  // ==========================================
+  // AI INTRO
+  // ==========================================
   if (step === "ai_intro") {
     return (
       <div className="text-center space-y-6 py-12 animate-in zoom-in duration-300">
-        <div className="text-4xl">🤖</div>
-        <h2 className="text-2xl font-bold text-white">{t.ai_intro.title}</h2>
+        <div className="text-5xl">🎉</div>
+        <h2 className="text-2xl font-bold text-white">
+          {lang === "th" ? "เยี่ยมมาก!" : "Great Job!"}
+        </h2>
         <p className="text-slate-300 max-w-md mx-auto">
-          {t.ai_intro.description}
+          {lang === "th"
+            ? "ตอนนี้พี่ Seed AI จะช่วยวิเคราะห์คำตอบของคุณ และสร้างโปรไฟล์เส้นทางที่ใช่"
+            : "Now our AI advisor will analyze your answers and create your personalized direction profile."}
         </p>
         <div className="flex gap-4 justify-center">
           <Button
@@ -1154,14 +987,89 @@ export function CoreAssessment({
           <Button
             onClick={onNext}
             size="lg"
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
           >
-            {t.ai_intro.button} <ChevronRight className="ml-2 w-4 h-4" />
+            {lang === "th" ? "เริ่มบทสนทนา" : "Start Conversation"}{" "}
+            <ChevronRight className="ml-2 w-4 h-4" />
           </Button>
         </div>
       </div>
     );
   }
 
-  return <div>Unknown step</div>;
+  // Fallback
+  return (
+    <div className="text-center py-8 text-slate-400">Unknown step: {step}</div>
+  );
+}
+
+// ==========================================
+// THAI TRANSLATION HELPERS
+// ==========================================
+function getThaiLabel(key: string): string {
+  const map: Record<string, string> = {
+    creating: "สร้างสรรค์/สร้างของ",
+    helping: "ช่วยเหลือ/สอน",
+    solving: "แก้ปัญหา",
+    competing: "แข่งขัน",
+    learning: "เรียนรู้/ค้นคว้า",
+    performing: "แสดงออก",
+    leading: "นำ/จัดการ",
+    analyzing: "วิเคราะห์",
+  };
+  return map[key] || key;
+}
+
+function getThaiDomain(key: string): string {
+  const map: Record<string, string> = {
+    math: "คณิต/ตรรกะ",
+    science: "วิทยาศาสตร์",
+    coding: "เขียนโค้ด/IT",
+    engineering: "วิศวกรรม",
+    art: "ศิลปะ/ดีไซน์",
+    music: "ดนตรี",
+    writing: "การเขียน",
+    speaking: "พูดในที่สาธารณะ",
+    sports: "กีฬา/ออกกำลังกาย",
+    business: "ธุรกิจ",
+    psychology: "จิตวิทยา",
+    medicine: "การแพทย์/สุขภาพ",
+    teaching: "การสอน",
+    gaming: "เกม/อีสปอร์ต",
+    cooking: "ทำอาหาร",
+    fashion: "แฟชั่น",
+    social: "สังคม/ช่วยเหลือ",
+    leadership: "ผู้นำ",
+  };
+  return map[key] || key;
+}
+
+function getThaiReputation(key: string): string {
+  const map: Record<string, string> = {
+    tech: "เรื่องไอที/คอม",
+    creative: "ไอเดียสร้างสรรค์",
+    emotional: "ปรึกษาเรื่องชีวิต",
+    explaining: "อธิบายเรื่องยากให้ง่าย",
+    organizing: "จัดงาน/วางแผน",
+    problem_solving: "แก้ปัญหา",
+    fun: "ทำให้สนุก",
+    calm: "ใจเย็น/รับมือแรงกดดัน",
+    patterns: "มองเห็นรายละเอียด",
+    design: "ดีไซน์/ความสวยงาม",
+    leadership: "นำทีม",
+    listening: "รับฟังที่ดี",
+  };
+  return map[key] || key;
+}
+
+function getThaiProudTag(key: string): string {
+  const map: Record<string, string> = {
+    helped: "ช่วยเหลือคนอื่น",
+    achieved: "ชนะ/สำเร็จ",
+    built: "สร้างสิ่งใหม่",
+    overcame: "ผ่านอุปสรรค",
+    learned: "เรียนรู้เรื่องยาก",
+    recognized: "ได้รับการยอมรับ",
+  };
+  return map[key] || key;
 }

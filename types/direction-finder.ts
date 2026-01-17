@@ -1,37 +1,124 @@
+// ==========================================
+// Direction Finder Types - V2 (6 Questions)
+// ==========================================
+
+// Q1: Energy & Flow Discovery
+export interface Q1FlowData {
+  description: string;           // Free text (3-4 sentences) - min 20 chars
+  activities: string[];          // Checkboxes: creating, helping, solving, etc.
+}
+
+// Q2: Zone Grid Item
+export interface ZoneGridItem {
+  domain: string;
+  interest: number;     // 1-10 scale
+  capability: number;   // 1-10 scale
+}
+
+// Q2: Zone Grid (2x2 matrix result)
+export interface Q2ZoneGridData {
+  items: ZoneGridItem[];  // All items with their ratings
+}
+
+// Q3: Work Style Preferences
+export interface Q3WorkStyleData {
+  indoor_outdoor: 'indoor' | 'outdoor' | 'neutral';
+  structured_flexible: 'structured' | 'flexible' | 'neutral';
+  solo_team: 'solo' | 'team' | 'neutral';
+  hands_on_theory: 'hands_on' | 'theory' | 'neutral';
+  steady_fast: 'steady' | 'fast' | 'neutral';
+}
+
+// Q5: Proud Moment
+export interface Q5ProudData {
+  story: string;          // Free text
+  tags: string[];         // What made it meaningful
+}
+
+// Q6: Secret Weapon (Optional)
+export interface Q6UniqueData {
+  description: string;    // Free text (optional)
+  skipped: boolean;       // "I can't think of anything"
+}
+
+// Main Assessment Answers Interface (V2 - 6 Questions)
 export interface AssessmentAnswers {
+  // Q1: Energy & Flow Discovery (Primary - 25%)
+  q1_flow: Q1FlowData;
+
+  // Q2: Zone Grid (Primary - 30%)
+  q2_zone_grid: Q2ZoneGridData;
+
+  // Q3: Work Style (Secondary - 15%)
+  q3_work_style: Q3WorkStyleData;
+
+  // Q4: Reputation (Primary - 20%) - Top 3 selections
+  q4_reputation: string[];
+
+  // Q5: Proud Moment (Secondary - 10%)
+  q5_proud: Q5ProudData;
+
+  // Q6: Secret Weapon (Bonus)
+  q6_unique: Q6UniqueData;
+}
+
+// Profile Context for AI Prompt Weighting
+export interface ProfileContext {
+  primary_signals: {
+    zone_of_genius: string[];     // Domains from Q2 with high interest + high capability
+    flow_evidence: string;         // From Q1 description
+    external_proof: string[];      // From Q4 reputation
+    weight: number;                // 0.55
+  };
+  secondary_signals: {
+    environment: Q3WorkStyleData;  // From Q3
+    values: {
+      story: string;               // From Q5
+      drivers: string[];           // From Q5 tags
+    };
+    unique_edge: string;           // From Q6
+    weight: number;                // 0.35
+  };
+  growth_edges: string[];          // Domains with high interest but low capability
+  capability_traps: string[];      // Domains with low interest but high capability (AVOID)
+}
+
+// ==========================================
+// Legacy Interface (V1) - For backwards compatibility
+// ==========================================
+export interface LegacyAssessmentAnswers {
   // Part 1: What Energizes You
-  q1_time_flies: string[]; // Top 3 activities
-  q2_energy_sources: string[]; // Top 3 energy sources
+  q1_time_flies: string[];
+  q2_energy_sources: string[];
   q3_work_style: {
-    indoor_outdoor: number; // 0-100 (0=Indoor, 100=Outdoor)
-    structured_flexible: number; // 0=Structured, 100=Flexible
-    solo_team: number; // 0=Solo, 100=Team
-    hands_on_theory: number; // 0=Hands-on, 100=Theory
-    routine_challenge: number; // 0=Routine, 100=Challenge
+    indoor_outdoor: number;
+    structured_flexible: number;
+    solo_team: number;
+    hands_on_theory: number;
+    routine_challenge: number;
   };
   q4_subject_interests: {
     subject: string;
-    love: number; // 1-5 stars (Interest)
-    capable: number; // 1-5 stars (Competence)
+    love: number;
+    capable: number;
   }[];
   q5_flow_state: {
     activity: string;
-    engaging_factors: string[]; // Top 2
+    engaging_factors: string[];
   };
 
   // Part 2: What You're Good At
-  q6_strongest_skills: string[]; // Top 5
-  q7_proud_moments: string[]; // Up to 3
-  q8_learning_style: string[]; // Top 2
-  q9_help_requests: string[]; // Select all
+  q6_strongest_skills: string[];
+  q7_proud_moments: string[];
+  q8_learning_style: string[];
+  q9_help_requests: string[];
   q10_fast_learner: {
     is_fast_learner: boolean;
     topic?: string;
     speed?: 'bit' | 'noticeably' | 'way';
   };
-  // q11_zone_activity removed as it was duplicate of q5
   q12_confidence: {
-    creative: number; // 1-5 stars
+    creative: number;
     analytical: number;
     technical: number;
     people: number;
@@ -41,11 +128,15 @@ export interface AssessmentAnswers {
   q13_recognition: string;
 }
 
+// ==========================================
+// Result Types (Unchanged)
+// ==========================================
+
 export interface IkigaiProfile {
   energizers: string[];
   strengths: string[];
   values: string[];
-  reality: string[]; // Constraints, resources, preferences
+  reality: string[];
 }
 
 export interface DirectionVector {
@@ -67,9 +158,18 @@ export interface DirectionVector {
     skill_context: string;
   };
   match_scores: {
-    overall: number; // 0-100
-    passion: number; // 0-100
-    skill: number; // 0-100
+    overall: number;
+    passion: number;
+    skill: number;
+  };
+  // NEW: Evidence tracking for V2
+  evidence_used?: {
+    q1_insight?: string;
+    q2_quadrant?: string;
+    q3_preferences?: string[];
+    q4_validation?: string;
+    q5_driver?: string;
+    q6_bonus?: string;
   };
   exploration_steps: {
     type: 'camp' | 'study' | 'activity' | 'person' | 'project' | 'community';
@@ -90,17 +190,17 @@ export interface RecommendedProgram {
 
 export interface MilestoneEvaluation {
   stepIndex: number;
-  originalDescription?: string; // To track what it was
-  description?: string; // User edited description
-  theoryScore: number; // 0-100
-  practiceScore: number; // 0-100
+  originalDescription?: string;
+  description?: string;
+  theoryScore: number;
+  practiceScore: number;
   obstacle: string;
   plan: string;
 }
 
 export interface Commitment {
   agreedToViewDaily: boolean;
-  duolingoMode: boolean; // Email reminders
+  duolingoMode: boolean;
 }
 
 export interface ActionPlan {
@@ -120,11 +220,18 @@ export interface DirectionFinderResult {
   actionPlan?: ActionPlan;
 }
 
+// ==========================================
+// Flow Types (Updated for V2)
+// ==========================================
+
 export type AssessmentStep =
   | 'intro'
-  | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' // Part 1
-  | 'part2_intro'
-  | 'q6' | 'q7' | 'q8' | 'q9' | 'q10' | 'q12' | 'q13' // Part 2
+  | 'q1'  // Energy & Flow Discovery
+  | 'q2'  // Zone Grid
+  | 'q3'  // Work Style
+  | 'q4'  // Reputation
+  | 'q5'  // Proud Moment
+  | 'q6'  // Secret Weapon
   | 'ai_intro'
   | 'ai_chat'
   | 'results'
@@ -135,4 +242,37 @@ export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+}
+
+// ==========================================
+// Helper Types
+// ==========================================
+
+// Redirect result for Q1 validation
+export interface RedirectResult {
+  shouldRedirect: boolean;
+  path?: string;
+  message?: string;
+}
+
+// Zone quadrant classification
+export type ZoneQuadrant = 'genius' | 'growth' | 'trap' | 'ignore';
+
+// Helper to classify a grid item into quadrant
+export function classifyZoneItem(item: ZoneGridItem): ZoneQuadrant {
+  const { interest, capability } = item;
+  if (interest >= 7 && capability >= 7) return 'genius';
+  if (interest >= 7 && capability < 5) return 'growth';
+  if (interest < 4 && capability >= 7) return 'trap';
+  return 'ignore';
+}
+
+// Helper to extract domains by quadrant
+export function extractByQuadrant(
+  items: ZoneGridItem[],
+  quadrant: ZoneQuadrant
+): string[] {
+  return items
+    .filter(item => classifyZoneItem(item) === quadrant)
+    .map(item => item.domain);
 }
