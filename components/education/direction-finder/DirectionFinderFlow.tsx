@@ -43,19 +43,12 @@ interface DirectionFinderFlowProps {
 
 const STEPS_ORDER: AssessmentStep[] = [
   "intro",
-  "q1",
-  "q2",
-  "q3",
-  "q4",
-  "q5",
-  "part2_intro",
-  "q6",
-  "q7",
-  "q8",
-  "q9",
-  "q10",
-  "q12",
-  "q13",
+  "q1", // Energy & Flow Discovery
+  "q2", // Zone Grid
+  "q3", // Work Style
+  "q4", // Reputation
+  "q5", // Proud Moment
+  "q6", // Secret Weapon
   "ai_intro",
   "ai_chat",
   "results",
@@ -189,7 +182,14 @@ function DirectionFinderFlowContent({
       try {
         const { step, answers: savedAnswers, history } = JSON.parse(saved);
         // Only restore step if URL param is NOT set (URL takes precedence)
-        if (!stepParam && step !== undefined) setCurrentStepIndex(step);
+        if (
+          !stepParam &&
+          step !== undefined &&
+          step >= 0 &&
+          step < STEPS_ORDER.length
+        ) {
+          setCurrentStepIndex(step);
+        }
         if (savedAnswers) setAnswers(savedAnswers);
         if (history) setChatHistory(history);
       } catch (e) {
@@ -247,6 +247,20 @@ function DirectionFinderFlowContent({
   };
 
   const handleNext = () => {
+    // Q1 Redirect Logic: If flow description is too short, redirect to /seeds
+    if (currentStep === "q1") {
+      const q1Data = answers.q1_flow;
+      if (!q1Data?.description || q1Data.description.trim().length < 20) {
+        toast.info(
+          lang === "th"
+            ? "ไม่เป็นไร! ลองไปสำรวจค่ายของเราก่อน แล้วกลับมาใหม่เมื่อพร้อม 🌱"
+            : "No worries! Let's get you exploring first. Check out our camps! 🌱"
+        );
+        router.push("/seeds");
+        return;
+      }
+    }
+
     if (currentStepIndex < STEPS_ORDER.length - 1) {
       updateStep(currentStepIndex + 1);
     }
@@ -340,6 +354,7 @@ function DirectionFinderFlowContent({
       )
     ) {
       setResult(null);
+      setChatHistory(undefined); // Clear chat history so we get a fresh analysis
       // Go to Q1 to let them edit
       updateStep(STEPS_ORDER.indexOf("q1"));
     }
@@ -477,30 +492,26 @@ function DirectionFinderFlowContent({
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
-      {/* Header with Progress - Hide in Review Mode */}
+      {/* Header with Language Toggle - Hide progress during quiz (handled by CoreAssessment) */}
       {currentStep !== "results" &&
         currentStep !== "milestone_eval" &&
         currentStep !== "commitment" &&
+        currentStep !== "intro" &&
+        currentStep &&
+        !currentStep.startsWith("q") && // Hide during quiz - progress is in CoreAssessment
         !isCheckingServer &&
         !isReviewMode && (
           <div className="space-y-2 mb-6">
-            <div className="flex justify-between text-sm text-slate-400">
-              <span>
-                Step {currentStepIndex + 1} of {STEPS_ORDER.length}
-              </span>
-              <div className="flex gap-4 items-center">
-                <span>{Math.round(progress)}%</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setLang(lang === "en" ? "th" : "en")}
-                  className="h-6 px-2 text-xs border border-white/10 hover:bg-white/10"
-                >
-                  {lang === "en" ? "🇹🇭 TH" : "🇬🇧 EN"}
-                </Button>
-              </div>
+            <div className="flex justify-end text-sm text-slate-400">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLang(lang === "en" ? "th" : "en")}
+                className="h-6 px-2 text-xs border border-white/10 hover:bg-white/10"
+              >
+                {lang === "en" ? "🇹🇭 TH" : "🇬🇧 EN"}
+              </Button>
             </div>
-            <Progress value={progress} className="h-2" />
           </div>
         )}
 

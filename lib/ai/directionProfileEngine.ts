@@ -1,327 +1,424 @@
 import { generateObject } from "ai";
 import { z } from "zod";
-import { AssessmentAnswers, DirectionFinderResult } from "@/types/direction-finder";
+import {
+  AssessmentAnswers,
+  DirectionFinderResult,
+  ProfileContext,
+  extractByQuadrant,
+  ZoneGridItem
+} from "@/types/direction-finder";
 import { getModel } from "./modelRegistry";
 
-export async function generateDirectionProfile(
-    history: { role: 'user' | 'assistant'; content: string }[],
-    answers: AssessmentAnswers,
-    modelName?: string,
-    language: 'en' | 'th' = 'en'
-): Promise<DirectionFinderResult> {
-    try {
-        const prompt = `
-      Based on the student's assessment data and the conversation history, generate a comprehensive Direction Profile.
-      
-      Language: ${language === 'th' ? 'Thai' : 'English'}
-      
-      Assessment Data:
-      ${JSON.stringify(answers, null, 2)}
-      
-      Conversation History:
-      ${JSON.stringify(history, null, 2)}
-      
-      Output JSON format:
-      {
-        "profile": {
-          "energizers": ["List 3 specific things that give them energy"],
-          "strengths": ["List 3 core strengths"],
-          "values": ["List 3 core values"],
-          "reality": ["List 3 aspects of reality/market they care about"]
-        },
-        "vectors": [
-          {
-            "name": "Creative/Cool/Inspiring Role Title",
-            "fit_reason": {
-              "interest_alignment": "One sentence on why this fits their interests",
-              "strength_alignment": "One sentence on why this fits their strengths",
-              "value_alignment": "One sentence on why this fits their values"
-            },
-            "differentiators": {
-              "main_focus": "Short phrase describing the core focus (e.g. Building, Researching, Helping)",
-              "knowledge_base": ["Subject 1", "Subject 2"],
-              "skill_tree": ["Skill 1", "Skill 2"]
-            },
-            "rarity": "Legendary",
-            "recommended_faculty": "Specific Faculty/Major Name",
-            "match_context": {
-                "passion_context": "You light up when discussing...", 
-                "skill_context": "Your natural ability to..."
-            },
-            "match_scores": {
-              "overall": 85,
-              "passion": 85,
-              "skill": 90
-            },
-            "exploration_steps": [
-              { "type": "activity", "description": "Specific project/activity idea 1", "reason": "Why this matters" },
-              { "type": "study", "description": "Specific study idea 2", "reason": "Why this matters" },
-              { "type": "camp", "description": "Specific camp/event idea 3", "reason": "Why this matters" }
-            ],
-            "first_step": "The very first micro-step to take today"
-          }
-          // ... generate 3 vectors total
-        ],
-        "programs": [
-          {
-            "name": "Program Name",
-            "match_level": "High",
-            "match_percentage": 90,
-            "reason": "Why this program fits",
-            "deadline": "YYYY-MM-DD",
-            "application_link": "https://example.com"
-          }
-        ],
-        "commitments": {
-          "this_week": ["Commitment 1", "Commitment 2"],
-          "this_month": ["Commitment 1", "Commitment 2"]
-        }
-      }
-      
-      IMPORTANT: Ensure the JSON is valid. Do not include markdown formatting.
-      If Language is Thai, all content in the JSON values MUST be in Thai. 
-      For Rarity: Assign based on how unique/niche this combination is. 'Rare' (Common but good), 'Epic' (Strong niche), 'Legendary' (Very specific/unique combo), 'Mythical' (One of a kind/Visionary).
-    `;
+// ==========================================
+// HELPER FUNCTIONS FOR CONTEXT EXTRACTION
+// ==========================================
 
-        const { object } = await generateObject({
-            model: getModel(modelName),
-            schema: z.object({
-                profile: z.object({
-                    energizers: z.array(z.string()),
-                    strengths: z.array(z.string()),
-                    values: z.array(z.string()),
-                    reality: z.array(z.string()),
-                }),
-                vectors: z.array(z.object({
-                    name: z.string(),
-                    rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
-                    recommended_faculty: z.string().optional(),
-                    match_context: z.object({
-                        passion_context: z.string(),
-                        skill_context: z.string(),
-                    }).optional(),
-                    fit_reason: z.object({
-                        interest_alignment: z.string(),
-                        strength_alignment: z.string(),
-                        value_alignment: z.string(),
-                    }),
-                    differentiators: z.object({
-                        main_focus: z.string(),
-                        knowledge_base: z.array(z.string()),
-                        skill_tree: z.array(z.string()),
-                    }).optional(),
-                    match_scores: z.object({
-                        overall: z.number().min(0).max(100),
-                        passion: z.number().min(0).max(100),
-                        skill: z.number().min(0).max(100),
-                    }),
-                    exploration_steps: z.array(z.object({
-                        type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe("The type of milestone project"),
-                        description: z.string().describe("Title of the project or milestone"),
-                        reason: z.string().optional().describe("Why this project matters"),
-                    })).describe("3-4 suggested projects or milestones to help the student progress in this direction"),
-                    first_step: z.string(),
-                })),
-                programs: z.array(z.object({
-                    name: z.string(),
-                    match_level: z.enum(['High', 'Good', 'Stretch']),
-                    match_percentage: z.number(),
-                    reason: z.string(),
-                    deadline: z.string().optional(),
-                    application_link: z.string().optional(),
-                })),
-                commitments: z.object({
-                    this_week: z.array(z.string()),
-                    this_month: z.array(z.string()),
-                }),
-            }),
-            prompt,
-        });
-
-        return object;
-    } catch (error) {
-        console.error("Error generating direction profile:", error);
-        throw error;
-    }
+/**
+ * Extract domains from Zone of Genius (high interest + high capability)
+ */
+export function extractZoneOfGenius(items: ZoneGridItem[]): string[] {
+  return extractByQuadrant(items, 'genius');
 }
+
+/**
+ * Extract domains from Growth Edge (high interest + low capability)
+ */
+export function extractGrowthEdge(items: ZoneGridItem[]): string[] {
+  return extractByQuadrant(items, 'growth');
+}
+
+/**
+ * Extract domains from Capability Trap (low interest + high capability) - AVOID these
+ */
+export function extractCapabilityTraps(items: ZoneGridItem[]): string[] {
+  return extractByQuadrant(items, 'trap');
+}
+
+/**
+ * Build the weighted ProfileContext from assessment answers
+ */
+export function buildProfileContext(answers: AssessmentAnswers): ProfileContext {
+  const gridItems = answers.q2_zone_grid?.items || [];
+
+  return {
+    primary_signals: {
+      zone_of_genius: extractZoneOfGenius(gridItems),
+      flow_evidence: answers.q1_flow?.description || '',
+      external_proof: answers.q4_reputation || [],
+      weight: 0.55
+    },
+    secondary_signals: {
+      environment: answers.q3_work_style || {
+        indoor_outdoor: 'neutral' as const,
+        structured_flexible: 'neutral' as const,
+        solo_team: 'neutral' as const,
+        hands_on_theory: 'neutral' as const,
+        steady_fast: 'neutral' as const
+      },
+      values: {
+        story: answers.q5_proud?.story || '',
+        drivers: answers.q5_proud?.tags || []
+      },
+      unique_edge: answers.q6_unique?.description || '',
+      weight: 0.35
+    },
+    growth_edges: extractGrowthEdge(gridItems),
+    capability_traps: extractCapabilityTraps(gridItems)
+  };
+}
+
+// ==========================================
+// SYSTEM PROMPT TEMPLATE
+// ==========================================
+
+const SYSTEM_PROMPT = `You are generating a Direction Profile based on student data. Follow these rules STRICTLY:
+
+## Data Utilization Requirements
+You MUST reference insights from ALL sections:
+1. **Primary Signals** (Q1, Q2, Q4) - these are non-negotiable anchors
+2. **Secondary Signals** (Q3, Q5, Q6) - these refine and validate
+3. **Growth Edges** - consider as stretch goals or complementary skills
+
+## Match Score Calculation
+For each career vector, calculate fit as:
+- Zone of Genius alignment (Q2 high-high): 30 points
+- Flow state connection (Q1): 15 points  
+- External validation (Q4): 10 points
+- Environment fit (Q3): 15 points
+- Value alignment (Q5): 10 points
+- Growth potential (Q2 high-low): 10 points
+- Unique advantage (Q6): 10 points bonus
+
+Total = /100
+
+## fit_reason Structure (MANDATORY)
+Every fit_reason must include:
+- "Your Zone of Genius in [X from Q2] connects to this because..."
+- "When you described [specific detail from Q1], it shows..."
+- "People recognize your [skill from Q4], which is crucial for..."
+- "This matches your preference for [environment from Q3]..."
+
+## Red Flags to Avoid
+NEVER recommend careers that:
+- Only match capability_traps (high skill, low interest)
+- Conflict with >3 environment preferences from Q3
+- Ignore the flow context from Q1
+
+## Evidence Tracking (REQUIRED)
+For each vector, include an evidence_used object showing:
+- q1_insight: Quote or reference from flow description
+- q2_quadrant: Which domains from zone_of_genius it connects to
+- q3_preferences: Relevant environment preferences
+- q4_validation: Which reputation items support this
+- q5_driver: Value driver that aligns
+
+## Rarity Assignment
+- 'Rare': Common but good fit
+- 'Epic': Strong niche market
+- 'Legendary': Very specific/unique combination
+- 'Mythical': One of a kind/Visionary path
+`;
+
+// ==========================================
+// MAIN PROFILE GENERATION (COMBINED)
+// ==========================================
+
+export async function generateDirectionProfile(
+  history: { role: 'user' | 'assistant'; content: string }[],
+  answers: AssessmentAnswers,
+  modelName?: string,
+  language: 'en' | 'th' = 'en'
+): Promise<DirectionFinderResult> {
+  try {
+    const context = buildProfileContext(answers);
+
+    const prompt = `
+${SYSTEM_PROMPT}
+
+Language: ${language === 'th' ? 'Thai' : 'English'}
+All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+
+## Student Profile Context (Weighted Data)
+
+### PRIMARY SIGNALS (55% weight)
+**Zone of Genius** (Q2 - High Interest + High Capability):
+${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
+
+**Flow State Evidence** (Q1):
+"${context.primary_signals.flow_evidence}"
+
+**External Validation** (Q4 - What people ask them for):
+${JSON.stringify(context.primary_signals.external_proof, null, 2)}
+
+### SECONDARY SIGNALS (35% weight)
+**Environment Preferences** (Q3):
+${JSON.stringify(context.secondary_signals.environment, null, 2)}
+
+**Value Drivers** (Q5):
+Story: "${context.secondary_signals.values.story}"
+Tags: ${JSON.stringify(context.secondary_signals.values.drivers)}
+
+**Unique Edge** (Q6):
+"${context.secondary_signals.unique_edge}"
+
+### GROWTH EDGES (10% weight - stretch opportunities)
+${JSON.stringify(context.growth_edges, null, 2)}
+
+### CAPABILITY TRAPS (AVOID - low interest, high skill)
+${JSON.stringify(context.capability_traps, null, 2)}
+
+### Conversation History
+${JSON.stringify(history, null, 2)}
+
+---
+
+Generate 3 career direction vectors. For EACH vector:
+1. Show which Q2 domains from zone_of_genius it connects to
+2. Quote a specific phrase from q1_flow_evidence
+3. Reference at least 2 items from q4_reputation
+4. Check alignment with q3_environment preferences
+5. Explain how it honors their q5_values
+
+Include an "evidence_used" object in each vector showing you used data from Q1-Q6.
+`;
+
+    const { object } = await generateObject({
+      model: getModel(modelName),
+      schema: z.object({
+        profile: z.object({
+          energizers: z.array(z.string()),
+          strengths: z.array(z.string()),
+          values: z.array(z.string()),
+          reality: z.array(z.string()),
+        }),
+        vectors: z.array(z.object({
+          name: z.string(),
+          rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
+          recommended_faculty: z.string().optional(),
+          match_context: z.object({
+            passion_context: z.string(),
+            skill_context: z.string(),
+          }).optional(),
+          fit_reason: z.object({
+            interest_alignment: z.string(),
+            strength_alignment: z.string(),
+            value_alignment: z.string(),
+          }),
+          differentiators: z.object({
+            main_focus: z.string(),
+            knowledge_base: z.array(z.string()),
+            skill_tree: z.array(z.string()),
+          }).optional(),
+          match_scores: z.object({
+            overall: z.number().min(0).max(100),
+            passion: z.number().min(0).max(100),
+            skill: z.number().min(0).max(100),
+          }),
+          evidence_used: z.object({
+            q1_insight: z.string().optional(),
+            q2_quadrant: z.string().optional(),
+            q3_preferences: z.array(z.string()).optional(),
+            q4_validation: z.string().optional(),
+            q5_driver: z.string().optional(),
+            q6_bonus: z.string().optional(),
+          }).optional(),
+          exploration_steps: z.array(z.object({
+            type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']),
+            description: z.string(),
+            reason: z.string().optional(),
+          })),
+          first_step: z.string(),
+        })),
+        programs: z.array(z.object({
+          name: z.string(),
+          match_level: z.enum(['High', 'Good', 'Stretch']),
+          match_percentage: z.number(),
+          reason: z.string(),
+          deadline: z.string().optional(),
+          application_link: z.string().optional(),
+        })),
+        commitments: z.object({
+          this_week: z.array(z.string()),
+          this_month: z.array(z.string()),
+        }),
+      }),
+      prompt,
+    });
+
+    return object;
+  } catch (error) {
+    console.error("Error generating direction profile:", error);
+    throw error;
+  }
+}
+
+// ==========================================
+// CORE PROFILE GENERATION (Vectors Only)
+// ==========================================
 
 export async function generateDirectionProfileCore(
-    history: { role: 'user' | 'assistant'; content: string }[],
-    answers: AssessmentAnswers,
-    modelName?: string,
-    language: 'en' | 'th' = 'en'
+  history: { role: 'user' | 'assistant'; content: string }[],
+  answers: AssessmentAnswers,
+  modelName?: string,
+  language: 'en' | 'th' = 'en'
 ): Promise<Partial<DirectionFinderResult>> {
-    try {
-        const prompt = `
-      Based on the student's assessment data and conversation, generate the CORE Direction Profile (Profile + Vectors).
-      
-      Language: ${language === 'th' ? 'Thai' : 'English'}
-      
-      Assessment Data:
-      ${JSON.stringify(answers, null, 2)}
-      
-      Conversation History:
-      ${JSON.stringify(history, null, 2)}
-      
-      Output JSON format:
-      {
-        "profile": {
-          "energizers": ["List 3 specific things that give them energy"],
-          "strengths": ["List 3 core strengths"],
-          "values": ["List 3 core values"],
-          "reality": ["List 3 aspects of reality/market they care about"]
-        },
-        "vectors": [
-          {
-            "name": "Creative/Cool/Inspiring Role Title",
-            "fit_reason": {
-              "interest_alignment": "One sentence on why this fits their interests",
-              "strength_alignment": "One sentence on why this fits their strengths",
-              "value_alignment": "One sentence on why this fits their values"
-            },
-            "differentiators": {
-              "main_focus": "Short phrase describing the core focus (e.g. Building, Researching, Helping)",
-              "knowledge_base": ["Subject 1", "Subject 2"],
-              "skill_tree": ["Skill 1", "Skill 2"]
-            },
-            "rarity": "Legendary",
-            "recommended_faculty": "Specific Faculty/Major Name",
-            "match_context": {
-                "passion_context": "You light up when discussing...", 
-                "skill_context": "Your natural ability to..."
-            },
-            "match_scores": {
-              "overall": 85,
-              "passion": 85,
-              "skill": 90
-            },
-            "exploration_steps": [
-              { "type": "activity", "description": "Specific project/activity idea 1", "reason": "Why this matters" },
-              { "type": "study", "description": "Specific study idea 2", "reason": "Why this matters" },
-              { "type": "camp", "description": "Specific camp/event idea 3", "reason": "Why this matters" }
-            ],
-            "first_step": "The very first micro-step to take today"
-          }
-          // ... generate 3 vectors total
-        ]
-      }
-      
-      Values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
-      Rarity: Rare, Epic, Legendary, Mythical.
-    `;
+  try {
+    const context = buildProfileContext(answers);
 
-        const { object } = await generateObject({
-            model: getModel(modelName),
-            schema: z.object({
-                profile: z.object({
-                    energizers: z.array(z.string()),
-                    strengths: z.array(z.string()),
-                    values: z.array(z.string()),
-                    reality: z.array(z.string()),
-                }),
-                vectors: z.array(z.object({
-                    name: z.string(),
-                    rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
-                    recommended_faculty: z.string().optional(),
-                    match_context: z.object({
-                        passion_context: z.string(),
-                        skill_context: z.string(),
-                    }).optional(),
-                    fit_reason: z.object({
-                        interest_alignment: z.string(),
-                        strength_alignment: z.string(),
-                        value_alignment: z.string(),
-                    }),
-                    differentiators: z.object({
-                        main_focus: z.string(),
-                        knowledge_base: z.array(z.string()),
-                        skill_tree: z.array(z.string()),
-                    }).optional(),
-                    match_scores: z.object({
-                        overall: z.number().min(0).max(100),
-                        passion: z.number().min(0).max(100),
-                        skill: z.number().min(0).max(100),
-                    }),
-                    exploration_steps: z.array(z.object({
-                        type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe("The type of milestone project"),
-                        description: z.string().describe("Title of the project or milestone"),
-                        reason: z.string().optional().describe("Why this project matters"),
-                    })).describe("3-4 suggested projects or milestones to help the student progress in this direction"),
-                    first_step: z.string(),
-                })),
-            }),
-            prompt,
-        });
+    const prompt = `
+${SYSTEM_PROMPT}
 
-        return object;
-    } catch (error) {
-        console.error("Error generating core profile:", error);
-        throw error;
-    }
+Language: ${language === 'th' ? 'Thai' : 'English'}
+All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+
+## Student Profile Context (Weighted Data)
+
+### PRIMARY SIGNALS (55% weight)
+**Zone of Genius** (Q2 - High Interest + High Capability):
+${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
+
+**Flow State Evidence** (Q1):
+"${context.primary_signals.flow_evidence}"
+
+**External Validation** (Q4 - What people ask them for):
+${JSON.stringify(context.primary_signals.external_proof, null, 2)}
+
+### SECONDARY SIGNALS (35% weight)
+**Environment Preferences** (Q3):
+${JSON.stringify(context.secondary_signals.environment, null, 2)}
+
+**Value Drivers** (Q5):
+Story: "${context.secondary_signals.values.story}"
+Tags: ${JSON.stringify(context.secondary_signals.values.drivers)}
+
+**Unique Edge** (Q6):
+"${context.secondary_signals.unique_edge}"
+
+### GROWTH EDGES (10% weight - stretch opportunities)
+${JSON.stringify(context.growth_edges, null, 2)}
+
+### CAPABILITY TRAPS (AVOID)
+${JSON.stringify(context.capability_traps, null, 2)}
+
+### Conversation History
+${JSON.stringify(history, null, 2)}
+
+---
+Generate the CORE profile (Profile + 3 Vectors). Include evidence_used for each vector.
+`;
+
+    const { object } = await generateObject({
+      model: getModel(modelName),
+      schema: z.object({
+        profile: z.object({
+          energizers: z.array(z.string()),
+          strengths: z.array(z.string()),
+          values: z.array(z.string()),
+          reality: z.array(z.string()),
+        }),
+        vectors: z.array(z.object({
+          name: z.string(),
+          rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
+          recommended_faculty: z.string().optional(),
+          match_context: z.object({
+            passion_context: z.string(),
+            skill_context: z.string(),
+          }).optional(),
+          fit_reason: z.object({
+            interest_alignment: z.string(),
+            strength_alignment: z.string(),
+            value_alignment: z.string(),
+          }),
+          differentiators: z.object({
+            main_focus: z.string(),
+            knowledge_base: z.array(z.string()),
+            skill_tree: z.array(z.string()),
+          }).optional(),
+          match_scores: z.object({
+            overall: z.number().min(0).max(100),
+            passion: z.number().min(0).max(100),
+            skill: z.number().min(0).max(100),
+          }),
+          evidence_used: z.object({
+            q1_insight: z.string().optional(),
+            q2_quadrant: z.string().optional(),
+            q3_preferences: z.array(z.string()).optional(),
+            q4_validation: z.string().optional(),
+            q5_driver: z.string().optional(),
+            q6_bonus: z.string().optional(),
+          }).optional(),
+          exploration_steps: z.array(z.object({
+            type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']),
+            description: z.string(),
+            reason: z.string().optional(),
+          })),
+          first_step: z.string(),
+        })),
+      }),
+      prompt,
+    });
+
+    return object;
+  } catch (error) {
+    console.error("Error generating core profile:", error);
+    throw error;
+  }
 }
 
+// ==========================================
+// DETAILS GENERATION (Programs & Commitments)
+// ==========================================
+
 export async function generateDirectionProfileDetails(
-    coreResult: Partial<DirectionFinderResult>,
-    answers: AssessmentAnswers,
-    modelName?: string,
-    language: 'en' | 'th' = 'en'
+  coreResult: Partial<DirectionFinderResult>,
+  answers: AssessmentAnswers,
+  modelName?: string,
+  language: 'en' | 'th' = 'en'
 ): Promise<Partial<DirectionFinderResult>> {
-    try {
-        const prompt = `
-      Based on the student's Core Result (Vectors), generate supporting details (Programs & Commitments).
-      
-      Language: ${language === 'th' ? 'Thai' : 'English'}
-      
-      Core Vectors Identified:
-      ${JSON.stringify(coreResult.vectors, null, 2)}
-      
-      Student Context:
-      ${JSON.stringify(answers.q4_subject_interests, null, 2)}
-      
-      Output JSON format:
-      {
-        "programs": [
-          {
-            "name": "Program Name",
-            "match_level": "High",
-            "match_percentage": 90,
-            "reason": "Why this program fits the vectors above",
-            "deadline": "YYYY-MM-DD",
-            "application_link": "https://example.com"
-          }
-           // ... generate 2-3 programs
-        ],
-        "commitments": {
-          "this_week": ["Commitment 1", "Commitment 2"],
-          "this_month": ["Commitment 1", "Commitment 2"]
-        }
-      }
-      
-      Values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
-    `;
+  try {
+    const context = buildProfileContext(answers);
 
-        const { object } = await generateObject({
-            model: getModel(modelName),
-            schema: z.object({
-                programs: z.array(z.object({
-                    name: z.string(),
-                    match_level: z.enum(['High', 'Good', 'Stretch']),
-                    match_percentage: z.number(),
-                    reason: z.string(),
-                    deadline: z.string().optional(),
-                    application_link: z.string().optional(),
-                })),
-                commitments: z.object({
-                    this_week: z.array(z.string()),
-                    this_month: z.array(z.string()),
-                }),
-            }),
-            prompt,
-        });
+    const prompt = `
+Based on the student's Core Direction Vectors, generate supporting details (Programs & Commitments).
 
-        return object;
-    } catch (error) {
-        console.error("Error generating profile details:", error);
-        throw error;
-    }
+Language: ${language === 'th' ? 'Thai' : 'English'}
+All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+
+Core Vectors Identified:
+${JSON.stringify(coreResult.vectors, null, 2)}
+
+Student's Zone of Genius Domains:
+${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
+
+Student's Environment Preferences:
+${JSON.stringify(context.secondary_signals.environment, null, 2)}
+
+---
+Generate 2-3 recommended programs/faculties and weekly/monthly commitments.
+`;
+
+    const { object } = await generateObject({
+      model: getModel(modelName),
+      schema: z.object({
+        programs: z.array(z.object({
+          name: z.string(),
+          match_level: z.enum(['High', 'Good', 'Stretch']),
+          match_percentage: z.number(),
+          reason: z.string(),
+          deadline: z.string().optional(),
+          application_link: z.string().optional(),
+        })),
+        commitments: z.object({
+          this_week: z.array(z.string()),
+          this_month: z.array(z.string()),
+        }),
+      }),
+      prompt,
+    });
+
+    return object;
+  } catch (error) {
+    console.error("Error generating profile details:", error);
+    throw error;
+  }
 }

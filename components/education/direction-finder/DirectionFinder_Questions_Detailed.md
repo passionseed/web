@@ -1,123 +1,245 @@
-# Direction Finder: Detailed Question Analysis
+# Direction Finder: 6-Question Quiz Design
 
-This document details every question in the **Direction Finder** flow, identifying its specific goal and explaining how the AI Advisor utilizes the data to generate the final **Direction Profile**.
+This document details the **6 focused questions** in the redesigned Direction Finder flow, their specific goals, and how the AI Advisor utilizes the data to generate the final **Direction Profile**.
 
-## 1. Interest Scan (Ikigai: What you Love)
+---
 
-### **Q1: "Time Flies When..."**
+## Overview
 
-- **Question Text**: "Select your top activities (1-3)"
-- **Options**: Creating, Helping, Competing, Deep Learning, Organizing, Performing, Solving, Leading, Analyzing, Exploring.
-- **Goal**: To identify the student's **Core Interests** and intrinsic motivators. This corresponds to the "What you Love" circle of Ikigai. It specifically looks for activities that induce state of flow.
-- **AI Usage**:
-  - **Profile Generation**: Populates the `energizers` section of the profile.
-  - **Vector Matching**: Used to align "Interest Alignment" in the `fit_reason`. For example, if a student selects "Helping" and "Analyzing", the AI might suggest "Clinical Psychology" or "UX Research".
+| #   | Question                | Purpose                       | AI Weight        |
+| --- | ----------------------- | ----------------------------- | ---------------- |
+| Q1  | Energy & Flow Discovery | Identify intrinsic motivators | 25% (Primary)    |
+| Q2  | Zone Grid               | Map interest vs capability    | 30% (Primary)    |
+| Q3  | Work Style              | Environment preferences       | 15% (Secondary)  |
+| Q4  | Reputation              | External validation           | 20% (Primary)    |
+| Q5  | Proud Moment            | Value drivers                 | 10% (Secondary)  |
+| Q6  | Secret Weapon           | Unique differentiator         | Bonus Multiplier |
 
-### **Q2: "Energy Check"**
+---
 
-- **Question Text**: "Which give you ENERGY? Pick 3"
-- **Options**: Making things with hands, Ideas/Concepts, Collaborating with people, Systems/Data, Creative expression, Physical activity, Leading/Teaching.
-- **Goal**: To perform an **Energy Audit**. Differentiating between what a student _can_ do vs. what actually _energizes_ them prevents burnout-prone career suggestions.
-- **AI Usage**:
-  - **Filtering**: The AI uses this to filter out mismatched roles. For example, if "People" is NOT selected, the AI will avoid high-social-contact roles like Sales or HR, even if other skills match.
-  - **Context**: Adds nuance to the `passion_context` in the final result (e.g., "You light up when working with big ideas...").
+## Q1: Energy & Flow Discovery 🔥
 
-### **Q3: "Work Style"**
+**Question**: "Think of a time you were so absorbed in something you lost track of time. What were you doing?"
 
-- **Question Text**: "Click to show your preference" (Binary choice pairs)
-- **Pairs**: Indoor/Outdoor, Structured/Flexible, Solo/Team, Hands-on/Theory, Routine/Challenge.
-- **Goal**: To determine the ideal **Working Environment** and organizational fit.
-- **AI Usage**:
-  - **Role Refinement**: Differentiates between similar roles.
-    - _Example_: A "Writer" who likes "Team/Flexible" might get "Content Strategist (Agency)". A "Writer" who likes "Solo/Structured" might get "Technical Writer".
+### Format
 
-## 2. Skill Mapping (Ikigai: What you are Good At)
+- **Free text area** (minimum 20 characters, 3-4 sentences encouraged)
+- **Follow-up checkboxes**: "This activity involved..."
+  - Creating/Building
+  - Helping/Teaching
+  - Problem Solving
+  - Competing
+  - Learning/Researching
+  - Performing
+  - Leading/Organizing
+  - Analyzing
 
-### **Q4: "Subject Love & Capability" (The Skill/Will Matrix)**
+### Goal
 
-- **Question Text**: "For subjects you like, rate how much you LOVE it vs how CAPABLE you are."
-- **Goal**: To identify the **Zone of Genius**.
-  - _High Love / High Skill_: Core Career Direction.
-  - _High Love / Low Skill_: Growth Potential / Hobby.
-  - _Low Love / High Skill_: The "Trap" (Competent but bored) - _AI explicitly avoids recommending these as primary paths._
-- **AI Usage**:
-  - **Faculty Recommendation**: Directly maps to `recommended_faculty` outputs (e.g., High Math/Physics -> Engineering).
-  - **Constraint Checking**: Ensures recommendations are realistic based on self-reported capability.
+Identify the student's **intrinsic motivators** and **flow state triggers**. This corresponds to the "What you Love" circle of Ikigai.
 
-### **Q6: "Strongest Skills"**
+### Redirect Logic
 
-- **Question Text**: "Select your top 5 strengths"
-- **Options**: A mix of hard skills (Coding, Visual Design) and soft skills (Empathy, Pattern Spotting, Public Speaking).
-- **Goal**: To identify functional **Competencies**.
-- **AI Usage**:
-  - **Profile Generation**: Populates the `strengths` section.
-  - **Differentiators**: Fill the `skill_tree` section of the `vectors`. The AI looks for unique combinations (e.g., "Coding" + "Empathy" -> "Product Management" or "EdTech Developer").
+```typescript
+if (description.trim().length < 20) {
+  redirect("/seeds");
+  toast("No worries! Let's get you exploring first. Check out our camps! 🌱");
+}
+```
 
-### **Q9: "What People Ask For" (Social Proof)**
+### AI Usage
 
-- **Question Text**: "What do others ask you for help with?"
-- **Options**: Tech help, Emotional support, Creative ideas, etc.
-- **Goal**: To validate internal perceptions with **External Reality**. Often students undervalue skills that come easily to them; this question highlights "unconscious competence."
-- **AI Usage**:
-  - **Validation**: Increases the confidence score (`match_scores`) of related vectors. If a user thinks they aren't creative but everyone asks them for ideas, the AI might gently probe this discrepancy in the chat or weigh the "Creative" potential higher.
+- **Profile Generation**: Populates `energizers` section
+- **Vector Matching**: Used in `fit_reason.interest_alignment`
+- **Evidence Tracking**: AI must quote specific phrases from this answer
 
-## 3. Deep Dive & Qualitative (The "Why")
+---
 
-### **Q5: "Flow State Memory"**
+## Q2: Zone Grid 🎯
 
-- **Question Text**: "Describe the last time you were so absorbed you lost track of time..." (Free Text)
-- **Goal**: To get qualitative data that checkboxes miss. It reveals the _context_ of motivation.
-- **AI Usage**:
-  - **Chat Starter**: The AI Advisor often uses this answer to break the ice in the `ai_chat` phase (e.g., "You mentioned you lost track of time editing a video. Was it the storytelling or the technical side that hooked you?").
-  - **First Step**: Helps generate the specific `first_step` in the prediction vector (e.g., "Edit a 1-minute video about [Topic]").
+**Question**: "Pick areas you're interested in, then rate how much you ENJOY vs how CAPABLE you are"
 
-### **Q7: "Proud Moments"**
+### Format
 
-- **Question Text**: "What have you accomplished that made you proud?"
-- **Goal**: To identify **Achievement Drivers**. Does the student value "Winning" (Competition), "Helping" (Altruism), or "Building" (Creation)?
-- **AI Usage**:
-  - **Value Alignment**: Populates the `values` section of the profile.
-  - **Resilience Check**: Answers like "Stuck with something long-term" indicate high grit, allowing the AI to suggest steeper learning curves (e.g., Medicine, Architecture).
+- **Domain selector**: 18 predefined domains (Math, Art, Coding, Sports, etc.)
+- **Dual sliders** per domain:
+  - Interest (1-10)
+  - Capability (1-10)
 
-### **Q8: "Learning Style"**
+### Quadrant Classification
 
-- **Question Text**: "How do you learn best?"
-- **Options**: Reading, Videos, Doing, Mentoring, etc.
-- **Goal**: To customize the **Action Plan**.
-- **AI Usage**:
-  - **Exploration Steps**: Tailors the `exploration_steps` in the final result.
-    - _Visual Learner_: "Watch this YouTube crash course."
-    - _Hands-on_: "Build a small prototype."
-    - _Social_: "Interview a professional in this field."
+| Interest | Capability | Quadrant           | AI Action             |
+| -------- | ---------- | ------------------ | --------------------- |
+| ≥7       | ≥7         | Zone of Genius ⭐  | Primary career anchor |
+| ≥7       | <5         | Growth Edge 🌱     | Stretch goals         |
+| <4       | ≥7         | Capability Trap ⚠️ | **AVOID**             |
+| else     | else       | Ignore             | Not considered        |
 
-## 4. Synthesis & Validaton
+### Goal
 
-### **Q10: "Fast Learner Moment"**
+Identify the **Zone of Genius** (where passion meets skill) and explicitly flag **Capability Traps** (skills without passion = burnout risk).
 
-- **Question Text**: "Is there something you picked up way faster than others?"
-- **Goal**: To identify **High Plasticity** areas (Natural Talent).
-- **AI Usage**:
-  - **Rarity Score**: If a rare skill was learned quickly, the AI might assign a higher `rarity` badge (e.g., "Legendary") to that profile vector.
+### AI Usage
 
-### **Q13: "Recognition Pattern"**
+- **Primary Signal**: 30% of match score comes from Zone of Genius alignment
+- **Constraint**: AI is instructed to NEVER recommend paths matching only Capability Traps
+- **Faculty Recommendation**: Directly maps to `recommended_faculty` outputs
 
-- **Question Text**: "What do people often compliment you on?"
-- **Goal**: To verify **Self-Perception** vs **External Perception**.
-- **AI Usage**:
-  - **Confidence Boost**: Used in the chat to encourage the student. "You mentioned people praise your calmness. That is a superpower in [Suggested Career]."
+---
 
-## 5. The AI Overlay ( `AIConversation.tsx` )
+## Q3: Work Style ⚙️
 
-After the questionnaire, the AI Chat (`AIConversation`) acts as the **Connector**.
+**Question**: "Click to show your preferences"
 
-- **Input**: Receives the full JSON object of all answers above.
-- **Process**:
-  1.  **Gap Analysis**: It looks for inconsistencies (e.g., "Loves Math" but "Hates Systems").
-  2.  **Probing**: It asks clarifying questions to resolve these gaps.
-  3.  **Synthesis**: It generates the 3 `vectors` (Career Directions) by combining specific data points:
-      - _Vector Interest_ = Q1 + Q5
-      - _Vector Strength_ = Q6 + Q10
-      - _Vector Vibe/Culture_ = Q2 + Q3
-- **Output**: The final prompts (`generateDirectionProfile` in `directionProfileEngine.ts`) explicitly require the AI to map these inputs to:
-  - `fit_reason`: "Why this fits" (uses Q1, Q4, Q6).
-  - `match_scores`: Calculated quantitative match based on the density of supporting evidence from the questions.
+### Format
+
+5 binary choice pairs (can stay neutral):
+| Left | Right |
+|------|-------|
+| Indoor | Outdoor |
+| Structured | Flexible |
+| Solo | Team |
+| Hands-on | Theory |
+| Steady pace | Fast-paced |
+
+### Goal
+
+Determine ideal **working environment** and organizational culture fit.
+
+### AI Usage
+
+- **Role Refinement**: Differentiates between similar careers
+  - Example: "Writer" → Structured+Solo = Technical Writer; Flexible+Team = Content Strategist
+- **Red Flag**: AI avoids careers conflicting with 3+ preferences
+
+---
+
+## Q4: Reputation 💬
+
+**Question**: "What do people often ask you for help with OR compliment you about?"
+
+### Format
+
+- Multi-select (pick 1-3)
+- Options: Tech stuff, Creative ideas, Emotional support, Explaining things, Organizing events, Problem-solving, Making things fun, Staying calm, Spotting patterns, Design/aesthetics, Leadership, Listening
+
+### Goal
+
+Capture **external validation** - what skills others recognize that the student may undervalue.
+
+### AI Usage
+
+- **Validation Signal**: 20% of match score
+- **Confidence Boost**: Used in `match_context.skill_context`
+- **Chat Conversation**: AI advisor uses these to encourage the student
+
+---
+
+## Q5: Proud Moment 🏆
+
+**Question**: "Describe something you accomplished that made you genuinely proud"
+
+### Format
+
+- **Free text** (minimum 10 characters)
+- **Tag selector** (pick 1-2):
+  - Helped others
+  - Won or achieved
+  - Built/Created something
+  - Overcame difficulty
+  - Learned something hard
+  - Got recognized
+
+### Goal
+
+Identify **achievement drivers** and core **values**.
+
+### AI Usage
+
+- **Profile Generation**: Populates `values` section
+- **Value Alignment**: Used in `fit_reason.value_alignment`
+- **Resilience Check**: Tags like "Overcame difficulty" indicate high grit
+
+---
+
+## Q6: Secret Weapon ✨
+
+**Question**: "Is there something unique about you - maybe you learn certain things crazy fast, or have an unusual combination of interests?"
+
+### Format
+
+- **Optional free text** (1-2 sentences)
+- **Skip checkbox**: "I can't think of anything right now"
+
+### Goal
+
+Capture **differentiators** that make the student's profile unique.
+
+### AI Usage
+
+- **Rarity Multiplier**: If filled, can boost rarity score (Legendary → Mythical)
+- **Unique Edge**: Stored in `secondary_signals.unique_edge`
+- **Chat Conversation**: AI may explore this in more depth
+
+---
+
+## AI Profile Context Structure
+
+```typescript
+interface ProfileContext {
+  primary_signals: {
+    zone_of_genius: string[]; // Q2 high/high domains
+    flow_evidence: string; // Q1 description
+    external_proof: string[]; // Q4 selections
+    weight: 0.55;
+  };
+  secondary_signals: {
+    environment: WorkStyleData; // Q3
+    values: {
+      story: string; // Q5 story
+      drivers: string[]; // Q5 tags
+    };
+    unique_edge: string; // Q6
+    weight: 0.35;
+  };
+  growth_edges: string[]; // Q2 high-interest/low-capability
+  capability_traps: string[]; // Q2 low-interest/high-capability (AVOID)
+}
+```
+
+---
+
+## Match Score Formula
+
+For each career vector:
+
+| Factor                   | Source | Points    |
+| ------------------------ | ------ | --------- |
+| Zone of Genius alignment | Q2     | 30        |
+| Flow state connection    | Q1     | 15        |
+| External validation      | Q4     | 10        |
+| Environment fit          | Q3     | 15        |
+| Value alignment          | Q5     | 10        |
+| Growth potential         | Q2     | 10        |
+| Unique advantage         | Q6     | +10 bonus |
+
+**Total: 100 points** (110 with Q6 bonus)
+
+---
+
+## Evidence Tracking
+
+Each generated vector includes an `evidence_used` object:
+
+```typescript
+{
+  q1_insight: "When you mentioned 'editing videos for hours'...",
+  q2_quadrant: "Zone of Genius: coding, art",
+  q3_preferences: ["flexible", "team"],
+  q4_validation: "People ask you for creative ideas",
+  q5_driver: "overcame difficulty",
+  q6_bonus: "Learn languages fast"
+}
+```
+
+This ensures the AI explicitly connects recommendations to student input.

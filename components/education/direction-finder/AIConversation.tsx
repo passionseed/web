@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Pencil,
   RefreshCw,
+  Braces,
 } from "lucide-react";
 import {
   conductDirectionConversation,
@@ -63,6 +64,18 @@ export function AIConversation({
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [lastSystemPrompt, setLastSystemPrompt] = useState<string>("");
+
+  const handleResetChat = () => {
+    if (confirm("Reset chat history? This cannot be undone.")) {
+      setMessages([]);
+      setShowIntro(true);
+      hasStartedRef.current = false;
+      setLoadingStage("none");
+      onHistoryChange?.([]);
+    }
+  };
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasStartedRef = useRef(false);
 
@@ -156,6 +169,10 @@ export function AIConversation({
         model,
         lang
       );
+
+      if (response.debug_system_prompt) {
+        setLastSystemPrompt(response.debug_system_prompt);
+      }
 
       // Simulate "human" typing and message splitting
       for (const msgContent of response.messages) {
@@ -598,45 +615,70 @@ export function AIConversation({
       )}
 
       {process.env.NODE_ENV === "development" && (
-        <details className="absolute top-14 right-2 z-40 max-w-sm w-full bg-black/80 backdrop-blur text-xs text-green-300 p-2 rounded border border-green-800 shadow-xl overflow-hidden">
-          <summary className="cursor-pointer font-bold hover:text-green-100 p-1">
-            DEV: AI Context
+        <details className="absolute top-14 right-2 z-40 max-w-md w-full bg-slate-900/95 backdrop-blur border border-slate-700 shadow-xl rounded-lg overflow-hidden text-xs">
+          <summary className="p-3 bg-slate-800 font-bold text-slate-300 cursor-pointer hover:text-white flex justify-between items-center transition-colors">
+            <span className="flex items-center gap-2">
+              <Bot className="w-4 h-4 text-emerald-500" />
+              Dev Tools & Context
+            </span>
+            <span className="text-[10px] bg-slate-700 px-2 py-0.5 rounded-full text-slate-400 font-mono">
+              {messages.length} msgs
+            </span>
           </summary>
-          <div className="max-h-60 overflow-auto p-2 space-y-4">
-            <div>
-              <strong className="text-white block mb-1">
-                Assessment Answers:
-              </strong>
-              <pre className="whitespace-pre-wrap">
-                {JSON.stringify(answers, null, 2)}
-              </pre>
+
+          <div className="p-4 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            {/* Actions */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={handleResetChat}
+                variant="destructive"
+                size="sm"
+                className="h-8 text-xs bg-red-900/50 hover:bg-red-900 text-red-100 border border-red-800/50"
+              >
+                <RefreshCw className="w-3 h-3 mr-2" /> Reset Chat
+              </Button>
+              <Button
+                onClick={() =>
+                  console.log({ answers, messages, lastSystemPrompt })
+                }
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300"
+              >
+                <Braces className="w-3 h-3 mr-2" /> Log to Console
+              </Button>
             </div>
-            <div>
-              <strong className="text-white block mb-1">
-                View Result Logic:
-              </strong>
-              <div className="text-gray-400">
-                User Messages:{" "}
-                {messages.filter((m) => m.role === "user").length} / 6
-                (Required)
-                <br />
-                Typing: {isTyping ? "Yes" : "No"}
-                <br />
-                Generating: {loadingStage !== "none" ? "Yes" : "No"}
-                <br />
-                <strong>
-                  Result:{" "}
-                  {messages.filter((m) => m.role === "user").length >= 6
-                    ? "VISIBLE"
-                    : "HIDDEN"}
-                </strong>
+
+            <div className="space-y-4">
+              {/* Last System Prompt */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-blue-400 font-semibold">
+                  <span>Latest Generated Prompt</span>
+                  <span className="text-[10px] opacity-60">
+                    Server-side Context
+                  </span>
+                </div>
+                {lastSystemPrompt ? (
+                  <div className="bg-slate-950 p-3 rounded-md border border-blue-900/30 font-mono text-[10px] text-blue-200/90 whitespace-pre-wrap max-h-60 overflow-y-auto leading-relaxed shadow-inner">
+                    {lastSystemPrompt}
+                  </div>
+                ) : (
+                  <div className="text-slate-500 italic p-3 bg-slate-950/50 rounded border border-slate-800 border-dashed text-center">
+                    No prompt generated yet. Send a message to see the context!
+                  </div>
+                )}
               </div>
-            </div>
-            <div>
-              <strong className="text-white block mb-1">Chat History:</strong>
-              <pre className="whitespace-pre-wrap">
-                {JSON.stringify(messages, null, 2)}
-              </pre>
+
+              {/* Assessment Answers */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-emerald-400 font-semibold">
+                  <span>Input Data (Answers)</span>
+                  <span className="text-[10px] opacity-60">Client State</span>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-md border border-emerald-900/30 font-mono text-[10px] text-emerald-200/90 whitespace-pre-wrap max-h-40 overflow-y-auto leading-relaxed shadow-inner">
+                  {JSON.stringify(answers, null, 2)}
+                </div>
+              </div>
             </div>
           </div>
         </details>

@@ -44,12 +44,35 @@ export async function conductDirectionConversation(
     answers: AssessmentAnswers,
     modelName?: string,
     language: 'en' | 'th' = 'en'
-): Promise<{ messages: string[]; options: string[] }> {
+): Promise<{ messages: string[]; options: string[]; debug_system_prompt?: string }> {
     try {
         console.log("conductDirectionConversation called");
         console.log("History length:", history.length);
         console.log("Answers keys:", Object.keys(answers));
         console.log("Model:", modelName || "default");
+
+        // Build structured context for better AI understanding
+        const { buildProfileContext } = await import("./directionProfileEngine");
+        const context = buildProfileContext(answers);
+
+        // Formulate a rich context string
+        const contextString = `
+      Student Profile Context (Processed from Assessment):
+      
+      [PRIMARY SIGNALS]
+      - Zone of Genius (High Interest + Skill): ${JSON.stringify(context.primary_signals.zone_of_genius)}
+      - Flow State Triggers: "${context.primary_signals.flow_evidence}"
+      - Validated Strengths (Feedback): ${JSON.stringify(context.primary_signals.external_proof)}
+      
+      [SECONDARY SIGNALS]
+      - Work Style: ${JSON.stringify(context.secondary_signals.environment)}
+      - Core Values: ${JSON.stringify(context.secondary_signals.values)}
+      - Unique Edge/Talent: "${context.secondary_signals.unique_edge}"
+      
+      [AREAS TO WATCH]
+      - Growth Edges (High Interest, Low Skill): ${JSON.stringify(context.growth_edges)}
+      - Capability Traps (Low Interest, High Skill - DO NOT RECOMMEND): ${JSON.stringify(context.capability_traps)}
+        `.trim();
 
         const systemPrompt = `
       You are a cool, casual mentor helping a high school student find their future path.
@@ -60,32 +83,27 @@ export async function conductDirectionConversation(
       - Tone: Casual, empathetic, insightful, enthusiastic. Like a supportive older sibling.
       - Goal: Help the student reflect on their assessment answers to find their "North Star" (future direction).
       
-      Student Assessment Context (Inner Ikigai):
-      ${JSON.stringify(answers, null, 2)}
+      ${contextString}
 
       Conversation Rules:
       1. Keep messages short (2-3 sentences max).
       2. Ask ONE thought-provoking question at a time.
       3. Focus on "Why" and "How" to dig deeper into their interests.
-      4. Synthesize their answers to show you understand.
+      4. Synthesize their answers to show you understand (e.g., "Since you love [Genius Item] and work well in [Style]...").
       5. If in Thai, use particles like "ครับ/ค่ะ" but keep it friendly/semi-casual.
       
       Strategy:
-      1. If this is the start: Hype up their strengths/interests! Then immediately ask a question to bridge to the real world.
-      2. Explore "World Needs": Ask what problems annoy them, what causes they care about, or who they want to help.
-      3. Explore "Reality/Market": Ask about lifestyle preferences, work environment (team vs solo), or industry interests.
+      1. If this is the start: Hype up their "Zone of Genius"! Then ask a bridging question about how they apply it.
+      2. Explore "World Needs": Ask what problems they want to solve using their strengths.
+      3. Explore "Reality": check if their work style preferences match their interests.
       
       Constraints:
       - Output strictly valid JSON.
-      - "messages": An array of 2-3 SHORT strings. Max 1-2 sentences per bubble. Split ideas into separate bubbles for better reading.
-      - "options": An array of 3-4 distinct, short reply buttons for the user. 
+      - "messages": An array of 2-3 SHORT strings. Max 1-2 sentences per bubble. Split ideas into separate bubbles.
+      - "options": An array of 3-4 distinct, short reply buttons. 
         - Option 1: Enthusiastic/Agree.
         - Option 2: Neutral/Curious/Elaborate.
         - Option 3: A different angle/Disagree.
-      
-      Tone:
-      - Short, punchy, conversational.
-      - No walls of text.
     `;
 
         const { object } = await generateObject({
@@ -98,7 +116,10 @@ export async function conductDirectionConversation(
             }),
         });
 
-        return object;
+        return {
+            ...object,
+            debug_system_prompt: systemPrompt
+        };
     } catch (error: any) {
         console.error("Error in direction conversation:", error);
 
