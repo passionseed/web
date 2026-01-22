@@ -149,7 +149,7 @@ export async function getDirectionFinderResultById(id: string) {
     throw new Error("Failed to fetch result");
   }
 
-  return data as { id: string; user_id: string; answers: AssessmentAnswers; result: DirectionFinderResult; chat_history: Message[]; created_at: string };
+  return data as { id: string; user_id: string; answers: AssessmentAnswers; result: DirectionFinderResult; chat_history: Message[]; created_at: string; updated_at: string };
 }
 
 export async function getUserDirectionFinderResult() {
@@ -176,7 +176,7 @@ export async function getUserDirectionFinderResult() {
     return null;
   }
 
-  return data as { id: string; user_id: string; answers: AssessmentAnswers; result: DirectionFinderResult; chat_history: Message[]; created_at: string };
+  return data as { id: string; user_id: string; answers: AssessmentAnswers; result: DirectionFinderResult; chat_history: Message[]; created_at: string; updated_at: string };
 }
 
 export async function getAllUserDirectionFinderResults() {
@@ -200,5 +200,5 @@ export async function getAllUserDirectionFinderResults() {
     return [];
   }
 
-  return data as { id: string; user_id: string; answers: AssessmentAnswers; result: DirectionFinderResult; chat_history: Message[]; created_at: string }[];
+  return data as { id: string; user_id: string; answers: AssessmentAnswers; result: DirectionFinderResult; chat_history: Message[]; created_at: string; updated_at: string }[];
 }
