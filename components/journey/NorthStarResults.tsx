@@ -35,6 +35,7 @@ interface NorthStarResultsProps {
   answers: AssessmentAnswers;
   onBack: () => void;
   userRole?: string;
+  backLabel?: string;
 }
 
 export function NorthStarResults({
@@ -42,6 +43,7 @@ export function NorthStarResults({
   answers,
   onBack,
   userRole,
+  backLabel = "Back to AI Chat",
 }: NorthStarResultsProps) {
   const [isSharing, setIsSharing] = useState(false);
   const { language } = useLanguage();
@@ -56,7 +58,7 @@ export function NorthStarResults({
           onClick={onBack}
           className="gap-2 text-slate-400 hover:text-white"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to AI Chat
+          <ArrowLeft className="w-4 h-4" /> {backLabel}
         </Button>
         {userRole && (
           <Badge
@@ -202,7 +204,7 @@ function IkigaiCard({
     <div
       className={cn(
         "bg-gradient-to-br rounded-2xl p-6 border space-y-4 animate-in slide-in-from-bottom-4 duration-500 fill-mode-both hover:-translate-y-1 transition-transform",
-        colorStyles[color]
+        colorStyles[color],
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -254,7 +256,7 @@ function PathCard({
         "relative rounded-3xl border transition-all hover:shadow-2xl group overflow-hidden",
         isTop
           ? "bg-gradient-to-br from-indigo-950/80 to-slate-900 border-indigo-500/40 shadow-indigo-500/10"
-          : "bg-slate-900/50 border-slate-700/50 hover:bg-slate-800/50"
+          : "bg-slate-900/50 border-slate-700/50 hover:bg-slate-800/50",
       )}
     >
       {/* Header / Summary Section */}
@@ -271,7 +273,7 @@ function PathCard({
               <Badge
                 variant="outline"
                 className={cn(
-                  rarityColors[rarity as keyof typeof rarityColors]
+                  rarityColors[rarity as keyof typeof rarityColors],
                 )}
               >
                 {vector.rarity}

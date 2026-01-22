@@ -17,6 +17,7 @@ import {
   Wand2,
   Languages,
   Compass,
+  History,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ import { LIFE_ASPECTS } from "@/constants/life-aspects";
 import { SDG_GOALS, NORTH_STAR_COLORS } from "@/constants/sdg";
 import { DirectionFinderResult } from "@/types/direction-finder";
 import { DirectionFinderFlow } from "../education/direction-finder/DirectionFinderFlow";
+import { SavedResultsList } from "../education/direction-finder/SavedResultsList";
 
 // Types
 interface SMARTMilestone {
@@ -205,6 +207,7 @@ export function CreateNorthStarDialog({
   const [showDirectionFinder, setShowDirectionFinder] = useState(false);
   const [directionFinderResult, setDirectionFinderResult] =
     useState<DirectionFinderResult | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const { hasResult, isLoading: isDirectionLoading } = useDirectionFinder();
 
@@ -243,6 +246,10 @@ export function CreateNorthStarDialog({
     }
     if (showDirectionFinder) {
       setShowDirectionFinder(false);
+      return;
+    }
+    if (showHistory) {
+      setShowHistory(false);
       return;
     }
     if (currentStep > 0) {
@@ -317,7 +324,7 @@ export function CreateNorthStarDialog({
             ? `${item.total_plan}`
             : undefined,
           website_url: item.website_url,
-        })
+        }),
       );
 
       setUniversities(universities);
@@ -330,7 +337,7 @@ export function CreateNorthStarDialog({
   };
 
   const handleEducationalPathwayComplete = (
-    data: EducationalFlowData & { roadmap: SimpleRoadmap }
+    data: EducationalFlowData & { roadmap: SimpleRoadmap },
   ) => {
     setShowEducationalPathway(false);
     setFormData((prev) => ({
@@ -360,7 +367,7 @@ export function CreateNorthStarDialog({
       .map((step, idx) => {
         const startDate = new Date(Date.now() + idx * 30 * 24 * 60 * 60 * 1000);
         const dueDate = new Date(
-          Date.now() + (idx + 1) * 30 * 24 * 60 * 60 * 1000
+          Date.now() + (idx + 1) * 30 * 24 * 60 * 60 * 1000,
         );
         return {
           title: step.description,
@@ -382,6 +389,14 @@ export function CreateNorthStarDialog({
     if (directionFinderResult) {
       setShowDirectionFinder(true);
     }
+  };
+
+  const handleHistorySelect = (result: DirectionFinderResult) => {
+    handleDirectionFinderComplete(result);
+    // Ideally we might want to stay on the history detail view until user explicitly clicks "Use this",
+    // but handleDirectionFinderComplete already sets state and moves to step 2.
+    // So we just need to ensure the history view is closed.
+    setShowHistory(false);
   };
 
   const handleSubmit = async () => {
@@ -429,7 +444,7 @@ export function CreateNorthStarDialog({
           await createProjectPath(
             createdProjects[i].id,
             createdProjects[i + 1].id,
-            "leads_to"
+            "leads_to",
           );
         }
       }
@@ -515,6 +530,19 @@ export function CreateNorthStarDialog({
                   onComplete={handleDirectionFinderComplete}
                   onCancel={() => setShowDirectionFinder(false)}
                   isReviewMode={hasResult}
+                />
+              </motion.div>
+            ) : showHistory ? (
+              <motion.div
+                key="history"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="w-full max-w-5xl h-full"
+              >
+                <SavedResultsList
+                  onSelect={handleHistorySelect}
+                  onBack={() => setShowHistory(false)}
                 />
               </motion.div>
             ) : (
@@ -608,6 +636,16 @@ export function CreateNorthStarDialog({
                             </span>
                           )}
                         </Button>
+                        <div className="flex justify-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowHistory(true)}
+                            className="text-slate-500 hover:text-white text-xs gap-1"
+                          >
+                            <History className="w-3 h-3" /> View History
+                          </Button>
+                        </div>
                       </div>
 
                       <div className="flex flex-col gap-2">
@@ -761,7 +799,7 @@ export function CreateNorthStarDialog({
                             size="icon"
                             onClick={() => {
                               const newM = formData.milestones.filter(
-                                (_, i) => i !== idx
+                                (_, i) => i !== idx,
                               );
                               setFormData({ ...formData, milestones: newM });
                             }}
@@ -784,7 +822,7 @@ export function CreateNorthStarDialog({
                                 startDate: format(new Date(), "yyyy-MM-dd"),
                                 dueDate: format(
                                   addMonths(new Date(), 3),
-                                  "yyyy-MM-dd"
+                                  "yyyy-MM-dd",
                                 ),
                                 measurable: "",
                               },
@@ -826,7 +864,7 @@ export function CreateNorthStarDialog({
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {LIFE_ASPECTS.map((aspect) => {
                         const isSelected = formData.lifeAspects.includes(
-                          aspect.value
+                          aspect.value,
                         );
                         return (
                           <div
@@ -836,7 +874,7 @@ export function CreateNorthStarDialog({
                                 setFormData({
                                   ...formData,
                                   lifeAspects: formData.lifeAspects.filter(
-                                    (a) => a !== aspect.value
+                                    (a) => a !== aspect.value,
                                   ),
                                 });
                               } else {
@@ -885,12 +923,12 @@ export function CreateNorthStarDialog({
                         }
                         color={
                           NORTH_STAR_COLORS.find(
-                            (c) => c.value === formData.northStarColor
+                            (c) => c.value === formData.northStarColor,
                           )?.color || "#FFD700"
                         }
                         glowColor={
                           NORTH_STAR_COLORS.find(
-                            (c) => c.value === formData.northStarColor
+                            (c) => c.value === formData.northStarColor,
                           )?.glow || "#FFA500"
                         }
                       />
@@ -967,26 +1005,29 @@ export function CreateNorthStarDialog({
       </div>
 
       {/* Footer Navigation */}
-      {!showEducationalPathway && !showDirectionFinder && currentStep > 0 && (
-        <div className="relative z-10 p-6 flex justify-between items-center max-w-5xl mx-auto w-full">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            className="text-slate-400 hover:text-white"
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" /> {t.back}
-          </Button>
-
-          {currentStep < 5 && (
+      {!showEducationalPathway &&
+        !showDirectionFinder &&
+        !showHistory &&
+        currentStep > 0 && (
+          <div className="relative z-10 p-6 flex justify-between items-center max-w-5xl mx-auto w-full">
             <Button
-              onClick={handleNext}
-              className="bg-white/10 hover:bg-white/20 text-white border border-white/10"
+              variant="ghost"
+              onClick={handleBack}
+              className="text-slate-400 hover:text-white"
             >
-              {t.next} <ChevronRight className="w-4 h-4 ml-2" />
+              <ChevronLeft className="w-4 h-4 mr-2" /> {t.back}
             </Button>
-          )}
-        </div>
-      )}
+
+            {currentStep < 5 && (
+              <Button
+                onClick={handleNext}
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/10"
+              >
+                {t.next} <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+          </div>
+        )}
     </div>
   );
 }

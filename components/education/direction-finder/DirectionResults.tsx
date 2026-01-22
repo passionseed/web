@@ -211,7 +211,7 @@ export function DirectionResults({
 
       {/* Refine / AI Chat Toggle / New Session */}
       <div
-        className="absolute top-0 right-0 z-10 flex gap-2"
+        className="absolute -top-12 right-0 z-10 flex gap-2"
         data-hide-on-share="true"
       >
         {onStartNew && (

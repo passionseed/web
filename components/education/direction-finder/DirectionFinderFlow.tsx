@@ -94,20 +94,20 @@ function DirectionFinderFlowContent({
     : 0;
 
   const [currentStepIndex, setCurrentStepIndex] = useState(
-    initialStepIndex !== -1 ? initialStepIndex : 0
+    initialStepIndex !== -1 ? initialStepIndex : 0,
   );
   const [answers, setAnswers] = useState<Partial<AssessmentAnswers>>({});
   const [result, setResult] = useState<DirectionFinderResult | null>(null);
   const [chatHistory, setChatHistory] = useState<Message[] | undefined>(
-    undefined
+    undefined,
   );
   // New State for Action Plan
   const [selectedVector, setSelectedVector] = useState<DirectionVector | null>(
-    null
+    null,
   );
   const [selectedVectorIndex, setSelectedVectorIndex] = useState<number>(-1);
   const [actionPlan, setActionPlan] = useState<ActionPlan | undefined>(
-    undefined
+    undefined,
   );
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -223,7 +223,7 @@ function DirectionFinderFlowContent({
         step: currentStepIndex,
         answers,
         history: chatHistory,
-      })
+      }),
     );
   }, [
     currentStepIndex,
@@ -254,7 +254,7 @@ function DirectionFinderFlowContent({
         toast.info(
           lang === "th"
             ? "ไม่เป็นไร! ลองไปสำรวจค่ายของเราก่อน แล้วกลับมาใหม่เมื่อพร้อม 🌱"
-            : "No worries! Let's get you exploring first. Check out our camps! 🌱"
+            : "No worries! Let's get you exploring first. Check out our camps! 🌱",
         );
         router.push("/seeds");
         return;
@@ -283,7 +283,7 @@ function DirectionFinderFlowContent({
         answers as AssessmentAnswers,
         finalResult,
         chatHistory,
-        serverDataId || undefined
+        serverDataId || undefined,
       );
       if (savedData?.id) {
         setServerDataId(savedData.id);
@@ -301,7 +301,7 @@ function DirectionFinderFlowContent({
   const handleStartNewSession = () => {
     if (
       window.confirm(
-        "Are you sure you want to start a new session? Current progress will be cleared from this view."
+        "Are you sure you want to start a new session? Current progress will be cleared from this view.",
       )
     ) {
       setAnswers({});
@@ -350,13 +350,26 @@ function DirectionFinderFlowContent({
   const handleRetake = () => {
     if (
       window.confirm(
-        "Are you sure you want to edit your answers? This will restart the AI analysis."
+        "Are you sure you want to edit your answers? This will restart the AI analysis.",
       )
     ) {
       setResult(null);
       setChatHistory(undefined); // Clear chat history so we get a fresh analysis
+
+      // Force update local storage to prevent auto-restore jumping to old step
+      // We keep 'answers' so the user doesn't lose them, but reset step to q1
+      const q1Index = STEPS_ORDER.indexOf("q1");
+      localStorage.setItem(
+        "direction_finder_progress",
+        JSON.stringify({
+          step: q1Index,
+          answers,
+          history: undefined,
+        }),
+      );
+
       // Go to Q1 to let them edit
-      updateStep(STEPS_ORDER.indexOf("q1"));
+      updateStep(q1Index);
     }
   };
 
@@ -404,7 +417,7 @@ function DirectionFinderFlowContent({
         answers as AssessmentAnswers,
         updatedResult,
         chatHistory,
-        serverDataId || undefined
+        serverDataId || undefined,
       );
       toast.success("Journey started! Commitment saved.");
       onComplete(updatedResult); // Call parent onComplete
