@@ -5,7 +5,7 @@ import {
     DndContext,
     DragOverlay,
     closestCenter,
-    pointerWithin, // Added pointerWithin
+    pointerWithin,
     KeyboardSensor,
     PointerSensor,
     useSensor,
@@ -17,6 +17,8 @@ import {
     DropAnimation,
     MeasuringStrategy,
     useDroppable,
+    CollisionDetection,
+    getFirstCollision,
 } from "@dnd-kit/core";
 import {
     arrayMove,
@@ -105,6 +107,27 @@ function parseInitialBlocks(blocks: string[]): CodeItem[] {
     });
 }
 
+// Custom collision detection: balanced approach.
+// Pointer -> DropZone overrides everything.
+const customCollisionDetection: CollisionDetection = (args) => {
+    const pointerCollisions = pointerWithin(args);
+
+    // If cursor is over a drop zone, use it immediately
+    // This allows precise nesting by hovering the container body
+    const dropZone = pointerCollisions.find(c => String(c.id).endsWith('-drop-zone'));
+    if (dropZone) return [dropZone];
+
+    // If cursor is over other things (like Header or Footer or Root Wrapper), use them
+    if (pointerCollisions.length > 0) return pointerCollisions;
+
+    // Fallback to center for better feel if cursor is off-target
+    const centerCollisions = closestCenter(args);
+    const centerDropZone = centerCollisions.find(c => String(c.id).endsWith('-drop-zone'));
+    if (centerDropZone) return [centerDropZone];
+
+    return centerCollisions;
+};
+
 // --- Components ---
 
 function SortableItem({
@@ -160,61 +183,61 @@ function SortableItem({
             ref={setSortableRef}
             style={style}
             className={cn(
-                "relative rounded-lg border border-slate-700 bg-slate-900 group mb-2",
+                "relative flex rounded-lg border border-slate-700 bg-slate-900 group mb-2 overflow-hidden",
                 isDragging ? "opacity-30 z-50 ring-2 ring-blue-500" : "hover:border-slate-600",
             )}
         >
-            {/* Drag Handle & Content */}
+            {/* Left: Drag Handle */}
             <div
-                className={cn(
-                    "flex items-center gap-2 p-3 min-h-[44px]",
-                    item.type === 'container' ? "border-b border-slate-800/50" : ""
-                )}
+                {...attributes}
+                {...listeners}
+                className="flex items-center justify-center p-2 border-r border-slate-800/50 bg-slate-900/50 cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-400 hover:bg-white/5"
             >
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-400 p-1 rounded hover:bg-white/5"
-                >
-                    <GripVertical className="h-5 w-5" />
-                </div>
-
-                <div className="font-mono text-sm leading-relaxed text-slate-200 flex-1 whitespace-pre-wrap">
-                    <span dangerouslySetInnerHTML={{ __html: highlightedHeader }} />
-                </div>
+                <GripVertical className="h-5 w-5" />
             </div>
 
-            {/* Container Children Area */}
-            {item.type === "container" && (
-                <div className="flex flex-col">
-                    <div
-                        ref={setDroppableRef}
-                        className={cn(
-                            "bg-black/20 p-2 pl-4 min-h-[60px] flex flex-col transition-colors",
-                            isOverDroppable ? "bg-blue-500/10 ring-2 ring-inset ring-blue-500/50 rounded" : ""
-                        )}
-                    >
-                        <SortableContext
-                            items={item.children.map(c => c.id)}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            {item.children.length === 0 && !isDragging && (
-                                <div className="text-xs text-slate-600 italic py-2 px-4 border border-dashed border-slate-800 rounded">
-                                    Drag items here
-                                </div>
-                            )}
-                            {item.children.map((child) => (
-                                <SortableItem key={child.id} item={child} depth={depth + 1} />
-                            ))}
-                        </SortableContext>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="bg-black/20 p-2 pl-4 font-mono text-sm text-slate-200 opacity-70 border-t border-slate-800/30 whitespace-pre-wrap rounded-b-lg">
-                        <span dangerouslySetInnerHTML={{ __html: highlightedFooter }} />
-                    </div>
+            {/* Right: Content & Drop Zone */}
+            <div
+                ref={setDroppableRef}
+                className={cn(
+                    "flex-1 flex flex-col transition-colors",
+                    isOverDroppable ? "bg-blue-500/10 ring-2 ring-inset ring-blue-500/50" : ""
+                )}
+            >
+                {/* Header */}
+                <div className={cn(
+                    "p-3 font-mono text-sm leading-relaxed text-slate-200 whitespace-pre-wrap",
+                    item.type === 'container' ? "border-b border-slate-800/50" : ""
+                )}>
+                    <span dangerouslySetInnerHTML={{ __html: highlightedHeader }} />
                 </div>
-            )}
+
+                {/* Container Children Area */}
+                {item.type === "container" && (
+                    <>
+                        <div className="bg-black/20 p-2 pl-4 min-h-[60px] flex flex-col">
+                            <SortableContext
+                                items={item.children.map(c => c.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                {item.children.length === 0 && !isDragging && (
+                                    <div className="text-xs text-slate-600 italic py-2 px-4 border border-dashed border-slate-800 rounded">
+                                        Drag items here
+                                    </div>
+                                )}
+                                {item.children.map((child) => (
+                                    <SortableItem key={child.id} item={child} depth={depth + 1} />
+                                ))}
+                            </SortableContext>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="bg-black/20 p-2 pl-4 font-mono text-sm text-slate-200 opacity-70 border-t border-slate-800/30 whitespace-pre-wrap">
+                            <span dangerouslySetInnerHTML={{ __html: highlightedFooter }} />
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 }
@@ -532,11 +555,11 @@ export function OrderCodeActivity({
 
             <DndContext
                 sensors={sensors}
-                collisionDetection={pointerWithin}
+                collisionDetection={customCollisionDetection}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOverRobust}
                 onDragEnd={handleDragEnd}
-                measuring={{ droppable: { strategy: MeasuringStrategy.Always } }} // Keep measuring strategy
+                measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
             >
                 <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/50">
                     <SortableContext
@@ -558,7 +581,7 @@ export function OrderCodeActivity({
                     }),
                 }}>
                     {activeId ? (
-                        <div className="opacity-90 rotate-2 cursor-grabbing">
+                        <div className="opacity-90 rotate-2 cursor-grabbing pointer-events-none">
                             {/* Simplified Overlay */}
                             <div className="rounded-lg border border-blue-500 bg-slate-800 p-3 text-white shadow-xl flex items-center gap-3">
                                 <GripVertical className="h-5 w-5 text-slate-400" />
