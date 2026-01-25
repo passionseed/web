@@ -34,6 +34,7 @@ interface DraggableTaskProps {
     onStatusChange: (taskId: string, status: string) => void;
     onDelete: (taskId: string) => void;
     onEdit: (task: PSTask) => void;
+    onView: (task: PSTask) => void;
     onFocus: (task: PSTask) => void;
     getDifficultyColor: (diff: number) => string;
     getStatusIcon: (status: string) => React.ReactNode;
@@ -42,12 +43,13 @@ interface DraggableTaskProps {
 }
 
 // Separated visual component for reuse in DragOverlay
-export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChange, onDelete, onEdit, onFocus, getDifficultyColor, getStatusIcon, members, currentUserId }: DraggableTaskProps & { isOverlay?: boolean }) {
+export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChange, onDelete, onEdit, onView, onFocus, getDifficultyColor, getStatusIcon, members, currentUserId }: DraggableTaskProps & { isOverlay?: boolean }) {
     const isAssignedToMe = currentUserId && (task.assigned_to === currentUserId || (!task.assigned_to && task.user_id === currentUserId));
     const assignee = members?.find(m => m.user_id === (task.assigned_to || task.user_id));
 
     return (
         <Card
+            onClick={() => !isOverlay && onView(task)}
             className={`relative group overflow-hidden flex flex-col transition-all bg-card border-l-4
             ${isOverlay ? 'shadow-2xl rotate-2 scale-105 cursor-grabbing z-50 ring-2 ring-primary w-[220px]' : 'hover:shadow-md cursor-grab active:cursor-grabbing w-full'}
             ${isCollected && !isOverlay ? 'opacity-0 pointer-events-none' : ''}
@@ -74,27 +76,33 @@ export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChan
                         {!isOverlay && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-5 w-5 -mt-1 -mr-1 text-muted-foreground hover:text-foreground" suppressHydrationWarning>
+                                    <Button
+                                        variant="ghost" size="icon"
+                                        className="h-5 w-5 -mt-1 -mr-1 text-muted-foreground hover:text-foreground"
+                                        suppressHydrationWarning
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => e.stopPropagation()} // Stop propagation to prevent card click
+                                    >
                                         <MoreHorizontal className="h-3 w-3" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
+                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem onClick={() => onEdit(task)}>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(task); }}>
                                         <Edit2 className="mr-2 h-4 w-4" /> Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => onStatusChange(task.id, "todo")}>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, "todo"); }}>
                                         <Circle className="mr-2 h-4 w-4" /> Todo
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onStatusChange(task.id, "in_progress")}>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, "in_progress"); }}>
                                         <Clock className="mr-2 h-4 w-4" /> In Progress
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onStatusChange(task.id, "done")}>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, "done"); }}>
                                         <CheckCircle2 className="mr-2 h-4 w-4" /> Done
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => onDelete(task.id)}>
+                                    <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}>
                                         <Trash2 className="mr-2 h-4 w-4" /> Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -107,7 +115,7 @@ export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChan
                     <button
                         className="hover:opacity-80 transition-opacity p-0.5"
                         onPointerDown={(e) => e.stopPropagation()}
-                        onClick={() => onStatusChange(task.id, task.status === "done" ? "todo" : "done")}
+                        onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, task.status === "done" ? "todo" : "done"); }}
                     >
                         {getStatusIcon(task.status)}
                     </button>
@@ -134,7 +142,8 @@ export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChan
                                 size="sm"
                                 variant="ghost"
                                 className="h-5 w-5 p-0 text-muted-foreground hover:text-primary"
-                                onClick={() => onFocus(task)}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); onFocus(task); }}
                             >
                                 <Play className="h-3 w-3" />
                             </Button>
@@ -149,11 +158,7 @@ export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChan
 export function DraggableTask(props: DraggableTaskProps) {
     const { task, isCollected, isOverdue } = props;
 
-    // Only use draggable hooks if NOT collected (collected items shouldn't be draggable themselves to avoid conflict,
-    // or maybe they should? For now, let's keep them draggable but if they are dimmed it implies they are "in" the stack)
-    // Actually, user might want to drag a collected item OUT of a stack?
-    // For simplicity, regular items are draggable.
-
+    // Only use draggable hooks if NOT collected
     const {
         attributes,
         listeners,
@@ -194,3 +199,4 @@ export function DraggableTask(props: DraggableTaskProps) {
         </div>
     );
 }
+

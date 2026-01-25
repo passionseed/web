@@ -22,7 +22,7 @@ import { SongSelector } from "@/components/song-of-the-day/song-selector";
 import { getVinylColorsFromCover, VinylColorScheme } from "@/utils/color-extraction";
 import Image from "next/image";
 
-export function CreateProjectModal() {
+export function CreateProjectModal({ projectType = 'project' }: { projectType?: 'project' | 'hackathon' }) {
     const [open, setOpen] = useState(false);
     const [songSelectorOpen, setSongSelectorOpen] = useState(false);
     const [selectedSong, setSelectedSong] = useState<any>(null);
@@ -54,6 +54,9 @@ export function CreateProjectModal() {
 
         try {
             const formData = new FormData(e.currentTarget);
+
+            // Append Project Type
+            formData.append("type", projectType);
 
             // Append Spotify data if selected
             if (selectedSong) {
@@ -100,15 +103,15 @@ export function CreateProjectModal() {
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     <Button>
-                        <Plus className="mr-2 h-4 w-4" /> New Project
+                        <Plus className="mr-2 h-4 w-4" /> New {projectType === 'hackathon' ? 'Hackathon' : 'Project'}
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                     <form onSubmit={handleSubmit}>
                         <DialogHeader>
-                            <DialogTitle>Create New Project</DialogTitle>
+                            <DialogTitle>Create New {projectType === 'hackathon' ? 'Hackathon' : 'Project'}</DialogTitle>
                             <DialogDescription>
-                                Define the vision for your new project.
+                                Define the vision for your new {projectType === 'hackathon' ? 'hackathon' : 'project'}.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
@@ -191,7 +194,7 @@ export function CreateProjectModal() {
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? "Creating..." : "Create Project"}
+                                {isSubmitting ? "Creating..." : `Create ${projectType === 'hackathon' ? 'Hackathon' : 'Project'}`}
                             </Button>
                         </DialogFooter>
                     </form>

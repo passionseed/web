@@ -98,8 +98,8 @@ export default async function ProjectDetailPage({
             className="pl-0 hover:pl-2 transition-all"
             asChild
           >
-            <Link href="/ps/projects">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
+            <Link href={project.type === 'hackathon' ? "/ps/hackathon" : "/ps/projects"}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to {project.type === 'hackathon' ? 'Hackathons' : 'Projects'}
             </Link>
           </Button>
           <div className="flex items-center gap-2">

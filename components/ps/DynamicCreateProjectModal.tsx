@@ -4,7 +4,8 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-export const DynamicCreateProjectModal = dynamic(
+// Define types so we can pass props
+export const DynamicCreateProjectModal = dynamic<any>(
     () =>
         import("@/components/ps/CreateProjectModal").then(
             (mod) => mod.CreateProjectModal

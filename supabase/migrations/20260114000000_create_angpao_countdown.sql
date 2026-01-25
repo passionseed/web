@@ -16,6 +16,10 @@ ON CONFLICT (id) DO NOTHING;
 -- Enable RLS
 ALTER TABLE public.angpao_countdown ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Allow public read access" ON public.angpao_countdown;
+DROP POLICY IF EXISTS "Allow public update access" ON public.angpao_countdown;
+
 -- Allow anyone to read
 CREATE POLICY "Allow public read access" ON public.angpao_countdown
   FOR SELECT USING (true);
@@ -32,6 +36,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS update_angpao_countdown_timestamp ON public.angpao_countdown;
 
 -- Create trigger
 CREATE TRIGGER update_angpao_countdown_timestamp
