@@ -8,8 +8,10 @@ import {
     updateTaskStatus,
     createTask,
     updateTaskDate,
+    updateTaskPartial,
     PSProjectMember,
 } from "@/actions/ps";
+import { Badge } from "@/components/ui/badge";
 import {
     Select,
     SelectContent,
@@ -17,17 +19,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
+    DialogClose,
 } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
 import { Slider } from "@/components/ui/slider";
 import {
     ArrowLeft,
@@ -38,6 +43,8 @@ import {
     Plus,
     Play,
     Calendar as CalendarIcon,
+    Edit2,
+    Trash2,
 } from "lucide-react";
 import {
     DndContext,
@@ -77,6 +84,7 @@ interface CommonTaskProps {
     onStatusChange: (taskId: string, status: string) => void;
     onDelete: (taskId: string) => void;
     onEdit: (task: PSTask) => void;
+    onView: (task: PSTask) => void;
     onFocus: (task: PSTask) => void;
     getDifficultyColor: (diff: number) => string;
     getStatusIcon: (status: string) => React.ReactNode;
@@ -250,8 +258,10 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
         }
     );
 
+
     const [activeTasksForFocus, setActiveTasksForFocus] = useState<PSTask[]>([]);
     const [editingTask, setEditingTask] = useState<PSTask | null>(null);
+    const [viewingTask, setViewingTask] = useState<PSTask | null>(null);
 
     // Create Task State
     const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -300,6 +310,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
             setEditDifficulty([task.difficulty]);
             setAssignee(task.assigned_to || task.user_id || "");
         },
+        onView: (task) => setViewingTask(task),
         onFocus: (task) => setActiveTasksForFocus([task]),
         getDifficultyColor: (diff: number) => {
             if (diff >= 8) return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
@@ -586,6 +597,173 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                     </DialogContent>
                 </Dialog>
 
+                {/* View/Info Dialog */}
+                <Dialog open={!!viewingTask} onOpenChange={(open) => !open && setViewingTask(null)}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle className="sr-only">Task Details</DialogTitle>
+                        </DialogHeader>
+                        {viewingTask && (
+                            <div className="flex flex-col gap-6">
+                                {/* Header - Goal (Editable) */}
+                                <div className="flex justify-between items-start gap-4">
+                                    <div className="flex-1 space-y-4">
+                                        <Textarea
+                                            className="text-2xl font-bold leading-tight min-h-[60px] resize-none border-transparent hover:border-input focus:border-ring p-2 -ml-2 rounded-md bg-transparent"
+                                            defaultValue={viewingTask.goal}
+                                            onBlur={(e) => {
+                                                const val = e.target.value.trim();
+                                                if (val && val !== viewingTask.goal) {
+                                                    updateTaskPartial(viewingTask.id, viewingTask.project_id || projectId!, { goal: val });
+                                                    setViewingTask({ ...viewingTask, goal: val });
+                                                }
+                                            }}
+                                            placeholder="Task goal..."
+                                        />
+
+                                        {/* Properties Grid */}
+                                        <div className="flex flex-wrap gap-4 text-sm">
+                                            {/* Status */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-muted-foreground w-20">Status</span>
+                                                <Select
+                                                    defaultValue={viewingTask.status}
+                                                    onValueChange={(val: any) => {
+                                                        updateTaskPartial(viewingTask.id, viewingTask.project_id || projectId!, { status: val });
+                                                        setViewingTask({ ...viewingTask, status: val });
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="h-8 w-[130px] border-transparent hover:border-input bg-muted/50">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="todo">To Do</SelectItem>
+                                                        <SelectItem value="in_progress">In Progress</SelectItem>
+                                                        <SelectItem value="done">Done</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Difficulty */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-muted-foreground w-20">Difficulty</span>
+                                                <div className="flex items-center gap-2 w-[130px] px-3 py-1 bg-muted/50 rounded-md hover:bg-muted transition-colors">
+                                                    <span className="font-medium">{viewingTask.difficulty}/10</span>
+                                                    <Slider
+                                                        className="flex-1 w-20"
+                                                        defaultValue={[viewingTask.difficulty]}
+                                                        max={10} min={1} step={1}
+                                                        onValueCommit={(vals) => {
+                                                            const val = vals[0];
+                                                            updateTaskPartial(viewingTask.id, viewingTask.project_id || projectId!, { difficulty: val });
+                                                            setViewingTask({ ...viewingTask, difficulty: val });
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Assignee */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-muted-foreground w-20">Assign To</span>
+                                                <Select
+                                                    defaultValue={viewingTask.assigned_to || viewingTask.user_id || "unassigned"}
+                                                    onValueChange={(val) => {
+                                                        const newVal = val === "unassigned" ? null : val;
+                                                        updateTaskPartial(viewingTask.id, viewingTask.project_id || projectId!, { assigned_to: newVal });
+                                                        setViewingTask({ ...viewingTask, assigned_to: newVal });
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="h-8 w-[130px] border-transparent hover:border-input bg-muted/50">
+                                                        <SelectValue placeholder="Unassigned" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="unassigned" className="text-muted-foreground">Unassigned</SelectItem>
+                                                        {members.map((m) => (
+                                                            <SelectItem key={m.user_id} value={m.user_id}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Avatar className="h-5 w-5">
+                                                                        <AvatarImage src={m.user?.avatar_url || ""} />
+                                                                        <AvatarFallback>{m.user?.username?.[0]}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <span className="truncate max-w-[80px]">{m.user?.username}</span>
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Date */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-muted-foreground w-20">Dates</span>
+                                                <div className="flex items-center">
+                                                    <Input
+                                                        type="date"
+                                                        className="h-8 w-auto min-w-[130px] border-transparent hover:border-input bg-muted/50 dark:[color-scheme:dark]"
+                                                        defaultValue={viewingTask.scheduled_date || ""}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value || null;
+                                                            updateTaskPartial(viewingTask.id, viewingTask.project_id || projectId!, { scheduled_date: val });
+                                                            setViewingTask({ ...viewingTask, scheduled_date: val });
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+
+                                {/* Content - Notes */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Edit2 className="w-4 h-4" />
+                                        <h3 className="font-semibold text-sm uppercase tracking-wide">Notes</h3>
+                                    </div>
+                                    <Textarea
+                                        className="min-h-[200px] resize-none border-transparent hover:border-input focus:border-ring p-4 rounded-lg bg-muted/30 leading-relaxed"
+                                        defaultValue={viewingTask.notes || ""}
+                                        placeholder="Add more details, notes, or context..."
+                                        onBlur={(e) => {
+                                            const val = e.target.value;
+                                            if (val !== viewingTask.notes) {
+                                                updateTaskPartial(viewingTask.id, viewingTask.project_id || projectId!, { notes: val });
+                                                setViewingTask({ ...viewingTask, notes: val });
+                                            }
+                                        }}
+                                    />
+
+                                    <div className="flex justify-end pt-4 border-t gap-2">
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={async () => {
+                                                if (!confirm("Are you sure you want to delete this task?")) return;
+                                                setViewingTask(null);
+                                                await handleDelete(viewingTask.id);
+                                            }}
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete
+                                        </Button>
+                                        {viewingTask.status !== 'done' && (
+                                            <Button size="sm" onClick={() => {
+                                                const taskToFocus = viewingTask;
+                                                setViewingTask(null);
+                                                if (taskToFocus) setActiveTasksForFocus([taskToFocus]);
+                                            }}>
+                                                <Play className="w-4 h-4 mr-2" />
+                                                Start Focus
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
                 {/* Focus Timer */}
                 <Dialog open={activeTasksForFocus.length > 0} onOpenChange={(o) => {
                     // Only allow closing via the specific close handlers inside the component which will call setActiveTasksForFocus([])
@@ -614,7 +792,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                         </div>
                     ) : null}
                 </DragOverlay>
-            </div>
-        </DndContext>
+            </div >
+        </DndContext >
     );
 }

@@ -24,6 +24,7 @@ export interface PSProject {
     theme_color?: any | null; // using any for jsonb to avoid strict typing issues for now
     preview_url?: string | null;
     paper_text?: string | null;
+    type?: 'project' | 'hackathon';
 }
 
 export interface PSTask {
@@ -84,17 +85,7 @@ async function checkPSRole() {
 }
 
 // Projects
-export async function getProjects() {
-    await checkPSRole();
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from("ps_projects")
-        .select("*")
-        .order("updated_at", { ascending: false });
 
-    if (error) throw error;
-    return data as PSProject[];
-}
 
 export async function createProject(formData: FormData) {
     const userId = await checkPSRole();
@@ -109,6 +100,7 @@ export async function createProject(formData: FormData) {
     const spotifyArtistName = formData.get("spotify_artist_name") as string;
     const spotifyAlbumCoverUrl = formData.get("spotify_album_cover_url") as string;
     const previewUrl = formData.get("preview_url") as string;
+    const type = (formData.get("type") as string) || "project"; // Added type field
 
     let themeColor = null;
     const themeColorStr = formData.get("theme_color") as string;
@@ -133,6 +125,7 @@ export async function createProject(formData: FormData) {
         spotify_album_cover_url: spotifyAlbumCoverUrl || null,
         preview_url: previewUrl || null,
         theme_color: themeColor,
+        type, // Added type field
     }).select().single();
 
     if (error) throw error;
@@ -338,6 +331,32 @@ export async function updateTask(formData: FormData) {
     revalidatePath(`/ps/projects/${projectId}`);
 }
 
+export async function updateTaskPartial(taskId: string, projectId: string, updates: Partial<PSTask>) {
+    await checkPSRole();
+    const supabase = await createClient();
+
+    // Whitelist allowed fields for safety
+    const allowedFields = ['goal', 'status', 'difficulty', 'notes', 'assigned_to', 'scheduled_date'];
+    const safeUpdates: any = {};
+
+    Object.keys(updates).forEach(key => {
+        if (allowedFields.includes(key)) {
+            // @ts-ignore
+            safeUpdates[key] = updates[key];
+        }
+    });
+
+    if (Object.keys(safeUpdates).length === 0) return;
+
+    const { error } = await supabase
+        .from("ps_tasks")
+        .update(safeUpdates)
+        .eq("id", taskId);
+
+    if (error) throw error;
+    revalidatePath(`/ps/projects/${projectId}`);
+}
+
 
 
 // ... existing code ...
@@ -529,7 +548,7 @@ export async function getProjectStats(projectId: string) {
     };
 }
 
-export async function getProjectsWithStats() {
+export async function getProjectsWithStats(type: string = 'project') {
     await checkPSRole();
     const supabase = await createClient();
 
@@ -537,6 +556,7 @@ export async function getProjectsWithStats() {
     const { data: projects, error } = await supabase
         .from("ps_projects")
         .select("*, ps_tasks(*)")
+        .eq("type", type)
         .order("updated_at", { ascending: false });
 
     if (error) throw error;

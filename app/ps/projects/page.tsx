@@ -25,7 +25,7 @@ export default async function ProjectsPage() {
   // We can fetch projects - if it fails, it throws authorized error which we can catch or let bubble
   let projects = [];
   try {
-    projects = await getProjectsWithStats();
+    projects = await getProjectsWithStats('project');
   } catch (e) {
     // If unauthorized, redirect or show error
     return (
