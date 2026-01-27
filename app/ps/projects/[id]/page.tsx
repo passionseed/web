@@ -99,7 +99,7 @@ export default async function ProjectDetailPage({
             asChild
           >
             <Link href={project.type === 'hackathon' ? "/ps/hackathon" : "/ps/projects"}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to {project.type === 'hackathon' ? 'Hackathons' : 'Projects'}
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to {project.type === 'hackathon' ? 'Departments' : 'Projects'}
             </Link>
           </Button>
           <div className="flex items-center gap-2">

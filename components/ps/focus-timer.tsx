@@ -263,7 +263,7 @@ export function FocusTimer({
 
   if (mode === "setup") {
     return (
-      <div className="space-y-6 py-4">
+      <div className="space-y-4 py-2">
         <div className="space-y-2 text-center">
           <Timer className="w-12 h-12 mx-auto text-primary" />
           <h3 className="text-lg font-medium">Start Focus Session</h3>
@@ -286,7 +286,7 @@ export function FocusTimer({
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Label>Duration (minutes): {duration}</Label>
           <div className="flex gap-2 justify-center">
             {[10, 25, 30, 45, 60].map((m) => (
