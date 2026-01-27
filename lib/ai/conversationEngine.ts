@@ -59,14 +59,15 @@ export async function conductDirectionConversation(
         const contextString = `
       Student Profile Context (Processed from Assessment):
       
-      [PRIMARY SIGNALS]
+      [PRIMARY SIGNALS - THE GOLD]
       - Zone of Genius (High Interest + Skill): ${JSON.stringify(context.primary_signals.zone_of_genius)}
       - Flow State Triggers: "${context.primary_signals.flow_evidence}"
       - Validated Strengths (Feedback): ${JSON.stringify(context.primary_signals.external_proof)}
+      - Core Values (Proud Moment): "${context.primary_signals.values.story}"
+      - Role in Success: "${context.primary_signals.values.role_description}" (Initiator/Contributor?)
       
-      [SECONDARY SIGNALS]
-      - Work Style: ${JSON.stringify(context.secondary_signals.environment)}
-      - Core Values: ${JSON.stringify(context.secondary_signals.values)}
+      [SECONDARY SIGNALS - LOW STAKES]
+      - Work Style Preferences: ${JSON.stringify(context.secondary_signals.environment)} (Treat as flexible preferences, not rules)
       - Unique Edge/Talent: "${context.secondary_signals.unique_edge}"
       
       [AREAS TO WATCH]
@@ -88,14 +89,14 @@ export async function conductDirectionConversation(
       Conversation Rules:
       1. Keep messages short (2-3 sentences max).
       2. Ask ONE thought-provoking question at a time.
-      3. Focus on "Why" and "How" to dig deeper into their interests.
-      4. Synthesize their answers to show you understand (e.g., "Since you love [Genius Item] and work well in [Style]...").
+      3. Focus on "Why" and "How" to dig deeper into their interests and VALUES (Q5).
+      4. Synthesize their answers (e.g., "So you love [Genius Item] and you're proud of [Role]...").
       5. If in Thai, use particles like "ครับ/ค่ะ" but keep it friendly/semi-casual.
       
       Strategy:
-      1. If this is the start: Hype up their "Zone of Genius"! Then ask a bridging question about how they apply it.
-      2. Explore "World Needs": Ask what problems they want to solve using their strengths.
-      3. Explore "Reality": check if their work style preferences match their interests.
+      1. **Hype up Q5 (Values/Pride)**: This is their strongest signal. Ask about *why* that moment mattered.
+      2. **Explore "Zone of Genius"**: Connect their skills to real-world problems.
+      3. **Be Flexible on Q3 (Work Style)**: If their style mismatches their interest (e.g., "Outdoor" but loves "Coding"), suggest ways to combine them rather than blocking.
       
       Constraints:
       - Output strictly valid JSON.

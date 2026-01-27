@@ -45,9 +45,16 @@ export function buildProfileContext(answers: AssessmentAnswers): ProfileContext 
       zone_of_genius: extractZoneOfGenius(gridItems),
       flow_evidence: answers.q1_flow?.description || '',
       external_proof: answers.q4_reputation || [],
-      weight: 0.55
+      // MOVE Q5 HERE (Gold Signal)
+      values: {
+        story: answers.q5_proud?.story || '',
+        role_description: answers.q5_proud?.role_description || '', /* NEW */
+        drivers: answers.q5_proud?.tags || []
+      },
+      weight: 0.60 // Increased from 0.55
     },
     secondary_signals: {
+      // MOVE Q3 HERE (Low Weight)
       environment: answers.q3_work_style || {
         indoor_outdoor: 'neutral' as const,
         structured_flexible: 'neutral' as const,
@@ -55,12 +62,8 @@ export function buildProfileContext(answers: AssessmentAnswers): ProfileContext 
         hands_on_theory: 'neutral' as const,
         steady_fast: 'neutral' as const
       },
-      values: {
-        story: answers.q5_proud?.story || '',
-        drivers: answers.q5_proud?.tags || []
-      },
       unique_edge: answers.q6_unique?.description || '',
-      weight: 0.35
+      weight: 0.30 // Decreased from 0.35
     },
     growth_edges: extractGrowthEdge(gridItems),
     capability_traps: extractCapabilityTraps(gridItems)
@@ -74,49 +77,37 @@ export function buildProfileContext(answers: AssessmentAnswers): ProfileContext 
 const SYSTEM_PROMPT = `You are generating a Direction Profile based on student data. Follow these rules STRICTLY:
 
 ## Data Utilization Requirements
-You MUST reference insights from ALL sections:
-1. **Primary Signals** (Q1, Q2, Q4) - these are non-negotiable anchors
-2. **Secondary Signals** (Q3, Q5, Q6) - these refine and validate
+1. **Primary Signals** (Q1, Q2, Q4, Q5) - these are non-negotiable anchors.
+   - Q5 (Proud Moment) is a "GOLD" signal. It reveals true values and motivation.
+   - Use the "role_description" in Q5 to distinguish between 'Initiators' (started it), 'Contributors' (helped), or 'Observers'.
+   - Q2 (Zone of Genius) & Q1 (Flow) remain core pillars.
+2. **Secondary Signals** (Q3, Q6) - these refine but DO NOT BLOCK.
+   - Q3 (Work Style) is "Low Stakes". If a vector fits Q1/Q2/Q5 perfectly but mismatches Q3, recommend it anyway (just note the mismatch).
 3. **Growth Edges** - consider as stretch goals or complementary skills
+
+## Direction Vector Strategy (BROAD & FUTURE-FOCUSED)
+- **Industry**: Suggest broad, resilient industries (e.g., "Digital Health" not "Health App Dev").
+- **Role**: High-level role types (e.g., "Product Architect", "System Designer").
+- **Specialization**: A specific, futuristic niche they could own (e.g., "AI-Ethics Compliance", "Neuro-Architecture").
+- **Do NOT** suggest specific entry-level job titles like "Junior Developer". Think mid-career trajectory.
+
+## Insight Generation
+For every Energizer, Strength, and Value, provide:
+- **Name**: The label.
+- **Description**: A user-friendly explanation.
+- **Insight**: "Why this matters for YOU" based on the assessment data (e.g., "because you love [Q1 activity]...").
 
 ## Match Score Calculation
 For each career vector, calculate fit as:
-- Zone of Genius alignment (Q2 high-high): 30 points
+- Zone of Genius alignment (Q2 high-high): 25 points
+- Proud Moment/Values alignment (Q5): 20 points (Increased weight)
 - Flow state connection (Q1): 15 points  
 - External validation (Q4): 10 points
-- Environment fit (Q3): 15 points
-- Value alignment (Q5): 10 points
+- Environment fit (Q3): 10 points (Decreased weight - Low Stakes)
 - Growth potential (Q2 high-low): 10 points
 - Unique advantage (Q6): 10 points bonus
 
 Total = /100
-
-## fit_reason Structure (MANDATORY)
-Every fit_reason must include:
-- "Your Zone of Genius in [X from Q2] connects to this because..."
-- "When you described [specific detail from Q1], it shows..."
-- "People recognize your [skill from Q4], which is crucial for..."
-- "This matches your preference for [environment from Q3]..."
-
-## Red Flags to Avoid
-NEVER recommend careers that:
-- Only match capability_traps (high skill, low interest)
-- Conflict with >3 environment preferences from Q3
-- Ignore the flow context from Q1
-
-## Evidence Tracking (REQUIRED)
-For each vector, include an evidence_used object showing:
-- q1_insight: Quote or reference from flow description
-- q2_quadrant: Which domains from zone_of_genius it connects to
-- q3_preferences: Relevant environment preferences
-- q4_validation: Which reputation items support this
-- q5_driver: Value driver that aligns
-
-## Rarity Assignment
-- 'Rare': Common but good fit
-- 'Epic': Strong niche market
-- 'Legendary': Very specific/unique combination
-- 'Mythical': One of a kind/Visionary path
 `;
 
 // ==========================================
@@ -140,7 +131,7 @@ All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
 
 ## Student Profile Context (Weighted Data)
 
-### PRIMARY SIGNALS (55% weight)
+### PRIMARY SIGNALS (60% weight - HIGH SIGNAL)
 **Zone of Genius** (Q2 - High Interest + High Capability):
 ${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
 
@@ -150,13 +141,15 @@ ${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
 **External Validation** (Q4 - What people ask them for):
 ${JSON.stringify(context.primary_signals.external_proof, null, 2)}
 
-### SECONDARY SIGNALS (35% weight)
-**Environment Preferences** (Q3):
-${JSON.stringify(context.secondary_signals.environment, null, 2)}
+**Proud Moment & Values** (Q5 - GOLD SIGNAL):
+Story: "${context.primary_signals.values.story}"
+Role: "${context.primary_signals.values.role_description}"
+Tags: ${JSON.stringify(context.primary_signals.values.drivers)}
 
-**Value Drivers** (Q5):
-Story: "${context.secondary_signals.values.story}"
-Tags: ${JSON.stringify(context.secondary_signals.values.drivers)}
+### SECONDARY SIGNALS (30% weight - LOW STAKES)
+**Environment Preferences** (Q3 - No Right Answer):
+${JSON.stringify(context.secondary_signals.environment, null, 2)}
+(Note: Treat these as preferences, not requirements. Do not block career paths even if they slightly mismatch.)
 
 **Unique Edge** (Q6):
 "${context.secondary_signals.unique_edge}"
@@ -186,13 +179,28 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
       model: getModel(modelName),
       schema: z.object({
         profile: z.object({
-          energizers: z.array(z.string()),
-          strengths: z.array(z.string()),
-          values: z.array(z.string()),
+          energizers: z.array(z.object({
+            name: z.string(),
+            description: z.string(),
+            insight: z.string(),
+          })),
+          strengths: z.array(z.object({
+            name: z.string(),
+            description: z.string(),
+            insight: z.string(),
+          })),
+          values: z.array(z.object({
+            name: z.string(),
+            description: z.string(),
+            insight: z.string(),
+          })),
           reality: z.array(z.string()),
         }),
         vectors: z.array(z.object({
           name: z.string(),
+          industry: z.string(),
+          role: z.string(),
+          specialization: z.string(),
           rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
           recommended_faculty: z.string().optional(),
           match_context: z.object({
@@ -252,6 +260,8 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
   }
 }
 
+// ... (keep generateDirectionProfile as is, but we'll focus on the schema update inside generateCoreLogic/generateDirectionProfile)
+
 // ==========================================
 // CORE PROFILE GENERATION (Vectors Only)
 // ==========================================
@@ -273,7 +283,7 @@ All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
 
 ## Student Profile Context (Weighted Data)
 
-### PRIMARY SIGNALS (55% weight)
+### PRIMARY SIGNALS (60% weight - HIGH SIGNAL)
 **Zone of Genius** (Q2 - High Interest + High Capability):
 ${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
 
@@ -283,13 +293,15 @@ ${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
 **External Validation** (Q4 - What people ask them for):
 ${JSON.stringify(context.primary_signals.external_proof, null, 2)}
 
-### SECONDARY SIGNALS (35% weight)
-**Environment Preferences** (Q3):
-${JSON.stringify(context.secondary_signals.environment, null, 2)}
+**Proud Moment & Values** (Q5 - GOLD SIGNAL):
+Story: "${context.primary_signals.values.story}"
+Role: "${context.primary_signals.values.role_description}"
+Tags: ${JSON.stringify(context.primary_signals.values.drivers)}
 
-**Value Drivers** (Q5):
-Story: "${context.secondary_signals.values.story}"
-Tags: ${JSON.stringify(context.secondary_signals.values.drivers)}
+### SECONDARY SIGNALS (30% weight - LOW STAKES)
+**Environment Preferences** (Q3 - No Right Answer):
+${JSON.stringify(context.secondary_signals.environment, null, 2)}
+(Note: Treat these as preferences, not requirements. Do not block career paths even if they slightly mismatch.)
 
 **Unique Edge** (Q6):
 "${context.secondary_signals.unique_edge}"
@@ -304,20 +316,37 @@ ${JSON.stringify(context.capability_traps, null, 2)}
 ${JSON.stringify(history, null, 2)}
 
 ---
-Generate the CORE profile (Profile + 3 Vectors). Include evidence_used for each vector.
+Generate the CORE profile (Profile + 3 Vectors). 
+Ensure 'energizers', 'strengths', and 'values' are arrays of objects with { name, description, insight }.
+Ensure vectors include 'industry', 'role', and 'specialization'.
 `;
 
     const { object } = await generateObject({
       model: getModel(modelName),
       schema: z.object({
         profile: z.object({
-          energizers: z.array(z.string()),
-          strengths: z.array(z.string()),
-          values: z.array(z.string()),
+          energizers: z.array(z.object({
+            name: z.string(),
+            description: z.string(),
+            insight: z.string(),
+          })),
+          strengths: z.array(z.object({
+            name: z.string(),
+            description: z.string(),
+            insight: z.string(),
+          })),
+          values: z.array(z.object({
+            name: z.string(),
+            description: z.string(),
+            insight: z.string(),
+          })),
           reality: z.array(z.string()),
         }),
         vectors: z.array(z.object({
           name: z.string(),
+          industry: z.string(),
+          role: z.string(),
+          specialization: z.string(),
           rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
           recommended_faculty: z.string().optional(),
           match_context: z.object({
@@ -354,6 +383,18 @@ Generate the CORE profile (Profile + 3 Vectors). Include evidence_used for each 
           })),
           first_step: z.string(),
         })),
+        programs: z.array(z.object({
+          name: z.string(),
+          match_level: z.enum(['High', 'Good', 'Stretch']),
+          match_percentage: z.number(),
+          reason: z.string(),
+          deadline: z.string().optional(),
+          application_link: z.string().optional(),
+        })),
+        commitments: z.object({
+          this_week: z.array(z.string()),
+          this_month: z.array(z.string()),
+        }),
       }),
       prompt,
     });

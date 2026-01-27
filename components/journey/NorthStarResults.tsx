@@ -4,6 +4,7 @@ import {
   DirectionFinderResult,
   AssessmentAnswers,
   DirectionVector,
+  ProfileItem,
 } from "@/types/direction-finder";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -188,7 +189,7 @@ function IkigaiCard({
 }: {
   title: string;
   icon: any;
-  items: string[];
+  items: ProfileItem[];
   color: "blue" | "green" | "purple";
   delay: number;
 }) {
@@ -219,8 +220,9 @@ function IkigaiCard({
           <span
             key={i}
             className="px-3 py-1.5 rounded-lg bg-black/20 text-sm font-medium border border-white/5"
+            title={item.insight}
           >
-            {item}
+            {item.name}
           </span>
         ))}
       </div>

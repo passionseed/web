@@ -6,6 +6,7 @@
 export interface Q1FlowData {
   description: string;           // Free text (3-4 sentences) - min 20 chars
   activities: string[];          // Checkboxes: creating, helping, solving, etc.
+  engagement_factors?: string;   // NEW: "What part of this activity kept you engaged?" (1 sentence)
 }
 
 // Q2: Zone Grid Item
@@ -13,6 +14,7 @@ export interface ZoneGridItem {
   domain: string;
   interest: number;     // 1-10 scale
   capability: number;   // 1-10 scale
+  exposure_level?: 'school' | 'outside' | 'none'; // NEW: Reality check
 }
 
 // Q2: Zone Grid (2x2 matrix result)
@@ -32,6 +34,7 @@ export interface Q3WorkStyleData {
 // Q5: Proud Moment
 export interface Q5ProudData {
   story: string;          // Free text
+  role_description: string; // NEW: "What part of this did you actually do?" (Initiator vs contributor)
   tags: string[];         // What made it meaningful
 }
 
@@ -68,16 +71,18 @@ export interface ProfileContext {
     zone_of_genius: string[];     // Domains from Q2 with high interest + high capability
     flow_evidence: string;         // From Q1 description
     external_proof: string[];      // From Q4 reputation
-    weight: number;                // 0.55
+    // MOVED FROM SECONDARY (Gold Signal)
+    values: {
+      story: string;               // From Q5
+      role_description: string;    // From Q5
+      drivers: string[];           // From Q5 tags
+    };
+    weight: number;                // 0.60
   };
   secondary_signals: {
     environment: Q3WorkStyleData;  // From Q3
-    values: {
-      story: string;               // From Q5
-      drivers: string[];           // From Q5 tags
-    };
     unique_edge: string;           // From Q6
-    weight: number;                // 0.35
+    weight: number;                // 0.30
   };
   growth_edges: string[];          // Domains with high interest but low capability
   capability_traps: string[];      // Domains with low interest but high capability (AVOID)
@@ -132,15 +137,24 @@ export interface LegacyAssessmentAnswers {
 // Result Types (Unchanged)
 // ==========================================
 
+export interface ProfileItem {
+  name: string;
+  description: string;
+  insight: string;
+}
+
 export interface IkigaiProfile {
-  energizers: string[];
-  strengths: string[];
-  values: string[];
+  energizers: ProfileItem[];
+  strengths: ProfileItem[];
+  values: ProfileItem[];
   reality: string[];
 }
 
 export interface DirectionVector {
-  name: string;
+  name: string; // Keep for now, but will likely be Industry + Role
+  industry: string;
+  role: string;
+  specialization: string; // Future potential/niche
   fit_reason: {
     interest_alignment: string;
     strength_alignment: string;

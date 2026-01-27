@@ -264,6 +264,10 @@ export function DirectionResults({
 
       {/* Ikigai Breakdown - Visual Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* // ... (Import Tooltip/HoverCard components if needed, or just use
+        simple UI for now due to constraints) // Since we don't have HoverCard
+        in the imports and I can't easily check all UI components, I'll use a
+        simple title attribute or sub-text for now. */}
         {/* What Energizes You */}
         <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-700/30 rounded-2xl p-6 space-y-4 hover:border-blue-600/50 transition-all hover:scale-[1.02]">
           <div className="flex items-center gap-3">
@@ -278,15 +282,20 @@ export function DirectionResults({
             {result.profile.energizers.map((item, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 text-sm text-blue-100 bg-blue-950/30 px-3 py-2 rounded-lg"
+                className="group relative flex flex-col gap-1 text-sm text-blue-100 bg-blue-950/30 px-3 py-2 rounded-lg hover:bg-blue-900/40 transition-colors"
+                title={item.insight} // Simple tooltip fallback
               >
-                <Heart className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
-                <span>{item}</span>
+                <div className="flex items-center gap-2 font-medium">
+                  <Heart className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
+                  <span>{item.name}</span>
+                </div>
+                <p className="text-[10px] text-blue-300/70 leading-tight pl-5.5 hidden group-hover:block animate-in fade-in slide-in-from-top-1">
+                  {item.description}
+                </p>
               </div>
             ))}
           </div>
         </div>
-
         {/* Your Strengths */}
         <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-700/30 rounded-2xl p-6 space-y-4 hover:border-green-600/50 transition-all hover:scale-[1.02]">
           <div className="flex items-center gap-3">
@@ -301,15 +310,19 @@ export function DirectionResults({
             {result.profile.strengths.map((item, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 text-sm text-green-100 bg-green-950/30 px-3 py-2 rounded-lg"
+                className="group relative flex flex-col gap-1 text-sm text-green-100 bg-green-950/30 px-3 py-2 rounded-lg hover:bg-green-900/40 transition-colors"
               >
-                <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-                <span>{item}</span>
+                <div className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                  <span>{item.name}</span>
+                </div>
+                <p className="text-[10px] text-green-300/70 leading-tight pl-5.5 hidden group-hover:block animate-in fade-in slide-in-from-top-1">
+                  {item.description}
+                </p>
               </div>
             ))}
           </div>
         </div>
-
         {/* What You Value */}
         <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/10 border border-purple-700/30 rounded-2xl p-6 space-y-4 hover:border-purple-600/50 transition-all hover:scale-[1.02]">
           <div className="flex items-center gap-3">
@@ -324,10 +337,15 @@ export function DirectionResults({
             {result.profile.values.map((item, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 text-sm text-purple-100 bg-purple-950/30 px-3 py-2 rounded-lg"
+                className="group relative flex flex-col gap-1 text-sm text-purple-100 bg-purple-950/30 px-3 py-2 rounded-lg hover:bg-purple-900/40 transition-colors"
               >
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                <span>{item}</span>
+                <div className="flex items-center gap-2 font-medium">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                  <span>{item.name}</span>
+                </div>
+                <p className="text-[10px] text-purple-300/70 leading-tight pl-5.5 hidden group-hover:block animate-in fade-in slide-in-from-top-1">
+                  {item.description}
+                </p>
               </div>
             ))}
           </div>
@@ -367,9 +385,17 @@ export function DirectionResults({
 
               <div className="space-y-4 flex-1 pt-2">
                 <div className="flex justify-between items-start">
-                  <h4 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
-                    {vector.name}
-                  </h4>
+                  <div>
+                    <h4 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+                      {vector.industry || vector.name}
+                    </h4>
+                    <p className="text-sm text-slate-400 font-medium">
+                      {vector.role}
+                    </p>
+                    <p className="text-xs text-purple-400 mt-0.5">
+                      Focus: {vector.specialization}
+                    </p>
+                  </div>
                   {idx === 0 && (
                     <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 px-2 py-0.5 text-xs font-semibold">
                       {t.results.best_match}
