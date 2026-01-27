@@ -103,15 +103,15 @@ export function CreateProjectModal({ projectType = 'project' }: { projectType?: 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                     <Button>
-                        <Plus className="mr-2 h-4 w-4" /> New {projectType === 'hackathon' ? 'Hackathon' : 'Project'}
+                        <Plus className="mr-2 h-4 w-4" /> New {projectType === 'hackathon' ? 'Department' : 'Project'}
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                     <form onSubmit={handleSubmit}>
                         <DialogHeader>
-                            <DialogTitle>Create New {projectType === 'hackathon' ? 'Hackathon' : 'Project'}</DialogTitle>
+                            <DialogTitle>Create New {projectType === 'hackathon' ? 'Department' : 'Project'}</DialogTitle>
                             <DialogDescription>
-                                Define the vision for your new {projectType === 'hackathon' ? 'hackathon' : 'project'}.
+                                Define the vision for your new {projectType === 'hackathon' ? 'department' : 'project'}.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
@@ -194,7 +194,7 @@ export function CreateProjectModal({ projectType = 'project' }: { projectType?: 
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? "Creating..." : `Create ${projectType === 'hackathon' ? 'Hackathon' : 'Project'}`}
+                                {isSubmitting ? "Creating..." : `Create ${projectType === 'hackathon' ? 'Department' : 'Project'}`}
                             </Button>
                         </DialogFooter>
                     </form>

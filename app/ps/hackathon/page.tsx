@@ -41,7 +41,7 @@ export default async function HackathonPage() {
 
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Hackathons</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Departments</h1>
                     <p className="text-muted-foreground mt-2">
                         Build quickly, break things, and ship fast.
                     </p>
@@ -59,7 +59,7 @@ export default async function HackathonPage() {
                 ))}
                 {projects.length === 0 && (
                     <div className="col-span-full text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                        No hackathons found. Start one!
+                        No Departments found. Start one!
                     </div>
                 )}
             </div>

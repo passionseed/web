@@ -64,10 +64,18 @@ import { useToast } from "@/components/ui/use-toast";
 import {
     format,
     startOfWeek,
+    endOfWeek,
     addDays,
     isToday,
     startOfDay,
     isBefore,
+    startOfMonth,
+    endOfMonth,
+    eachDayOfInterval,
+    addMonths,
+    subMonths,
+    isSameMonth,
+    isSameDay,
 } from "date-fns";
 
 interface TaskListProps {
@@ -128,34 +136,23 @@ function DayColumn({
 
     const isCurrentDay = isToday(date);
     const isPastDay = isBefore(date, startOfDay(new Date()));
-    const dayStyle = getDayStyles(date);
+    const isFirstDayOfMonth = date.getDate() === 1;
 
     return (
         <div
             ref={setNodeRef}
             className={`
-        flex flex-col gap-2 rounded-xl p-2 transition-all duration-300 h-full border
-        ${isCurrentDay
-                    ? `${dayStyle.bg} ${dayStyle.border} ring-2 ring-primary/20 shadow-lg`
-                    : "bg-muted/5 border-border/40"}
-        ${isOver ? "ring-2 ring-primary/60 bg-primary/5" : ""}
+        flex flex-col gap-1 p-1 transition-all duration-300 h-full bg-background
+        ${isOver ? "bg-accent/50" : ""}
       `}
         >
-            <div className={`
-                flex flex-col gap-1 pb-2 border-b border-black/5 dark:border-white/5
-                ${!isCurrentDay ? `${dayStyle.bg} -mx-2 -mt-2 p-3 rounded-t-xl` : ""}
-            `}>
-                <div className="flex items-center justify-between">
-                    <span className={`font-bold truncate ${isCurrentDay ? "text-foreground text-base" : "text-foreground/80 text-sm"}`}>
-                        {format(date, "EEEE")}
-                    </span>
-                </div>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                    {format(date, "d MMM")}
+            <div className="flex justify-between items-start px-1 pt-1">
+                <span className={`text-xs font-semibold ${isCurrentDay ? "bg-red-500 text-white w-6 h-6 flex items-center justify-center rounded-full" : "text-muted-foreground"}`}>
+                    {isFirstDayOfMonth ? format(date, "MMM d") : format(date, "d")}
                 </span>
             </div>
 
-            <div className="flex-1 flex flex-col gap-2 min-h-[150px] overflow-y-auto py-2">
+            <div className="flex-1 flex flex-col gap-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-muted-foreground/20">
                 {tasks.map((task) => {
                     const isOverdue = isPastDay && task.status !== "done";
                     return (
@@ -164,26 +161,13 @@ function DayColumn({
                                 task={task}
                                 isCollected={false}
                                 isOverdue={isOverdue}
+                                compact={true}
                                 {...commonProps}
                             />
                         </div>
                     );
                 })}
             </div>
-
-            {isCurrentDay && (
-                <div className="pt-2 mt-auto border-t border-border/50">
-                    <Button
-                        size="sm"
-                        variant="default"
-                        className="w-full gap-2 shadow-sm"
-                        onClick={() => onFocusDay(tasks.filter(t => t.status !== 'done' && (t.assigned_to === commonProps.currentUserId || (!t.assigned_to && t.user_id === commonProps.currentUserId))))}
-                        disabled={tasks.filter(t => t.status !== 'done' && (t.assigned_to === commonProps.currentUserId || (!t.assigned_to && t.user_id === commonProps.currentUserId))).length === 0}
-                    >
-                        <Play className="w-3 h-3" /> Start Focus
-                    </Button>
-                </div>
-            )}
         </div>
     );
 }
@@ -241,8 +225,8 @@ function UnscheduledArea({
 }
 
 export function TaskList({ tasks, projectId, themeColor, initialDate, isMember = true, members = [], currentUserId }: TaskListProps) {
-    const [currentWeekStart, setCurrentWeekStart] = useState(() =>
-        startOfWeek(initialDate || new Date(), { weekStartsOn: 1 })
+    const [currentMonth, setCurrentMonth] = useState(() =>
+        startOfMonth(initialDate || new Date())
     );
 
 
@@ -251,7 +235,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
         (state: PSTask[], action: { type: 'update'; taskId: string; date: string | null }) => {
             return state.map((task) => {
                 if (task.id === action.taskId) {
-                    return { ...task, scheduled_date: action.date };
+                    return { ...task, due_date: action.date };
                 }
                 return task;
             });
@@ -349,7 +333,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
 
         // Drop on Unscheduled Pool
         if (over.id === "unscheduled-pool") {
-            if (task.scheduled_date !== null) {
+            if (task.due_date !== null) {
                 // Optimistic Update
                 startTransition(() => {
                     addOptimisticTask({ type: 'update', taskId: task.id, date: null });
@@ -367,7 +351,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
         // Drop on Day
         if (over.id.toString().startsWith("day-")) {
             const dateStr = over.id.toString().replace("day-", "");
-            if (task.scheduled_date !== dateStr) {
+            if (task.due_date !== dateStr) {
                 // Optimistic Update
                 startTransition(() => {
                     addOptimisticTask({ type: 'update', taskId: task.id, date: dateStr });
@@ -383,13 +367,21 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
     };
 
     // Render Logic
-    const weekDays = useMemo(() => {
-        return Array.from({ length: 7 }).map((_, i) => addDays(currentWeekStart, i));
-    }, [currentWeekStart]);
+    const calendarDays = useMemo(() => {
+        const monthStart = startOfMonth(currentMonth);
+        const monthEnd = endOfMonth(monthStart);
+        const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }); // Monday start
+        const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+        return eachDayOfInterval({
+            start: startDate,
+            end: endDate
+        });
+    }, [currentMonth]);
 
     const { tasksByDate, unscheduledTasks } = useMemo(() => {
         const grouped = new Map<string, PSTask[]>();
-        weekDays.forEach(date => {
+        calendarDays.forEach(date => {
             grouped.set(format(date, "yyyy-MM-dd"), []);
         });
 
@@ -397,15 +389,15 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
 
         // Use optimistic tasks for rendering
         optimisticTasks.forEach(task => {
-            if (!task.scheduled_date) {
+            if (!task.due_date) {
                 unscheduled.push(task);
-            } else if (grouped.has(task.scheduled_date)) {
-                grouped.get(task.scheduled_date)?.push(task);
+            } else if (grouped.has(task.due_date)) {
+                grouped.get(task.due_date)?.push(task);
             }
         });
 
         return { tasksByDate: grouped, unscheduledTasks: unscheduled };
-    }, [optimisticTasks, weekDays]);
+    }, [optimisticTasks, calendarDays]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -421,17 +413,17 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
         >
-            <div className="flex flex-col gap-4 pb-24 h-[calc(100vh-100px)]">
+            <div className="flex flex-col gap-2 pb-4 h-[calc(100vh-140px)] overflow-hidden">
                 {/* Navigation */}
                 <div className="flex items-center justify-between px-4">
-                    <Button variant="ghost" onClick={() => setCurrentWeekStart(d => addDays(d, -7))}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Previous Week
+                    <Button variant="ghost" onClick={() => setCurrentMonth(d => subMonths(d, 1))}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Previous Month
                     </Button>
-                    <span className="font-semibold text-lg">
-                        {format(weekDays[0], "MMM d")} - {format(weekDays[6], "MMM d, yyyy")}
+                    <span className="font-semibold text-lg capitalize">
+                        {format(currentMonth, "MMMM yyyy")}
                     </span>
-                    <Button variant="ghost" onClick={() => setCurrentWeekStart(d => addDays(d, 7))}>
-                        Next Week <ArrowRight className="ml-2 h-4 w-4" />
+                    <Button variant="ghost" onClick={() => setCurrentMonth(d => addMonths(d, 1))}>
+                        Next Month <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
 
@@ -448,9 +440,18 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                     commonProps={commonTaskProps}
                 />
 
-                {/* Board Grid - Full Width, No Scroll */}
-                <div className="grid grid-cols-7 gap-2 flex-1 min-h-0">
-                    {weekDays.map((date) => {
+                {/* Weekday Header */}
+                <div className="grid grid-cols-7 gap-px border bg-border mb-px">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                        <div key={day} className="bg-background p-2 text-sm font-medium text-muted-foreground text-center">
+                            {day}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Board Grid - Dense Notion-like Grid */}
+                <div className="grid grid-cols-7 gap-px bg-border border flex-1 min-h-0 auto-rows-fr">
+                    {calendarDays.map((date) => {
                         const dateStr = format(date, "yyyy-MM-dd");
                         const dayTasks = tasksByDate.get(dateStr) || [];
 
@@ -700,11 +701,11 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                                                     <Input
                                                         type="date"
                                                         className="h-8 w-auto min-w-[130px] border-transparent hover:border-input bg-muted/50 dark:[color-scheme:dark]"
-                                                        defaultValue={viewingTask.scheduled_date || ""}
+                                                        defaultValue={viewingTask.due_date || ""}
                                                         onChange={(e) => {
                                                             const val = e.target.value || null;
-                                                            updateTaskPartial(viewingTask.id, viewingTask.project_id || projectId!, { scheduled_date: val });
-                                                            setViewingTask({ ...viewingTask, scheduled_date: val });
+                                                            updateTaskPartial(viewingTask.id, viewingTask.project_id || projectId!, { due_date: val });
+                                                            setViewingTask({ ...viewingTask, due_date: val });
                                                         }}
                                                     />
                                                 </div>

@@ -81,7 +81,7 @@ export function StatsPaper({
       {variant === "standalone" ? (
         <textarea
           className="absolute inset-0 w-full h-full bg-transparent p-8 pb-32 resize-none outline-none text-neutral-700 font-handwriting text-lg leading-relaxed z-10"
-          placeholder="Write your thoughts here..."
+          placeholder="Write Project Notes Here"
           value={text}
           onChange={handleTextChange}
           spellCheck={false}

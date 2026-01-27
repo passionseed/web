@@ -40,12 +40,42 @@ interface DraggableTaskProps {
     getStatusIcon: (status: string) => React.ReactNode;
     members?: any[]; // Using any to avoid importing the full type here for simplicity, or we can export it from actions/ps
     currentUserId?: string;
+    compact?: boolean;
 }
 
 // Separated visual component for reuse in DragOverlay
-export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChange, onDelete, onEdit, onView, onFocus, getDifficultyColor, getStatusIcon, members, currentUserId }: DraggableTaskProps & { isOverlay?: boolean }) {
+export function TaskCard({ task, isOverlay, isCollected, isOverdue, onStatusChange, onDelete, onEdit, onView, onFocus, getDifficultyColor, getStatusIcon, members, currentUserId, compact }: DraggableTaskProps & { isOverlay?: boolean, compact?: boolean }) {
     const isAssignedToMe = currentUserId && (task.assigned_to === currentUserId || (!task.assigned_to && task.user_id === currentUserId));
     const assignee = members?.find(m => m.user_id === (task.assigned_to || task.user_id));
+
+    if (compact) {
+        return (
+            <div
+                onClick={() => !isOverlay && onView(task)}
+                className={`
+                    group relative flex items-center gap-2 p-1 pl-2 text-xs rounded-sm cursor-pointer select-none
+                    hover:bg-accent transition-colors border border-transparent hover:border-border/50
+                    ${isOverlay ? 'scale-105 shadow-md bg-background z-50 ring-2 ring-primary w-[180px]' : 'w-full bg-muted/30'}
+                    ${task.status === 'done' ? 'opacity-60 line-through text-muted-foreground' : ''}
+                    ${isAssignedToMe ? 'bg-primary/5' : ''}
+                `}
+            >
+                {/* Status Indicator (Dot) */}
+                <div
+                    className={`w-2 h-2 rounded-full shrink-0 ${task.status === 'done' ? 'bg-green-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-slate-300'}`}
+                />
+
+                {/* Title */}
+                <span className="truncate font-medium flex-1 leading-none">{task.goal}</span>
+
+                {/* Difficulty Badge (Tiny) */}
+                <span className={`text-[9px] px-1 rounded-sm opacity-80 ${getDifficultyColor(task.difficulty)}`}>
+                    {task.difficulty}
+                </span>
+            </div>
+        );
+    }
+
 
     return (
         <Card

@@ -1,9 +1,10 @@
-import { getProjectsWithStats, createProject } from "@/actions/ps";
+import { getProjectsWithStats, createProject, getUserTasks } from "@/actions/ps";
 import { CassetteTape } from "@/components/ps/CassetteTape";
 import { redirect } from "next/navigation";
 import { getUserRolesClient } from "@/lib/supabase/auth-client";
 import { createClient } from "@/utils/supabase/server";
 import { DynamicCreateProjectModal } from "@/components/ps/DynamicCreateProjectModal";
+import { FocusButtonDialog } from "@/components/ps/focus-button-dialog";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -24,8 +25,10 @@ export default async function ProjectsPage() {
   // Ideally middleware handles this, but we'll do a quick check or let the action fail
   // We can fetch projects - if it fails, it throws authorized error which we can catch or let bubble
   let projects = [];
+  let userTasks = [];
   try {
     projects = await getProjectsWithStats('project');
+    userTasks = await getUserTasks();
   } catch (e) {
     // If unauthorized, redirect or show error
     return (
@@ -51,7 +54,10 @@ export default async function ProjectsPage() {
             Manage your passion projects and track progress.
           </p>
         </div>
-        <DynamicCreateProjectModal />
+        <div className="flex items-center gap-3">
+          <FocusButtonDialog tasks={userTasks} />
+          <DynamicCreateProjectModal />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -68,6 +74,7 @@ export default async function ProjectsPage() {
           </div>
         )}
       </div>
+
     </div>
   );
 }

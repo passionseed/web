@@ -36,7 +36,7 @@ export interface PSTask {
     notes: string | null;
     user_id: string | null;
     assigned_to: string | null;
-    scheduled_date: string | null;
+    due_date: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -251,7 +251,7 @@ export async function getUserTasks() {
         // But "tasks for the user" usually implies Todo.
         // If it's a 7-day view, we surely want to see tasks scheduled for those days regardless of status?
         // Let's fetch all, client can filter.
-        .order("scheduled_date", { ascending: true }); // optimize for calendar
+        .order("due_date", { ascending: true }); // optimize for calendar
 
     if (error) throw error;
     return data as (PSTask & { ps_projects: { name: string, theme_color: any } })[];
@@ -277,6 +277,7 @@ export async function createTask(formData: FormData) {
         user_id: userId, // Creator
         assigned_to: assignedTo, // Assignee
         status: "todo",
+        due_date: formData.get("scheduledDate") as string || null,
     }).select().single();
 
     if (error) throw error;
@@ -336,7 +337,7 @@ export async function updateTaskPartial(taskId: string, projectId: string, updat
     const supabase = await createClient();
 
     // Whitelist allowed fields for safety
-    const allowedFields = ['goal', 'status', 'difficulty', 'notes', 'assigned_to', 'scheduled_date'];
+    const allowedFields = ['goal', 'status', 'difficulty', 'notes', 'assigned_to', 'due_date'];
     const safeUpdates: any = {};
 
     Object.keys(updates).forEach(key => {
@@ -366,7 +367,7 @@ export async function updateTaskDate(taskId: string, date: string | null, projec
     const supabase = await createClient();
     const { error } = await supabase
         .from("ps_tasks")
-        .update({ scheduled_date: date })
+        .update({ due_date: date })
         .eq("id", taskId);
 
     if (error) throw error;
