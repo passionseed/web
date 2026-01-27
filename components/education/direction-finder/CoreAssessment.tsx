@@ -84,7 +84,7 @@ const QuestionWrapper = ({
               key={i}
               className={cn(
                 "w-8 h-1.5 rounded-full transition-all",
-                i < questionNumber ? "bg-blue-500" : "bg-slate-700"
+                i < questionNumber ? "bg-blue-500" : "bg-slate-700",
               )}
             />
           ))}
@@ -128,7 +128,7 @@ const QuestionWrapper = ({
           disabled={!canProceed}
           className={cn(
             "bg-blue-600 hover:bg-blue-700 text-white",
-            !canProceed && "opacity-50 cursor-not-allowed"
+            !canProceed && "opacity-50 cursor-not-allowed",
           )}
         >
           {nextLabel} <ChevronRight className="ml-2 w-4 h-4" />
@@ -166,14 +166,14 @@ const DOMAIN_OPTIONS = [
 // ACTIVITY OPTIONS FOR Q1
 // ==========================================
 const ACTIVITY_OPTIONS = [
-  { key: "creating", label: "Creating/Building" },
+  { key: "creating", label: "Creating or Making Something New" },
   { key: "helping", label: "Helping/Teaching" },
   { key: "solving", label: "Problem Solving" },
   { key: "competing", label: "Competing" },
   { key: "learning", label: "Learning/Researching" },
   { key: "performing", label: "Performing" },
   { key: "leading", label: "Leading/Organizing" },
-  { key: "analyzing", label: "Analyzing" },
+  { key: "analyzing", label: "Analyzing (patterns, data, strategy)" },
 ];
 
 // ==========================================
@@ -199,7 +199,8 @@ const REPUTATION_OPTIONS = [
 // ==========================================
 const PROUD_TAGS = [
   { key: "helped", label: "Helped others" },
-  { key: "achieved", label: "Won or achieved something" },
+  { key: "achieved_goal", label: "Achieved a goal" },
+  { key: "beat_challenge", label: "Beat a challenge/competition" },
   { key: "built", label: "Built/Created something" },
   { key: "overcame", label: "Overcame difficulty" },
   { key: "learned", label: "Learned something hard" },
@@ -228,7 +229,7 @@ export function CoreAssessment({
 
   const updateAnswer = <K extends keyof AssessmentAnswers>(
     key: K,
-    value: AssessmentAnswers[K]
+    value: AssessmentAnswers[K],
   ) => {
     const newAnswers = { ...localAnswers, [key]: value };
     setLocalAnswers(newAnswers);
@@ -286,6 +287,7 @@ export function CoreAssessment({
     const descriptionLength = flowData.description.trim().length;
     const hasMinLength = descriptionLength >= 20;
     const hasActivities = flowData.activities.length > 0;
+    const hasEngagement = (flowData.engagement_factors || "").trim().length > 5;
 
     return (
       <QuestionWrapper
@@ -297,7 +299,7 @@ export function CoreAssessment({
             : "Think of a time you were so absorbed in something you lost track of time. What were you doing?"
         }
         emoji="🔥"
-        canProceed={hasMinLength && hasActivities}
+        canProceed={hasMinLength && hasActivities && hasEngagement}
         onBack={onBack}
         onNext={onNext}
       >
@@ -319,11 +321,17 @@ export function CoreAssessment({
               }
               className="bg-slate-900 border-slate-700 min-h-[120px] text-white"
             />
+            <p className="text-xs text-slate-400 mt-1">
+              💡{" "}
+              {lang === "th"
+                ? "เคล็ดลับ: เน้นที่สิ่งที่คุณทำ ไม่ใช่ชื่อเกม/แอป/วิชา"
+                : "Tip: Focus on what you were doing, not the app/game/class name."}
+            </p>
             <div className="flex justify-between text-xs">
               <span
                 className={cn(
                   "transition-colors",
-                  hasMinLength ? "text-green-400" : "text-slate-500"
+                  hasMinLength ? "text-green-400" : "text-slate-500",
                 )}
               >
                 {descriptionLength}/20{" "}
@@ -362,13 +370,39 @@ export function CoreAssessment({
                     "p-3 rounded-lg border cursor-pointer transition-all text-sm",
                     flowData.activities.includes(option.key)
                       ? "bg-orange-600/20 border-orange-500 text-white"
-                      : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                      : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600",
                   )}
                 >
                   {lang === "th" ? getThaiLabel(option.key) : option.label}
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Engagement Follow-up */}
+          <div className="space-y-2 pt-2 border-t border-slate-800">
+            <Label className="text-slate-300 flex items-center gap-2">
+              <span className="text-orange-400">✨</span>
+              {lang === "th"
+                ? "ส่วนไหนของกิจกรรมนี้ที่ทำให้คุณอินที่สุด? (1 ประโยค)"
+                : "What part of this activity kept you engaged? (1 sentence)"}
+              <span className="text-xs text-red-400">*</span>
+            </Label>
+            <Textarea
+              value={flowData.engagement_factors || ""}
+              onChange={(e) =>
+                updateAnswer("q1_flow", {
+                  ...flowData,
+                  engagement_factors: e.target.value,
+                })
+              }
+              placeholder={
+                lang === "th"
+                  ? "เช่น ชอบที่ได้เห็นผลลัพธ์ทันที หรือ ชอบที่ได้แก้ปัญหาให้คนอื่น..."
+                  : "e.g. I loved seeing the immediate visual feedback, or I liked solving a puzzle..."
+              }
+              className="bg-slate-900 border-slate-700 min-h-[60px] text-white h-20"
+            />
           </div>
         </div>
       </QuestionWrapper>
@@ -400,11 +434,11 @@ export function CoreAssessment({
     const updateDomainRating = (
       domain: string,
       field: "interest" | "capability",
-      value: number
+      value: number,
     ) => {
       updateAnswer("q2_zone_grid", {
         items: gridData.items.map((i) =>
-          i.domain === domain ? { ...i, [field]: value } : i
+          i.domain === domain ? { ...i, [field]: value } : i,
         ),
       });
     };
@@ -476,7 +510,7 @@ export function CoreAssessment({
                       "px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5",
                       isSelected
                         ? "bg-blue-600 text-white"
-                        : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                        : "bg-slate-800 text-slate-400 hover:bg-slate-700",
                     )}
                   >
                     <span>{domain.emoji}</span>
@@ -499,7 +533,7 @@ export function CoreAssessment({
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                 {gridData.items.map((item) => {
                   const domain = DOMAIN_OPTIONS.find(
-                    (d) => d.key === item.domain
+                    (d) => d.key === item.domain,
                   );
                   const quadrantInfo = getQuadrantInfo(item);
                   return (
@@ -507,7 +541,7 @@ export function CoreAssessment({
                       key={item.domain}
                       className={cn(
                         "p-4 rounded-lg border border-slate-700 space-y-4",
-                        quadrantInfo.bg
+                        quadrantInfo.bg,
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -523,7 +557,7 @@ export function CoreAssessment({
                           className={cn(
                             "text-xs",
                             quadrantInfo.color,
-                            "bg-transparent border-0"
+                            "bg-transparent border-0",
                           )}
                         >
                           {quadrantInfo.label}
@@ -568,6 +602,61 @@ export function CoreAssessment({
                           }
                           className="w-full"
                         />
+                        <p className="text-[10px] text-slate-500">
+                          {lang === "th"
+                            ? "ความถนัด = ทักษะที่คุณเคยฝึกฝนหรือได้รับคำชม"
+                            : "Capability = skills you’ve already practiced or been recognized for"}
+                        </p>
+                      </div>
+
+                      {/* Reality Check - Exposure Level */}
+                      <div className="pt-2 border-t border-slate-700/50">
+                        <p className="text-xs text-slate-400 mb-2">
+                          {lang === "th"
+                            ? "คุณเคยทำสิ่งนี้ที่อื่นนอกจากในห้องเรียนไหม?"
+                            : "Have you ever done this outside of class?"}
+                        </p>
+                        <div className="flex bg-slate-900 rounded-lg p-1">
+                          {[
+                            {
+                              val: "none",
+                              label: lang === "th" ? "ยังไม่เคย" : "Not yet",
+                            },
+                            {
+                              val: "school",
+                              label:
+                                lang === "th"
+                                  ? "แค่ในโรงเรียน"
+                                  : "Only in school",
+                            },
+                            {
+                              val: "outside",
+                              label: lang === "th" ? "ทำข้างนอกด้วย" : "Yes",
+                            },
+                          ].map((opt) => (
+                            <button
+                              key={opt.val}
+                              onClick={() => {
+                                const newItems = gridData.items.map((i) =>
+                                  i.domain === item.domain
+                                    ? { ...i, exposure_level: opt.val as any }
+                                    : i,
+                                );
+                                updateAnswer("q2_zone_grid", {
+                                  items: newItems,
+                                });
+                              }}
+                              className={cn(
+                                "flex-1 text-[10px] py-1.5 rounded transition-all",
+                                item.exposure_level === opt.val
+                                  ? "bg-slate-700 text-white font-medium shadow-sm"
+                                  : "text-slate-500 hover:text-slate-300",
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   );
@@ -624,7 +713,7 @@ export function CoreAssessment({
     const renderToggle = (
       key: StyleKey,
       left: { value: StyleValue; label: string; icon: any },
-      right: { value: StyleValue; label: string; icon: any }
+      right: { value: StyleValue; label: string; icon: any },
     ) => {
       const current = workStyle[key];
       return (
@@ -641,7 +730,7 @@ export function CoreAssessment({
               "flex-1 flex items-center justify-center gap-2 p-3 rounded-lg transition-all",
               current === left.value
                 ? "bg-blue-600 text-white"
-                : "bg-slate-700 text-slate-400 hover:bg-slate-600"
+                : "bg-slate-700 text-slate-400 hover:bg-slate-600",
             )}
           >
             <left.icon className="w-4 h-4" />
@@ -663,7 +752,7 @@ export function CoreAssessment({
               "flex-1 flex items-center justify-center gap-2 p-3 rounded-lg transition-all",
               current === right.value
                 ? "bg-purple-600 text-white"
-                : "bg-slate-700 text-slate-400 hover:bg-slate-600"
+                : "bg-slate-700 text-slate-400 hover:bg-slate-600",
             )}
           >
             <right.icon className="w-4 h-4" />
@@ -679,8 +768,8 @@ export function CoreAssessment({
         title={lang === "th" ? "สไตล์การทำงาน" : "How You Like to Work"}
         subtitle={
           lang === "th"
-            ? "คลิกเพื่อเลือกสิ่งที่คุณชอบมากกว่า"
-            : "Click to show your preferences"
+            ? "ไม่มีคำตอบที่ถูกหรือผิด เลือกสิ่งที่รู้สึกว่าเป็นธรรมชาติสำหรับคุณที่สุด"
+            : "There’s no right answer. Pick what feels more natural right now."
         }
         emoji="⚙️"
         onBack={onBack}
@@ -698,7 +787,7 @@ export function CoreAssessment({
               value: "outdoor",
               label: lang === "th" ? "กลางแจ้ง" : "Outdoor",
               icon: Sun,
-            }
+            },
           )}
           {renderToggle(
             "structured_flexible",
@@ -711,7 +800,7 @@ export function CoreAssessment({
               value: "flexible",
               label: lang === "th" ? "ยืดหยุ่น" : "Flexible",
               icon: Sparkles,
-            }
+            },
           )}
           {renderToggle(
             "solo_team",
@@ -724,7 +813,7 @@ export function CoreAssessment({
               value: "team",
               label: lang === "th" ? "ทำเป็นทีม" : "Team",
               icon: Users,
-            }
+            },
           )}
           {renderToggle(
             "hands_on_theory",
@@ -737,7 +826,7 @@ export function CoreAssessment({
               value: "theory",
               label: lang === "th" ? "ทฤษฎี" : "Theory",
               icon: Lightbulb,
-            }
+            },
           )}
           {renderToggle(
             "steady_fast",
@@ -750,7 +839,7 @@ export function CoreAssessment({
               value: "fast",
               label: lang === "th" ? "ท้าทาย" : "Fast-paced",
               icon: Zap,
-            }
+            },
           )}
         </div>
       </QuestionWrapper>
@@ -762,15 +851,15 @@ export function CoreAssessment({
   // ==========================================
   if (step === "q4") {
     const reputation = localAnswers.q4_reputation || [];
-    const hasEnough = reputation.length >= 1 && reputation.length <= 3;
+    const hasEnough = reputation.length >= 1 && reputation.length <= 2;
 
     const toggleReputation = (key: string) => {
       if (reputation.includes(key)) {
         updateAnswer(
           "q4_reputation",
-          reputation.filter((r) => r !== key)
+          reputation.filter((r) => r !== key),
         );
-      } else if (reputation.length < 3) {
+      } else if (reputation.length < 2) {
         updateAnswer("q4_reputation", [...reputation, key]);
       }
     };
@@ -781,8 +870,8 @@ export function CoreAssessment({
         title={lang === "th" ? "ที่พึ่งของเพื่อน" : "Your Reputation"}
         subtitle={
           lang === "th"
-            ? "คนอื่นมักจะมาขอให้คุณช่วยเรื่องอะไร หรือชมว่าคุณเก่งเรื่องอะไร? (เลือก 1-3 ข้อ)"
-            : "What do people often ask you for help with OR compliment you about? (Pick 1-3)"
+            ? "เพื่อน ครอบครัว หรือครู มักจะขอให้คุณช่วยเรื่องอะไร? (เลือก 1-2 ข้อ)"
+            : "This can be from friends, family, or teachers. What do they ask you for help with? (Pick 1-2)"
         }
         emoji="💬"
         canProceed={hasEnough}
@@ -800,7 +889,7 @@ export function CoreAssessment({
                   ? "bg-cyan-600/20 border-cyan-500 text-white"
                   : reputation.length >= 3
                     ? "bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed"
-                    : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                    : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600",
               )}
             >
               {lang === "th" ? getThaiReputation(option.key) : option.label}
@@ -812,8 +901,8 @@ export function CoreAssessment({
         </div>
         <div className="text-sm text-slate-500 mt-4">
           {lang === "th"
-            ? `เลือกแล้ว ${reputation.length}/3`
-            : `Selected ${reputation.length}/3`}
+            ? `เลือกแล้ว ${reputation.length}/2`
+            : `Selected ${reputation.length}/2`}
         </div>
       </QuestionWrapper>
     );
@@ -823,8 +912,13 @@ export function CoreAssessment({
   // Q5: PROUD MOMENT 🏆
   // ==========================================
   if (step === "q5") {
-    const proudData = localAnswers.q5_proud || { story: "", tags: [] };
+    const proudData = localAnswers.q5_proud || {
+      story: "",
+      role_description: "",
+      tags: [],
+    };
     const hasStory = proudData.story.trim().length >= 10;
+    const hasRole = (proudData.role_description || "").trim().length >= 5;
     const hasTags = proudData.tags.length > 0;
 
     return (
@@ -837,7 +931,7 @@ export function CoreAssessment({
             : "Describe something you accomplished that made you genuinely proud (big or small)"
         }
         emoji="🏆"
-        canProceed={hasStory && hasTags}
+        canProceed={hasStory && hasRole && hasTags}
         onBack={onBack}
         onNext={onNext}
       >
@@ -854,6 +948,30 @@ export function CoreAssessment({
             }
             className="bg-slate-900 border-slate-700 min-h-[100px] text-white"
           />
+
+          <div className="space-y-2">
+            <Label className="text-slate-300 flex items-center gap-2">
+              <span className="text-amber-400">👤</span>
+              {lang === "th"
+                ? "คุณทำหน้าที่อะไรในเหตุการณ์นั้น? (สิ่งที่คุณลงมือทำ)"
+                : "What part of this did you actually do?"}
+            </Label>
+            <Textarea
+              value={proudData.role_description || ""}
+              onChange={(e) =>
+                updateAnswer("q5_proud", {
+                  ...proudData,
+                  role_description: e.target.value,
+                })
+              }
+              placeholder={
+                lang === "th"
+                  ? "เช่น ผมเป็นคนต้นคิดไอเดีย, ผมช่วยเพื่อนติว..."
+                  : "e.g. I came up with the idea, I organized the team, I did the research..."
+              }
+              className="bg-slate-900 border-slate-700 min-h-[60px] text-white"
+            />
+          </div>
 
           <div className="space-y-2">
             <Label className="text-slate-300">
@@ -878,7 +996,7 @@ export function CoreAssessment({
                     "px-4 py-2 rounded-full text-sm transition-all",
                     proudData.tags.includes(tag.key)
                       ? "bg-amber-600 text-white"
-                      : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                      : "bg-slate-800 text-slate-400 hover:bg-slate-700",
                   )}
                 >
                   {lang === "th" ? getThaiProudTag(tag.key) : tag.label}
@@ -1065,7 +1183,8 @@ function getThaiReputation(key: string): string {
 function getThaiProudTag(key: string): string {
   const map: Record<string, string> = {
     helped: "ช่วยเหลือคนอื่น",
-    achieved: "ชนะ/สำเร็จ",
+    achieved_goal: "บรรลุเป้าหมาย",
+    beat_challenge: "ชนะการแข่งขัน/ผ่านด่านยาก",
     built: "สร้างสิ่งใหม่",
     overcame: "ผ่านอุปสรรค",
     learned: "เรียนรู้เรื่องยาก",
