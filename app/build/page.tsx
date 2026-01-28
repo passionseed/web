@@ -27,7 +27,7 @@ export default async function BuildPage() {
                             <Link href="/ps/hackathon" className="block group">
                                 <div className="w-full bg-purple-950/30 hover:bg-purple-900/50 border-2 border-dashed border-purple-800/50 rounded-sm p-4 flex items-center justify-center gap-3 transition-all hover:border-purple-500 hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] cursor-pointer h-[60px]">
                                     <Trophy className="h-5 w-5 text-purple-400 group-hover:text-purple-300 transition-colors" />
-                                    <span className="font-medium text-purple-400/90 group-hover:text-purple-200">Departments</span>
+                                    <span className="font-medium text-purple-400/90 group-hover:text-purple-200">Next-Dec Hack</span>
                                 </div>
                             </Link>
                         </div>

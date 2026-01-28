@@ -127,9 +127,10 @@ export function FocusTimer({
     playNotificationSound();
   };
 
-  const handleTimerComplete = () => {
-    setMode("finished");
+  const handleTimerComplete = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    // Directly save and close without showing completion screen
+    await handleSaveSession();
   };
 
   // Direct save without summary screen
