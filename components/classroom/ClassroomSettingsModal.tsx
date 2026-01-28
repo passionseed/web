@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Settings, Copy, RefreshCw } from "lucide-react";
 import { Classroom } from "@/types/classroom";
+import { toast } from "sonner";
 
 interface ClassroomSettingsModalProps {
   classroom: Classroom;
@@ -60,7 +61,7 @@ export function ClassroomSettingsModal({
       onSettingsUpdated();
     } catch (error) {
       console.error("Error updating classroom:", error);
-      // TODO: Show error toast
+      toast.error("Failed to update classroom");
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,7 @@ export function ClassroomSettingsModal({
   const copyJoinCode = async () => {
     try {
       await navigator.clipboard.writeText(classroom.join_code);
-      // TODO: Show success toast
+      toast.success("Join code copied to clipboard");
     } catch (error) {
       console.error("Failed to copy join code:", error);
     }
@@ -110,7 +111,7 @@ export function ClassroomSettingsModal({
       onSettingsUpdated();
     } catch (error) {
       console.error("Error regenerating join code:", error);
-      // TODO: Show error toast
+      toast.error("Failed to regenerate join code");
     } finally {
       setGeneratingCode(false);
     }
