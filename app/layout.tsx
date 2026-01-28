@@ -9,7 +9,6 @@ import {
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { createClient } from "@/utils/supabase/server";
 import { Layout } from "@/components/layout";
@@ -107,7 +106,6 @@ export default async function RootLayout({
             <DirectionFinderProvider>
               <ErrorBoundary>
                 <Layout>{children}</Layout>
-                <Toaster />
                 <SonnerToaster />
                 <DevHealthCheck />
                 <TOSAcceptanceModal />
