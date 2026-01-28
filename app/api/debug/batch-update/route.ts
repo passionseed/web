@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
       },
       { status: 500 }
     );
