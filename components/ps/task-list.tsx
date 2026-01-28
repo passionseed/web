@@ -432,7 +432,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                     tasks={unscheduledTasks}
                     isOver={overId === "unscheduled-pool"}
                     onAddTask={() => {
-                        if (!isMember || !projectId) return;
+                        if (!isMember) return;
                         setAddTaskDate(null);
                         setAssignee(currentUserId || "");
                         setIsAddTaskOpen(true);
@@ -462,7 +462,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                                 tasks={dayTasks}
                                 isOver={overId === `day-${dateStr}`}
                                 onAddTask={(d) => {
-                                    if (!isMember || !projectId) return;
+                                    if (!isMember) return;
                                     setAddTaskDate(d);
                                     setAssignee(currentUserId || "");
                                     setIsAddTaskOpen(true);
