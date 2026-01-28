@@ -18,7 +18,7 @@ import { CreateMilestoneNorthStarDialog } from "./CreateMilestoneNorthStarDialog
 import {
   getProjectById,
   getProjectMilestones,
-  getMilestoneJournals,
+  getProjectJournals,
 } from "@/lib/supabase/journey";
 import {
   ProjectWithMilestones,
@@ -59,21 +59,22 @@ export function MilestoneMapView({ projectId, onBack }: MilestoneMapViewProps) {
         breadcrumbContext?.setMilestoneTitle(projectData.title);
       }
 
-      // Load journals for each milestone
-      const milestonesWithJournals = await Promise.all(
-        milestonesData.map(async (milestone) => {
-          const journals = await getMilestoneJournals(milestone.id);
-          return {
-            ...milestone,
-            journals,
-            journal_count: journals.length,
-            total_time_spent: journals.reduce(
-              (sum, j) => sum + (j.time_spent_minutes || 0),
-              0
-            ),
-          };
-        })
-      );
+      // Load journals for all milestones at once
+      const journalsByMilestone = await getProjectJournals(projectId);
+
+      // Map journals to milestones
+      const milestonesWithJournals = milestonesData.map((milestone) => {
+        const journals = journalsByMilestone[milestone.id] || [];
+        return {
+          ...milestone,
+          journals,
+          journal_count: journals.length,
+          total_time_spent: journals.reduce(
+            (sum, j) => sum + (j.time_spent_minutes || 0),
+            0
+          ),
+        };
+      });
 
       setMilestones(milestonesWithJournals);
     } catch (error) {
