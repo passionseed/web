@@ -103,7 +103,6 @@ export async function POST(request: NextRequest) {
       {
         error: "Grading failed",
         message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
       },
       { status: 500 }
     );
