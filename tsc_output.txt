@@ -1,0 +1,337 @@
+app/api/admin/maps/route.ts(135,11): error TS7034: Variable 'nodeStats' implicitly has type 'any[]' in some locations where its type cannot be determined.
+app/api/admin/maps/route.ts(177,18): error TS7005: Variable 'nodeStats' implicitly has an 'any[]' type.
+app/api/admin/maps/route.ts(193,54): error TS2345: Argument of type '(map: { id: string; title: string; description: string; creator_id: string; difficulty: number; category: string; visibility: string; created_at: string; updated_at: string; metadata: any; profiles?: { username?: string; full_name?: string; }; }) => { ...; }' is not assignable to parameter of type '(value: { id: any; title: any; description: any; creator_id: any; difficulty: any; category: any; visibility: any; created_at: any; updated_at: any; metadata: any; profiles: { username: any; full_name: any; }[]; }, index: number, array: { ...; }[]) => { ...; }'.
+  Types of parameters 'map' and 'value' are incompatible.
+    Type '{ id: any; title: any; description: any; creator_id: any; difficulty: any; category: any; visibility: any; created_at: any; updated_at: any; metadata: any; profiles: { username: any; full_name: any; }[]; }' is not assignable to type '{ id: string; title: string; description: string; creator_id: string; difficulty: number; category: string; visibility: string; created_at: string; updated_at: string; metadata: any; profiles?: { ...; } | undefined; }'.
+      Types of property 'profiles' are incompatible.
+        Type '{ username: any; full_name: any; }[]' has no properties in common with type '{ username?: string | undefined; full_name?: string | undefined; }'.
+app/api/admin/maps/route.ts(209,23): error TS7005: Variable 'nodeStats' implicitly has an 'any[]' type.
+app/api/classrooms/[id]/debug-groups/route.ts(278,34): error TS18048: 'memberProgress' is possibly 'undefined'.
+app/api/debug/test-grade/route.ts(55,8): error TS2551: Property 'catch' does not exist on type 'PostgrestFilterBuilder<any, any, any, "get_table_constraints", null>'. Did you mean 'match'?
+app/api/maps/create-from-json/route.ts(209,11): error TS2322: Type '{ content_type: "text" | "video" | "canva_slide" | "image" | "pdf" | "resource_link"; content_url: string | null; content_body: string; }[]' is not assignable to type '{ content_type: string; content_url?: string | undefined; content_body: string; }[]'.
+  Type '{ content_type: "text" | "video" | "canva_slide" | "image" | "pdf" | "resource_link"; content_url: string | null; content_body: string; }' is not assignable to type '{ content_type: string; content_url?: string | undefined; content_body: string; }'.
+    Types of property 'content_url' are incompatible.
+      Type 'string | null' is not assignable to type 'string | undefined'.
+        Type 'null' is not assignable to type 'string | undefined'.
+app/api/maps/create-from-json/route.ts(220,13): error TS2322: Type 'null' is not assignable to type 'string | undefined'.
+app/api/maps/create-from-json/route.ts(304,50): error TS2339: Property 'length' does not exist on type 'never'.
+app/api/maps/create-from-json/route.ts(328,49): error TS2339: Property 'length' does not exist on type 'never'.
+app/api/maps/route.ts(9,32): error TS2551: Property 'map' does not exist on type '{ maps: (LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; })[]; total_count: number; has_more: boolean; }'. Did you mean 'maps'?
+app/api/maps/route.ts(9,37): error TS7006: Parameter 'map' implicitly has an 'any' type.
+app/api/seeds/rooms/[roomId]/grading/route.ts(55,52): error TS2339: Property 'points_possible' does not exist on type '{ id: any; points_possible: any; }[]'.
+app/communities/[slug]/page.tsx(474,57): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+app/communities/page.tsx(475,57): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+app/map/[id]/edit/page.tsx(105,29): error TS2322: Type '{ id: any; creator_id: any; title: any; category: any; map_type: any; parent_seed_id: any; }' is not assignable to type 'FullLearningMap'.
+  Type '{ id: any; creator_id: any; title: any; category: any; map_type: any; parent_seed_id: any; }' is missing the following properties from type 'LearningMap': description, created_at, updated_at
+app/map/server-page.tsx(10,28): error TS2322: Type '{ maps: (LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; })[]; total_count: number; has_more: boolean; }' is not assignable to type 'InitialData'.
+  Types of property 'maps' are incompatible.
+    Type '(LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; })[]' is not assignable to type 'MapWithStats[]'.
+      Type 'LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; }' is not assignable to type 'MapWithStats'.
+        Type 'LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; }' is not assignable to type '{ node_count: number; avg_difficulty: number; total_assessments: number; isEnrolled: boolean; hasStarted: boolean; map_type: "public" | "team" | "personal" | "classroom" | "forked"; source_info?: { ...; } | undefined; cover_image_url?: string | undefined; cover_image_blurhash?: string | undefined; cover_image_key?: ...'.
+          Types of property 'map_type' are incompatible.
+            Type '"public" | "classroom_exclusive"' is not assignable to type '"public" | "team" | "personal" | "classroom" | "forked"'.
+              Type '"classroom_exclusive"' is not assignable to type '"public" | "team" | "personal" | "classroom" | "forked"'.
+app/me/reflection/monthly/page.tsx(11,26): error TS2305: Module '"@/types/reflection"' has no exported member 'CalendarDay'.
+app/me/reflection/monthly/page.tsx(79,33): error TS2345: Argument of type 'Date' is not assignable to parameter of type 'number'.
+app/me/reflection/monthly/page.tsx(186,30): error TS2339: Property 'currentStreak' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(189,30): error TS2339: Property 'lastReflectionDate' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(190,70): error TS2339: Property 'lastReflectionDate' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(202,28): error TS2339: Property 'bestDay' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(205,49): error TS2339: Property 'bestDay' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(209,35): error TS2339: Property 'bestDay' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(212,35): error TS2339: Property 'bestDay' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(212,78): error TS2339: Property 'bestDay' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(228,28): error TS2339: Property 'mostCommonEmotion' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(231,49): error TS2339: Property 'mostCommonEmotion' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(235,35): error TS2339: Property 'mostCommonEmotion' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(238,35): error TS2339: Property 'mostCommonEmotion' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(261,26): error TS2339: Property 'topTopics' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(261,48): error TS2339: Property 'topTopics' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(263,29): error TS2339: Property 'topTopics' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(263,44): error TS7006: Parameter 'topic' implicitly has an 'any' type.
+app/me/reflection/monthly/page.tsx(263,51): error TS7006: Parameter 'index' implicitly has an 'any' type.
+app/me/reflection/monthly/page.tsx(396,26): error TS2339: Property 'insights' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(396,47): error TS2339: Property 'insights' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(398,29): error TS2339: Property 'insights' does not exist on type 'MonthlyInsight'.
+app/me/reflection/monthly/page.tsx(398,43): error TS7006: Parameter 'insight' implicitly has an 'any' type.
+app/me/reflection/monthly/page.tsx(398,52): error TS7006: Parameter 'index' implicitly has an 'any' type.
+app/me/reflection/page.tsx(85,36): error TS18046: 'b' is of type 'unknown'.
+app/me/reflection/page.tsx(85,71): error TS18046: 'a' is of type 'unknown'.
+app/me/reflection/page.tsx(87,24): error TS2345: Argument of type 'unknown[]' is not assignable to parameter of type 'SetStateAction<MindmapReflection[]>'.
+  Type 'unknown[]' is not assignable to type 'MindmapReflection[]'.
+    Type 'unknown' is not assignable to type 'MindmapReflection'.
+app/profile/page.tsx(210,28): error TS2551: Property 'discord_uid' does not exist on type 'UserProfile'. Did you mean 'discord_id'?
+app/projects/new/page.tsx(63,17): error TS2345: Argument of type '(prev: { name: string; goal: string; description: string; link: string; image_url: string; tagIds: never[]; }) => { tagIds: string[]; name: string; goal: string; description: string; link: string; image_url: string; }' is not assignable to parameter of type 'SetStateAction<{ name: string; goal: string; description: string; link: string; image_url: string; tagIds: never[]; }>'.
+  Type '(prev: { name: string; goal: string; description: string; link: string; image_url: string; tagIds: never[]; }) => { tagIds: string[]; name: string; goal: string; description: string; link: string; image_url: string; }' is not assignable to type '(prevState: { name: string; goal: string; description: string; link: string; image_url: string; tagIds: never[]; }) => { name: string; goal: string; description: string; link: string; image_url: string; tagIds: never[]; }'.
+    Call signature return types '{ tagIds: string[]; name: string; goal: string; description: string; link: string; image_url: string; }' and '{ name: string; goal: string; description: string; link: string; image_url: string; tagIds: never[]; }' are incompatible.
+      The types of 'tagIds' are incompatible between these types.
+        Type 'string[]' is not assignable to type 'never[]'.
+          Type 'string' is not assignable to type 'never'.
+app/projects/new/page.tsx(65,36): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+components/admin/AdminDirectionFinder.tsx(382,45): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/admin/AdminDirectionFinder.tsx(392,45): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/admin/AdminDirectionFinder.tsx(402,45): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/admin/AdminJourneyPeek.tsx(96,24): error TS2339: Property 'node_count' does not exist on type '{ id: any; title: any; description: any; created_at: any; updated_at: any; }'.
+components/admin/AdminJourneyPeek.tsx(184,24): error TS2339: Property 'node_count' does not exist on type '{ id: any; title: any; description: any; created_at: any; updated_at: any; }'.
+components/admin/CreateUniversityMilestoneDialog.tsx(126,53): error TS2322: Type '{ children: Element; open: boolean; onOpenChange: (open: boolean) => void; suppressHydrationWarning: true; }' is not assignable to type 'IntrinsicAttributes & DialogProps'.
+  Property 'suppressHydrationWarning' does not exist on type 'IntrinsicAttributes & DialogProps'.
+components/admin/CreateUniversityMilestoneDialog.tsx(154,17): error TS2322: Type '{ children: Element[]; value: string; onValueChange: (value: string) => void; suppressHydrationWarning: true; }' is not assignable to type 'IntrinsicAttributes & SelectSharedProps & { value?: string | undefined; defaultValue?: string | undefined; onValueChange?(value: string): void; }'.
+  Property 'suppressHydrationWarning' does not exist on type 'IntrinsicAttributes & SelectSharedProps & { value?: string | undefined; defaultValue?: string | undefined; onValueChange?(value: string): void; }'.
+components/admin/CreateUniversityMilestoneDialog.tsx(177,17): error TS2322: Type '{ children: Element[]; value: string; onValueChange: (value: string) => void; suppressHydrationWarning: true; }' is not assignable to type 'IntrinsicAttributes & SelectSharedProps & { value?: string | undefined; defaultValue?: string | undefined; onValueChange?(value: string): void; }'.
+  Property 'suppressHydrationWarning' does not exist on type 'IntrinsicAttributes & SelectSharedProps & { value?: string | undefined; defaultValue?: string | undefined; onValueChange?(value: string): void; }'.
+components/admin/CreateUniversityMilestoneDialog.tsx(201,15): error TS2322: Type '{ children: Element[]; value: string; onValueChange: (value: string) => void; suppressHydrationWarning: true; }' is not assignable to type 'IntrinsicAttributes & SelectSharedProps & { value?: string | undefined; defaultValue?: string | undefined; onValueChange?(value: string): void; }'.
+  Property 'suppressHydrationWarning' does not exist on type 'IntrinsicAttributes & SelectSharedProps & { value?: string | undefined; defaultValue?: string | undefined; onValueChange?(value: string): void; }'.
+components/admin/UniversityExampleJourneyCanvas.tsx(8,3): error TS2300: Duplicate identifier 'Node'.
+components/admin/UniversityExampleJourneyCanvas.tsx(9,3): error TS2300: Duplicate identifier 'Edge'.
+components/admin/UniversityExampleJourneyCanvas.tsx(39,3): error TS2300: Duplicate identifier 'Node'.
+components/admin/UniversityExampleJourneyCanvas.tsx(40,3): error TS2300: Duplicate identifier 'Edge'.
+components/admin/UniversityExampleJourneyCanvas.tsx(129,12): error TS2304: Cannot find name 'BookOpen'.
+components/admin/UniversityExampleJourneyCanvas.tsx(366,56): error TS2741: Property 'achieved_at' is missing in type '{ id: string; user_id: any; title: string; description: string; why: string; icon: string; sdg_goals: never[]; career_path: null; north_star_shape: string; north_star_color: string; status: "active"; ... 8 more ...; completed_at: null; }' but required in type 'NorthStar'.
+components/admin/UniversityExampleJourneyCanvas.tsx(588,26): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ProjectWithMilestones'.
+components/admin/UniversityExampleJourneyCanvas.tsx(593,28): error TS2554: Expected 0 arguments, but got 1.
+components/admin/UniversityExampleJourneyCanvas.tsx(603,14): error TS2345: Argument of type 'Node[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'Node[]' is not assignable to type 'never[]'.
+    Type 'Node' is not assignable to type 'never'.
+components/admin/UniversityExampleJourneyCanvas.tsx(604,14): error TS2345: Argument of type 'Edge[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'Edge[]' is not assignable to type 'never[]'.
+    Type 'Edge' is not assignable to type 'never'.
+components/admin/UniversityExampleJourneyCanvas.tsx(620,11): error TS2741: Property 'short_title' is missing in type '{ id: string; user_id: any; title: any; description: any; goal: any; why: any; project_type: any; north_star_id: string; is_main_quest: false; position_x: number; position_y: number; status: "not_started"; ... 21 more ...; reflection_count: number; }' but required in type 'ProjectWithMilestones'.
+components/admin/UniversityExampleJourneyCanvas.tsx(794,53): error TS2339: Property 'id' does not exist on type 'never'.
+components/admin/UniversityExampleJourneyCanvas.tsx(795,52): error TS2339: Property 'position' does not exist on type 'never'.
+components/admin/UniversityExampleJourneyCanvas.tsx(809,53): error TS2339: Property 'id' does not exist on type 'never'.
+components/admin/UniversityExampleJourneyCanvas.tsx(810,63): error TS2339: Property 'position' does not exist on type 'never'.
+components/admin/UniversityExampleJourneyCanvas.tsx(882,50): error TS18046: 'error' is of type 'unknown'.
+components/admin/UniversityExampleJourneyCanvas.tsx(954,59): error TS2554: Expected 0 arguments, but got 1.
+components/admin/UniversityExampleJourneyCanvas.tsx(988,32): error TS2345: Argument of type '(nds: never[]) => Node[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '(nds: never[]) => Node[]' is not assignable to type '(prevState: never[]) => never[]'.
+    Type 'Node[]' is not assignable to type 'never[]'.
+      Type 'Node' is not assignable to type 'never'.
+components/admin/UniversityExampleJourneyCanvas.tsx(1010,21): error TS2322: Type '"smoothstep"' is not assignable to type 'ConnectionLineType | undefined'.
+components/admin/UniversityExampleJourneyCanvas.tsx(1043,20): error TS2739: Type '{}' is missing the following properties from type 'NavigationGuideProps': stats, isExpanded, onToggle
+components/admin/UniversityExampleJourneyCanvas.tsx(1084,59): error TS2554: Expected 0 arguments, but got 1.
+components/admin/UniversityExampleMapsDialog.tsx(105,25): error TS2345: Argument of type '{ academicYear?: string | undefined; interests?: string[] | undefined; gpaRange?: string | undefined; extracurriculars?: string[] | undefined; background?: string | undefined; } | null' is not assignable to parameter of type 'SetStateAction<StudentPersona | null>'.
+  Type '{ academicYear?: string | undefined; interests?: string[] | undefined; gpaRange?: string | undefined; extracurriculars?: string[] | undefined; background?: string | undefined; }' is not assignable to type 'SetStateAction<StudentPersona | null>'.
+    Type '{ academicYear?: string | undefined; interests?: string[] | undefined; gpaRange?: string | undefined; extracurriculars?: string[] | undefined; background?: string | undefined; }' is not assignable to type 'StudentPersona'.
+      Types of property 'academicYear' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+components/ai-elements/message.tsx(83,3): error TS2322: Type '"icon-sm"' is not assignable to type '"lg" | "sm" | "default" | "icon" | null'.
+components/ai-elements/message.tsx(252,7): error TS2322: Type '"icon-sm"' is not assignable to type '"lg" | "sm" | "default" | "icon" | null | undefined'.
+components/ai-elements/message.tsx(276,7): error TS2322: Type '"icon-sm"' is not assignable to type '"lg" | "sm" | "default" | "icon" | null | undefined'.
+components/classroom/ClassroomDetailsDashboard.tsx(404,18): error TS2367: This comparison appears to be unintentional because the types 'true | undefined' and 'false' have no overlap.
+components/classroom/ClassroomDetailsDashboard.tsx(408,29): error TS2367: This comparison appears to be unintentional because the types 'true | undefined' and 'false' have no overlap.
+components/classroom/ClassroomDetailsDashboard.tsx(417,14): error TS2367: This comparison appears to be unintentional because the types 'true | undefined' and 'false' have no overlap.
+components/classroom/ClassroomDetailsDashboard.tsx(580,17): error TS2322: Type '{ students: never[]; assignments: never[]; canManage: true; }' is not assignable to type 'IntrinsicAttributes & StudentProgressTableProps'.
+  Property 'assignments' does not exist on type 'IntrinsicAttributes & StudentProgressTableProps'.
+components/classroom/ClassroomDirectionFinder.tsx(344,45): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/classroom/ClassroomDirectionFinder.tsx(354,45): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/classroom/ClassroomDirectionFinder.tsx(364,45): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/classroom/ClassroomMapsManager.tsx(117,9): error TS2698: Spread types may only be created from object types.
+components/classroom/GroupMapGrading.tsx(95,9): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+components/classroom/StudentMapsView.tsx(113,9): error TS2698: Spread types may only be created from object types.
+components/classroom/TeamGrading.tsx(155,45): error TS2339: Property 'profiles' does not exist on type '{ id: any; user_id: any; node_id: any; map_nodes: any[]; profiles: { username: any; full_name: any; }[]; }[]'.
+components/classroom/TeamGrading.tsx(156,46): error TS2339: Property 'profiles' does not exist on type '{ id: any; user_id: any; node_id: any; map_nodes: any[]; profiles: { username: any; full_name: any; }[]; }[]'.
+components/classroom/TeamGrading.tsx(160,47): error TS2339: Property 'map_nodes' does not exist on type '{ id: any; user_id: any; node_id: any; map_nodes: any[]; profiles: { username: any; full_name: any; }[]; }[]'.
+components/classroom/TeamGrading.tsx(167,48): error TS2339: Property 'id' does not exist on type '{ id: any; user_id: any; node_id: any; map_nodes: any[]; profiles: { username: any; full_name: any; }[]; }[]'.
+components/classroom/TeamGrading.tsx(558,54): error TS2322: Type '{ children: string; variant: "outline"; size: string; }' is not assignable to type 'IntrinsicAttributes & BadgeProps'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & BadgeProps'.
+components/classroom/index.ts(40,10): error TS2614: Module '"./StudentMapsView"' has no exported member 'StudentMapsView'. Did you mean to use 'import StudentMapsView from "./StudentMapsView"' instead?
+components/classroom/index.ts(41,10): error TS2614: Module '"./StudentMapsViewWrapper"' has no exported member 'StudentMapsViewWrapper'. Did you mean to use 'import StudentMapsViewWrapper from "./StudentMapsViewWrapper"' instead?
+components/dashboard-home.tsx(72,54): error TS2339: Property 'realTimeProgress' does not exist on type 'MapWithStats | EnrolledMapWithStats'.
+  Property 'realTimeProgress' does not exist on type 'MapWithStats'.
+components/dashboard-home.tsx(73,28): error TS2339: Property 'realTimeProgress' does not exist on type 'MapWithStats | EnrolledMapWithStats'.
+  Property 'realTimeProgress' does not exist on type 'MapWithStats'.
+components/dashboard-home.tsx(75,13): error TS2339: Property 'realTimeProgress' does not exist on type 'MapWithStats | EnrolledMapWithStats'.
+  Property 'realTimeProgress' does not exist on type 'MapWithStats'.
+components/dashboard-home.tsx(91,28): error TS2339: Property 'enrollment' does not exist on type 'MapWithStats | EnrolledMapWithStats'.
+  Property 'enrollment' does not exist on type 'MapWithStats'.
+components/education/EducationalPathwayFlow.tsx(644,22): error TS2367: This comparison appears to be unintentional because the types '"complete" | "universities" | "interests" | "roadmap"' and '"recommendation"' have no overlap.
+components/journey/CreateProjectDialog.tsx(121,25): error TS2339: Property 'why' does not exist on type '{ title: string; description: string; projectType: ProjectType; isNorthStar: boolean; northStarId: string; color: string; isMainQuest: boolean; sdgGoals: number[]; careerPath: string; northStarShape: string; northStarColor: string; }'.
+components/journey/CreateProjectDialog.tsx(130,31): error TS2345: Argument of type '{ title: string; description: string | undefined; why: any; icon: string; sdg_goals: number[]; career_path: string | null; north_star_shape: string; north_star_color: string; metadata: {}; }' is not assignable to parameter of type 'NorthStarCreateData'.
+  Types of property 'career_path' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+components/journey/JourneyMapCanvas.refactored.tsx(224,10): error TS2739: Type '{ nodes: Node[]; edges: Edge[]; isLoading: boolean; journeyStats: { totalProjects: number; northStarCount: number; activeProjects: number; completedProjects: number; totalMilestones: number; completedMilestones: number; progressPercentage: number; }; ... 8 more ...; onCreateProject: () => void; }' is missing the following properties from type 'JourneyMapCanvasViewProps': setEdges, onCreateNorthStar
+components/journey/JourneyMapCanvas.refactored.tsx(272,19): error TS2322: Type '{ projectId: string; onEdit: () => void; onAddReflection: () => string | number; onAddMilestone: () => string | number; }' is not assignable to type 'IntrinsicAttributes & ProjectDetailsPanelProps'.
+  Property 'onEdit' does not exist on type 'IntrinsicAttributes & ProjectDetailsPanelProps'.
+components/journey/JourneyMapCanvas.refactored.tsx(296,9): error TS2322: Type '{ open: boolean; onOpenChange: () => void; northStarProjects: { id: string; title: string; }[]; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & CreateProjectDialogProps'.
+  Property 'northStarProjects' does not exist on type 'IntrinsicAttributes & CreateProjectDialogProps'.
+components/journey/MilestoneMapView.tsx(210,11): error TS2322: Type '(milestone: ProjectMilestone) => void' is not assignable to type '(milestone: ProjectMilestone | null) => void'.
+  Types of parameters 'milestone' and 'milestone' are incompatible.
+    Type 'ProjectMilestone | null' is not assignable to type 'ProjectMilestone'.
+      Type 'null' is not assignable to type 'ProjectMilestone'.
+components/journey/MilestoneMapView.tsx(225,11): error TS2322: Type '{ isOpen: boolean; onClose: () => void; existingNorthStar: any; onSave: (northStar: any) => Promise<void>; }' is not assignable to type 'IntrinsicAttributes & CreateMilestoneNorthStarDialogProps'.
+  Property 'isOpen' does not exist on type 'IntrinsicAttributes & CreateMilestoneNorthStarDialogProps'. Did you mean 'open'?
+components/journey/MilestoneMapView.tsx(228,26): error TS7006: Parameter 'northStar' implicitly has an 'any' type.
+components/journey/NewNorthStarFlow.tsx(39,3): error TS2322: Type '"part2_intro"' is not assignable to type 'AssessmentStep'.
+components/journey/NewNorthStarFlow.tsx(41,3): error TS2322: Type '"q7"' is not assignable to type 'AssessmentStep'.
+components/journey/NewNorthStarFlow.tsx(42,3): error TS2322: Type '"q8"' is not assignable to type 'AssessmentStep'.
+components/journey/NewNorthStarFlow.tsx(43,3): error TS2322: Type '"q9"' is not assignable to type 'AssessmentStep'.
+components/journey/NewNorthStarFlow.tsx(44,3): error TS2322: Type '"q10"' is not assignable to type 'AssessmentStep'.
+components/journey/NewNorthStarFlow.tsx(45,3): error TS2322: Type '"q12"' is not assignable to type 'AssessmentStep'.
+components/journey/NewNorthStarFlow.tsx(46,3): error TS2322: Type '"q13"' is not assignable to type 'AssessmentStep'.
+components/journey/SocialSharePreview.tsx(348,17): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/journey/SocialSharePreview.tsx(366,17): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/journey/SocialSharePreview.tsx(384,17): error TS2322: Type 'ProfileItem' is not assignable to type 'ReactNode'.
+components/journey/gantt/GanttProgressPopover.tsx(77,11): error TS2367: This comparison appears to be unintentional because the types '"in_progress" | "not_started"' and '"completed"' have no overlap.
+components/journey/index.ts(36,10): error TS2305: Module '"./DailyActivityPanel"' has no exported member 'MiniJourneyPreview'.
+components/journey/milestone-details/details/InlineEditableTitle.tsx(66,5): error TS2322: Type '(value: string) => Promise<ProjectMilestone>' is not assignable to type '(value: string) => Promise<void>'.
+  Type 'Promise<ProjectMilestone>' is not assignable to type 'Promise<void>'.
+    Type 'ProjectMilestone' is not assignable to type 'void'.
+components/journey/milestone-details/details/QuickProgressControls.tsx(57,56): error TS2367: This comparison appears to be unintentional because the types '"in_progress" | "not_started" | "blocked" | "skipped"' and '"completed"' have no overlap.
+components/journey/nodes/MilestoneNode.tsx(228,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { className?: string | undefined; }, context?: any): string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | ... 4 more ... | undefined', gave the following error.
+    Type '{ className: string; style: { fontSize: string; }; }' is not assignable to type 'IntrinsicAttributes & { className?: string | undefined; }'.
+      Property 'style' does not exist on type 'IntrinsicAttributes & { className?: string | undefined; }'.
+  Overload 2 of 2, '(props: { className?: string | undefined; }): string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | ... 4 more ... | undefined', gave the following error.
+    Type '{ className: string; style: { fontSize: string; }; }' is not assignable to type 'IntrinsicAttributes & { className?: string | undefined; }'.
+      Property 'style' does not exist on type 'IntrinsicAttributes & { className?: string | undefined; }'.
+components/journey/nodes/MilestoneNorthStarNode.tsx(82,9): error TS2739: Type '{ coreSize: number; flareCount: number; seed: string; }' is missing the following properties from type 'StarConfig': rotation, innerRadiusRatio, glowIntensity
+components/journey/nodes/NorthStarProjectNode.tsx(42,28): error TS2339: Property 'sdg_goals' does not exist on type 'JourneyProject'.
+components/journey/nodes/NorthStarProjectNode.tsx(43,30): error TS2339: Property 'career_path' does not exist on type 'JourneyProject'.
+components/journey/nodes/NorthStarProjectNode.tsx(44,34): error TS2339: Property 'north_star_shape' does not exist on type 'JourneyProject'.
+components/journey/nodes/NorthStarProjectNode.tsx(45,34): error TS2339: Property 'north_star_color' does not exist on type 'JourneyProject'.
+components/journey/nodes/NorthStarProjectNode.tsx(90,21): error TS2304: Cannot find name 'nodeWidth'.
+components/map/AssessmentEditor.tsx(530,72): error TS2339: Property 'icon' does not exist on type 'never'.
+components/map/AssessmentEditor.tsx(534,47): error TS2339: Property 'replace' does not exist on type 'never'.
+components/map/AssessmentEditor/QuestionForm.tsx(88,16): error TS2345: Argument of type 'readonly [] | readonly [{ readonly option: "A"; readonly text: ""; }, { readonly option: "B"; readonly text: ""; }, { readonly option: "C"; readonly text: ""; }, { readonly option: "D"; readonly text: ""; }] | readonly [...]' is not assignable to parameter of type 'SetStateAction<{ option: string; text: string; }[]>'.
+  Type 'readonly []' is not assignable to type 'SetStateAction<{ option: string; text: string; }[]>'.
+    The type 'readonly []' is 'readonly' and cannot be assigned to the mutable type '{ option: string; text: string; }[]'.
+components/map/AssessmentEditor/utils.ts(68,3): error TS2353: Object literal may only specify known properties, and 'created_at' does not exist in type 'QuizQuestion'.
+components/map/CoverImageMaker.tsx(99,9): error TS7034: Variable 'gradient' implicitly has type 'any' in some locations where its type cannot be determined.
+components/map/CoverImageMaker.tsx(125,9): error TS7005: Variable 'gradient' implicitly has an 'any' type.
+components/map/InstructorGradingPanel.tsx(74,34): error TS2339: Property 'metadata' does not exist on type 'SubmissionWithDetails'.
+components/map/InstructorGradingPanel.tsx(132,9): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number | null'.
+  Type 'undefined' is not assignable to type 'number | null'.
+components/map/InstructorGradingPanel.tsx(242,41): error TS2339: Property 'metadata' does not exist on type 'SubmissionWithDetails'.
+components/map/InstructorGradingPanel.tsx(243,33): error TS2339: Property 'metadata' does not exist on type 'SubmissionWithDetails'.
+components/map/MapEditor.tsx(1549,26): error TS2345: Argument of type '{ node_paths_source: never[]; node_paths_destination: never[]; node_content: { id: string; node_id: string; content_type: any; content_title: any; content_url: any; content_body: any; display_order: number; }[]; ... 12 more ...; updated_at: string; }' is not assignable to parameter of type 'MapNode & { node_paths_source: any[]; node_paths_destination: any[]; node_content: any[]; node_assessments: any[]; }'.
+  Type '{ node_paths_source: never[]; node_paths_destination: never[]; node_content: { id: string; node_id: string; content_type: any; content_title: any; content_url: any; content_body: any; display_order: number; }[]; ... 12 more ...; updated_at: string; }' is not assignable to type 'MapNode'.
+    Types of property 'node_content' are incompatible.
+      Type '{ id: string; node_id: string; content_type: any; content_title: any; content_url: any; content_body: any; display_order: number; }[]' is not assignable to type 'NodeContent[]'.
+        Property 'created_at' is missing in type '{ id: string; node_id: string; content_type: any; content_title: any; content_url: any; content_body: any; display_order: number; }' but required in type 'NodeContent'.
+components/map/MapEditor/hooks/useMapEditor.ts(156,24): error TS2552: Cannot find name 'selectedNode'. Did you mean 'selectedNodes'?
+components/map/MapGrader.tsx(32,3): error TS2305: Module '"@/lib/supabase/maps"' has no exported member 'updateTeamNodeStatus'.
+components/map/MapViewer/index.tsx(61,5): error TS2322: Type 'RefObject<ImperativePanelHandle | null>' is not assignable to type 'RefObject<ImperativePanelHandle>'.
+  Type 'ImperativePanelHandle | null' is not assignable to type 'ImperativePanelHandle'.
+    Type 'null' is not assignable to type 'ImperativePanelHandle'.
+components/map/MapViewer/index.tsx(62,5): error TS2322: Type 'RefObject<ImperativePanelHandle | null>' is not assignable to type 'RefObject<ImperativePanelHandle>'.
+  Type 'ImperativePanelHandle | null' is not assignable to type 'ImperativePanelHandle'.
+    Type 'null' is not assignable to type 'ImperativePanelHandle'.
+components/map/MapViewer/index.tsx(189,11): error TS7034: Variable 'transformedEdges' implicitly has type 'any[]' in some locations where its type cannot be determined.
+components/map/MapViewer/index.tsx(214,14): error TS2345: Argument of type '{ id: string; type: string; data: { progress: EnhancedProgress; id: string; map_id: string; title: string; instructions: string | null; version?: number | undefined; last_modified_by?: string | ... 1 more ... | undefined; ... 9 more ...; node_paths_destination: NodePath[]; }; ... 5 more ...; style: { ...; }; }[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '{ id: string; type: string; data: { progress: EnhancedProgress; id: string; map_id: string; title: string; instructions: string | null; version?: number | undefined; last_modified_by?: string | ... 1 more ... | undefined; ... 9 more ...; node_paths_destination: NodePath[]; }; ... 5 more ...; style: { ...; }; }[]' is not assignable to type 'never[]'.
+    Type '{ id: string; type: string; data: { progress: EnhancedProgress; id: string; map_id: string; title: string; instructions: string | null; version?: number; last_modified_by?: string | null; ... 9 more ...; node_paths_destination: NodePath[]; }; ... 5 more ...; style: { ...; }; }' is not assignable to type 'never'.
+components/map/MapViewer/index.tsx(215,14): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'any[]' is not assignable to type 'never[]'.
+    Type 'any' is not assignable to type 'never'.
+components/map/MapViewer/index.tsx(215,14): error TS7005: Variable 'transformedEdges' implicitly has an 'any[]' type.
+components/map/MapViewer/index.tsx(427,45): error TS2304: Cannot find name 'MapNode'.
+components/map/MapViewer/types/index.ts(7,27): error TS2459: Module '"@/lib/supabase/maps"' declares 'MapNode' locally, but it is not exported.
+components/map/MapViewer/utils/mapKeyboard.ts(50,3): error TS2322: Type 'string | boolean' is not assignable to type 'boolean'.
+  Type 'string' is not assignable to type 'boolean'.
+components/map/MiniJourneyMapPreview.tsx(116,14): error TS2345: Argument of type 'Node[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'Node[]' is not assignable to type 'never[]'.
+    Type 'Node' is not assignable to type 'never'.
+components/map/MiniJourneyMapPreview.tsx(117,14): error TS2345: Argument of type 'Edge[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'Edge[]' is not assignable to type 'never[]'.
+    Type 'Edge' is not assignable to type 'never'.
+components/map/MiniJourneyMapPreview.tsx(127,9): error TS2322: Type 'null' is not assignable to type 'SubmissionRequirement'.
+components/map/NodeEditorPanel.tsx(37,22): error TS2344: Type 'MapNode' does not satisfy the constraint 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'MapNode'.
+components/map/TeamNodeViewPanel.tsx(1135,16): error TS2741: Property 'mapId' is missing in type '{ nodeId: string; assessment: NodeAssessment; canResubmit: boolean; showAssessmentForm: any; assessmentAnswer: string; setAssessmentAnswer: Dispatch<SetStateAction<string>>; ... 5 more ...; progressStatus: any; }' but required in type 'AssessmentSectionProps'.
+components/profile/BadgeDetailModal.tsx(66,17): error TS18047: 'badge' is possibly 'null'.
+components/profile/BadgeDetailModal.tsx(67,17): error TS18047: 'badge' is possibly 'null'.
+components/profile/BadgeDetailModal.tsx(72,63): error TS18047: 'badge' is possibly 'null'.
+components/profile/BadgeDetailModal.tsx(83,21): error TS18047: 'badge' is possibly 'null'.
+components/profile/BadgeDetailModal.tsx(84,21): error TS18047: 'badge' is possibly 'null'.
+components/profile/BadgeDetailModal.tsx(89,21): error TS18047: 'badge' is possibly 'null'.
+components/profile/BadgeDetailModal.tsx(90,21): error TS18047: 'badge' is possibly 'null'.
+components/profile/BadgeDetailModal.tsx(91,21): error TS18047: 'badge' is possibly 'null'.
+components/profile/BadgeDetailModal.tsx(103,59): error TS18047: 'badge' is possibly 'null'.
+components/seeds/CreateRoomButton.tsx(87,41): error TS2339: Property 'message' does not exist on type '{}'.
+components/seeds/CreateRoomButton.tsx(88,40): error TS2339: Property 'hint' does not exist on type '{}'.
+components/seeds/SeedRoomDashboard.tsx(320,41): error TS7006: Parameter 'n' implicitly has an 'any' type.
+components/user-portal.tsx(131,24): error TS18046: 'b' is of type 'unknown'.
+components/user-portal.tsx(132,24): error TS18046: 'a' is of type 'unknown'.
+components/user-portal.tsx(136,24): error TS2345: Argument of type 'unknown[]' is not assignable to parameter of type 'SetStateAction<MindmapReflection[]>'.
+  Type 'unknown[]' is not assignable to type 'MindmapReflection[]'.
+    Type 'unknown' is not assignable to type 'MindmapReflection'.
+hooks/use-progress-maps.ts(105,28): error TS2345: Argument of type '(LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; })[]' is not assignable to parameter of type 'SetStateAction<MapWithStats[]>'.
+  Type '(LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; })[]' is not assignable to type 'MapWithStats[]'.
+    Type 'LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; }' is not assignable to type 'MapWithStats'.
+      Type 'LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; }' is not assignable to type '{ node_count: number; avg_difficulty: number; total_assessments: number; isEnrolled: boolean; hasStarted: boolean; map_type: "public" | "team" | "personal" | "classroom" | "forked"; source_info?: { ...; } | undefined; cover_image_url?: string | undefined; cover_image_blurhash?: string | undefined; cover_image_key?: ...'.
+        Types of property 'map_type' are incompatible.
+          Type '"public" | "classroom_exclusive"' is not assignable to type '"public" | "team" | "personal" | "classroom" | "forked"'.
+            Type '"classroom_exclusive"' is not assignable to type '"public" | "team" | "personal" | "classroom" | "forked"'.
+lib/supabase/assessment-groups.ts(245,37): error TS2339: Property 'learning_maps' does not exist on type '{ learning_maps: { id: any; parent_classroom_id: any; map_type: any; }[]; }[]'.
+lib/supabase/assessment-groups.ts(250,50): error TS2339: Property 'learning_maps' does not exist on type '{ learning_maps: { id: any; parent_classroom_id: any; map_type: any; }[]; }[]'.
+lib/supabase/assessment-groups.ts(303,37): error TS2339: Property 'learning_maps' does not exist on type '{ learning_maps: { id: any; parent_classroom_id: any; map_type: any; }[]; }[]'.
+lib/supabase/assessment-groups.ts(308,50): error TS2339: Property 'learning_maps' does not exist on type '{ learning_maps: { id: any; parent_classroom_id: any; map_type: any; }[]; }[]'.
+lib/supabase/assessment-groups.ts(464,67): error TS2339: Property 'id' does not exist on type '{ id: any; assessment_id: any; group_name: any; group_number: any; created_at: any; created_by: any; }[]'.
+lib/supabase/assessment-groups.ts(516,7): error TS2345: Argument of type 'PostgrestFilterBuilder<any, any, { node_id: any; }[], "node_assessments", unknown>' is not assignable to parameter of type 'readonly any[]'.
+  Type 'PostgrestFilterBuilder<any, any, { node_id: any; }[], "node_assessments", unknown>' is missing the following properties from type 'readonly any[]': length, concat, join, slice, and 25 more.
+lib/supabase/classroom-map-progress.ts(162,7): error TS2739: Type '{ id: any; email: any; full_name: any; avatar_url: any; }[]' is missing the following properties from type '{ id: string; email: string; full_name?: string | undefined; avatar_url?: string | undefined; }': id, email
+lib/supabase/classroom-memberships.ts(384,32): error TS7006: Parameter 'classroom' implicitly has an 'any' type.
+lib/supabase/enrollment.ts(16,22): error TS2339: Property 'auth' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(23,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(55,22): error TS2339: Property 'auth' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(59,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(83,22): error TS2339: Property 'auth' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(87,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(112,22): error TS2339: Property 'auth' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(124,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(162,22): error TS2339: Property 'auth' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(169,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(213,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(358,22): error TS2339: Property 'auth' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(364,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(443,22): error TS2339: Property 'auth' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(451,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/enrollment.ts(492,6): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", any>>'.
+lib/supabase/map-deletion.ts(133,11): error TS2345: Argument of type 'PostgrestFilterBuilder<any, any, { id: any; }[], "assessment_submissions", unknown>' is not assignable to parameter of type 'readonly any[]'.
+  Type 'PostgrestFilterBuilder<any, any, { id: any; }[], "assessment_submissions", unknown>' is missing the following properties from type 'readonly any[]': length, concat, join, slice, and 25 more.
+lib/supabase/map-deletion.ts(184,13): error TS2345: Argument of type 'PostgrestFilterBuilder<any, any, { id: any; }[], "assessment_submissions", unknown>' is not assignable to parameter of type 'readonly any[]'.
+  Type 'PostgrestFilterBuilder<any, any, { id: any; }[], "assessment_submissions", unknown>' is missing the following properties from type 'readonly any[]': length, concat, join, slice, and 25 more.
+lib/supabase/map-editors.ts(48,10): error TS2352: Conversion of type '{ id: any; map_id: any; user_id: any; granted_by: any; granted_at: any; profiles: { id: any; username: any; full_name: any; email: any; }[]; }[]' to type 'MapEditor[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: any; map_id: any; user_id: any; granted_by: any; granted_at: any; profiles: { id: any; username: any; full_name: any; email: any; }[]; }' is not comparable to type 'MapEditor'.
+    Types of property 'profiles' are incompatible.
+      Type '{ id: any; username: any; full_name: any; email: any; }[]' is missing the following properties from type '{ id: string; username: string; full_name: string | null; email?: string | undefined; }': id, username, full_name
+lib/supabase/map-editors.ts(159,13): error TS2352: Conversion of type '{ id: any; map_id: any; user_id: any; granted_by: any; granted_at: any; profiles: { id: any; username: any; full_name: any; email: any; }[]; }' to type 'MapEditor' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'profiles' are incompatible.
+    Type '{ id: any; username: any; full_name: any; email: any; }[]' is missing the following properties from type '{ id: string; username: string; full_name: string | null; email?: string | undefined; }': id, username, full_name
+lib/supabase/maps-server.ts(355,5): error TS2322: Type '{ id: any; title: any; description: any; creator_id: any; difficulty: any; category: any; total_students: any; finished_students: any; metadata: any; visibility: any; created_at: any; updated_at: any; ... 9 more ...; hasStarted: boolean; }[]' is not assignable to type '(LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "personal" | "classroom" | "forked"; isEnrolled: boolean; ... 4 more ...; cover_image_updated_at?: string | undefined; })[]'.
+  Type '{ id: any; title: any; description: any; creator_id: any; difficulty: any; category: any; total_students: any; finished_students: any; metadata: any; visibility: any; created_at: any; updated_at: any; ... 9 more ...; hasStarted: boolean; }' is not assignable to type 'LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "personal" | "classroom" | "forked"; isEnrolled: boolean; ... 4 more ...; cover_image_updated_at?: string | undefined; }'.
+    Type '{ id: any; title: any; description: any; creator_id: any; difficulty: any; category: any; total_students: any; finished_students: any; metadata: any; visibility: any; created_at: any; updated_at: any; ... 9 more ...; hasStarted: boolean; }' is not assignable to type 'LearningMap'.
+      Types of property 'map_type' are incompatible.
+        Type '"public" | "personal" | "forked"' is not assignable to type '"public" | "seed" | "private" | "classroom_exclusive" | undefined'.
+          Type '"personal"' is not assignable to type '"public" | "seed" | "private" | "classroom_exclusive" | undefined'.
+lib/supabase/maps.ts(651,5): error TS2322: Type '{ id: any; title: any; description: any; creator_id: any; difficulty: any; category: any; total_students: any; finished_students: any; metadata: any; visibility: any; created_at: any; updated_at: any; ... 10 more ...; hasStarted: any; }[]' is not assignable to type '(LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; })[]'.
+  Type '{ id: any; title: any; description: any; creator_id: any; difficulty: any; category: any; total_students: any; finished_students: any; metadata: any; visibility: any; created_at: any; updated_at: any; ... 10 more ...; hasStarted: any; }' is not assignable to type 'LearningMap & { node_count: number; avg_difficulty: number; total_assessments: number; map_type: "public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"; isEnrolled: boolean; hasStarted: boolean; source_info?: { ...; } | undefined; }'.
+    Type '{ id: any; title: any; description: any; creator_id: any; difficulty: any; category: any; total_students: any; finished_students: any; metadata: any; visibility: any; created_at: any; updated_at: any; ... 10 more ...; hasStarted: any; }' is not assignable to type 'LearningMap'.
+      Types of property 'map_type' are incompatible.
+        Type '"public" | "team" | "classroom_exclusive" | "personal" | "classroom" | "forked"' is not assignable to type '"public" | "seed" | "private" | "classroom_exclusive" | undefined'.
+          Type '"team"' is not assignable to type '"public" | "seed" | "private" | "classroom_exclusive" | undefined'.
+lib/supabase/maps.ts(911,32): error TS7006: Parameter 'n' implicitly has an 'any' type.
+lib/supabase/maps.ts(924,46): error TS7006: Parameter 'a' implicitly has an 'any' type.
+lib/supabase/maps.ts(938,54): error TS7006: Parameter 's' implicitly has an 'any' type.
+lib/supabase/nodes.ts(66,9): error TS2345: Argument of type 'PostgrestFilterBuilder<any, any, { id: any; }[], "node_assessments", unknown>' is not assignable to parameter of type 'readonly any[]'.
+  Type 'PostgrestFilterBuilder<any, any, { id: any; }[], "node_assessments", unknown>' is missing the following properties from type 'readonly any[]': length, concat, join, slice, and 25 more.
+lib/supabase/progresses.ts(68,3): error TS2322: Type 'Record<string, TeamNodeProgress | StudentProgress>' is not assignable to type 'Record<string, StudentProgress>'.
+  'string' index signatures are incompatible.
+    Type 'TeamNodeProgress | StudentProgress' is not assignable to type 'StudentProgress'.
+      Property 'user_id' is missing in type 'TeamNodeProgress' but required in type 'StudentProgress'.
+lib/supabase/reflection.ts(570,5): error TS2353: Object literal may only specify known properties, and 'currentStreak' does not exist in type 'MonthlyInsight'.
