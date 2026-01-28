@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Settings, Copy, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { Classroom } from "@/types/classroom";
 
 interface ClassroomSettingsModalProps {
@@ -79,9 +80,10 @@ export function ClassroomSettingsModal({
   const copyJoinCode = async () => {
     try {
       await navigator.clipboard.writeText(classroom.join_code);
-      // TODO: Show success toast
+      toast.success("Join code copied to clipboard!");
     } catch (error) {
       console.error("Failed to copy join code:", error);
+      toast.error("Failed to copy join code");
     }
   };
 
