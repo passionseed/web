@@ -7,6 +7,7 @@ import Embed, { defaultProviders } from "react-tiny-oembed";
 import { CanvaEmbed } from "./CanvaEmbed";
 import { marked } from "marked";
 import { OrderCodeActivity } from "./OrderCodeActivity";
+import { sanitizeHtml } from "@/lib/security";
 
 // Configure marked options for security and consistency
 marked.setOptions({
@@ -40,16 +41,17 @@ const processTextContent = (content: string): string => {
   // If content contains markdown syntax, parse as markdown
   if (containsMarkdownSyntax(content)) {
     try {
-      return marked.parse(content) as string;
+      const parsed = marked.parse(content) as string;
+      return sanitizeHtml(parsed);
     } catch (error) {
       console.error("Error parsing markdown:", error);
       // Fallback to raw content if markdown parsing fails
-      return content;
+      return sanitizeHtml(content);
     }
   }
 
   // Otherwise, treat as HTML (existing behavior)
-  return content;
+  return sanitizeHtml(content);
 };
 
 // Custom fallback components for better UX - memoized to prevent unnecessary re-renders

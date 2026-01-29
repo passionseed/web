@@ -38,3 +38,4 @@ supabase/seed.sql
 .kilocode/*
 !.kilocode/*.template
 !.kilocode/README.md
+coverage/

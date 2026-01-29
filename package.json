@@ -83,6 +83,8 @@
     "framer-motion": "^12.11.0",
     "html-to-image": "^1.11.13",
     "input-otp": "1.4.1",
+    "isomorphic-dompurify": "^2.35.0",
+    "jsdom": "^27.4.0",
     "jspdf": "^3.0.4",
     "lodash": "^4.17.21",
     "lucide-react": "^0.454.0",
