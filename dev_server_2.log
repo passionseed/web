@@ -1,0 +1,30 @@
+
+> my-v0-project@0.1.0 dev /app
+> next dev --turbopack
+
+ ⚠ `eslint` configuration in next.config.mjs is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+ ⚠ `images.domains` is deprecated in favor of `images.remotePatterns`. Please update next.config.mjs to protect your application from malicious users.
+ ⚠ Invalid next.config.mjs options detected:
+ ⚠     Unrecognized key(s) in object: 'eslint'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.0.2:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ parallelServerBuildTraces
+     ✓ parallelServerCompiles
+     · serverActions
+     ✓ webpackBuildWorker
+
+ ✓ Starting...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+ ✓ Ready in 1515ms
+ ○ Compiling / ...
+
+warn - The class `duration-[2000ms]` is ambiguous and matches multiple utilities.
+warn - If this is content and not a class, replace it with `duration-&lsqb;2000ms&rsqb;` to silence this warning.
+ GET / 200 in 16.4s (compile: 14.9s, proxy.ts: 134ms, render: 1293ms)
+ POST / 200 in 132ms (compile: 30ms, proxy.ts: 13ms, render: 89ms)
+ GET /grid.svg 404 in 3.3s (compile: 3.1s, render: 269ms)

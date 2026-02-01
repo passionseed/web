@@ -88,8 +88,8 @@ export default async function RootLayout({
 }>) {
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -105,7 +105,7 @@ export default async function RootLayout({
           <LanguageProvider>
             <DirectionFinderProvider>
               <ErrorBoundary>
-                <Layout>{children}</Layout>
+                <Layout user={user}>{children}</Layout>
                 <Toaster />
                 <DevHealthCheck />
                 <TOSAcceptanceModal />

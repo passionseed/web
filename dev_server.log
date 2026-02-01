@@ -1,0 +1,87 @@
+
+> my-v0-project@0.1.0 dev /app
+> next dev --turbopack
+
+ ⚠ `eslint` configuration in next.config.mjs is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+ ⚠ `images.domains` is deprecated in favor of `images.remotePatterns`. Please update next.config.mjs to protect your application from malicious users.
+ ⚠ Invalid next.config.mjs options detected:
+ ⚠     Unrecognized key(s) in object: 'eslint'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.0.2:3000
+   - Experiments (use with caution):
+     ✓ parallelServerBuildTraces
+     ✓ parallelServerCompiles
+     · serverActions
+     ✓ webpackBuildWorker
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+ ✓ Ready in 1510ms
+Supabase fetch failed in middleware: Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at updateSession (utils/supabase/middleware.ts:11:40)
+    at middleware (middleware.ts:6:39)
+   9 |   let user = null;
+  10 |   try {
+> 11 |     const supabase = createServerClient(
+     |                                        ^
+  12 |       process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  13 |       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  14 |       { {
+
+}
+ ○ Compiling / ...
+
+warn - The class `duration-[2000ms]` is ambiguous and matches multiple utilities.
+warn - If this is content and not a class, replace it with `duration-&lsqb;2000ms&rsqb;` to silence this warning.
+ ⨯ Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at createClient (utils/supabase/server.ts:7:28)
+    at async RootLayout (app/layout.tsx:89:20)
+   5 |   const cookieStore = await cookies();
+   6 |
+>  7 |   return createServerClient(
+     |                            ^
+   8 |     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+   9 |     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  10 |     { {
+  digest: '81405671'
+}
+ ⨯ Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at createClient (utils/supabase/server.ts:7:28)
+    at async Home (app/page.tsx:125:20)
+   5 |   const cookieStore = await cookies();
+   6 |
+>  7 |   return createServerClient(
+     |                            ^
+   8 |     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+   9 |     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  10 |     { {
+  digest: '3662000700'
+}
+ GET / 500 in 18.1s (compile: 16.8s, proxy.ts: 194ms, render: 1087ms)
+   Reload env: .env.local
+ ✓ Compiled in 1153ms
+ ELIFECYCLE  Command failed.
+[?25h
