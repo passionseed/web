@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { JourneyMapCanvas } from "@/components/journey";
 import { DirectionResultsView } from "@/components/education/direction-finder/DirectionResultsView";
 import { getUserDirectionFinderResult } from "@/app/actions/save-direction";
@@ -17,7 +17,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2, Compass } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { resetJourneyMap } from "@/app/actions/journey";
 import { toast } from "sonner";
@@ -53,36 +53,11 @@ export function JourneyPageClientWrapper({
   const [backToOverviewCallback, setBackToOverviewCallback] = useState<
     () => void
   >(() => {});
-
-  // Direction Result State
+  const [showDirection, setShowDirection] = useState(false);
   const [directionData, setDirectionData] = useState<{
     result: DirectionFinderResult;
     answers: AssessmentAnswers;
   } | null>(null);
-  const [showDirection, setShowDirection] = useState(false);
-  const [loadingDirection, setLoadingDirection] = useState(true);
-
-  useEffect(() => {
-    async function loadDirection() {
-      try {
-        const data = await getUserDirectionFinderResult();
-        if (data && data.result) {
-          setDirectionData({
-            result: data.result,
-            answers: data.answers,
-          });
-          // Default to showing direction only if we don't have URL params indicating specific journey view?
-          // For now, let's show it by default if it exists to satisfy "make it like the result page"
-          setShowDirection(true);
-        }
-      } catch (e) {
-        console.error("Failed to load direction", e);
-      } finally {
-        setLoadingDirection(false);
-      }
-    }
-    loadDirection();
-  }, []);
 
   const handleJourneyMapClick = useCallback(() => {
     backToOverviewCallback();
@@ -190,19 +165,6 @@ export function JourneyPageClientWrapper({
               >
                 <Trash2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Reset Map</span>
-              </Button>
-            )}
-
-            {/* Toggle Direction View */}
-            {directionData && !showDirection && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDirection(true)}
-                className="gap-2 border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
-              >
-                <Compass className="h-4 w-4" />
-                <span className="hidden sm:inline">View Direction</span>
               </Button>
             )}
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trash2, Eye, RefreshCw, GraduationCap, UserCheck } from "lucide-react";
@@ -19,14 +19,26 @@ interface AdminLobbiesProps {
     isAdmin: boolean;
 }
 
+interface SeedRoom {
+    id: string;
+    join_code: string;
+    status: "waiting" | "active" | "completed";
+    created_at: string;
+    max_students: number;
+    mentor_id: string | null;
+    seed?: { title: string };
+    members?: { id: string }[];
+    memberCount?: number;
+}
+
 export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [lobbies, setLobbies] = useState<any[]>([]);
+    const [lobbies, setLobbies] = useState<SeedRoom[]>([]);
     const [loading, setLoading] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{ roomId: string; joinCode: string } | null>(null);
     const [mentorLoading, setMentorLoading] = useState<string | null>(null);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-    const supabase = createClient();
+    const [supabase] = useState(() => createClient());
 
     // Get current user on mount
     useEffect(() => {
@@ -35,17 +47,16 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
             setCurrentUserId(user?.id || null);
         };
         getUser();
-    }, []);
+    }, [supabase.auth]);
 
-    const fetchLobbies = async () => {
-        console.log("🔄 Fetching lobbies...");
+    const fetchLobbies = useCallback(async () => {
         setLoading(true);
         const { data, error } = await supabase
             .from("seed_rooms")
             .select(`
                 *,
                 seed:seeds(title),
-                members:seed_room_members(count)
+                members:seed_room_members(id)
             `)
             .in("status", ["waiting", "active"])
             .order("created_at", { ascending: false });
@@ -54,23 +65,16 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
             console.error("Error fetching lobbies:", error);
             toast.error("Failed to load lobbies");
         } else {
-            console.log(`✅ Fetched ${data?.length || 0} rooms`);
-            // Count members for each room
-            const lobbiesWithCounts = await Promise.all(
-                (data || []).map(async (room) => {
-                    const { count } = await supabase
-                        .from("seed_room_members")
-                        .select("*", { count: "exact", head: true })
-                        .eq("room_id", room.id);
-
-                    return { ...room, memberCount: count || 0 };
-                })
-            );
-            console.log("Lobbies with counts:", lobbiesWithCounts);
+            // Calculate member counts from the joined data
+            // We cast data to any[] because supabase types might not infer the join correctly without generated types
+            const lobbiesWithCounts: SeedRoom[] = (data as unknown as SeedRoom[] || []).map((room) => ({
+                ...room,
+                memberCount: room.members?.length || 0,
+            }));
             setLobbies(lobbiesWithCounts);
         }
         setLoading(false);
-    };
+    }, [supabase]);
 
     const handleDeleteClick = (roomId: string, joinCode: string) => {
         setDeleteConfirm({ roomId, joinCode });
@@ -148,9 +152,10 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
 
             toast.success("You are now the mentor for this room!");
             fetchLobbies();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
             console.error("Error assigning mentor:", error);
-            toast.error(error?.message || "Failed to assign as mentor");
+            toast.error(message || "Failed to assign as mentor");
         } finally {
             setMentorLoading(null);
         }
@@ -167,9 +172,10 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
             if (error) throw error;
             toast.success("Mentor unassigned");
             fetchLobbies();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
             console.error("Error unassigning mentor:", error);
-            toast.error(error.message || "Failed to unassign mentor");
+            toast.error(message || "Failed to unassign mentor");
         } finally {
             setMentorLoading(null);
         }
@@ -179,7 +185,7 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
         if (isOpen) {
             fetchLobbies();
         }
-    }, [isOpen]);
+    }, [isOpen, fetchLobbies]);
 
     if (!isAdmin) return null;
 
@@ -236,7 +242,7 @@ export function AdminLobbies({ isAdmin }: AdminLobbiesProps) {
                                             </span>
                                         </div>
                                         <p className="text-white font-medium mb-1">
-                                            {(lobby as any).seed?.title || "Unknown Seed"}
+                                            {lobby.seed?.title || "Unknown Seed"}
                                         </p>
                                         <div className="flex items-center gap-4 text-sm text-neutral-400">
                                             <span className="flex items-center gap-1">
