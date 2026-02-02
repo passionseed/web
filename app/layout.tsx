@@ -87,9 +87,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const supabase = await createClient();
+  // Fetch user on server to prevent auth waterfall and layout shift on client
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -105,7 +106,7 @@ export default async function RootLayout({
           <LanguageProvider>
             <DirectionFinderProvider>
               <ErrorBoundary>
-                <Layout>{children}</Layout>
+                <Layout initialUser={user}>{children}</Layout>
                 <Toaster />
                 <DevHealthCheck />
                 <TOSAcceptanceModal />

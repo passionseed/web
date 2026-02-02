@@ -11,10 +11,12 @@ import type { User } from "@supabase/supabase-js";
 
 interface LayoutProps {
   children: React.ReactNode;
+  initialUser?: User | null;
 }
 
-export function Layout({ children }: LayoutProps) {
-  const [user, setUser] = useState<User | null>(null);
+export function Layout({ children, initialUser }: LayoutProps) {
+  // Initialize with initialUser to prevent layout shift on hydration
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
   const pathname = usePathname();
   
   // Hide navbar for profile completion pages
