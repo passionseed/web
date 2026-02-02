@@ -36,6 +36,7 @@ import {
 } from "@/lib/supabase/nodes";
 import { useToast } from "@/components/ui/use-toast";
 import { marked } from "marked";
+import { sanitizeHtml } from "@/lib/security";
 
 // Content type configurations
 const CONTENT_TYPE_CONFIG = {
@@ -836,9 +837,9 @@ const ContentPreviewDisplay = ({
     // Render markdown if it starts with markdown syntax, otherwise treat as plain text
     const renderMarkdown = (text: string) => {
       try {
-        return marked(text);
+        return sanitizeHtml(marked.parse(text) as string);
       } catch {
-        return `<p>${text.replace(/\n/g, "</p><p>")}</p>`;
+        return sanitizeHtml(`<p>${text.replace(/\n/g, "</p><p>")}</p>`);
       }
     };
 
