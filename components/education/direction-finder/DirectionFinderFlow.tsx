@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { CoreAssessment } from "./CoreAssessment";
 import { AIConversation } from "./AIConversation";
-import { DirectionResults } from "./DirectionResults";
+import { DirectionResultsView } from "./DirectionResultsView";
 import { MilestoneEvaluator } from "./MilestoneEvaluator";
 import { CommitmentContract } from "./CommitmentContract";
 import {
@@ -454,15 +454,13 @@ function DirectionFinderFlowContent({
     if (currentStep === "results" && result) {
       return (
         <div className="relative">
-          <DirectionResults
+          <DirectionResultsView
             result={result}
             answers={answers as AssessmentAnswers}
-            onComplete={() => {}} // Remove redundant onComplete here if logical flow is via Select Path now
             onBack={handleBackFromResults}
             onRefine={() => updateStep(STEPS_ORDER.indexOf("ai_chat"))}
             chatHistory={chatHistory}
-            model={model}
-            lang={lang}
+            mode="assessment"
             resultId={serverDataId || undefined}
             onStartNew={handleStartNewSession}
             onSelect={handleSelectPath}

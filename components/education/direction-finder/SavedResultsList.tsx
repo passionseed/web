@@ -23,7 +23,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { format } from "date-fns";
-import { DirectionResults } from "./DirectionResults";
+import { DirectionResultsView } from "./DirectionResultsView";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 interface SavedResult {
@@ -84,24 +84,17 @@ export function SavedResultsList({
             {format(new Date(selectedResult.updated_at), "PPP p")}
           </div>
         </div>
-        <DirectionResults
+        <DirectionResultsView
           result={selectedResult.result}
           answers={selectedResult.answers}
-          onComplete={() => {
-            if (onSelect) {
-              onSelect(selectedResult.result);
-            } else {
-              setSelectedResult(null);
-            }
-          }}
           onBack={() => setSelectedResult(null)}
           chatHistory={selectedResult.chat_history}
-          lang={lang}
           resultId={selectedResult.id}
+          mode="journey_view"
           // Review mode: disable editing/refining
           onRefine={undefined}
           onStartNew={undefined}
-          onSelect={undefined} // Or maybe allow re-selecting?
+          onSelect={undefined}
         />
       </div>
     );
