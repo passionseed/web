@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CoreAssessment } from "@/components/education/direction-finder/CoreAssessment";
 import { AIConversation } from "@/components/education/direction-finder/AIConversation";
-import { NorthStarResults } from "./NorthStarResults"; // We will create this next
+import { DirectionResultsView } from "@/components/education/direction-finder/DirectionResultsView";
 
 // Types & Actions
 import {
@@ -73,7 +73,7 @@ function NewNorthStarFlowContent() {
   // Data State
   const [answers, setAnswers] = useState<Partial<AssessmentAnswers>>({});
   const [chatHistory, setChatHistory] = useState<Message[] | undefined>(
-    undefined
+    undefined,
   );
   const [result, setResult] = useState<DirectionFinderResult | null>(null);
   const [serverDataId, setServerDataId] = useState<string | null>(null);
@@ -148,7 +148,7 @@ function NewNorthStarFlowContent() {
           answers,
           history: chatHistory,
           updatedAt: Date.now(),
-        })
+        }),
       );
     }
   }, [answers, chatHistory, isLoading]);
@@ -207,7 +207,7 @@ function NewNorthStarFlowContent() {
         answers as AssessmentAnswers,
         finalResult || result || null, // Pass null if no result yet, need to check type compatibility
         chatHistory,
-        serverDataId || undefined
+        serverDataId || undefined,
       );
       if (saved?.id) setServerDataId(saved.id);
     } catch (e) {
@@ -223,7 +223,7 @@ function NewNorthStarFlowContent() {
         answers as AssessmentAnswers,
         finalResult,
         chatHistory,
-        serverDataId || undefined
+        serverDataId || undefined,
       );
       toast.success("Analysis Complete!");
     } catch (e) {
@@ -294,10 +294,11 @@ function NewNorthStarFlowContent() {
         )}
 
         {currentFlowStep === "results" && result && (
-          <NorthStarResults
+          <DirectionResultsView
             result={result}
             answers={answers as AssessmentAnswers}
             onBack={() => updateURL("ai-chat")}
+            mode="assessment"
             userRole="beta-tester" // Placeholder, in real app we might pass actual role if needed for debug
           />
         )}

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import { JourneyMapCanvas } from "@/components/journey";
-import { NorthStarResults } from "@/components/journey/NorthStarResults";
+import { DirectionResultsView } from "@/components/education/direction-finder/DirectionResultsView";
 import { getUserDirectionFinderResult } from "@/app/actions/save-direction";
 import {
   DirectionFinderResult,
@@ -212,11 +212,11 @@ export function JourneyPageClientWrapper({
         <main className="flex-1 overflow-y-auto bg-slate-950 relative">
           {showDirection && directionData ? (
             <div className="container mx-auto max-w-7xl px-4 py-8">
-              <NorthStarResults
+              <DirectionResultsView
                 result={directionData.result}
                 answers={directionData.answers}
                 onBack={() => setShowDirection(false)}
-                backLabel="Back to Journey Map"
+                mode="journey_view"
               />
             </div>
           ) : (
