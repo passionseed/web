@@ -36,6 +36,7 @@ import {
 } from "@/lib/supabase/nodes";
 import { useToast } from "@/components/ui/use-toast";
 import { marked } from "marked";
+import { sanitizeHtml } from "@/lib/security";
 
 // Content type configurations
 const CONTENT_TYPE_CONFIG = {
@@ -836,7 +837,7 @@ const ContentPreviewDisplay = ({
     // Render markdown if it starts with markdown syntax, otherwise treat as plain text
     const renderMarkdown = (text: string) => {
       try {
-        return marked(text);
+        return marked.parse(text, { async: false }) as string;
       } catch {
         return `<p>${text.replace(/\n/g, "</p><p>")}</p>`;
       }
@@ -851,7 +852,7 @@ const ContentPreviewDisplay = ({
               <div
                 className="text-sm text-slate-700 line-clamp-3 prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{
-                  __html: renderMarkdown(item.content_body),
+                  __html: sanitizeHtml(renderMarkdown(item.content_body)),
                 }}
               />
               {hasMoreContent && (
@@ -871,7 +872,7 @@ const ContentPreviewDisplay = ({
               <div
                 className="text-sm text-slate-700 prose prose-sm max-w-none space-y-2"
                 dangerouslySetInnerHTML={{
-                  __html: renderMarkdown(item.content_body),
+                  __html: sanitizeHtml(renderMarkdown(item.content_body)),
                 }}
               />
               <button

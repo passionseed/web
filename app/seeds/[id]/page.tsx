@@ -7,6 +7,7 @@ import Link from "next/link";
 import { CreateRoomButton } from "@/components/seeds/CreateRoomButton";
 import { SeedSettingsButton } from "@/components/seeds/SeedSettingsButton";
 import { marked } from "marked";
+import { sanitizeHtml } from "@/lib/security";
 
 interface SeedDetailPageProps {
     params: Promise<{
@@ -95,9 +96,11 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
     console.log("Can edit:", canEdit);
 
     // Parse description markdown with line breaks preserved
-    const descriptionHtml = seed.description
+    const rawHtml = seed.description
         ? await marked.parse(seed.description.replace(/\n/g, '  \n')) // Preserve line breaks in markdown
         : null;
+
+    const descriptionHtml = rawHtml ? sanitizeHtml(rawHtml) : null;
 
     return (
         <div className="min-h-screen relative overflow-hidden font-sans">
