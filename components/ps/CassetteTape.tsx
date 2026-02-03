@@ -39,22 +39,22 @@ export function CassetteTape({
 
   const tapeStyle = theme
     ? {
-        background: theme.bg,
-      }
+      background: theme.bg,
+    }
     : {}; // Default handled by class
 
   const labelStyle = theme
     ? {
-        background: theme.labelStyle?.background,
-        borderColor: theme.labelStyle?.borderColor,
-        color: theme.labelStyle?.color,
-      }
+      background: theme.labelStyle?.background,
+      borderColor: theme.labelStyle?.borderColor,
+      color: theme.labelStyle?.color,
+    }
     : {};
 
   const grooveStyle = theme
     ? {
-        borderColor: theme.grooveStyle?.borderColor,
-      }
+      borderColor: theme.grooveStyle?.borderColor,
+    }
     : {};
 
   const isCustomTheme = !!theme;
@@ -63,9 +63,8 @@ export function CassetteTape({
 
   return (
     <div
-      className={`relative group/cassette w-full mx-auto perspective-1000 ${
-        props.className || "max-w-[420px]"
-      }`}
+      className={`relative group/cassette w-full mx-auto perspective-1000 ${props.className || "max-w-[420px]"
+        }`}
     >
       {/* Stats Paper (Integrated Mode) - Behind */}
       {!hidePaper && stats && (
@@ -110,7 +109,7 @@ export function CassetteTape({
             </div>
 
             {/* Lines for writing */}
-            <div className="flex-1 space-y-1 relative">
+            <div className="flex-1 space-y-2.5 relative">
               <div className="flex justify-between items-start">
                 <p
                   className={`text-[10px] line-clamp-2 font-mono leading-tight flex-1 mr-2 ${!isCustomTheme ? "text-neutral-800/80" : "opacity-80"}`}
