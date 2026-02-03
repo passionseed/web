@@ -18,6 +18,7 @@ import { PSProject, updateProject } from "@/actions/ps";
 import { toast } from "sonner";
 import { Edit, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { SpotifyTrackSearchInput } from "./SpotifyTrackSearchInput";
 
 interface EditProjectDialogProps {
   project: PSProject;
@@ -125,42 +126,13 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
               <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">
                 Spotify Integration
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid items-center gap-2">
-                  <Label htmlFor="spotify_track_name">Track Name</Label>
-                  <Input
-                    id="spotify_track_name"
-                    name="spotify_track_name"
-                    defaultValue={project.spotify_track_name || ""}
-                  />
-                </div>
-                <div className="grid items-center gap-2">
-                  <Label htmlFor="spotify_artist_name">Artist Name</Label>
-                  <Input
-                    id="spotify_artist_name"
-                    name="spotify_artist_name"
-                    defaultValue={project.spotify_artist_name || ""}
-                  />
-                </div>
-                <div className="grid items-center gap-2 col-span-2">
-                  <Label htmlFor="spotify_track_id">Spotify Track ID</Label>
-                  <Input
-                    id="spotify_track_id"
-                    name="spotify_track_id"
-                    defaultValue={project.spotify_track_id || ""}
-                    placeholder="e.g. 4PTG3Z6ehGkBFwjybzWkR8"
-                  />
-                </div>
-                <div className="grid items-center gap-2 col-span-2">
-                  <Label htmlFor="preview_url">Preview URL</Label>
-                  <Input
-                    id="preview_url"
-                    name="preview_url"
-                    defaultValue={project.preview_url || ""}
-                    placeholder="https://p.scdn.co/mp3-preview/..."
-                  />
-                </div>
-              </div>
+              <SpotifyTrackSearchInput
+                defaultTrackId={project.spotify_track_id || undefined}
+                defaultTrackName={project.spotify_track_name || undefined}
+                defaultArtistName={project.spotify_artist_name || undefined}
+                defaultAlbumCover={project.spotify_album_cover_url || undefined}
+                defaultPreviewUrl={project.preview_url || undefined}
+              />
             </div>
           </div>
 
