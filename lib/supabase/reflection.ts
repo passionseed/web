@@ -10,7 +10,7 @@ import {
   ReflectionCalendarDay,
 } from "@/types/reflection";
 import { Project, ProjectFormData } from "@/types/project";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient, User } from "@supabase/supabase-js";
 
 export type { ReflectionTimelineNode };
 
@@ -213,10 +213,17 @@ interface RawReflection {
   project: Project;
 }
 
-export async function getUserDashboardData(supabase: SupabaseClient) {
-  const { data } = await supabase.auth.getUser();
-  console.log(data);
-  const user = data.user;
+export async function getUserDashboardData(
+  supabase: SupabaseClient,
+  currentUser?: User | null
+) {
+  let user = currentUser;
+
+  if (!user) {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  }
+
   if (!user) {
     throw new Error("User not authenticated");
   }
@@ -226,79 +233,74 @@ export async function getUserDashboardData(supabase: SupabaseClient) {
   let reflectionsData: any[] = [];
   let workshopsData: any[] = [];
 
-  // Try to fetch projects with comprehensive error handling
-  try {
-    const projectsRes = await supabase
-      .from(TABLE_NAMES.PROJECTS)
-      .select("*, tags:project_tags(tags(*))")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+  // Execute queries in parallel
+  const [projectsRes, reflectionsRes, mindmapReflectionsRes, workshopsRes] =
+    await Promise.all([
+      // Fetch projects
+      supabase
+        .from(TABLE_NAMES.PROJECTS)
+        .select("*, tags:project_tags(tags(*))")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      // Fetch reflections
+      supabase
+        .from(TABLE_NAMES.REFLECTIONS)
+        .select("created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      // Fetch mindmap reflections
+      supabase
+        .from("mindmap_reflections")
+        .select("created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      // Fetch workshops
+      supabase
+        .from("user_workshops")
+        .select("workshops(*)")
+        .eq("user_id", user.id)
+        .limit(3),
+    ]);
 
-    if (projectsRes.error) {
-      console.warn("Projects data not accessible:", projectsRes.error);
-      console.warn("Error code:", projectsRes.error.code);
-      console.warn("Error message:", projectsRes.error.message);
-    } else {
-      projectsData = projectsRes.data || [];
-    }
-  } catch (error) {
-    console.error("Failed to fetch projects:", error);
+  // Process projects result
+  if (projectsRes.error) {
+    console.warn("Projects data not accessible:", projectsRes.error);
+    console.warn("Error code:", projectsRes.error.code);
+    console.warn("Error message:", projectsRes.error.message);
+  } else {
+    projectsData = projectsRes.data || [];
   }
 
-  // Try to fetch reflections with comprehensive error handling
-  try {
-    const reflectionsRes = await supabase
-      .from(TABLE_NAMES.REFLECTIONS)
-      .select("created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (reflectionsRes.error) {
-      console.warn("Reflections data not accessible:", reflectionsRes.error);
-      console.warn("Error code:", reflectionsRes.error.code);
-      console.warn("Error message:", reflectionsRes.error.message);
-    } else {
-      reflectionsData = reflectionsRes.data || [];
-    }
-  } catch (error) {
-    console.error("Failed to fetch reflections:", error);
+  // Process reflections result
+  if (reflectionsRes.error) {
+    console.warn("Reflections data not accessible:", reflectionsRes.error);
+    console.warn("Error code:", reflectionsRes.error.code);
+    console.warn("Error message:", reflectionsRes.error.message);
+  } else {
+    reflectionsData = reflectionsRes.data || [];
   }
 
-  // Also fetch mindmap reflections
-  try {
-    const mindmapReflectionsRes = await supabase
-      .from("mindmap_reflections")
-      .select("created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (mindmapReflectionsRes.error) {
-      console.warn("Mindmap reflections data not accessible:", mindmapReflectionsRes.error);
-    } else {
-      // Combine with existing reflections
-      reflectionsData = [...reflectionsData, ...(mindmapReflectionsRes.data || [])];
-    }
-  } catch (error) {
-    console.error("Failed to fetch mindmap reflections:", error);
+  // Process mindmap reflections result
+  if (mindmapReflectionsRes.error) {
+    console.warn(
+      "Mindmap reflections data not accessible:",
+      mindmapReflectionsRes.error
+    );
+  } else {
+    // Combine with existing reflections
+    reflectionsData = [
+      ...reflectionsData,
+      ...(mindmapReflectionsRes.data || []),
+    ];
   }
 
-  // Try to fetch workshops with comprehensive error handling
-  try {
-    const workshopsRes = await supabase
-      .from("user_workshops")
-      .select("workshops(*)")
-      .eq("user_id", user.id)
-      .limit(3);
-
-    if (workshopsRes.error) {
-      console.warn("Workshops data not accessible:", workshopsRes.error);
-      console.warn("Error code:", workshopsRes.error.code);
-      console.warn("Error message:", workshopsRes.error.message);
-    } else {
-      workshopsData = workshopsRes.data || [];
-    }
-  } catch (error) {
-    console.error("Failed to fetch workshops:", error);
+  // Process workshops result
+  if (workshopsRes.error) {
+    console.warn("Workshops data not accessible:", workshopsRes.error);
+    console.warn("Error code:", workshopsRes.error.code);
+    console.warn("Error message:", workshopsRes.error.message);
+  } else {
+    workshopsData = workshopsRes.data || [];
   }
 
   // Calculate streak using the safe reflectionsData

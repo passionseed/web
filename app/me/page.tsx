@@ -16,7 +16,7 @@ export default async function PortalPage() {
     redirect("/login");
   }
 
-  const dashboardData = await getUserDashboardData(supabase);
+  const dashboardData = await getUserDashboardData(supabase, user);
 
   const userName =
     user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
