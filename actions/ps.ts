@@ -451,6 +451,87 @@ export async function updateProject(formData: FormData) {
     revalidatePath(`/ps/projects/${projectId}`);
     revalidatePath("/ps/projects");
 }
+
+export async function deleteProject(projectId: string) {
+    await checkPSRole();
+    const supabase = await createClient();
+
+    // Supabase should handle cascading deletes if foreign keys are set up properly
+    // But we'll delete manually to be safe
+
+    // 1. Delete focus sessions for project tasks
+    const { data: tasks } = await supabase
+        .from("ps_tasks")
+        .select("id")
+        .eq("project_id", projectId);
+
+    if (tasks && tasks.length > 0) {
+        const taskIds = tasks.map(t => t.id);
+        await supabase
+            .from("ps_focus_sessions")
+            .delete()
+            .in("task_id", taskIds);
+    }
+
+    // 2. Delete feedback task links
+    const { data: forms } = await supabase
+        .from("ps_feedback_forms")
+        .select("id")
+        .eq("project_id", projectId);
+
+    if (forms && forms.length > 0) {
+        const formIds = forms.map(f => f.id);
+
+        // Get submissions to delete task links
+        const { data: submissions } = await supabase
+            .from("ps_submissions")
+            .select("id")
+            .in("form_id", formIds);
+
+        if (submissions && submissions.length > 0) {
+            const submissionIds = submissions.map(s => s.id);
+            await supabase
+                .from("ps_feedback_task_links")
+                .delete()
+                .in("submission_id", submissionIds);
+        }
+
+        // Delete submissions
+        await supabase
+            .from("ps_submissions")
+            .delete()
+            .in("form_id", formIds);
+
+        // Delete feedback forms
+        await supabase
+            .from("ps_feedback_forms")
+            .delete()
+            .eq("project_id", projectId);
+    }
+
+    // 3. Delete tasks
+    await supabase
+        .from("ps_tasks")
+        .delete()
+        .eq("project_id", projectId);
+
+    // 4. Delete project members
+    await supabase
+        .from("ps_project_members")
+        .delete()
+        .eq("project_id", projectId);
+
+    // 5. Finally, delete the project
+    const { error } = await supabase
+        .from("ps_projects")
+        .delete()
+        .eq("id", projectId);
+
+    if (error) throw error;
+
+    revalidatePath("/ps/projects");
+    revalidatePath("/ps/hackathon");
+}
 // Leaderboard
 export async function getWeeklyLeaderboard() {
     await checkPSRole();

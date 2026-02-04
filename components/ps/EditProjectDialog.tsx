@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Edit, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SpotifyTrackSearchInput } from "./SpotifyTrackSearchInput";
+import { DeleteProjectDialog } from "./DeleteProjectDialog";
 
 interface EditProjectDialogProps {
   project: PSProject;
@@ -26,6 +27,7 @@ interface EditProjectDialogProps {
 
 export function EditProjectDialog({ project }: EditProjectDialogProps) {
   const [open, setOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -134,6 +136,22 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
                 defaultPreviewUrl={project.preview_url || undefined}
               />
             </div>
+            {/* Danger Zone */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="bg-destructive/10 p-4 rounded-lg flex items-center justify-between">
+                <div className="text-sm text-destructive font-medium">
+                  Delete this {project.type === "hackathon" ? "department" : "project"}
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
           </div>
 
           <DialogFooter>
@@ -150,6 +168,15 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
             </Button>
           </DialogFooter>
         </form>
+
+        <DeleteProjectDialog
+          projectId={project.id}
+          projectName={project.name}
+          projectType={project.type}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          hideTrigger={true}
+        />
       </DialogContent>
     </Dialog>
   );
