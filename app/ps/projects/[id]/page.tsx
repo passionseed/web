@@ -10,6 +10,7 @@ import { ProjectGuide } from "@/components/ps/project-guide";
 import { StatsPaper } from "@/components/ps/StatsPaper";
 import { EditProjectDialog } from "@/components/ps/EditProjectDialog";
 
+
 export const dynamic = "force-dynamic";
 
 interface ProjectDetailPageProps {
