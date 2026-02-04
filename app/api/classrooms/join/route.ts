@@ -51,14 +51,6 @@ export async function POST(request: NextRequest) {
     const cleanJoinCode = join_code.toUpperCase().trim();
     console.log("🔍 Looking for classroom with code:", cleanJoinCode);
 
-    // First, let's see all classrooms to debug
-    const { data: allClassrooms, error: allError } = await supabase
-      .from("classrooms")
-      .select("id, name, join_code, is_active");
-
-    console.log("All classrooms:", allClassrooms);
-    console.log("Query error:", allError);
-
     // Find classroom by join code
     const { data: classroom, error: classroomError } = await supabase
       .from("classrooms")
