@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { CreateExampleMapFlow } from "@/components/admin/CreateExampleMapFlow";
+import { checkAdminAccess } from "@/utils/admin";
 
 async function getUniversity(supabase: any, universityId: string) {
   const { data: university, error } = await supabase
@@ -24,22 +25,7 @@ export default async function CreateExampleMapPage({
   const supabase = await createClient();
   const resolvedParams = await params;
   
-  // Check authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    redirect("/login");
-  }
-
-  // Get user profile (simplified check - in real app would check admin role)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile) {
-    redirect("/me");
-  }
+  const user = await checkAdminAccess(supabase);
 
   const university = await getUniversity(supabase, resolvedParams.universityId);
 

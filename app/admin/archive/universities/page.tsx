@@ -1,25 +1,10 @@
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
 import { UniversityManagement } from '@/components/admin/UniversityManagement'
+import { checkAdminAccess } from "@/utils/admin";
 
 export default async function UniversitiesArchivePage() {
   const supabase = await createClient()
-  
-  // Check authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    redirect('/login')
-  }
-
-  // Get user profile to check admin status (simplified check for now)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  // For now, allow all authenticated users (in real app, check admin role)
-  // TODO: Add proper admin role checking when admin system is implemented
+  const user = await checkAdminAccess(supabase);
   
   // Fetch universities for the admin interface
   const { data: universities, error: universitiesError } = await supabase

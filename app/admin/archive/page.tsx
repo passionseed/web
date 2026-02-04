@@ -1,27 +1,10 @@
-import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
+import { checkAdminAccess } from "@/utils/admin";
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { University, Database, Archive } from 'lucide-react'
 
 export default async function ArchivePage() {
-  const supabase = await createClient()
-  
-  // Check authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    redirect('/login')
-  }
-
-  // Get user profile to check admin status (simplified check for now)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  // For now, allow all authenticated users (in real app, check admin role)
-  // TODO: Add proper admin role checking when admin system is implemented
+  await checkAdminAccess();
 
   return (
     <div className="container mx-auto py-8">
