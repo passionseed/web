@@ -1,4 +1,5 @@
 import { getProjectsWithStats } from "@/actions/ps";
+import { getPendingRequestCounts } from "@/actions/ps-requests";
 import { CassetteTape } from "@/components/ps/CassetteTape";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
@@ -19,9 +20,13 @@ export default async function HackathonPage() {
     }
 
     let projects = [];
+    let pendingCounts: Record<string, number> = {};
     try {
         // Fetch hackathons instead of projects
         projects = await getProjectsWithStats('hackathon');
+        // Get pending request counts
+        const projectIds = projects.map((p: any) => p.id);
+        pendingCounts = await getPendingRequestCounts(projectIds);
     } catch (e) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -55,6 +60,7 @@ export default async function HackathonPage() {
                         <CassetteTape
                             project={project}
                             stats={project.stats}
+                            pendingRequestCount={pendingCounts[project.id] || 0}
                         />
                     </div>
                 ))}

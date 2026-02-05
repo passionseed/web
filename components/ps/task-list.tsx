@@ -11,6 +11,7 @@ import {
     updateTaskPartial,
     PSProjectMember,
 } from "@/actions/ps";
+import { PSRequest } from "@/actions/ps-requests";
 import { Badge } from "@/components/ui/badge";
 import {
     Select,
@@ -60,6 +61,7 @@ import {
 } from "@dnd-kit/core";
 import { DraggableTask, TaskCard } from "./draggable-task";
 import { FocusTimer } from "./focus-timer";
+import { RequestDetailsDialog } from "./RequestDetailsDialog";
 import { useToast } from "@/components/ui/use-toast";
 import {
     format,
@@ -80,6 +82,7 @@ import {
 
 interface TaskListProps {
     tasks: PSTask[];
+    requests?: PSRequest[]; // Optional requests to display on calendar
     projectId?: string; // Optional if global view
     themeColor?: any;
     initialDate?: Date;
@@ -94,6 +97,7 @@ interface CommonTaskProps {
     onEdit: (task: PSTask) => void;
     onView: (task: PSTask) => void;
     onFocus: (task: PSTask) => void;
+    onViewRequest?: (request: PSRequest) => void;
     getDifficultyColor: (diff: number) => string;
     getStatusIcon: (status: string) => React.ReactNode;
     members?: PSProjectMember[];
@@ -118,6 +122,7 @@ const getDayStyles = (date: Date) => {
 function DayColumn({
     date,
     tasks,
+    requests = [],
     isOver,
     onAddTask,
     onFocusDay,
@@ -125,6 +130,7 @@ function DayColumn({
 }: {
     date: Date;
     tasks: PSTask[];
+    requests?: PSRequest[];
     isOver: boolean;
     onAddTask: (date: Date) => void;
     onFocusDay: (tasks: PSTask[]) => void;
@@ -142,17 +148,17 @@ function DayColumn({
         <div
             ref={setNodeRef}
             className={`
-        flex flex-col gap-1 p-1 transition-all duration-300 h-full bg-background
+        flex flex-col gap-1 p-2 transition-all duration-300 min-h-[120px] bg-background
         ${isOver ? "bg-accent/50" : ""}
       `}
         >
-            <div className="flex justify-between items-start px-1 pt-1">
+            <div className="flex justify-between items-start px-1">
                 <span className={`text-xs font-semibold ${isCurrentDay ? "bg-red-500 text-white w-6 h-6 flex items-center justify-center rounded-full" : "text-muted-foreground"}`}>
                     {isFirstDayOfMonth ? format(date, "MMM d") : format(date, "d")}
                 </span>
             </div>
 
-            <div className="flex-1 flex flex-col gap-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-muted-foreground/20">
+            <div className="flex flex-col gap-1">
                 {tasks.map((task) => {
                     const isOverdue = isPastDay && task.status !== "done";
                     return (
@@ -167,6 +173,30 @@ function DayColumn({
                         </div>
                     );
                 })}
+                {requests.map((request) => (
+                    <div
+                        key={request.id}
+                        className="text-[10px] px-2 py-1 rounded bg-purple-500/20 border border-purple-500/40 cursor-pointer hover:bg-purple-500/30 transition-colors"
+                        title={`Request: ${request.title} (${request.status})`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            commonProps.onViewRequest?.(request);
+                        }}
+                    >
+                        <div className="font-medium truncate">{request.title}</div>
+                        <div className="text-purple-400 text-[8px] truncate">
+                            {request.status === "pending"
+                                ? "⏳ Pending"
+                                : request.status === "accepted"
+                                    ? "✓ Accepted"
+                                    : request.status === "in_progress"
+                                        ? "▶ In Progress"
+                                        : request.status === "completed"
+                                            ? "✓ Done"
+                                            : request.status}
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -224,7 +254,7 @@ function UnscheduledArea({
     );
 }
 
-export function TaskList({ tasks, projectId, themeColor, initialDate, isMember = true, members = [], currentUserId }: TaskListProps) {
+export function TaskList({ tasks, requests = [], projectId, themeColor, initialDate, isMember = true, members = [], currentUserId }: TaskListProps) {
     const [currentMonth, setCurrentMonth] = useState(() =>
         startOfMonth(initialDate || new Date())
     );
@@ -246,6 +276,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
     const [activeTasksForFocus, setActiveTasksForFocus] = useState<PSTask[]>([]);
     const [editingTask, setEditingTask] = useState<PSTask | null>(null);
     const [viewingTask, setViewingTask] = useState<PSTask | null>(null);
+    const [viewingRequest, setViewingRequest] = useState<PSRequest | null>(null);
 
     // Create Task State
     const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
@@ -296,6 +327,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
         },
         onView: (task) => setViewingTask(task),
         onFocus: (task) => setActiveTasksForFocus([task]),
+        onViewRequest: (request) => setViewingRequest(request),
         getDifficultyColor: (diff: number) => {
             if (diff >= 8) return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
             if (diff >= 5) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100";
@@ -399,6 +431,27 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
         return { tasksByDate: grouped, unscheduledTasks: unscheduled };
     }, [optimisticTasks, calendarDays]);
 
+    // Group requests by date_needed
+    const requestsByDate = useMemo(() => {
+        const grouped = new Map<string, PSRequest[]>();
+        calendarDays.forEach(date => {
+            grouped.set(format(date, "yyyy-MM-dd"), []);
+        });
+
+        requests.forEach(request => {
+            if (request.date_needed) {
+                // Convert ISO timestamp to yyyy-MM-dd format to match calendar dates
+                const requestDate = format(new Date(request.date_needed), "yyyy-MM-dd");
+
+                if (grouped.has(requestDate)) {
+                    grouped.get(requestDate)?.push(request);
+                }
+            }
+        });
+
+        return grouped;
+    }, [requests, calendarDays]);
+
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
     );
@@ -413,7 +466,7 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
         >
-            <div className="flex flex-col gap-2 pb-4 h-[calc(100vh-140px)] overflow-hidden">
+            <div className="flex flex-col gap-2 pb-4">
                 {/* Navigation */}
                 <div className="flex items-center justify-between px-4">
                     <Button variant="ghost" onClick={() => setCurrentMonth(d => subMonths(d, 1))}>
@@ -440,38 +493,43 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                     commonProps={commonTaskProps}
                 />
 
-                {/* Weekday Header */}
-                <div className="grid grid-cols-7 gap-px border bg-border mb-px">
-                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
-                        <div key={day} className="bg-background p-2 text-sm font-medium text-muted-foreground text-center">
-                            {day}
-                        </div>
-                    ))}
-                </div>
+                {/* Weekday Header and Calendar Grid Container */}
+                <div>
+                    {/* Weekday Header */}
+                    <div className="grid grid-cols-7 gap-px border bg-border mb-px sticky top-0 z-10">
+                        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                            <div key={day} className="bg-background p-2 text-sm font-medium text-muted-foreground text-center">
+                                {day}
+                            </div>
+                        ))}
+                    </div>
 
-                {/* Board Grid - Dense Notion-like Grid */}
-                <div className="grid grid-cols-7 gap-px bg-border border flex-1 min-h-0 auto-rows-fr">
-                    {calendarDays.map((date) => {
-                        const dateStr = format(date, "yyyy-MM-dd");
-                        const dayTasks = tasksByDate.get(dateStr) || [];
+                    {/* Board Grid - Notion-style expanding grid */}
+                    <div className="grid grid-cols-7 gap-px bg-border border">
+                        {calendarDays.map((date) => {
+                            const dateStr = format(date, "yyyy-MM-dd");
+                            const dayTasks = tasksByDate.get(dateStr) || [];
+                            const dayRequests = requestsByDate.get(dateStr) || [];
 
-                        return (
-                            <DayColumn
-                                key={dateStr}
-                                date={date}
-                                tasks={dayTasks}
-                                isOver={overId === `day-${dateStr}`}
-                                onAddTask={(d) => {
-                                    if (!isMember) return;
-                                    setAddTaskDate(d);
-                                    setAssignee(currentUserId || "");
-                                    setIsAddTaskOpen(true);
-                                }}
-                                onFocusDay={setActiveTasksForFocus}
-                                commonProps={commonTaskProps}
-                            />
-                        );
-                    })}
+                            return (
+                                <DayColumn
+                                    key={dateStr}
+                                    date={date}
+                                    tasks={dayTasks}
+                                    requests={dayRequests}
+                                    isOver={overId === `day-${dateStr}`}
+                                    onAddTask={(d) => {
+                                        if (!isMember) return;
+                                        setAddTaskDate(d);
+                                        setAssignee(currentUserId || "");
+                                        setIsAddTaskOpen(true);
+                                    }}
+                                    onFocusDay={(tasks) => setActiveTasksForFocus(tasks)}
+                                    commonProps={commonTaskProps}
+                                />
+                            );
+                        })}
+                    </div>
                 </div>
 
 
@@ -487,12 +545,15 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                         <form
                             action={async (formData) => {
                                 if (projectId) formData.append("projectId", projectId);
-                                // If no projectId, we can't create task here yet
 
-                                if (addTaskDate) {
+                                // Use dueDate from the form input if provided, otherwise use addTaskDate (from calendar click)
+                                const dueDate = formData.get("dueDate") as string;
+                                if (dueDate) {
+                                    formData.append("scheduledDate", dueDate);
+                                } else if (addTaskDate) {
                                     formData.append("scheduledDate", format(addTaskDate, "yyyy-MM-dd"));
                                 }
-                                // If no date, server handles as unscheduled
+
                                 await createTask(formData);
                                 toast({ title: "Created", description: "Task created." });
                                 setIsAddTaskOpen(false);
@@ -533,6 +594,15 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="dueDate">Due Date (Optional)</Label>
+                                    <Input
+                                        id="dueDate"
+                                        name="dueDate"
+                                        type="date"
+                                        defaultValue={addTaskDate ? format(addTaskDate, "yyyy-MM-dd") : ""}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Notes</Label>
@@ -793,6 +863,16 @@ export function TaskList({ tasks, projectId, themeColor, initialDate, isMember =
                         </div>
                     ) : null}
                 </DragOverlay>
+
+                {/* Request Details Dialog */}
+                {viewingRequest && (
+                    <RequestDetailsDialog
+                        request={viewingRequest}
+                        open={!!viewingRequest}
+                        onOpenChange={(open) => !open && setViewingRequest(null)}
+                        projectId={projectId || ""}
+                    />
+                )}
             </div >
         </DndContext >
     );

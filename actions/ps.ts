@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { UserRole } from "@/lib/supabase/auth-client";
 import { VinylColorScheme } from "@/utils/color-extraction";
+import { notifyUserTaskAssignment } from "@/lib/discord-notify";
 
 // Types
 export interface PSProject {
@@ -293,6 +294,48 @@ export async function createTask(formData: FormData) {
     if (submissionId) {
         revalidatePath(`/ps/projects/${projectId}/feedback`);
     }
+
+    // Notify assigned user via Discord (if assigned to someone else)
+    if (assignedTo && assignedTo !== userId) {
+        console.log("[Discord] 📝 New task created and assigned to:", assignedTo);
+        try {
+            const { data: project } = await supabase
+                .from("ps_projects")
+                .select("name")
+                .eq("id", projectId)
+                .single();
+
+            const { data: assignedUser } = await supabase
+                .from("profiles")
+                .select("discord_uid, full_name")
+                .eq("id", assignedTo)
+                .single();
+
+            const { data: assignedByUser } = await supabase
+                .from("profiles")
+                .select("full_name")
+                .eq("id", userId)
+                .single();
+
+            console.log("[Discord] Task:", goal);
+            console.log("[Discord] Project:", project?.name);
+            console.log("[Discord] Assigned user discord_uid:", assignedUser?.discord_uid || "NOT SET");
+
+            if (assignedUser?.discord_uid && project) {
+                console.log("[Discord] 📤 Sending new task assignment notification...");
+                await notifyUserTaskAssignment(assignedUser.discord_uid, {
+                    taskTitle: goal,
+                    projectName: project.name,
+                    dueDate: formData.get("scheduledDate") as string || undefined,
+                    assignedBy: assignedByUser?.full_name || "Someone",
+                });
+            } else {
+                console.log("[Discord] ⚠️ Skipping notification - missing data or discord_uid");
+            }
+        } catch (notifyError) {
+            console.error("[Discord] ❌ Failed to send Discord notification for new task assignment:", notifyError);
+        }
+    }
 }
 
 export async function updateTaskStatus(taskId: string, status: string, projectId: string) {
@@ -329,6 +372,53 @@ export async function updateTask(formData: FormData) {
         .eq("id", taskId);
 
     if (error) throw error;
+
+    // Notify assigned user via Discord
+    if (assignedTo) {
+        console.log("[Discord] ✅ Task assigned to:", assignedTo);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const { data: task } = await supabase
+                .from("ps_tasks")
+                .select("goal, due_date")
+                .eq("id", taskId)
+                .single();
+
+            const { data: project } = await supabase
+                .from("ps_projects")
+                .select("name")
+                .eq("id", projectId)
+                .single();
+
+            const { data: assignedUser } = await supabase
+                .from("profiles")
+                .select("discord_uid")
+                .eq("id", assignedTo)
+                .single();
+
+            const { data: assignedByUser } = await supabase
+                .from("profiles")
+                .select("full_name")
+                .eq("id", user?.id)
+                .single();
+
+            console.log("[Discord] Task:", task?.goal);
+            console.log("[Discord] Assigned user discord_uid:", assignedUser?.discord_uid || "NOT SET");
+            if (assignedUser?.discord_uid && task && project) {
+                console.log("[Discord] 📤 Sending task assignment notification...");
+                await notifyUserTaskAssignment(assignedUser.discord_uid, {
+                    taskTitle: task.goal,
+                    projectName: project.name,
+                    dueDate: task.due_date || undefined,
+                    assignedBy: assignedByUser?.full_name || "Someone",
+                });
+            }
+        } catch (notifyError) {
+            console.error("Failed to send Discord notification for task assignment:", notifyError);
+            // Don't fail the task update if notification fails
+        }
+    }
+
     revalidatePath(`/ps/projects/${projectId}`);
 }
 

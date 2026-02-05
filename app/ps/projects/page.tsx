@@ -1,4 +1,5 @@
 import { getProjectsWithStats, createProject, getUserTasks } from "@/actions/ps";
+import { getPendingRequestCounts } from "@/actions/ps-requests";
 import { CassetteTape } from "@/components/ps/CassetteTape";
 import { redirect } from "next/navigation";
 import { getUserRolesClient } from "@/lib/supabase/auth-client";
@@ -26,9 +27,13 @@ export default async function ProjectsPage() {
   // We can fetch projects - if it fails, it throws authorized error which we can catch or let bubble
   let projects = [];
   let userTasks = [];
+  let pendingCounts: Record<string, number> = {};
   try {
     projects = await getProjectsWithStats('project');
     userTasks = await getUserTasks();
+    // Get pending request counts for all projects
+    const projectIds = projects.map((p: any) => p.id);
+    pendingCounts = await getPendingRequestCounts(projectIds);
   } catch (e) {
     // If unauthorized, redirect or show error
     return (
@@ -66,6 +71,7 @@ export default async function ProjectsPage() {
             <CassetteTape
               project={project}
               stats={project.stats}
+              pendingRequestCount={pendingCounts[project.id] || 0}
             />
           </div>
         ))}
