@@ -65,7 +65,7 @@ export function StatsPaper({
       className={cn(
         "bg-[#fdfbf6] shadow-sm border border-neutral-200/60 p-6 flex flex-col font-handwriting relative overflow-hidden transition-all duration-500 ease-out group/paper",
         variant === "integrated"
-          ? "absolute left-2 right-2 top-12 pt-[220px] pb-8 rounded-b-sm -z-10 origin-top shadow-md group-hover/cassette:translate-y-[var(--hover-translate)] rotate-1 group-hover/cassette:rotate-0 "
+          ? "absolute left-2 right-2 top-12 pt-[58%] pb-8 rounded-b-sm -z-10 origin-top shadow-md group-hover/cassette:translate-y-[var(--hover-translate)] rotate-1 group-hover/cassette:rotate-0 "
           : "w-full min-h-[600px] rounded-sm rotate-1 hover:rotate-0 shadow-md hover:shadow-lg",
         className
       )}

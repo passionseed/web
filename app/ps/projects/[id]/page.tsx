@@ -9,6 +9,9 @@ import { CassetteTape } from "@/components/ps/CassetteTape";
 import { ProjectGuide } from "@/components/ps/project-guide";
 import { StatsPaper } from "@/components/ps/StatsPaper";
 import { EditProjectDialog } from "@/components/ps/EditProjectDialog";
+import { CreateRequestDialog } from "@/components/ps/CreateRequestDialog";
+import { RequestsList } from "@/components/ps/RequestsList";
+import { getProjectRequests } from "@/actions/ps-requests";
 
 
 export const dynamic = "force-dynamic";
@@ -33,9 +36,16 @@ export default async function ProjectDetailPage({
 
   let project;
   let stats;
+  let requests;
   try {
     project = await getProject(id);
     stats = await getProjectStats(id);
+    // Get both incoming and outgoing requests for calendar view
+    const [incoming, outgoing] = await Promise.all([
+      getProjectRequests(id, "incoming"),
+      getProjectRequests(id, "outgoing"),
+    ]);
+    requests = [...incoming, ...outgoing].filter(r => ['accepted', 'in_progress'].includes(r.status));
   } catch (e) {
     if (e instanceof Error && e.message === "Unauthorized") {
       return (
@@ -77,6 +87,16 @@ export default async function ProjectDetailPage({
   const accentColor = theme?.labelStyle?.borderColor || "#3b82f6";
   const members = await getProjectMembers(id);
   const isMember = members.some((m) => m.user_id === user.id); // Assuming user.id is available from session or action check
+
+  // Fetch all projects for request dropdown
+  const { data: allProjects } = await supabase
+    .from("ps_projects")
+    .select("id, name, type")
+    .order("created_at", { ascending: false });
+
+  // Fetch requests
+  const incomingRequests = await getProjectRequests(id, "incoming");
+  const outgoingRequests = await getProjectRequests(id, "outgoing");
 
   const handleJoin = async () => {
     "use server";
@@ -220,6 +240,7 @@ export default async function ProjectDetailPage({
           <div className="bg-muted/10 rounded-xl p-1">
             <TaskList
               tasks={project.ps_tasks}
+              requests={requests}
               projectId={project.id}
               themeColor={theme}
               initialDate={new Date()}
@@ -229,6 +250,32 @@ export default async function ProjectDetailPage({
             />
           </div>
         </div>
+
+        {/* Requests Section */}
+        {isMember && (
+          <div className="space-y-6 w-full">
+            <div className="flex justify-between items-center">
+              <h3 className="text-2xl font-bold font-handwriting opacity-80 pl-2">
+                Requests
+              </h3>
+              <CreateRequestDialog
+                currentProject={{
+                  id: project.id,
+                  name: project.name,
+                  type: project.type || '',
+                }}
+                availableProjects={allProjects || []}
+              />
+            </div>
+            <div className="bg-muted/10 rounded-xl p-6">
+              <RequestsList
+                incomingRequests={incomingRequests}
+                outgoingRequests={outgoingRequests}
+                projectId={project.id}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
