@@ -168,9 +168,12 @@ async function sendDiscordDM(
         const botToken = process.env.DISCORD_BOT_TOKEN;
 
         if (!botToken) {
-            console.error('DISCORD_BOT_TOKEN is not set in environment variables');
-            return { success: false, error: 'Discord bot not configured' };
+            console.error('[Discord] ❌ CRITICAL: DISCORD_BOT_TOKEN is not set in environment variables');
+            console.error('[Discord] Please add DISCORD_BOT_TOKEN to your environment variables in Vercel/server');
+            return { success: false, error: 'Discord bot not configured - DISCORD_BOT_TOKEN missing' };
         }
+
+        console.log('[Discord] ✅ Bot token found, attempting to create DM channel...');
 
         // Step 1: Create a DM channel
         const dmChannelResponse = await fetchWithRetry('https://discord.com/api/v10/users/@me/channels', {
@@ -186,15 +189,19 @@ async function sendDiscordDM(
 
         if (!dmChannelResponse.ok) {
             const error = await dmChannelResponse.text();
-            console.error('Failed to create DM channel:', error);
+            console.error('[Discord] ❌ Failed to create DM channel - Status:', dmChannelResponse.status);
+            console.error('[Discord] Response:', error);
+            console.error('[Discord] User Discord UID:', userDiscordUid);
             if (dmChannelResponse.status === 403) {
                 return { success: false, error: 'Cannot send DM - user has DMs disabled or blocked the bot' };
             }
             if (dmChannelResponse.status === 404) {
                 return { success: false, error: 'User not found on Discord' };
             }
-            return { success: false, error: 'Failed to create DM channel' };
+            return { success: false, error: `Failed to create DM channel (${dmChannelResponse.status})` };
         }
+
+        console.log('[Discord] ✅ DM channel created successfully');
 
         const dmChannel = await dmChannelResponse.json();
 
@@ -212,15 +219,17 @@ async function sendDiscordDM(
 
         if (!sendMessageResponse.ok) {
             const error = await sendMessageResponse.text();
-            console.error('Failed to send message:', error);
-            return { success: false, error: 'Failed to send message' };
+            console.error('[Discord] ❌ Failed to send message - Status:', sendMessageResponse.status);
+            console.error('[Discord] Response:', error);
+            return { success: false, error: `Failed to send message (${sendMessageResponse.status})` };
         }
 
-        console.log(`✅ Discord notification sent to user ${userDiscordUid}`);
+        console.log(`[Discord] ✅ Discord notification sent successfully to user ${userDiscordUid}`);
         return { success: true };
     } catch (error) {
-        console.error('Error sending Discord DM:', error);
-        return { success: false, error: 'Unexpected error occurred' };
+        console.error('[Discord] ❌ Unexpected error sending Discord DM:', error);
+        console.error('[Discord] Error details:', error instanceof Error ? error.message : String(error));
+        return { success: false, error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
 }
 
@@ -241,6 +250,7 @@ export async function notifyUserNewRequest(
 ): Promise<{ success: boolean; error?: string }> {
     console.log("[Discord] 📥 Preparing to send NEW REQUEST notification to", userDiscordUid);
     console.log("[Discord] Request:", details.requestTitle, "Priority:", details.priority);
+    console.log("[Discord] Environment check - Bot token exists:", !!process.env.DISCORD_BOT_TOKEN);
 
     const message = `📥 **New Request Received**\n\n` +
         `**Request:** ${details.requestTitle}\n` +
@@ -252,6 +262,9 @@ export async function notifyUserNewRequest(
 
     const result = await sendDiscordDM(userDiscordUid, message);
     console.log("[Discord] Notification send result:", result);
+    if (!result.success) {
+        console.error("[Discord] ❌ NOTIFICATION FAILED:", result.error);
+    }
     return result;
 }
 

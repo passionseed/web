@@ -30,13 +30,18 @@ export function RequestsList({
         null
     );
 
-    // Filter out completed requests and combine them
-    const activeIncoming = incomingRequests.filter(r => r.status !== 'completed');
-    const activeOutgoing = outgoingRequests.filter(r => r.status !== 'completed');
+    // Filter out completed and cancelled requests
+    const activeIncoming = incomingRequests.filter(r => r.status !== 'completed' && r.status !== 'cancelled');
+    const activeOutgoing = outgoingRequests.filter(r => r.status !== 'completed' && r.status !== 'cancelled');
     const completedRequests = [
         ...incomingRequests.filter(r => r.status === 'completed'),
         ...outgoingRequests.filter(r => r.status === 'completed')
     ].sort((a, b) => new Date(b.completed_at || b.updated_at).getTime() - new Date(a.completed_at || a.updated_at).getTime());
+
+    const cancelledRequests = [
+        ...incomingRequests.filter(r => r.status === 'cancelled'),
+        ...outgoingRequests.filter(r => r.status === 'cancelled')
+    ].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
     const getPriorityBadge = (priority: string) => {
         const variants = {
@@ -63,6 +68,7 @@ export function RequestsList({
             rejected: "destructive",
             in_progress: "secondary",
             completed: "secondary",
+            cancelled: "outline",
         } as const;
         const colors = {
             pending: "text-yellow-600 border-yellow-600",
@@ -70,10 +76,11 @@ export function RequestsList({
             rejected: "text-red-600 border-red-600",
             in_progress: "text-blue-600 border-blue-600",
             completed: "text-gray-600 border-gray-600",
+            cancelled: "text-gray-400 border-gray-400 decoration-slice line-through",
         };
         return (
             <Badge
-                variant={status === 'accepted' ? 'secondary' : variants[status as keyof typeof variants]}
+                variant={status === 'accepted' ? 'secondary' : (variants[status as keyof typeof variants] || 'outline')}
                 className={colors[status as keyof typeof colors]}
             >
                 {status.replace("_", " ").toUpperCase()}
@@ -149,7 +156,7 @@ export function RequestsList({
     return (
         <>
             <Tabs defaultValue="incoming" className="w-full">
-                <TabsList className="grid w-full max-w-2xl grid-cols-3">
+                <TabsList className="grid w-full max-w-2xl grid-cols-4">
                     <TabsTrigger value="incoming">
                         Incoming ({activeIncoming.length})
                     </TabsTrigger>
@@ -158,6 +165,9 @@ export function RequestsList({
                     </TabsTrigger>
                     <TabsTrigger value="completed">
                         Completed ({completedRequests.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="cancelled">
+                        Cancelled ({cancelledRequests.length})
                     </TabsTrigger>
                 </TabsList>
 
@@ -208,6 +218,28 @@ export function RequestsList({
                     ) : (
                         <div className="grid gap-4">
                             {completedRequests.map((request) => {
+                                const isIncoming = request.receiving_project_id === projectId;
+                                return (
+                                    <RequestCard
+                                        key={request.id}
+                                        request={request}
+                                        type={isIncoming ? "incoming" : "outgoing"}
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="cancelled" className="space-y-4 mt-6">
+                    {cancelledRequests.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>No cancelled requests</p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-4">
+                            {cancelledRequests.map((request) => {
                                 const isIncoming = request.receiving_project_id === projectId;
                                 return (
                                     <RequestCard

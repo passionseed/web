@@ -12,6 +12,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { PSRequest, cancelRequest, updateRequestStatus } from "@/actions/ps-requests";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { AcceptRequestDialog } from "@/components/ps/AcceptRequestDialog";
 import { RejectRequestDialog } from "@/components/ps/RejectRequestDialog";
 import { toast } from "sonner";
@@ -234,16 +245,36 @@ export function RequestDetailsDialog({
                         {/* Actions */}
                         <div className="flex gap-2 justify-end flex-wrap">
                             {canCancel && (
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={handleCancel}
-                                    disabled={loading}
-                                >
-                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Cancel Request
-                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            disabled={loading}
+                                        >
+                                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Cancel Request
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently cancel the request.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                onClick={handleCancel}
+                                            >
+                                                Yes, Cancel Request
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             )}
 
                             {canReject && (

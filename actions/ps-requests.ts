@@ -18,7 +18,7 @@ export interface PSRequest {
     date_needed: string;
     date_modified: string | null;
     created_at: string;
-    status: "pending" | "accepted" | "rejected" | "in_progress" | "completed";
+    status: "pending" | "accepted" | "rejected" | "in_progress" | "completed" | "cancelled";
     assigned_to: string | null;
     assigned_at: string | null;
     rejection_reason: string | null;
@@ -590,7 +590,7 @@ export async function cancelRequest(requestId: string) {
 
     const { error } = await supabase
         .from("ps_requests")
-        .delete()
+        .update({ status: "cancelled" })
         .eq("id", requestId);
 
     if (error) throw error;
