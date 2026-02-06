@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ChecklistItem } from '@/components/journey/utils/checklistMarkdown';
 import { marked } from 'marked';
 import { cn } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/security';
 
 interface ChecklistRendererProps {
   markdown: string;
@@ -50,7 +51,11 @@ export function ChecklistRenderer({
             <div
               key={`text-${currentTextStartLine}-${endLine}`}
               className="prose prose-sm max-w-none text-slate-300 mb-3"
-              dangerouslySetInnerHTML={{ __html: marked.parse(textContent) }}
+              dangerouslySetInnerHTML={{
+                __html: sanitizeHtml(
+                  marked.parse(textContent, { async: false }) as string
+                ),
+              }}
             />
           );
         }

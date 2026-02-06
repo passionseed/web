@@ -31,6 +31,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, RotateCcw, Copy } from "lucide-react";
 import Prism from "prismjs";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/security";
 import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-javascript";
@@ -209,7 +210,7 @@ function SortableItem({
                     "p-3 font-mono text-sm leading-relaxed text-slate-200 whitespace-pre-wrap",
                     item.type === 'container' ? "border-b border-slate-800/50" : ""
                 )}>
-                    <span dangerouslySetInnerHTML={{ __html: highlightedHeader }} />
+                    <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(highlightedHeader) }} />
                 </div>
 
                 {/* Container Children Area */}
@@ -233,7 +234,7 @@ function SortableItem({
 
                         {/* Footer */}
                         <div className="bg-black/20 p-2 pl-4 font-mono text-sm text-slate-200 opacity-70 border-t border-slate-800/30 whitespace-pre-wrap">
-                            <span dangerouslySetInnerHTML={{ __html: highlightedFooter }} />
+                            <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(highlightedFooter) }} />
                         </div>
                     </>
                 )}

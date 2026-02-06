@@ -1,0 +1,75 @@
+
+> my-v0-project@0.1.0 dev /app
+> next dev --turbopack
+
+ ⚠ `eslint` configuration in next.config.mjs is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+ ⚠ `images.domains` is deprecated in favor of `images.remotePatterns`. Please update next.config.mjs to protect your application from malicious users.
+ ⚠ Invalid next.config.mjs options detected:
+ ⚠     Unrecognized key(s) in object: 'eslint'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.0.2:3000
+   - Experiments (use with caution):
+     ✓ parallelServerBuildTraces
+     ✓ parallelServerCompiles
+     · serverActions
+     ✓ webpackBuildWorker
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+ ✓ Ready in 1637ms
+Supabase fetch failed in middleware: Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at updateSession (utils/supabase/middleware.ts:11:40)
+    at middleware (middleware.ts:6:39)
+   9 |   let user = null;
+  10 |   try {
+> 11 |     const supabase = createServerClient(
+     |                                        ^
+  12 |       process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  13 |       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  14 |       { {
+
+}
+ ○ Compiling /direction-finder ...
+
+warn - The class `duration-[2000ms]` is ambiguous and matches multiple utilities.
+warn - If this is content and not a class, replace it with `duration-&lsqb;2000ms&rsqb;` to silence this warning.
+ ⚠ ./node_modules/.pnpm/isomorphic-dompurify@2.35.0/node_modules/isomorphic-dompurify
+Package jsdom can't be external
+The request jsdom matches serverExternalPackages (or the default list).
+The package resolves to a different version when requested from the project directory (28.0.0) compared to the package requested from the importing module (27.4.0).
+Make sure to install the same version of the package in both locations.
+
+
+ ⨯ Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at createClient (utils/supabase/server.ts:7:28)
+    at async RootLayout (app/layout.tsx:89:20)
+   5 |   const cookieStore = await cookies();
+   6 |
+>  7 |   return createServerClient(
+     |                            ^
+   8 |     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+   9 |     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  10 |     { {
+  digest: '1520455206'
+}
+ GET /direction-finder 500 in 21.1s (compile: 18.7s, proxy.ts: 344ms, render: 2.1s)
+ ELIFECYCLE  Command failed.
+[?25h
