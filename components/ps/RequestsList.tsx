@@ -33,16 +33,16 @@ export function RequestsList({
     );
 
     // Filter out completed and cancelled requests
-    const activeIncoming = incomingRequests.filter(r => r.status !== 'completed' && r.status !== 'cancelled');
-    const activeOutgoing = outgoingRequests.filter(r => r.status !== 'completed' && r.status !== 'cancelled');
+    const activeIncoming = incomingRequests.filter(r => r.status !== 'completed' && r.status !== 'cancelled' && r.status !== 'rejected');
+    const activeOutgoing = outgoingRequests.filter(r => r.status !== 'completed' && r.status !== 'cancelled' && r.status !== 'rejected');
     const completedRequests = [
         ...incomingRequests.filter(r => r.status === 'completed'),
         ...outgoingRequests.filter(r => r.status === 'completed')
     ].sort((a, b) => new Date(b.completed_at || b.updated_at).getTime() - new Date(a.completed_at || a.updated_at).getTime());
 
     const cancelledRequests = [
-        ...incomingRequests.filter(r => r.status === 'cancelled'),
-        ...outgoingRequests.filter(r => r.status === 'cancelled')
+        ...incomingRequests.filter(r => r.status === 'cancelled' || r.status === 'rejected'),
+        ...outgoingRequests.filter(r => r.status === 'cancelled' || r.status === 'rejected')
     ].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
     const getPriorityBadge = (priority: string) => {
@@ -169,7 +169,7 @@ export function RequestsList({
                         Completed {isMember && `(${completedRequests.length})`}
                     </TabsTrigger>
                     <TabsTrigger value="cancelled">
-                        Cancelled {isMember && `(${cancelledRequests.length})`}
+                        Cancelled / Rejected {isMember && `(${cancelledRequests.length})`}
                     </TabsTrigger>
                 </TabsList>
 
@@ -237,7 +237,7 @@ export function RequestsList({
                     {cancelledRequests.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground">
                             <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                            <p>No cancelled requests</p>
+                            <p>No cancelled or rejected requests</p>
                         </div>
                     ) : (
                         <div className="grid gap-4">
