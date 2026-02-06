@@ -28,12 +28,25 @@ export default async function ProjectsPage() {
   let projects = [];
   let userTasks = [];
   let pendingCounts: Record<string, number> = {};
+  let memberProjectIds = new Set<string>();
+
   try {
     projects = await getProjectsWithStats('project');
     userTasks = await getUserTasks();
     // Get pending request counts for all projects
     const projectIds = projects.map((p: any) => p.id);
     pendingCounts = await getPendingRequestCounts(projectIds);
+
+    // Get user memberships to filter notifications
+    const { data: memberships } = await supabase
+      .from("ps_project_members")
+      .select("project_id")
+      .eq("user_id", user.id);
+
+    if (memberships) {
+      memberships.forEach(m => memberProjectIds.add(m.project_id));
+    }
+
   } catch (e) {
     // If unauthorized, redirect or show error
     return (
@@ -71,7 +84,7 @@ export default async function ProjectsPage() {
             <CassetteTape
               project={project}
               stats={project.stats}
-              pendingRequestCount={pendingCounts[project.id] || 0}
+              pendingRequestCount={memberProjectIds.has(project.id) ? (pendingCounts[project.id] || 0) : 0}
             />
           </div>
         ))}
