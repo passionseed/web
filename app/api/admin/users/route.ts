@@ -4,7 +4,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 
 async function checkAdminAccess() {
   const supabase = await createClient();
-  
+
   const {
     data: { user },
     error,
@@ -26,7 +26,7 @@ async function checkAdminAccess() {
 
 export async function GET() {
   const user = await checkAdminAccess();
-  
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -41,7 +41,7 @@ export async function GET() {
       page: 1,
       perPage: 1000
     });
-    
+
     if (authError) {
       console.error("Error fetching auth users:", authError);
       return NextResponse.json(
@@ -52,14 +52,14 @@ export async function GET() {
 
     // Get all user profiles and roles
     const userIds = authUsers.users.map(u => u.id);
-    
+
     const [profilesResult, rolesResult] = await Promise.all([
       // Get profiles for all users
       supabase
         .from("profiles")
-        .select("id, username, full_name, avatar_url")
+        .select("id, username, full_name, avatar_url, discord_uid")
         .in("id", userIds),
-      
+
       // Get all user roles
       supabase
         .from("user_roles")
@@ -93,13 +93,13 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const user = await checkAdminAccess();
-  
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {
-    const { userId, username, full_name } = await request.json();
+    const { userId, username, full_name, discord_uid } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
@@ -128,6 +128,7 @@ export async function PUT(request: Request) {
     const updateData: any = {};
     if (username !== undefined) updateData.username = username.trim() || null;
     if (full_name !== undefined) updateData.full_name = full_name.trim() || null;
+    if (discord_uid !== undefined) updateData.discord_uid = discord_uid.trim() || null;
 
     const { error: updateError } = await supabase
       .from("profiles")
