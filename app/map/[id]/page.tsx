@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getMapWithNodesServer } from "@/lib/supabase/maps-server";
 import { createClient } from "@/utils/supabase/server";
-import { isInstructor } from "@/lib/supabase/roles";
 import { MapViewerWithProvider as MapViewer } from "@/components/map/MapViewer";
 import { MapEnrollmentTracker } from "@/components/map/MapEnrollmentTracker";
 import { ArrowLeft, Pencil, ClipboardCheck } from "lucide-react";
@@ -26,40 +25,47 @@ export default async function MapViewerPage(props: {
     notFound();
   }
 
-  // Check if user is admin
-  const userIsAdmin = user
-    ? await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .single()
-      .then(({ data }) => !!data)
-    : false;
+  // OPTIMIZATION: Fetch all permissions in parallel
+  // This replaces sequential checks for admin, instructor, and editor status
+  let userRoles: string[] = [];
+  let isEditor = false;
+
+  if (user) {
+    const [rolesResult, editorResult] = await Promise.all([
+      // Fetch all roles in one query
+      supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id),
+
+      // Check editor status
+      supabase
+        .from("map_editors")
+        .select("id")
+        .eq("map_id", params.id)
+        .eq("user_id", user.id)
+        .single()
+    ]);
+
+    userRoles = rolesResult.data?.map(r => r.role) || [];
+    isEditor = !!editorResult.data;
+  }
+
+  const userIsAdmin = userRoles.includes("admin");
 
   // Restrict access to seed maps - only admins can access seed maps directly
   if (map.map_type === 'seed' && !userIsAdmin) {
     notFound();
   }
 
-  // OPTIMIZATION: Only check instructor status if needed (user exists and isn't creator)
-  const userIsInstructor = user && map.creator_id !== user.id
-    ? await isInstructor(user.id)
-    : false;
-
   // Check if user is the creator of this map
   const userIsCreator = user && map.creator_id === user.id;
 
-  // Check if user is an editor of this map
-  const userIsEditor = user
-    ? await supabase
-      .from("map_editors")
-      .select("id")
-      .eq("map_id", params.id)
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => !!data)
-    : false;
+  // Check if user is instructor (using fetched roles)
+  const userIsInstructor = userRoles.includes("instructor");
+
+  // Check if user is an editor (using fetched status)
+  const userIsEditor = isEditor;
 
   // Simple inline permission check - user can edit if they're the creator OR editor OR instructor OR admin
   const userCanEdit = user && (userIsCreator || userIsEditor || userIsInstructor || userIsAdmin);
