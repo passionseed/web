@@ -19,12 +19,14 @@ interface RequestsListProps {
     incomingRequests: PSRequest[];
     outgoingRequests: PSRequest[];
     projectId: string;
+    isMember: boolean;
 }
 
 export function RequestsList({
     incomingRequests,
     outgoingRequests,
     projectId,
+    isMember,
 }: RequestsListProps) {
     const [selectedRequest, setSelectedRequest] = useState<PSRequest | null>(
         null
@@ -158,16 +160,16 @@ export function RequestsList({
             <Tabs defaultValue="incoming" className="w-full">
                 <TabsList className="grid w-full max-w-2xl grid-cols-4">
                     <TabsTrigger value="incoming">
-                        Incoming ({activeIncoming.length})
+                        Incoming {isMember && `(${activeIncoming.length})`}
                     </TabsTrigger>
                     <TabsTrigger value="outgoing">
-                        Outgoing ({activeOutgoing.length})
+                        Outgoing {isMember && `(${activeOutgoing.length})`}
                     </TabsTrigger>
                     <TabsTrigger value="completed">
-                        Completed ({completedRequests.length})
+                        Completed {isMember && `(${completedRequests.length})`}
                     </TabsTrigger>
                     <TabsTrigger value="cancelled">
-                        Cancelled ({cancelledRequests.length})
+                        Cancelled {isMember && `(${cancelledRequests.length})`}
                     </TabsTrigger>
                 </TabsList>
 

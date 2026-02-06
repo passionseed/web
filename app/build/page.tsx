@@ -9,6 +9,8 @@ import { TaskList } from "@/components/ps/task-list";
 import { createClient } from "@/utils/supabase/server";
 import { TestButton } from "@/components/ps/test-button";
 
+export const dynamic = "force-dynamic";
+
 export default async function BuildPage() {
     const userTasks = await getUserTasks();
 
@@ -86,6 +88,9 @@ async function FocusStatsFetcher() {
 }
 
 async function ProjectButtonsFetcher() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     // Fetch all projects and departments
     const projects = await getProjectsWithStats('project');
     const departments = await getProjectsWithStats('hackathon');
@@ -97,9 +102,30 @@ async function ProjectButtonsFetcher() {
     const projectCounts = await getPendingRequestCounts(projectIds);
     const departmentCounts = await getPendingRequestCounts(departmentIds);
 
-    // Sum up all pending requests for each category
-    const totalProjectPending = Object.values(projectCounts).reduce((sum: number, count: number) => sum + count, 0);
-    const totalDepartmentPending = Object.values(departmentCounts).reduce((sum: number, count: number) => sum + count, 0);
+    // Get user memberships to filter notifications
+    let memberProjectIds = new Set<string>();
+    if (user) {
+        const { data: memberships } = await supabase
+            .from("ps_project_members")
+            .select("project_id")
+            .eq("user_id", user.id);
+
+        if (memberships) {
+            memberships.forEach(m => memberProjectIds.add(m.project_id));
+        }
+    }
+
+    console.log("[ProjectButtonsFetcher] User ID:", user?.id);
+    console.log("[ProjectButtonsFetcher] Member Projects:", Array.from(memberProjectIds));
+
+    // Sum up pending requests ONLY for projects the user is a member of
+    const totalProjectPending = Object.entries(projectCounts).reduce((sum, [pid, count]) => {
+        return memberProjectIds.has(pid) ? sum + count : sum;
+    }, 0);
+
+    const totalDepartmentPending = Object.entries(departmentCounts).reduce((sum, [pid, count]) => {
+        return memberProjectIds.has(pid) ? sum + count : sum;
+    }, 0);
 
     return (
         <>

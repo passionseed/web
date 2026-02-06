@@ -125,6 +125,7 @@ export async function createRequest(formData: FormData) {
                     console.log("[Discord] 📥 Sending notification to", profile?.full_name);
                     const result = await notifyUserNewRequest(discordUid, {
                         requestTitle: requestData.title,
+                        description: requestData.description,
                         requestingProject: requestingProject.name,
                         receivingProject: receivingProject.name,
                         dateNeeded: requestData.date_needed,

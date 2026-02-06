@@ -235,6 +235,7 @@ async function sendDiscordDM(
 
 interface RequestNotificationDetails {
     requestTitle: string;
+    description?: string;
     requestingProject: string;
     receivingProject: string;
     dateNeeded: string;
@@ -252,12 +253,15 @@ export async function notifyUserNewRequest(
     console.log("[Discord] Request:", details.requestTitle, "Priority:", details.priority);
     console.log("[Discord] Environment check - Bot token exists:", !!process.env.DISCORD_BOT_TOKEN);
 
+    const descriptionText = details.description ? `\n**Details:** ${details.description}\n` : '';
+
     const message = `📥 **New Request Received**\n\n` +
         `**Request:** ${details.requestTitle}\n` +
         `**From:** ${details.requestingProject}\n` +
         `**To:** ${details.receivingProject}\n` +
         `**Needed by:** ${details.dateNeeded}\n` +
-        `**Priority:** ${details.priority}\n\n` +
+        `**Priority:** ${details.priority}` +
+        descriptionText + `\n\n` +
         `Check your projects page to review and assign this request.`;
 
     const result = await sendDiscordDM(userDiscordUid, message);

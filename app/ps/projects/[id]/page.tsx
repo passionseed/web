@@ -252,12 +252,12 @@ export default async function ProjectDetailPage({
         </div>
 
         {/* Requests Section */}
-        {isMember && (
-          <div className="space-y-6 w-full">
-            <div className="flex justify-between items-center">
-              <h3 className="text-2xl font-bold font-handwriting opacity-80 pl-2">
-                Requests
-              </h3>
+        <div className="space-y-6 w-full">
+          <div className="flex justify-between items-center">
+            <h3 className="text-2xl font-bold font-handwriting opacity-80 pl-2">
+              Requests
+            </h3>
+            {isMember && (
               <CreateRequestDialog
                 currentProject={{
                   id: project.id,
@@ -266,16 +266,17 @@ export default async function ProjectDetailPage({
                 }}
                 availableProjects={allProjects || []}
               />
-            </div>
-            <div className="bg-muted/10 rounded-xl p-6">
-              <RequestsList
-                incomingRequests={incomingRequests}
-                outgoingRequests={outgoingRequests}
-                projectId={project.id}
-              />
-            </div>
+            )}
           </div>
-        )}
+          <div className="bg-muted/10 rounded-xl p-6">
+            <RequestsList
+              incomingRequests={incomingRequests}
+              outgoingRequests={outgoingRequests}
+              projectId={project.id}
+              isMember={isMember}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
