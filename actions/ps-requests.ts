@@ -31,8 +31,8 @@ export interface PSRequest {
     // Joined fields
     requesting_project?: { id: string; name: string; type: string };
     receiving_project?: { id: string; name: string; type: string };
-    assigned_user?: { id: string; full_name: string; email: string };
-    creator?: { id: string; full_name: string; email: string };
+    assigned_user?: { id: string; full_name: string; email: string; username: string };
+    creator?: { id: string; full_name: string; email: string; username: string };
 }
 
 /**
@@ -74,70 +74,58 @@ export async function createRequest(formData: FormData) {
 
     // Notify members of the receiving project about the new request
     try {
-        console.log("[Discord] 🔔 New request created, preparing to notify receiving project members");
+        console.log(`[Discord] 🔔 New request created (Priority: ${requestData.priority}), preparing to notify receiving project members`);
+
         const { data: receivingProject } = await supabase
             .from("ps_projects")
             .select("name")
             .eq("id", requestData.receiving_project_id)
             .single();
 
-        console.log("[Discord] Receiving project:", receivingProject?.name);
-        console.log("[Discord] Fetching requesting project...");
         const { data: requestingProject } = await supabase
             .from("ps_projects")
             .select("name")
             .eq("id", requestData.requesting_project_id)
             .single();
 
-        console.log("[Discord] Requesting project:", requestingProject?.name);
-        console.log("[Discord] Fetching project members for project:", requestData.receiving_project_id);
-
         // Fetch members
-        const { data: members, error: membersError } = await supabase
+        const { data: members } = await supabase
             .from("ps_project_members")
             .select("user_id")
             .eq("project_id", requestData.receiving_project_id);
-
-        if (membersError) {
-            console.error("[Discord] ❌ Error fetching members:", membersError);
-        }
-
-        console.log("[Discord] Found", members?.length || 0, "members in receiving project");
 
         if (members && members.length > 0 && receivingProject && requestingProject) {
             // Fetch profiles for all members
             const userIds = members.map(m => m.user_id);
             const { data: profiles } = await supabase
                 .from("profiles")
-                .select("id, discord_uid, full_name")
+                .select("id, discord_uid, full_name, username")
                 .in("id", userIds);
-
-            console.log("[Discord] Fetched", profiles?.length || 0, "profiles");
 
             // Send notifications to users with discord_uid
             for (const member of members) {
-                const profile = profiles?.find(p => p.id === member.user_id);
-                const discordUid = profile?.discord_uid;
+                try {
+                    const profile = profiles?.find(p => p.id === member.user_id);
+                    const discordUid = profile?.discord_uid;
 
-                console.log("[Discord]   - User:", profile?.full_name || member.user_id, "discord_uid:", discordUid || "NOT SET");
-
-                if (discordUid) {
-                    console.log("[Discord] 📥 Sending notification to", profile?.full_name);
-                    const result = await notifyUserNewRequest(discordUid, {
-                        requestTitle: requestData.title,
-                        description: requestData.description,
-                        requestingProject: requestingProject.name,
-                        receivingProject: receivingProject.name,
-                        dateNeeded: requestData.date_needed,
-                        priority: requestData.priority,
-                    });
-                    console.log("[Discord] Result:", result);
+                    if (discordUid) {
+                        console.log(`[Discord] 📥 Sending ${requestData.priority} priority notification to ${profile?.full_name}`);
+                        await notifyUserNewRequest(discordUid, {
+                            requestTitle: requestData.title,
+                            description: requestData.description,
+                            requestingProject: requestingProject.name,
+                            receivingProject: receivingProject.name,
+                            dateNeeded: requestData.date_needed,
+                            priority: requestData.priority,
+                        });
+                    }
+                } catch (innerError) {
+                    console.error(`[Discord] Failed to notify user ${member.user_id}:`, innerError);
                 }
             }
         }
     } catch (notifyError) {
-        console.error("Failed to send Discord notifications:", notifyError);
-        // Don't fail the request creation if notifications fail
+        console.error("Failed to prepare Discord notifications:", notifyError);
     }
 
     revalidatePath("/ps/projects");
@@ -199,7 +187,7 @@ export async function getProjectRequests(
 
     const { data: users } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name, email, username")
         .in("id", userIds);
 
     // Combine the data
@@ -242,7 +230,7 @@ export async function getRequestById(requestId: string) {
             .in("id", [data.requesting_project_id, data.receiving_project_id]),
         supabase
             .from("profiles")
-            .select("id, full_name, email")
+            .select("id, full_name, email, username")
             .in(
                 "id",
                 [data.created_by, data.assigned_to].filter(Boolean) as string[]
@@ -333,7 +321,7 @@ export async function acceptRequest(
 
             const { data: assignedByUser } = await supabase
                 .from("profiles")
-                .select("full_name")
+                .select("full_name, username")
                 .eq("id", user.id)
                 .single();
 
@@ -342,7 +330,7 @@ export async function acceptRequest(
                     requestTitle: requestDetails.title,
                     projectName: project.name,
                     dateNeeded: requestDetails.date_needed,
-                    assignedBy: assignedByUser?.full_name || "Someone",
+                    assignedBy: assignedByUser?.username || assignedByUser?.full_name || "Someone",
                 });
             }
         } catch (notifyError) {
@@ -366,7 +354,7 @@ export async function acceptRequest(
             if (requestDetails && requestDetails.created_by) {
                 const { data: creator } = await supabase
                     .from("profiles")
-                    .select("discord_uid, full_name")
+                    .select("discord_uid, full_name, username")
                     .eq("id", requestDetails.created_by)
                     .single();
 
@@ -378,7 +366,7 @@ export async function acceptRequest(
 
                 const { data: acceptedByUser } = await supabase
                     .from("profiles")
-                    .select("full_name")
+                    .select("full_name, username")
                     .eq("id", user.id)
                     .single();
 
@@ -386,7 +374,7 @@ export async function acceptRequest(
                     await notifyRequesterRequestAccepted(creator.discord_uid, {
                         requestTitle: requestDetails.title,
                         acceptedByProject: project.name,
-                        acceptedByUser: acceptedByUser?.full_name || "Someone",
+                        acceptedByUser: acceptedByUser?.username || acceptedByUser?.full_name || "Someone",
                         dateNeeded: requestDetails.date_needed
                     });
                     console.log("[Discord] ✅ Notification sent to requester:", creator.full_name);
@@ -544,7 +532,7 @@ export async function getCalendarRequests(
         userIds.length > 0
             ? await supabase
                 .from("profiles")
-                .select("id, full_name, email")
+                .select("id, full_name, email, username")
                 .in("id", userIds)
             : { data: [] };
 

@@ -147,7 +147,7 @@ export function RequestsList({
 
                     {request.assigned_user && type === "outgoing" && (
                         <div className="text-xs text-muted-foreground">
-                            Assigned to: {request.assigned_user.full_name}
+                            Assigned to: {request.assigned_user.username || request.assigned_user.full_name}
                         </div>
                     )}
                 </div>

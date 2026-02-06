@@ -47,8 +47,12 @@ export function CreateRequestDialog({
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const handleSubmit = async (formData: FormData) => {
+    const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (loading) return;
         setLoading(true);
+
+        const formData = new FormData(e.currentTarget);
         try {
             await createRequest(formData);
             toast.success("Request created successfully");
@@ -78,7 +82,7 @@ export function CreateRequestDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <form action={handleSubmit} className="space-y-6">
+                <form onSubmit={onFormSubmit} className="space-y-6">
                     {/* Hidden field for requesting project */}
                     <input
                         type="hidden"
@@ -182,8 +186,14 @@ export function CreateRequestDialog({
                             Cancel
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Create Request
+                            {loading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Creating...
+                                </>
+                            ) : (
+                                "Create Request"
+                            )}
                         </Button>
                     </DialogFooter>
                 </form>

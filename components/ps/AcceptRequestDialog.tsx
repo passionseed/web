@@ -128,7 +128,7 @@ export function AcceptRequestDialog({
                                 ) : (
                                     projectMembers.map((member) => (
                                         <SelectItem key={member.user_id} value={member.user_id}>
-                                            {member.profiles?.full_name || member.profiles?.email || member.user_id}
+                                            {member.profiles?.username || member.profiles?.full_name || member.profiles?.email || member.user_id}
                                         </SelectItem>
                                     ))
                                 )}

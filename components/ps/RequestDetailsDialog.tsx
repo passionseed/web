@@ -192,7 +192,7 @@ export function RequestDetailsDialog({
                                 <div>
                                     <div className="text-sm font-medium">Requested By</div>
                                     <div className="text-sm text-muted-foreground">
-                                        {request.creator?.full_name || request.creator?.email}
+                                        {request.creator?.username || request.creator?.full_name || request.creator?.email}
                                     </div>
                                 </div>
                             </div>
@@ -216,7 +216,7 @@ export function RequestDetailsDialog({
                                     <div>
                                         <div className="text-sm font-medium">Assigned To</div>
                                         <div className="text-sm text-muted-foreground">
-                                            {request.assigned_user.full_name}
+                                            {request.assigned_user.username || request.assigned_user.full_name}
                                         </div>
                                         {request.assigned_at && (
                                             <div className="text-xs text-muted-foreground">

@@ -46,6 +46,7 @@ import {
     Calendar as CalendarIcon,
     Edit2,
     Trash2,
+    Loader2,
 } from "lucide-react";
 import {
     DndContext,
@@ -280,6 +281,7 @@ export function TaskList({ tasks, requests = [], projectId, themeColor, initialD
 
     // Create Task State
     const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+    const [isCreatingTask, setIsCreatingTask] = useState(false);
     const [addTaskDate, setAddTaskDate] = useState<Date | null>(null); // null means unscheduled
 
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -543,21 +545,32 @@ export function TaskList({ tasks, requests = [], projectId, themeColor, initialD
                             </DialogTitle>
                         </DialogHeader>
                         <form
-                            action={async (formData) => {
-                                if (projectId) formData.append("projectId", projectId);
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                if (isCreatingTask) return;
+                                setIsCreatingTask(true);
 
-                                // Use dueDate from the form input if provided, otherwise use addTaskDate (from calendar click)
-                                const dueDate = formData.get("dueDate") as string;
-                                if (dueDate) {
-                                    formData.append("scheduledDate", dueDate);
-                                } else if (addTaskDate) {
-                                    formData.append("scheduledDate", format(addTaskDate, "yyyy-MM-dd"));
+                                try {
+                                    const formData = new FormData(e.currentTarget);
+                                    if (projectId) formData.append("projectId", projectId);
+
+                                    // Use dueDate from the form input if provided, otherwise use addTaskDate (from calendar click)
+                                    const dueDate = formData.get("dueDate") as string;
+                                    if (dueDate) {
+                                        formData.append("scheduledDate", dueDate);
+                                    } else if (addTaskDate) {
+                                        formData.append("scheduledDate", format(addTaskDate, "yyyy-MM-dd"));
+                                    }
+
+                                    await createTask(formData);
+                                    toast({ title: "Created", description: "Task created." });
+                                    setIsAddTaskOpen(false);
+                                    setNewDifficulty([1]);
+                                } catch (error) {
+                                    toast({ variant: "destructive", description: "Failed to create task." });
+                                } finally {
+                                    setIsCreatingTask(false);
                                 }
-
-                                await createTask(formData);
-                                toast({ title: "Created", description: "Task created." });
-                                setIsAddTaskOpen(false);
-                                setNewDifficulty([1]);
                             }}
                         >
                             <div className="space-y-4 py-4">
@@ -588,7 +601,7 @@ export function TaskList({ tasks, requests = [], projectId, themeColor, initialD
                                                             <AvatarImage src={m.user?.avatar_url || ""} />
                                                             <AvatarFallback>{m.user?.username?.[0] || "?"}</AvatarFallback>
                                                         </Avatar>
-                                                        {m.user?.full_name || m.user?.username || "Unknown"}
+                                                        {m.user?.username || m.user?.full_name || "Unknown"}
                                                     </div>
                                                 </SelectItem>
                                             ))}
@@ -608,7 +621,16 @@ export function TaskList({ tasks, requests = [], projectId, themeColor, initialD
                                     <Label>Notes</Label>
                                     <Textarea name="notes" placeholder="Details..." />
                                 </div>
-                                <Button type="submit" className="w-full">Add Task</Button>
+                                <Button type="submit" className="w-full" disabled={isCreatingTask}>
+                                    {isCreatingTask ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        "Add Task"
+                                    )}
+                                </Button>
                             </div>
                         </form>
                     </DialogContent>
@@ -650,7 +672,7 @@ export function TaskList({ tasks, requests = [], projectId, themeColor, initialD
                                                                 <AvatarImage src={m.user?.avatar_url || ""} />
                                                                 <AvatarFallback>{m.user?.username?.[0] || "?"}</AvatarFallback>
                                                             </Avatar>
-                                                            {m.user?.full_name || m.user?.username || "Unknown"}
+                                                            {m.user?.username || m.user?.full_name || "Unknown"}
                                                         </div>
                                                     </SelectItem>
                                                 ))}
