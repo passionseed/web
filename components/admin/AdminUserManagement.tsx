@@ -40,6 +40,7 @@ interface UserWithRoles {
     username: string;
     full_name: string;
     avatar_url: string;
+    discord_uid?: string;
   };
   user_roles: {
     role: UserRole;
@@ -267,10 +268,10 @@ export function AdminUserManagement({
                             key={index}
                             variant={getRoleBadgeVariant(roleData.role)}
                             className={`text-xs capitalize ${roleData.role === "beta-tester"
-                                ? "bg-purple-500 hover:bg-purple-600 border-none text-white"
-                                : roleData.role === "passion-seed-team"
-                                  ? "bg-rose-500 hover:bg-rose-600 border-none text-white"
-                                  : ""
+                              ? "bg-purple-500 hover:bg-purple-600 border-none text-white"
+                              : roleData.role === "passion-seed-team"
+                                ? "bg-rose-500 hover:bg-rose-600 border-none text-white"
+                                : ""
                               }`}
                           >
                             {getRoleDisplayName(roleData.role)}
