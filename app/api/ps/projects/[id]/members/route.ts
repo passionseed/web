@@ -43,7 +43,7 @@ export async function GET(
 
     const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, full_name, email")
+        .select("id, full_name, email, username")
         .in("id", userIds);
 
     console.log("[Members API] Found profiles:", profiles?.length || 0, profiles);
