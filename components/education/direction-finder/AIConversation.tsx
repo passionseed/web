@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { marked } from "marked";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/security";
 
 interface AIConversationProps {
   answers: AssessmentAnswers;
@@ -476,7 +477,7 @@ export function AIConversation({
                         <div
                           className="prose prose-invert prose-sm max-w-none [&>p]:m-0 [&>p]:leading-relaxed"
                           dangerouslySetInnerHTML={{
-                            __html: marked.parse(msg.content) as string,
+                            __html: sanitizeHtml(marked.parse(msg.content, { async: false }) as string),
                           }}
                         />
                         {/* Edit Button for User Messages */}
