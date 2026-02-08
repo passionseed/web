@@ -23,6 +23,8 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
     const [title, setTitle] = useState("");
     const [slogan, setSlogan] = useState("");
     const [description, setDescription] = useState("");
+    const [seedType, setSeedType] = useState<"collaborative" | "pathlab">("collaborative");
+    const [pathTotalDays, setPathTotalDays] = useState(5);
     const [mapId, setMapId] = useState("");
     const [minStudents, setMinStudents] = useState(1);
     const [maxStudents, setMaxStudents] = useState(50);
@@ -89,6 +91,8 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                     description,
                     categoryId: selectedCategory || null,
                     sourceMapId: mapId === "blank" ? null : mapId || null, // If mapId is blank, it means blank map
+                    seedType,
+                    totalDays: seedType === "pathlab" ? pathTotalDays : null,
                 }),
             });
 
@@ -143,6 +147,38 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                     <DialogTitle>Create New Seed</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="seedType">Seed Type</Label>
+                        <Select
+                            value={seedType}
+                            onValueChange={(value) => setSeedType(value as "collaborative" | "pathlab")}
+                        >
+                            <SelectTrigger className="w-full p-2 rounded-md bg-neutral-800 border border-neutral-700 text-white">
+                                <SelectValue placeholder="Select seed type" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-neutral-800 border-neutral-700 text-white">
+                                <SelectItem value="collaborative">Workshop (Collaborative)</SelectItem>
+                                <SelectItem value="pathlab">PathLab (Solo)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {seedType === "pathlab" && (
+                        <div className="space-y-2">
+                            <Label htmlFor="pathTotalDays">Path Duration (Days)</Label>
+                            <Input
+                                id="pathTotalDays"
+                                type="number"
+                                min="1"
+                                max="30"
+                                value={pathTotalDays}
+                                onChange={(e) => setPathTotalDays(Math.max(1, parseInt(e.target.value) || 5))}
+                                className="bg-neutral-800 border-neutral-700"
+                                required
+                            />
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <Label htmlFor="map">Base Map</Label>
                         <div className="space-y-2">
@@ -247,34 +283,36 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="minStudents">Minimum Students</Label>
-                            <Input
-                                id="minStudents"
-                                type="number"
-                                min="1"
-                                max={maxStudents}
-                                value={minStudents}
-                                onChange={(e) => setMinStudents(parseInt(e.target.value) || 1)}
-                                className="bg-neutral-800 border-neutral-700"
-                                required
-                            />
+                    {seedType === "collaborative" && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="minStudents">Minimum Students</Label>
+                                <Input
+                                    id="minStudents"
+                                    type="number"
+                                    min="1"
+                                    max={maxStudents}
+                                    value={minStudents}
+                                    onChange={(e) => setMinStudents(parseInt(e.target.value) || 1)}
+                                    className="bg-neutral-800 border-neutral-700"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="maxStudents">Maximum Students</Label>
+                                <Input
+                                    id="maxStudents"
+                                    type="number"
+                                    min={minStudents}
+                                    max="100"
+                                    value={maxStudents}
+                                    onChange={(e) => setMaxStudents(parseInt(e.target.value) || 50)}
+                                    className="bg-neutral-800 border-neutral-700"
+                                    required
+                                />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="maxStudents">Maximum Students</Label>
-                            <Input
-                                id="maxStudents"
-                                type="number"
-                                min={minStudents}
-                                max="100"
-                                value={maxStudents}
-                                onChange={(e) => setMaxStudents(parseInt(e.target.value) || 50)}
-                                className="bg-neutral-800 border-neutral-700"
-                                required
-                            />
-                        </div>
-                    </div>
+                    )}
 
                     <div className="flex justify-end space-x-2 pt-4">
                         <Button variant="ghost" type="button" onClick={onClose}>

@@ -1,3 +1,5 @@
+import type { SeedType } from "./pathlab";
+
 export interface SeedCategory {
     id: string;
     name: string;
@@ -17,6 +19,11 @@ export interface Seed {
     cover_image_updated_at: string | null;
     category_id: string | null;
     category?: SeedCategory; // joined data
+    seed_type?: SeedType;
+    path?: {
+        id: string;
+        total_days: number;
+    } | null;
     created_by: string | null; // uuid
     created_at: string; // timestamptz
     updated_at: string; // timestamptz

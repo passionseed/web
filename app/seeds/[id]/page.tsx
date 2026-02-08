@@ -2,11 +2,12 @@ import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Users, Calendar, Play, ArrowRight } from "lucide-react";
+import { ArrowLeft, Users, Calendar } from "lucide-react";
 import Link from "next/link";
 import { CreateRoomButton } from "@/components/seeds/CreateRoomButton";
 import { SeedSettingsButton } from "@/components/seeds/SeedSettingsButton";
 import { markdownToSafeHtml } from "@/lib/security/sanitize-html";
+import { BeginPathButton } from "@/components/pathlab/BeginPathButton";
 
 interface SeedDetailPageProps {
     params: Promise<{
@@ -37,7 +38,7 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
     // Fetch seed details
     const { data: seed } = await supabase
         .from("seeds")
-        .select("*, learning_maps!map_id(title, description), category:seed_categories(id, name, logo_url)")
+        .select("*, learning_maps!map_id(title, description), category:seed_categories(id, name, logo_url), path:paths(id, total_days)")
         .eq("id", id)
         .single();
 
@@ -45,17 +46,15 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
         notFound();
     }
 
-    // Get active room count for this seed
-    const { count: activeRooms } = await supabase
-        .from("seed_rooms")
-        .select("*", { count: "exact", head: true })
-        .eq("seed_id", id)
-        .in("status", ["waiting", "active"]);
+    const isPathLab = seed.seed_type === "pathlab";
+    const pathTotalDays = Array.isArray((seed as any).path)
+        ? (seed as any).path[0]?.total_days
+        : (seed as any).path?.total_days;
 
     // Check if user is already in a room for this seed
     let userRoom = null;
     let userHasCompletedRoom = false;
-    if (user) {
+    if (user && !isPathLab) {
         const { data: membershipData } = await supabase
             .from("seed_room_members")
             .select(`
@@ -179,29 +178,46 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
                                         </div>
                                     </div>
 
-                                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-col gap-1 transition-transform hover:scale-105 duration-300">
-                                        <div className="flex items-center gap-2 text-white/60 text-xs uppercase tracking-wider font-semibold">
-                                            <Users className="w-4 h-4" />
-                                            <span>Group Size</span>
+                                    {isPathLab ? (
+                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-col gap-1 transition-transform hover:scale-105 duration-300">
+                                            <div className="flex items-center gap-2 text-white/60 text-xs uppercase tracking-wider font-semibold">
+                                                <Calendar className="w-4 h-4" />
+                                                <span>Duration</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-2xl font-bold text-white">{pathTotalDays || 5}</span>
+                                                <span className="text-white/60 text-sm">days (~30 min each)</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-2xl font-bold text-white">{seed.min_students || 1}</span>
-                                            <span className="text-white/50">-</span>
-                                            <span className="text-2xl font-bold text-white">{seed.max_students || 50}</span>
-                                            <span className="text-white/60 text-sm">students</span>
+                                    ) : (
+                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-col gap-1 transition-transform hover:scale-105 duration-300">
+                                            <div className="flex items-center gap-2 text-white/60 text-xs uppercase tracking-wider font-semibold">
+                                                <Users className="w-4 h-4" />
+                                                <span>Group Size</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-2xl font-bold text-white">{seed.min_students || 1}</span>
+                                                <span className="text-white/50">-</span>
+                                                <span className="text-2xl font-bold text-white">{seed.max_students || 50}</span>
+                                                <span className="text-white/60 text-sm">students</span>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
 
                                 {/* Hero CTA */}
                                 <div className="max-w-xs">
                                     {user ? (
-                                        <CreateRoomButton
-                                            seedId={seed.id}
-                                            userId={user.id}
-                                            existingRoom={userRoom}
-                                            isCompleted={userHasCompletedRoom}
-                                        />
+                                        isPathLab ? (
+                                            <BeginPathButton seedId={seed.id} />
+                                        ) : (
+                                            <CreateRoomButton
+                                                seedId={seed.id}
+                                                userId={user.id}
+                                                existingRoom={userRoom}
+                                                isCompleted={userHasCompletedRoom}
+                                            />
+                                        )
                                     ) : (
                                         <Link href="/login">
                                             <Button className="w-full bg-white text-black hover:bg-neutral-200 text-lg py-6 font-bold shadow-xl">
@@ -210,6 +226,26 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
                                         </Link>
                                     )}
                                 </div>
+                                {canEdit && isPathLab && (
+                                    <div className="flex flex-wrap gap-2">
+                                        <Link href={`/seeds/${seed.id}/pathlab-builder`}>
+                                            <Button
+                                                variant="outline"
+                                                className="bg-black/20 hover:bg-black/40 text-white/80 hover:text-white backdrop-blur-md border border-white/10"
+                                            >
+                                                Path Builder
+                                            </Button>
+                                        </Link>
+                                        <Link href={`/seeds/${seed.id}/reports`}>
+                                            <Button
+                                                variant="outline"
+                                                className="bg-black/20 hover:bg-black/40 text-white/80 hover:text-white backdrop-blur-md border border-white/10"
+                                            >
+                                                Student Reports
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -222,13 +258,20 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
                 <section className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8">
                     <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
                         <span className="w-1 h-8 bg-blue-500 rounded-full mr-2" />
-                        About this Journey
+                        {isPathLab ? "About this Exploration" : "About this Journey"}
                     </h2>
                     <div className="prose prose-invert prose-lg max-w-none text-neutral-300 leading-relaxed space-y-4">
                         {descriptionHtml ? (
                             <div dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
                         ) : (
                             <p>No description provided for this journey seed. It's ready to be explored!</p>
+                        )}
+                        {isPathLab && (
+                            <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                                <p className="text-sm text-neutral-200">
+                                    PathLab is solo and self-paced. You will complete each day, reflect, then intentionally decide whether to continue, pause, or quit.
+                                </p>
+                            </div>
                         )}
                     </div>
                 </section>
