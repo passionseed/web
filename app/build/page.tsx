@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getWeeklyLeaderboard, getUserTasks, getWeeklyFocusStats } from "@/actions/ps";
+import { getWeeklyLeaderboard, getUserTasks, getWeeklyFocusStats, getPSAccess } from "@/actions/ps";
 import { BuildLeaderboard } from "@/components/ps/build-leaderboard";
 import Link from "next/link";
 import { FolderKanban, ArrowRight, Trophy } from "lucide-react";
@@ -7,8 +7,37 @@ import { FocusGraphPaper } from "@/components/ps/FocusGraphPaper";
 import { TaskList } from "@/components/ps/task-list";
 import { createClient } from "@/utils/supabase/server";
 import { TestButton } from "@/components/ps/test-button";
+import { Button } from "@/components/ui/button";
 
 export default async function BuildPage() {
+    const access = await getPSAccess();
+
+    if (!access.isAuthenticated || !access.isAuthorized) {
+        return (
+            <div className="container mx-auto py-12">
+                <div className="max-w-2xl mx-auto rounded-lg border border-white/10 bg-[#0b1220]/60 p-8 text-center">
+                    <h1 className="text-2xl font-bold text-white">Build Access Required</h1>
+                    <p className="mt-3 text-white/70">
+                        This area is currently limited to Passion Seed team members.
+                    </p>
+                    <p className="mt-2 text-sm text-white/60">
+                        If you believe this is a mistake, please contact an admin to get access.
+                    </p>
+                    <div className="mt-6 flex items-center justify-center gap-3">
+                        {!access.isAuthenticated && (
+                            <Button asChild variant="secondary">
+                                <Link href="/login">Sign In</Link>
+                            </Button>
+                        )}
+                        <Button asChild variant="outline">
+                            <Link href="/">Go Home</Link>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     const userTasks = await getUserTasks();
 
     return (

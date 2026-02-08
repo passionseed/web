@@ -1,76 +1,33 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-
-async function checkAdminAccess() {
-  const supabase = await createClient();
-  
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return null;
-  }
-
-  // Check if user has admin role
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("role", "admin");
-
-  return roles && roles.length > 0 ? user : null;
-}
+import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 
 export async function GET() {
-  const user = await checkAdminAccess();
-  
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
 
   try {
-    const supabase = await createClient();
+    const { supabase } = admin.value;
     const adminSupabase = createAdminClient();
 
-    // Get all users from auth.users (admin only) - requires service role
-    // Set a higher limit to get more users (max 1000 per request)
     const { data: authUsers, error: authError } = await adminSupabase.auth.admin.listUsers({
       page: 1,
-      perPage: 1000
+      perPage: 1000,
     });
-    
+
     if (authError) {
-      console.error("Error fetching auth users:", authError);
-      return NextResponse.json(
-        { error: "Failed to fetch users" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
     }
 
-    // Get all user profiles and roles
-    const userIds = authUsers.users.map(u => u.id);
-    
+    const userIds = authUsers.users.map((u) => u.id);
     const [profilesResult, rolesResult] = await Promise.all([
-      // Get profiles for all users
-      supabase
-        .from("profiles")
-        .select("id, username, full_name, avatar_url")
-        .in("id", userIds),
-      
-      // Get all user roles
-      supabase
-        .from("user_roles")
-        .select("user_id, role")
-        .in("user_id", userIds),
+      supabase.from("profiles").select("id, username, full_name, avatar_url").in("id", userIds),
+      supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
     ]);
 
-    // Combine the data
-    const users = authUsers.users.map(authUser => {
-      const profile = profilesResult.data?.find(p => p.id === authUser.id);
-      const userRoles = rolesResult.data?.filter(r => r.user_id === authUser.id) || [];
+    const users = authUsers.users.map((authUser) => {
+      const profile = profilesResult.data?.find((p) => p.id === authUser.id);
+      const userRoles = rolesResult.data?.filter((r) => r.user_id === authUser.id) || [];
 
       return {
         id: authUser.id,
@@ -83,31 +40,22 @@ export async function GET() {
 
     return NextResponse.json(users);
   } catch (error) {
-    console.error("Error fetching users:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch users" },
-      { status: 500 }
-    );
+    return safeServerError("Failed to fetch users", error);
   }
 }
 
 export async function PUT(request: Request) {
-  const user = await checkAdminAccess();
-  
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
 
   try {
+    const { supabase } = admin.value;
     const { userId, username, full_name } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    const supabase = await createClient();
-
-    // Check if username is already taken by another user
     if (username && username.trim()) {
       const { data: existingUser } = await supabase
         .from("profiles")
@@ -117,15 +65,11 @@ export async function PUT(request: Request) {
         .single();
 
       if (existingUser) {
-        return NextResponse.json(
-          { error: "Username is already taken" },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: "Username is already taken" }, { status: 409 });
       }
     }
 
-    // Update the user's profile
-    const updateData: any = {};
+    const updateData: Record<string, string | null> = {};
     if (username !== undefined) updateData.username = username.trim() || null;
     if (full_name !== undefined) updateData.full_name = full_name.trim() || null;
 
@@ -135,19 +79,11 @@ export async function PUT(request: Request) {
       .eq("id", userId);
 
     if (updateError) {
-      console.error("Error updating profile:", updateError);
-      return NextResponse.json(
-        { error: "Failed to update profile" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating user profile:", error);
-    return NextResponse.json(
-      { error: "Failed to update user profile" },
-      { status: 500 }
-    );
+    return safeServerError("Failed to update user profile", error);
   }
 }
