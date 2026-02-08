@@ -7,12 +7,10 @@ import { MentoredLobbyCard } from "./MentoredLobbyCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Users, Building2 } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
 import { CreateSeedModal } from "./CreateSeedModal";
 import { CurrentLobby } from "./CurrentLobby";
 import { AdminLobbies } from "./AdminLobbies";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface SeedGalleryProps {
@@ -21,13 +19,22 @@ interface SeedGalleryProps {
     isAdmin: boolean;
     isInstructor: boolean;
     currentRoom?: any;
+    initialSeedType?: "collaborative" | "pathlab";
 }
 
-export function SeedGallery({ seeds, mentoredRooms = [], isAdmin, isInstructor, currentRoom }: SeedGalleryProps) {
+export function SeedGallery({
+    seeds,
+    mentoredRooms = [],
+    isAdmin,
+    isInstructor,
+    currentRoom,
+    initialSeedType = "collaborative",
+}: SeedGalleryProps) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<"mentored" | "catalog">(
-        mentoredRooms.length > 0 ? "mentored" : "catalog"
+        mentoredRooms.length > 0 && initialSeedType !== "pathlab" ? "mentored" : "catalog"
     );
+    const [activeSeedType, setActiveSeedType] = useState<"collaborative" | "pathlab">(initialSeedType);
     const router = useRouter();
 
     // Clear active room when viewing main seeds gallery
@@ -37,9 +44,12 @@ export function SeedGallery({ seeds, mentoredRooms = [], isAdmin, isInstructor, 
         }
     }, []);
 
-    const handleSeedClick = (seed: Seed) => {
-        router.push(`/seeds/${seed.id}`);
-    };
+    const filteredSeeds = seeds.filter((seed) => {
+        if (activeSeedType === "pathlab") {
+            return seed.seed_type === "pathlab";
+        }
+        return seed.seed_type !== "pathlab";
+    });
 
     return (
         <div className="space-y-8">
@@ -94,31 +104,41 @@ export function SeedGallery({ seeds, mentoredRooms = [], isAdmin, isInstructor, 
                 <div className="space-y-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div>
-                            <h2 className="text-3xl font-bold text-white tracking-tight">Available Seeds</h2>
-                            <p className="text-neutral-400 mt-1">Start a new learning journey or join an existing one</p>
+                            <h2 className="text-3xl font-bold text-white tracking-tight">
+                                {activeSeedType === "pathlab" ? "PathLab Explorations" : "Workshop Seeds"}
+                            </h2>
+                            <p className="text-neutral-400 mt-1">
+                                {activeSeedType === "pathlab"
+                                    ? "Solo, self-paced paths with intentional decision points"
+                                    : "Collaborative workshop experiences with lobbies"}
+                            </p>
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                    <span className="text-neutral-500 font-mono text-xs">#</span>
-                                </div>
-                                <Input
-                                    placeholder="Enter Code"
-                                    className="pl-7 bg-neutral-900/50 border-neutral-800 hover:border-neutral-700 focus:border-blue-500/50 transition-all w-32 focus:w-40 text-sm h-10"
-                                    maxLength={6}
-                                    onChange={(e) => {
-                                        const code = e.target.value.toUpperCase();
-                                        if (code.length === 6) {
-                                            router.push(`/seeds/room/${code}`);
-                                        }
-                                    }}
-                                />
-                            </div>
+                            {activeSeedType === "collaborative" && (
+                                <>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                            <span className="text-neutral-500 font-mono text-xs">#</span>
+                                        </div>
+                                        <Input
+                                            placeholder="Enter Code"
+                                            className="pl-7 bg-neutral-900/50 border-neutral-800 hover:border-neutral-700 focus:border-blue-500/50 transition-all w-32 focus:w-40 text-sm h-10"
+                                            maxLength={6}
+                                            onChange={(e) => {
+                                                const code = e.target.value.toUpperCase();
+                                                if (code.length === 6) {
+                                                    router.push(`/seeds/room/${code}`);
+                                                }
+                                            }}
+                                        />
+                                    </div>
 
-                            <div className="h-6 w-px bg-neutral-800 mx-1" />
+                                    <div className="h-6 w-px bg-neutral-800 mx-1" />
 
-                            <AdminLobbies isAdmin={isAdmin} />
+                                    <AdminLobbies isAdmin={isAdmin} />
+                                </>
+                            )}
 
                             {isAdmin && (
                                 <Button
@@ -132,10 +152,35 @@ export function SeedGallery({ seeds, mentoredRooms = [], isAdmin, isInstructor, 
                         </div>
                     </div>
 
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setActiveSeedType("collaborative")}
+                            className={cn(
+                                "rounded-full border px-4 py-2 text-sm transition-colors",
+                                activeSeedType === "collaborative"
+                                    ? "border-white/60 bg-white/10 text-white"
+                                    : "border-neutral-700 text-neutral-400 hover:text-white"
+                            )}
+                        >
+                            Workshops
+                        </button>
+                        <button
+                            onClick={() => setActiveSeedType("pathlab")}
+                            className={cn(
+                                "rounded-full border px-4 py-2 text-sm transition-colors",
+                                activeSeedType === "pathlab"
+                                    ? "border-white/60 bg-white/10 text-white"
+                                    : "border-neutral-700 text-neutral-400 hover:text-white"
+                            )}
+                        >
+                            PathLab
+                        </button>
+                    </div>
+
                     {/* Group seeds by category */}
                     {(() => {
                         // Group seeds by category
-                        const grouped = seeds.reduce((acc, seed) => {
+                        const grouped = filteredSeeds.reduce((acc, seed) => {
                             const categoryName = seed.category?.name || "Uncategorized";
                             if (!acc[categoryName]) {
                                 acc[categoryName] = [];
@@ -161,14 +206,16 @@ export function SeedGallery({ seeds, mentoredRooms = [], isAdmin, isInstructor, 
                         ));
                     })()}
 
-                    {seeds.length === 0 && (
+                    {filteredSeeds.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-24 text-center bg-neutral-900/30 rounded-3xl border border-neutral-800 border-dashed">
                             <div className="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center mb-4">
                                 <div className="w-8 h-8 border-2 border-neutral-600 rounded-full animate-spin-slow" />
                             </div>
                             <h3 className="text-xl font-semibold text-white mb-2">No Seeds Found</h3>
                             <p className="text-neutral-400 max-w-md mx-auto">
-                                There are no active learning journeys available at the moment.
+                                {activeSeedType === "pathlab"
+                                    ? "No PathLab explorations are available right now."
+                                    : "No workshop seeds are available right now."}
                             </p>
                             {isAdmin && (
                                 <Button

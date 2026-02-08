@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { SeedGallery } from "@/components/seeds/SeedGallery";
 import { redirect } from "next/navigation";
 
-export default async function SeedsPage({ searchParams }: { searchParams: Promise<{ admin?: string; gallery?: string }> }) {
+export default async function SeedsPage({ searchParams }: { searchParams: Promise<{ admin?: string; gallery?: string; type?: string }> }) {
     const supabase = await createClient();
     const params = await searchParams;
 
@@ -39,7 +39,7 @@ export default async function SeedsPage({ searchParams }: { searchParams: Promis
     // Fetch all seeds
     const { data: seeds } = await supabase
         .from("seeds")
-        .select("*, category:seed_categories(*)")
+        .select("*, category:seed_categories(*), path:paths(id, total_days)")
         .order("created_at", { ascending: false });
 
     // Fetch rooms where user is a mentor (for instructors and admins)
@@ -107,6 +107,7 @@ export default async function SeedsPage({ searchParams }: { searchParams: Promis
                 isAdmin={isAdmin}
                 isInstructor={isInstructor}
                 currentRoom={null}
+                initialSeedType={params.type === "pathlab" ? "pathlab" : "collaborative"}
             />
         </div>
     );
