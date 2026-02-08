@@ -203,9 +203,15 @@ export function PathLabExperience({
 
   const allNodesComplete = useMemo(() => {
     if (dayNodes.length === 0) return true;
-    return dayNodes.every((node) =>
-      COMPLETE_STATUSES.has(progressMap[node.id]?.status),
-    );
+    const result = dayNodes.every((node) => {
+      const nodeProgress = progressMap[node.id];
+      const status = nodeProgress?.status;
+      const isComplete = COMPLETE_STATUSES.has(status);
+      console.log(`[PathLab] Node ${node.title}: status="${status}", isComplete=${isComplete}`);
+      return isComplete;
+    });
+    console.log(`[PathLab] All nodes complete: ${result}`, { progressMap, dayNodes: dayNodes.map(n => n.id) });
+    return result;
   }, [dayNodes, progressMap]);
 
   async function refreshProgress() {
@@ -498,7 +504,7 @@ export function PathLabExperience({
                   ))}
                 </div>
 
-                <div className="h-[70vh] overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950/50">
+                <div className="min-h-[80vh] overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950/50">
                   {selectedNode && (
                     <NodeViewPanel
                       selectedNode={selectedNode}
