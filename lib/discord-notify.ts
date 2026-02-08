@@ -156,3 +156,191 @@ export function formatTime(time: string): string {
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${minutes} ${ampm}`;
 }
+
+/**
+ * Send a generic Discord DM notification
+ */
+async function sendDiscordDM(
+    userDiscordUid: string,
+    message: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const botToken = process.env.DISCORD_BOT_TOKEN;
+
+        if (!botToken) {
+            console.error('[Discord] ❌ CRITICAL: DISCORD_BOT_TOKEN is not set in environment variables');
+            console.error('[Discord] Please add DISCORD_BOT_TOKEN to your environment variables in Vercel/server');
+            return { success: false, error: 'Discord bot not configured - DISCORD_BOT_TOKEN missing' };
+        }
+
+        console.log('[Discord] ✅ Bot token found, attempting to create DM channel...');
+
+        // Step 1: Create a DM channel
+        const dmChannelResponse = await fetchWithRetry('https://discord.com/api/v10/users/@me/channels', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bot ${botToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                recipient_id: userDiscordUid,
+            }),
+        });
+
+        if (!dmChannelResponse.ok) {
+            const error = await dmChannelResponse.text();
+            console.error('[Discord] ❌ Failed to create DM channel - Status:', dmChannelResponse.status);
+            console.error('[Discord] Response:', error);
+            console.error('[Discord] User Discord UID:', userDiscordUid);
+            if (dmChannelResponse.status === 403) {
+                return { success: false, error: 'Cannot send DM - user has DMs disabled or blocked the bot' };
+            }
+            if (dmChannelResponse.status === 404) {
+                return { success: false, error: 'User not found on Discord' };
+            }
+            return { success: false, error: `Failed to create DM channel (${dmChannelResponse.status})` };
+        }
+
+        console.log('[Discord] ✅ DM channel created successfully');
+
+        const dmChannel = await dmChannelResponse.json();
+
+        // Step 2: Send the message
+        const sendMessageResponse = await fetchWithRetry(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bot ${botToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                content: message,
+            }),
+        });
+
+        if (!sendMessageResponse.ok) {
+            const error = await sendMessageResponse.text();
+            console.error('[Discord] ❌ Failed to send message - Status:', sendMessageResponse.status);
+            console.error('[Discord] Response:', error);
+            return { success: false, error: `Failed to send message (${sendMessageResponse.status})` };
+        }
+
+        console.log(`[Discord] ✅ Discord notification sent successfully to user ${userDiscordUid}`);
+        return { success: true };
+    } catch (error) {
+        console.error('[Discord] ❌ Unexpected error sending Discord DM:', error);
+        console.error('[Discord] Error details:', error instanceof Error ? error.message : String(error));
+        return { success: false, error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}` };
+    }
+}
+
+interface RequestNotificationDetails {
+    requestTitle: string;
+    description?: string;
+    requestingProject: string;
+    receivingProject: string;
+    dateNeeded: string;
+    priority: string;
+}
+
+/**
+ * Notify user about a new incoming request
+ */
+export async function notifyUserNewRequest(
+    userDiscordUid: string,
+    details: RequestNotificationDetails
+): Promise<{ success: boolean; error?: string }> {
+    console.log("[Discord] 📥 Preparing to send NEW REQUEST notification to", userDiscordUid);
+    console.log("[Discord] Request:", details.requestTitle, "Priority:", details.priority);
+    console.log("[Discord] Environment check - Bot token exists:", !!process.env.DISCORD_BOT_TOKEN);
+
+    const descriptionText = details.description ? `\n**Details:** ${details.description}\n` : '';
+
+    const message = `📥 **New Request Received**\n\n` +
+        `**Request:** ${details.requestTitle}\n` +
+        `**From:** ${details.requestingProject}\n` +
+        `**To:** ${details.receivingProject}\n` +
+        `**Needed by:** ${details.dateNeeded}\n` +
+        `**Priority:** ${details.priority}` +
+        descriptionText + `\n\n` +
+        `Check your projects page to review and assign this request.`;
+
+    const result = await sendDiscordDM(userDiscordUid, message);
+    console.log("[Discord] Notification send result:", result);
+    if (!result.success) {
+        console.error("[Discord] ❌ NOTIFICATION FAILED:", result.error);
+    }
+    return result;
+}
+
+interface TaskAssignmentDetails {
+    taskTitle: string;
+    projectName: string;
+    dueDate?: string;
+    assignedBy: string;
+}
+
+/**
+ * Notify user when they are assigned a task
+ */
+export async function notifyUserTaskAssignment(
+    userDiscordUid: string,
+    details: TaskAssignmentDetails
+): Promise<{ success: boolean; error?: string }> {
+    const dueDateText = details.dueDate ? `**Due:** ${details.dueDate}\n` : '';
+
+    const message = `✅ **New Task Assigned to You**\n\n` +
+        `**Task:** ${details.taskTitle}\n` +
+        `**Project:** ${details.projectName}\n` +
+        dueDateText +
+        `**Assigned by:** ${details.assignedBy}\n\n` +
+        `Check your calendar to see this task.`;
+
+    return sendDiscordDM(userDiscordUid, message);
+}
+
+interface RequestAssignmentDetails {
+    requestTitle: string;
+    projectName: string;
+    dateNeeded: string;
+    assignedBy: string;
+}
+
+/**
+ * Notify user when they are assigned a request
+ */
+export async function notifyUserRequestAssignment(
+    userDiscordUid: string,
+    details: RequestAssignmentDetails
+): Promise<{ success: boolean; error?: string }> {
+    const message = `📌 **Request Assigned to You**\n\n` +
+        `**Request:** ${details.requestTitle}\n` +
+        `**Project:** ${details.projectName}\n` +
+        `**Needed by:** ${details.dateNeeded}\n` +
+        `**Assigned by:** ${details.assignedBy}\n\n` +
+        `Check the project page to view this request.`;
+
+    return sendDiscordDM(userDiscordUid, message);
+}
+
+interface RequestAcceptedDetails {
+    requestTitle: string;
+    acceptedByProject: string;
+    acceptedByUser: string;
+    dateNeeded: string;
+}
+
+/**
+ * Notify the requester when their request is accepted
+ */
+export async function notifyRequesterRequestAccepted(
+    userDiscordUid: string,
+    details: RequestAcceptedDetails
+): Promise<{ success: boolean; error?: string }> {
+    const message = `🎉 **Request Accepted!**\n\n` +
+        `**Request:** ${details.requestTitle}\n` +
+        `**Accepted by:** ${details.acceptedByUser} (${details.acceptedByProject})\n` +
+        `**Date Confirm:** ${details.dateNeeded}\n\n` +
+        `The team has accepted your request and will start working on it.`;
+
+    return sendDiscordDM(userDiscordUid, message);
+}

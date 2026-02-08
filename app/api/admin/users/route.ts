@@ -20,14 +20,32 @@ export async function GET() {
     }
 
     const userIds = authUsers.users.map((u) => u.id);
+
     const [profilesResult, rolesResult] = await Promise.all([
-      supabase.from("profiles").select("id, username, full_name, avatar_url").in("id", userIds),
-      supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
+      supabase
+        .from("profiles")
+        .select("id, username, full_name, avatar_url, discord_uid")
+        .in("id", userIds),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds),
     ]);
 
+    if (profilesResult.error) {
+      console.error("Error fetching profiles:", profilesResult.error);
+    }
+
+    if (rolesResult.error) {
+      console.error("Error fetching roles:", rolesResult.error);
+    }
+
+    const profiles = profilesResult.data || [];
+    const roles = rolesResult.data || [];
+
     const users = authUsers.users.map((authUser) => {
-      const profile = profilesResult.data?.find((p) => p.id === authUser.id);
-      const userRoles = rolesResult.data?.filter((r) => r.user_id === authUser.id) || [];
+      const profile = profiles.find((p) => p.id === authUser.id);
+      const userRoles = roles.filter((r) => r.user_id === authUser.id) || [];
 
       return {
         id: authUser.id,
@@ -50,12 +68,13 @@ export async function PUT(request: Request) {
 
   try {
     const { supabase } = admin.value;
-    const { userId, username, full_name } = await request.json();
+    const { userId, username, full_name, discord_uid } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
+    // Check for username uniqueness if being updated
     if (username && username.trim()) {
       const { data: existingUser } = await supabase
         .from("profiles")
@@ -72,14 +91,17 @@ export async function PUT(request: Request) {
     const updateData: Record<string, string | null> = {};
     if (username !== undefined) updateData.username = username.trim() || null;
     if (full_name !== undefined) updateData.full_name = full_name.trim() || null;
+    if (discord_uid !== undefined) updateData.discord_uid = discord_uid.trim() || null;
 
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update(updateData)
-      .eq("id", userId);
+    if (Object.keys(updateData).length > 0) {
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("id", userId);
 
-    if (updateError) {
-      return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+      if (updateError) {
+        return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true });

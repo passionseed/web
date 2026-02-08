@@ -42,6 +42,7 @@ interface UserWithRoles {
     username: string;
     full_name: string;
     avatar_url: string;
+    discord_uid?: string;
   };
   user_roles: {
     role: UserRole;
@@ -93,6 +94,7 @@ export function RoleManagementDialog({
   const [profileData, setProfileData] = useState({
     username: "",
     full_name: "",
+    discord_uid: "",
   });
   const [selectedRole, setSelectedRole] = useState<UserRole | "">("");
   const { toast } = useToast();
@@ -103,6 +105,7 @@ export function RoleManagementDialog({
       setProfileData({
         username: user.profiles?.username || "",
         full_name: user.profiles?.full_name || "",
+        discord_uid: user.profiles?.discord_uid || "",
       });
       setSelectedRole("");
       setEditingProfile(false);
@@ -110,6 +113,7 @@ export function RoleManagementDialog({
       setProfileData({
         username: "",
         full_name: "",
+        discord_uid: "",
       });
       setSelectedRole("");
       setEditingProfile(false);
@@ -274,6 +278,7 @@ export function RoleManagementDialog({
           userId: user.id,
           username: profileData.username.trim(),
           full_name: profileData.full_name.trim(),
+          discord_uid: profileData.discord_uid.trim(),
         }),
       });
 
@@ -401,6 +406,21 @@ export function RoleManagementDialog({
                     disabled={loading}
                   />
                 </div>
+                <div>
+                  <Label htmlFor="discord_uid">Discord UID</Label>
+                  <Input
+                    id="discord_uid"
+                    value={profileData.discord_uid}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        discord_uid: e.target.value,
+                      }))
+                    }
+                    placeholder="Enter Discord UID"
+                    disabled={loading}
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Button
                     onClick={handleProfileUpdate}
@@ -422,6 +442,7 @@ export function RoleManagementDialog({
                       setProfileData({
                         username: user?.profiles?.username || "",
                         full_name: user?.profiles?.full_name || "",
+                        discord_uid: user?.profiles?.discord_uid || "",
                       });
                     }}
                     disabled={loading}
@@ -439,6 +460,10 @@ export function RoleManagementDialog({
                 <div>
                   <span className="text-muted-foreground">Full Name:</span>{" "}
                   {user.profiles?.full_name || "Not set"}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Discord UID:</span>{" "}
+                  {user.profiles?.discord_uid || "Not set"}
                 </div>
               </div>
             )}
