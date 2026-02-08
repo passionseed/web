@@ -22,7 +22,7 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
   return (
     <div className="min-h-screen bg-background font-sans antialiased relative overflow-hidden">
       {/* Language Toggle */}
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-20 right-4 z-40">
         <Button
           variant="outline"
           size="sm"

@@ -1,71 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { requireDebugAccess, safeServerError } from "@/lib/security/route-guards";
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
+  const debug = await requireDebugAccess();
+  if (!debug.ok) return debug.response;
+
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { supabase } = debug.value;
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Test different grade values to see what the database accepts
     const testCases = [
       { grade: "pass", rating: null },
       { grade: "fail", rating: null },
       { grade: "pass", rating: 1 },
       { grade: "pass", rating: 5 },
-      { grade: "PASS", rating: null }, // Test case sensitivity
-      { grade: "invalid", rating: null }, // Should fail
-      { grade: "pass", rating: 0 }, // Should fail
-      { grade: "pass", rating: 6 }, // Should fail
+      { grade: "PASS", rating: null },
+      { grade: "invalid", rating: null },
+      { grade: "pass", rating: 0 },
+      { grade: "pass", rating: 6 },
     ];
 
-    const results = [];
-
+    const results: Array<{ testCase: any; success: boolean; error: string | null }> = [];
     for (const testCase of testCases) {
-      try {
-        // Just test the constraints without actually inserting
-        const { error } = await supabase
-          .from("submission_grades")
-          .select("id")
-          .eq("grade", testCase.grade)
-          .limit(1);
+      const { error } = await supabase
+        .from("submission_grades")
+        .select("id")
+        .eq("grade", testCase.grade)
+        .limit(1);
 
-        results.push({
-          testCase,
-          success: !error,
-          error: error?.message || null,
-        });
-      } catch (e) {
-        results.push({
-          testCase,
-          success: false,
-          error: String(e),
-        });
-      }
+      results.push({ testCase, success: !error, error: error?.message || null });
     }
 
-    // Get the actual table schema
-    const { data: tableInfo, error: schemaError } = await supabase
-      .rpc("get_table_constraints", { table_name: "submission_grades" })
-      .catch(() => ({ data: null, error: "RPC not available" }));
-
-    return NextResponse.json({
-      testResults: results,
-      tableInfo,
-      schemaError: schemaError?.message,
-    });
+    return NextResponse.json({ testResults: results });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: "Test failed",
-        message: String(error),
-      },
-      { status: 500 }
-    );
+    return safeServerError("Test failed", error);
   }
 }

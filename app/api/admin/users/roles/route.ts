@@ -1,27 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
-
-async function checkAdminAccess() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return null;
-  }
-
-  // Check if user has admin role
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("role", "admin");
-
-  return roles && roles.length > 0 ? user : null;
-}
+import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 
 async function logAdminActivity(
   supabase: any,
@@ -31,31 +9,26 @@ async function logAdminActivity(
   details: any
 ) {
   try {
-    await supabase
-      .from("admin_activity_log")
-      .insert({
-        admin_user_id: adminUserId,
-        action,
-        target_user_id: targetUserId,
-        target_resource_type: "user_role",
-        details,
-      });
-  } catch (error) {
-    console.error("Failed to log admin activity:", error);
+    await supabase.from("admin_activity_log").insert({
+      admin_user_id: adminUserId,
+      action,
+      target_user_id: targetUserId,
+      target_resource_type: "user_role",
+      details,
+    });
+  } catch {
+    // Intentionally ignore logging errors
   }
 }
 
 export async function POST(request: Request) {
-  const adminUser = await checkAdminAccess();
-
-  if (!adminUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
 
   try {
+    const { supabase, userId: adminUserId } = admin.value;
     const { userId, role, action } = await request.json();
 
-    // Validate inputs
     if (!userId || !role || !action) {
       return NextResponse.json(
         { error: "Missing required fields: userId, role, action" },
@@ -63,69 +36,32 @@ export async function POST(request: Request) {
       );
     }
 
+    if (![
+      "student",
+      "TA",
+      "instructor",
+      "admin",
+      "beta-tester",
+      "passion-seed-team",
+    ].includes(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
+
     if (!["add", "remove"].includes(action)) {
-      return NextResponse.json(
-        { error: "Action must be 'add' or 'remove'" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Action must be 'add' or 'remove'" }, { status: 400 });
     }
-
-    if (!["student", "TA", "instructor", "admin", "beta-tester", "passion-seed-team"].includes(role)) {
-      return NextResponse.json(
-        { error: "Invalid role" },
-        { status: 400 }
-      );
-    }
-
-    // Prevent non-admin from modifying admin roles
-    if (role === "admin" && adminUser.id !== userId) {
-      // Check if target user is already admin or if we're trying to add admin role
-      const { data: existingRoles } = await (await createClient())
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .eq("role", "admin");
-
-      if (existingRoles && existingRoles.length > 0 && action === "remove") {
-        return NextResponse.json(
-          { error: "Cannot remove admin role from another admin" },
-          { status: 403 }
-        );
-      }
-    }
-
-    const supabase = await createClient();
 
     if (action === "add") {
-      // Add role (insert if not exists)
-      const { error } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: userId,
-          role: role,
-        });
-
+      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
+      if (error?.code === "23505") {
+        return NextResponse.json({ error: "User already has this role" }, { status: 400 });
+      }
       if (error) {
-        // Check if it's a duplicate key error (role already exists)
-        if (error.code === "23505") {
-          return NextResponse.json(
-            { error: "User already has this role" },
-            { status: 400 }
-          );
-        }
-        throw error;
+        return NextResponse.json({ error: "Failed to update user role" }, { status: 500 });
       }
 
-      await logAdminActivity(
-        supabase,
-        adminUser.id,
-        `add_role_${role}`,
-        userId,
-        { role, action: "add" }
-      );
-
-    } else if (action === "remove") {
-      // Remove role
+      await logAdminActivity(supabase, adminUserId, `add_role_${role}`, userId, { role, action });
+    } else {
       const { error } = await supabase
         .from("user_roles")
         .delete()
@@ -133,28 +69,20 @@ export async function POST(request: Request) {
         .eq("role", role);
 
       if (error) {
-        throw error;
+        return NextResponse.json({ error: "Failed to update user role" }, { status: 500 });
       }
 
-      await logAdminActivity(
-        supabase,
-        adminUser.id,
-        `remove_role_${role}`,
-        userId,
-        { role, action: "remove" }
-      );
+      await logAdminActivity(supabase, adminUserId, `remove_role_${role}`, userId, {
+        role,
+        action,
+      });
     }
 
     return NextResponse.json({
       success: true,
-      message: `Role ${role} ${action === "add" ? "added to" : "removed from"} user successfully`
+      message: `Role ${role} ${action === "add" ? "added to" : "removed from"} user successfully`,
     });
-
   } catch (error) {
-    console.error("Error managing user role:", error);
-    return NextResponse.json(
-      { error: "Failed to update user role" },
-      { status: 500 }
-    );
+    return safeServerError("Failed to update user role", error);
   }
 }

@@ -1,131 +1,90 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin, safeServerError } from "@/lib/security/route-guards";
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
+
   try {
-    const resolvedParams = await params
-    const supabase = await createClient()
-    
-    // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // TODO: Add admin role check when admin system is implemented
-
-    const body = await request.json()
+    const { id } = await params;
+    const { supabase } = admin.value;
+    const body = await request.json();
     const {
       name,
       short_name,
       website_url,
       logo_url,
       description,
-      admission_requirements
-    } = body
+      admission_requirements,
+    } = body;
 
     if (!name?.trim()) {
-      return NextResponse.json(
-        { error: 'University name is required' },
-        { status: 400 }
-      )
-    }
-
-    const updateData = {
-      name: name.trim(),
-      short_name: short_name?.trim() || null,
-      website_url: website_url?.trim() || null,
-      logo_url: logo_url?.trim() || null,
-      description: description?.trim() || null,
-      admission_requirements: admission_requirements?.trim() || null,
-      updated_at: new Date().toISOString()
+      return NextResponse.json({ error: "University name is required" }, { status: 400 });
     }
 
     const { data: university, error } = await supabase
-      .from('universities')
-      .update(updateData)
-      .eq('id', resolvedParams.id)
+      .from("universities")
+      .update({
+        name: name.trim(),
+        short_name: short_name?.trim() || null,
+        website_url: website_url?.trim() || null,
+        logo_url: logo_url?.trim() || null,
+        description: description?.trim() || null,
+        admission_requirements: admission_requirements?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
       .select()
-      .single()
+      .single();
 
     if (error) {
-      console.error('Error updating university:', error)
-      return NextResponse.json(
-        { error: 'Failed to update university' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "Failed to update university" }, { status: 500 });
     }
 
-    return NextResponse.json({ university })
+    return NextResponse.json({ university });
   } catch (error) {
-    console.error('Update university API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return safeServerError("Internal server error", error);
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin.response;
+
   try {
-    const resolvedParams = await params
-    const supabase = await createClient()
-    
-    // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { id } = await params;
+    const { supabase } = admin.value;
 
-    // TODO: Add admin role check when admin system is implemented
-
-    // Check if university is in use (has user targets)
     const { data: targets, error: targetsError } = await supabase
-      .from('user_university_targets')
-      .select('id')
-      .eq('university_id', resolvedParams.id)
-      .limit(1)
+      .from("user_university_targets")
+      .select("id")
+      .eq("university_id", id)
+      .limit(1);
 
     if (targetsError) {
-      console.error('Error checking university usage:', targetsError)
-      return NextResponse.json(
-        { error: 'Failed to check university usage' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "Failed to check university usage" }, { status: 500 });
     }
 
     if (targets && targets.length > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete university that is selected by users' },
+        { error: "Cannot delete university that is selected by users" },
         { status: 400 }
-      )
+      );
     }
 
-    const { error } = await supabase
-      .from('universities')
-      .delete()
-      .eq('id', resolvedParams.id)
-
+    const { error } = await supabase.from("universities").delete().eq("id", id);
     if (error) {
-      console.error('Error deleting university:', error)
-      return NextResponse.json(
-        { error: 'Failed to delete university' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "Failed to delete university" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Delete university API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return safeServerError("Internal server error", error);
   }
 }

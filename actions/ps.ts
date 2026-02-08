@@ -61,15 +61,20 @@ export interface PSFocusSession {
     created_at: string;
 }
 
-// Helper to check role
-async function checkPSRole() {
+export interface PSAccess {
+    userId: string | null;
+    isAuthenticated: boolean;
+    isAuthorized: boolean;
+}
+
+export async function getPSAccess(): Promise<PSAccess> {
     const supabase = await createClient();
     const {
         data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-        throw new Error("Not authenticated");
+        return { userId: null, isAuthenticated: false, isAuthorized: false };
     }
 
     const { data: roles } = await supabase
@@ -78,10 +83,22 @@ async function checkPSRole() {
         .eq("user_id", user.id);
 
     const userRoles = roles?.map((r) => r.role as UserRole) || [];
-    if (!userRoles.includes("passion-seed-team")) {
+    const isAuthorized = userRoles.includes("passion-seed-team");
+
+    return { userId: user.id, isAuthenticated: true, isAuthorized };
+}
+
+// Helper to check role
+async function checkPSRole() {
+    const access = await getPSAccess();
+
+    if (!access.isAuthenticated || !access.userId) {
+        throw new Error("Not authenticated");
+    }
+    if (!access.isAuthorized) {
         throw new Error("Unauthorized");
     }
-    return user.id;
+    return access.userId;
 }
 
 // Projects

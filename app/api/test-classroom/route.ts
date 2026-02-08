@@ -1,74 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
   generateUniqueJoinCode,
   createClassroom,
   getInstructorClassrooms,
 } from "@/lib/supabase/classrooms";
+import { requireDebugAccess, safeServerError } from "@/lib/security/route-guards";
 
 export async function GET() {
-  try {
-    const results = [];
+  const debug = await requireDebugAccess();
+  if (!debug.ok) return debug.response;
 
-    // Test 1: Join code generation
-    results.push("🧪 Testing join code generation...");
+  try {
     const code1 = await generateUniqueJoinCode();
     const code2 = await generateUniqueJoinCode();
-    results.push(`✅ Generated codes: ${code1}, ${code2}`);
-    results.push(`✅ Codes are unique: ${code1 !== code2}`);
-
-    // Test 2: Get instructor classrooms
-    results.push("🧪 Testing instructor classrooms fetch...");
     const classrooms = await getInstructorClassrooms();
-    results.push(`✅ Found ${classrooms.length} classroom(s)`);
-
-    results.push("🎉 Basic tests passed!");
 
     return NextResponse.json({
       success: true,
-      results,
+      joinCodesUnique: code1 !== code2,
+      classroomCount: classrooms.length,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    return safeServerError("Test failed", error);
   }
 }
 
 export async function POST() {
-  try {
-    const results = [];
+  const debug = await requireDebugAccess();
+  if (!debug.ok) return debug.response;
 
-    // Test classroom creation (requires authentication)
-    results.push("🧪 Testing classroom creation...");
+  try {
     const classroomData = {
-      name: "API Test Classroom - " + new Date().toISOString(),
+      name: `API Test Classroom - ${new Date().toISOString()}`,
       description: "A test classroom created via API route",
     };
 
     const newClassroom = await createClassroom(classroomData);
-    results.push(`✅ Classroom created: ${newClassroom.classroom.name}`);
-    results.push(`✅ Join code: ${newClassroom.join_code}`);
 
     return NextResponse.json({
       success: true,
-      results,
-      classroom: newClassroom,
+      classroomId: newClassroom.classroom.id,
+      joinCode: newClassroom.join_code,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    return safeServerError("Test failed", error);
   }
 }

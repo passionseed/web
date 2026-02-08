@@ -6,7 +6,7 @@ import { ArrowLeft, Users, Calendar, Play, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { CreateRoomButton } from "@/components/seeds/CreateRoomButton";
 import { SeedSettingsButton } from "@/components/seeds/SeedSettingsButton";
-import { marked } from "marked";
+import { markdownToSafeHtml } from "@/lib/security/sanitize-html";
 
 interface SeedDetailPageProps {
     params: Promise<{
@@ -96,7 +96,7 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
 
     // Parse description markdown with line breaks preserved
     const descriptionHtml = seed.description
-        ? await marked.parse(seed.description.replace(/\n/g, '  \n')) // Preserve line breaks in markdown
+        ? markdownToSafeHtml(seed.description.replace(/\n/g, '  \n'))
         : null;
 
     return (
@@ -236,4 +236,3 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
         </div>
     );
 }
-

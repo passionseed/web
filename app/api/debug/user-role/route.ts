@@ -1,55 +1,33 @@
-import { createClient } from '@/utils/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { requireDebugAccess, safeServerError } from "@/lib/security/route-guards";
 
 export async function GET(request: NextRequest) {
+  const debug = await requireDebugAccess();
+  if (!debug.ok) return debug.response;
+
   const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
-  
+  const userId = searchParams.get("userId");
+
   if (!userId) {
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    return NextResponse.json({ error: "User ID is required" }, { status: 400 });
   }
 
   try {
-    const supabase = await createClient();
-    
-    // Check if user exists in profiles
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    // Check user roles
-    const { data: roles, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId);
-    
-    // Test the is_admin function
-    const { data: isAdminResult, error: isAdminError } = await supabase
-      .rpc('is_admin', { user_uuid: userId });
-    
+    const { supabase } = debug.value;
+
+    const [profileResult, rolesResult, isAdminResult] = await Promise.all([
+      supabase.from("profiles").select("id, username, full_name").eq("id", userId).single(),
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase.rpc("is_admin", { user_uuid: userId }),
+    ]);
+
     return NextResponse.json({
       userId,
-      profile: {
-        data: profile,
-        error: profileError?.message
-      },
-      roles: {
-        data: roles,
-        error: roleError?.message
-      },
-      isAdmin: {
-        result: isAdminResult,
-        error: isAdminError?.message
-      }
+      profile: profileResult.data || null,
+      roles: rolesResult.data || [],
+      isAdmin: !!isAdminResult.data,
     });
-    
   } catch (error) {
-    console.error('Debug user role error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return safeServerError("Internal server error", error);
   }
 }
