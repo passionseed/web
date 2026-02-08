@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
+async function canManageSeed(seedId: string, userId: string) {
+  const supabase = await createClient();
+
+  const [{ data: seedData }, { data: rolesData }] = await Promise.all([
+    supabase
+      .from("seeds")
+      .select("id, created_by")
+      .eq("id", seedId)
+      .single(),
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", ["admin", "instructor"]),
+  ]);
+
+  const isAdminOrInstructor = !!rolesData?.length;
+  const isSeedCreator = seedData?.created_by === userId;
+
+  return isAdminOrInstructor || isSeedCreator;
+}
+
 async function canManagePath(pathId: string, userId: string) {
   const supabase = await createClient();
 
@@ -22,6 +44,61 @@ async function canManagePath(pathId: string, userId: string) {
   const isSeedCreator = (pathData as any)?.seed?.created_by === userId;
 
   return isAdminOrInstructor || isPathCreator || isSeedCreator;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const seedId = searchParams.get("seedId");
+
+    if (!seedId) {
+      return NextResponse.json({ error: "seedId is required" }, { status: 400 });
+    }
+
+    const allowed = await canManageSeed(seedId, user.id);
+    if (!allowed) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Get the path for this seed
+    const { data: path } = await supabase
+      .from("paths")
+      .select("id")
+      .eq("seed_id", seedId)
+      .maybeSingle();
+
+    if (!path) {
+      return NextResponse.json({ days: [] });
+    }
+
+    // Get path days
+    const { data: days, error: daysError } = await supabase
+      .from("path_days")
+      .select("*")
+      .eq("path_id", path.id)
+      .order("day_number", { ascending: true });
+
+    if (daysError) {
+      throw daysError;
+    }
+
+    return NextResponse.json({ days: days || [] });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Failed to fetch path days" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -58,6 +135,7 @@ export async function POST(request: NextRequest) {
       .map((day: any) => ({
         path_id: pathId,
         day_number: Number(day.day_number),
+        title: typeof day.title === "string" ? day.title.trim() || null : null,
         context_text: String(day.context_text || "").trim() || `Day ${day.day_number}`,
         reflection_prompts: Array.isArray(day.reflection_prompts)
           ? day.reflection_prompts.map((prompt: any) => String(prompt)).filter(Boolean)

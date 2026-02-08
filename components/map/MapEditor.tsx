@@ -77,6 +77,9 @@ type AppEdge = Edge;
 interface MapEditorProps {
   map: FullLearningMap;
   onMapChange: React.Dispatch<React.SetStateAction<FullLearningMap | null>>;
+  pathDays?: any[];
+  seedInfo?: { id: string; seed_type: string } | null;
+  onPathDaysChange?: (days: any[]) => void;
 }
 
 // Constants
@@ -448,7 +451,7 @@ const NODE_TYPES = {
   text: (props: any) => <TextNode {...props} />,
 };
 
-export function MapEditor({ map, onMapChange }: MapEditorProps) {
+export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDaysChange }: MapEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(
     INITIAL_NODES as Node[]
   );
@@ -2854,6 +2857,9 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   onNodeDelete={handleDeleteNode}
                   onEditingStateChange={setIsEditingNode}
                   isSeedMap={map.map_type === 'seed' || map.parent_seed_id != null}
+                  pathDays={pathDays}
+                  seedInfo={seedInfo}
+                  onPathDaysChange={onPathDaysChange}
                 />
               </div>
             </ResizablePanel>
@@ -3008,10 +3014,16 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 }
 
 // Wrapper component that provides ReactFlow context
-export function MapEditorWithProvider({ map, onMapChange }: MapEditorProps) {
+export function MapEditorWithProvider({ map, onMapChange, pathDays, seedInfo, onPathDaysChange }: MapEditorProps) {
   return (
     <ReactFlowProvider>
-      <MapEditor map={map} onMapChange={onMapChange} />
+      <MapEditor
+        map={map}
+        onMapChange={onMapChange}
+        pathDays={pathDays}
+        seedInfo={seedInfo}
+        onPathDaysChange={onPathDaysChange}
+      />
     </ReactFlowProvider>
   );
 }
