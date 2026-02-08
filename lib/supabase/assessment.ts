@@ -388,6 +388,32 @@ const autoGradeQuizSubmission = async (submission: any) => {
     }
 
     console.log("✅ Quiz auto-graded successfully:", gradeResult);
+
+    // Update progress status based on grade
+    try {
+      const progressRecord = submission.student_node_progress;
+      if (progressRecord) {
+        const mapId = (progressRecord.map_nodes as any)?.map_id;
+        const nodeId = progressRecord.node_id;
+
+        if (mapId && nodeId) {
+          const newStatus = grade === "pass" ? "passed" : "failed";
+          console.log(`📊 Updating progress status to "${newStatus}" after auto-grade`);
+
+          await updateNodeProgress(mapId, nodeId, newStatus as ProgressStatus, {
+            submitted_at: new Date().toISOString(),
+          });
+
+          console.log(`✅ Progress status updated to "${newStatus}"`);
+        } else {
+          console.warn("⚠️ Could not update progress: missing mapId or nodeId");
+        }
+      }
+    } catch (progressError) {
+      console.error("❌ Failed to update progress after auto-grade:", progressError);
+      // Don't throw - grading was successful, progress update is secondary
+    }
+
     return gradeResult;
   } catch (error) {
     console.error("❌ Error in auto-grading quiz:", error);
