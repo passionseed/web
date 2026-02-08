@@ -12,12 +12,14 @@ interface CassetteTapeProps {
   };
   hidePaper?: boolean;
   className?: string; // Allow overriding width/size
+  pendingRequestCount?: number;
 }
 
 export function CassetteTape({
   project,
   stats,
   hidePaper = false,
+  pendingRequestCount = 0,
   ...props
 }: CassetteTapeProps) {
   // Use hash of project ID to pick a random color for the label to add variety if no theme color
@@ -80,6 +82,13 @@ export function CassetteTape({
         href={`/ps/projects/${project.id}`}
         className="block relative w-full aspect-[1.6/1] transition-transform group-hover/cassette:scale-[1.02] group-hover/cassette:-rotate-1 duration-300 z-10"
       >
+        {/* Notification Badge */}
+        {pendingRequestCount > 0 && (
+          <div className="absolute -top-2 -right-2 z-20 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-background">
+            {pendingRequestCount}
+          </div>
+        )}
+
         {/* Cassette Body */}
         <div
           className={`absolute inset-0 rounded-xl shadow-2xl overflow-hidden border-2 border-neutral-700/50 ${!isCustomTheme ? "bg-neutral-800" : ""}`}
