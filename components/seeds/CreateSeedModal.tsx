@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CategoryManagementModal } from "./CategoryManagementModal";
+import { PathLabGenerateModal } from "@/components/pathlab/PathLabGenerateModal";
 
 interface CreateSeedModalProps {
     isOpen: boolean;
@@ -37,6 +38,7 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
     const [categories, setCategories] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -164,18 +166,33 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                     </div>
 
                     {seedType === "pathlab" && (
-                        <div className="space-y-2">
-                            <Label htmlFor="pathTotalDays">Path Duration (Days)</Label>
-                            <Input
-                                id="pathTotalDays"
-                                type="number"
-                                min="1"
-                                max="30"
-                                value={pathTotalDays}
-                                onChange={(e) => setPathTotalDays(Math.max(1, parseInt(e.target.value) || 5))}
-                                className="bg-neutral-800 border-neutral-700"
-                                required
-                            />
+                        <div className="space-y-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="pathTotalDays">Path Duration (Days)</Label>
+                                <Input
+                                    id="pathTotalDays"
+                                    type="number"
+                                    min="1"
+                                    max="30"
+                                    value={pathTotalDays}
+                                    onChange={(e) => setPathTotalDays(Math.max(1, parseInt(e.target.value) || 5))}
+                                    className="bg-neutral-800 border-neutral-700"
+                                    required
+                                />
+                            </div>
+                            <div className="rounded-md border border-neutral-800 bg-neutral-950 p-3 space-y-2">
+                                <p className="text-xs text-neutral-300">
+                                    Generate a complete PathLab draft from a short prompt.
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="border-neutral-700 text-neutral-200 hover:bg-neutral-800"
+                                    onClick={() => setIsGenerateModalOpen(true)}
+                                >
+                                    Generate with AI
+                                </Button>
+                            </div>
                         </div>
                     )}
 
@@ -330,6 +347,17 @@ export function CreateSeedModal({ isOpen, onClose }: CreateSeedModalProps) {
                 isOpen={isCategoryModalOpen}
                 onClose={() => setIsCategoryModalOpen(false)}
                 onCategoryCreated={fetchCategories}
+            />
+
+            <PathLabGenerateModal
+                open={isGenerateModalOpen}
+                onOpenChange={setIsGenerateModalOpen}
+                defaultCategoryId={selectedCategory || null}
+                defaultTotalDays={pathTotalDays}
+                onGenerated={(generated) => {
+                    onClose();
+                    router.push(`/seeds/${generated.seedId}/pathlab-builder`);
+                }}
             />
         </Dialog>
     );

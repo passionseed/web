@@ -58,7 +58,13 @@ import { ImageUpload } from "@/components/map/ImageUpload";
 import { CoverImageMaker } from "@/components/map/CoverImageMaker";
 import { MapViewerWithProvider } from "@/components/map/MapViewer";
 
-export default function EditMapPage({ map: initialMapData }: { map?: FullLearningMap }) {
+export default function EditMapPage({
+  map: initialMapData,
+  seedInfo
+}: {
+  map?: FullLearningMap;
+  seedInfo?: { id: string; seed_type: string } | null;
+}) {
   console.log(
     "🚀🚀🚀 EDITMAP COMPONENT MOUNTING - THIS SHOULD ALWAYS APPEAR 🚀🚀🚀"
   );
@@ -79,6 +85,24 @@ export default function EditMapPage({ map: initialMapData }: { map?: FullLearnin
     setIsMounted(true);
   }, []);
 
+  // Fetch path days if this is a PathLab seed
+  useEffect(() => {
+    async function fetchPathDays() {
+      if (seedInfo?.seed_type === 'pathlab' && seedInfo.id) {
+        try {
+          const response = await fetch(`/api/pathlab/days?seedId=${seedInfo.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setPathDays(data.days || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch path days:', error);
+        }
+      }
+    }
+    fetchPathDays();
+  }, [seedInfo]);
+
   const [initialMap, setInitialMap] = useState<FullLearningMap | null>(initialMapData ? JSON.parse(JSON.stringify(initialMapData)) : null);
   const [map, setMap] = useState<FullLearningMap | null>(initialMapData || null);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,6 +112,7 @@ export default function EditMapPage({ map: initialMapData }: { map?: FullLearnin
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [mapResetKey, setMapResetKey] = useState(0); // Key to force MapEditor remount on reset
+  const [pathDays, setPathDays] = useState<any[]>([]);
 
   const fetchMap = useCallback(async () => {
     console.log("📡 fetchMap called for mapId:", mapId);
@@ -1218,6 +1243,16 @@ export default function EditMapPage({ map: initialMapData }: { map?: FullLearnin
                   {map?.map_type === 'seed' ? "Back to Seed" : map?.category === "journey" ? "Back to Portal" : "Back to Map"}
                 </Link>
               </Button>
+              {seedInfo?.seed_type === 'pathlab' && seedInfo.id && (
+                <>
+                  <div className="h-6 w-px bg-border" />
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/seeds/${seedInfo.id}/pathlab-builder`}>
+                      PathLab Builder
+                    </Link>
+                  </Button>
+                </>
+              )}
               <div className="h-6 w-px bg-border" />
               <div>
                 <h1 className="text-xl font-semibold">Map Editor</h1>
@@ -1318,6 +1353,9 @@ export default function EditMapPage({ map: initialMapData }: { map?: FullLearnin
                 <MapEditor
                   key={mapResetKey}
                   map={map}
+                  pathDays={pathDays}
+                  seedInfo={seedInfo}
+                  onPathDaysChange={setPathDays}
                   onMapChange={(newMapParam) => {
                     // Handle both value and function updates
                     const newMap = typeof newMapParam === 'function'

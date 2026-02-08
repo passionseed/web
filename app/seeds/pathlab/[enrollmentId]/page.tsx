@@ -7,10 +7,16 @@ interface PathLabExperiencePageProps {
   params: Promise<{
     enrollmentId: string;
   }>;
+  searchParams: Promise<{
+    day?: string | string[];
+  }>;
 }
 
-export default async function PathLabExperiencePage({ params }: PathLabExperiencePageProps) {
+export default async function PathLabExperiencePage({ params, searchParams }: PathLabExperiencePageProps) {
   const { enrollmentId } = await params;
+  const { day: daySearchParam } = await searchParams;
+  const requestedDayNumber =
+    typeof daySearchParam === "string" ? Number.parseInt(daySearchParam, 10) : Number.NaN;
   const supabase = await createClient();
 
   const {
@@ -43,11 +49,36 @@ export default async function PathLabExperiencePage({ params }: PathLabExperienc
     notFound();
   }
 
+  const { data: days } = await supabase
+    .from("path_days")
+    .select("day_number")
+    .eq("path_id", enrollment.path.id)
+    .order("day_number", { ascending: true });
+
+  const allDayNumbers = (days || [])
+    .map((entry: any) => Number(entry.day_number))
+    .filter((entry: number) => Number.isFinite(entry));
+
+  const maxAccessibleDay =
+    enrollment.status === "explored"
+      ? Number(enrollment.path?.total_days || enrollment.current_day)
+      : Number(enrollment.current_day);
+  const availableDayNumbers = allDayNumbers.filter((dayNumber) => dayNumber <= maxAccessibleDay);
+  const navigableDayNumbers = availableDayNumbers.length > 0 ? availableDayNumbers : allDayNumbers;
+  const fallbackDayNumber =
+    availableDayNumbers.includes(Number(enrollment.current_day))
+      ? Number(enrollment.current_day)
+      : availableDayNumbers[availableDayNumbers.length - 1] || allDayNumbers[0] || Number(enrollment.current_day);
+  const selectedDayNumber =
+    Number.isFinite(requestedDayNumber) && navigableDayNumbers.includes(requestedDayNumber)
+      ? requestedDayNumber
+      : fallbackDayNumber;
+
   const { data: day } = await supabase
     .from("path_days")
     .select("*")
     .eq("path_id", enrollment.path.id)
-    .eq("day_number", enrollment.current_day)
+    .eq("day_number", selectedDayNumber)
     .maybeSingle();
 
   let dayNodes: any[] = [];
@@ -86,6 +117,8 @@ export default async function PathLabExperiencePage({ params }: PathLabExperienc
         path={enrollment.path}
         day={day}
         dayNodes={dayNodes}
+        availableDayNumbers={navigableDayNumbers}
+        currentDayNumber={Number(enrollment.current_day)}
         reflections={reflections}
         exitReflection={exitReflection}
         endReflection={endReflection}

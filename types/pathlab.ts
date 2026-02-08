@@ -31,6 +31,7 @@ export interface PathDay {
   id: string;
   path_id: string;
   day_number: number;
+  title: string | null;
   context_text: string;
   reflection_prompts: string[];
   node_ids: string[];

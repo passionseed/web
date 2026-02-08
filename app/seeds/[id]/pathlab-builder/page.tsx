@@ -1,7 +1,11 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { PathDayBuilder } from "@/components/pathlab/PathDayBuilder";
+import { GeneratedPathReview } from "@/components/pathlab/GeneratedPathReview";
 import { PATHLAB_CURRICULUM } from "../../pathlab/curriculum";
+import { ArrowLeft, Map } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface PathLabBuilderPageProps {
   params: Promise<{
@@ -77,7 +81,7 @@ export default async function PathLabBuilderPage({
       .order("day_number", { ascending: true }),
     supabase
       .from("map_nodes")
-      .select("id, title")
+      .select("id, title, node_type")
       .eq("map_id", seed.map_id)
       .order("created_at", { ascending: true }),
   ]);
@@ -87,11 +91,34 @@ export default async function PathLabBuilderPage({
       ? days
       : PATHLAB_CURRICULUM.map((day) => ({
           ...day,
-          context_text: `## ${day.title}\n\n${day.context_text}`,
+          context_text: day.context_text,
         }));
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4 px-4 py-8">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/seeds/${seedId}`}
+            className="flex items-center gap-1 text-sm text-neutral-400 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to seed
+          </Link>
+          <Link
+            href={`/seeds/${seedId}/pathlab-reports`}
+            className="text-sm text-neutral-400 transition-colors hover:text-white"
+          >
+            Reports
+          </Link>
+        </div>
+        <Button asChild variant="outline" className="border-neutral-700 text-neutral-300 hover:bg-neutral-800">
+          <Link href={`/map/${seed.map_id}/edit`}>
+            <Map className="mr-2 h-4 w-4" />
+            Edit Map Nodes
+          </Link>
+        </Button>
+      </div>
       <div>
         <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
           PathLab Builder
@@ -101,8 +128,33 @@ export default async function PathLabBuilderPage({
       <PathDayBuilder
         pathId={path.id}
         totalDays={path.total_days}
-        initialDays={(initialDays || []) as any}
-        mapNodes={(mapNodes || []) as any}
+        initialDays={
+          (initialDays || []) as Array<{
+            id?: string;
+            day_number: number;
+            title: string | null;
+            context_text: string;
+            reflection_prompts: string[];
+            node_ids: string[];
+          }>
+        }
+        mapNodes={
+          (mapNodes || []) as Array<{
+            id: string;
+            title: string;
+            node_type: string | null;
+          }>
+        }
+        mapId={seed.map_id}
+      />
+      <GeneratedPathReview
+        seedId={seed.id}
+        nodes={
+          (mapNodes || []).map((node: any) => ({
+            id: node.id,
+            title: node.title,
+          }))
+        }
       />
     </div>
   );
