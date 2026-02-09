@@ -31,7 +31,16 @@ import {
   BatchMapUpdate,
 } from "@/lib/supabase/maps";
 import { MapCategory } from "@/types/map";
-import { Loader2, Trash2, ArrowLeft, RefreshCw, Save, Upload, Sparkles, Eye } from "lucide-react";
+import {
+  Loader2,
+  Trash2,
+  ArrowLeft,
+  RefreshCw,
+  Save,
+  Upload,
+  Sparkles,
+  Eye,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -60,24 +69,19 @@ import { MapViewerWithProvider } from "@/components/map/MapViewer";
 
 export default function EditMapPage({
   map: initialMapData,
-  seedInfo
+  seedInfo,
 }: {
   map?: FullLearningMap;
   seedInfo?: { id: string; seed_type: string } | null;
 }) {
   console.log(
-    "🚀🚀🚀 EDITMAP COMPONENT MOUNTING - THIS SHOULD ALWAYS APPEAR 🚀🚀🚀"
+    "🚀🚀🚀 EDITMAP COMPONENT MOUNTING - THIS SHOULD ALWAYS APPEAR 🚀🚀🚀",
   );
 
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
   const mapId = params.id as string;
-
-  // Emergency fallback - add a simple button outside all logic
-  if (typeof window !== "undefined") {
-    console.log("💻 Client-side rendering confirmed");
-  }
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -88,23 +92,31 @@ export default function EditMapPage({
   // Fetch path days if this is a PathLab seed
   useEffect(() => {
     async function fetchPathDays() {
-      if (seedInfo?.seed_type === 'pathlab' && seedInfo.id) {
+      if (seedInfo?.seed_type === "pathlab" && seedInfo.id) {
         try {
-          const response = await fetch(`/api/pathlab/days?seedId=${seedInfo.id}`);
+          const response = await fetch(
+            `/api/pathlab/days?seedId=${seedInfo.id}`,
+          );
           if (response.ok) {
             const data = await response.json();
             setPathDays(data.days || []);
+            setInitialPathDays(JSON.parse(JSON.stringify(data.days || [])));
+            if (data.pathId) setPathId(data.pathId);
           }
         } catch (error) {
-          console.error('Failed to fetch path days:', error);
+          console.error("Failed to fetch path days:", error);
         }
       }
     }
     fetchPathDays();
   }, [seedInfo]);
 
-  const [initialMap, setInitialMap] = useState<FullLearningMap | null>(initialMapData ? JSON.parse(JSON.stringify(initialMapData)) : null);
-  const [map, setMap] = useState<FullLearningMap | null>(initialMapData || null);
+  const [initialMap, setInitialMap] = useState<FullLearningMap | null>(
+    initialMapData ? JSON.parse(JSON.stringify(initialMapData)) : null,
+  );
+  const [map, setMap] = useState<FullLearningMap | null>(
+    initialMapData || null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -113,6 +125,8 @@ export default function EditMapPage({
   const [isExporting, setIsExporting] = useState(false);
   const [mapResetKey, setMapResetKey] = useState(0); // Key to force MapEditor remount on reset
   const [pathDays, setPathDays] = useState<any[]>([]);
+  const [initialPathDays, setInitialPathDays] = useState<any[]>([]);
+  const [pathId, setPathId] = useState<string | null>(null);
 
   const fetchMap = useCallback(async () => {
     console.log("📡 fetchMap called for mapId:", mapId);
@@ -187,33 +201,33 @@ export default function EditMapPage({
     setMap((prev) =>
       prev
         ? {
-          ...prev,
-          cover_image_url: imageData.url,
-          cover_image_blurhash: imageData.blurhash,
-          cover_image_key: imageData.fileName,
-          cover_image_updated_at: new Date().toISOString(),
-          // Clear old metadata.coverImage if it exists
-          metadata: prev.metadata
-            ? { ...prev.metadata, coverImage: undefined }
-            : undefined,
-        }
-        : null
+            ...prev,
+            cover_image_url: imageData.url,
+            cover_image_blurhash: imageData.blurhash,
+            cover_image_key: imageData.fileName,
+            cover_image_updated_at: new Date().toISOString(),
+            // Clear old metadata.coverImage if it exists
+            metadata: prev.metadata
+              ? { ...prev.metadata, coverImage: undefined }
+              : undefined,
+          }
+        : null,
     );
 
     // Update initial map to reflect the saved state
     setInitialMap((prev) =>
       prev
         ? {
-          ...prev,
-          cover_image_url: imageData.url,
-          cover_image_blurhash: imageData.blurhash,
-          cover_image_key: imageData.fileName,
-          cover_image_updated_at: new Date().toISOString(),
-          metadata: prev.metadata
-            ? { ...prev.metadata, coverImage: undefined }
-            : undefined,
-        }
-        : null
+            ...prev,
+            cover_image_url: imageData.url,
+            cover_image_blurhash: imageData.blurhash,
+            cover_image_key: imageData.fileName,
+            cover_image_updated_at: new Date().toISOString(),
+            metadata: prev.metadata
+              ? { ...prev.metadata, coverImage: undefined }
+              : undefined,
+          }
+        : null,
     );
   };
 
@@ -256,7 +270,10 @@ export default function EditMapPage({
       console.error("Failed to upload created image:", error);
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload created image",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to upload created image",
         variant: "destructive",
       });
     }
@@ -267,16 +284,16 @@ export default function EditMapPage({
     setMap((prev) =>
       prev
         ? {
-          ...prev,
-          cover_image_url: null,
-          cover_image_blurhash: null,
-          cover_image_key: null,
-          cover_image_updated_at: null,
-          metadata: prev.metadata
-            ? { ...prev.metadata, coverImage: undefined }
-            : undefined,
-        }
-        : null
+            ...prev,
+            cover_image_url: null,
+            cover_image_blurhash: null,
+            cover_image_key: null,
+            cover_image_updated_at: null,
+            metadata: prev.metadata
+              ? { ...prev.metadata, coverImage: undefined }
+              : undefined,
+          }
+        : null,
     );
   };
 
@@ -285,6 +302,334 @@ export default function EditMapPage({
     if (!map || !initialMap) return false;
     return JSON.stringify(map) !== JSON.stringify(initialMap);
   }, [map, initialMap]);
+
+  // Generate batch update object from differences
+  const generateBatchUpdate = useCallback((): BatchMapUpdate => {
+    console.log("🔧 Generating batch update...");
+
+    if (!map || !initialMap) {
+      console.error("❌ Cannot generate batch update - missing map data", {
+        map: !!map,
+        initialMap: !!initialMap,
+      });
+      throw new Error("Missing map or initialMap data");
+    }
+
+    try {
+      const batchUpdate: BatchMapUpdate = {
+        map: {},
+        nodes: { create: [], update: [], delete: [] },
+        paths: { create: [], delete: [] },
+        content: { create: [], update: [], delete: [] },
+        assessments: { create: [], update: [], delete: [] },
+        quizQuestions: { create: [], update: [], delete: [] },
+      };
+
+      // Detect map changes
+      if (map.title !== initialMap.title) batchUpdate.map.title = map.title;
+      if (map.description !== initialMap.description)
+        batchUpdate.map.description = map.description;
+      if (map.difficulty !== initialMap.difficulty)
+        batchUpdate.map.difficulty = map.difficulty;
+      if (map.category !== initialMap.category)
+        batchUpdate.map.category = map.category;
+      if (map.visibility !== initialMap.visibility)
+        batchUpdate.map.visibility = map.visibility;
+      if (map.cover_image_url !== initialMap.cover_image_url)
+        batchUpdate.map.cover_image_url = map.cover_image_url;
+      if (map.cover_image_blurhash !== initialMap.cover_image_blurhash)
+        batchUpdate.map.cover_image_blurhash = map.cover_image_blurhash;
+      if (map.cover_image_key !== initialMap.cover_image_key)
+        batchUpdate.map.cover_image_key = map.cover_image_key;
+      if (map.cover_image_updated_at !== initialMap.cover_image_updated_at)
+        batchUpdate.map.cover_image_updated_at = map.cover_image_updated_at;
+
+      console.log("📍 Detecting node changes...");
+      // Detect node changes (create, update, delete)
+      const currentNodes = map.map_nodes || [];
+      const initialNodes = initialMap.map_nodes || [];
+
+      // Nodes to delete
+      const nodeIdsToDelete = initialNodes
+        .filter((inode) => !currentNodes.some((cnode) => cnode.id === inode.id))
+        .map((inode) => inode.id);
+      batchUpdate.nodes.delete = nodeIdsToDelete;
+
+      // Nodes to create and update
+      currentNodes.forEach((cnode) => {
+        const inode = initialNodes.find((n) => n.id === cnode.id);
+        if (!inode) {
+          // New node
+          batchUpdate.nodes.create.push(cnode);
+        } else {
+          // Check for differences
+          const hasChanges =
+            cnode.title !== inode.title ||
+            cnode.instructions !== inode.instructions ||
+            cnode.difficulty !== inode.difficulty ||
+            cnode.sprite_url !== inode.sprite_url ||
+            JSON.stringify(cnode.metadata) !== JSON.stringify(inode.metadata);
+
+          if (hasChanges) {
+            batchUpdate.nodes.update.push(cnode);
+          }
+        }
+      });
+
+      console.log("🛣️ Detecting path changes...");
+      // Detect path changes (create, delete) - edges in React Flow
+      const currentPaths = map.node_paths_source || [];
+      const initialPaths = initialMap.node_paths_source || [];
+
+      // Paths to delete
+      batchUpdate.paths.delete = initialPaths
+        .filter(
+          (ipath) =>
+            !currentPaths.some(
+              (cpath) =>
+                cpath.source_node_id === ipath.source_node_id &&
+                cpath.destination_node_id === ipath.destination_node_id,
+            ),
+        )
+        .map((ipath) => ipath.id);
+
+      // Paths to create
+      batchUpdate.paths.create = currentPaths.filter(
+        (cpath) =>
+          !initialPaths.some(
+            (ipath) =>
+              ipath.source_node_id === cpath.source_node_id &&
+              ipath.destination_node_id === cpath.destination_node_id,
+          ),
+      );
+
+      console.log("📝 Detecting content and assessment changes...");
+      // Detect content and assessment changes for each node
+      currentNodes.forEach((cnode) => {
+        const inode = initialNodes.find((n) => n.id === cnode.id);
+        if (!inode) return; // New nodes handle their own content/assessments
+
+        // Content changes
+        const currentContent = cnode.node_content || [];
+        const initialContent = inode.node_content || [];
+
+        // Content to delete
+        batchUpdate.content.delete.push(
+          ...initialContent
+            .filter((ic) => !currentContent.some((cc) => cc.id === ic.id))
+            .map((ic) => ic.id),
+        );
+
+        // Content to create or update
+        currentContent.forEach((cc) => {
+          const ic = initialContent.find((c) => c.id === cc.id);
+          if (!ic) {
+            batchUpdate.content.create.push(cc);
+          } else if (
+            cc.content_type !== ic.content_type ||
+            cc.content_title !== ic.content_title ||
+            cc.content_url !== ic.content_url ||
+            cc.content_body !== ic.content_body ||
+            cc.display_order !== ic.display_order
+          ) {
+            batchUpdate.content.update.push(cc);
+          }
+        });
+
+        // Assessment changes
+        const currentAssessments = cnode.node_assessments || [];
+        const initialAssessments = inode.node_assessments || [];
+
+        // Assessment to delete
+        batchUpdate.assessments.delete.push(
+          ...initialAssessments
+            .filter((ia) => !currentAssessments.some((ca) => ca.id === ia.id))
+            .map((ia) => ia.id),
+        );
+
+        // Assessment to create or update
+        currentAssessments.forEach((ca) => {
+          const ia = initialAssessments.find((a) => a.id === ca.id);
+          if (!ia) {
+            batchUpdate.assessments.create.push(ca);
+          } else {
+            // Check for assessment-level changes
+            const hasAssessmentChanges =
+              ca.assessment_type !== ia.assessment_type ||
+              ca.points_possible !== ia.points_possible ||
+              ca.is_graded !== ia.is_graded ||
+              JSON.stringify(ca.metadata) !== JSON.stringify(ia.metadata);
+
+            if (hasAssessmentChanges) {
+              batchUpdate.assessments.update.push(ca);
+            }
+          }
+        });
+
+        // Quiz Question changes - handle separately to avoid nested issues
+        const currentAssessment = currentAssessments.find(
+          (a) => a.assessment_type === "quiz",
+        );
+        const initialAssessment = initialAssessments.find(
+          (a) => a.assessment_type === "quiz",
+        );
+
+        if (currentAssessment && initialAssessment) {
+          const currentQuestions = currentAssessment.quiz_questions || [];
+          const initialQuestions = initialAssessment.quiz_questions || [];
+
+          // Quiz questions can be created, updated or deleted
+          // However, to keep the batch update reliable, we only track changes
+          // for assessments that already have real database IDs.
+
+          // Newly created questions (temp IDs)
+          const questionsToCreate = currentQuestions.filter((q) =>
+            q.id?.startsWith("temp_"),
+          );
+          questionsToCreate.forEach((q) => {
+            const questionToCreate = {
+              assessment_id: currentAssessment.id,
+              question_text: q.question_text,
+              options: q.options,
+              correct_option: q.correct_option,
+            };
+            batchUpdate.quizQuestions.create.push(questionToCreate);
+            console.log("➕ Adding quiz question to create:", questionToCreate);
+          });
+
+          // Deleted questions - only real IDs that exist in initial but not current
+          const questionsToDelete = initialQuestions.filter((iq) => {
+            if (!iq.id || iq.id.startsWith("temp_")) return false;
+            const stillExists = currentQuestions.some((cq) => cq.id === iq.id);
+            if (!stillExists) {
+              console.log("🗑️ Question marked for deletion:", iq.id);
+              return true;
+            }
+            return false;
+          });
+
+          questionsToDelete.forEach((iq) => {
+            batchUpdate.quizQuestions.delete.push(iq.id!);
+            console.log("🗑️ Adding quiz question to delete:", iq.id);
+          });
+
+          // Updated questions - only process questions that exist in both states with changes
+          const questionsToUpdate = currentQuestions.filter((cq) => {
+            if (!cq.id || cq.id.startsWith("temp_")) return false;
+
+            const iq = initialQuestions.find((q) => q.id === cq.id);
+            if (!iq) {
+              // Question exists in current but not initial - either newly created or state sync issue
+              console.log(
+                "⚠️ Question in current but not initial state - skipping update:",
+                cq.id,
+              );
+              return false;
+            }
+
+            // Compare the questions for changes
+            const hasChanges =
+              cq.question_text !== iq.question_text ||
+              cq.correct_option !== iq.correct_option ||
+              JSON.stringify(cq.options) !== JSON.stringify(iq.options);
+
+            if (hasChanges) {
+              console.log("📝 Question has changes:", cq.id);
+              return true;
+            }
+
+            return false;
+          });
+
+          questionsToUpdate.forEach((cq) => {
+            const questionToUpdate = {
+              id: cq.id!,
+              question_text: cq.question_text,
+              options: cq.options,
+              correct_option: cq.correct_option,
+            };
+            batchUpdate.quizQuestions.update.push(questionToUpdate);
+            console.log("📝 Adding quiz question to update:", questionToUpdate);
+          });
+
+          console.log("📊 Quiz questions batch summary:", {
+            toCreate: questionsToCreate.length,
+            toDelete: questionsToDelete.length,
+            toUpdate: questionsToUpdate.length,
+          });
+        }
+      });
+
+      console.log("✅ Batch update generation completed");
+      console.log("📊 Final batch update summary:", {
+        mapChanges: Object.keys(batchUpdate.map).length,
+        nodesToCreate: batchUpdate.nodes.create.length,
+        nodesToUpdate: batchUpdate.nodes.update.length,
+        nodesToDelete: batchUpdate.nodes.delete.length,
+        pathsToCreate: batchUpdate.paths.create.length,
+        pathsToDelete: batchUpdate.paths.delete.length,
+        contentToCreate: batchUpdate.content.create.length,
+        contentToUpdate: batchUpdate.content.update.length,
+        contentToDelete: batchUpdate.content.delete.length,
+      });
+
+      return batchUpdate;
+    } catch (error) {
+      console.error("❌ Error generating batch update:", error);
+      throw new Error(
+        `Failed to generate batch update: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }, [map, initialMap]);
+
+  // More accurate check for unsaved changes using batch update logic
+  const hasUnsavedChanges = useMemo(() => {
+    if (!map || !initialMap) return false;
+
+    // Check for path days changes
+    const pathDaysChanged =
+      JSON.stringify(pathDays) !== JSON.stringify(initialPathDays);
+    if (pathDaysChanged) return true;
+
+    // First do a quick string comparison
+    if (JSON.stringify(map) === JSON.stringify(initialMap)) return false;
+
+    // If strings differ, check if there are actual changes that need saving
+    try {
+      const batchUpdate = generateBatchUpdate();
+      if (!batchUpdate) return false;
+
+      const hasChanges =
+        Object.keys(batchUpdate.map).length > 0 ||
+        batchUpdate.nodes.create.length > 0 ||
+        batchUpdate.nodes.update.length > 0 ||
+        batchUpdate.nodes.delete.length > 0 ||
+        batchUpdate.paths.create.length > 0 ||
+        batchUpdate.paths.delete.length > 0 ||
+        batchUpdate.content.create.length > 0 ||
+        batchUpdate.content.update.length > 0 ||
+        batchUpdate.content.delete.length > 0 ||
+        batchUpdate.assessments.create.length > 0 ||
+        batchUpdate.assessments.update.length > 0 ||
+        batchUpdate.assessments.delete.length > 0 ||
+        batchUpdate.quizQuestions.create.length > 0 ||
+        batchUpdate.quizQuestions.update.length > 0 ||
+        batchUpdate.quizQuestions.delete.length > 0;
+
+      return hasChanges;
+    } catch (error) {
+      console.error("Error checking for changes:", error);
+      // If we can't determine, fall back to simple comparison
+      return hasUnsavedChangesSimple;
+    }
+  }, [
+    map,
+    initialMap,
+    pathDays,
+    initialPathDays,
+    generateBatchUpdate,
+    hasUnsavedChangesSimple,
+  ]);
 
   const handleSaveAll = async () => {
     if (!map || !hasUnsavedChanges) {
@@ -306,13 +651,13 @@ export default function EditMapPage({
 
       console.log(
         "📦 Generated batch update:",
-        JSON.stringify(batchUpdate, null, 2)
+        JSON.stringify(batchUpdate, null, 2),
       );
 
       // Validate batch update before sending
       if (!batchUpdate) {
         throw new Error(
-          "Failed to generate batch update - returned null/undefined"
+          "Failed to generate batch update - returned null/undefined",
         );
       }
 
@@ -351,13 +696,45 @@ export default function EditMapPage({
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(
           () => reject(new Error("Save operation timed out after 30 seconds")),
-          30000
+          30000,
         );
       });
 
       await Promise.race([savePromise, timeoutPromise]);
 
       console.log("✅ Batch update completed successfully");
+
+      // Save PathLab days if they changed
+      if (
+        seedInfo?.seed_type === "pathlab" &&
+        pathId &&
+        JSON.stringify(pathDays) !== JSON.stringify(initialPathDays)
+      ) {
+        console.log("Saving changed path days...");
+        try {
+          const daysResponse = await fetch("/api/pathlab/days", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pathId,
+              totalDays: pathDays.length,
+              days: pathDays,
+            }),
+          });
+          if (daysResponse.ok) {
+            const data = await daysResponse.json();
+            setInitialPathDays(
+              JSON.parse(JSON.stringify(data.days || pathDays)),
+            );
+            console.log("✅ Path days saved successfully");
+          } else {
+            const errorData = await daysResponse.json();
+            console.error("❌ Failed to save path days:", errorData);
+          }
+        } catch (error) {
+          console.error("❌ Error saving path days:", error);
+        }
+      }
 
       // Refresh data after save with detailed logging
       console.log("🔄 Refreshing map data after save...");
@@ -430,625 +807,6 @@ export default function EditMapPage({
     }
   };
 
-  // Generate batch update object from differences
-  const generateBatchUpdate = useCallback((): BatchMapUpdate => {
-    console.log("🔧 Generating batch update...");
-
-    if (!map || !initialMap) {
-      console.error("❌ Cannot generate batch update - missing map data", {
-        map: !!map,
-        initialMap: !!initialMap,
-      });
-      throw new Error("Missing map or initialMap data");
-    }
-
-    const batchUpdate: BatchMapUpdate = {
-      map: {},
-      nodes: { create: [], update: [], delete: [] },
-      paths: { create: [], delete: [] },
-      content: { create: [], update: [], delete: [] },
-      assessments: { create: [], update: [], delete: [] },
-      quizQuestions: { create: [], update: [], delete: [] },
-    };
-
-    try {
-      // Check for map-level changes
-      console.log("🔍 Checking map-level changes...");
-      const mapChanges: Partial<FullLearningMap> = {};
-      if (map.title !== initialMap.title) {
-        mapChanges.title = map.title;
-        console.log("📝 Map title changed:", {
-          from: initialMap.title,
-          to: map.title,
-        });
-      }
-      if (map.description !== initialMap.description) {
-        mapChanges.description = map.description;
-        console.log("📝 Map description changed");
-      }
-      if (map.difficulty !== initialMap.difficulty) {
-        mapChanges.difficulty = map.difficulty;
-        console.log("📝 Map difficulty changed:", {
-          from: initialMap.difficulty,
-          to: map.difficulty,
-        });
-      }
-      if (map.category !== initialMap.category) {
-        mapChanges.category = map.category;
-        console.log("📝 Map category changed:", {
-          from: initialMap.category,
-          to: map.category,
-        });
-      }
-      if (
-        JSON.stringify(map.metadata) !== JSON.stringify(initialMap.metadata)
-      ) {
-        mapChanges.metadata = map.metadata;
-        console.log("📝 Map metadata changed");
-      }
-      batchUpdate.map = mapChanges;
-
-      // Check for node changes
-      console.log("🔍 Checking node changes...");
-      const initialNodeMap = new Map(
-        initialMap.map_nodes.map((n) => [n.id, n])
-      );
-      const currentNodeMap = new Map(map.map_nodes.map((n) => [n.id, n]));
-
-      console.log("📊 Node comparison:", {
-        initialNodes: initialMap.map_nodes.length,
-        currentNodes: map.map_nodes.length,
-        initialNodeIds: Array.from(initialNodeMap.keys()),
-        currentNodeIds: Array.from(currentNodeMap.keys()),
-      });
-
-      // Find deleted nodes - IMPORTANT: Only include real nodes (not temp)
-      const deletedNodes = initialMap.map_nodes.filter(
-        (node) => !currentNodeMap.has(node.id) && !node.id.startsWith("temp_")
-      );
-      console.log(
-        "🗑️ Deleted nodes:",
-        deletedNodes.length,
-        deletedNodes.map((n) => ({ id: n.id, title: n.title }))
-      );
-
-      deletedNodes.forEach((node) => {
-        batchUpdate.nodes.delete.push(node.id);
-        console.log("🗑️ Adding node to delete:", node.id);
-      });
-
-      // Find created nodes (temporary IDs)
-      const createdNodes = map.map_nodes.filter(
-        (node) =>
-          node.id.startsWith("temp_node_") || node.id.startsWith("temp_text_")
-      );
-      console.log(
-        "➕ Created nodes:",
-        createdNodes.length,
-        createdNodes.map((n) => ({
-          id: n.id,
-          title: n.title,
-          type: (n as any).node_type,
-        }))
-      );
-
-      createdNodes.forEach((node) => {
-        const nodeToCreate = {
-          map_id: map.id,
-          title: node.title,
-          instructions: node.instructions,
-          difficulty: node.difficulty,
-          sprite_url: node.sprite_url,
-          metadata: node.metadata,
-          // Include node_type for text nodes
-          ...((node as any).node_type && {
-            node_type: (node as any).node_type,
-          }),
-          // Include temp_id for mapping if the node has a temporary ID
-          ...(node.id.startsWith("temp_") && {
-            temp_id: node.id,
-          }),
-        };
-        batchUpdate.nodes.create.push(nodeToCreate);
-        console.log("➕ Adding node to create:", nodeToCreate);
-      });
-
-      // Find updated nodes (exclude temp nodes and only real changes)
-      const updatedNodes = map.map_nodes.filter((node) => {
-        if (node.id.startsWith("temp_")) return false;
-        const initialNode = initialNodeMap.get(node.id);
-        if (!initialNode) return false;
-
-        const nodeChanged =
-          node.title !== initialNode.title ||
-          node.instructions !== initialNode.instructions ||
-          node.difficulty !== initialNode.difficulty ||
-          node.sprite_url !== initialNode.sprite_url ||
-          JSON.stringify(node.metadata) !==
-          JSON.stringify(initialNode.metadata) ||
-          (node as any).node_type !== (initialNode as any).node_type;
-
-        return nodeChanged;
-      });
-
-      console.log(
-        "📝 Updated nodes:",
-        updatedNodes.length,
-        updatedNodes.map((n) => ({ id: n.id, title: n.title }))
-      );
-
-      updatedNodes.forEach((node) => {
-        const nodeToUpdate = {
-          id: node.id,
-          title: node.title,
-          instructions: node.instructions,
-          difficulty: node.difficulty,
-          sprite_url: node.sprite_url,
-          metadata: node.metadata,
-          // Include node_type for text nodes
-          ...((node as any).node_type && {
-            node_type: (node as any).node_type,
-          }),
-        };
-        batchUpdate.nodes.update.push(nodeToUpdate);
-        console.log("📝 Adding node to update:", nodeToUpdate);
-      });
-
-      // Handle path changes with better validation
-      console.log("🔍 Checking path changes...");
-      const allInitialPaths = initialMap.map_nodes
-        .flatMap((node) => node.node_paths_source || [])
-        .filter(Boolean);
-      const allCurrentPaths = map.map_nodes
-        .flatMap((node) => node.node_paths_source || [])
-        .filter(Boolean);
-
-      console.log("📊 Path comparison:", {
-        initialPaths: allInitialPaths.length,
-        currentPaths: allCurrentPaths.length,
-        initialPathIds: allInitialPaths.map((p) => p.id),
-        currentPathIds: allCurrentPaths.map((p) => p.id),
-      });
-
-      // Find deleted paths (exclude temp paths and paths connected to deleted nodes)
-      const deletedPaths = allInitialPaths.filter((path) => {
-        if (path.id.startsWith("temp_")) return false;
-
-        // Don't add to delete list if connected nodes are being deleted (cascade will handle it)
-        const sourceNodeDeleted = batchUpdate.nodes.delete.includes(
-          path.source_node_id
-        );
-        const destNodeDeleted = batchUpdate.nodes.delete.includes(
-          path.destination_node_id
-        );
-        if (sourceNodeDeleted || destNodeDeleted) return false;
-
-        return !allCurrentPaths.some((p) => p.id === path.id);
-      });
-      console.log("🗑️ Deleted paths:", deletedPaths.length, deletedPaths);
-
-      deletedPaths.forEach((path) => {
-        batchUpdate.paths.delete.push(path.id);
-        console.log("🗑️ Adding path to delete:", path.id);
-      });
-
-      // Find created paths (temporary IDs)
-      const createdPaths = allCurrentPaths.filter((path) =>
-        path.id.startsWith("temp_")
-      );
-      console.log("➕ Created paths:", createdPaths.length, createdPaths);
-
-      createdPaths.forEach((path) => {
-        if (path.source_node_id && path.destination_node_id) {
-          const pathToCreate = {
-            source_node_id: path.source_node_id,
-            destination_node_id: path.destination_node_id,
-          };
-          batchUpdate.paths.create.push(pathToCreate);
-          console.log("➕ Adding path to create:", pathToCreate);
-        } else {
-          console.warn("⚠️ Invalid path found:", path);
-        }
-      });
-
-      // Handle content changes for each node
-      console.log("🔍 Checking content changes...");
-      map.map_nodes.forEach((node) => {
-        // Skip content processing for text nodes (they don't have content)
-        if ((node as any).node_type === "text") {
-          console.log(`⏭️ Skipping content for text node ${node.id}`);
-          return;
-        }
-
-        const initialNode = initialNodeMap.get(node.id);
-
-        // For new nodes, add all their content as new
-        if (node.id.startsWith("temp_node_")) {
-          const nodeContent = node.node_content || [];
-          console.log(
-            `➕ Processing content for new node ${node.id}:`,
-            nodeContent.length
-          );
-
-          nodeContent.forEach((content) => {
-            if (
-              content.content_type &&
-              (content.content_url || content.content_body)
-            ) {
-              const contentToCreate = {
-                node_id: node.id, // Will be mapped after node creation
-                content_type: content.content_type,
-                content_url: content.content_url,
-                content_body: content.content_body,
-              };
-              batchUpdate.content.create.push(contentToCreate);
-              console.log("➕ Adding content to create:", contentToCreate);
-            }
-          });
-          return;
-        }
-
-        if (!initialNode) {
-          console.warn("⚠️ No initial node found for:", node.id);
-          return;
-        }
-
-        const initialContent = initialNode.node_content || [];
-        const currentContent = node.node_content || [];
-
-        console.log(`🔍 Checking content for node ${node.id}:`, {
-          initial: initialContent.length,
-          current: currentContent.length,
-        });
-
-        // Find created content (temp IDs)
-        const createdContent = currentContent.filter((content) =>
-          content.id?.startsWith("temp_")
-        );
-        console.log(
-          `➕ Created content for node ${node.id}:`,
-          createdContent.length
-        );
-
-        createdContent.forEach((content) => {
-          if (
-            content.content_type &&
-            (content.content_url || content.content_body)
-          ) {
-            const contentToCreate = {
-              node_id: node.id,
-              content_type: content.content_type,
-              content_url: content.content_url,
-              content_body: content.content_body,
-            };
-            batchUpdate.content.create.push(contentToCreate);
-            console.log("➕ Adding content to create:", contentToCreate);
-          }
-        });
-
-        // Find deleted content (but not for nodes being deleted - cascade will handle it)
-        if (!batchUpdate.nodes.delete.includes(node.id)) {
-          const deletedContent = initialContent.filter(
-            (content) =>
-              !currentContent.some((c) => c.id === content.id) &&
-              !content.id?.startsWith("temp_")
-          );
-          console.log(
-            `🗑️ Deleted content for node ${node.id}:`,
-            deletedContent.length
-          );
-
-          deletedContent.forEach((content) => {
-            batchUpdate.content.delete.push(content.id);
-            console.log("🗑️ Adding content to delete:", content.id);
-          });
-        }
-
-        // Find updated content
-        const updatedContent = currentContent.filter((content) => {
-          if (!content.id || content.id.startsWith("temp_")) return false;
-
-          const initialContentItem = initialContent.find(
-            (c) => c.id === content.id
-          );
-          if (!initialContentItem) return false;
-
-          return JSON.stringify(content) !== JSON.stringify(initialContentItem);
-        });
-
-        console.log(
-          `📝 Updated content for node ${node.id}:`,
-          updatedContent.length
-        );
-
-        updatedContent.forEach((content) => {
-          const contentToUpdate = {
-            id: content.id!,
-            content_type: content.content_type,
-            content_url: content.content_url,
-            content_body: content.content_body,
-          };
-          batchUpdate.content.update.push(contentToUpdate);
-          console.log("📝 Adding content to update:", contentToUpdate);
-        });
-      });
-
-      // ---------- Assessment & Quiz Question Changes ----------
-      console.log("🔍 Checking assessment changes...");
-      map.map_nodes.forEach((node) => {
-        // Skip assessment processing for text nodes (they don't have assessments)
-        if ((node as any).node_type === "text") {
-          console.log(`⏭️ Skipping assessments for text node ${node.id}`);
-          return;
-        }
-
-        const initialNode = initialNodeMap.get(node.id);
-        const currentAssessment = node.node_assessments?.[0] || null;
-        const initialAssessment = initialNode?.node_assessments?.[0] || null;
-
-        // Created assessment (either truly new OR has temporary ID meaning it's not yet saved)
-        if ((!initialAssessment && currentAssessment) ||
-          (currentAssessment && currentAssessment.id?.startsWith("temp_"))) {
-          const assessmentToCreate = {
-            node_id: node.id,
-            assessment_type: currentAssessment.assessment_type,
-            // Add grading fields
-            points_possible: currentAssessment.points_possible,
-            is_graded: currentAssessment.is_graded,
-            // Add group assessment fields
-            is_group_assessment: currentAssessment.is_group_assessment,
-            group_formation_method: currentAssessment.group_formation_method,
-            group_submission_mode: currentAssessment.group_submission_mode,
-            target_group_size: currentAssessment.target_group_size,
-            allow_uneven_groups: currentAssessment.allow_uneven_groups,
-            groups_config: currentAssessment.groups_config,
-            // Add metadata for checklist assessments
-            ...(currentAssessment.metadata && {
-              metadata: currentAssessment.metadata,
-            }),
-            // Include temp_id for mapping if the currentAssessment has a temporary ID
-            ...(currentAssessment.id?.startsWith("temp_") && {
-              temp_id: currentAssessment.id,
-            }),
-          };
-          batchUpdate.assessments.create.push(assessmentToCreate);
-          console.log("➕ Adding assessment to create:", assessmentToCreate);
-
-          if (currentAssessment.assessment_type === "quiz") {
-            // Only create questions with temp IDs (not already saved individually)
-            const questionsToCreate = (currentAssessment.quiz_questions || []).filter((q) => q.id?.startsWith("temp_"));
-            questionsToCreate.forEach((q) => {
-              const questionToCreate = {
-                assessment_id: currentAssessment.id,
-                question_text: q.question_text,
-                options: q.options,
-                correct_option: q.correct_option,
-              };
-              batchUpdate.quizQuestions.create.push(questionToCreate);
-              console.log(
-                "➕ Adding quiz question to create (new assessment):",
-                questionToCreate
-              );
-            });
-            console.log(`📊 New assessment - skipping ${(currentAssessment.quiz_questions || []).length - questionsToCreate.length} already saved questions`);
-          }
-          return;
-        }
-
-        // Deleted assessment
-        if (initialAssessment && !currentAssessment) {
-          batchUpdate.assessments.delete.push(initialAssessment.id);
-          console.log("🗑️ Adding assessment to delete:", initialAssessment.id);
-
-          if (initialAssessment.assessment_type === "quiz") {
-            (initialAssessment.quiz_questions || []).forEach((q) => {
-              if (q.id && !q.id.startsWith("temp_")) {
-                batchUpdate.quizQuestions.delete.push(q.id);
-                console.log("🗑️ Adding quiz question to delete:", q.id);
-              }
-            });
-          }
-          return;
-        }
-
-        // Updated assessment (type, metadata, grading fields, or group settings)
-        // Exclude assessments with temporary IDs as they're handled in the creation case
-        if (
-          initialAssessment &&
-          currentAssessment &&
-          !currentAssessment.id?.startsWith("temp_") &&
-          (initialAssessment.assessment_type !==
-            currentAssessment.assessment_type ||
-            JSON.stringify(initialAssessment.metadata) !==
-            JSON.stringify(currentAssessment.metadata) ||
-            initialAssessment.points_possible !==
-            currentAssessment.points_possible ||
-            initialAssessment.is_graded !== currentAssessment.is_graded ||
-            initialAssessment.is_group_assessment !==
-            currentAssessment.is_group_assessment ||
-            initialAssessment.group_formation_method !==
-            currentAssessment.group_formation_method ||
-            initialAssessment.group_submission_mode !==
-            currentAssessment.group_submission_mode ||
-            initialAssessment.target_group_size !==
-            currentAssessment.target_group_size ||
-            initialAssessment.allow_uneven_groups !==
-            currentAssessment.allow_uneven_groups ||
-            JSON.stringify(initialAssessment.groups_config) !==
-            JSON.stringify(currentAssessment.groups_config))
-        ) {
-          const assessmentToUpdate = {
-            id: initialAssessment.id,
-            assessment_type: currentAssessment.assessment_type,
-            // Add grading fields
-            points_possible: currentAssessment.points_possible,
-            is_graded: currentAssessment.is_graded,
-            // Add group assessment fields
-            is_group_assessment: currentAssessment.is_group_assessment,
-            group_formation_method: currentAssessment.group_formation_method,
-            group_submission_mode: currentAssessment.group_submission_mode,
-            target_group_size: currentAssessment.target_group_size,
-            allow_uneven_groups: currentAssessment.allow_uneven_groups,
-            groups_config: currentAssessment.groups_config,
-            // Add metadata for checklist assessments
-            ...(currentAssessment.metadata && {
-              metadata: currentAssessment.metadata,
-            }),
-          };
-          batchUpdate.assessments.update.push(assessmentToUpdate);
-          console.log("📝 Adding assessment to update:", assessmentToUpdate);
-        }
-
-        // Handle quiz questions if quiz type (but only for assessments with real IDs)
-        // Assessments with temporary IDs are handled in the creation case above
-        if (
-          currentAssessment?.assessment_type === "quiz" &&
-          initialAssessment?.assessment_type === "quiz" &&
-          !currentAssessment.id?.startsWith("temp_")
-        ) {
-          const initialQuestions = initialAssessment.quiz_questions || [];
-          const currentQuestions = currentAssessment.quiz_questions || [];
-
-          console.log("🔍 Quiz question batch processing:", {
-            initialQuestionsCount: initialQuestions.length,
-            currentQuestionsCount: currentQuestions.length,
-            initialQuestionIds: initialQuestions.map(q => q.id),
-            currentQuestionIds: currentQuestions.map(q => q.id)
-          });
-
-          // Only process questions with temp IDs (truly new questions not yet saved)
-          const questionsToCreate = currentQuestions.filter((q) => q.id?.startsWith("temp_"));
-          questionsToCreate.forEach((q) => {
-            const questionToCreate = {
-              assessment_id: currentAssessment.id,
-              question_text: q.question_text,
-              options: q.options,
-              correct_option: q.correct_option,
-            };
-            batchUpdate.quizQuestions.create.push(questionToCreate);
-            console.log("➕ Adding quiz question to create:", questionToCreate);
-          });
-
-          // Deleted questions - only real IDs that exist in initial but not current
-          const questionsToDelete = initialQuestions.filter((iq) => {
-            if (!iq.id || iq.id.startsWith("temp_")) return false;
-            const stillExists = currentQuestions.some((cq) => cq.id === iq.id);
-            if (!stillExists) {
-              console.log("🗑️ Question marked for deletion:", iq.id);
-              return true;
-            }
-            return false;
-          });
-
-          questionsToDelete.forEach((iq) => {
-            batchUpdate.quizQuestions.delete.push(iq.id!);
-            console.log("🗑️ Adding quiz question to delete:", iq.id);
-          });
-
-          // Updated questions - only process questions that exist in both states with changes
-          const questionsToUpdate = currentQuestions.filter((cq) => {
-            if (!cq.id || cq.id.startsWith("temp_")) return false;
-
-            const iq = initialQuestions.find((q) => q.id === cq.id);
-            if (!iq) {
-              // Question exists in current but not initial - either newly created or state sync issue
-              console.log("⚠️ Question in current but not initial state - skipping update:", cq.id);
-              return false;
-            }
-
-            // Compare the questions for changes
-            const hasChanges = (
-              cq.question_text !== iq.question_text ||
-              cq.correct_option !== iq.correct_option ||
-              JSON.stringify(cq.options) !== JSON.stringify(iq.options)
-            );
-
-            if (hasChanges) {
-              console.log("📝 Question has changes:", cq.id);
-              return true;
-            }
-
-            return false;
-          });
-
-          questionsToUpdate.forEach((cq) => {
-            const questionToUpdate = {
-              id: cq.id!,
-              question_text: cq.question_text,
-              options: cq.options,
-              correct_option: cq.correct_option,
-            };
-            batchUpdate.quizQuestions.update.push(questionToUpdate);
-            console.log("📝 Adding quiz question to update:", questionToUpdate);
-          });
-
-          console.log("📊 Quiz questions batch summary:", {
-            toCreate: questionsToCreate.length,
-            toDelete: questionsToDelete.length,
-            toUpdate: questionsToUpdate.length
-          });
-        }
-      });
-
-      console.log("✅ Batch update generation completed");
-      console.log("📊 Final batch update summary:", {
-        mapChanges: Object.keys(batchUpdate.map).length,
-        nodesToCreate: batchUpdate.nodes.create.length,
-        nodesToUpdate: batchUpdate.nodes.update.length,
-        nodesToDelete: batchUpdate.nodes.delete.length,
-        pathsToCreate: batchUpdate.paths.create.length,
-        pathsToDelete: batchUpdate.paths.delete.length,
-        contentToCreate: batchUpdate.content.create.length,
-        contentToUpdate: batchUpdate.content.update.length,
-        contentToDelete: batchUpdate.content.delete.length,
-      });
-
-      return batchUpdate;
-    } catch (error) {
-      console.error("❌ Error generating batch update:", error);
-      throw new Error(
-        `Failed to generate batch update: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    }
-  }, [map, initialMap]);
-
-  // More accurate check for unsaved changes using batch update logic
-  const hasUnsavedChanges = useMemo(() => {
-    if (!map || !initialMap) return false;
-
-    // First do a quick string comparison
-    if (JSON.stringify(map) === JSON.stringify(initialMap)) return false;
-
-    // If strings differ, check if there are actual changes that need saving
-    try {
-      const batchUpdate = generateBatchUpdate();
-      if (!batchUpdate) return false;
-
-      const hasChanges =
-        Object.keys(batchUpdate.map).length > 0 ||
-        batchUpdate.nodes.create.length > 0 ||
-        batchUpdate.nodes.update.length > 0 ||
-        batchUpdate.nodes.delete.length > 0 ||
-        batchUpdate.paths.create.length > 0 ||
-        batchUpdate.paths.delete.length > 0 ||
-        batchUpdate.content.create.length > 0 ||
-        batchUpdate.content.update.length > 0 ||
-        batchUpdate.content.delete.length > 0 ||
-        batchUpdate.assessments.create.length > 0 ||
-        batchUpdate.assessments.update.length > 0 ||
-        batchUpdate.assessments.delete.length > 0 ||
-        batchUpdate.quizQuestions.create.length > 0 ||
-        batchUpdate.quizQuestions.update.length > 0 ||
-        batchUpdate.quizQuestions.delete.length > 0;
-
-      return hasChanges;
-    } catch (error) {
-      console.error("Error checking for changes:", error);
-      // If we can't determine, fall back to simple comparison
-      return hasUnsavedChangesSimple;
-    }
-  }, [map, initialMap, generateBatchUpdate, hasUnsavedChangesSimple]);
-
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!map || !map.title.trim()) {
@@ -1118,7 +876,7 @@ export default function EditMapPage({
           difficulty: map.difficulty || 1,
           estimatedHours: Math.max(
             1,
-            Math.round(((map.map_nodes?.length || 1) * 30) / 60)
+            Math.round(((map.map_nodes?.length || 1) * 30) / 60),
           ),
           visibility: map.visibility || "public",
           metadata: {
@@ -1159,7 +917,7 @@ export default function EditMapPage({
                 from: path.source_node_id,
                 to: path.destination_node_id,
                 type: "prerequisite",
-              })) || []
+              })) || [],
           ) || [],
       };
 
@@ -1200,7 +958,7 @@ export default function EditMapPage({
     "initialMap:",
     !!initialMap,
     "isMounted:",
-    isMounted
+    isMounted,
   );
 
   if (isLoading) {
@@ -1234,16 +992,24 @@ export default function EditMapPage({
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <Button asChild variant="ghost" size="sm">
-                <Link href={
-                  map?.map_type === 'seed' && map?.parent_seed_id
-                    ? `/seeds/${map.parent_seed_id}`
-                    : map?.category === "journey" ? "/me" : `/map/${mapId}`
-                }>
+                <Link
+                  href={
+                    map?.map_type === "seed" && map?.parent_seed_id
+                      ? `/seeds/${map.parent_seed_id}`
+                      : map?.category === "journey"
+                        ? "/me"
+                        : `/map/${mapId}`
+                  }
+                >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  {map?.map_type === 'seed' ? "Back to Seed" : map?.category === "journey" ? "Back to Portal" : "Back to Map"}
+                  {map?.map_type === "seed"
+                    ? "Back to Seed"
+                    : map?.category === "journey"
+                      ? "Back to Portal"
+                      : "Back to Map"}
                 </Link>
               </Button>
-              {seedInfo?.seed_type === 'pathlab' && seedInfo.id && (
+              {seedInfo?.seed_type === "pathlab" && seedInfo.id && (
                 <>
                   <div className="h-6 w-px bg-border" />
                   <Button asChild variant="ghost" size="sm">
@@ -1358,9 +1124,10 @@ export default function EditMapPage({
                   onPathDaysChange={setPathDays}
                   onMapChange={(newMapParam) => {
                     // Handle both value and function updates
-                    const newMap = typeof newMapParam === 'function'
-                      ? newMapParam(map)
-                      : newMapParam;
+                    const newMap =
+                      typeof newMapParam === "function"
+                        ? newMapParam(map)
+                        : newMapParam;
 
                     setMap(newMap);
 
@@ -1373,12 +1140,12 @@ export default function EditMapPage({
 
                       // Find newly created nodes (ones that exist in newMap but not in initialMap)
                       const initialNodeIds = new Set(
-                        prev.map_nodes.map((node) => node.id)
+                        prev.map_nodes.map((node) => node.id),
                       );
                       const newlyCreatedNodes = newMap.map_nodes.filter(
                         (node) =>
                           !initialNodeIds.has(node.id) &&
-                          !node.id.startsWith("temp_")
+                          !node.id.startsWith("temp_"),
                       );
 
                       if (newlyCreatedNodes.length > 0) {
@@ -1387,7 +1154,7 @@ export default function EditMapPage({
                           newlyCreatedNodes.map((n) => ({
                             id: n.id,
                             title: n.title,
-                          }))
+                          })),
                         );
                         return {
                           ...prev,
@@ -1402,13 +1169,12 @@ export default function EditMapPage({
               </div>
             </TabsContent>
 
-            <TabsContent value="view" className="h-full m-0 p-0 overflow-hidden relative">
+            <TabsContent
+              value="view"
+              className="h-full m-0 p-0 overflow-hidden relative"
+            >
               <div className="h-full w-full bg-slate-950">
-                {map && (
-                  <MapViewerWithProvider
-                    map={map}
-                  />
-                )}
+                {map && <MapViewerWithProvider map={map} />}
               </div>
             </TabsContent>
 
@@ -1432,7 +1198,9 @@ export default function EditMapPage({
                             value={map.title}
                             onChange={(e) =>
                               setMap((prev) =>
-                                prev ? { ...prev, title: e.target.value } : null
+                                prev
+                                  ? { ...prev, title: e.target.value }
+                                  : null,
                               )
                             }
                             disabled={isSubmitting}
@@ -1444,19 +1212,29 @@ export default function EditMapPage({
                           <Label htmlFor="category">
                             Category
                             {map.category === "journey" && (
-                              <span className="ml-2 text-xs text-muted-foreground">(Personal Journey - Unchangeable)</span>
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                (Personal Journey - Unchangeable)
+                              </span>
                             )}
                           </Label>
                           <Select
                             value={map.category || ""}
                             onValueChange={(value: MapCategory) =>
                               setMap((prev) =>
-                                prev ? { ...prev, category: value } : null
+                                prev ? { ...prev, category: value } : null,
                               )
                             }
-                            disabled={isSubmitting || map.category === "journey"}
+                            disabled={
+                              isSubmitting || map.category === "journey"
+                            }
                           >
-                            <SelectTrigger className={map.category === "journey" ? "opacity-60 cursor-not-allowed" : ""}>
+                            <SelectTrigger
+                              className={
+                                map.category === "journey"
+                                  ? "opacity-60 cursor-not-allowed"
+                                  : ""
+                              }
+                            >
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1525,7 +1303,7 @@ export default function EditMapPage({
                                   };
                                   const blob = new Blob(
                                     [JSON.stringify(exportData, null, 2)],
-                                    { type: "application/json" }
+                                    { type: "application/json" },
                                   );
                                   const url = URL.createObjectURL(blob);
                                   const link = document.createElement("a");
@@ -1552,7 +1330,7 @@ export default function EditMapPage({
                               setMap((prev) =>
                                 prev
                                   ? { ...prev, description: e.target.value }
-                                  : null
+                                  : null,
                               )
                             }
                             className="min-h-[100px]"
@@ -1575,12 +1353,16 @@ export default function EditMapPage({
                               </TabsTrigger>
                             </TabsList>
 
-                            <TabsContent value="upload" className="space-y-2 mt-4">
+                            <TabsContent
+                              value="upload"
+                              className="space-y-2 mt-4"
+                            >
                               {/* Debug info */}
                               {process.env.NODE_ENV === "development" && (
                                 <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
                                   <div>
-                                    cover_image_url: {map.cover_image_url || "null"}
+                                    cover_image_url:{" "}
+                                    {map.cover_image_url || "null"}
                                   </div>
                                   <div>
                                     cover_image_blurhash:{" "}
@@ -1596,8 +1378,10 @@ export default function EditMapPage({
                                 mapId={mapId}
                                 currentImage={{
                                   url:
-                                    map.cover_image_url || map.metadata?.coverImage,
-                                  blurhash: map.cover_image_blurhash || undefined,
+                                    map.cover_image_url ||
+                                    map.metadata?.coverImage,
+                                  blurhash:
+                                    map.cover_image_blurhash || undefined,
                                 }}
                                 onImageUploaded={handleImageUploaded}
                                 onImageRemoved={handleImageRemoved}
@@ -1630,7 +1414,7 @@ export default function EditMapPage({
                                 setMap((prev) =>
                                   prev
                                     ? { ...prev, difficulty: value[0] }
-                                    : null
+                                    : null,
                                 )
                               }
                               disabled={isSubmitting}

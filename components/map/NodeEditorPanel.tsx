@@ -12,7 +12,8 @@ import {
   NodeAssessment,
   QuizQuestion,
 } from "@/types/map";
-import { Trash2, MapPin } from "lucide-react";
+import { PathDay } from "@/types/pathlab";
+import { Trash2, MapPin, Clock, Check, Calendar } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,9 +40,9 @@ interface NodeEditorPanelProps {
   onNodeDelete?: (nodeId: string) => void;
   onEditingStateChange?: (isEditing: boolean) => void;
   isSeedMap?: boolean; // NEW: Flag to indicate if this is a seed map
-  pathDays?: any[];
+  pathDays?: PathDay[];
   seedInfo?: { id: string; seed_type: string } | null;
-  onPathDaysChange?: (days: any[]) => void;
+  onPathDaysChange?: (days: PathDay[]) => void;
 }
 
 export function NodeEditorPanel({
@@ -180,17 +181,17 @@ export function NodeEditorPanel({
       setCurrentTab(newTab);
       onEditingStateChange?.(false);
     },
-    [currentTab, savePendingChanges, onEditingStateChange]
+    [currentTab, savePendingChanges, onEditingStateChange],
   );
 
   useEffect(() => {
     if (selectedNode) {
       console.log(
-        "📋 NodeEditorPanel: selectedNode changed, updating local state"
+        "📋 NodeEditorPanel: selectedNode changed, updating local state",
       );
       console.log(
         "📊 New node assessments:",
-        selectedNode.data.node_assessments
+        selectedNode.data.node_assessments,
       );
 
       setNodeData(selectedNode.data);
@@ -247,7 +248,7 @@ export function NodeEditorPanel({
           onNodeDataChange(selectedNode.id, { [field]: value });
         }
       },
-    [nodeData, selectedNode, onNodeDataChange, isTextNode]
+    [nodeData, selectedNode, onNodeDataChange, isTextNode],
   );
 
   const handleSliderChange = useCallback(
@@ -259,19 +260,19 @@ export function NodeEditorPanel({
         onNodeDataChange(selectedNode.id, { difficulty: value[0] });
       }
     },
-    [nodeData, selectedNode, onNodeDataChange]
+    [nodeData, selectedNode, onNodeDataChange],
   );
 
   const handleContentChange = useCallback(
     (newContent: NodeContent[]) => {
       console.log(
         "📝 NodeEditorPanel: Content changed, new content:",
-        newContent.length
+        newContent.length,
       );
 
       if (!selectedNode) {
         console.warn(
-          "❌ NodeEditorPanel: No selected node, cannot update content"
+          "❌ NodeEditorPanel: No selected node, cannot update content",
         );
         return;
       }
@@ -287,13 +288,13 @@ export function NodeEditorPanel({
         node_content: newContent,
       });
     },
-    [selectedNode, onNodeDataChange]
+    [selectedNode, onNodeDataChange],
   );
 
   const handleAssessmentChange = useCallback(
     (
       changedAssessment: NodeAssessment | null,
-      action: "add" | "delete" | "update"
+      action: "add" | "delete" | "update",
     ) => {
       if (!selectedNode) return;
 
@@ -304,7 +305,7 @@ export function NodeEditorPanel({
         "points_possible:",
         changedAssessment?.points_possible,
         "is_graded:",
-        changedAssessment?.is_graded
+        changedAssessment?.is_graded,
       );
 
       let newAssessments: NodeAssessment[];
@@ -318,7 +319,7 @@ export function NodeEditorPanel({
         // For update, update the existing assessment in place
         const currentAssessments = nodeData.node_assessments || [];
         const existingIndex = currentAssessments.findIndex(
-          (a) => a.id === changedAssessment.id
+          (a) => a.id === changedAssessment.id,
         );
 
         if (existingIndex >= 0) {
@@ -336,7 +337,7 @@ export function NodeEditorPanel({
         "📊 New assessments array:",
         newAssessments,
         "Length:",
-        newAssessments.length
+        newAssessments.length,
       );
 
       // Update local state immediately
@@ -355,7 +356,7 @@ export function NodeEditorPanel({
         setQuizQuestions([]);
       }
     },
-    [selectedNode, onNodeDataChange, nodeData.node_assessments]
+    [selectedNode, onNodeDataChange, nodeData.node_assessments],
   );
 
   const handleDeleteNode = useCallback(() => {
@@ -462,9 +463,15 @@ export function NodeEditorPanel({
                     <Label htmlFor="node_type">Node Type</Label>
                     <select
                       id="node_type"
-                      value={(selectedNode?.data as any)?.node_type || "learning"}
+                      value={
+                        (selectedNode?.data as any)?.node_type || "learning"
+                      }
                       onChange={(e) => {
-                        const newType = e.target.value as "learning" | "text" | "comment" | "end";
+                        const newType = e.target.value as
+                          | "learning"
+                          | "text"
+                          | "comment"
+                          | "end";
                         if (selectedNode) {
                           onNodeDataChange(selectedNode.id, {
                             node_type: newType,
@@ -479,23 +486,87 @@ export function NodeEditorPanel({
                       <option value="end">🏁 End Node (Completion)</option>
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      {((selectedNode?.data as any)?.node_type) === "end" && (
+                      {(selectedNode?.data as any)?.node_type === "end" && (
                         <span className="text-amber-600 font-medium">
-                          ⚠️ When students complete this node, they will see a congratulations popup marking the seed as finished.
+                          ⚠️ When students complete this node, they will see a
+                          congratulations popup marking the seed as finished.
                         </span>
                       )}
-                      {((selectedNode?.data as any)?.node_type) === "learning" && (
-                        "Standard interactive node with content and assessments"
-                      )}
-                      {((selectedNode?.data as any)?.node_type) === "text" && (
-                        "Text label for annotations and information"
-                      )}
-                      {((selectedNode?.data as any)?.node_type) === "comment" && (
-                        "Comment node for notes and reminders"
-                      )}
+                      {(selectedNode?.data as any)?.node_type === "learning" &&
+                        "Standard interactive node with content and assessments"}
+                      {(selectedNode?.data as any)?.node_type === "text" &&
+                        "Text label for annotations and information"}
+                      {(selectedNode?.data as any)?.node_type === "comment" &&
+                        "Comment node for notes and reminders"}
                     </p>
                   </div>
                 )}
+
+                {/* Path Days selection for PathLab maps */}
+                {!isTextNode &&
+                  (seedInfo?.seed_type === "pathlab" ||
+                    (pathDays && pathDays.length > 0)) && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <Label className="flex items-center gap-2 text-sm font-medium">
+                        <Clock className="h-4 w-4 text-blue-500" />
+                        Assign to Path Days
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {pathDays?.map((day) => {
+                          const isAssigned = day.node_ids?.includes(
+                            selectedNode.id,
+                          );
+                          return (
+                            <div
+                              key={day.id}
+                              className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all duration-200 ${
+                                isAssigned
+                                  ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
+                                  : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50"
+                              }`}
+                              onClick={() => {
+                                if (!onPathDaysChange || !pathDays) return;
+
+                                const newNodeIds = isAssigned
+                                  ? day.node_ids.filter(
+                                      (id) => id !== selectedNode.id,
+                                    )
+                                  : [...(day.node_ids || []), selectedNode.id];
+
+                                const updatedDays = pathDays.map((d) =>
+                                  d.id === day.id
+                                    ? { ...d, node_ids: newNodeIds }
+                                    : d,
+                                );
+
+                                onPathDaysChange(updatedDays);
+                              }}
+                            >
+                              <div
+                                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                  isAssigned
+                                    ? "bg-blue-500 border-blue-500"
+                                    : "bg-background border-muted-foreground/30"
+                                }`}
+                              >
+                                {isAssigned && (
+                                  <Check className="h-3 w-3 text-white stroke-[3]" />
+                                )}
+                              </div>
+                              <span className="text-xs font-semibold">
+                                Day {day.day_number}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {(!pathDays || pathDays.length === 0) && (
+                        <p className="text-xs text-muted-foreground italic bg-muted/20 p-2 rounded border border-dashed text-center">
+                          No path days defined yet.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                 {isTextNode && (
                   <>
@@ -800,7 +871,7 @@ export function NodeEditorPanel({
                                 // Save sprite to database immediately
                                 console.log(
                                   "🖼️ Saving sprite to database:",
-                                  spriteUrl
+                                  spriteUrl,
                                 );
                                 await updateNode(selectedNode.id, {
                                   sprite_url: spriteUrl,
@@ -825,7 +896,7 @@ export function NodeEditorPanel({
                               } catch (error) {
                                 console.error(
                                   "❌ Failed to save sprite:",
-                                  error
+                                  error,
                                 );
                                 toast({
                                   title: "Failed to save sprite",
@@ -891,91 +962,105 @@ export function NodeEditorPanel({
         </Tabs>
 
         {/* PathLab Day Assignment */}
-        {seedInfo?.seed_type === 'pathlab' && pathDays.length > 0 && selectedNode && !isTextNode && (
-          <div className="border-t border-gray-700 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold">PathLab Days</Label>
-              <span className="text-xs text-gray-400">
-                Assign to days
-              </span>
-            </div>
-            <p className="text-xs text-gray-400">
-              Check which days should include this node
-            </p>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {pathDays.map((day) => {
-                const isAssigned = Array.isArray(day.node_ids) && day.node_ids.includes(selectedNode.id);
-                return (
-                  <label
-                    key={day.id}
-                    className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
-                      isAssigned
-                        ? 'border-blue-500 bg-blue-950/30'
-                        : 'border-gray-700 hover:border-gray-600'
-                    }`}
-                    onClick={async () => {
-                      if (!onPathDaysChange || !seedInfo) return;
+        {seedInfo?.seed_type === "pathlab" &&
+          pathDays.length > 0 &&
+          selectedNode &&
+          !isTextNode && (
+            <div className="border-t border-gray-700 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">PathLab Days</Label>
+                <span className="text-xs text-gray-400">Assign to days</span>
+              </div>
+              <p className="text-xs text-gray-400">
+                Check which days should include this node
+              </p>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {pathDays.map((day) => {
+                  const isAssigned =
+                    Array.isArray(day.node_ids) &&
+                    day.node_ids.includes(selectedNode.id);
+                  return (
+                    <label
+                      key={day.id}
+                      className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                        isAssigned
+                          ? "border-blue-500 bg-blue-950/30"
+                          : "border-gray-700 hover:border-gray-600"
+                      }`}
+                      onClick={async () => {
+                        if (!onPathDaysChange || !seedInfo) return;
 
-                      const updatedDays = pathDays.map((d) => {
-                        if (d.day_number === day.day_number) {
-                          const currentNodeIds = Array.isArray(d.node_ids) ? d.node_ids : [];
-                          const newNodeIds = isAssigned
-                            ? currentNodeIds.filter((id: string) => id !== selectedNode.id)
-                            : [...currentNodeIds, selectedNode.id];
-                          return { ...d, node_ids: newNodeIds };
-                        }
-                        return d;
-                      });
-
-                      onPathDaysChange(updatedDays);
-
-                      // Save to database
-                      try {
-                        const pathResponse = await fetch(`/api/pathlab/days?seedId=${seedInfo.id}`);
-                        const pathData = await pathResponse.json();
-
-                        if (pathData.days && pathData.days.length > 0) {
-                          const pathId = pathData.days[0].path_id;
-
-                          await fetch('/api/pathlab/days', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              pathId,
-                              totalDays: updatedDays.length,
-                              days: updatedDays,
-                            }),
-                          });
-
-                          toast({
-                            title: isAssigned ? 'Removed from day' : 'Added to day',
-                            description: `Node ${isAssigned ? 'removed from' : 'added to'} Day ${day.day_number}`,
-                          });
-                        }
-                      } catch (error) {
-                        toast({
-                          title: 'Error',
-                          description: 'Failed to update day assignment',
-                          variant: 'destructive',
+                        const updatedDays = pathDays.map((d) => {
+                          if (d.day_number === day.day_number) {
+                            const currentNodeIds = Array.isArray(d.node_ids)
+                              ? d.node_ids
+                              : [];
+                            const newNodeIds = isAssigned
+                              ? currentNodeIds.filter(
+                                  (id: string) => id !== selectedNode.id,
+                                )
+                              : [...currentNodeIds, selectedNode.id];
+                            return { ...d, node_ids: newNodeIds };
+                          }
+                          return d;
                         });
-                      }
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isAssigned}
-                      onChange={() => {}} // Handled by label onClick
-                      className="h-4 w-4"
-                    />
-                    <span className={`text-sm ${isAssigned ? 'text-white font-medium' : 'text-gray-300'}`}>
-                      Day {day.day_number}{day.title ? `: ${day.title}` : ''}
-                    </span>
-                  </label>
-                );
-              })}
+
+                        onPathDaysChange(updatedDays);
+
+                        // Save to database
+                        try {
+                          const pathResponse = await fetch(
+                            `/api/pathlab/days?seedId=${seedInfo.id}`,
+                          );
+                          const pathData = await pathResponse.json();
+
+                          if (pathData.days && pathData.days.length > 0) {
+                            const pathId = pathData.days[0].path_id;
+
+                            await fetch("/api/pathlab/days", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                pathId,
+                                totalDays: updatedDays.length,
+                                days: updatedDays,
+                              }),
+                            });
+
+                            toast({
+                              title: isAssigned
+                                ? "Removed from day"
+                                : "Added to day",
+                              description: `Node ${isAssigned ? "removed from" : "added to"} Day ${day.day_number}`,
+                            });
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: "Failed to update day assignment",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isAssigned}
+                        onChange={() => {}} // Handled by label onClick
+                        className="h-4 w-4"
+                      />
+                      <span
+                        className={`text-sm ${isAssigned ? "text-white font-medium" : "text-gray-300"}`}
+                      >
+                        Day {day.day_number}
+                        {day.title ? `: ${day.title}` : ""}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </div>
   );

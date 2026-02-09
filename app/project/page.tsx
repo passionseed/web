@@ -174,6 +174,127 @@ interface RoadmapData {
 }
 
 /**
+ * Validates PathLab seed format with PathDay structure
+ */
+const validatePathLabJson = (jsonString: string): string[] => {
+  const errors: string[] = [];
+
+  try {
+    const data: any = JSON.parse(jsonString);
+
+    // 1. Validate 'seed' object
+    if (!data.seed) {
+      errors.push("PathLab Error: Missing 'seed' object.");
+    } else {
+      if (!data.seed.title || typeof data.seed.title !== "string")
+        errors.push("PathLab Error: seed.title is required (string).");
+      if (!data.seed.description || typeof data.seed.description !== "string")
+        errors.push("PathLab Error: seed.description is required (string).");
+      if (!data.seed.slogan || typeof data.seed.slogan !== "string")
+        errors.push("PathLab Error: seed.slogan is required (string).");
+    }
+
+    // 2. Validate 'nodes' object (keyed by node_key)
+    if (!data.nodes || typeof data.nodes !== "object") {
+      errors.push("PathLab Error: 'nodes' must be an object with node keys.");
+    } else {
+      const nodeKeys = Object.keys(data.nodes);
+      if (nodeKeys.length === 0) {
+        errors.push("PathLab Error: 'nodes' must contain at least one node.");
+      }
+
+      nodeKeys.forEach((key) => {
+        const node = data.nodes[key];
+        const nodeLabel = `Node '${key}'`;
+
+        if (!node.title) errors.push(`${nodeLabel}: Missing 'title'.`);
+        if (!node.instructions) errors.push(`${nodeLabel}: Missing 'instructions'.`);
+        if (!node.node_content || !Array.isArray(node.node_content)) {
+          errors.push(`${nodeLabel}: 'node_content' must be an array.`);
+        }
+        if (!node.node_assessments || !Array.isArray(node.node_assessments)) {
+          errors.push(`${nodeLabel}: 'node_assessments' must be an array.`);
+        }
+      });
+    }
+
+    // 3. Validate 'path' object with days
+    if (!data.path) {
+      errors.push("PathLab Error: Missing 'path' object.");
+    } else {
+      if (typeof data.path.total_days !== "number") {
+        errors.push("PathLab Error: path.total_days must be a number.");
+      } else if (data.path.total_days < 1 || data.path.total_days > 30) {
+        errors.push("PathLab Error: path.total_days must be between 1 and 30.");
+      }
+
+      if (!Array.isArray(data.path.days)) {
+        errors.push("PathLab Error: path.days must be an array.");
+      } else {
+        if (data.path.days.length !== data.path.total_days) {
+          errors.push(
+            `PathLab Error: path.days length (${data.path.days.length}) must match total_days (${data.path.total_days}).`
+          );
+        }
+
+        data.path.days.forEach((day: any, i: number) => {
+          const dayLabel = `Day ${i + 1}`;
+
+          if (typeof day.day_number !== "number") {
+            errors.push(`${dayLabel}: 'day_number' must be a number.`);
+          } else if (day.day_number !== i + 1) {
+            errors.push(`${dayLabel}: 'day_number' must be ${i + 1} (sequential).`);
+          }
+
+          if (!day.context_text || typeof day.context_text !== "string") {
+            errors.push(`${dayLabel}: 'context_text' is required (string).`);
+          }
+
+          if (!Array.isArray(day.reflection_prompts)) {
+            errors.push(`${dayLabel}: 'reflection_prompts' must be an array.`);
+          } else if (day.reflection_prompts.length === 0) {
+            errors.push(`${dayLabel}: Must have at least one reflection prompt.`);
+          }
+
+          if (!Array.isArray(day.node_keys)) {
+            errors.push(`${dayLabel}: 'node_keys' must be an array.`);
+          } else if (day.node_keys.length === 0) {
+            errors.push(`${dayLabel}: Must reference at least one node.`);
+          } else {
+            // Validate node_keys reference existing nodes
+            const nodeKeys = new Set(Object.keys(data.nodes || {}));
+            day.node_keys.forEach((key: string) => {
+              if (!nodeKeys.has(key)) {
+                errors.push(`${dayLabel}: References non-existent node key '${key}'.`);
+              }
+            });
+          }
+        });
+      }
+    }
+
+    // 4. Validate 'edges' array (optional but if present must be valid)
+    if (data.edges && Array.isArray(data.edges)) {
+      const nodeKeys = new Set(Object.keys(data.nodes || {}));
+      data.edges.forEach((edge: any, i: number) => {
+        if (!nodeKeys.has(edge.source_key)) {
+          errors.push(`Edge ${i + 1}: source_key '${edge.source_key}' does not exist.`);
+        }
+        if (!nodeKeys.has(edge.destination_key)) {
+          errors.push(`Edge ${i + 1}: destination_key '${edge.destination_key}' does not exist.`);
+        }
+      });
+    }
+  } catch (e) {
+    errors.push(
+      "Fatal Error: Invalid JSON format. The string could not be parsed.",
+    );
+  }
+
+  return errors;
+};
+
+/**
  * Validates the structure and educational completeness of a learning roadmap JSON.
  * @param jsonString The JSON string to validate.
  * @returns An array of error messages. An empty array means the JSON is valid.
@@ -197,7 +318,7 @@ const validateRoadmapJson = (jsonString: string): string[] => {
     // 2. Validate 'nodes' array
     if (!data.nodes || !Array.isArray(data.nodes) || data.nodes.length === 0) {
       errors.push(
-        "Validation Error: 'nodes' must be an array with at least one node."
+        "Validation Error: 'nodes' must be an array with at least one node.",
       );
     } else {
       data.nodes.forEach((node, i) => {
@@ -212,7 +333,7 @@ const validateRoadmapJson = (jsonString: string): string[] => {
           typeof node.position.y !== "number"
         ) {
           errors.push(
-            `${nodeLabel}: Invalid 'position' (must have numeric x and y coordinates).`
+            `${nodeLabel}: Invalid 'position' (must have numeric x and y coordinates).`,
           );
         }
 
@@ -223,7 +344,7 @@ const validateRoadmapJson = (jsonString: string): string[] => {
 
         if (!node.assessments || node.assessments.length === 0) {
           errors.push(
-            `${nodeLabel}: Must have a non-empty 'assessments' array.`
+            `${nodeLabel}: Must have a non-empty 'assessments' array.`,
           );
         }
       });
@@ -235,23 +356,237 @@ const validateRoadmapJson = (jsonString: string): string[] => {
       data.connections.forEach((conn, i) => {
         if (!nodeIds.has(conn.from)) {
           errors.push(
-            `Connection ${i + 1}: 'from' ID "${conn.from}" does not exist.`
+            `Connection ${i + 1}: 'from' ID "${conn.from}" does not exist.`,
           );
         }
         if (!nodeIds.has(conn.to)) {
           errors.push(
-            `Connection ${i + 1}: 'to' ID "${conn.to}" does not exist.`
+            `Connection ${i + 1}: 'to' ID "${conn.to}" does not exist.`,
           );
         }
       });
     }
   } catch (e) {
     errors.push(
-      "Fatal Error: Invalid JSON format. The string could not be parsed."
+      "Fatal Error: Invalid JSON format. The string could not be parsed.",
     );
   }
 
   return errors;
+};
+
+type PromptMode = "standard" | "pathlab";
+
+const PROMPT_TEMPLATES: Record<PromptMode, string> = {
+  standard: `Final Prompt: Adaptive Learning Roadmap Generator (v2.0)
+
+You are an expert educational content creator specializing in building step-by-step learning roadmaps. When a user describes a project they want to build, you will assess their skill level and generate a detailed, adaptive roadmap in JSON format that supports flexible, non-linear learning paths.
+
+Your Role:
+- Audience Adaptability: Cater to all skill levels, from complete beginners to experienced professionals
+- Skill Assessment: Actively probe the user's background and experience
+- Goal Scoping: For large goals, create a high-level roadmap that charts critical initial stages
+- Path Flexibility: Recognize that learning is not always linear. Structure roadmaps with parallel tracks where appropriate
+
+Available Content & Assessment Types:
+Content Types: "text", "video", "canva_slide", "image", "pdf", "resource_link"
+Assessment Types: "quiz", "text_answer", "image_upload", "file_upload", "checklist"
+
+JSON Structure Required:
+{
+  "map": {
+    "title": "Project Title",
+    "description": "Clear description of what students will build",
+    "difficulty": 1,
+    "estimatedHours": 20,
+    "visibility": "public",
+    "metadata": {
+      "tags": ["web-development", "javascript", "react"],
+      "category": "web-development"
+    }
+  },
+  "nodes": [
+    {
+      "id": "node_1",
+      "title": "Clear, actionable step title",
+      "description": "Brief description of what this step accomplishes",
+      "position": { "x": 100, "y": 100 },
+      "difficulty": 1,
+      "estimatedMinutes": 60,
+      "prerequisites": [],
+      "content": [
+        {
+          "content_type": "text",
+          "content_body": "### Instructions\\n1. First, do this specific action.\\n2. Next, run the following command.\\n\\n### Code Block\\n\`\`\`bash\\nnpm install\\n\`\`\`\\n\\n### Completion Criteria\\nSuccess is when you see the confirmation message."
+        },
+        {
+          "content_type": "resource_link",
+          "content_url": "https://example.com",
+          "content_body": "Official Documentation"
+        }
+      ],
+      "assessments": [
+        {
+          "type": "checklist",
+          "isGraded": false,
+          "pointsPossible": 0,
+          "metadata": {
+            "items": [
+              "Required setup is complete",
+              "I can run the basic command successfully"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "connections": [
+    { "from": "node_1", "to": "node_2", "type": "prerequisite" }
+  ]
+}
+
+Core Requirements:
+- Each node MUST have unique id, content array (not empty), and assessments array (not empty)
+- Use prerequisites array to define node dependencies (empty [] for starting nodes)
+- Position coordinates: increment x by 200 for sequential steps; use different y values (e.g., y: 100 for frontend, y: 300 for backend) for parallel tracks
+
+Best Practices:
+1. "Inspiration & Case Study" Node: Provide real-world examples and architectural patterns
+2. "Explore & Connect" Node: Guide users toward self-directed learning for advanced topics
+
+Clarification Protocol (IMPORTANT):
+Phase 1 - Assess Skill Level:
+- "Could you tell me about your experience with [key technology]?"
+- "What's the most complex project you've built?"
+- "On a scale of 1-5, how would you rate your skill level?"
+
+Phase 2 - Define Project Scope:
+- "What are the 2-3 essential features this project must have?"
+- "Is this a short-term learning project or long-term expansion?"
+- "Do you prefer linear or parallel learning tracks?"
+
+Response Format:
+First Response: Ask 2-3 clarifying questions about skill level and scope
+Second Response: Generate the complete JSON roadmap based on their answers`,
+  pathlab: `You are an expert PathLab curriculum architect.
+
+Your task is to generate a VALID JSON DRAFT BLUEPRINT that can be imported into the system to create:
+1) A Learning Map (content layer)
+2) A PathLab Map (experience layer)
+
+This is a SOLO, SELF-PACED, DAY-BASED exploration designed to help learners TEST a path and decide whether to CONTINUE, PAUSE, or QUIT.
+
+You must strictly follow the schemas and rules below. Do NOT invent fields. Do NOT add explanations.
+
+==================================================
+OUTPUT FORMAT (TOP LEVEL – REQUIRED)
+==================================================
+{
+  "seed": {
+    "title": string,
+    "description": string,
+    "slogan": string
+  },
+  "nodes": {
+    "<node_key>": MapNode,
+    ...
+  },
+  "edges": [
+    { "source_key": string, "destination_key": string }
+  ],
+  "path": {
+    "total_days": number,
+    "days": PathDay[]
+  }
+}
+
+==================================================
+LEARNING MAP – NODE SCHEMA (CONTENT LAYER)
+==================================================
+
+MapNode:
+{
+  "title": string,
+  "instructions": string,        // markdown, action-focused
+  "node_type": "learning" | "text" | "comment" | "end",
+  "metadata": {
+    "position": { "x": number, "y": number }
+  },
+  "node_content": [
+    {
+      "content_type": "text" | "video" | "canva_slide" | "image" | "pdf" | "resource_link",
+      "content_body": string
+    }
+  ],
+  "node_assessments": [
+    {
+      "type": "quiz" | "text_answer" | "file_upload" | "image_upload" | "checklist",
+      "prompt": string,
+      "isGraded": false,
+      "pointsPossible": 0
+    }
+  ]
+}
+
+CONTENT RULES (STRICT):
+- Every node MUST require an action (not just reading)
+- Each node must capture at least one low-effort signal (checklist or quiz).
+- Use uploads to capture proof of action when possible.
+- Use text_answer sparingly (max one per node, one sentence max), mainly for synthesis or decision-making.
+- Each node should be completable in 15–45 minutes
+- Do not front-load explanations.
+- Instructions should push the learner to act first, then reference content only as needed.
+
+==================================================
+PATHLAB MAP – DAY SCHEMA (EXPERIENCE LAYER)
+==================================================
+
+PathDay:
+{
+  "day_number": number,
+  "title": string,
+  "context_text": string,         // short framing, not instructional
+  "reflection_prompts": string[], // max 2, lightweight
+  "node_keys": string[]           // references keys from "nodes"
+}
+
+PATHLAB RULES (STRICT):
+1. total_days must be between 5 and 7
+2. Days must be sequential (1 → N)
+3. Each day must reference 1–2 nodes max
+4. Reflection must be low-effort:
+   - 1-sentence max
+5. Final day MUST include:
+   - synthesis
+   - an explicit decision signal:
+     Continue / Pause / Quit
+
+==================================================
+DESIGN PRINCIPLES (ENFORCE IN OUTPUT)
+==================================================
+- Assume learners are easily fatigued
+- Avoid deep journaling
+- Optimize for signal, not completion
+- Quitting with clarity is a success
+- No collaboration or team assumptions
+
+==================================================
+EDGE RULES
+==================================================
+- edges define logical learning flow
+- keep structure mostly linear
+- light branching is allowed, chaos is not
+
+==================================================
+RESPONSE RULES (MANDATORY)
+==================================================
+- Output ONLY valid JSON
+- No markdown
+- No comments
+- No explanation text
+- All references must be consistent
+- JSON must be parseable
+`,
 };
 
 export default function ProjectPage() {
@@ -259,11 +594,38 @@ export default function ProjectPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [previewData, setPreviewData] = useState<any>(null);
+  const [promptMode, setPromptMode] = useState<PromptMode>("standard");
+  const [detectedFormat, setDetectedFormat] = useState<"standard" | "pathlab" | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
-  const validateJson = validateRoadmapJson;
+  // Auto-detect format and use appropriate validator
+  const validateJson = (jsonString: string): string[] => {
+    if (!jsonString.trim()) return [];
+
+    try {
+      const parsed = JSON.parse(jsonString);
+
+      // Detect format based on structure
+      const isPathLab = parsed.seed && parsed.path && parsed.path.days;
+      const isStandard = parsed.map && Array.isArray(parsed.nodes);
+
+      if (isPathLab) {
+        setDetectedFormat("pathlab");
+        return validatePathLabJson(jsonString);
+      } else if (isStandard) {
+        setDetectedFormat("standard");
+        return validateRoadmapJson(jsonString);
+      } else {
+        setDetectedFormat(null);
+        return ["Unrecognized format. Must be either Standard (with 'map' object) or PathLab (with 'seed' and 'path' objects)."];
+      }
+    } catch (e) {
+      setDetectedFormat(null);
+      return ["Fatal Error: Invalid JSON format. The string could not be parsed."];
+    }
+  };
 
   const handleInputChange = (value: string) => {
     setJsonInput(value);
@@ -463,15 +825,22 @@ export default function ProjectPage() {
             {/* Validation & Preview */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {validationErrors.length === 0 && jsonInput.trim() ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  ) : validationErrors.length > 0 ? (
-                    <AlertCircle className="w-5 h-5 text-red-500" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {validationErrors.length === 0 && jsonInput.trim() ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : validationErrors.length > 0 ? (
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                    Validation & Preview
+                  </div>
+                  {detectedFormat && (
+                    <Badge variant={detectedFormat === "pathlab" ? "default" : "secondary"}>
+                      {detectedFormat === "pathlab" ? "PathLab Format" : "Standard Format"}
+                    </Badge>
                   )}
-                  Validation & Preview
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -491,10 +860,48 @@ export default function ProjectPage() {
                   </div>
                 )}
 
-                {previewData && (
+                {previewData && detectedFormat === "pathlab" && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <h4 className="text-green-800 font-medium mb-3">
-                      ✅ Valid JSON Structure
+                      ✅ Valid PathLab Structure
+                    </h4>
+                    <div className="text-sm text-green-700 space-y-2">
+                      <div>
+                        <strong>Seed:</strong> {previewData.seed?.title}
+                      </div>
+                      <div>
+                        <strong>Total Days:</strong> {previewData.path?.total_days || 0}
+                      </div>
+                      <div>
+                        <strong>Nodes:</strong>{" "}
+                        {Object.keys(previewData.nodes || {}).length}
+                      </div>
+                      <div>
+                        <strong>Edges:</strong> {previewData.edges?.length || 0}
+                      </div>
+                      <div className="pt-2 mt-2 border-t border-green-300">
+                        <strong>Day Breakdown:</strong>
+                        <ul className="mt-1 ml-4 space-y-1">
+                          {previewData.path?.days?.slice(0, 3).map((day: any) => (
+                            <li key={day.day_number}>
+                              Day {day.day_number}: {day.node_keys?.length || 0} node(s)
+                            </li>
+                          ))}
+                          {previewData.path?.days?.length > 3 && (
+                            <li className="italic">
+                              ...and {previewData.path.days.length - 3} more days
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {previewData && detectedFormat === "standard" && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h4 className="text-green-800 font-medium mb-3">
+                      ✅ Valid Standard Map Structure
                     </h4>
                     <div className="text-sm text-green-700 space-y-2">
                       <div>
@@ -512,7 +919,7 @@ export default function ProjectPage() {
                         {previewData.nodes?.reduce(
                           (total: number, node: any) =>
                             total + (node.assessments?.length || 0),
-                          0
+                          0,
                         ) || 0}
                       </div>
                     </div>
@@ -551,10 +958,26 @@ export default function ProjectPage() {
             <CardHeader>
               <CardTitle>AI Prompt for Generating Maps</CardTitle>
               <CardDescription>
-                Use this prompt with AI tools like ChatGPT or Claude to generate learning map JSON
+                Use these prompts with AI tools like ChatGPT or Claude to
+                generate learning map JSON
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <Tabs
+                value={promptMode}
+                onValueChange={(value) => setPromptMode(value as PromptMode)}
+                className="space-y-4"
+              >
+                <TabsList>
+                  <TabsTrigger value="standard">
+                    Standard Learning Map
+                  </TabsTrigger>
+                  <TabsTrigger value="pathlab">
+                    PathLab Learning Map
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
               <div className="bg-muted rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-semibold text-sm">Prompt Template</h4>
@@ -562,11 +985,15 @@ export default function ProjectPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const promptText = document.getElementById("ai-prompt-text")?.textContent || "";
-                      navigator.clipboard.writeText(promptText);
+                      navigator.clipboard.writeText(
+                        PROMPT_TEMPLATES[promptMode],
+                      );
                       toast({
                         title: "Prompt Copied",
-                        description: "Paste this into your AI tool to generate a learning map"
+                        description:
+                          promptMode === "pathlab"
+                            ? "Paste this into your AI tool to generate a PathLab-focused learning map"
+                            : "Paste this into your AI tool to generate a learning map",
                       });
                     }}
                   >
@@ -574,107 +1001,38 @@ export default function ProjectPage() {
                     Copy Prompt
                   </Button>
                 </div>
-                <pre id="ai-prompt-text" className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-auto text-sm whitespace-pre-wrap">
-{`Final Prompt: Adaptive Learning Roadmap Generator (v2.0)
-
-You are an expert educational content creator specializing in building step-by-step learning roadmaps. When a user describes a project they want to build, you will assess their skill level and generate a detailed, adaptive roadmap in JSON format that supports flexible, non-linear learning paths.
-
-Your Role:
-- Audience Adaptability: Cater to all skill levels, from complete beginners to experienced professionals
-- Skill Assessment: Actively probe the user's background and experience
-- Goal Scoping: For large goals, create a high-level roadmap that charts critical initial stages
-- Path Flexibility: Recognize that learning is not always linear. Structure roadmaps with parallel tracks where appropriate
-
-Available Content & Assessment Types:
-Content Types: "text", "video", "canva_slide", "image", "pdf", "resource_link"
-Assessment Types: "quiz", "text_answer", "image_upload", "file_upload", "checklist"
-
-JSON Structure Required:
-{
-  "map": {
-    "title": "Project Title",
-    "description": "Clear description of what students will build",
-    "difficulty": 1,
-    "estimatedHours": 20,
-    "visibility": "public",
-    "metadata": {
-      "tags": ["web-development", "javascript", "react"],
-      "category": "web-development"
-    }
-  },
-  "nodes": [
-    {
-      "id": "node_1",
-      "title": "Clear, actionable step title",
-      "description": "Brief description of what this step accomplishes",
-      "position": { "x": 100, "y": 100 },
-      "difficulty": 1,
-      "estimatedMinutes": 60,
-      "prerequisites": [],
-      "content": [
-        {
-          "content_type": "text",
-          "content_body": "### Instructions\\n1. First, do this specific action.\\n2. Next, run the following command.\\n\\n### Code Block\\n\`\`\`bash\\nnpm install\\n\`\`\`\\n\\n### Completion Criteria\\nSuccess is when you see the confirmation message."
-        },
-        {
-          "content_type": "resource_link",
-          "content_url": "https://example.com",
-          "content_body": "Official Documentation"
-        }
-      ],
-      "assessments": [
-        {
-          "type": "checklist",
-          "isGraded": false,
-          "pointsPossible": 0,
-          "metadata": {
-            "items": [
-              "Required setup is complete",
-              "I can run the basic command successfully"
-            ]
-          }
-        }
-      ]
-    }
-  ],
-  "connections": [
-    { "from": "node_1", "to": "node_2", "type": "prerequisite" }
-  ]
-}
-
-Core Requirements:
-- Each node MUST have unique id, content array (not empty), and assessments array (not empty)
-- Use prerequisites array to define node dependencies (empty [] for starting nodes)
-- Position coordinates: increment x by 200 for sequential steps; use different y values (e.g., y: 100 for frontend, y: 300 for backend) for parallel tracks
-
-Best Practices:
-1. "Inspiration & Case Study" Node: Provide real-world examples and architectural patterns
-2. "Explore & Connect" Node: Guide users toward self-directed learning for advanced topics
-
-Clarification Protocol (IMPORTANT):
-Phase 1 - Assess Skill Level:
-- "Could you tell me about your experience with [key technology]?"
-- "What's the most complex project you've built?"
-- "On a scale of 1-5, how would you rate your skill level?"
-
-Phase 2 - Define Project Scope:
-- "What are the 2-3 essential features this project must have?"
-- "Is this a short-term learning project or long-term expansion?"
-- "Do you prefer linear or parallel learning tracks?"
-
-Response Format:
-First Response: Ask 2-3 clarifying questions about skill level and scope
-Second Response: Generate the complete JSON roadmap based on their answers`}
+                <pre
+                  id="ai-prompt-text"
+                  className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-auto text-sm whitespace-pre-wrap"
+                >
+                  {PROMPT_TEMPLATES[promptMode]}
                 </pre>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">Usage Tips:</h4>
+                <h4 className="font-semibold text-blue-900 mb-2">
+                  Usage Tips:
+                </h4>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Copy this entire prompt and paste it into ChatGPT or Claude</li>
-                  <li>• Describe your project (e.g., "Help me build a recipe sharing app")</li>
-                  <li>• Answer the AI's clarifying questions about your skill level</li>
-                  <li>• The AI will generate a complete JSON roadmap tailored to you</li>
-                  <li>• Review and validate the generated JSON before pasting into the Create tab</li>
+                  <li>
+                    • Select Standard or PathLab prompt above, then copy it into
+                    ChatGPT or Claude
+                  </li>
+                  <li>
+                    • Describe your project or PathLab topic (e.g., "Help me
+                    build a UX design PathLab for beginners")
+                  </li>
+                  <li>
+                    • Answer the AI's clarifying questions about your skill
+                    level
+                  </li>
+                  <li>
+                    • The AI will generate a complete JSON roadmap tailored to
+                    you
+                  </li>
+                  <li>
+                    • Review and validate the generated JSON before pasting into
+                    the Create tab
+                  </li>
                 </ul>
               </div>
             </CardContent>
