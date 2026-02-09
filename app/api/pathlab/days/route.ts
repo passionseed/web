@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       throw daysError;
     }
 
-    return NextResponse.json({ days: days || [] });
+    return NextResponse.json({ days: days || [], pathId: path.id });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to fetch path days" },

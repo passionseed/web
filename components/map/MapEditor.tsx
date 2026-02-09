@@ -57,6 +57,7 @@ import {
   X,
   Eye,
   Users,
+  Sparkles,
 } from "lucide-react";
 import {
   ResizableHandle,
@@ -69,6 +70,8 @@ import FloatingEdge, { FloatingEdgeEdit } from "./FloatingEdge";
 import { isEditable } from "@/lib/dom/is-editable";
 import { log } from "console";
 import { MapEditorsDialog } from "./MapEditorsDialog";
+import { PathLabGeneratorChat } from "@/components/pathlab/PathLabGeneratorChat";
+import type { PathLabGeneratorDraftInput } from "@/lib/ai/pathlab-generator-schema";
 
 // Type definitions
 type AppNode = Node<any, "default" | "text">;
@@ -480,6 +483,7 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
   // JSON import state
   const [showJsonImport, setShowJsonImport] = useState(false);
   const [jsonInput, setJsonInput] = useState("");
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [jsonValidationErrors, setJsonValidationErrors] = useState<string[]>(
     []
   );
@@ -1822,6 +1826,51 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
 
   // ReactFlow handles node data and selection internally - no manual sync needed
 
+  // AI Generation Complete Handler
+  const handleAIGenerationComplete = useCallback(
+    async (draft: PathLabGeneratorDraftInput, params: any) => {
+      try {
+        toast({
+          title: "Saving PathLab...",
+          description: "Creating your generated pathLab in the database",
+        });
+
+        // Call the existing generate API to persist using the conversation params
+        const response = await fetch("/api/pathlab/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(params),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save pathLab");
+        }
+
+        const result = await response.json();
+
+        toast({
+          title: "PathLab Created!",
+          description: `Successfully created ${result.dayCount} days with ${result.nodeCount} nodes`,
+        });
+
+        // Close AI Assistant panel
+        setShowAIAssistant(false);
+
+        // Refresh page to show the new map
+        // TODO: Instead of refresh, we could fetch the new map data and update state
+        window.location.reload();
+      } catch (error: any) {
+        console.error("Failed to save AI-generated pathLab:", error);
+        toast({
+          title: "Save Failed",
+          description: error.message || "Failed to save the generated pathLab",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
+
   // Add node handler - immediately saves to database
   const handleAddNode = useCallback(async () => {
     console.log("🆕 Adding new node - saving to database immediately");
@@ -2549,6 +2598,20 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
                 Import JSON
               </Button>
 
+              {/* AI Assistant button - only show for pathLab seeds */}
+              {seedInfo?.seed_type === "pathlab" && (
+                <Button
+                  onClick={() => setShowAIAssistant(!showAIAssistant)}
+                  size="sm"
+                  variant={showAIAssistant ? "default" : "outline"}
+                  className="gap-2"
+                  title="Open PathLab AI Assistant"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  AI Assistant
+                </Button>
+              )}
+
               {/* Manage Editors button */}
               <div className="h-4 w-px bg-border" />
               <Button
@@ -2862,6 +2925,28 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
                   onPathDaysChange={onPathDaysChange}
                 />
               </div>
+            </ResizablePanel>
+          </>
+        )}
+
+        {/* AI Assistant Panel */}
+        {showAIAssistant && seedInfo?.seed_type === "pathlab" && (
+          <>
+            <ResizableHandle
+              withHandle
+              className="w-1.5 bg-border hover:bg-primary/20 transition-colors"
+            />
+            <ResizablePanel
+              id="map-editor-ai-panel"
+              defaultSize={30}
+              minSize={20}
+              maxSize={50}
+              className="transition-all duration-300 ease-in-out"
+            >
+              <PathLabGeneratorChat
+                onGenerationComplete={handleAIGenerationComplete}
+                onClose={() => setShowAIAssistant(false)}
+              />
             </ResizablePanel>
           </>
         )}
