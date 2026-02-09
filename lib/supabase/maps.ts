@@ -121,6 +121,7 @@ export const getMapsWithStats = async (
   } = await supabase.auth.getUser();
 
   // OPTIMIZATION: Drastically reduce data transfer by selecting only essential columns
+  // Changed node_assessments (id) to node_assessments (count) to reduce payload size
   let baseQuery = `
       id,
       title,
@@ -141,7 +142,7 @@ export const getMapsWithStats = async (
       map_nodes!inner (
         id,
         difficulty,
-        node_assessments (id)
+        node_assessments (count)
       )`;
 
   // Add enrollment data only for authenticated users
@@ -429,7 +430,7 @@ export const getMapsWithStats = async (
             map_nodes (
               id,
               difficulty,
-              node_assessments (id)
+              node_assessments (count)
             ),
             user_map_enrollments!left (
               enrolled_at,
@@ -458,7 +459,7 @@ export const getMapsWithStats = async (
             map_nodes (
               id,
               difficulty,
-              node_assessments (id)
+              node_assessments (count)
             ),
             user_map_enrollments!left (
               enrolled_at,
@@ -497,7 +498,7 @@ export const getMapsWithStats = async (
               map_nodes (
                 id,
                 difficulty,
-                node_assessments (id)
+                node_assessments (count)
               ),
               user_map_enrollments!left (
                 enrolled_at,
@@ -565,7 +566,19 @@ export const getMapsWithStats = async (
             )
           : 1;
       const totalAssessments = nodes.reduce(
-        (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
+        (sum: number, node: any) => {
+          // Check if node_assessments is array of objects with count property
+          // This handles the optimized query response format: [{ count: 1 }]
+          if (Array.isArray(node.node_assessments) && node.node_assessments.length > 0) {
+            const firstItem = node.node_assessments[0];
+            if (firstItem && typeof firstItem === 'object' && 'count' in firstItem) {
+              return sum + (Number(firstItem.count) || 0);
+            }
+            // Fallback for non-optimized query (if any)
+            return sum + node.node_assessments.length;
+          }
+          return sum;
+        },
         0
       );
 
