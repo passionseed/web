@@ -661,6 +661,12 @@ export default function EditMapPage({
         );
       }
 
+      // Check if there are PathLab days changes
+      const hasPathDaysChanges =
+        seedInfo?.seed_type === "pathlab" &&
+        pathId &&
+        JSON.stringify(pathDays) !== JSON.stringify(initialPathDays);
+
       // Check if there are actually changes to save
       const hasChanges =
         Object.keys(batchUpdate.map).length > 0 ||
@@ -679,8 +685,8 @@ export default function EditMapPage({
         batchUpdate.quizQuestions.update.length > 0 ||
         batchUpdate.quizQuestions.delete.length > 0;
 
-      if (!hasChanges) {
-        console.log("ℹ️ No actual changes detected in batch update");
+      if (!hasChanges && !hasPathDaysChanges) {
+        console.log("ℹ️ No actual changes detected in batch update or path days");
         toast({
           title: "No Changes to Save",
           description: "All data is already up to date.",
@@ -688,29 +694,28 @@ export default function EditMapPage({
         return;
       }
 
-      console.log("📨 Sending batch update to server...");
-      console.log("🎯 Map ID:", mapId);
+      // Save map changes if there are any
+      if (hasChanges) {
+        console.log("📨 Sending batch update to server...");
+        console.log("🎯 Map ID:", mapId);
 
-      // Add timeout to catch hanging requests
-      const savePromise = batchUpdateMap(mapId, batchUpdate);
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(
-          () => reject(new Error("Save operation timed out after 30 seconds")),
-          30000,
-        );
-      });
+        // Add timeout to catch hanging requests
+        const savePromise = batchUpdateMap(mapId, batchUpdate);
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(
+            () => reject(new Error("Save operation timed out after 30 seconds")),
+            30000,
+          );
+        });
 
-      await Promise.race([savePromise, timeoutPromise]);
+        await Promise.race([savePromise, timeoutPromise]);
 
-      console.log("✅ Batch update completed successfully");
+        console.log("✅ Batch update completed successfully");
+      }
 
       // Save PathLab days if they changed
-      if (
-        seedInfo?.seed_type === "pathlab" &&
-        pathId &&
-        JSON.stringify(pathDays) !== JSON.stringify(initialPathDays)
-      ) {
-        console.log("Saving changed path days...");
+      if (hasPathDaysChanges) {
+        console.log("💾 Saving changed path days...");
         try {
           const daysResponse = await fetch("/api/pathlab/days", {
             method: "POST",
@@ -730,32 +735,40 @@ export default function EditMapPage({
           } else {
             const errorData = await daysResponse.json();
             console.error("❌ Failed to save path days:", errorData);
+            throw new Error(errorData.error || "Failed to save path days");
           }
         } catch (error) {
           console.error("❌ Error saving path days:", error);
+          throw error; // Re-throw to trigger error handling below
         }
       }
 
-      // Refresh data after save with detailed logging
-      console.log("🔄 Refreshing map data after save...");
-      const updatedMap = await getMapWithNodes(mapId);
+      // Refresh data after save with detailed logging (only if map changes were saved)
+      if (hasChanges) {
+        console.log("🔄 Refreshing map data after save...");
+        const updatedMap = await getMapWithNodes(mapId);
 
-      if (!updatedMap) {
-        throw new Error("Failed to fetch updated map data after save");
+        if (!updatedMap) {
+          throw new Error("Failed to fetch updated map data after save");
+        }
+
+        console.log("📊 Updated map data:", JSON.stringify(updatedMap, null, 2));
+
+        // Update state with fresh data
+        const newInitialMap = JSON.parse(JSON.stringify(updatedMap));
+        setInitialMap(newInitialMap);
+        setMap(updatedMap);
+
+        console.log("✅ State updated with fresh data");
       }
-
-      console.log("📊 Updated map data:", JSON.stringify(updatedMap, null, 2));
-
-      // Update state with fresh data
-      const newInitialMap = JSON.parse(JSON.stringify(updatedMap));
-      setInitialMap(newInitialMap);
-      setMap(updatedMap);
-
-      console.log("✅ State updated with fresh data");
 
       toast({
         title: "All Changes Saved Successfully",
-        description: "Your map has been updated and refreshed.",
+        description: hasPathDaysChanges && hasChanges
+          ? "Your map and PathLab days have been updated."
+          : hasPathDaysChanges
+            ? "PathLab days have been updated."
+            : "Your map has been updated and refreshed.",
       });
 
       saveSuccessful = true;
