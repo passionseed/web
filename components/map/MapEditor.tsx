@@ -1835,11 +1835,15 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
           description: "Creating your generated pathLab in the database",
         });
 
-        // Call the existing generate API to persist using the conversation params
+        // Send both the draft and params to the API
+        // The API will use the provided draft instead of regenerating
         const response = await fetch("/api/pathlab/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(params),
+          body: JSON.stringify({
+            params,
+            draft,
+          }),
         });
 
         if (!response.ok) {
@@ -1856,9 +1860,27 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
         // Close AI Assistant panel
         setShowAIAssistant(false);
 
-        // Refresh page to show the new map
-        // TODO: Instead of refresh, we could fetch the new map data and update state
-        window.location.reload();
+        // Fetch updated map data and update state instead of reloading
+        toast({
+          title: "Refreshing map...",
+          description: "Loading the new PathLab structure",
+        });
+
+        // Dynamically import to avoid circular dependencies
+        const { getMapWithNodes } = await import("@/lib/supabase/maps");
+        const updatedMap = await getMapWithNodes(result.mapId);
+
+        if (updatedMap) {
+          // Update the map state which will trigger re-render of MapEditor
+          onMapChange(updatedMap);
+
+          toast({
+            title: "Map Refreshed!",
+            description: "Your new PathLab is now visible",
+          });
+        } else {
+          throw new Error("Failed to fetch updated map data");
+        }
       } catch (error: any) {
         console.error("Failed to save AI-generated pathLab:", error);
         toast({
@@ -1868,7 +1890,7 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
         });
       }
     },
-    [toast]
+    [toast, onMapChange]
   );
 
   // Add node handler - immediately saves to database

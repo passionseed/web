@@ -201,6 +201,38 @@ async function insertDraftStructures(params: {
   const supabase = await createClient();
   const { mapId, pathId, draft, replaceExisting } = params;
 
+  // TODO: OPTIMIZATION #3 - Database Transactions (Part 2)
+  // ================================================
+  // This function also needs transaction wrapping, especially for the replace scenario.
+  // When replaceExisting=true, we delete old data then insert new data. If the insert
+  // fails after deletion, we've lost the old data.
+  //
+  // IMPLEMENTATION APPROACH:
+  // 1. Wrap the entire replace + insert operation in a transaction
+  // 2. Use the same PostgreSQL function approach as createPathLabDraftFromGeneration
+  // 3. Create a separate RPC function: `replace_pathlab_draft_structures`
+  //
+  // 4. Transaction flow for replace:
+  //    BEGIN;
+  //      DELETE FROM path_days WHERE path_id = ...;
+  //      DELETE FROM map_nodes WHERE map_id = ...;
+  //      INSERT INTO map_nodes (...) VALUES (...);
+  //      INSERT INTO node_content (...) VALUES (...);
+  //      INSERT INTO node_assessments (...) VALUES (...);
+  //      INSERT INTO quiz_questions (...) VALUES (...);
+  //      INSERT INTO node_paths (...) VALUES (...);
+  //      INSERT INTO path_days (...) VALUES (...);
+  //      UPDATE paths SET total_days = ... WHERE id = ...;
+  //    COMMIT;
+  //
+  // 5. Benefits:
+  //    - Prevent data loss during replace operations
+  //    - Ensure all related data (nodes, content, assessments) are inserted together
+  //    - Better error recovery
+  //
+  // 6. Implementation priority: High for data integrity
+  // ================================================
+
   if (replaceExisting) {
     const { error: deleteDaysError } = await supabase
       .from("path_days")
@@ -390,6 +422,67 @@ export async function createPathLabDraftFromGeneration(params: {
   const { userId, request, draft } = params;
 
   let mapId: string | null = null;
+
+  // TODO: OPTIMIZATION #3 - Database Transactions
+  // ================================================
+  // Currently, this function performs multiple sequential database operations without
+  // a transaction wrapper. If any step fails partway through, we're left with partial
+  // data (e.g., a map and seed created, but nodes failed to insert).
+  //
+  // IMPLEMENTATION APPROACH:
+  // 1. Wrap all operations in a Supabase transaction using RPC function:
+  //    - Create a PostgreSQL function `create_pathlab_draft_transaction` in Supabase
+  //    - The function should accept all necessary parameters (map, seed, path, nodes, etc.)
+  //    - Use PostgreSQL's BEGIN...COMMIT with ROLLBACK on error
+  //
+  // 2. Alternative approach using application-level transaction pattern:
+  //    - Collect all insert operations into a single batch
+  //    - Use Supabase RPC to call a stored procedure that handles the transaction
+  //    - Example: await supabase.rpc('create_pathlab_draft', { draft_data: ... })
+  //
+  // 3. Benefits of transaction wrapper:
+  //    - Atomic operations - all succeed or all fail
+  //    - No orphaned data in the database
+  //    - Easier error handling and rollback
+  //    - Better data consistency
+  //
+  // 4. Supabase transaction pattern example:
+  //    ```sql
+  //    CREATE OR REPLACE FUNCTION create_pathlab_draft_transaction(
+  //      p_map_data jsonb,
+  //      p_seed_data jsonb,
+  //      p_path_data jsonb,
+  //      p_nodes_data jsonb,
+  //      p_days_data jsonb
+  //    ) RETURNS jsonb AS $$
+  //    DECLARE
+  //      v_map_id uuid;
+  //      v_seed_id uuid;
+  //      v_path_id uuid;
+  //    BEGIN
+  //      -- Insert map
+  //      INSERT INTO learning_maps (...) VALUES (...) RETURNING id INTO v_map_id;
+  //      -- Insert seed
+  //      INSERT INTO seeds (...) VALUES (...) RETURNING id INTO v_seed_id;
+  //      -- Insert path
+  //      INSERT INTO paths (...) VALUES (...) RETURNING id INTO v_path_id;
+  //      -- Insert nodes (batch)
+  //      INSERT INTO map_nodes (...) SELECT * FROM jsonb_to_recordset(p_nodes_data);
+  //      -- Insert days (batch)
+  //      INSERT INTO path_days (...) SELECT * FROM jsonb_to_recordset(p_days_data);
+  //
+  //      RETURN jsonb_build_object(
+  //        'map_id', v_map_id,
+  //        'seed_id', v_seed_id,
+  //        'path_id', v_path_id
+  //      );
+  //    END;
+  //    $$ LANGUAGE plpgsql;
+  //    ```
+  //
+  // 5. Impact: Medium - Improves data consistency and error handling
+  //    Priority: High for production stability
+  // ================================================
 
   try {
     const { data: map, error: mapError } = await supabase

@@ -36,6 +36,7 @@ export function PathLabGeneratorChat({
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState<string>("");
   const [accumulatedParams, setAccumulatedParams] = useState<ConversationParams>({});
   const [generatedDraft, setGeneratedDraft] = useState<PathLabGeneratorDraftInput | null>(
     null,
@@ -153,6 +154,7 @@ export function PathLabGeneratorChat({
 
   const handleGeneration = async (params: ConversationParams) => {
     setIsGenerating(true);
+    setGenerationProgress("Preparing generation...");
 
     try {
       console.log("🚀 Calling preview API with params:", params);
@@ -168,6 +170,15 @@ export function PathLabGeneratorChat({
         throw new Error(`Missing required parameters: ${missing.join(", ")}`);
       }
 
+      // Show progress steps
+      setGenerationProgress("Creating PathLab seed...");
+      await new Promise(resolve => setTimeout(resolve, 100)); // Brief delay for UI feedback
+
+      setGenerationProgress("Generating learning path structure...");
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      setGenerationProgress("Creating learning nodes...");
+
       // Call preview API to generate draft
       const response = await fetch("/api/pathlab/preview", {
         method: "POST",
@@ -181,8 +192,12 @@ export function PathLabGeneratorChat({
         throw new Error(errorData.error || `Generation failed: ${response.status}`);
       }
 
+      setGenerationProgress("Setting up daily schedule...");
       const data = await response.json();
       console.log("✅ Preview API response:", data);
+
+      setGenerationProgress("Finalizing PathLab draft...");
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       setGeneratedDraft(data.draft);
       setValidationResult(data.validation);
@@ -213,6 +228,7 @@ export function PathLabGeneratorChat({
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsGenerating(false);
+      setGenerationProgress("");
     }
   };
 
@@ -417,7 +433,7 @@ export function PathLabGeneratorChat({
                 <div className="flex items-center gap-2 rounded-lg bg-muted px-4 py-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm text-muted-foreground">
-                    Generating pathLab draft...
+                    {generationProgress || "Generating pathLab draft..."}
                   </span>
                 </div>
               </div>
