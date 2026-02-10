@@ -151,7 +151,7 @@ export function MapViewer({ map }: MapViewerProps) {
     "for user:",
     authUser?.email,
     "as",
-    userRole
+    userRole,
   );
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const leftPanelRef = useRef<ImperativePanelHandle>(null);
@@ -228,10 +228,10 @@ export function MapViewer({ map }: MapViewerProps) {
   const navigateToAdjacentNode = (direction: 1 | -1) => {
     // Only navigate through learning nodes, not text nodes
     const learningNodes = map.map_nodes.filter(
-      (node) => (node as any)?.node_type !== "text"
+      (node) => (node as any)?.node_type !== "text",
     );
     const unlockedNodes = learningNodes.filter((node) =>
-      isNodeUnlocked(node.id)
+      isNodeUnlocked(node.id),
     );
     if (unlockedNodes.length === 0) return;
 
@@ -254,7 +254,7 @@ export function MapViewer({ map }: MapViewerProps) {
       reactFlowInstance.setCenter(
         (nextNode.metadata as any)?.position?.x || 0,
         (nextNode.metadata as any)?.position?.y || 0,
-        { zoom: 1.2, duration: 600 }
+        { zoom: 1.2, duration: 600 },
       );
 
       // Update selection
@@ -293,7 +293,7 @@ export function MapViewer({ map }: MapViewerProps) {
         console.log(
           "✅ [MapViewer] Loaded team progress for",
           Object.keys(progressData).length,
-          "nodes"
+          "nodes",
         );
       } else {
         // Use the standard individual progress loading
@@ -302,7 +302,7 @@ export function MapViewer({ map }: MapViewerProps) {
         console.log(
           "✅ [MapViewer] Loaded individual progress for",
           Object.keys(progressData).length,
-          "nodes"
+          "nodes",
         );
       }
 
@@ -357,7 +357,7 @@ export function MapViewer({ map }: MapViewerProps) {
         if (teamMapInfo.isTeamMap && teamMapInfo.classroomId) {
           // Get user's role in the classroom
           const role = await getUserClassroomRoleClient(
-            teamMapInfo.classroomId
+            teamMapInfo.classroomId,
           );
           if (role) {
             setClassroomRole(role);
@@ -365,14 +365,14 @@ export function MapViewer({ map }: MapViewerProps) {
               "👥 [MapViewer] User role in classroom:",
               role,
               "for classroom:",
-              teamMapInfo.classroomId
+              teamMapInfo.classroomId,
             );
           }
         }
       } catch (error) {
         console.error(
           "❌ [MapViewer] Error checking team map or classroom role:",
-          error
+          error,
         );
       }
     };
@@ -397,7 +397,9 @@ export function MapViewer({ map }: MapViewerProps) {
 
     // Find all nodes that have paths leading to this node
     const prerequisites = map.map_nodes.filter((node) =>
-      node.node_paths_source.some((path) => path.destination_node_id === nodeId)
+      node.node_paths_source.some(
+        (path) => path.destination_node_id === nodeId,
+      ),
     );
 
     // If no prerequisites, node is unlocked (starting node)
@@ -439,7 +441,8 @@ export function MapViewer({ map }: MapViewerProps) {
       if (progress?.member_progress) {
         return progress.member_progress.every(
           (member: any) =>
-            member.node_status === "passed" || member.node_status === "submitted"
+            member.node_status === "passed" ||
+            member.node_status === "submitted",
         );
       }
       return status === "passed" || status === "submitted";
@@ -583,20 +586,20 @@ export function MapViewer({ map }: MapViewerProps) {
           // Show team member progress for team maps
           const memberProgress = progress.member_progress;
           const passedCount = memberProgress.filter(
-            (mp: any) => mp.node_status === "passed"
+            (mp: any) => mp.node_status === "passed",
           ).length;
           const submittedCount = memberProgress.filter(
-            (mp: any) => mp.node_status === "submitted"
+            (mp: any) => mp.node_status === "submitted",
           ).length;
           const inProgressCount = memberProgress.filter(
-            (mp: any) => mp.node_status === "in_progress"
+            (mp: any) => mp.node_status === "in_progress",
           ).length;
           const totalMembers = memberProgress.length;
           const completedCount = passedCount + submittedCount;
 
           // Check if this is an "all" requirement node
           const requiresAll = requirement === "all";
-          
+
           let badgeColor = "bg-blue-500";
           let badgeText = `${totalMembers}`;
           let title = `Team progress: ${passedCount} passed, ${submittedCount} submitted, ${inProgressCount} in progress`;
@@ -620,7 +623,7 @@ export function MapViewer({ map }: MapViewerProps) {
           memberProgressInfo = (
             <div className="absolute -top-2 -right-2 z-50">
               <div
-                className={`rounded-full p-1 text-xs font-bold shadow-lg text-white ${badgeColor} ${completedCount < totalMembers && requiresAll ? 'animate-pulse' : ''}`}
+                className={`rounded-full p-1 text-xs font-bold shadow-lg text-white ${badgeColor} ${completedCount < totalMembers && requiresAll ? "animate-pulse" : ""}`}
                 title={title}
               >
                 {badgeText}
@@ -630,11 +633,11 @@ export function MapViewer({ map }: MapViewerProps) {
         } else {
           // Count submissions for individual progress
           const nodeSubmissions = allSubmissions.filter(
-            (sub) => sub.node_assessments?.map_nodes?.id === data.id
+            (sub) => sub.node_assessments?.map_nodes?.id === data.id,
           );
           submissionCount = nodeSubmissions.length;
           pendingCount = nodeSubmissions.filter(
-            (sub) => sub.submission_grades.length === 0
+            (sub) => sub.submission_grades.length === 0,
           ).length;
 
           // Add grading badge if there are submissions
@@ -753,7 +756,7 @@ export function MapViewer({ map }: MapViewerProps) {
 
             {/* Floating Label with Enhanced Animation */}
             <div
-              className={`absolute -bottom-8 left-1/2 transform -translate-x-1/2 ${selected ? "scale-105 -translate-y-1" : ""} transition-all duration-300`}
+              className={`absolute -bottom-10 left-1/2 transform -translate-x-1/2 ${selected ? "scale-105 -translate-y-1" : ""} transition-all duration-300 z-30`}
             >
               <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1 shadow-lg hover:shadow-xl transition-shadow duration-200">
                 <div className="text-xs font-bold text-gray-800 text-center whitespace-nowrap max-w-24 truncate">
@@ -879,7 +882,8 @@ export function MapViewer({ map }: MapViewerProps) {
       node.node_paths_source.forEach((path) => {
         // Add visual indicators for path states
         const sourceProgress = progressMap[path.source_node_id];
-        const sourceStatus = sourceProgress?.status || (sourceProgress as any)?.status;
+        const sourceStatus =
+          sourceProgress?.status || (sourceProgress as any)?.status;
         const isPathActive =
           sourceStatus === "passed" ||
           sourceStatus === "in_progress" ||
@@ -961,11 +965,15 @@ export function MapViewer({ map }: MapViewerProps) {
         rightPanelRef.current.resize(30);
       }
     },
-    [reactFlowInstance, isPanelMinimized]
+    [reactFlowInstance, isPanelMinimized],
   );
 
   return (
-    <ResizablePanelGroup id="map-viewer-original-panels" direction="horizontal" className="h-full">
+    <ResizablePanelGroup
+      id="map-viewer-original-panels"
+      direction="horizontal"
+      className="h-full"
+    >
       <ResizablePanel
         id="map-viewer-original-left-panel"
         ref={leftPanelRef}
@@ -1073,12 +1081,10 @@ export function MapViewer({ map }: MapViewerProps) {
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                   <span>
                     {
-                      Object.values(progressMap).filter(
-                        (p) => {
-                          const status = p.status || (p as any)?.status;
-                          return status === "submitted";
-                        }
-                      ).length
+                      Object.values(progressMap).filter((p) => {
+                        const status = p.status || (p as any)?.status;
+                        return status === "submitted";
+                      }).length
                     }{" "}
                     Submitted
                   </span>
@@ -1087,12 +1093,10 @@ export function MapViewer({ map }: MapViewerProps) {
                   <div className="w-2 h-2 rounded-full bg-orange-500"></div>
                   <span>
                     {
-                      Object.values(progressMap).filter(
-                        (p) => {
-                          const status = p.status || (p as any)?.status;
-                          return status === "in_progress";
-                        }
-                      ).length
+                      Object.values(progressMap).filter((p) => {
+                        const status = p.status || (p as any)?.status;
+                        return status === "in_progress";
+                      }).length
                     }{" "}
                     In Progress
                   </span>

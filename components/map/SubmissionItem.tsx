@@ -28,7 +28,12 @@ interface SubmissionItemProps {
   grade: SubmissionGrade | null;
   index: number; // Index in the submissions list
   totalSubmissions: number; // Total number of submissions
-  progressStatus?: "not_started" | "in_progress" | "submitted" | "passed" | "failed";
+  progressStatus?:
+    | "not_started"
+    | "in_progress"
+    | "submitted"
+    | "passed"
+    | "failed";
   assessment?: { points_possible?: number | null; is_graded?: boolean };
 }
 
@@ -43,7 +48,15 @@ export function SubmissionItem({
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
   const isImageFile = (url: string): boolean => {
-    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    const imageExtensions = [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".webp",
+      ".heic",
+      ".heif",
+    ];
     const extension = url.toLowerCase().split(".").pop();
     return extension ? imageExtensions.includes(`.${extension}`) : false;
   };
@@ -193,11 +206,15 @@ export function SubmissionItem({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {(grade.points_awarded !== null && grade.points_awarded !== undefined) || assessment?.points_possible ? (
+                  {(grade.points_awarded !== null &&
+                    grade.points_awarded !== undefined) ||
+                  assessment?.points_possible ? (
                     <div className="flex items-center gap-1">
                       <span className="font-medium">
                         {grade.points_awarded ?? 0}
-                        {assessment?.points_possible && ` / ${assessment.points_possible}`} points
+                        {assessment?.points_possible &&
+                          ` / ${assessment.points_possible}`}{" "}
+                        points
                       </span>
                     </div>
                   ) : null}

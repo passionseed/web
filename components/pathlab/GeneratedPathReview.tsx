@@ -185,18 +185,18 @@ export function GeneratedPathReview({ seedId, nodes }: GeneratedPathReviewProps)
 
         {(validation?.errors?.length || validation?.warnings?.length) ? (
           <div className="space-y-2">
-            {validation.errors.map((issue) => (
+            {validation.errors.map((issue, index) => (
               <div
-                key={`error-${issue.code}-${issue.message}`}
+                key={`error-${index}`}
                 className="rounded border border-red-900/70 bg-red-950/20 p-2 text-xs text-red-200"
               >
                 <p className="font-medium">{issue.code}</p>
                 <p>{issue.message}</p>
               </div>
             ))}
-            {validation.warnings.map((issue) => (
+            {validation.warnings.map((issue, index) => (
               <div
-                key={`warning-${issue.code}-${issue.message}`}
+                key={`warning-${index}`}
                 className="rounded border border-amber-900/70 bg-amber-950/20 p-2 text-xs text-amber-200"
               >
                 <div className="flex items-center gap-2">

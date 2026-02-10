@@ -203,17 +203,74 @@ const validatePathLabJson = (jsonString: string): string[] => {
         errors.push("PathLab Error: 'nodes' must contain at least one node.");
       }
 
+      const validNodeTypes = ["learning", "text", "comment", "end"];
+      const validContentTypes = ["text", "video", "canva_slide", "image", "pdf", "resource_link"];
+      const validAssessmentTypes = ["quiz", "text_answer", "file_upload", "image_upload", "checklist"];
+
       nodeKeys.forEach((key) => {
         const node = data.nodes[key];
         const nodeLabel = `Node '${key}'`;
 
-        if (!node.title) errors.push(`${nodeLabel}: Missing 'title'.`);
-        if (!node.instructions) errors.push(`${nodeLabel}: Missing 'instructions'.`);
-        if (!node.node_content || !Array.isArray(node.node_content)) {
-          errors.push(`${nodeLabel}: 'node_content' must be an array.`);
+        // Required fields
+        if (!node.title || typeof node.title !== "string")
+          errors.push(`${nodeLabel}: 'title' is required (string).`);
+        if (!node.instructions || typeof node.instructions !== "string")
+          errors.push(`${nodeLabel}: 'instructions' is required (string).`);
+
+        // Validate node_type
+        if (!node.node_type || !validNodeTypes.includes(node.node_type)) {
+          errors.push(`${nodeLabel}: 'node_type' must be one of: ${validNodeTypes.join(", ")}.`);
         }
-        if (!node.node_assessments || !Array.isArray(node.node_assessments)) {
-          errors.push(`${nodeLabel}: 'node_assessments' must be an array.`);
+
+        // Validate position (can be at root or in metadata)
+        const position = node.position || node.metadata?.position;
+        if (!position || typeof position !== "object") {
+          errors.push(`${nodeLabel}: 'position' object is required (either at root or in metadata).`);
+        } else {
+          if (typeof position.x !== "number") {
+            errors.push(`${nodeLabel}: 'position.x' must be a number.`);
+          }
+          if (typeof position.y !== "number") {
+            errors.push(`${nodeLabel}: 'position.y' must be a number.`);
+          }
+        }
+
+        // Validate content
+        if (!node.content || !Array.isArray(node.content)) {
+          errors.push(`${nodeLabel}: 'content' must be an array.`);
+        } else if (node.content.length === 0) {
+          errors.push(`${nodeLabel}: 'content' must not be empty.`);
+        } else {
+          node.content.forEach((content: any, idx: number) => {
+            if (!content.content_type || !validContentTypes.includes(content.content_type)) {
+              errors.push(`${nodeLabel}: content[${idx}].content_type must be one of: ${validContentTypes.join(", ")}.`);
+            }
+            if (!content.content_body || typeof content.content_body !== "string") {
+              errors.push(`${nodeLabel}: content[${idx}].content_body is required (string).`);
+            }
+          });
+        }
+
+        // Validate assessments
+        if (!node.assessments || !Array.isArray(node.assessments)) {
+          errors.push(`${nodeLabel}: 'assessments' must be an array.`);
+        } else if (node.assessments.length === 0) {
+          errors.push(`${nodeLabel}: 'assessments' must not be empty.`);
+        } else {
+          node.assessments.forEach((assessment: any, idx: number) => {
+            if (!assessment.type || !validAssessmentTypes.includes(assessment.type)) {
+              errors.push(`${nodeLabel}: assessment[${idx}].type must be one of: ${validAssessmentTypes.join(", ")}.`);
+            }
+            if (!assessment.prompt || typeof assessment.prompt !== "string") {
+              errors.push(`${nodeLabel}: assessment[${idx}].prompt is required (string).`);
+            }
+            if (typeof assessment.isGraded !== "boolean") {
+              errors.push(`${nodeLabel}: assessment[${idx}].isGraded must be a boolean.`);
+            }
+            if (typeof assessment.pointsPossible !== "number") {
+              errors.push(`${nodeLabel}: assessment[${idx}].pointsPossible must be a number.`);
+            }
+          });
         }
       });
     }
@@ -224,8 +281,8 @@ const validatePathLabJson = (jsonString: string): string[] => {
     } else {
       if (typeof data.path.total_days !== "number") {
         errors.push("PathLab Error: path.total_days must be a number.");
-      } else if (data.path.total_days < 1 || data.path.total_days > 30) {
-        errors.push("PathLab Error: path.total_days must be between 1 and 30.");
+      } else if (data.path.total_days < 5 || data.path.total_days > 7) {
+        errors.push("PathLab Error: path.total_days must be between 5 and 7.");
       }
 
       if (!Array.isArray(data.path.days)) {
@@ -246,6 +303,10 @@ const validatePathLabJson = (jsonString: string): string[] => {
             errors.push(`${dayLabel}: 'day_number' must be ${i + 1} (sequential).`);
           }
 
+          if (!day.title || typeof day.title !== "string") {
+            errors.push(`${dayLabel}: 'title' is required (string).`);
+          }
+
           if (!day.context_text || typeof day.context_text !== "string") {
             errors.push(`${dayLabel}: 'context_text' is required (string).`);
           }
@@ -254,12 +315,16 @@ const validatePathLabJson = (jsonString: string): string[] => {
             errors.push(`${dayLabel}: 'reflection_prompts' must be an array.`);
           } else if (day.reflection_prompts.length === 0) {
             errors.push(`${dayLabel}: Must have at least one reflection prompt.`);
+          } else if (day.reflection_prompts.length > 2) {
+            errors.push(`${dayLabel}: Maximum 2 reflection prompts allowed.`);
           }
 
           if (!Array.isArray(day.node_keys)) {
             errors.push(`${dayLabel}: 'node_keys' must be an array.`);
           } else if (day.node_keys.length === 0) {
             errors.push(`${dayLabel}: Must reference at least one node.`);
+          } else if (day.node_keys.length > 2) {
+            errors.push(`${dayLabel}: Maximum 2 nodes per day allowed.`);
           } else {
             // Validate node_keys reference existing nodes
             const nodeKeys = new Set(Object.keys(data.nodes || {}));
@@ -483,20 +548,20 @@ OUTPUT FORMAT (TOP LEVEL – REQUIRED)
 ==================================================
 {
   "seed": {
-    "title": string,
-    "description": string,
-    "slogan": string
+    "title": string,           // Required: Map title
+    "description": string,     // Required: Map description
+    "slogan": string          // Required: Short tagline
   },
   "nodes": {
-    "<node_key>": MapNode,
+    "<node_key>": MapNode,   // Required: At least one node, keys are strings
     ...
   },
-  "edges": [
+  "edges": [                 // Optional: Define learning flow
     { "source_key": string, "destination_key": string }
   ],
   "path": {
-    "total_days": number,
-    "days": PathDay[]
+    "total_days": number,    // Required: 5-7 days only
+    "days": PathDay[]        // Required: Array matching total_days
   }
 }
 
@@ -504,88 +569,184 @@ OUTPUT FORMAT (TOP LEVEL – REQUIRED)
 LEARNING MAP – NODE SCHEMA (CONTENT LAYER)
 ==================================================
 
-MapNode:
+MapNode (ALL FIELDS REQUIRED):
 {
-  "title": string,
-  "instructions": string,        // markdown, action-focused
-  "node_type": "learning" | "text" | "comment" | "end",
-  "metadata": {
-    "position": { "x": number, "y": number }
-  },
-  "node_content": [
+  "title": string,                                    // Required: Node title
+  "instructions": string,                             // Required: Markdown, action-focused
+  "node_type": "learning" | "text" | "comment" | "end", // Required: Node type
+  "position": { "x": number, "y": number },          // Required: Canvas position (e.g., x: 100, y: 100)
+  "content": [                                        // Required: At least one content item
     {
       "content_type": "text" | "video" | "canva_slide" | "image" | "pdf" | "resource_link",
-      "content_body": string
+      "content_body": string                          // Required: Content text or description
     }
   ],
-  "node_assessments": [
+  "assessments": [                                    // Required: At least one assessment
     {
       "type": "quiz" | "text_answer" | "file_upload" | "image_upload" | "checklist",
-      "prompt": string,
-      "isGraded": false,
-      "pointsPossible": 0
+      "prompt": string,                               // Required: Assessment question/prompt
+      "isGraded": boolean,                           // Required: Usually false for PathLab
+      "pointsPossible": number                       // Required: Usually 0 for PathLab
     }
   ]
 }
 
 CONTENT RULES (STRICT):
 - Every node MUST require an action (not just reading)
-- Each node must capture at least one low-effort signal (checklist or quiz).
-- Use uploads to capture proof of action when possible.
-- Use text_answer sparingly (max one per node, one sentence max), mainly for synthesis or decision-making.
+- Every node MUST have at least one non-empty content item in content array
+- Every node MUST have at least one assessment in assessments array
+- Each node must capture at least one low-effort signal (checklist or quiz)
+- Use uploads (file_upload, image_upload) to capture proof of action when possible
+- Use text_answer sparingly (max one per node, one sentence max), mainly for synthesis or decision-making
 - Each node should be completable in 15–45 minutes
-- Do not front-load explanations.
-- Instructions should push the learner to act first, then reference content only as needed.
+- Do not front-load explanations
+- Instructions should push the learner to act first, then reference content only as needed
+- Use node_type "learning" for most nodes, "end" for final day nodes
 
 ==================================================
 PATHLAB MAP – DAY SCHEMA (EXPERIENCE LAYER)
 ==================================================
 
-PathDay:
+PathDay (ALL FIELDS REQUIRED):
 {
-  "day_number": number,
-  "title": string,
-  "context_text": string,         // short framing, not instructional
-  "reflection_prompts": string[], // max 2, lightweight
-  "node_keys": string[]           // references keys from "nodes"
+  "day_number": number,           // Required: Sequential (1, 2, 3...)
+  "title": string,                // Required: Day title
+  "context_text": string,         // Required: Short framing, not instructional
+  "reflection_prompts": string[], // Required: 1-2 prompts max, lightweight
+  "node_keys": string[]           // Required: 1-2 node references max
 }
 
 PATHLAB RULES (STRICT):
-1. total_days must be between 5 and 7
-2. Days must be sequential (1 → N)
-3. Each day must reference 1–2 nodes max
-4. Reflection must be low-effort:
-   - 1-sentence max
-5. Final day MUST include:
-   - synthesis
-   - an explicit decision signal:
-     Continue / Pause / Quit
+1. total_days must be exactly 5, 6, or 7 (no more, no less)
+2. Days must be sequential starting from 1 (day_number: 1, 2, 3...)
+3. path.days array length MUST equal total_days
+4. Each day must reference 1–2 nodes maximum in node_keys array
+5. Each day must have 1-2 reflection_prompts maximum (keep them short)
+6. Every node_key referenced must exist in the nodes object
+7. Reflection prompts must be low-effort: 1-sentence max per prompt
+8. Final day (last day) MUST include:
+   - Synthesis reflection
+   - An explicit decision signal prompt like:
+     "Based on this week, what's your next step? Continue / Pause / Quit"
 
 ==================================================
 DESIGN PRINCIPLES (ENFORCE IN OUTPUT)
 ==================================================
 - Assume learners are easily fatigued
-- Avoid deep journaling
+- Avoid deep journaling or long reflections
 - Optimize for signal, not completion
 - Quitting with clarity is a success
 - No collaboration or team assumptions
+- PathLab is SOLO and SELF-PACED
 
 ==================================================
 EDGE RULES
 ==================================================
-- edges define logical learning flow
-- keep structure mostly linear
-- light branching is allowed, chaos is not
+- edges array is optional but recommended
+- Each edge must reference existing node keys: { "source_key": "node_1", "destination_key": "node_2" }
+- Keep structure mostly linear (day 1 → day 2 → day 3...)
+- Light branching is allowed for optional paths
+- Avoid creating complex dependency graphs
+
+==================================================
+POSITION GUIDELINES
+==================================================
+- Start positions at x: 100, y: 100
+- Increment x by 200-250 for sequential days (x: 100, 300, 500...)
+- Keep y consistent for linear paths (all y: 100)
+- Use different y values for parallel/branching paths (y: 100 vs y: 300)
 
 ==================================================
 RESPONSE RULES (MANDATORY)
 ==================================================
 - Output ONLY valid JSON
-- No markdown
-- No comments
-- No explanation text
-- All references must be consistent
-- JSON must be parseable
+- No markdown code blocks (no \`\`\`json)
+- No comments inside JSON
+- No explanation text before or after JSON
+- All node_keys must be consistent across nodes, edges, and path.days
+- All required fields must be present
+- JSON must be parseable by JSON.parse()
+
+==================================================
+EXAMPLE STRUCTURE (Minimal Valid Format)
+==================================================
+{
+  "seed": {
+    "title": "Web Design Fundamentals",
+    "description": "Test your interest in web design over 5 days",
+    "slogan": "Design your first webpage"
+  },
+  "nodes": {
+    "day1_intro": {
+      "title": "HTML Basics",
+      "instructions": "Create a simple HTML page with a heading and paragraph. Test it in your browser.",
+      "node_type": "learning",
+      "position": { "x": 100, "y": 100 },
+      "content": [
+        {
+          "content_type": "text",
+          "content_body": "HTML structures web content using tags. Start with <!DOCTYPE html>, then add <html>, <head>, and <body> tags."
+        }
+      ],
+      "assessments": [
+        {
+          "type": "file_upload",
+          "prompt": "Upload your HTML file",
+          "isGraded": false,
+          "pointsPossible": 0
+        },
+        {
+          "type": "checklist",
+          "prompt": "Completion checklist",
+          "isGraded": false,
+          "pointsPossible": 0
+        }
+      ]
+    },
+    "day2_css": {
+      "title": "CSS Styling",
+      "instructions": "Add colors and fonts to your HTML page using CSS.",
+      "node_type": "learning",
+      "position": { "x": 300, "y": 100 },
+      "content": [
+        {
+          "content_type": "text",
+          "content_body": "CSS controls visual styling. Use <style> tags or external .css files."
+        }
+      ],
+      "assessments": [
+        {
+          "type": "image_upload",
+          "prompt": "Upload a screenshot of your styled page",
+          "isGraded": false,
+          "pointsPossible": 0
+        }
+      ]
+    }
+  },
+  "edges": [
+    { "source_key": "day1_intro", "destination_key": "day2_css" }
+  ],
+  "path": {
+    "total_days": 5,
+    "days": [
+      {
+        "day_number": 1,
+        "title": "Getting Started",
+        "context_text": "Today you'll write your first HTML.",
+        "reflection_prompts": ["What surprised you about HTML?"],
+        "node_keys": ["day1_intro"]
+      },
+      {
+        "day_number": 2,
+        "title": "Adding Style",
+        "context_text": "Now make it look good with CSS.",
+        "reflection_prompts": ["How does CSS change the user experience?"],
+        "node_keys": ["day2_css"]
+      }
+    ]
+  }
+}
 `,
 };
 
@@ -861,68 +1022,272 @@ export default function ProjectPage() {
                 )}
 
                 {previewData && detectedFormat === "pathlab" && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="text-green-800 font-medium mb-3">
-                      ✅ Valid PathLab Structure
-                    </h4>
-                    <div className="text-sm text-green-700 space-y-2">
-                      <div>
-                        <strong>Seed:</strong> {previewData.seed?.title}
-                      </div>
-                      <div>
-                        <strong>Total Days:</strong> {previewData.path?.total_days || 0}
-                      </div>
-                      <div>
-                        <strong>Nodes:</strong>{" "}
-                        {Object.keys(previewData.nodes || {}).length}
-                      </div>
-                      <div>
-                        <strong>Edges:</strong> {previewData.edges?.length || 0}
-                      </div>
-                      <div className="pt-2 mt-2 border-t border-green-300">
-                        <strong>Day Breakdown:</strong>
-                        <ul className="mt-1 ml-4 space-y-1">
-                          {previewData.path?.days?.slice(0, 3).map((day: any) => (
-                            <li key={day.day_number}>
-                              Day {day.day_number}: {day.node_keys?.length || 0} node(s)
-                            </li>
-                          ))}
-                          {previewData.path?.days?.length > 3 && (
-                            <li className="italic">
-                              ...and {previewData.path.days.length - 3} more days
-                            </li>
-                          )}
-                        </ul>
+                  <div className="space-y-3">
+                    {/* Summary */}
+                    <div className="bg-green-100 border border-green-300 rounded-lg p-3">
+                      <h4 className="text-green-900 font-semibold mb-2 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        PathLab Structure Valid
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-green-800 font-medium">Nodes:</span>{" "}
+                          <span className="font-semibold text-green-950">{Object.keys(previewData.nodes || {}).length}</span>
+                        </div>
+                        <div>
+                          <span className="text-green-800 font-medium">Days:</span>{" "}
+                          <span className="font-semibold text-green-950">{previewData.path?.total_days || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-green-800 font-medium">Edges:</span>{" "}
+                          <span className="font-semibold text-green-950">{previewData.edges?.length || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-green-800 font-medium">Content Items:</span>{" "}
+                          <span className="font-semibold text-green-950">
+                            {Object.values(previewData.nodes || {}).reduce(
+                              (sum: number, node: any) => sum + (node.content?.length || 0),
+                              0
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Browsable Details */}
+                    <Tabs defaultValue="seed" className="w-full">
+                      <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="seed">Seed</TabsTrigger>
+                        <TabsTrigger value="nodes">Nodes</TabsTrigger>
+                        <TabsTrigger value="days">Days</TabsTrigger>
+                        <TabsTrigger value="edges">Edges</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="seed" className="mt-2">
+                        <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm max-h-64 overflow-y-auto">
+                          <div>
+                            <span className="font-semibold text-foreground">Title:</span>{" "}
+                            <span className="text-foreground/80">{previewData.seed?.title || "❌ Missing"}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-foreground">Description:</span>{" "}
+                            <span className="text-foreground/80">{previewData.seed?.description || "❌ Missing"}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-foreground">Slogan:</span>{" "}
+                            <span className="text-foreground/80">{previewData.seed?.slogan || "❌ Missing"}</span>
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="nodes" className="mt-2">
+                        <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm max-h-64 overflow-y-auto">
+                          {Object.entries(previewData.nodes || {}).map(([key, node]: [string, any]) => (
+                            <details key={key} className="border-b border-border/50 pb-2 last:border-b-0">
+                              <summary className="cursor-pointer font-semibold text-foreground hover:text-blue-600">
+                                {key}: {node.title || "Untitled"}
+                                <span className="ml-2 text-xs text-foreground/60">
+                                  ({node.content?.length || 0} content, {node.assessments?.length || 0} assessments)
+                                </span>
+                              </summary>
+                              <div className="mt-2 ml-4 space-y-1 text-xs text-foreground/80">
+                                <div>
+                                  <span className="font-medium text-foreground">Type:</span> {node.node_type || "❌ Missing"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-foreground">Position:</span>{" "}
+                                  {node.position ? `(${node.position.x}, ${node.position.y})` : "❌ Missing"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-foreground">Content Types:</span>{" "}
+                                  {node.content?.map((c: any) => c.content_type).join(", ") || "None"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-foreground">Assessment Types:</span>{" "}
+                                  {node.assessments?.map((a: any) => a.type).join(", ") || "None"}
+                                </div>
+                              </div>
+                            </details>
+                          ))}
+                          {Object.keys(previewData.nodes || {}).length === 0 && (
+                            <p className="text-red-600">❌ No nodes found</p>
+                          )}
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="days" className="mt-2">
+                        <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm max-h-64 overflow-y-auto">
+                          {previewData.path?.days?.map((day: any) => (
+                            <details key={day.day_number} className="border-b border-border/50 pb-2 last:border-b-0">
+                              <summary className="cursor-pointer font-semibold text-foreground hover:text-blue-600">
+                                Day {day.day_number}: {day.title || "Untitled"}
+                                <span className="ml-2 text-xs text-foreground/60">
+                                  ({day.node_keys?.length || 0} nodes)
+                                </span>
+                              </summary>
+                              <div className="mt-2 ml-4 space-y-1 text-xs text-foreground/80">
+                                <div>
+                                  <span className="font-medium text-foreground">Context:</span>{" "}
+                                  <span>
+                                    {day.context_text?.substring(0, 80) || "❌ Missing"}
+                                    {day.context_text?.length > 80 && "..."}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-foreground">Reflection Prompts:</span>{" "}
+                                  {day.reflection_prompts?.length || 0}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-foreground">Node Keys:</span>{" "}
+                                  {day.node_keys?.join(", ") || "❌ None"}
+                                </div>
+                              </div>
+                            </details>
+                          ))}
+                          {!previewData.path?.days?.length && (
+                            <p className="text-red-600">❌ No days found</p>
+                          )}
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="edges" className="mt-2">
+                        <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm max-h-64 overflow-y-auto">
+                          {previewData.edges?.map((edge: any, i: number) => (
+                            <div key={i} className="flex items-center gap-2 text-xs border-b border-border/50 pb-2 last:border-b-0">
+                              <span className="font-mono bg-blue-100 text-blue-900 px-2 py-1 rounded">{edge.source_key}</span>
+                              <span className="text-foreground">→</span>
+                              <span className="font-mono bg-green-100 text-green-900 px-2 py-1 rounded">{edge.destination_key}</span>
+                            </div>
+                          ))}
+                          {!previewData.edges?.length && (
+                            <p className="text-foreground/60">No edges defined (optional)</p>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 )}
 
                 {previewData && detectedFormat === "standard" && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="text-green-800 font-medium mb-3">
-                      ✅ Valid Standard Map Structure
-                    </h4>
-                    <div className="text-sm text-green-700 space-y-2">
-                      <div>
-                        <strong>Map:</strong> {previewData.map?.title}
-                      </div>
-                      <div>
-                        <strong>Nodes:</strong> {previewData.nodes?.length || 0}
-                      </div>
-                      <div>
-                        <strong>Connections:</strong>{" "}
-                        {previewData.connections?.length || 0}
-                      </div>
-                      <div>
-                        <strong>Assessments:</strong>{" "}
-                        {previewData.nodes?.reduce(
-                          (total: number, node: any) =>
-                            total + (node.assessments?.length || 0),
-                          0,
-                        ) || 0}
+                  <div className="space-y-3">
+                    {/* Summary */}
+                    <div className="bg-green-100 border border-green-300 rounded-lg p-3">
+                      <h4 className="text-green-900 font-semibold mb-2 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Standard Map Valid
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-green-800 font-medium">Nodes:</span>{" "}
+                          <span className="font-semibold text-green-950">{previewData.nodes?.length || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-green-800 font-medium">Connections:</span>{" "}
+                          <span className="font-semibold text-green-950">{previewData.connections?.length || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-green-800 font-medium">Content Items:</span>{" "}
+                          <span className="font-semibold text-green-950">
+                            {previewData.nodes?.reduce(
+                              (sum: number, node: any) => sum + (node.content?.length || 0),
+                              0
+                            ) || 0}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-green-800 font-medium">Assessments:</span>{" "}
+                          <span className="font-semibold text-green-950">
+                            {previewData.nodes?.reduce(
+                              (sum: number, node: any) => sum + (node.assessments?.length || 0),
+                              0
+                            ) || 0}
+                          </span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Browsable Details */}
+                    <Tabs defaultValue="map" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="map">Map Info</TabsTrigger>
+                        <TabsTrigger value="nodes">Nodes</TabsTrigger>
+                        <TabsTrigger value="connections">Connections</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="map" className="mt-2">
+                        <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm max-h-64 overflow-y-auto">
+                          <div>
+                            <span className="font-semibold text-foreground">Title:</span>{" "}
+                            <span className="text-foreground/80">{previewData.map?.title || "❌ Missing"}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-foreground">Description:</span>{" "}
+                            <span className="text-foreground/80">{previewData.map?.description || "None"}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-foreground">Difficulty:</span>{" "}
+                            <span className="text-foreground/80">{previewData.map?.difficulty || "Not set"}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-foreground">Visibility:</span>{" "}
+                            <span className="text-foreground/80">{previewData.map?.visibility || "public"}</span>
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="nodes" className="mt-2">
+                        <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm max-h-64 overflow-y-auto">
+                          {previewData.nodes?.map((node: any, i: number) => (
+                            <details key={i} className="border-b border-border/50 pb-2 last:border-b-0">
+                              <summary className="cursor-pointer font-semibold text-foreground hover:text-blue-600">
+                                {node.id}: {node.title || "Untitled"}
+                                <span className="ml-2 text-xs text-foreground/60">
+                                  ({node.content?.length || 0} content, {node.assessments?.length || 0} assessments)
+                                </span>
+                              </summary>
+                              <div className="mt-2 ml-4 space-y-1 text-xs text-foreground/80">
+                                <div>
+                                  <span className="font-medium text-foreground">Position:</span>{" "}
+                                  {node.position ? `(${node.position.x}, ${node.position.y})` : "❌ Missing"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-foreground">Description:</span>{" "}
+                                  {node.description || "None"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-foreground">Content Types:</span>{" "}
+                                  {Array.isArray(node.content)
+                                    ? node.content.map((c: any) => c.content_type).join(", ")
+                                    : node.content?.type || "None"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-foreground">Assessment Types:</span>{" "}
+                                  {node.assessments?.map((a: any) => a.type).join(", ") || "None"}
+                                </div>
+                              </div>
+                            </details>
+                          ))}
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="connections" className="mt-2">
+                        <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm max-h-64 overflow-y-auto">
+                          {previewData.connections?.map((conn: any, i: number) => (
+                            <div key={i} className="flex items-center gap-2 text-xs border-b border-border/50 pb-2 last:border-b-0">
+                              <span className="font-mono bg-blue-100 text-blue-900 px-2 py-1 rounded">{conn.from}</span>
+                              <span className="text-foreground">→</span>
+                              <span className="font-mono bg-green-100 text-green-900 px-2 py-1 rounded">{conn.to}</span>
+                              {conn.type && (
+                                <span className="text-xs text-foreground/60">({conn.type})</span>
+                              )}
+                            </div>
+                          ))}
+                          {!previewData.connections?.length && (
+                            <p className="text-foreground/60">No connections defined (optional)</p>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 )}
 

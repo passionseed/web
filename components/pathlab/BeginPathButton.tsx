@@ -16,9 +16,13 @@ import { toast } from "sonner";
 
 interface BeginPathButtonProps {
   seedId: string;
+  existingEnrollmentId?: string;
 }
 
-export function BeginPathButton({ seedId }: BeginPathButtonProps) {
+export function BeginPathButton({
+  seedId,
+  existingEnrollmentId,
+}: BeginPathButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [whyJoined, setWhyJoined] = useState("");
@@ -55,6 +59,17 @@ export function BeginPathButton({ seedId }: BeginPathButtonProps) {
     }
   };
 
+  if (existingEnrollmentId) {
+    return (
+      <Button
+        onClick={() => router.push(`/seeds/pathlab/${existingEnrollmentId}`)}
+        className="w-full bg-white text-black hover:bg-neutral-200 text-lg py-6 font-bold"
+      >
+        Continue Path
+      </Button>
+    );
+  }
+
   return (
     <>
       <Button
@@ -79,10 +94,18 @@ export function BeginPathButton({ seedId }: BeginPathButtonProps) {
             placeholder="Write a sentence or two..."
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)} disabled={loading}>
+            <Button
+              variant="ghost"
+              onClick={() => setOpen(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button onClick={handleBegin} disabled={loading} className="bg-white text-black hover:bg-neutral-200">
+            <Button
+              onClick={handleBegin}
+              disabled={loading}
+              className="bg-white text-black hover:bg-neutral-200"
+            >
               {loading ? "Starting..." : "Start"}
             </Button>
           </DialogFooter>

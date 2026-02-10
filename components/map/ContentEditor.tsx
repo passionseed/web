@@ -59,7 +59,7 @@ const CONTENT_TYPE_CONFIG = {
   image: {
     label: "🖼️ Image Upload",
     placeholder: "",
-    hint: "Upload images (JPG, PNG, GIF, WebP) up to 5MB",
+    hint: "Upload images (JPG, PNG, GIF, WebP, HEIC) up to 10MB",
   },
   pdf: {
     label: "📄 PDF Document",
@@ -105,7 +105,7 @@ const validateUrl = (url: string): boolean => {
 const validateContentForm = (
   contentType: ContentType,
   contentUrl: string,
-  contentBody: string
+  contentBody: string,
 ): string[] => {
   const errors: string[] = [];
 
@@ -127,7 +127,7 @@ const validateContentForm = (
       !contentUrl.includes("canva.com/design/")
     ) {
       errors.push(
-        "Please enter a valid Canva design URL (should contain 'canva.com/design/')"
+        "Please enter a valid Canva design URL (should contain 'canva.com/design/')",
       );
     } else if (contentType === "video") {
       // Enhanced validation for video URLs - check for supported platforms
@@ -142,12 +142,12 @@ const validateContentForm = (
         "flickr.com",
       ];
       const isSupported = supportedPlatforms.some((platform) =>
-        contentUrl.toLowerCase().includes(platform)
+        contentUrl.toLowerCase().includes(platform),
       );
 
       if (!isSupported) {
         errors.push(
-          "For best compatibility, use URLs from: YouTube, Vimeo, SoundCloud, Twitter, Reddit, GIPHY, or Flickr. Other URLs may still work but aren't guaranteed."
+          "For best compatibility, use URLs from: YouTube, Vimeo, SoundCloud, Twitter, Reddit, GIPHY, or Flickr. Other URLs may still work but aren't guaranteed.",
         );
       }
     }
@@ -202,20 +202,23 @@ const ContentForm = ({
   onCancel,
 }: ContentFormProps) => {
   const [contentType, setContentType] = useState<ContentType>(
-    existingContent?.content_type || "video"
+    existingContent?.content_type || "video",
   );
   const [contentTitle, setContentTitle] = useState(
-    existingContent?.content_title || ""
+    existingContent?.content_title || "",
   );
   const [contentUrl, setContentUrl] = useState(
-    existingContent?.content_url || ""
+    existingContent?.content_url || "",
   );
   const [contentBody, setContentBody] = useState(
-    existingContent?.content_body || ""
+    existingContent?.content_body || "",
   );
   // State for order code blocks
   const [codeBlocks, setCodeBlocks] = useState<string[]>(() => {
-    if (existingContent?.content_type === "order_code" && existingContent.content_body) {
+    if (
+      existingContent?.content_type === "order_code" &&
+      existingContent.content_body
+    ) {
       try {
         return JSON.parse(existingContent.content_body);
       } catch {
@@ -246,7 +249,7 @@ const ContentForm = ({
       const validationErrors = validateContentForm(
         contentType,
         contentUrl,
-        contentBody
+        contentBody,
       );
 
       console.log("Validation errors:", validationErrors);
@@ -297,7 +300,7 @@ const ContentForm = ({
       existingContent,
       nodeId,
       onSave,
-    ]
+    ],
   );
 
   const clearErrors = useCallback(() => setErrors([]), []);
@@ -309,7 +312,7 @@ const ContentForm = ({
       setUploadedFileName(fileName);
       clearErrors();
     },
-    [clearErrors]
+    [clearErrors],
   );
 
   const handleFileUploadError = useCallback((error: string) => {
@@ -386,57 +389,58 @@ const ContentForm = ({
       {(contentType === "video" ||
         contentType === "canva_slide" ||
         contentType === "resource_link") && (
-          <div className="space-y-3">
-            <Label
-              htmlFor="content_url"
-              className="text-sm font-semibold text-slate-700"
-            >
-              URL <span className="text-red-500">*</span>
-              <span className="text-xs text-slate-500 ml-2 font-normal">
-                ({config.hint})
-              </span>
-            </Label>
-            <Input
-              id="content_url"
-              value={contentUrl}
-              onChange={(e) => {
-                setContentUrl(e.target.value);
-                clearErrors();
-              }}
-              placeholder={config.placeholder}
-              className={`h-11 border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 transition-colors truncate ${errors.some((e) => e.includes("URL"))
+        <div className="space-y-3">
+          <Label
+            htmlFor="content_url"
+            className="text-sm font-semibold text-slate-700"
+          >
+            URL <span className="text-red-500">*</span>
+            <span className="text-xs text-slate-500 ml-2 font-normal">
+              ({config.hint})
+            </span>
+          </Label>
+          <Input
+            id="content_url"
+            value={contentUrl}
+            onChange={(e) => {
+              setContentUrl(e.target.value);
+              clearErrors();
+            }}
+            placeholder={config.placeholder}
+            className={`h-11 border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 transition-colors truncate ${
+              errors.some((e) => e.includes("URL"))
                 ? "border-red-400 focus:border-red-500"
                 : ""
-                }`}
-            />
+            }`}
+          />
 
-            {contentType === "video" && (
-              <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg overflow-hidden">
-                <div className="text-green-600 mt-0.5 flex-shrink-0">🎯</div>
-                <div className="text-xs text-green-800 leading-relaxed break-words overflow-x-auto">
-                  <strong>Supported platforms:</strong> YouTube, Vimeo,
-                  SoundCloud, Twitter, Reddit, GIPHY, Flickr.
-                  <br />
-                  <strong>Pro tip:</strong> Most social media and video platform
-                  URLs work automatically!
-                </div>
+          {contentType === "video" && (
+            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg overflow-hidden">
+              <div className="text-green-600 mt-0.5 flex-shrink-0">🎯</div>
+              <div className="text-xs text-green-800 leading-relaxed break-words overflow-x-auto">
+                <strong>Supported platforms:</strong> YouTube, Vimeo,
+                SoundCloud, Twitter, Reddit, GIPHY, Flickr.
+                <br />
+                <strong>Pro tip:</strong> Most social media and video platform
+                URLs work automatically!
               </div>
-            )}
+            </div>
+          )}
 
-            {contentType === "resource_link" && (
-              <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg overflow-hidden">
-                <div className="text-purple-600 mt-0.5 flex-shrink-0">📚</div>
-                <div className="text-xs text-purple-800 leading-relaxed break-words overflow-x-auto">
-                  <strong>Examples:</strong> PDFs, Google Docs, GitHub repos,
-                  books, articles, datasets, tools.
-                  <br />
-                  <strong>Tip:</strong> Add a clear description below to help
-                  students understand what this resource is!
-                </div>
+          {contentType === "resource_link" && (
+            <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg overflow-hidden">
+              <div className="text-purple-600 mt-0.5 flex-shrink-0">📚</div>
+              <div className="text-xs text-purple-800 leading-relaxed break-words overflow-x-auto">
+                <strong>Examples:</strong> PDFs, Google Docs, GitHub repos,
+                books, articles, datasets, tools.
+                <br />
+                <strong>Tip:</strong> Add a clear description below to help
+                students understand what this resource is!
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* File Upload for Images */}
       {contentType === "image" && (
@@ -452,8 +456,8 @@ const ContentForm = ({
             onUploadComplete={handleFileUploadComplete}
             onValidationError={handleFileUploadError}
             onUploadStateChange={handleUploadStateChange}
-            accept=".jpg,.jpeg,.png,.gif,.webp"
-            maxSize={5} // 5MB limit for images
+            accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif"
+            maxSize={10} // 10MB limit for images
             allowMultiple={false}
             uploadEndpoint="images"
             className="border-2 border-dashed border-blue-200"
@@ -535,12 +539,13 @@ const ContentForm = ({
               setContentBody(e.target.value);
               clearErrors();
             }}
-            className={`min-h-[120px] ${errors.some(
-              (e) => e.includes("Content body") || e.includes("Description")
-            )
-              ? "border-red-500"
-              : ""
-              }`}
+            className={`min-h-[120px] ${
+              errors.some(
+                (e) => e.includes("Content body") || e.includes("Description"),
+              )
+                ? "border-red-500"
+                : ""
+            }`}
             placeholder={
               contentType === "resource_link"
                 ? "Describe what this resource is and why it's useful for students. e.g., 'Essential reading on machine learning fundamentals' or 'Python documentation for reference'"
@@ -569,83 +574,81 @@ const ContentForm = ({
         </div>
       )}
 
-
-
       {/* Order Code Editor */}
-      {
-        contentType === "order_code" && (
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold text-slate-700">
-              Code Blocks <span className="text-red-500">*</span>
-              <span className="text-xs text-slate-500 ml-2 font-normal">
-                ({config.hint})
-              </span>
-            </Label>
+      {contentType === "order_code" && (
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold text-slate-700">
+            Code Blocks <span className="text-red-500">*</span>
+            <span className="text-xs text-slate-500 ml-2 font-normal">
+              ({config.hint})
+            </span>
+          </Label>
 
-            <div className="space-y-2">
-              {codeBlocks.map((block, index) => (
-                <div key={index} className="flex gap-2">
-                  <Textarea
-                    value={block}
-                    onChange={(e) => {
-                      const newBlocks = [...codeBlocks];
-                      newBlocks[index] = e.target.value;
-                      setCodeBlocks(newBlocks);
-                      setContentBody(JSON.stringify(newBlocks));
-                      clearErrors();
+          <div className="space-y-2">
+            {codeBlocks.map((block, index) => (
+              <div key={index} className="flex gap-2">
+                <Textarea
+                  value={block}
+                  onChange={(e) => {
+                    const newBlocks = [...codeBlocks];
+                    newBlocks[index] = e.target.value;
+                    setCodeBlocks(newBlocks);
+                    setContentBody(JSON.stringify(newBlocks));
+                    clearErrors();
 
-                      // Auto-resize
-                      e.target.style.height = 'auto';
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                    }}
-                    // Initialize height on mount
-                    ref={(el) => {
-                      if (el) {
-                        el.style.height = 'auto';
-                        el.style.height = `${el.scrollHeight}px`;
-                      }
-                    }}
-                    placeholder={`Code block ${index + 1}`}
-                    className="font-mono text-sm min-h-[60px] resize-none overflow-hidden bg-slate-900 text-slate-100 border-slate-700"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => {
-                      const newBlocks = codeBlocks.filter((_, i) => i !== index);
-                      setCodeBlocks(newBlocks);
-                      setContentBody(JSON.stringify(newBlocks));
-                    }}
-                    disabled={codeBlocks.length <= 1}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setCodeBlocks([...codeBlocks, ""]);
-              }}
-              className="w-full border-dashed"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Code Block
-            </Button>
-
-            <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg text-blue-800">
-              🧩 <strong>How it works:</strong> Define the blocks in the <strong>exact order</strong> you want them to appear.
-              Students can drag blocks to reorder them or nest them inside containers (blocks with braces).
-            </div>
+                    // Auto-resize
+                    e.target.style.height = "auto";
+                    e.target.style.height = `${e.target.scrollHeight}px`;
+                  }}
+                  // Initialize height on mount
+                  ref={(el) => {
+                    if (el) {
+                      el.style.height = "auto";
+                      el.style.height = `${el.scrollHeight}px`;
+                    }
+                  }}
+                  placeholder={`Code block ${index + 1}`}
+                  className="font-mono text-sm min-h-[60px] resize-none overflow-hidden bg-slate-900 text-slate-100 border-slate-700"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    const newBlocks = codeBlocks.filter((_, i) => i !== index);
+                    setCodeBlocks(newBlocks);
+                    setContentBody(JSON.stringify(newBlocks));
+                  }}
+                  disabled={codeBlocks.length <= 1}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
           </div>
-        )
-      }
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setCodeBlocks([...codeBlocks, ""]);
+            }}
+            className="w-full border-dashed"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Code Block
+          </Button>
+
+          <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg text-blue-800">
+            🧩 <strong>How it works:</strong> Define the blocks in the{" "}
+            <strong>exact order</strong> you want them to appear. Students can
+            drag blocks to reorder them or nest them inside containers (blocks
+            with braces).
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button
@@ -685,7 +688,7 @@ const ContentForm = ({
           )}
         </Button>
       </div>
-    </form >
+    </form>
   );
 };
 
@@ -752,7 +755,7 @@ const getEmbedUrl = (url: string): string | null => {
     // YouTube
     if (url.includes("youtube.com") || url.includes("youtu.be")) {
       const videoId = url.match(
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
       )?.[1];
       return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
     }
@@ -953,7 +956,7 @@ export function ContentEditor({
   // Sort content by display_order for rendering
   const sortedContent = useMemo(() => {
     return [...content].sort(
-      (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+      (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0),
     );
   }, [content]);
 
@@ -1051,7 +1054,7 @@ export function ContentEditor({
         });
       }
     },
-    [content, onContentChange, nodeId, toast]
+    [content, onContentChange, nodeId, toast],
   );
 
   const handleDelete = useCallback(
@@ -1086,7 +1089,7 @@ export function ContentEditor({
         });
       }
     },
-    [content, onContentChange, toast]
+    [content, onContentChange, toast],
   );
 
   const handleEdit = useCallback((id: string) => {
@@ -1104,7 +1107,7 @@ export function ContentEditor({
         handleDelete(id);
       }
     },
-    [handleDelete]
+    [handleDelete],
   );
 
   // Reordering functions
@@ -1152,7 +1155,7 @@ export function ContentEditor({
         description: "Moved up in the list",
       });
     },
-    [sortedContent, onContentChange, toast]
+    [sortedContent, onContentChange, toast],
   );
 
   const moveContentDown = useCallback(
@@ -1199,7 +1202,7 @@ export function ContentEditor({
         description: "Moved down in the list",
       });
     },
-    [sortedContent, onContentChange, toast]
+    [sortedContent, onContentChange, toast],
   );
 
   // Empty state component
@@ -1223,7 +1226,7 @@ export function ContentEditor({
         </div>
       </div>
     ),
-    []
+    [],
   );
 
   // Help text component
@@ -1237,7 +1240,7 @@ export function ContentEditor({
         </p>
       </div>
     ),
-    []
+    [],
   );
 
   return (
