@@ -14,6 +14,19 @@ import { DecisionGate, type PathDecision } from "./DecisionGate";
 import { ExitReflection } from "./ExitReflection";
 import { EndReflection } from "./EndReflection";
 import { TrendSummary } from "./TrendSummary";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+
+type PathDaySummary = {
+  day_number: number;
+  title: string | null;
+  context_text: string;
+  reflection_prompts: string[];
+  node_ids: string[];
+  nodes: Array<{
+    id: string;
+    title: string;
+  }>;
+};
 
 type PathLabExperienceProps = {
   enrollment: any;
@@ -21,6 +34,7 @@ type PathLabExperienceProps = {
   path: any;
   day: any;
   dayNodes: MapNode[];
+  pathDaySummaries: PathDaySummary[];
   availableDayNumbers: number[];
   currentDayNumber: number;
   reflections: any[];
@@ -144,6 +158,7 @@ export function PathLabExperience({
   path,
   day,
   dayNodes,
+  pathDaySummaries,
   availableDayNumbers,
   currentDayNumber,
   reflections,
@@ -175,6 +190,9 @@ export function PathLabExperience({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(
     dayNodes[0]?.id || null,
   );
+
+  // Map View State
+  const [isMapOpen, setIsMapOpen] = useState(false);
   const [progressMap, setProgressMap] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
   const [reflectionDraft, setReflectionDraft] = useState<DailyReflectionDraft>({
@@ -185,11 +203,15 @@ export function PathLabExperience({
     timeSpentMinutes: null,
   });
   const currentDayIndex = useMemo(
-    () => availableDayNumbers.findIndex((dayNumber) => dayNumber === day?.day_number),
+    () =>
+      availableDayNumbers.findIndex(
+        (dayNumber) => dayNumber === day?.day_number,
+      ),
     [availableDayNumbers, day?.day_number],
   );
   const previousRenderedDay = useRef<number | null>(day?.day_number ?? null);
-  const previousDayNumber = currentDayIndex > 0 ? availableDayNumbers[currentDayIndex - 1] : null;
+  const previousDayNumber =
+    currentDayIndex > 0 ? availableDayNumbers[currentDayIndex - 1] : null;
   const nextDayNumber =
     currentDayIndex >= 0 && currentDayIndex < availableDayNumbers.length - 1
       ? availableDayNumbers[currentDayIndex + 1]
@@ -201,16 +223,62 @@ export function PathLabExperience({
     return node ? toSelectedNode(node) : null;
   }, [dayNodes, selectedNodeId]);
 
+  const mapViewerDays = useMemo(() => {
+    if (pathDaySummaries.length > 0) {
+      return [...pathDaySummaries]
+        .filter((entry) => Number.isFinite(entry.day_number))
+        .sort((a, b) => a.day_number - b.day_number);
+    }
+
+    const totalDays = Number(path?.total_days || 0);
+    if (!Number.isFinite(totalDays) || totalDays <= 0) {
+      return [];
+    }
+
+    return Array.from({ length: totalDays }, (_, index) => ({
+      day_number: index + 1,
+      title: null,
+      context_text: "",
+      reflection_prompts: [],
+      node_ids: [],
+      nodes: [],
+    }));
+  }, [path?.total_days, pathDaySummaries]);
+
+  const upcomingDays = useMemo(
+    () => mapViewerDays.filter((entry) => entry.day_number >= currentDayNumber),
+    [currentDayNumber, mapViewerDays],
+  );
+
+  const dayProgressMap = useMemo(() => {
+    return mapViewerDays.reduce<Record<number, { completed: number; total: number }>>(
+      (acc, entry) => {
+        const nodeIds = Array.isArray(entry.node_ids) ? entry.node_ids : [];
+        const completed = nodeIds.filter((nodeId) =>
+          COMPLETE_STATUSES.has(progressMap[nodeId]?.status),
+        ).length;
+        acc[entry.day_number] = { completed, total: nodeIds.length };
+        return acc;
+      },
+      {},
+    );
+  }, [mapViewerDays, progressMap]);
+
   const allNodesComplete = useMemo(() => {
     if (dayNodes.length === 0) return true;
     const result = dayNodes.every((node) => {
       const nodeProgress = progressMap[node.id];
       const status = nodeProgress?.status;
       const isComplete = COMPLETE_STATUSES.has(status);
-      console.log(`[PathLab] Node ${node.title}: status="${status}", isComplete=${isComplete}`);
+      console.log(
+        `[PathLab] Node ${node.title}: status="${status}", isComplete=${isComplete}`,
+      );
       return isComplete;
     });
-    console.log(`[PathLab] All nodes complete: ${result}`, { progressMap, dayNodes: dayNodes.map(n => n.id) });
+    console.log(`[PathLab] All nodes complete: ${result}`, {
+      progressMap,
+      dayNodes: dayNodes.map((n) => n.id),
+    });
     return result;
   }, [dayNodes, progressMap]);
 
@@ -223,7 +291,7 @@ export function PathLabExperience({
         return;
       }
       setProgressMap(payload.data?.progress_map || {});
-    } catch (error) {
+    } catch {
       // no-op
     }
   }
@@ -416,6 +484,124 @@ export function PathLabExperience({
 
   return (
     <div className="space-y-4">
+      {/* Map Modal */}
+      <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
+        <DialogContent className="max-w-2xl border-neutral-800 bg-neutral-950">
+          <DialogTitle className="text-white">What&apos;s coming</DialogTitle>
+          <div className="max-h-[70vh] space-y-2 overflow-y-auto pr-1">
+            {upcomingDays.length > 0 ? (
+              upcomingDays.map((entry) => {
+                const isCurrent = entry.day_number === currentDayNumber;
+                const progress = dayProgressMap[entry.day_number] || {
+                  completed: 0,
+                  total: 0,
+                };
+                const nodeLabel =
+                  progress.total === 1 ? "1 activity" : `${progress.total} activities`;
+                const contextPreview = entry.context_text
+                  ? entry.context_text.replace(/\s+/g, " ").trim()
+                  : "";
+                const activityPreview = entry.nodes.slice(0, 4);
+                const promptPreview = entry.reflection_prompts.slice(0, 2);
+
+                return (
+                  <div
+                    key={entry.day_number}
+                    className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-white">
+                        Day {entry.day_number}
+                      </p>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs ${
+                          isCurrent
+                            ? "bg-blue-500/20 text-blue-300"
+                            : "bg-neutral-800 text-neutral-300"
+                        }`}
+                      >
+                        {isCurrent ? "Current" : "Upcoming"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-neutral-200">
+                      {entry.title?.trim() || "Planned day"}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      {nodeLabel}
+                      {progress.total > 0 &&
+                        ` · ${progress.completed}/${progress.total} complete`}
+                    </p>
+
+                    {contextPreview && (
+                      <p className="mt-2 text-xs text-neutral-300">
+                        {contextPreview.length > 180
+                          ? `${contextPreview.slice(0, 180)}...`
+                          : contextPreview}
+                      </p>
+                    )}
+
+                    {activityPreview.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[11px] uppercase tracking-wider text-neutral-500">
+                          Activities
+                        </p>
+                        <ul className="mt-1 space-y-1">
+                          {activityPreview.map((activity) => (
+                            <li
+                              key={`${entry.day_number}-${activity.id}`}
+                              className="text-xs text-neutral-200"
+                            >
+                              {activity.title}
+                            </li>
+                          ))}
+                        </ul>
+                        {entry.nodes.length > activityPreview.length && (
+                          <p className="mt-1 text-xs text-neutral-500">
+                            +{entry.nodes.length - activityPreview.length} more
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {promptPreview.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[11px] uppercase tracking-wider text-neutral-500">
+                          Reflection prompts
+                        </p>
+                        <ul className="mt-1 space-y-1">
+                          {promptPreview.map((prompt, index) => (
+                            <li
+                              key={`${entry.day_number}-prompt-${index}`}
+                              className="text-xs text-neutral-300"
+                            >
+                              {prompt}
+                            </li>
+                          ))}
+                        </ul>
+                        {entry.reflection_prompts.length > promptPreview.length && (
+                          <p className="mt-1 text-xs text-neutral-500">
+                            +{entry.reflection_prompts.length - promptPreview.length} more
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-4 text-sm text-neutral-300">
+                No upcoming days are available yet.
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end border-t border-neutral-800 pt-4">
+            <Button variant="outline" onClick={() => setIsMapOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card className="border-neutral-800 bg-neutral-900/80">
         <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4">
           <div>
@@ -425,12 +611,23 @@ export function PathLabExperience({
             <h2 className="text-xl font-semibold text-white">{seed.title}</h2>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
+            {mapViewerDays.length > 0 && (
+              <Button
+                variant="ghost"
+                className="text-neutral-400 hover:text-white"
+                onClick={() => setIsMapOpen(true)}
+              >
+                View what&apos;s coming
+              </Button>
+            )}
             <p className="text-sm text-neutral-300">
               Day {day.day_number} of {path.total_days}
             </p>
             <Button
               variant="outline"
-              onClick={() => previousDayNumber && navigateToDay(previousDayNumber)}
+              onClick={() =>
+                previousDayNumber && navigateToDay(previousDayNumber)
+              }
               disabled={!previousDayNumber}
               className="border-neutral-700 bg-neutral-950/70 text-neutral-200 hover:bg-neutral-800 disabled:opacity-40"
             >
@@ -452,7 +649,8 @@ export function PathLabExperience({
         <Card className="border-neutral-800 bg-neutral-900/80">
           <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4">
             <p className="text-sm text-neutral-300">
-              Review mode. Day {currentDayNumber} is your active day for reflections and decisions.
+              Review mode. Day {currentDayNumber} is your active day for
+              reflections and decisions.
             </p>
             <Button
               onClick={() => navigateToDay(currentDayNumber)}
@@ -464,7 +662,9 @@ export function PathLabExperience({
         </Card>
       )}
 
-      {isCurrentDayView && <PhaseStepper currentPhase={phase} isFinalDay={isFinalDay} />}
+      {isCurrentDayView && (
+        <PhaseStepper currentPhase={phase} isFinalDay={isFinalDay} />
+      )}
 
       {phase === "context" && (
         <ContextPhase
@@ -542,7 +742,8 @@ export function PathLabExperience({
                 ) : (
                   <div className="rounded-lg border border-neutral-800 bg-neutral-950/70 p-3">
                     <p className="text-sm text-neutral-300">
-                      Reviewing a previous day. Switch back to Day {currentDayNumber} to continue your path.
+                      Reviewing a previous day. Switch back to Day{" "}
+                      {currentDayNumber} to continue your path.
                     </p>
                   </div>
                 )}

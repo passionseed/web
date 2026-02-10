@@ -82,7 +82,7 @@ export const getMaps = async (): Promise<LearningMap[]> => {
   }
 
   // Filter out personal journey maps from public listings (client-side filter)
-  const filteredData = (data || []).filter(map => 
+  const filteredData = (data || []).filter(map =>
     !map.metadata?.is_personal_journey
   );
 
@@ -115,13 +115,13 @@ export const getMapsWithStats = async (
   try {
     const supabase = createClient();
 
-  // Check if user is authenticated
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Check if user is authenticated
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  // OPTIMIZATION: Drastically reduce data transfer by selecting only essential columns
-  let baseQuery = `
+    // OPTIMIZATION: Drastically reduce data transfer by selecting only essential columns
+    let baseQuery = `
       id,
       title,
       description,
@@ -144,121 +144,121 @@ export const getMapsWithStats = async (
         node_assessments (id)
       )`;
 
-  // Add enrollment data only for authenticated users
-  if (user) {
-    baseQuery += `,
+    // Add enrollment data only for authenticated users
+    if (user) {
+      baseQuery += `,
       user_map_enrollments!left (
         enrolled_at,
         progress_percentage,
         completed_at,
         status
       )`;
-  }
-
-  // OPTIMIZATION: Add pagination and count query
-  const offset = page * limit;
-  
-  // First get total count (lightweight query) - simplified to avoid auth issues
-  let countQuery = supabase
-    .from("learning_maps")
-    .select("id", { count: 'exact', head: true });
-
-  // Apply the same visibility filters as the main query
-  if (!user) {
-    countQuery = countQuery.eq("visibility", "public");
-  } else {
-    countQuery = countQuery.or(`visibility.eq.public,creator_id.eq.${user.id}`);
-  }
-
-  const { count: totalCount, error: countError } = await countQuery;
-
-  if (countError) {
-    console.error("Error fetching maps count:", {
-      message: countError.message || 'Unknown error',
-      details: countError.details || 'No details available',
-      code: countError.code || 'No error code'
-    });
-    // For permission errors, return empty result
-    if (countError.code === '42501' || countError.message?.includes('permission denied')) {
-      console.error("CLIENT: Database permission issue detected in count query, returning empty result");
-      return {
-        maps: [],
-        total_count: 0,
-        has_more: false
-      };
     }
-    // Don't throw error for other count issues, just set count to 0 and continue
-    console.warn("Continuing without count due to error");
-  }
 
-  let query = supabase.from("learning_maps").select(baseQuery);
+    // OPTIMIZATION: Add pagination and count query
+    const offset = page * limit;
 
-  // Apply visibility filters based on authentication status
-  if (!user) {
-    // Unauthenticated users can only see public maps
-    query = query.eq("visibility", "public");
-  } else {
-    // Authenticated users can see:
-    // 1. Public maps
-    // 2. Their own private maps (except personal journey maps)
-    // 3. Team maps if they're in the team (handled later in categorization)
-    // 4. Classroom maps if they're enrolled (handled later in categorization)
-    query = query
-      .or(`visibility.eq.public,creator_id.eq.${user.id}`)
-      .eq("user_map_enrollments.user_id", user.id);
-  }
+    // First get total count (lightweight query) - simplified to avoid auth issues
+    let countQuery = supabase
+      .from("learning_maps")
+      .select("id", { count: 'exact', head: true });
 
-  // OPTIMIZATION: Apply pagination
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (error) {
-    console.error("Error fetching maps with stats:", {
-      message: error.message || 'Unknown error',
-      details: error.details || 'No details available',
-      code: error.code || 'No error code'
-    });
-    // Return empty result for permission errors instead of throwing
-    if (error.code === '42501' || error.message?.includes('permission denied')) {
-      console.error("CLIENT: Database permission issue detected, returning empty result");
-      return {
-        maps: [],
-        total_count: 0,
-        has_more: false
-      };
+    // Apply the same visibility filters as the main query
+    if (!user) {
+      countQuery = countQuery.eq("visibility", "public");
+    } else {
+      countQuery = countQuery.or(`visibility.eq.public,creator_id.eq.${user.id}`);
     }
-    throw new Error("Could not fetch learning maps.");
-  }
 
-  // Get additional data for authenticated users - OPTIMIZED with concurrent fetching
-  let userClassrooms: any[] = [];
-  let userTeams: any[] = [];
-  let teamMaps: any[] = [];
-  let additionalMaps: any[] = [];
+    const { count: totalCount, error: countError } = await countQuery;
 
-  if (user) {
-    console.log(
-      `getMapsWithStats: Fetching data for authenticated user ${user.id}`
-    );
+    if (countError) {
+      console.error("Error fetching maps count:", {
+        message: countError.message || 'Unknown error',
+        details: countError.details || 'No details available',
+        code: countError.code || 'No error code'
+      });
+      // For permission errors, return empty result
+      if (countError.code === '42501' || countError.message?.includes('permission denied')) {
+        console.error("CLIENT: Database permission issue detected in count query, returning empty result");
+        return {
+          maps: [],
+          total_count: 0,
+          has_more: false
+        };
+      }
+      // Don't throw error for other count issues, just set count to 0 and continue
+      console.warn("Continuing without count due to error");
+    }
 
-    // OPTIMIZATION: Execute all initial queries concurrently
-    const [
-      userRolesResult,
-      classroomMembershipsResult,
-      teamMembershipsResult
-    ] = await Promise.all([
-      // Get user's roles for debugging
-      supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id),
-      
-      // Get user's classrooms (as student or instructor)
-      supabase
-        .from("classroom_memberships")
-        .select(
-          `
+    let query = supabase.from("learning_maps").select(baseQuery);
+
+    // Apply visibility filters based on authentication status
+    if (!user) {
+      // Unauthenticated users can only see public maps
+      query = query.eq("visibility", "public");
+    } else {
+      // Authenticated users can see:
+      // 1. Public maps
+      // 2. Their own private maps (except personal journey maps)
+      // 3. Team maps if they're in the team (handled later in categorization)
+      // 4. Classroom maps if they're enrolled (handled later in categorization)
+      query = query
+        .or(`visibility.eq.public,creator_id.eq.${user.id}`)
+        .eq("user_map_enrollments.user_id", user.id);
+    }
+
+    // OPTIMIZATION: Apply pagination
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error("Error fetching maps with stats:", {
+        message: error.message || 'Unknown error',
+        details: error.details || 'No details available',
+        code: error.code || 'No error code'
+      });
+      // Return empty result for permission errors instead of throwing
+      if (error.code === '42501' || error.message?.includes('permission denied')) {
+        console.error("CLIENT: Database permission issue detected, returning empty result");
+        return {
+          maps: [],
+          total_count: 0,
+          has_more: false
+        };
+      }
+      throw new Error("Could not fetch learning maps.");
+    }
+
+    // Get additional data for authenticated users - OPTIMIZED with concurrent fetching
+    let userClassrooms: any[] = [];
+    let userTeams: any[] = [];
+    let teamMaps: any[] = [];
+    let additionalMaps: any[] = [];
+
+    if (user) {
+      console.log(
+        `getMapsWithStats: Fetching data for authenticated user ${user.id}`
+      );
+
+      // OPTIMIZATION: Execute all initial queries concurrently
+      const [
+        userRolesResult,
+        classroomMembershipsResult,
+        teamMembershipsResult
+      ] = await Promise.all([
+        // Get user's roles for debugging
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id),
+
+        // Get user's classrooms (as student or instructor)
+        supabase
+          .from("classroom_memberships")
+          .select(
+            `
           classroom_id,
           classrooms!inner (
             id,
@@ -269,14 +269,14 @@ export const getMapsWithStats = async (
             )
           )
         `
-        )
-        .eq("user_id", user.id),
-      
-      // Get user's teams
-      supabase
-        .from("team_memberships")
-        .select(
-          `
+          )
+          .eq("user_id", user.id),
+
+        // Get user's teams
+        supabase
+          .from("team_memberships")
+          .select(
+            `
           team_id,
           left_at,
           is_leader,
@@ -286,70 +286,70 @@ export const getMapsWithStats = async (
             classroom_id
           )
         `
-        )
-        .eq("user_id", user.id)
-    ]);
+          )
+          .eq("user_id", user.id)
+      ]);
 
-    const { data: userRoles } = userRolesResult;
-    const { data: classroomMemberships } = classroomMembershipsResult;
-    const { data: teamMemberships, error: teamMembershipError } = teamMembershipsResult;
+      const { data: userRoles } = userRolesResult;
+      const { data: classroomMemberships } = classroomMembershipsResult;
+      const { data: teamMemberships, error: teamMembershipError } = teamMembershipsResult;
 
-    console.log(
-      `User ${user.id} has roles:`,
-      userRoles?.map((r) => r.role) || ["no explicit roles"]
-    );
-
-    if (classroomMemberships) {
-      userClassrooms = classroomMemberships.flatMap(
-        (m: any) =>
-          m.classrooms.classroom_maps?.map((cm: any) => ({
-            map_id: cm.map_id,
-            classroom_name: m.classrooms.name,
-          })) || []
-      );
-    }
-
-    if (teamMembershipError) {
-      console.error(
-        `Error fetching team memberships for user ${user.id}:`,
-        teamMembershipError
-      );
-    }
-
-    if (teamMemberships) {
-      userTeams = teamMemberships.map((tm) => ({
-        team_id: tm.team_id,
-        team_name: extractClassroomTeamName(tm.classroom_teams as any) || null,
-        left_at: tm.left_at,
-        is_leader: tm.is_leader,
-      }));
-
-      const activeTeams = userTeams.filter((t) => !t.left_at);
       console.log(
-        `User ${user.id} has ${userTeams.length} team memberships (${activeTeams.length} active):`,
-        activeTeams.map((t) => `${t.team_name} (${t.team_id})`)
-      );
-    } else {
-      console.log(`User ${user.id} has no team memberships`);
-    }
-
-    // OPTIMIZATION: Prepare all remaining queries for concurrent execution
-    const userTeamIds = userTeams.map((t) => t.team_id).filter(Boolean);
-    const classroomMapIds = userClassrooms.map((cm) => cm.map_id);
-    
-    const pendingQueries = [];
-
-    // Get team maps (only query if user has teams)
-    if (userTeamIds.length > 0) {
-      console.log(
-        `Fetching team maps for user ${user.id}, team IDs: ${userTeamIds.join(", ")}`
+        `User ${user.id} has roles:`,
+        userRoles?.map((r) => r.role) || ["no explicit roles"]
       );
 
-      pendingQueries.push(
-        supabase
-          .from("classroom_team_maps")
-          .select(
-            `
+      if (classroomMemberships) {
+        userClassrooms = classroomMemberships.flatMap(
+          (m: any) =>
+            m.classrooms.classroom_maps?.map((cm: any) => ({
+              map_id: cm.map_id,
+              classroom_name: m.classrooms.name,
+            })) || []
+        );
+      }
+
+      if (teamMembershipError) {
+        console.error(
+          `Error fetching team memberships for user ${user.id}:`,
+          teamMembershipError
+        );
+      }
+
+      if (teamMemberships) {
+        userTeams = teamMemberships.map((tm) => ({
+          team_id: tm.team_id,
+          team_name: extractClassroomTeamName(tm.classroom_teams as any) || null,
+          left_at: tm.left_at,
+          is_leader: tm.is_leader,
+        }));
+
+        const activeTeams = userTeams.filter((t) => !t.left_at);
+        console.log(
+          `User ${user.id} has ${userTeams.length} team memberships (${activeTeams.length} active):`,
+          activeTeams.map((t) => `${t.team_name} (${t.team_id})`)
+        );
+      } else {
+        console.log(`User ${user.id} has no team memberships`);
+      }
+
+      // OPTIMIZATION: Prepare all remaining queries for concurrent execution
+      const userTeamIds = userTeams.map((t) => t.team_id).filter(Boolean);
+      const classroomMapIds = userClassrooms.map((cm) => cm.map_id);
+
+      const pendingQueries = [];
+
+      // Get team maps (only query if user has teams)
+      if (userTeamIds.length > 0) {
+        console.log(
+          `Fetching team maps for user ${user.id}, team IDs: ${userTeamIds.join(", ")}`
+        );
+
+        pendingQueries.push(
+          supabase
+            .from("classroom_team_maps")
+            .select(
+              `
             map_id,
             original_map_id,
             team_id,
@@ -357,26 +357,26 @@ export const getMapsWithStats = async (
             learning_maps!map_id!inner (title),
             original_maps:learning_maps!original_map_id (title)
           `
-          )
-          .in("team_id", userTeamIds)
-          .then(({ data: teamMapData, error: teamMapError }) => {
-            if (teamMapError) {
-              console.error("Error fetching classroom_team_maps:", {
-                error: teamMapError,
-                message: teamMapError.message,
-                code: teamMapError.code,
-                details: teamMapError.details,
-                hint: teamMapError.hint,
-                userId: user.id,
-                userTeamIds: userTeamIds,
-              });
+            )
+            .in("team_id", userTeamIds)
+            .then(({ data: teamMapData, error: teamMapError }) => {
+              if (teamMapError) {
+                console.error("Error fetching classroom_team_maps:", {
+                  error: teamMapError,
+                  message: teamMapError.message,
+                  code: teamMapError.code,
+                  details: teamMapError.details,
+                  hint: teamMapError.hint,
+                  userId: user.id,
+                  userTeamIds: userTeamIds,
+                });
 
-              // Try a fallback query with left joins to get partial data
-              console.log("Attempting fallback query for team maps...");
-              return supabase
-                .from("classroom_team_maps")
-                .select(
-                  `
+                // Try a fallback query with left joins to get partial data
+                console.log("Attempting fallback query for team maps...");
+                return supabase
+                  .from("classroom_team_maps")
+                  .select(
+                    `
                   map_id,
                   original_map_id,
                   team_id,
@@ -384,115 +384,115 @@ export const getMapsWithStats = async (
                   learning_maps!map_id_fkey (title),
                   original_maps:learning_maps!original_map_id_fkey (title)
                 `
-                )
-                .in("team_id", userTeamIds)
-                .then(({ data: fallbackTeamMapData, error: fallbackError }) => {
-                  if (fallbackError) {
-                    console.error("Fallback query also failed:", fallbackError);
-                    return []; // Set empty array as final fallback
-                  } else {
-                    console.log(
-                      `Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`
-                    );
-                    return fallbackTeamMapData || [];
-                  }
-                });
-            } else if (teamMapData) {
-              console.log(`Successfully fetched ${teamMapData.length} team maps`);
-              return teamMapData;
-            }
-            return [];
-          })
-      );
-    } else {
-      // No teams for user - nothing to fetch
-      console.log(`User ${user.id} has no teams, skipping team map fetch`);
-      pendingQueries.push(Promise.resolve([]));
-    }
+                  )
+                  .in("team_id", userTeamIds)
+                  .then(({ data: fallbackTeamMapData, error: fallbackError }) => {
+                    if (fallbackError) {
+                      console.error("Fallback query also failed:", fallbackError);
+                      return []; // Set empty array as final fallback
+                    } else {
+                      console.log(
+                        `Fallback query succeeded, found ${fallbackTeamMapData?.length || 0} team maps`
+                      );
+                      return fallbackTeamMapData || [];
+                    }
+                  });
+              } else if (teamMapData) {
+                console.log(`Successfully fetched ${teamMapData.length} team maps`);
+                return teamMapData;
+              }
+              return [];
+            })
+        );
+      } else {
+        // No teams for user - nothing to fetch
+        console.log(`User ${user.id} has no teams, skipping team map fetch`);
+        pendingQueries.push(Promise.resolve([]));
+      }
 
-    // Execute team maps query and wait for result to get team map IDs for additional queries
-    const [teamMapResult] = await Promise.all(pendingQueries);
-    teamMaps = teamMapResult;
+      // Execute team maps query and wait for result to get team map IDs for additional queries
+      const [teamMapResult] = await Promise.all(pendingQueries);
+      teamMaps = teamMapResult;
 
-    // OPTIMIZATION: Now execute remaining queries concurrently
-    const teamMapIds = teamMaps.map((tm) => tm.map_id);
-    const additionalQueries = [];
+      // OPTIMIZATION: Now execute remaining queries concurrently
+      const teamMapIds = teamMaps.map((tm) => tm.map_id);
+      const additionalQueries = [];
 
-    // Fetch additional team maps that user has access to
-    if (teamMapIds.length > 0) {
-      additionalQueries.push(
-        supabase
-          .from("learning_maps")
-          .select(
-            `
-            *,
-            map_nodes (
-              id,
-              difficulty,
-              node_assessments (id)
-            ),
-            user_map_enrollments!left (
-              enrolled_at,
-              progress_percentage,
-              completed_at
-            )
-          `
-          )
-          .in("id", teamMapIds)
-          .not("creator_id", "eq", user.id) // Exclude maps the user already owns
-          .eq("user_map_enrollments.user_id", user.id)
-          .then(({ data }) => ({ type: 'team', data: data || [] }))
-      );
-    } else {
-      additionalQueries.push(Promise.resolve({ type: 'team', data: [] }));
-    }
-
-    // Fetch classroom maps that user has access to
-    if (classroomMapIds.length > 0) {
-      additionalQueries.push(
-        supabase
-          .from("learning_maps")
-          .select(
-            `
-            *,
-            map_nodes (
-              id,
-              difficulty,
-              node_assessments (id)
-            ),
-            user_map_enrollments!left (
-              enrolled_at,
-              progress_percentage,
-              completed_at
-            )
-          `
-          )
-          .in("id", classroomMapIds)
-          .not("creator_id", "eq", user.id) // Exclude maps the user already owns
-          .eq("user_map_enrollments.user_id", user.id)
-          .then(({ data }) => ({ type: 'classroom', data: data || [] }))
-      );
-    } else {
-      additionalQueries.push(Promise.resolve({ type: 'classroom', data: [] }));
-    }
-
-    // Fetch classroom-exclusive maps for user's classrooms
-    const userClassroomIds = [...new Set(userClassrooms.map(c => c.classroom_name))];
-    if (userClassroomIds.length > 0) {
-      // Get classroom IDs first
-      const { data: classroomsData } = await supabase
-        .from("classrooms")
-        .select("id, name")
-        .in("name", userClassroomIds);
-
-      if (classroomsData && classroomsData.length > 0) {
-        const classroomIds = classroomsData.map(c => c.id);
-        
+      // Fetch additional team maps that user has access to
+      if (teamMapIds.length > 0) {
         additionalQueries.push(
           supabase
             .from("learning_maps")
             .select(
               `
+            *,
+            map_nodes (
+              id,
+              difficulty,
+              node_assessments (id)
+            ),
+            user_map_enrollments!left (
+              enrolled_at,
+              progress_percentage,
+              completed_at
+            )
+          `
+            )
+            .in("id", teamMapIds)
+            .not("creator_id", "eq", user.id) // Exclude maps the user already owns
+            .eq("user_map_enrollments.user_id", user.id)
+            .then(({ data }) => ({ type: 'team', data: data || [] }))
+        );
+      } else {
+        additionalQueries.push(Promise.resolve({ type: 'team', data: [] }));
+      }
+
+      // Fetch classroom maps that user has access to
+      if (classroomMapIds.length > 0) {
+        additionalQueries.push(
+          supabase
+            .from("learning_maps")
+            .select(
+              `
+            *,
+            map_nodes (
+              id,
+              difficulty,
+              node_assessments (id)
+            ),
+            user_map_enrollments!left (
+              enrolled_at,
+              progress_percentage,
+              completed_at
+            )
+          `
+            )
+            .in("id", classroomMapIds)
+            .not("creator_id", "eq", user.id) // Exclude maps the user already owns
+            .eq("user_map_enrollments.user_id", user.id)
+            .then(({ data }) => ({ type: 'classroom', data: data || [] }))
+        );
+      } else {
+        additionalQueries.push(Promise.resolve({ type: 'classroom', data: [] }));
+      }
+
+      // Fetch classroom-exclusive maps for user's classrooms
+      const userClassroomIds = [...new Set(userClassrooms.map(c => c.classroom_name))];
+      if (userClassroomIds.length > 0) {
+        // Get classroom IDs first
+        const { data: classroomsData } = await supabase
+          .from("classrooms")
+          .select("id, name")
+          .in("name", userClassroomIds);
+
+        if (classroomsData && classroomsData.length > 0) {
+          const classroomIds = classroomsData.map(c => c.id);
+
+          additionalQueries.push(
+            supabase
+              .from("learning_maps")
+              .select(
+                `
               *,
               map_nodes (
                 id,
@@ -505,159 +505,159 @@ export const getMapsWithStats = async (
                 completed_at
               )
             `
-            )
-            .eq("map_type", "classroom_exclusive")
-            .in("parent_classroom_id", classroomIds)
-            .eq("user_map_enrollments.user_id", user.id)
-            .then(({ data }) => ({ 
-              type: 'classroom_exclusive', 
-              data: (data || []).map(map => ({
-                ...map,
-                source_classroom_name: classroomsData.find(c => c.id === map.parent_classroom_id)?.name
+              )
+              .eq("map_type", "classroom_exclusive")
+              .in("parent_classroom_id", classroomIds)
+              .eq("user_map_enrollments.user_id", user.id)
+              .then(({ data }) => ({
+                type: 'classroom_exclusive',
+                data: (data || []).map(map => ({
+                  ...map,
+                  source_classroom_name: classroomsData.find(c => c.id === map.parent_classroom_id)?.name
+                }))
               }))
-            }))
-        );
+          );
+        } else {
+          additionalQueries.push(Promise.resolve({ type: 'classroom_exclusive', data: [] }));
+        }
       } else {
         additionalQueries.push(Promise.resolve({ type: 'classroom_exclusive', data: [] }));
       }
-    } else {
-      additionalQueries.push(Promise.resolve({ type: 'classroom_exclusive', data: [] }));
+
+      // Execute additional map queries concurrently
+      const additionalResults = await Promise.all(additionalQueries);
+
+      // Combine results
+      additionalResults.forEach(result => {
+        if (result.data && result.data.length > 0) {
+          additionalMaps = additionalMaps.concat(result.data);
+        }
+      });
     }
 
-    // Execute additional map queries concurrently
-    const additionalResults = await Promise.all(additionalQueries);
-    
-    // Combine results
-    additionalResults.forEach(result => {
-      if (result.data && result.data.length > 0) {
-        additionalMaps = additionalMaps.concat(result.data);
-      }
-    });
-  }
+    // Combine all maps and remove duplicates
+    const allMaps = [...(data || []), ...additionalMaps];
+    const uniqueMaps = allMaps.filter(
+      (map, index, self) => index === self.findIndex((m) => m.id === map.id)
+    );
 
-  // Combine all maps and remove duplicates
-  const allMaps = [...(data || []), ...additionalMaps];
-  const uniqueMaps = allMaps.filter(
-    (map, index, self) => index === self.findIndex((m) => m.id === map.id)
-  );
+    // Transform data to include calculated statistics and categorization
+    const mapsWithStats = uniqueMaps
+      .filter((map: any) => {
+        // Filter out null/invalid maps
+        if (!map || !map.id || !map.title) return false;
 
-  // Transform data to include calculated statistics and categorization
-  const mapsWithStats = uniqueMaps
-    .filter((map: any) => {
-      // Filter out null/invalid maps
-      if (!map || !map.id || !map.title) return false;
-      
-      // Filter out personal journey maps from public listings
-      if (map.metadata?.is_personal_journey === true) return false;
-      
-      return true;
-    })
-    .map((map: any) => {
-      const nodes = map.map_nodes || [];
-      const nodeCount = nodes.length;
-      const avgDifficulty =
-        nodeCount > 0
-          ? Math.round(
+        // Filter out personal journey maps from public listings
+        if (map.metadata?.is_personal_journey === true) return false;
+
+        return true;
+      })
+      .map((map: any) => {
+        const nodes = map.map_nodes || [];
+        const nodeCount = nodes.length;
+        const avgDifficulty =
+          nodeCount > 0
+            ? Math.round(
               nodes.reduce(
                 (sum: number, node: any) => sum + (node.difficulty || 1),
                 0
               ) / nodeCount
             )
-          : 1;
-      const totalAssessments = nodes.reduce(
-        (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
-        0
-      );
+            : 1;
+        const totalAssessments = nodes.reduce(
+          (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
+          0
+        );
 
-      // Determine map type and source info
-      let mapType: "personal" | "classroom" | "classroom_exclusive" | "team" | "forked" | "public" =
-        "public";
-      const sourceInfo: any = {};
+        // Determine map type and source info
+        let mapType: "personal" | "classroom" | "classroom_exclusive" | "team" | "forked" | "public" =
+          "public";
+        const sourceInfo: any = {};
 
-      if (user) {
-        // Check if it's a classroom-exclusive map first
-        if (map.map_type === "classroom_exclusive") {
-          mapType = "classroom_exclusive";
-          sourceInfo.classroom_name = map.source_classroom_name;
-        }
-        // Check if it's the user's own map
-        else if (map.creator_id === user.id) {
-          if (map.metadata?.forked_from) {
-            mapType = "forked";
-            sourceInfo.original_title = "Original Map"; // You might want to fetch this
-          } else {
-            mapType = "personal";
+        if (user) {
+          // Check if it's a classroom-exclusive map first
+          if (map.map_type === "classroom_exclusive") {
+            mapType = "classroom_exclusive";
+            sourceInfo.classroom_name = map.source_classroom_name;
           }
-        } else {
-          // Check if it's a classroom map
-          const classroomInfo = userClassrooms.find((c) => c.map_id === map.id);
-          if (classroomInfo) {
-            mapType = "classroom";
-            sourceInfo.classroom_name = classroomInfo.classroom_name;
+          // Check if it's the user's own map
+          else if (map.creator_id === user.id) {
+            if (map.metadata?.forked_from) {
+              mapType = "forked";
+              sourceInfo.original_title = "Original Map"; // You might want to fetch this
+            } else {
+              mapType = "personal";
+            }
           } else {
-            // Check if it's a team map
-            const teamInfo = teamMaps.find((tm) => tm.map_id === map.id);
-            if (teamInfo) {
-              mapType = "team";
-              sourceInfo.team_name = teamInfo.classroom_teams.name;
-              sourceInfo.original_title = teamInfo.original_maps?.title;
+            // Check if it's a classroom map
+            const classroomInfo = userClassrooms.find((c) => c.map_id === map.id);
+            if (classroomInfo) {
+              mapType = "classroom";
+              sourceInfo.classroom_name = classroomInfo.classroom_name;
+            } else {
+              // Check if it's a team map
+              const teamInfo = teamMaps.find((tm) => tm.map_id === map.id);
+              if (teamInfo) {
+                mapType = "team";
+                sourceInfo.team_name = teamInfo.classroom_teams.name;
+                sourceInfo.original_title = teamInfo.original_maps?.title;
+              }
             }
           }
         }
-      }
 
-      // Extract enrollment information (only available for authenticated users)
-      const enrollment =
-        user && Array.isArray(map.user_map_enrollments)
-          ? map.user_map_enrollments[0]
-          : user && map.user_map_enrollments;
+        // Extract enrollment information (only available for authenticated users)
+        const enrollment =
+          user && Array.isArray(map.user_map_enrollments)
+            ? map.user_map_enrollments[0]
+            : user && map.user_map_enrollments;
 
-      const isEnrolled = !!enrollment?.enrolled_at;
-      const hasStarted =
-        !!enrollment &&
-        ((enrollment.progress_percentage &&
-          enrollment.progress_percentage > 0) ||
-          enrollment.status === "completed");
+        const isEnrolled = !!enrollment?.enrolled_at;
+        const hasStarted =
+          !!enrollment &&
+          ((enrollment.progress_percentage &&
+            enrollment.progress_percentage > 0) ||
+            enrollment.status === "completed");
 
-      return {
-        id: map.id,
-        title: map.title,
-        description: map.description,
-        creator_id: map.creator_id,
-        difficulty: map.difficulty,
-        category: map.category,
-        total_students: map.total_students,
-        finished_students: map.finished_students,
-        metadata: map.metadata,
-        visibility: map.visibility,
-        created_at: map.created_at,
-        updated_at: map.updated_at,
-        // New image storage fields
-        cover_image_url: map.cover_image_url,
-        cover_image_blurhash: map.cover_image_blurhash,
-        cover_image_key: map.cover_image_key,
-        cover_image_updated_at: map.cover_image_updated_at,
-        node_count: nodeCount,
-        avg_difficulty: avgDifficulty,
-        total_assessments: totalAssessments,
-        map_type: mapType,
-        source_info: sourceInfo,
-        isEnrolled,
-        hasStarted,
-      };
-    });
+        return {
+          id: map.id,
+          title: map.title,
+          description: map.description,
+          creator_id: map.creator_id,
+          difficulty: map.difficulty,
+          category: map.category,
+          total_students: map.total_students,
+          finished_students: map.finished_students,
+          metadata: map.metadata,
+          visibility: map.visibility,
+          created_at: map.created_at,
+          updated_at: map.updated_at,
+          // New image storage fields
+          cover_image_url: map.cover_image_url,
+          cover_image_blurhash: map.cover_image_blurhash,
+          cover_image_key: map.cover_image_key,
+          cover_image_updated_at: map.cover_image_updated_at,
+          node_count: nodeCount,
+          avg_difficulty: avgDifficulty,
+          total_assessments: totalAssessments,
+          map_type: mapType,
+          source_info: sourceInfo,
+          isEnrolled,
+          hasStarted,
+        };
+      });
 
-  return {
-    maps: mapsWithStats,
-    total_count: countError ? mapsWithStats.length : (totalCount || 0),
-    has_more: countError ? mapsWithStats.length >= limit : ((offset + limit) < (totalCount || 0))
-  };
+    return {
+      maps: mapsWithStats,
+      total_count: countError ? mapsWithStats.length : (totalCount || 0),
+      has_more: countError ? mapsWithStats.length >= limit : ((offset + limit) < (totalCount || 0))
+    };
   } catch (globalError) {
     console.error("CLIENT: Global error in getMapsWithStats:", {
       message: globalError instanceof Error ? globalError.message : 'Unknown error',
       stack: globalError instanceof Error ? globalError.stack : undefined
     });
-    
+
     // Return empty result instead of throwing for any unexpected errors
     return {
       maps: [],
@@ -667,13 +667,18 @@ export const getMapsWithStats = async (
   }
 };
 
+import { SupabaseClient } from "@supabase/supabase-js";
+
+// ... existing imports ...
+
 export const getMapWithNodes = async (
-  id: string
+  id: string,
+  supabaseClient?: SupabaseClient
 ): Promise<FullLearningMap | null> => {
   const cacheKey = createCacheKey("map-with-nodes", id);
 
   return dedupeRequest(cacheKey, async () => {
-    const supabase = createClient();
+    const supabase = supabaseClient || createClient();
     const { data, error } = await supabase
       .from("learning_maps")
       .select(
@@ -936,7 +941,7 @@ export const deleteMap = async (
       }
 
       const submissionIds = submissionsToDelete?.map(s => s.id) || [];
-      
+
       // Delete submission grades first (has FK to assessment_submissions)
       if (submissionIds.length > 0) {
         const { error: gradesError } = await supabase
@@ -1039,7 +1044,7 @@ export const deleteMap = async (
 
     // Step 7: Clean up additional references that might prevent map deletion
     console.log("🧹 Cleaning up additional references...");
-    
+
     const additionalTables = [
       { table: 'user_map_enrollments', column: 'map_id' },
       { table: 'classroom_maps', column: 'map_id' },
@@ -1101,19 +1106,19 @@ export const deleteMap = async (
     } else if (verificationData && verificationData.length > 0) {
       console.error("❌ CRITICAL: Map still exists after deletion commands!");
       console.error("❌ This suggests RLS policies or foreign key constraints are preventing deletion");
-      
+
       // Let's check what might be referencing this map
       console.log("🔍 Checking for remaining references to this map...");
-      
+
       // Check for any remaining foreign key references
       const tablesToCheck = [
         'user_map_enrollments',
-        'classroom_maps', 
+        'classroom_maps',
         'classroom_team_maps',
         'map_likes',
         'map_comments'
       ];
-      
+
       for (const table of tablesToCheck) {
         try {
           const { data: refs, error: refError } = await supabase
@@ -1121,7 +1126,7 @@ export const deleteMap = async (
             .select("id")
             .eq("map_id", id)
             .limit(5);
-          
+
           if (!refError && refs && refs.length > 0) {
             console.error(`❌ Found ${refs.length} references in ${table}:`, refs);
           }
@@ -1129,7 +1134,7 @@ export const deleteMap = async (
           console.log(`ℹ️ Could not check ${table} (table may not exist)`);
         }
       }
-      
+
       throw new Error(
         "Map deletion failed - map still exists in database after deletion commands. Check foreign key constraints and RLS policies."
       );
@@ -1743,13 +1748,13 @@ export const batchUpdateMap = async (
 
     if (updates.nodes.create.length > 0) {
       console.log("➕ Creating nodes:", updates.nodes.create);
-      
+
       // Extract temp_id from nodes before database insert (similar to assessments)
       const nodesToCreate = updates.nodes.create.map((node) => {
         const { temp_id, ...nodeData } = node as any; // Remove temp_id from database insert
         return nodeData;
       });
-      
+
       const { data: createdNodes, error } = await supabase
         .from("map_nodes")
         .insert(nodesToCreate)
@@ -1791,8 +1796,8 @@ export const batchUpdateMap = async (
             `temp_node_${index}`,
             // Try to extract from any metadata if available
             ...(originalNodeToCreate.metadata &&
-            typeof originalNodeToCreate.metadata === "object" &&
-            "temp_id" in originalNodeToCreate.metadata
+              typeof originalNodeToCreate.metadata === "object" &&
+              "temp_id" in originalNodeToCreate.metadata
               ? [originalNodeToCreate.metadata.temp_id]
               : []),
           ];
@@ -2075,18 +2080,18 @@ export const batchUpdateMap = async (
           type: a.assessment_type,
         }))
       );
-      
-      console.log("🔍 Original assessments with temp_ids:", updates.assessments.create.map(a => ({ 
-        temp_id: a.temp_id, 
-        node_id: a.node_id 
+
+      console.log("🔍 Original assessments with temp_ids:", updates.assessments.create.map(a => ({
+        temp_id: a.temp_id,
+        node_id: a.node_id
       })));
 
       // Map temporary assessment IDs to real ones using the preserved temp_id
       createdAssessments.forEach((createdAssessment, index) => {
         const originalAssessmentRequest = updates.assessments.create[index];
-        
+
         console.log(`🔍 Mapping assessment ${index}: original=`, originalAssessmentRequest, `created=`, createdAssessment);
-        
+
         if (originalAssessmentRequest && originalAssessmentRequest.temp_id) {
           // Use the preserved temp_id for mapping
           createdAssessmentMap.set(originalAssessmentRequest.temp_id, createdAssessment.id);
@@ -2704,7 +2709,7 @@ export const getOrCreatePersonalJourneyMap = async (): Promise<LearningMap> => {
 
   const newJourneyMap = await createMap(journeyMapData);
   console.log("Created new personal journey map:", newJourneyMap.id);
-  
+
   return newJourneyMap;
 };
 

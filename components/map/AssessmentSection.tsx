@@ -309,7 +309,18 @@ export function AssessmentSection({
 
   // Check if file is required for submission
   const validateSubmission = () => {
-    if (assessment.assessment_type === "file_upload" && fileUrls.length === 0) {
+    console.log("🔍 validateSubmission", {
+      assessmentType: assessment.assessment_type,
+      fileUrlsLength: fileUrls.length,
+      fileUrls
+    });
+
+    if (
+      (assessment.assessment_type === "file_upload" ||
+        assessment.assessment_type === "image_upload") &&
+      fileUrls.length === 0
+    ) {
+      console.warn("❌ Validation failed: No files uploaded");
       setIsFileRequired(true);
       return false;
     }
@@ -320,10 +331,12 @@ export function AssessmentSection({
         (checked) => checked,
       );
       if (!allChecked) {
+        console.warn("❌ Validation failed: Not all checklist items checked");
         return false;
       }
     }
 
+    console.log("✅ Validation passed");
     setIsFileRequired(false);
     return true;
   };
@@ -349,6 +362,17 @@ export function AssessmentSection({
   };
 
   const handleSubmit = () => {
+    console.log("🎯 handleSubmit called", {
+      assessmentType: assessment.assessment_type,
+      fileUrls,
+      fileNames,
+      isSubmitting,
+      isUploading,
+      canResubmit,
+      progressStatus,
+      submissionsCount: submissionsWithGrades.length
+    });
+
     // Check if attempt limit is reached for multiple attempt assessments
     const hasReachedAttemptLimit =
       !canResubmit &&
@@ -384,12 +408,17 @@ export function AssessmentSection({
       return;
     }
 
+    console.log("📝 Validating submission...");
     if (validateSubmission()) {
+      console.log("✅ Validation passed, calling onSubmit");
       if (assessment.assessment_type === "checklist") {
         onSubmit(undefined, undefined, checklistItems);
       } else {
+        console.log("📤 Submitting files:", { fileUrls, fileNames });
         onSubmit(fileUrls, fileNames);
       }
+    } else {
+      console.warn("❌ Validation failed");
     }
   };
 
@@ -884,6 +913,36 @@ export function AssessmentSection({
 
                   <p className="text-xs text-muted-foreground">
                     You can upload multiple files. Each file must be under 10MB.
+                  </p>
+                </div>
+              )}
+
+              {assessment.assessment_type === "image_upload" && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">
+                    Upload Image(s){" "}
+                    {isFileRequired && <span className="text-red-500">*</span>}
+                  </label>
+                  {(isFileRequired || fileSizeError) && (
+                    <div className="text-sm text-red-600 mb-2">
+                      {fileSizeError ||
+                        "Please upload at least one image before submitting."}
+                    </div>
+                  )}
+
+                  <FileUpload
+                    nodeId={nodeId}
+                    onUploadComplete={handleFileUpload}
+                    onValidationError={handleFileSizeError}
+                    onUploadStateChange={setIsUploading}
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif"
+                    maxSize={10}
+                    disabled={isSubmitting}
+                    allowMultiple={true}
+                  />
+
+                  <p className="text-xs text-muted-foreground">
+                    You can upload multiple images. Each image must be under 10MB.
                   </p>
                 </div>
               )}

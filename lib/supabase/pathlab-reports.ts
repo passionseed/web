@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import type { PathReportData } from "@/types/pathlab";
 import { getPathEndReflection, getPathExitReflection, getPathReflections } from "./pathlab-reflections";
+import { buildPathReportTemplate } from "@/lib/pathlab/report-template";
 
 function createShareToken() {
   return randomBytes(16).toString("hex");
@@ -99,12 +100,35 @@ export async function getSeedEnrollmentDetail(seedId: string, enrollmentId: stri
   const exitReflection = await getPathExitReflection(enrollmentId);
   const endReflection = await getPathEndReflection(enrollmentId);
 
+  const totalTimeMinutes = reflections.reduce((sum, reflection) => {
+    return sum + (reflection.time_spent_minutes || 0);
+  }, 0);
+
+  const reportData: PathReportData = {
+    seed_title: enrollment.path.seed.title,
+    student_name: profile?.full_name || profile?.username || null,
+    status: enrollment.status,
+    days_completed: reflections.length,
+    total_days: enrollment.path.total_days,
+    total_time_minutes: totalTimeMinutes,
+    trend: reflections.map((reflection) => ({
+      day_number: reflection.day_number,
+      energy_level: reflection.energy_level,
+      confusion_level: reflection.confusion_level,
+      interest_level: reflection.interest_level,
+      time_spent_minutes: reflection.time_spent_minutes,
+    })),
+    exit_reflection: exitReflection,
+    end_reflection: endReflection,
+  };
+
   return {
     enrollment,
     profile,
     reflections,
     exitReflection,
     endReflection,
+    reportData,
   };
 }
 
@@ -169,12 +193,13 @@ export async function createPathReport(params: {
 }) {
   const supabase = await createClient();
   const reportData = await buildPathReportData(params.enrollmentId);
+  const normalizedText = params.reportText?.trim();
 
   const payload = {
     enrollment_id: params.enrollmentId,
     generated_by: params.generatedBy,
     report_data: reportData,
-    report_text: params.reportText || null,
+    report_text: normalizedText || buildPathReportTemplate(reportData),
     share_token: createShareToken(),
   };
 

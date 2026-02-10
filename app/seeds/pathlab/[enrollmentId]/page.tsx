@@ -12,6 +12,19 @@ interface PathLabExperiencePageProps {
   }>;
 }
 
+type PathDayRow = {
+  day_number: number | string | null;
+  title: string | null;
+  context_text: string | null;
+  reflection_prompts: string[] | null;
+  node_ids: string[] | null;
+};
+
+type PathDayNodeRow = {
+  id: string;
+  title: string | null;
+};
+
 export default async function PathLabExperiencePage({ params, searchParams }: PathLabExperiencePageProps) {
   const { enrollmentId } = await params;
   const { day: daySearchParam } = await searchParams;
@@ -51,13 +64,56 @@ export default async function PathLabExperiencePage({ params, searchParams }: Pa
 
   const { data: days } = await supabase
     .from("path_days")
-    .select("day_number")
+    .select("day_number, title, context_text, reflection_prompts, node_ids")
     .eq("path_id", enrollment.path.id)
     .order("day_number", { ascending: true });
 
-  const allDayNumbers = (days || [])
-    .map((entry: any) => Number(entry.day_number))
+  const dayRows = (days || []) as PathDayRow[];
+  const allPathDayNodeIds = Array.from(
+    new Set(
+      dayRows.flatMap((entry) =>
+        Array.isArray(entry.node_ids) ? entry.node_ids : [],
+      ),
+    ),
+  );
+  const nodeTitleById = new Map<string, string>();
+
+  if (allPathDayNodeIds.length > 0) {
+    const { data: pathDayNodes } = await supabase
+      .from("map_nodes")
+      .select("id, title")
+      .in("id", allPathDayNodeIds);
+
+    ((pathDayNodes || []) as PathDayNodeRow[]).forEach((node) => {
+      nodeTitleById.set(node.id, node.title?.trim() || "Untitled activity");
+    });
+  }
+
+  const allDayNumbers = dayRows
+    .map((entry) => Number(entry.day_number))
     .filter((entry: number) => Number.isFinite(entry));
+
+  const pathDaySummaries = dayRows
+    .filter((entry) => Number.isFinite(Number(entry.day_number)))
+    .map((entry) => ({
+      day_number: Number(entry.day_number),
+      title: typeof entry.title === "string" ? entry.title : null,
+      context_text:
+        typeof entry.context_text === "string" ? entry.context_text : "",
+      reflection_prompts: Array.isArray(entry.reflection_prompts)
+        ? entry.reflection_prompts.filter(
+            (prompt): prompt is string =>
+              typeof prompt === "string" && prompt.trim().length > 0,
+          )
+        : [],
+      node_ids: Array.isArray(entry.node_ids) ? entry.node_ids : [],
+      nodes: (Array.isArray(entry.node_ids) ? entry.node_ids : []).map(
+        (nodeId) => ({
+          id: nodeId,
+          title: nodeTitleById.get(nodeId) || "Untitled activity",
+        }),
+      ),
+    }));
 
   const maxAccessibleDay =
     enrollment.status === "explored"
@@ -117,6 +173,7 @@ export default async function PathLabExperiencePage({ params, searchParams }: Pa
         path={enrollment.path}
         day={day}
         dayNodes={dayNodes}
+        pathDaySummaries={pathDaySummaries}
         availableDayNumbers={navigableDayNumbers}
         currentDayNumber={Number(enrollment.current_day)}
         reflections={reflections}

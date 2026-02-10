@@ -112,6 +112,7 @@ export default async function PathLabReportsPage({ params, searchParams }: PathL
             reflections={selectedDetail.reflections}
             exitReflection={selectedDetail.exitReflection}
             endReflection={selectedDetail.endReflection}
+            reportData={selectedDetail.reportData}
           />
         ) : (
           <Card className="border-neutral-800 bg-neutral-900/80">
