@@ -5,7 +5,7 @@
 
 // Maximum file sizes (in bytes)
 export const MAX_FILE_SIZE = 40 * 1024 * 1024; // 40MB
-export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 export const MAX_DOCUMENT_SIZE = 40 * 1024 * 1024; // 40MB
 export const MAX_GENERAL_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -19,6 +19,8 @@ export const ALLOWED_IMAGE_TYPES = new Set([
   "image/png",
   "image/gif",
   "image/webp",
+  "image/heic",
+  "image/heif",
 ]);
 
 export const ALLOWED_DOCUMENT_TYPES = new Set([
@@ -35,6 +37,8 @@ export const ALLOWED_GENERAL_TYPES = new Set([
   "image/png",
   "image/gif",
   "image/webp",
+  "image/heic",
+  "image/heif",
   "text/plain",
   "application/zip",
   "application/x-zip-compressed",
