@@ -106,7 +106,7 @@ export default async function PathLabBuilderPage({
             Back to seed
           </Link>
           <Link
-            href={`/seeds/${seedId}/pathlab-reports`}
+            href={`/seeds/${seedId}/reports`}
             className="text-sm text-neutral-400 transition-colors hover:text-white"
           >
             Reports
