@@ -71,11 +71,11 @@ const QuestionWrapper = ({
   nextLabel?: string;
   showDevSkip?: boolean;
 }) => (
-  <div className="space-y-6 animate-in fade-in duration-300">
+  <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
     {/* Question Counter */}
     {questionNumber && (
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-slate-400">
+      <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
+        <span className="text-slate-400 whitespace-nowrap">
           Question {questionNumber} of {totalQuestions}
         </span>
         <div className="flex gap-1">
@@ -83,7 +83,7 @@ const QuestionWrapper = ({
             <div
               key={i}
               className={cn(
-                "w-8 h-1.5 rounded-full transition-all",
+                "w-6 sm:w-8 h-1.5 rounded-full transition-all",
                 i < questionNumber ? "bg-blue-500" : "bg-slate-700",
               )}
             />
@@ -94,31 +94,32 @@ const QuestionWrapper = ({
 
     {/* Title */}
     <div className="space-y-2">
-      <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-        {emoji && <span>{emoji}</span>}
+      <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
+        {emoji && <span className="text-xl sm:text-2xl">{emoji}</span>}
         {title}
       </h3>
-      {subtitle && <p className="text-slate-400">{subtitle}</p>}
+      {subtitle && <p className="text-sm sm:text-base text-slate-400">{subtitle}</p>}
     </div>
 
     {/* Content */}
     <div className="py-2">{children}</div>
 
     {/* Navigation */}
-    <div className="flex justify-between pt-4">
+    <div className="flex justify-between items-center pt-4 gap-2">
       <Button
         variant="ghost"
         onClick={onBack}
-        className="text-slate-400 hover:text-white"
+        className="text-slate-400 hover:text-white touch-manipulation min-h-[44px]"
       >
-        <ChevronLeft className="w-4 h-4 mr-2" /> {backLabel}
+        <ChevronLeft className="w-4 h-4 sm:mr-2" />
+        <span className="hidden sm:inline">{backLabel}</span>
       </Button>
       <div className="flex gap-2">
         {process.env.NODE_ENV === "development" && showDevSkip && (
           <Button
             variant="ghost"
             onClick={onNext}
-            className="text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 text-xs"
+            className="text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10 text-xs hidden sm:flex"
           >
             Skip (Dev)
           </Button>
@@ -127,11 +128,11 @@ const QuestionWrapper = ({
           onClick={onNext}
           disabled={!canProceed}
           className={cn(
-            "bg-blue-600 hover:bg-blue-700 text-white",
+            "bg-blue-600 hover:bg-blue-700 text-white touch-manipulation min-h-[44px] px-4 sm:px-6",
             !canProceed && "opacity-50 cursor-not-allowed",
           )}
         >
-          {nextLabel} <ChevronRight className="ml-2 w-4 h-4" />
+          {nextLabel} <ChevronRight className="ml-1 sm:ml-2 w-4 h-4" />
         </Button>
       </div>
     </div>
@@ -166,14 +167,14 @@ const DOMAIN_OPTIONS = [
 // ACTIVITY OPTIONS FOR Q1
 // ==========================================
 const ACTIVITY_OPTIONS = [
-  { key: "creating", label: "Creating or Making Something New" },
-  { key: "helping", label: "Helping/Teaching" },
-  { key: "solving", label: "Problem Solving" },
-  { key: "competing", label: "Competing" },
-  { key: "learning", label: "Learning/Researching" },
-  { key: "performing", label: "Performing" },
-  { key: "leading", label: "Leading/Organizing" },
-  { key: "analyzing", label: "Analyzing (patterns, data, strategy)" },
+  { key: "creating", label: "Creating or Making Something New", shortLabel: "Creating/Making" },
+  { key: "helping", label: "Helping/Teaching", shortLabel: "Helping/Teaching" },
+  { key: "solving", label: "Problem Solving", shortLabel: "Problem Solving" },
+  { key: "competing", label: "Competing", shortLabel: "Competing" },
+  { key: "learning", label: "Learning/Researching", shortLabel: "Learning/Research" },
+  { key: "performing", label: "Performing", shortLabel: "Performing" },
+  { key: "leading", label: "Leading/Organizing", shortLabel: "Leading/Organizing" },
+  { key: "analyzing", label: "Analyzing (patterns, data, strategy)", shortLabel: "Analyzing Data" },
 ];
 
 // ==========================================
@@ -303,7 +304,7 @@ export function CoreAssessment({
         onBack={onBack}
         onNext={onNext}
       >
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Free Text */}
           <div className="space-y-2">
             <Textarea
@@ -319,18 +320,19 @@ export function CoreAssessment({
                   ? "เช่น ตอนที่ผมตัดต่อวิดีโอให้เพื่อน ผมนั่งทำอยู่ 4 ชั่วโมงโดยไม่รู้ตัว..."
                   : "e.g. I was editing a video for my friend's birthday. I spent 4 hours without realizing..."
               }
-              className="bg-slate-900 border-slate-700 min-h-[120px] text-white"
+              className="bg-slate-900 border-slate-700 min-h-[100px] sm:min-h-[120px] text-white text-sm sm:text-base p-3 sm:p-4 resize-none"
+              rows={4}
             />
-            <p className="text-xs text-slate-400 mt-1">
-              💡{" "}
+            <p className="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed">
+              <span className="text-base sm:text-lg">💡</span>{" "}
               {lang === "th"
                 ? "เคล็ดลับ: เน้นที่สิ่งที่คุณทำ ไม่ใช่ชื่อเกม/แอป/วิชา"
                 : "Tip: Focus on what you were doing, not the app/game/class name."}
             </p>
-            <div className="flex justify-between text-xs">
+            <div className="flex justify-between items-center text-xs sm:text-sm mt-2">
               <span
                 className={cn(
-                  "transition-colors",
+                  "transition-colors font-medium",
                   hasMinLength ? "text-green-400" : "text-slate-500",
                 )}
               >
@@ -347,15 +349,16 @@ export function CoreAssessment({
 
           {/* Activity Checkboxes */}
           <div className="space-y-3">
-            <Label className="text-slate-300">
+            <Label className="text-slate-300 text-sm sm:text-base">
               {lang === "th"
                 ? "กิจกรรมนี้เกี่ยวกับ... (เลือกที่ใช่)"
                 : "This activity involved... (select all that apply)"}
             </Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               {ACTIVITY_OPTIONS.map((option) => (
-                <div
+                <button
                   key={option.key}
+                  type="button"
                   onClick={() => {
                     const current = flowData.activities;
                     const newActivities = current.includes(option.key)
@@ -367,26 +370,35 @@ export function CoreAssessment({
                     });
                   }}
                   className={cn(
-                    "p-3 rounded-lg border cursor-pointer transition-all text-sm",
+                    "p-3 sm:p-4 rounded-lg border cursor-pointer transition-all text-xs sm:text-sm touch-manipulation min-h-[44px] active:scale-95 text-center break-words hyphens-auto leading-tight flex items-center justify-center",
                     flowData.activities.includes(option.key)
-                      ? "bg-orange-600/20 border-orange-500 text-white"
+                      ? "bg-orange-600/20 border-orange-500 text-white font-medium"
                       : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600",
                   )}
                 >
-                  {lang === "th" ? getThaiLabel(option.key) : option.label}
-                </div>
+                  <span className="block w-full">
+                    <span className="sm:hidden">
+                      {lang === "th" ? getThaiLabel(option.key) : (option.shortLabel || option.label)}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {lang === "th" ? getThaiLabel(option.key) : option.label}
+                    </span>
+                  </span>
+                </button>
               ))}
             </div>
           </div>
 
           {/* Engagement Follow-up */}
-          <div className="space-y-2 pt-2 border-t border-slate-800">
-            <Label className="text-slate-300 flex items-center gap-2">
-              <span className="text-orange-400">✨</span>
-              {lang === "th"
-                ? "ส่วนไหนของกิจกรรมนี้ที่ทำให้คุณอินที่สุด? (1 ประโยค)"
-                : "What part of this activity kept you engaged? (1 sentence)"}
-              <span className="text-xs text-red-400">*</span>
+          <div className="space-y-2 pt-3 sm:pt-4 border-t border-slate-800">
+            <Label className="text-slate-300 text-sm sm:text-base flex items-start gap-2">
+              <span className="text-orange-400 text-lg sm:text-xl">✨</span>
+              <span className="flex-1">
+                {lang === "th"
+                  ? "ส่วนไหนของกิจกรรมนี้ที่ทำให้คุณอินที่สุด? (1 ประโยค)"
+                  : "What part of this activity kept you engaged? (1 sentence)"}
+                <span className="text-xs text-red-400 ml-1">*</span>
+              </span>
             </Label>
             <Textarea
               value={flowData.engagement_factors || ""}
@@ -401,7 +413,8 @@ export function CoreAssessment({
                   ? "เช่น ชอบที่ได้เห็นผลลัพธ์ทันที หรือ ชอบที่ได้แก้ปัญหาให้คนอื่น..."
                   : "e.g. I loved seeing the immediate visual feedback, or I liked solving a puzzle..."
               }
-              className="bg-slate-900 border-slate-700 min-h-[60px] text-white h-20"
+              className="bg-slate-900 border-slate-700 min-h-[80px] sm:min-h-[60px] text-white text-sm sm:text-base p-3 sm:p-4 resize-none"
+              rows={3}
             />
           </div>
         </div>
