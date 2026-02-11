@@ -69,6 +69,10 @@ export function GameBoxCard({ seed, href, onClick, className }: GameBoxCardProps
 
     const Container = (href ? Link : 'div') as any;
     const containerProps = href ? { href } : { onClick };
+    const pathTotalDays = Array.isArray((seed as any).path)
+        ? (seed as any).path[0]?.total_days
+        : (seed as any).path?.total_days;
+    const isPathLab = seed.seed_type === "pathlab";
 
     return (
         <Container
@@ -127,6 +131,11 @@ export function GameBoxCard({ seed, href, onClick, className }: GameBoxCardProps
                                     
                                     {/* Overlay with title */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3 z-10">
+                                        {isPathLab && (
+                                            <div className="mb-2 inline-flex w-fit items-center rounded-full border border-white/30 bg-black/40 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-white">
+                                                PathLab{pathTotalDays ? ` · ${pathTotalDays} days` : ""}
+                                            </div>
+                                        )}
                                         <h3 className="text-sm font-black text-white uppercase leading-none tracking-tight drop-shadow-lg">
                                             {seed.title}
                                         </h3>
@@ -168,6 +177,12 @@ export function GameBoxCard({ seed, href, onClick, className }: GameBoxCardProps
                                     <h3 className="text-base font-black text-white uppercase leading-none tracking-tighter drop-shadow-lg z-10 mt-2">
                                         {seed.title}
                                     </h3>
+
+                                    {isPathLab && (
+                                        <p className="z-10 mt-2 text-[9px] text-white/85">
+                                            {pathTotalDays ? `${pathTotalDays}-day exploration` : "Solo exploration"}
+                                        </p>
+                                    )}
 
                                     <div className="mt-auto z-10">
                                         {seed.slogan && (

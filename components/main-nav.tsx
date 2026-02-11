@@ -4,7 +4,13 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { checkClientAuth } from "@/lib/supabase/auth-client";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+  VisuallyHidden,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 
@@ -23,12 +29,12 @@ export function MainNav() {
 
   const handleSeedsClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (typeof window !== 'undefined') {
-      const activeRoom = localStorage.getItem('activeSeedRoom');
+    if (typeof window !== "undefined") {
+      const activeRoom = localStorage.getItem("activeSeedRoom");
       if (activeRoom) {
         router.push(`/seeds/room/${activeRoom}`);
       } else {
-        router.push('/seeds');
+        router.push("/seeds");
       }
     }
     setMenuOpen(false);
@@ -50,6 +56,9 @@ export function MainNav() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-full sm:w-3/4">
+            <VisuallyHidden.Root>
+              <SheetTitle>Menu</SheetTitle>
+            </VisuallyHidden.Root>
             <nav className="flex flex-col space-y-4 pt-10">
               <Link
                 href="/about"

@@ -3,8 +3,8 @@ import { b2 } from "@/lib/backblaze";
 import { requireUploadAccess } from "@/lib/security/upload-access";
 import { safeServerError } from "@/lib/security/route-guards";
 
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"]);
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 function validateImageFile(file: File): { valid: boolean; error?: string } {
   if (!file) return { valid: false, error: "No file provided" };

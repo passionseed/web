@@ -57,6 +57,7 @@ import {
   X,
   Eye,
   Users,
+  Sparkles,
 } from "lucide-react";
 import {
   ResizableHandle,
@@ -69,6 +70,8 @@ import FloatingEdge, { FloatingEdgeEdit } from "./FloatingEdge";
 import { isEditable } from "@/lib/dom/is-editable";
 import { log } from "console";
 import { MapEditorsDialog } from "./MapEditorsDialog";
+import { PathLabGeneratorChat } from "@/components/pathlab/PathLabGeneratorChat";
+import type { PathLabGeneratorDraftInput } from "@/lib/ai/pathlab-generator-schema";
 
 // Type definitions
 type AppNode = Node<any, "default" | "text">;
@@ -77,6 +80,9 @@ type AppEdge = Edge;
 interface MapEditorProps {
   map: FullLearningMap;
   onMapChange: React.Dispatch<React.SetStateAction<FullLearningMap | null>>;
+  pathDays?: any[];
+  seedInfo?: { id: string; seed_type: string } | null;
+  onPathDaysChange?: (days: any[]) => void;
 }
 
 // Constants
@@ -448,7 +454,7 @@ const NODE_TYPES = {
   text: (props: any) => <TextNode {...props} />,
 };
 
-export function MapEditor({ map, onMapChange }: MapEditorProps) {
+export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDaysChange }: MapEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(
     INITIAL_NODES as Node[]
   );
@@ -477,6 +483,7 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
   // JSON import state
   const [showJsonImport, setShowJsonImport] = useState(false);
   const [jsonInput, setJsonInput] = useState("");
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [jsonValidationErrors, setJsonValidationErrors] = useState<string[]>(
     []
   );
@@ -1819,6 +1826,73 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 
   // ReactFlow handles node data and selection internally - no manual sync needed
 
+  // AI Generation Complete Handler
+  const handleAIGenerationComplete = useCallback(
+    async (draft: PathLabGeneratorDraftInput, params: any) => {
+      try {
+        toast({
+          title: "Saving PathLab...",
+          description: "Creating your generated pathLab in the database",
+        });
+
+        // Send both the draft and params to the API
+        // The API will use the provided draft instead of regenerating
+        const response = await fetch("/api/pathlab/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            params,
+            draft,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save pathLab");
+        }
+
+        const result = await response.json();
+
+        toast({
+          title: "PathLab Created!",
+          description: `Successfully created ${result.dayCount} days with ${result.nodeCount} nodes`,
+        });
+
+        // Close AI Assistant panel
+        setShowAIAssistant(false);
+
+        // Fetch updated map data and update state instead of reloading
+        toast({
+          title: "Refreshing map...",
+          description: "Loading the new PathLab structure",
+        });
+
+        // Dynamically import to avoid circular dependencies
+        const { getMapWithNodes } = await import("@/lib/supabase/maps");
+        const updatedMap = await getMapWithNodes(result.mapId);
+
+        if (updatedMap) {
+          // Update the map state which will trigger re-render of MapEditor
+          onMapChange(updatedMap);
+
+          toast({
+            title: "Map Refreshed!",
+            description: "Your new PathLab is now visible",
+          });
+        } else {
+          throw new Error("Failed to fetch updated map data");
+        }
+      } catch (error: any) {
+        console.error("Failed to save AI-generated pathLab:", error);
+        toast({
+          title: "Save Failed",
+          description: error.message || "Failed to save the generated pathLab",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast, onMapChange]
+  );
+
   // Add node handler - immediately saves to database
   const handleAddNode = useCallback(async () => {
     console.log("🆕 Adding new node - saving to database immediately");
@@ -2546,6 +2620,20 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                 Import JSON
               </Button>
 
+              {/* AI Assistant button - only show for pathLab seeds */}
+              {seedInfo?.seed_type === "pathlab" && (
+                <Button
+                  onClick={() => setShowAIAssistant(!showAIAssistant)}
+                  size="sm"
+                  variant={showAIAssistant ? "default" : "outline"}
+                  className="gap-2"
+                  title="Open PathLab AI Assistant"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  AI Assistant
+                </Button>
+              )}
+
               {/* Manage Editors button */}
               <div className="h-4 w-px bg-border" />
               <Button
@@ -2854,8 +2942,33 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
                   onNodeDelete={handleDeleteNode}
                   onEditingStateChange={setIsEditingNode}
                   isSeedMap={map.map_type === 'seed' || map.parent_seed_id != null}
+                  pathDays={pathDays}
+                  seedInfo={seedInfo}
+                  onPathDaysChange={onPathDaysChange}
                 />
               </div>
+            </ResizablePanel>
+          </>
+        )}
+
+        {/* AI Assistant Panel */}
+        {showAIAssistant && seedInfo?.seed_type === "pathlab" && (
+          <>
+            <ResizableHandle
+              withHandle
+              className="w-1.5 bg-border hover:bg-primary/20 transition-colors"
+            />
+            <ResizablePanel
+              id="map-editor-ai-panel"
+              defaultSize={30}
+              minSize={20}
+              maxSize={50}
+              className="transition-all duration-300 ease-in-out"
+            >
+              <PathLabGeneratorChat
+                onGenerationComplete={handleAIGenerationComplete}
+                onClose={() => setShowAIAssistant(false)}
+              />
             </ResizablePanel>
           </>
         )}
@@ -3008,10 +3121,16 @@ export function MapEditor({ map, onMapChange }: MapEditorProps) {
 }
 
 // Wrapper component that provides ReactFlow context
-export function MapEditorWithProvider({ map, onMapChange }: MapEditorProps) {
+export function MapEditorWithProvider({ map, onMapChange, pathDays, seedInfo, onPathDaysChange }: MapEditorProps) {
   return (
     <ReactFlowProvider>
-      <MapEditor map={map} onMapChange={onMapChange} />
+      <MapEditor
+        map={map}
+        onMapChange={onMapChange}
+        pathDays={pathDays}
+        seedInfo={seedInfo}
+        onPathDaysChange={onPathDaysChange}
+      />
     </ReactFlowProvider>
   );
 }

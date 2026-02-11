@@ -35,7 +35,7 @@ export function GameNode({
     progress,
     isUnlocked,
     selected,
-    isCompleted
+    isCompleted,
   );
 
   // Determine status icon based on progress
@@ -110,20 +110,20 @@ export function GameNode({
       // Show team member progress for team maps
       const memberProgress = progress.member_progress;
       const passedCount = memberProgress.filter(
-        (mp: any) => mp.node_status === "passed"
+        (mp: any) => mp.node_status === "passed",
       ).length;
       const submittedCount = memberProgress.filter(
-        (mp: any) => mp.node_status === "submitted"
+        (mp: any) => mp.node_status === "submitted",
       ).length;
       const inProgressCount = memberProgress.filter(
-        (mp: any) => mp.node_status === "in_progress"
+        (mp: any) => mp.node_status === "in_progress",
       ).length;
       const totalMembers = memberProgress.length;
       const completedCount = passedCount + submittedCount;
 
       // Check if this is an "all" requirement node
       const requiresAll = requirement === "all";
-      
+
       let badgeColor = "bg-blue-500";
       let badgeText = `${totalMembers}`;
       let title = `Team progress: ${passedCount} passed, ${submittedCount} submitted, ${inProgressCount} in progress`;
@@ -147,7 +147,7 @@ export function GameNode({
       memberProgressInfo = (
         <div className="absolute -top-2 -right-2 z-50">
           <div
-            className={`rounded-full p-1 text-xs font-bold shadow-lg text-white ${badgeColor} ${completedCount < totalMembers && requiresAll ? 'animate-pulse' : ''}`}
+            className={`rounded-full p-1 text-xs font-bold shadow-lg text-white ${badgeColor} ${completedCount < totalMembers && requiresAll ? "animate-pulse" : ""}`}
             title={title}
           >
             {badgeText}
@@ -157,11 +157,11 @@ export function GameNode({
     } else {
       // Count submissions for individual progress
       const nodeSubmissions = allSubmissions.filter(
-        (sub) => sub.node_assessments?.map_nodes?.id === data.id
+        (sub) => sub.node_assessments?.map_nodes?.id === data.id,
       );
       const submissionCount = nodeSubmissions.length;
       const pendingCount = nodeSubmissions.filter(
-        (sub) => sub.submission_grades.length === 0
+        (sub) => sub.submission_grades.length === 0,
       ).length;
 
       // Add grading badge if there are submissions
@@ -282,7 +282,7 @@ export function GameNode({
 
         {/* Floating Label with Enhanced Animation */}
         <div
-          className={`absolute -bottom-8 left-1/2 transform -translate-x-1/2 ${selected ? "scale-105 -translate-y-1" : ""} transition-all duration-300`}
+          className={`absolute -bottom-10 left-1/2 transform -translate-x-1/2 ${selected ? "scale-105 -translate-y-1" : ""} transition-all duration-300 z-30`}
         >
           <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1 shadow-lg hover:shadow-xl transition-shadow duration-200">
             <div className="text-xs font-bold text-gray-800 text-center whitespace-nowrap max-w-24 truncate">

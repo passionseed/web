@@ -34,6 +34,17 @@ async function checkEditAccess(mapId: string) {
     redirect("/map");
   }
 
+  // Fetch seed info if this map belongs to a seed
+  let seedInfo = null;
+  if (existingMap.parent_seed_id) {
+    const { data: seed } = await supabase
+      .from("seeds")
+      .select("id, seed_type")
+      .eq("id", existingMap.parent_seed_id)
+      .single();
+    seedInfo = seed;
+  }
+
   // SECURITY: Check if user has admin or instructor role
   const { data: roles, error: roleError } = await supabase
     .from("user_roles")
@@ -87,7 +98,7 @@ async function checkEditAccess(mapId: string) {
   console.log(
     `Access granted: ${accessType} editing map ${mapId}`
   );
-  return { user, map: existingMap, isAdmin };
+  return { user, map: existingMap, isAdmin, seedInfo };
 }
 
 export default async function EditMapPage({
@@ -99,8 +110,8 @@ export default async function EditMapPage({
   const { id } = await params;
 
   // Check access before rendering
-  const { map } = await checkEditAccess(id);
+  const { map, seedInfo } = await checkEditAccess(id);
 
   // If we get here, user has proper access
-  return <EditMapPageClient map={map} />;
+  return <EditMapPageClient map={map} seedInfo={seedInfo} />;
 }

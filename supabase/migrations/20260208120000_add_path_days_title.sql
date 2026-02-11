@@ -1,0 +1,1 @@
+ALTER TABLE public.path_days ADD COLUMN IF NOT EXISTS title TEXT;

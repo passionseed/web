@@ -37,9 +37,18 @@ class BackblazeB2 {
       );
     }
 
+    // Extract region from endpoint (e.g., s3.us-east-005.backblazeb2.com -> us-east-005)
+    let region = "us-west-000";
+    if (this.endpoint.includes('.')) {
+      const parts = this.endpoint.split('.');
+      if (parts.length >= 2 && parts[1].startsWith('us-')) {
+        region = parts[1];
+      }
+    }
+
     this.s3Client = new S3Client({
       endpoint: `https://${this.endpoint}`,
-      region: "us-west-000",
+      region: region,
       credentials: {
         accessKeyId: keyId,
         secretAccessKey: applicationKey,

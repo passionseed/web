@@ -29,7 +29,10 @@ import {
   getUserAssessmentGroup,
   getGroupMembersSubmissionStatus,
 } from "@/lib/supabase/assessment-groups";
-import { getSeedRoomAssessmentGroup, isSeedMap } from "@/lib/supabase/seed-groups";
+import {
+  getSeedRoomAssessmentGroup,
+  isSeedMap,
+} from "@/lib/supabase/seed-groups";
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/components/ui/use-toast";
@@ -75,24 +78,24 @@ interface AssessmentSectionProps {
   onSubmit: (
     fileUrl?: string[],
     fileName?: string[],
-    checklistData?: Record<string, boolean>
+    checklistData?: Record<string, boolean>,
   ) => void;
   submissionsWithGrades: { submission: any; grade: any }[]; // Adjust type as needed;
   nodeId: string;
   mapId: string; // Add mapId to detect seed maps
   progressStatus?:
-  | "not_started"
-  | "in_progress"
-  | "submitted"
-  | "passed"
-  | "failed";
+    | "not_started"
+    | "in_progress"
+    | "submitted"
+    | "passed"
+    | "failed";
 }
 
 const renderQuizQuestion = (
   question: QuizQuestion,
   index: number,
   quizAnswers: Record<string, string>,
-  setQuizAnswers: (value: React.SetStateAction<Record<string, string>>) => void
+  setQuizAnswers: (value: React.SetStateAction<Record<string, string>>) => void,
 ) => (
   <Card key={question.id} className="bg-muted/30">
     <CardContent className="p-4">
@@ -170,11 +173,11 @@ export function AssessmentSection({
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
   const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const [isUploading, setIsUploading] = useState(false);
   const [userGroup, setUserGroup] = useState<AssessmentGroupWithMembers | null>(
-    null
+    null,
   );
   const [loadingGroup, setLoadingGroup] = useState(false);
   const [groupMembersStatus, setGroupMembersStatus] = useState<
@@ -214,7 +217,7 @@ export function AssessmentSection({
       assessment.quiz_questions.length;
     const actualQuestionsToShow = Math.min(
       questionsToShow,
-      shuffledQuestions.length
+      shuffledQuestions.length,
     );
 
     // Return the specified number of shuffled questions
@@ -251,9 +254,9 @@ export function AssessmentSection({
         // Check if this is a seed map
         const supabase = createClient();
         const { data: mapData } = await supabase
-          .from('learning_maps')
-          .select('map_type, parent_seed_id')
-          .eq('id', mapId)
+          .from("learning_maps")
+          .select("map_type, parent_seed_id")
+          .eq("id", mapId)
           .single();
 
         let group;
@@ -273,19 +276,19 @@ export function AssessmentSection({
           console.log("📊 Loading submission status for group members...");
           const membersStatus = await getGroupMembersSubmissionStatus(
             assessment.id,
-            group.id
+            group.id,
           );
           setGroupMembersStatus(membersStatus);
 
           // Check if any group member has submitted (for single submission mode)
           const hasSubmission = membersStatus.some(
-            (member) => member.has_submitted
+            (member) => member.has_submitted,
           );
           setGroupHasSubmission(hasSubmission);
 
           console.log(
             "✅ Group members submission status loaded:",
-            membersStatus
+            membersStatus,
           );
           console.log("🔍 Group has submission:", hasSubmission);
         }
@@ -306,7 +309,18 @@ export function AssessmentSection({
 
   // Check if file is required for submission
   const validateSubmission = () => {
-    if (assessment.assessment_type === "file_upload" && fileUrls.length === 0) {
+    console.log("🔍 validateSubmission", {
+      assessmentType: assessment.assessment_type,
+      fileUrlsLength: fileUrls.length,
+      fileUrls
+    });
+
+    if (
+      (assessment.assessment_type === "file_upload" ||
+        assessment.assessment_type === "image_upload") &&
+      fileUrls.length === 0
+    ) {
+      console.warn("❌ Validation failed: No files uploaded");
       setIsFileRequired(true);
       return false;
     }
@@ -314,13 +328,15 @@ export function AssessmentSection({
     // For checklist, ensure all items are checked
     if (assessment.assessment_type === "checklist") {
       const allChecked = Object.values(checklistItems).every(
-        (checked) => checked
+        (checked) => checked,
       );
       if (!allChecked) {
+        console.warn("❌ Validation failed: Not all checklist items checked");
         return false;
       }
     }
 
+    console.log("✅ Validation passed");
     setIsFileRequired(false);
     return true;
   };
@@ -346,6 +362,17 @@ export function AssessmentSection({
   };
 
   const handleSubmit = () => {
+    console.log("🎯 handleSubmit called", {
+      assessmentType: assessment.assessment_type,
+      fileUrls,
+      fileNames,
+      isSubmitting,
+      isUploading,
+      canResubmit,
+      progressStatus,
+      submissionsCount: submissionsWithGrades.length
+    });
+
     // Check if attempt limit is reached for multiple attempt assessments
     const hasReachedAttemptLimit =
       !canResubmit &&
@@ -370,7 +397,7 @@ export function AssessmentSection({
 
     if (isSingleAttemptWithSubmission) {
       console.warn(
-        "⚠️ Submission blocked: Single attempt assessment already submitted"
+        "⚠️ Submission blocked: Single attempt assessment already submitted",
       );
       toast({
         title: "Submission Not Allowed",
@@ -381,12 +408,17 @@ export function AssessmentSection({
       return;
     }
 
+    console.log("📝 Validating submission...");
     if (validateSubmission()) {
+      console.log("✅ Validation passed, calling onSubmit");
       if (assessment.assessment_type === "checklist") {
         onSubmit(undefined, undefined, checklistItems);
       } else {
+        console.log("📤 Submitting files:", { fileUrls, fileNames });
         onSubmit(fileUrls, fileNames);
       }
+    } else {
+      console.warn("❌ Validation failed");
     }
   };
 
@@ -408,7 +440,7 @@ export function AssessmentSection({
                 {displayQuestions.length !== 1 ? "s" : ""}
                 {assessment.metadata?.randomize_questions &&
                   displayQuestions.length !==
-                  (assessment.quiz_questions?.length || 0) && (
+                    (assessment.quiz_questions?.length || 0) && (
                     <span className="text-xs ml-1">
                       (of {assessment.quiz_questions?.length || 0})
                     </span>
@@ -445,60 +477,60 @@ export function AssessmentSection({
                     <div className="space-y-1">
                       {groupMembersStatus.length > 0
                         ? groupMembersStatus.map((member) => {
-                          const isCurrentUser = member.user_id === user?.id;
-                          return (
+                            const isCurrentUser = member.user_id === user?.id;
+                            return (
+                              <div
+                                key={member.user_id}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                {member.has_submitted ? (
+                                  <CheckCircle className="h-3 w-3 text-green-600" />
+                                ) : (
+                                  <Circle className="h-3 w-3 text-gray-400" />
+                                )}
+                                <span
+                                  className={
+                                    member.has_submitted
+                                      ? "text-green-700"
+                                      : "text-blue-700"
+                                  }
+                                >
+                                  {member.full_name ||
+                                    member.username ||
+                                    "Unknown User"}
+                                  {isCurrentUser && (
+                                    <span className="text-blue-500 ml-1">
+                                      (You)
+                                    </span>
+                                  )}
+                                  {member.has_submitted && (
+                                    <span className="text-green-600 ml-2 text-xs">
+                                      ✓ Submitted
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })
+                        : // Fallback to original display if submission status not loaded
+                          userGroup.members.map((member) => (
                             <div
                               key={member.user_id}
                               className="flex items-center gap-2 text-sm"
                             >
-                              {member.has_submitted ? (
-                                <CheckCircle className="h-3 w-3 text-green-600" />
-                              ) : (
-                                <Circle className="h-3 w-3 text-gray-400" />
-                              )}
-                              <span
-                                className={
-                                  member.has_submitted
-                                    ? "text-green-700"
-                                    : "text-blue-700"
-                                }
-                              >
+                              <UserCheck className="h-3 w-3 text-blue-600" />
+                              <span className="text-blue-700">
                                 {member.full_name ||
                                   member.username ||
                                   "Unknown User"}
-                                {isCurrentUser && (
+                                {member.user_id === user?.id && (
                                   <span className="text-blue-500 ml-1">
                                     (You)
                                   </span>
                                 )}
-                                {member.has_submitted && (
-                                  <span className="text-green-600 ml-2 text-xs">
-                                    ✓ Submitted
-                                  </span>
-                                )}
                               </span>
                             </div>
-                          );
-                        })
-                        : // Fallback to original display if submission status not loaded
-                        userGroup.members.map((member) => (
-                          <div
-                            key={member.user_id}
-                            className="flex items-center gap-2 text-sm"
-                          >
-                            <UserCheck className="h-3 w-3 text-blue-600" />
-                            <span className="text-blue-700">
-                              {member.full_name ||
-                                member.username ||
-                                "Unknown User"}
-                              {member.user_id === user?.id && (
-                                <span className="text-blue-500 ml-1">
-                                  (You)
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        ))}
+                          ))}
                     </div>
                   </div>
                 ) : (
@@ -541,7 +573,7 @@ export function AssessmentSection({
           progressStatus === "failed" &&
           (assessment.metadata?.allow_multiple_attempts ?? true) &&
           submissionsWithGrades.length >=
-          (assessment.metadata?.max_attempts || 3) && (
+            (assessment.metadata?.max_attempts || 3) && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start gap-3">
                 <X className="h-5 w-5 text-red-600 mt-0.5" />
@@ -672,42 +704,42 @@ export function AssessmentSection({
               {(assessment.metadata?.question ||
                 assessment.metadata?.prompt ||
                 assessment.assessment_type === "quiz") && (
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0">
-                        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-blue-900 mb-2">
-                          {assessment.assessment_type === "quiz"
-                            ? "Quiz Instructions"
-                            : "Assessment Instructions"}
-                        </p>
-                        <div className="text-sm text-blue-800 whitespace-pre-wrap space-y-2">
-                          {assessment.metadata?.question && (
-                            <p>{assessment.metadata.question}</p>
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-blue-900 mb-2">
+                        {assessment.assessment_type === "quiz"
+                          ? "Quiz Instructions"
+                          : "Assessment Instructions"}
+                      </p>
+                      <div className="text-sm text-blue-800 whitespace-pre-wrap space-y-2">
+                        {assessment.metadata?.question && (
+                          <p>{assessment.metadata.question}</p>
+                        )}
+                        {assessment.metadata?.prompt && (
+                          <p>{assessment.metadata.prompt}</p>
+                        )}
+                        {assessment.assessment_type === "quiz" &&
+                          assessment.metadata?.quiz_description && (
+                            <p>{assessment.metadata.quiz_description}</p>
                           )}
-                          {assessment.metadata?.prompt && (
-                            <p>{assessment.metadata.prompt}</p>
+                        {assessment.assessment_type === "quiz" &&
+                          !assessment.metadata?.question &&
+                          !assessment.metadata?.prompt &&
+                          !assessment.metadata?.quiz_description && (
+                            <p>
+                              Complete the quiz below. Answer all questions to
+                              the best of your ability.
+                            </p>
                           )}
-                          {assessment.assessment_type === "quiz" &&
-                            assessment.metadata?.quiz_description && (
-                              <p>{assessment.metadata.quiz_description}</p>
-                            )}
-                          {assessment.assessment_type === "quiz" &&
-                            !assessment.metadata?.question &&
-                            !assessment.metadata?.prompt &&
-                            !assessment.metadata?.quiz_description && (
-                              <p>
-                                Complete the quiz below. Answer all questions to
-                                the best of your ability.
-                              </p>
-                            )}
-                        </div>
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
               {/* Attempt Information */}
               {submissionsWithGrades.length === 0 && (
@@ -765,8 +797,8 @@ export function AssessmentSection({
                         question,
                         index,
                         quizAnswers,
-                        setQuizAnswers
-                      )
+                        setQuizAnswers,
+                      ),
                     )}
                   </div>
                 )}
@@ -817,7 +849,7 @@ export function AssessmentSection({
                               </div>
                             </CardContent>
                           </Card>
-                        )
+                        ),
                       )}
                     </div>
 
@@ -830,7 +862,7 @@ export function AssessmentSection({
                           completed
                         </span>
                         {Object.values(checklistItems).every(
-                          (checked) => checked
+                          (checked) => checked,
                         ) ? (
                           <span className="flex items-center gap-1 text-green-600">
                             <CheckCircle className="h-4 w-4" />
@@ -873,7 +905,7 @@ export function AssessmentSection({
                     onUploadComplete={handleFileUpload}
                     onValidationError={handleFileSizeError}
                     onUploadStateChange={setIsUploading}
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.txt,.zip,.json,.csv"
                     maxSize={10}
                     disabled={isSubmitting}
                     allowMultiple={true}
@@ -885,6 +917,36 @@ export function AssessmentSection({
                 </div>
               )}
 
+              {assessment.assessment_type === "image_upload" && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">
+                    Upload Image(s){" "}
+                    {isFileRequired && <span className="text-red-500">*</span>}
+                  </label>
+                  {(isFileRequired || fileSizeError) && (
+                    <div className="text-sm text-red-600 mb-2">
+                      {fileSizeError ||
+                        "Please upload at least one image before submitting."}
+                    </div>
+                  )}
+
+                  <FileUpload
+                    nodeId={nodeId}
+                    onUploadComplete={handleFileUpload}
+                    onValidationError={handleFileSizeError}
+                    onUploadStateChange={setIsUploading}
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif"
+                    maxSize={10}
+                    disabled={isSubmitting}
+                    allowMultiple={true}
+                  />
+
+                  <p className="text-xs text-muted-foreground">
+                    You can upload multiple images. Each image must be under 10MB.
+                  </p>
+                </div>
+              )}
+
               <Button
                 onClick={handleSubmit}
                 disabled={
@@ -892,14 +954,14 @@ export function AssessmentSection({
                   isUploading ||
                   (assessment.assessment_type === "checklist" &&
                     !Object.values(checklistItems).every(
-                      (checked) => checked
+                      (checked) => checked,
                     )) ||
                   // Prevent submission if attempt limit is reached (multiple attempts)
                   (!canResubmit &&
                     progressStatus === "failed" &&
                     (assessment.metadata?.allow_multiple_attempts ?? true) &&
                     submissionsWithGrades.length >=
-                    (assessment.metadata?.max_attempts || 3)) ||
+                      (assessment.metadata?.max_attempts || 3)) ||
                   // Prevent submission for single attempt assessments that already have a submission
                   (!(assessment.metadata?.allow_multiple_attempts ?? true) &&
                     submissionsWithGrades.length > 0)

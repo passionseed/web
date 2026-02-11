@@ -1,7 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { batchUpdateMap } from "@/lib/supabase/maps";
+import { batchUpdateMap, getMapWithNodes } from "@/lib/supabase/maps";
 import type { FullLearningMap } from "@/lib/supabase/maps";
 import { createClient } from "@/utils/supabase/server";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: "Map ID is required" }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const map = await getMapWithNodes(id, supabase);
+    if (!map) {
+      return NextResponse.json({ error: "Map not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ data: map });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
 export async function PUT(
   request: NextRequest,
@@ -87,7 +109,7 @@ export async function PUT(
     // 1. Node positions and basic properties
     // 2. Node paths/connections
     // 3. Map metadata
-    
+
     const updates = {
       map: {
         title: updatedMap.title,

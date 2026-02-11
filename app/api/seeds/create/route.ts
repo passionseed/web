@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { title, slogan, description, categoryId, sourceMapId, minStudents, maxStudents } = body;
+        const { title, slogan, description, categoryId, sourceMapId, seedType, totalDays } = body;
 
         if (!title) {
             return NextResponse.json(
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
                 map_id: newMap.id,
                 created_by: user.id,
                 category_id: categoryId || null,
+                seed_type: seedType === "pathlab" ? "pathlab" : "collaborative",
                 // We can add min/max students if the table supports it, 
                 // but currently they seem to be in seed_rooms or not in seeds table based on migration?
                 // Checking migration: seeds table has title, description, cover_image_url, map_id, created_by.
@@ -100,6 +101,21 @@ export async function POST(request: NextRequest) {
             console.error("Failed to update map to seed type", updateMapError);
             // We don't rollback here as the seed is created and usable, just the map type is wrong.
             // We can try to fix it or log it.
+        }
+
+        // 4. Create path configuration for PathLab seeds
+        if ((seedType === "pathlab") && seed?.id) {
+            const parsedTotalDays = Math.max(1, Number(totalDays) || 5);
+            const { error: pathError } = await supabase.from("paths").insert({
+                seed_id: seed.id,
+                total_days: parsedTotalDays,
+                created_by: user.id,
+            });
+
+            if (pathError) {
+                console.error("Failed to create path row", pathError);
+                // Keep seed creation successful even if path setup failed.
+            }
         }
 
         return NextResponse.json({ success: true, seed });
