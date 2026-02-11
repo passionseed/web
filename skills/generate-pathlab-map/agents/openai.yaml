@@ -1,0 +1,4 @@
+interface:
+  display_name: "PathLab Map Generator"
+  short_description: "Generate strict PathLab map JSON"
+  default_prompt: "Use $generate-pathlab-map to generate one valid PathLabMapStructure JSON object for this topic."

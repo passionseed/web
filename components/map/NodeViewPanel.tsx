@@ -653,11 +653,14 @@ export function NodeViewPanel({
         }
 
         submissionData.quiz_answers = quizAnswers;
-      } else if (assessment.assessment_type === "file_upload") {
+      } else if (
+        assessment.assessment_type === "file_upload" ||
+        assessment.assessment_type === "image_upload"
+      ) {
         if (!fileUrls || fileUrls.length === 0) {
           toast({
             title: "Please upload at least one file",
-            description: "File upload is required for this assessment.",
+            description: `${assessment.assessment_type === "image_upload" ? "Image" : "File"} upload is required for this assessment.`,
             variant: "destructive",
           });
           return;

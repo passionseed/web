@@ -133,6 +133,7 @@ export type AssessmentType =
   | "quiz"
   | "text_answer"
   | "file_upload"
+  | "image_upload"
   | "checklist";
 
 export interface NodeAssessment {
