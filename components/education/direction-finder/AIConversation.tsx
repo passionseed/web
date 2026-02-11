@@ -41,6 +41,7 @@ interface AIConversationProps {
   model?: string;
   lang: Language;
   className?: string;
+  existingResult?: DirectionFinderResult | null;
 }
 
 export function AIConversation({
@@ -52,6 +53,7 @@ export function AIConversation({
   model,
   lang,
   className,
+  existingResult,
 }: AIConversationProps) {
   const t = translations[lang];
   const [messages, setMessages] = useState<Message[]>(history || []);
@@ -217,6 +219,12 @@ export function AIConversation({
   };
 
   const handleFinish = async () => {
+    // If we already have a result, just navigate to it instead of regenerating
+    if (existingResult) {
+      onComplete(existingResult);
+      return;
+    }
+
     // setIsGeneratingProfile(true);
     setLoadingStage("core");
     try {
@@ -269,7 +277,7 @@ export function AIConversation({
   return (
     <Card
       className={cn(
-        "h-[85vh] md:h-[600px] flex flex-col bg-slate-900 border-slate-700 relative overflow-hidden shadow-2xl",
+        "flex flex-col bg-slate-900 border-slate-700 relative overflow-hidden",
         className,
       )}
     >

@@ -14,9 +14,5 @@ export default async function NewNorthStarPage() {
     redirect("/login");
   }
 
-  return (
-    <div className="container mx-auto py-8">
-      <NewNorthStarFlow />
-    </div>
-  );
+  return <NewNorthStarFlow />;
 }
