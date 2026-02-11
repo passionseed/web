@@ -540,10 +540,10 @@ export function CoreAssessment({
           {/* Selected Domains with Sliders */}
           {gridData.items.length > 0 && (
             <div className="space-y-4">
-              <Label className="text-slate-300">
+              <Label className="text-slate-300 text-sm sm:text-base">
                 {lang === "th" ? "ให้คะแนนแต่ละหัวข้อ" : "Rate each domain"}
               </Label>
-              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+              <div className="space-y-4">
                 {gridData.items.map((item) => {
                   const domain = DOMAIN_OPTIONS.find(
                     (d) => d.key === item.domain,
@@ -580,45 +580,57 @@ export function CoreAssessment({
                       {/* Interest Slider */}
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                          <span className="text-pink-400">
+                          <span className="text-pink-400 font-medium">
                             ❤️ {lang === "th" ? "ความชอบ" : "Interest"}:{" "}
                             {item.interest}/10
                           </span>
                         </div>
-                        <Slider
-                          value={[item.interest]}
-                          min={1}
-                          max={10}
-                          step={1}
-                          onValueChange={([v]) =>
-                            updateDomainRating(item.domain, "interest", v)
-                          }
-                          className="w-full"
-                        />
+                        <div className="space-y-1">
+                          <Slider
+                            value={[item.interest]}
+                            min={1}
+                            max={10}
+                            step={1}
+                            onValueChange={([v]) =>
+                              updateDomainRating(item.domain, "interest", v)
+                            }
+                            className="w-full [&_[data-radix-slider-range]]:bg-pink-500 [&_[data-radix-slider-thumb]]:border-pink-500"
+                          />
+                          <div className="flex justify-between text-[10px] text-slate-500 px-0.5">
+                            <span>1</span>
+                            <span>10</span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Capability Slider */}
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                          <span className="text-yellow-400">
+                          <span className="text-yellow-400 font-medium">
                             ⚡ {lang === "th" ? "ความถนัด" : "Capability"}:{" "}
                             {item.capability}/10
                           </span>
                         </div>
-                        <Slider
-                          value={[item.capability]}
-                          min={1}
-                          max={10}
-                          step={1}
-                          onValueChange={([v]) =>
-                            updateDomainRating(item.domain, "capability", v)
-                          }
-                          className="w-full"
-                        />
-                        <p className="text-[10px] text-slate-500">
+                        <div className="space-y-1">
+                          <Slider
+                            value={[item.capability]}
+                            min={1}
+                            max={10}
+                            step={1}
+                            onValueChange={([v]) =>
+                              updateDomainRating(item.domain, "capability", v)
+                            }
+                            className="w-full [&_[data-radix-slider-range]]:bg-yellow-500 [&_[data-radix-slider-thumb]]:border-yellow-500"
+                          />
+                          <div className="flex justify-between text-[10px] text-slate-500 px-0.5">
+                            <span>1</span>
+                            <span>10</span>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-1">
                           {lang === "th"
                             ? "ความถนัด = ทักษะที่คุณเคยฝึกฝนหรือได้รับคำชม"
-                            : "Capability = skills you’ve already practiced or been recognized for"}
+                            : "Capability = skills you've already practiced or been recognized for"}
                         </p>
                       </div>
 
@@ -931,7 +943,6 @@ export function CoreAssessment({
       tags: [],
     };
     const hasStory = proudData.story.trim().length >= 10;
-    const hasRole = (proudData.role_description || "").trim().length >= 5;
     const hasTags = proudData.tags.length > 0;
 
     return (
@@ -944,50 +955,40 @@ export function CoreAssessment({
             : "Describe something you accomplished that made you genuinely proud (big or small)"
         }
         emoji="🏆"
-        canProceed={hasStory && hasRole && hasTags}
+        canProceed={hasStory && hasTags}
         onBack={onBack}
         onNext={onNext}
       >
-        <div className="space-y-6">
-          <Textarea
-            value={proudData.story}
-            onChange={(e) =>
-              updateAnswer("q5_proud", { ...proudData, story: e.target.value })
-            }
-            placeholder={
-              lang === "th"
-                ? "เช่น ตอนที่ผมสอนน้องๆ ในค่ายอาสา พวกเขาเข้าใจและยิ้มให้ ผมรู้สึกดีใจมาก..."
-                : "e.g. When I taught kids at a volunteer camp and they finally understood, seeing their smiles made me so happy..."
-            }
-            className="bg-slate-900 border-slate-700 min-h-[100px] text-white"
-          />
-
+        <div className="space-y-4 sm:space-y-6">
           <div className="space-y-2">
-            <Label className="text-slate-300 flex items-center gap-2">
-              <span className="text-amber-400">👤</span>
-              {lang === "th"
-                ? "คุณทำหน้าที่อะไรในเหตุการณ์นั้น? (สิ่งที่คุณลงมือทำ)"
-                : "What part of this did you actually do?"}
-            </Label>
             <Textarea
-              value={proudData.role_description || ""}
+              value={proudData.story}
               onChange={(e) =>
-                updateAnswer("q5_proud", {
-                  ...proudData,
-                  role_description: e.target.value,
-                })
+                updateAnswer("q5_proud", { ...proudData, story: e.target.value })
               }
               placeholder={
                 lang === "th"
-                  ? "เช่น ผมเป็นคนต้นคิดไอเดีย, ผมช่วยเพื่อนติว..."
-                  : "e.g. I came up with the idea, I organized the team, I did the research..."
+                  ? "เช่น ตอนที่ผมสอนน้องๆ ในค่ายอาสา พวกเขาเข้าใจและยิ้มให้ ผมรู้สึกดีใจมาก..."
+                  : "e.g. When I taught kids at a volunteer camp and they finally understood, seeing their smiles made me so happy..."
               }
-              className="bg-slate-900 border-slate-700 min-h-[60px] text-white"
+              className="bg-slate-900 border-slate-700 min-h-[100px] sm:min-h-[100px] text-white text-sm sm:text-base p-3 sm:p-4 resize-none"
+              rows={4}
             />
+            <div className="flex justify-between items-center text-xs sm:text-sm">
+              <span
+                className={cn(
+                  "transition-colors font-medium",
+                  hasStory ? "text-green-400" : "text-slate-500",
+                )}
+              >
+                {proudData.story.trim().length}/10{" "}
+                {lang === "th" ? "ตัวอักษรขั้นต่ำ" : "min characters"}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-300">
+            <Label className="text-slate-300 text-sm sm:text-base">
               {lang === "th"
                 ? "ทำไมถึงรู้สึกภูมิใจ? (เลือก 1-2 ข้อ)"
                 : "What made it meaningful? (Pick 1-2)"}
@@ -996,6 +997,7 @@ export function CoreAssessment({
               {PROUD_TAGS.map((tag) => (
                 <button
                   key={tag.key}
+                  type="button"
                   onClick={() => {
                     const current = proudData.tags;
                     const newTags = current.includes(tag.key)
@@ -1006,10 +1008,10 @@ export function CoreAssessment({
                     updateAnswer("q5_proud", { ...proudData, tags: newTags });
                   }}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm transition-all",
+                    "px-4 py-2.5 rounded-full text-xs sm:text-sm transition-all touch-manipulation min-h-[44px] active:scale-95 font-medium",
                     proudData.tags.includes(tag.key)
-                      ? "bg-amber-600 text-white"
-                      : "bg-slate-800 text-slate-400 hover:bg-slate-700",
+                      ? "bg-amber-600 text-white shadow-lg"
+                      : "bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700",
                   )}
                 >
                   {lang === "th" ? getThaiProudTag(tag.key) : tag.label}
@@ -1019,6 +1021,46 @@ export function CoreAssessment({
           </div>
         </div>
       </QuestionWrapper>
+    );
+  }
+
+  // ==========================================
+  // PART 2 INTRO
+  // ==========================================
+  if (step === "part2_intro") {
+    return (
+      <div className="text-center space-y-6 py-8 animate-in zoom-in duration-300">
+        <div className="text-5xl">🎯</div>
+        <h2 className="text-2xl font-bold text-white">
+          {lang === "th" ? "ดีมาก! ไปต่อกันเลย" : "Nice Work! Let's Continue"}
+        </h2>
+        <p className="text-slate-300 max-w-md mx-auto">
+          {lang === "th"
+            ? "ส่วนที่ 2: คำถามเพิ่มเติมเพื่อค้นหาสิ่งที่ทำให้คุณเป็นคุณ"
+            : "Part 2: A few more questions to discover what makes you unique"}
+          <br />
+          <span className="text-sm text-slate-400 mt-2 block">
+            {lang === "th" ? "⏱️ อีก 3-4 นาที" : "⏱️ Just 3-4 more minutes"}
+          </span>
+        </p>
+        <div className="flex gap-4 justify-center">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="text-slate-400 hover:text-white"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" /> {lang === "th" ? "กลับ" : "Back"}
+          </Button>
+          <Button
+            onClick={onNext}
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {lang === "th" ? "ไปต่อ" : "Continue"}{" "}
+            <ChevronRight className="ml-2 w-4 h-4" />
+          </Button>
+        </div>
+      </div>
     );
   }
 

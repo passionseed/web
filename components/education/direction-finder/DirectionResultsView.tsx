@@ -175,19 +175,21 @@ export function DirectionResultsView({
       <div ref={resultsRef} className="space-y-12">
         {/* Top Navigation */}
         <div
-          className="flex items-center justify-between pt-4"
+          className="flex items-center justify-end pt-4"
           data-hide-on-share="true"
         >
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="gap-2 text-slate-400 hover:text-white"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {mode === "assessment" ? t.common.back : "Back to Journey"}
-          </Button>
-
           <div className="flex gap-2">
+            {mode === "assessment" && onRetake && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRetake}
+                className="gap-2 border-red-500/30 hover:bg-red-500/10 text-red-400 hover:text-red-300"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Start Over</span>
+              </Button>
+            )}
             {mode === "assessment" && onStartNew && (
               <Button
                 variant="ghost"

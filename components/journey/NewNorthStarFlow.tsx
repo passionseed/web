@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { cn } from "@/lib/utils";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -36,14 +37,6 @@ const IKIGAI_STEPS: AssessmentStep[] = [
   "q3",
   "q4",
   "q5",
-  "part2_intro",
-  "q6",
-  "q7",
-  "q8",
-  "q9",
-  "q10",
-  "q12",
-  "q13",
 ];
 
 export function NewNorthStarFlow() {
@@ -233,40 +226,74 @@ function NewNorthStarFlowContent() {
     updateURL("results");
   };
 
+  const handleRetakeAssessment = () => {
+    if (
+      confirm(
+        "Are you sure you want to start over? This will clear all your answers and results.",
+      )
+    ) {
+      // Clear all state
+      setAnswers({});
+      setResult(null);
+      setChatHistory(undefined);
+      setServerDataId(null);
+      setIkigaiStepIndex(0);
+
+      // Clear localStorage
+      localStorage.removeItem("new_northstar_progress");
+
+      // Navigate back to TOS
+      updateURL("tos");
+      toast.success("Assessment reset! Starting fresh.");
+    }
+  };
+
   // --- Render ---
 
   if (isLoading) return null;
 
   return (
-    <div className="w-full max-w-5xl mx-auto min-h-screen pb-20 px-4 sm:px-6">
-      {/* Header / Nav (Optional, maybe minimal) */}
-      <div className="flex items-center justify-between py-4 sm:py-6 gap-3">
-        <button
-          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity active:opacity-60 touch-manipulation"
-          onClick={() => router.push("/me")}
-          aria-label="Back to Journey"
-        >
-          <div className="bg-white/10 p-2 sm:p-2.5 rounded-full">
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300" />
+    <div
+      className={cn(
+        "w-full min-h-screen",
+        currentFlowStep === "ai-chat"
+          ? "" // Fullscreen for chat on mobile
+          : "container mx-auto py-8", // Normal container for other steps
+      )}
+    >
+      {/* Header / Nav - Hidden on mobile for ai-chat */}
+      {currentFlowStep !== "ai-chat" && (
+        <div className="flex items-center justify-between py-4 sm:py-6 gap-3 px-4 sm:px-6">
+          <button
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity active:opacity-60 touch-manipulation"
+            onClick={() => router.push("/me")}
+            aria-label="Back to Journey"
+          >
+            <div className="bg-white/10 p-2 sm:p-2.5 rounded-full">
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300" />
+            </div>
+            <span className="text-sm sm:text-base font-medium text-slate-400 hidden sm:inline">
+              Back to Journey
+            </span>
+          </button>
+
+          <div className="text-xs sm:text-sm text-slate-500 font-mono">
+            {currentFlowStep === "ikigai" &&
+              `Step ${ikigaiStepIndex + 1}/${IKIGAI_STEPS.length}`}
+            {currentFlowStep === "results" && "Your North Star"}
           </div>
-          <span className="text-sm sm:text-base font-medium text-slate-400 hidden sm:inline">
-            Back to Journey
-          </span>
-        </button>
-
-        <div className="text-xs sm:text-sm text-slate-500 font-mono">
-          {currentFlowStep === "ikigai" &&
-            `Step ${ikigaiStepIndex + 1}/${IKIGAI_STEPS.length}`}
-          {currentFlowStep === "ai-chat" && "AI Analysis"}
-          {currentFlowStep === "results" && "Your North Star"}
         </div>
-      </div>
+      )}
 
-      <div className="mt-2 sm:mt-4">
-        {currentFlowStep === "tos" && <TOSStep onAccept={handleTOSAccept} />}
+      <div className={cn(currentFlowStep === "ai-chat" ? "" : "mt-2 sm:mt-4")}>
+        {currentFlowStep === "tos" && (
+          <div className="px-4 sm:px-6">
+            <TOSStep onAccept={handleTOSAccept} />
+          </div>
+        )}
 
         {currentFlowStep === "ikigai" && (
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <CoreAssessment
               step={IKIGAI_STEPS[ikigaiStepIndex]}
               answers={answers}
@@ -279,29 +306,31 @@ function NewNorthStarFlowContent() {
         )}
 
         {currentFlowStep === "ai-chat" && (
-          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <AIConversation
-              answers={answers as AssessmentAnswers}
-              onComplete={handleAIChatComplete}
-              history={chatHistory}
-              onHistoryChange={setChatHistory}
-              onBack={() =>
-                updateURL("ikigai", IKIGAI_STEPS[IKIGAI_STEPS.length - 1])
-              }
-              lang={language as any}
-              className="h-[700px] border-slate-800 shadow-2xl"
-            />
-          </div>
+          <AIConversation
+            answers={answers as AssessmentAnswers}
+            onComplete={handleAIChatComplete}
+            history={chatHistory}
+            onHistoryChange={setChatHistory}
+            onBack={() =>
+              updateURL("ikigai", IKIGAI_STEPS[IKIGAI_STEPS.length - 1])
+            }
+            lang={language as any}
+            className="h-screen w-screen sm:h-[700px] sm:w-auto sm:max-w-4xl sm:mx-auto sm:border sm:border-slate-800 sm:shadow-2xl sm:rounded-xl border-0 rounded-none"
+            existingResult={result}
+          />
         )}
 
         {currentFlowStep === "results" && result && (
-          <DirectionResultsView
-            result={result}
-            answers={answers as AssessmentAnswers}
-            onBack={() => updateURL("ai-chat")}
-            mode="assessment"
-            userRole="beta-tester" // Placeholder, in real app we might pass actual role if needed for debug
-          />
+          <div className="px-4 sm:px-6">
+            <DirectionResultsView
+              result={result}
+              answers={answers as AssessmentAnswers}
+              onBack={() => updateURL("ai-chat")}
+              mode="assessment"
+              userRole="beta-tester" // Placeholder, in real app we might pass actual role if needed for debug
+              onRetake={handleRetakeAssessment}
+            />
+          </div>
         )}
       </div>
     </div>
