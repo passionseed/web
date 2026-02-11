@@ -238,22 +238,23 @@ function NewNorthStarFlowContent() {
   if (isLoading) return null;
 
   return (
-    <div className="w-full max-w-5xl mx-auto min-h-screen pb-20">
+    <div className="w-full max-w-5xl mx-auto min-h-screen pb-20 px-4 sm:px-6">
       {/* Header / Nav (Optional, maybe minimal) */}
-      <div className="flex items-center justify-between py-6 px-4">
-        <div
-          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+      <div className="flex items-center justify-between py-4 sm:py-6 gap-3">
+        <button
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity active:opacity-60 touch-manipulation"
           onClick={() => router.push("/me")}
+          aria-label="Back to Journey"
         >
-          <div className="bg-white/10 p-2 rounded-full">
-            <ArrowLeft className="w-4 h-4 text-slate-300" />
+          <div className="bg-white/10 p-2 sm:p-2.5 rounded-full">
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300" />
           </div>
-          <span className="text-sm font-medium text-slate-400">
+          <span className="text-sm sm:text-base font-medium text-slate-400 hidden sm:inline">
             Back to Journey
           </span>
-        </div>
+        </button>
 
-        <div className="text-sm text-slate-500 font-mono">
+        <div className="text-xs sm:text-sm text-slate-500 font-mono">
           {currentFlowStep === "ikigai" &&
             `Step ${ikigaiStepIndex + 1}/${IKIGAI_STEPS.length}`}
           {currentFlowStep === "ai-chat" && "AI Analysis"}
@@ -261,7 +262,7 @@ function NewNorthStarFlowContent() {
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-2 sm:mt-4">
         {currentFlowStep === "tos" && <TOSStep onAccept={handleTOSAccept} />}
 
         {currentFlowStep === "ikigai" && (
