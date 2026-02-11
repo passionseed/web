@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
     const validUploadTypes = ["submission", "map-content"];
     const finalUploadType = uploadType && validUploadTypes.includes(uploadType) ? uploadType : "submission";
 
+    if (finalUploadType === "map-content" && !access.canEditMap) {
+      return NextResponse.json({ error: "Access denied for map content upload" }, { status: 403 });
+    }
+
     if (!fileName || typeof fileName !== "string" || fileName.trim().length === 0) {
       return NextResponse.json({ error: "Valid fileName is required" }, { status: 400 });
     }

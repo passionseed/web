@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 
 export type UploadAccessResult =
-  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string }
+  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; canEditMap: boolean }
   | { ok: false; status: number; error: string };
 
 function isTempNodeId(nodeId: string): boolean {
@@ -27,7 +27,8 @@ export async function requireUploadAccess(
   }
 
   if (isTempNodeId(nodeId)) {
-    return { ok: true, supabase, userId: user.id };
+    // Temp nodes are only for creation, user has full access to their own temp node context
+    return { ok: true, supabase, userId: user.id, canEditMap: true };
   }
 
   const { data: node, error: nodeError } = await supabase
@@ -67,15 +68,16 @@ export async function requireUploadAccess(
         .limit(1),
     ]);
 
-  const isAllowed =
+  const canEditMap =
     map?.creator_id === user.id ||
     (adminOrInstructor?.length ?? 0) > 0 ||
-    (editor?.length ?? 0) > 0 ||
-    (enrollment?.length ?? 0) > 0;
+    (editor?.length ?? 0) > 0;
+
+  const isAllowed = canEditMap || (enrollment?.length ?? 0) > 0;
 
   if (!isAllowed) {
     return { ok: false, status: 403, error: "Node not found or access denied" };
   }
 
-  return { ok: true, supabase, userId: user.id };
+  return { ok: true, supabase, userId: user.id, canEditMap };
 }

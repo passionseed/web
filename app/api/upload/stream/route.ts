@@ -26,6 +26,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
+    if (uploadType === "map-content" && !access.canEditMap) {
+      return NextResponse.json({ error: "Access denied for map content upload" }, { status: 403 });
+    }
+
     const fileSize = parseInt(fileSizeStr, 10);
     if (isNaN(fileSize) || fileSize <= 0) {
       return NextResponse.json({ error: "Invalid file size" }, { status: 400 });

@@ -1,0 +1,4 @@
+## 2025-05-15 - Authorization Bypass in File Upload via Metadata
+**Vulnerability:** Students could upload files to the `map-content` storage path (intended for instructors) by manually specifying `uploadType: "map-content"` in the API request. The backend only checked general "upload access" (which students have for submissions) but didn't validate the *type* of upload against the user's role.
+**Learning:** Checking "can this user upload *something*?" is insufficient when an endpoint supports multiple upload contexts (e.g., submissions vs. course content) with different privilege levels.
+**Prevention:** Always validate the *specific action/context* (e.g., `uploadType`) against the user's specific permissions, not just their general access to the resource. Return granular permission flags (e.g., `canEditMap`) from auth helpers instead of a single boolean.
