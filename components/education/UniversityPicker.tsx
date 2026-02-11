@@ -19,7 +19,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
