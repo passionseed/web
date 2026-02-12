@@ -29,7 +29,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { DirectionResultsView } from "@/components/education/direction-finder/DirectionResultsView";
 
 interface ClassroomDirectionFinderProps {
@@ -203,12 +203,12 @@ export function ClassroomDirectionFinder({
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-6xl w-[90vw] max-h-[85vh] p-0 overflow-hidden gap-0">
-          <VisuallyHidden>
+          <VisuallyHidden.Root>
             <DialogTitle>
               Student Direction Profile for{" "}
               {selectedResult?.profiles?.full_name || selectedResult?.profiles?.email || "Student"}
             </DialogTitle>
-          </VisuallyHidden>
+          </VisuallyHidden.Root>
           <div className="h-full max-h-[85vh] overflow-auto -mt-8">
             {selectedResult && selectedResult.result && (
               <DirectionResultsView
