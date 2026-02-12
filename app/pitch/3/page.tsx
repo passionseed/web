@@ -237,7 +237,7 @@ const REVENUE_MODELS = [
 
 function SlideTwo() {
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center px-16 py-16 relative">
+    <div className="h-full w-full flex flex-col items-center justify-start md:justify-center px-4 py-8 md:px-16 md:py-16 relative overflow-y-auto">
       <SlideBackground />
 
       <div className="relative z-10 w-full max-w-7xl">
@@ -245,9 +245,9 @@ function SlideTwo() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="text-center mb-6 md:mb-16"
         >
-          <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-4 leading-tight font-heading">
+          <h2 className="text-3xl md:text-5xl lg:text-7xl font-bold tracking-tight mb-2 md:mb-4 leading-tight font-heading">
             <span className="text-white/20">Our </span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
               Revenue Models
@@ -263,7 +263,7 @@ function SlideTwo() {
         </motion.div>
 
         {/* 3 Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-stretch">
           {REVENUE_MODELS.map((model, i) => {
             const Icon = model.icon;
             return (
@@ -277,34 +277,34 @@ function SlideTwo() {
                   ease: "easeOut",
                 }}
                 whileHover={{ y: -10 }}
-                className={`group relative rounded-3xl border p-10 flex flex-col transition-all duration-500 backdrop-blur-xl ${
+                className={`group relative rounded-3xl border p-5 md:p-10 flex flex-col transition-all duration-500 backdrop-blur-xl ${
                   model.highlighted
                     ? "border-purple-500/30 bg-purple-500/[0.04] shadow-[0_20px_60px_-15px_rgba(168,85,247,0.15)] ring-1 ring-purple-500/20"
                     : "border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10"
                 }`}
               >
                 {/* Ranking */}
-                <span className="absolute top-10 right-10 font-mono text-8xl text-white/[0.03] leading-none pointer-events-none select-none italic font-black">
+                <span className="absolute top-5 right-5 md:top-10 md:right-10 font-mono text-5xl md:text-8xl text-white/[0.03] leading-none pointer-events-none select-none italic font-black">
                   0{model.rank}
                 </span>
 
                 {/* Icon Container */}
                 <div
-                  className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 bg-gradient-to-br ${model.color} shadow-lg shadow-purple-500/10`}
+                  className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mb-4 md:mb-8 bg-gradient-to-br ${model.color} shadow-lg shadow-purple-500/10`}
                 >
-                  <Icon className="w-8 h-8 text-white" />
+                  <Icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
 
                 {/* Content */}
-                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-400 transition-colors">
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3 group-hover:text-purple-400 transition-colors">
                   {model.title}
                 </h3>
-                <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+                <p className="text-gray-400 text-sm mb-4 md:mb-8 leading-relaxed">
                   {model.description}
                 </p>
 
                 {/* Metrics/Points */}
-                <div className="space-y-4 mb-10">
+                <div className="space-y-3 md:space-y-4 mb-4 md:mb-10">
                   {model.points.map((point, j) => (
                     <div
                       key={j}
@@ -319,7 +319,7 @@ function SlideTwo() {
                 </div>
 
                 {/* Challenge Footer */}
-                <div className="mt-auto pt-6 border-t border-white/5">
+                <div className="mt-auto pt-4 md:pt-6 border-t border-white/5">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
                     <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-orange-400/80">
@@ -379,7 +379,7 @@ const REVENUE_PATHS = [
 
 function SlideThree() {
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center px-16 py-16 relative">
+    <div className="h-full w-full flex flex-col items-center justify-start md:justify-center px-4 py-8 md:px-16 md:py-16 relative overflow-y-auto">
       <SlideBackground />
 
       <div className="relative z-10 w-full max-w-6xl">
@@ -388,15 +388,15 @@ function SlideThree() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="text-center mb-6 md:mb-16"
         >
-          <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-2 font-heading">
+          <h2 className="text-3xl md:text-5xl lg:text-7xl font-bold tracking-tight text-white mb-2 font-heading">
             The Path to{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
               Revenue
             </span>
           </h2>
-          <p className="text-gray-500 font-mono text-sm tracking-[0.4em] uppercase">
+          <p className="text-gray-500 font-mono text-xs md:text-sm tracking-[0.4em] uppercase">
             Execution Roadmap 2026
           </p>
         </motion.div>
@@ -414,15 +414,15 @@ function SlideThree() {
                 className="flex-1 flex flex-col group"
               >
                 {/* Visual Step Marker & Header */}
-                <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-8">
                   <div className="relative">
                     <div
-                      className={`w-14 h-14 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover:border-purple-500/50 transition-colors`}
+                      className={`w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover:border-purple-500/50 transition-colors`}
                     >
                       <div
                         className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${path.color} opacity-10 blur-xl group-hover:opacity-30 transition-opacity`}
                       />
-                      <StepIcon className="w-6 h-6 text-white relative z-10" />
+                      <StepIcon className="w-5 h-5 md:w-6 md:h-6 text-white relative z-10" />
                     </div>
                     {/* Connector line to next phase */}
                     {idx < REVENUE_PATHS.length - 1 && (
@@ -433,14 +433,14 @@ function SlideThree() {
                     <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 block">
                       {path.label}
                     </span>
-                    <h3 className="text-lg font-bold text-white font-heading">
+                    <h3 className="text-base md:text-lg font-bold text-white font-heading">
                       {path.title}
                     </h3>
                   </div>
                 </div>
 
                 {/* Steps Flow Vertical */}
-                <div className="space-y-6 relative pl-7">
+                <div className="space-y-3 md:space-y-6 relative pl-7">
                   {/* Vertical connector line */}
                   <div className="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-white/20 via-white/5 to-transparent" />
 
@@ -459,9 +459,9 @@ function SlideThree() {
                         }`}
                       />
 
-                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4 flex-1 backdrop-blur-sm group-hover/step:bg-white/[0.06] group-hover/step:border-white/10 transition-all">
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3 md:p-4 flex-1 backdrop-blur-sm group-hover/step:bg-white/[0.06] group-hover/step:border-white/10 transition-all">
                         <p
-                          className={`text-sm leading-tight ${step.hard ? "text-orange-200/90 font-medium" : "text-gray-300 font-light"}`}
+                          className={`text-xs md:text-sm leading-tight ${step.hard ? "text-orange-200/90 font-medium" : "text-gray-300 font-light"}`}
                         >
                           {step.text}
                         </p>
@@ -479,7 +479,7 @@ function SlideThree() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
-          className="mt-16 flex items-center justify-center gap-8 text-[10px] font-mono text-gray-600 uppercase tracking-[0.3em]"
+          className="mt-8 md:mt-16 flex items-center justify-center gap-4 md:gap-8 text-[10px] font-mono text-gray-600 uppercase tracking-[0.3em]"
         >
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_5px_rgba(249,115,22,0.8)]" />
@@ -505,7 +505,7 @@ function DotNavigation({
   onSelect: (i: number) => void;
 }) {
   return (
-    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20">
+    <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20">
       {Array.from({ length: total }).map((_, i) => (
         <button
           key={i}
@@ -591,7 +591,7 @@ export default function PitchDeck3Page() {
       onTouchEnd={handleTouchEnd}
     >
       {/* Persistent Brand Header */}
-      <div className="absolute top-8 left-10 z-[110] flex items-center gap-4 pointer-events-none">
+      <div className="absolute top-4 left-4 md:top-8 md:left-10 z-[110] flex items-center gap-3 md:gap-4 pointer-events-none">
         <Image
           src="/passionseed-logo.svg"
           alt="PS"
@@ -653,7 +653,7 @@ export default function PitchDeck3Page() {
       />
 
       {/* Slide counter */}
-      <div className="absolute top-6 right-8 z-20 font-mono text-xs text-gray-600">
+      <div className="absolute top-4 right-4 md:top-6 md:right-8 z-20 font-mono text-xs text-gray-600">
         {currentSlide + 1} / {totalSlides}
       </div>
     </div>
