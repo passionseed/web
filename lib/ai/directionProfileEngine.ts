@@ -201,49 +201,27 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
           industry: z.string(),
           role: z.string(),
           specialization: z.string(),
-          rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
-          recommended_faculty: z.string().optional(),
-          match_context: z.object({
-            passion_context: z.string(),
-            skill_context: z.string(),
-          }).optional(),
           fit_reason: z.object({
             interest_alignment: z.string(),
             strength_alignment: z.string(),
             value_alignment: z.string(),
           }),
-          differentiators: z.object({
-            main_focus: z.string(),
-            knowledge_base: z.array(z.string()),
-            skill_tree: z.array(z.string()),
-          }).optional(),
           match_scores: z.object({
-            overall: z.number().min(0).max(100),
-            passion: z.number().min(0).max(100),
-            skill: z.number().min(0).max(100),
+            overall: z.number().describe('Overall match score from 0-100'),
+            passion: z.number().describe('Passion alignment score from 0-100'),
+            skill: z.number().describe('Skill alignment score from 0-100'),
           }),
-          evidence_used: z.object({
-            q1_insight: z.string().optional(),
-            q2_quadrant: z.string().optional(),
-            q3_preferences: z.array(z.string()).optional(),
-            q4_validation: z.string().optional(),
-            q5_driver: z.string().optional(),
-            q6_bonus: z.string().optional(),
-          }).optional(),
           exploration_steps: z.array(z.object({
-            type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']),
+            type: z.string().describe('Type: project, study, activity, community, camp, or person'),
             description: z.string(),
-            reason: z.string().optional(),
           })),
           first_step: z.string(),
         })),
         programs: z.array(z.object({
           name: z.string(),
-          match_level: z.enum(['High', 'Good', 'Stretch']),
-          match_percentage: z.number(),
+          match_level: z.string().describe('Match level: High, Good, or Stretch'),
+          match_percentage: z.number().describe('Match percentage from 0-100'),
           reason: z.string(),
-          deadline: z.string().optional(),
-          application_link: z.string().optional(),
         })),
         commitments: z.object({
           this_week: z.array(z.string()),
@@ -375,7 +353,7 @@ ${JSON.stringify(context.capability_traps, null, 2)}
 ${JSON.stringify(compressedHistory, null, 2)}
 
 ---
-Generate the CORE profile (Profile + 3 Vectors). 
+Generate the CORE profile (Profile + 3 Vectors).
 Ensure 'energizers', 'strengths', and 'values' are arrays of objects with { name, description, insight }.
 Ensure vectors include 'industry', 'role', and 'specialization'.
 `;
@@ -406,54 +384,22 @@ Ensure vectors include 'industry', 'role', and 'specialization'.
           industry: z.string(),
           role: z.string(),
           specialization: z.string(),
-          rarity: z.enum(['Rare', 'Epic', 'Legendary', 'Mythical']).optional(),
-          recommended_faculty: z.string().optional(),
-          match_context: z.object({
-            passion_context: z.string(),
-            skill_context: z.string(),
-          }).optional(),
           fit_reason: z.object({
             interest_alignment: z.string(),
             strength_alignment: z.string(),
             value_alignment: z.string(),
           }),
-          differentiators: z.object({
-            main_focus: z.string(),
-            knowledge_base: z.array(z.string()),
-            skill_tree: z.array(z.string()),
-          }).optional(),
           match_scores: z.object({
-            overall: z.number().min(0).max(100),
-            passion: z.number().min(0).max(100),
-            skill: z.number().min(0).max(100),
+            overall: z.number().describe('Overall match score from 0-100'),
+            passion: z.number().describe('Passion alignment score from 0-100'),
+            skill: z.number().describe('Skill alignment score from 0-100'),
           }),
-          evidence_used: z.object({
-            q1_insight: z.string().optional(),
-            q2_quadrant: z.string().optional(),
-            q3_preferences: z.array(z.string()).optional(),
-            q4_validation: z.string().optional(),
-            q5_driver: z.string().optional(),
-            q6_bonus: z.string().optional(),
-          }).optional(),
           exploration_steps: z.array(z.object({
-            type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']),
+            type: z.string().describe('Type: project, study, activity, community, camp, or person'),
             description: z.string(),
-            reason: z.string().optional(),
           })),
           first_step: z.string(),
         })),
-        programs: z.array(z.object({
-          name: z.string(),
-          match_level: z.enum(['High', 'Good', 'Stretch']),
-          match_percentage: z.number(),
-          reason: z.string(),
-          deadline: z.string().optional(),
-          application_link: z.string().optional(),
-        })),
-        commitments: z.object({
-          this_week: z.array(z.string()),
-          this_month: z.array(z.string()),
-        }),
       }),
       prompt,
     });
@@ -503,7 +449,7 @@ Generate 2-3 recommended programs/faculties and weekly/monthly commitments.
         programs: z.array(z.object({
           name: z.string(),
           match_level: z.enum(['High', 'Good', 'Stretch']),
-          match_percentage: z.number(),
+          match_percentage: z.number().describe('Match percentage from 0-100'),
           reason: z.string(),
           deadline: z.string().optional(),
           application_link: z.string().optional(),
@@ -519,6 +465,108 @@ Generate 2-3 recommended programs/faculties and weekly/monthly commitments.
     return object;
   } catch (error) {
     console.error("Error generating profile details:", error);
+    throw error;
+  }
+}
+
+// ==========================================
+// PROGRAMS GENERATION (Step 2 - Split for timeout safety)
+// ==========================================
+
+export async function generatePrograms(
+  coreResult: Partial<DirectionFinderResult>,
+  answers: AssessmentAnswers,
+  modelName?: string,
+  language: 'en' | 'th' = 'en'
+): Promise<{ programs: DirectionFinderResult['programs'] }> {
+  try {
+    const context = buildProfileContext(answers);
+
+    const prompt = `
+Based on the student's Core Direction Vectors, generate 2-3 recommended programs/faculties.
+
+Language: ${language === 'th' ? 'Thai' : 'English'}
+All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+
+Core Vectors Identified:
+${JSON.stringify(coreResult.vectors, null, 2)}
+
+Student's Zone of Genius Domains:
+${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
+
+Student's Environment Preferences:
+${JSON.stringify(context.secondary_signals.environment, null, 2)}
+
+---
+Generate 2-3 recommended university programs or faculties that match the career vectors.
+Include match level (High/Good/Stretch), match percentage, and reasoning.
+`;
+
+    const { object } = await generateObject({
+      model: getModel(modelName),
+      schema: z.object({
+        programs: z.array(z.object({
+          name: z.string(),
+          match_level: z.string().describe('Match level: High, Good, or Stretch'),
+          match_percentage: z.number().describe('Match percentage from 0-100'),
+          reason: z.string(),
+        })),
+      }),
+      prompt,
+    });
+
+    return object;
+  } catch (error) {
+    console.error("Error generating programs:", error);
+    throw error;
+  }
+}
+
+// ==========================================
+// COMMITMENTS GENERATION (Step 3 - Split for timeout safety)
+// ==========================================
+
+export async function generateCommitments(
+  coreResult: Partial<DirectionFinderResult>,
+  answers: AssessmentAnswers,
+  modelName?: string,
+  language: 'en' | 'th' = 'en'
+): Promise<{ commitments: DirectionFinderResult['commitments'] }> {
+  try {
+    const context = buildProfileContext(answers);
+
+    const prompt = `
+Based on the student's Core Direction Vectors, generate actionable commitments (weekly and monthly).
+
+Language: ${language === 'th' ? 'Thai' : 'English'}
+All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+
+Core Vectors Identified:
+${JSON.stringify(coreResult.vectors, null, 2)}
+
+Student's Zone of Genius:
+${JSON.stringify(context.primary_signals.zone_of_genius, null, 2)}
+
+---
+Generate:
+- 2-3 commitments for this week (specific, actionable, small)
+- 2-3 commitments for this month (larger milestones)
+`;
+
+    const { object } = await generateObject({
+      model: getModel(modelName),
+      schema: z.object({
+        commitments: z.object({
+          this_week: z.array(z.string()),
+          this_month: z.array(z.string()),
+        }),
+      }),
+      prompt,
+    });
+
+    return object;
+  } catch (error) {
+    console.error("Error generating commitments:", error);
     throw error;
   }
 }
