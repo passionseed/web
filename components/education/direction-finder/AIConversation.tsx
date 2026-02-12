@@ -34,6 +34,7 @@ import {
 import { selectModelForUser } from "@/lib/ai/modelSelector";
 import { recordGenerationMetrics, getModelProvider } from "@/lib/utils/metrics-collector";
 import { toast } from "sonner";
+import { createHash } from "crypto";
 import { marked } from "marked";
 import { sanitizeHtml } from "@/lib/security/sanitize-html";
 import { cn } from "@/lib/utils";
@@ -77,11 +78,20 @@ export function AIConversation({
 
   const handleResetChat = () => {
     if (confirm("Reset chat history? This cannot be undone.")) {
+      console.log('🔄 [Chat] Resetting conversation...', {
+        previousMessages: messages.length,
+        model: model || 'auto'
+      });
+
       setMessages([]);
       setShowIntro(true);
       hasStartedRef.current = false;
       setLoadingStage("none");
       onHistoryChange?.([]);
+
+      console.log('✅ [Chat] Conversation reset complete');
+    } else {
+      console.log('❌ [Chat] Reset cancelled by user');
     }
   };
 
@@ -104,6 +114,16 @@ export function AIConversation({
     const msgIndex = messages.findIndex((m) => m.id === id);
     if (msgIndex === -1) return;
 
+    const originalMessage = messages[msgIndex];
+
+    console.log('✏️ [Chat] Editing message:', {
+      id,
+      index: msgIndex,
+      oldContent: originalMessage.content.slice(0, 50) + '...',
+      newContent: editValue.slice(0, 50) + '...',
+      role: originalMessage.role
+    });
+
     // Slice history to include everything BEFORE the edited message
     const prevHistory = messages.slice(0, msgIndex);
 
@@ -112,6 +132,11 @@ export function AIConversation({
 
     // New history state starts with [ ...prev, updatedUserMsg ]
     const newHistory = [...prevHistory, newUserMsg];
+
+    console.log('🔄 [Chat] Re-generating from edit...', {
+      deletedMessages: messages.length - newHistory.length,
+      newHistoryLength: newHistory.length
+    });
 
     setMessages(newHistory);
     setEditingId(null);
@@ -124,6 +149,29 @@ export function AIConversation({
     }));
     await handleAIResponse(apiHistory);
   };
+
+  // Component mount logging
+  useEffect(() => {
+    console.log('🎬 [Chat] AIConversation component mounted', {
+      hasHistory: !!(history && history.length > 0),
+      historyLength: history?.length || 0,
+      hasExistingResult: !!existingResult,
+      model: model || 'auto',
+      language: lang,
+      timestamp: new Date().toISOString()
+    });
+
+    if (history && history.length > 0) {
+      console.log('📜 [Chat] Loading conversation history:', {
+        messages: history.map((m, i) => ({
+          index: i,
+          role: m.role,
+          contentPreview: m.content.slice(0, 50) + '...',
+          contentLength: m.content.length
+        }))
+      });
+    }
+  }, []); // Only on mount
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -146,15 +194,26 @@ export function AIConversation({
 
   // Handle intro start
   const handleStartChat = () => {
+    console.log('🚀 [Chat] Starting conversation...', {
+      hasHistory: !!(history && history.length > 0),
+      hasStarted: hasStartedRef.current,
+      model: model || 'auto'
+    });
+
     setShowIntro(false);
     if ((!history || history.length === 0) && !hasStartedRef.current) {
       hasStartedRef.current = true;
+      console.log('👋 [Chat] Sending initial trigger to AI');
       handleAIResponse(
         [
           { role: "user", content: "Start conversation" }, // Hidden trigger message
         ],
         true,
       );
+    } else {
+      console.log('ℹ️ [Chat] Resuming existing conversation', {
+        messageCount: history?.length || 0
+      });
     }
   };
 
@@ -165,8 +224,17 @@ export function AIConversation({
     currentHistory: { role: "user" | "assistant"; content: string }[],
     isInitial = false,
   ) => {
+    const requestStartTime = Date.now();
     setIsTyping(true);
     setCurrentOptions([]); // Hide options while thinking
+
+    console.log('🤖 [AI Response] Requesting AI conversation...', {
+      historyLength: currentHistory.length,
+      isInitial,
+      model: model || 'auto',
+      language: lang,
+      lastUserMessage: currentHistory[currentHistory.length - 1]?.content.slice(0, 50) + '...'
+    });
 
     try {
       // If initial, we send the "Start conversation" trigger to the AI so it knows to begin.
@@ -179,22 +247,58 @@ export function AIConversation({
         lang,
       );
 
+      const responseTime = Date.now() - requestStartTime;
+      console.log('✅ [AI Response] Received response', {
+        responseTime: responseTime + 'ms',
+        messagesCount: response.messages.length,
+        optionsCount: response.options.length,
+        hasSystemPrompt: !!response.debug_system_prompt
+      });
+
       if (response.debug_system_prompt) {
         setLastSystemPrompt(response.debug_system_prompt);
       }
 
       // Simulate "human" typing and message splitting
-      for (const msgContent of response.messages) {
-        await simulateTyping(300 + Math.random() * 300); // Shorter, snappier delay
+      for (let i = 0; i < response.messages.length; i++) {
+        const msgContent = response.messages[i];
+        const typingDelay = 300 + Math.random() * 300;
+
+        console.log(`💭 [AI Response] Typing message ${i + 1}/${response.messages.length}...`, {
+          contentLength: msgContent.length,
+          delay: Math.round(typingDelay) + 'ms',
+          preview: msgContent.slice(0, 60) + (msgContent.length > 60 ? '...' : '')
+        });
+
+        await simulateTyping(typingDelay); // Shorter, snappier delay
+
+        const messageId = Date.now().toString();
         setMessages((prev) => [
           ...prev,
-          { id: Date.now().toString(), role: "assistant", content: msgContent },
+          { id: messageId, role: "assistant", content: msgContent },
         ]);
+
+        console.log(`✅ [AI Response] Message ${i + 1} displayed`, {
+          id: messageId,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      if (response.options.length > 0) {
+        console.log('🎯 [AI Response] Showing options:', {
+          count: response.options.length,
+          options: response.options
+        });
       }
 
       setCurrentOptions(response.options);
-    } catch (error) {
-      console.error("Error getting AI response:", error);
+    } catch (error: any) {
+      const errorTime = Date.now() - requestStartTime;
+      console.error('❌ [AI Response] Failed', {
+        error: error.message,
+        time: errorTime + 'ms',
+        stack: error.stack
+      });
       toast.error("Failed to connect to AI advisor");
     } finally {
       setIsTyping(false);
@@ -211,6 +315,14 @@ export function AIConversation({
     };
     const newHistory = [...messages, userMsg];
 
+    console.log('💬 [Chat] User sent message:', {
+      id: userMsg.id,
+      content: text.slice(0, 100) + (text.length > 100 ? '...' : ''),
+      contentLength: text.length,
+      totalMessages: newHistory.length,
+      timestamp: new Date().toISOString()
+    });
+
     setMessages(newHistory);
     setInput("");
     setCurrentOptions([]); // Clear options after selection
@@ -220,6 +332,12 @@ export function AIConversation({
       role: m.role,
       content: m.content,
     }));
+
+    console.log('🔄 [Chat] Requesting AI response...', {
+      historyLength: apiHistory.length,
+      model: model || 'auto',
+      language: lang
+    });
 
     await handleAIResponse(apiHistory);
   };
@@ -251,13 +369,33 @@ export function AIConversation({
       const userId = await getCurrentUserId();
 
       // If no userId, default to provided model or gemini-2.5-flash
-      if (userId) {
+      if (userId && !model) {
         // Select model for this user (consistent A/B testing)
         selectedModel = selectModelForUser(userId);
+        console.log('🤖 [AI] Auto-selected model for user:', {
+          userId: userId.slice(0, 8) + '...',
+          model: selectedModel,
+          source: 'A/B Testing (hash-based)'
+        });
+      } else if (model) {
+        selectedModel = model;
+        console.log('🎯 [AI] Using manually selected model:', {
+          model: selectedModel,
+          source: 'Manual Override'
+        });
+      } else {
+        console.log('⚠️ [AI] Using default model:', {
+          model: selectedModel,
+          source: 'Fallback (no user ID)'
+        });
       }
 
       // Check cache before generating
       const cacheStartTime = Date.now();
+      console.log('🔍 [Cache] Checking for cached result...', {
+        model: selectedModel,
+        answersHash: createHash('md5').update(JSON.stringify(answers)).digest('hex').slice(0, 8)
+      });
       const cachedResult = await findCachedResult(answers, selectedModel);
       cacheLookupTime = Date.now() - cacheStartTime;
 
@@ -266,6 +404,11 @@ export function AIConversation({
         cacheHit = true;
         await incrementCacheHitCount(cachedResult.id);
 
+        console.log('✅ [Cache] HIT! Returning cached result', {
+          resultId: cachedResult.id.slice(0, 8) + '...',
+          lookupTime: cacheLookupTime + 'ms',
+          cacheHitCount: cachedResult.cache_hit_count + 1
+        });
         toast.success("Found matching profile from cache! ⚡");
 
         // Record metrics for cache hit
@@ -293,6 +436,10 @@ export function AIConversation({
       }
 
       // No cache hit, proceed with fresh generation
+      console.log('❌ [Cache] MISS. Generating fresh profile...', {
+        lookupTime: cacheLookupTime + 'ms'
+      });
+
       const apiHistory = messages.map((m) => ({
         role: m.role,
         content: m.content,
@@ -300,6 +447,11 @@ export function AIConversation({
 
       // Step 1: Core generation
       const coreStartTime = Date.now();
+      console.log('🧠 [Generation] Starting CORE generation...', {
+        model: selectedModel,
+        conversationLength: apiHistory.length,
+        language: lang
+      });
       const coreResult = await generateDirectionProfileCore(
         apiHistory,
         answers,
@@ -307,11 +459,16 @@ export function AIConversation({
         lang,
       );
       coreGenerationTime = Date.now() - coreStartTime;
+      console.log('✅ [Generation] CORE complete', {
+        time: coreGenerationTime + 'ms',
+        vectors: coreResult.vectors?.length || 0
+      });
 
       setLoadingStage("details");
 
       // Step 2: Details generation
       const detailsStartTime = Date.now();
+      console.log('📋 [Generation] Starting DETAILS generation...');
       const detailsResult = await generateDirectionProfileDetails(
         coreResult,
         answers,
@@ -319,6 +476,10 @@ export function AIConversation({
         lang,
       );
       detailsGenerationTime = Date.now() - detailsStartTime;
+      console.log('✅ [Generation] DETAILS complete', {
+        time: detailsGenerationTime + 'ms',
+        programs: detailsResult.programs?.length || 0
+      });
 
       // Merge results
       const finalResult: DirectionFinderResult = {
@@ -328,6 +489,14 @@ export function AIConversation({
 
       const totalGenerationTime = Date.now() - generationStartTime;
 
+      console.log('🎉 [Generation] Complete!', {
+        totalTime: totalGenerationTime + 'ms',
+        coreTime: coreGenerationTime + 'ms',
+        detailsTime: detailsGenerationTime + 'ms',
+        model: selectedModel,
+        cacheUsed: false
+      });
+
       // Record metrics for successful generation
       // Note: We don't have resultId yet, will need to get it after save
       // For now, we'll skip recording metrics here and do it in the parent component
@@ -335,7 +504,13 @@ export function AIConversation({
 
       onComplete(finalResult);
     } catch (error: any) {
-      console.error("Error generating profile:", error);
+      const totalTime = Date.now() - generationStartTime;
+      console.error('❌ [Generation] FAILED', {
+        error: error.message,
+        time: totalTime + 'ms',
+        model: selectedModel,
+        stack: error.stack
+      });
 
       // Classify error type
       if (
@@ -344,15 +519,18 @@ export function AIConversation({
       ) {
         hadTimeout = true;
         errorMessage = "Generation timed out";
+        console.error('⏱️ [Error] TIMEOUT - exceeded 300s limit');
         toast.error(
           "Generation timed out. Please try again or use a faster model.",
         );
       } else if (error.message?.includes("429") || error.message?.includes("rate limit")) {
         hadRateLimit = true;
         errorMessage = "Rate limit exceeded";
+        console.error('🚫 [Error] RATE LIMIT - too many requests to AI provider');
         toast.error("Too many requests. Please wait a moment and try again.");
       } else {
         errorMessage = error.message || "Unknown error";
+        console.error('💥 [Error] UNKNOWN -', errorMessage);
         toast.error("Failed to generate profile. Please try again.");
       }
 
@@ -398,6 +576,15 @@ export function AIConversation({
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3">
+          {/* DEV: Model Debug Badge */}
+          {process.env.NODE_ENV === "development" && (
+            <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              <span className="text-[10px] font-mono text-blue-300">
+                {model || 'auto'}
+              </span>
+            </div>
+          )}
           {/* Reset Chat Button */}
           {messages.length > 0 && (
             <Button
@@ -630,6 +817,12 @@ export function AIConversation({
                     <button
                       key={idx}
                       onClick={() => {
+                        console.log('🎯 [Chat] Option clicked:', {
+                          index: idx + 1,
+                          total: currentOptions.length,
+                          option: option.slice(0, 50) + (option.length > 50 ? '...' : ''),
+                          fullOption: option
+                        });
                         setInput(option);
                       }}
                       className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-800 hover:bg-blue-600/20 border border-slate-600 hover:border-blue-500 text-slate-200 hover:text-blue-200 text-xs md:text-sm rounded-full transition-all text-left animate-in fade-in slide-in-from-bottom-2 duration-300 active:scale-95"
