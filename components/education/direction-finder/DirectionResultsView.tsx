@@ -6,6 +6,7 @@ import {
   DirectionVector,
   ProfileItem,
   Message,
+  DirectionSaveOptions,
 } from "@/types/direction-finder";
 import { translations, Language } from "@/lib/i18n/direction-finder";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ interface DirectionResultsViewProps {
   onRefine?: () => void;
   onStartNew?: () => void; // For "New Chat"
   resultId?: string; // For updating existing result
+  saveOptions?: DirectionSaveOptions;
 }
 
 export function DirectionResultsView({
@@ -76,6 +78,7 @@ export function DirectionResultsView({
   onRefine,
   onStartNew,
   resultId,
+  saveOptions,
 }: DirectionResultsViewProps) {
   // Language & Translation
   const { language } = useLanguage();
@@ -100,7 +103,13 @@ export function DirectionResultsView({
 
     const autoSave = async () => {
       try {
-        await saveDirectionFinderResult(answers, result, chatHistory, resultId);
+        await saveDirectionFinderResult(
+          answers,
+          result,
+          chatHistory,
+          resultId,
+          saveOptions,
+        );
         setHasAutoSaved(true);
       } catch (error) {
         console.error("Auto-save failed:", error);
@@ -108,7 +117,7 @@ export function DirectionResultsView({
     };
 
     autoSave();
-  }, [answers, result, hasAutoSaved, chatHistory, resultId, mode]);
+  }, [answers, result, hasAutoSaved, chatHistory, resultId, mode, saveOptions]);
 
   // --- Image Generation Logic ---
   const generateProfileImage = async (node: HTMLElement) => {
@@ -145,7 +154,13 @@ export function DirectionResultsView({
     setIsSaving(true);
     try {
       // 1. Save to DB first
-      await saveDirectionFinderResult(answers, result, chatHistory, resultId);
+      await saveDirectionFinderResult(
+        answers,
+        result,
+        chatHistory,
+        resultId,
+        saveOptions,
+      );
 
       // 2. Download Image
       if (resultsRef.current) {

@@ -16,15 +16,19 @@ import { DirectionResultsView } from "@/components/education/direction-finder/Di
 
 // Types & Actions
 import {
+  AIConversationCompletionPayload,
   AssessmentAnswers,
   DirectionFinderResult,
   AssessmentStep,
   Message,
+  DirectionGenerationMetadata,
 } from "@/types/direction-finder";
 import {
+  getCurrentUserId,
   saveDirectionFinderResult,
   getUserDirectionFinderResult,
 } from "@/app/actions/save-direction";
+import { getModelProvider, recordGenerationMetrics } from "@/lib/utils/metrics-collector";
 
 type FlowStep = "tos" | "ikigai" | "ai-chat" | "results";
 
@@ -70,6 +74,8 @@ function NewNorthStarFlowContent() {
   );
   const [result, setResult] = useState<DirectionFinderResult | null>(null);
   const [serverDataId, setServerDataId] = useState<string | null>(null);
+  const [generationMetadata, setGenerationMetadata] =
+    useState<DirectionGenerationMetadata | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -194,6 +200,16 @@ function NewNorthStarFlowContent() {
     }
   };
 
+  const getSaveOptions = (metadata?: DirectionGenerationMetadata | null) => {
+    if (!metadata) return undefined;
+    return {
+      modelName: metadata.modelName,
+      isCached: metadata.cacheHit,
+      originalResultId: metadata.originalResultId,
+      generationSessionId: metadata.generationSessionId,
+    };
+  };
+
   const saveProgressToServer = async (finalResult?: DirectionFinderResult) => {
     try {
       const saved = await saveDirectionFinderResult(
@@ -201,6 +217,7 @@ function NewNorthStarFlowContent() {
         finalResult || result || null, // Pass null if no result yet, need to check type compatibility
         chatHistory,
         serverDataId || undefined,
+        getSaveOptions(generationMetadata),
       );
       if (saved?.id) setServerDataId(saved.id);
     } catch (e) {
@@ -208,16 +225,42 @@ function NewNorthStarFlowContent() {
     }
   };
 
-  const handleAIChatComplete = async (finalResult: DirectionFinderResult) => {
+  const handleAIChatComplete = async ({
+    result: finalResult,
+    metadata,
+  }: AIConversationCompletionPayload) => {
     setResult(finalResult);
+    setGenerationMetadata(metadata);
     // Optimization: Save immediately
     try {
-      await saveDirectionFinderResult(
+      const saved = await saveDirectionFinderResult(
         answers as AssessmentAnswers,
         finalResult,
         chatHistory,
         serverDataId || undefined,
+        getSaveOptions(metadata),
       );
+      if (saved?.id) {
+        setServerDataId(saved.id);
+        const userId = await getCurrentUserId();
+        if (userId) {
+          await recordGenerationMetrics(saved.id, userId, {
+            modelProvider: await getModelProvider(metadata.modelName),
+            modelName: metadata.modelName,
+            coreGenerationTimeMs: metadata.timings.coreGenerationTimeMs,
+            detailsGenerationTimeMs: metadata.timings.detailsGenerationTimeMs,
+            totalGenerationTimeMs: metadata.timings.totalGenerationTimeMs,
+            cacheHit: metadata.cacheHit,
+            cacheLookupTimeMs: metadata.timings.cacheLookupTimeMs,
+            hadTimeout: metadata.errorFlags.hadTimeout,
+            hadRateLimit: metadata.errorFlags.hadRateLimit,
+            errorMessage: metadata.errorFlags.errorMessage,
+            retryCount: metadata.retryCount,
+            conversationTurnCount: chatHistory?.length ?? 0,
+            language: language as "en" | "th",
+          });
+        }
+      }
       toast.success("Analysis Complete!");
     } catch (e) {
       toast.error("Failed to save results, please try again.");
@@ -237,6 +280,7 @@ function NewNorthStarFlowContent() {
       setResult(null);
       setChatHistory(undefined);
       setServerDataId(null);
+      setGenerationMetadata(null);
       setIkigaiStepIndex(0);
 
       // Clear localStorage
@@ -329,6 +373,7 @@ function NewNorthStarFlowContent() {
               mode="assessment"
               userRole="beta-tester" // Placeholder, in real app we might pass actual role if needed for debug
               onRetake={handleRetakeAssessment}
+              saveOptions={getSaveOptions(generationMetadata)}
             />
           </div>
         )}

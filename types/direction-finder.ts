@@ -234,6 +234,43 @@ export interface DirectionFinderResult {
   actionPlan?: ActionPlan;
 }
 
+export interface DirectionGenerationTimings {
+  cacheLookupTimeMs: number;
+  coreGenerationTimeMs: number;
+  detailsGenerationTimeMs: number;
+  totalGenerationTimeMs: number;
+}
+
+export interface DirectionGenerationErrorFlags {
+  hadTimeout: boolean;
+  hadRateLimit: boolean;
+  fallbackUsed: boolean;
+  errorMessage?: string;
+}
+
+export interface DirectionGenerationMetadata {
+  modelName: string;
+  cacheHit: boolean;
+  originalResultId?: string;
+  retryCount: number;
+  timings: DirectionGenerationTimings;
+  errorFlags: DirectionGenerationErrorFlags;
+  generationSessionId: string;
+}
+
+export interface AIConversationCompletionPayload {
+  result: DirectionFinderResult;
+  metadata: DirectionGenerationMetadata;
+}
+
+export interface DirectionSaveOptions {
+  modelName?: string;
+  isCached?: boolean;
+  originalResultId?: string;
+  generationSessionId?: string;
+  skipSummary?: boolean;
+}
+
 // ==========================================
 // Flow Types (Updated for V2)
 // ==========================================

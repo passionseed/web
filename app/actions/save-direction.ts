@@ -2,17 +2,72 @@
 
 import { createHash } from "crypto";
 import { createClient } from "@/utils/supabase/server";
-import { AssessmentAnswers, DirectionFinderResult, Message } from "@/types/direction-finder";
+import {
+  AssessmentAnswers,
+  DirectionFinderResult,
+  DirectionSaveOptions,
+  Message,
+} from "@/types/direction-finder";
 import { summarizeConversation } from "@/lib/ai/conversationEngine";
+
+function canonicalizeJson(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => canonicalizeJson(item));
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+      a.localeCompare(b),
+    );
+    return entries.reduce<Record<string, unknown>>((acc, [key, nestedValue]) => {
+      acc[key] = canonicalizeJson(nestedValue);
+      return acc;
+    }, {});
+  }
+  return value;
+}
+
+export function buildDirectionFinderCacheKey(
+  answers: AssessmentAnswers,
+  modelName: string,
+): string {
+  const normalizedAnswers = canonicalizeJson(answers);
+  return `${createHash("md5").update(JSON.stringify(normalizedAnswers)).digest("hex")}_${modelName}`;
+}
+
+export function buildDirectionSavePayload(params: {
+  answers: AssessmentAnswers;
+  result: DirectionFinderResult | null;
+  safeHistory: Message[];
+  chatContext: string;
+  options?: DirectionSaveOptions;
+}): Record<string, unknown> {
+  const { answers, result, safeHistory, chatContext, options } = params;
+  const payload: Record<string, unknown> = {
+    answers,
+    result,
+    chat_history: safeHistory,
+    chat_context: chatContext,
+  };
+
+  if (options?.modelName) {
+    payload.model_name = options.modelName;
+    payload.cache_key = buildDirectionFinderCacheKey(answers, options.modelName);
+  }
+  if (options?.isCached !== undefined) payload.is_cached = options.isCached;
+  if (options?.originalResultId) payload.original_result_id = options.originalResultId;
+  if (options?.generationSessionId) {
+    payload.generation_session_id = options.generationSessionId;
+  }
+
+  return payload;
+}
 
 export async function saveDirectionFinderResult(
   answers: AssessmentAnswers,
   result: DirectionFinderResult | null,
   chatHistory?: Message[],
   id?: string,
-  modelName?: string,
-  isCached?: boolean,
-  originalResultId?: string
+  options?: DirectionSaveOptions,
 ) {
   const supabase = await createClient();
   const {
@@ -24,14 +79,31 @@ export async function saveDirectionFinderResult(
   }
 
   let chatContext = "";
-  let currentData = null;
+  let currentData: any = null;
+  let effectiveId = id;
 
-  if (id) {
+  if (!effectiveId && options?.generationSessionId) {
+    const { data: existingBySession } = await supabase
+      .from("direction_finder_results")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("generation_session_id", options.generationSessionId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingBySession) {
+      currentData = existingBySession;
+      effectiveId = existingBySession.id;
+    }
+  }
+
+  if (effectiveId && !currentData) {
     // Fetch existing record to check for changes
     const { data } = await supabase
       .from("direction_finder_results")
       .select("*")
-      .eq("id", id)
+      .eq("id", effectiveId)
       .single();
 
     currentData = data;
@@ -60,7 +132,10 @@ export async function saveDirectionFinderResult(
     }
   }
 
-  if (shouldRegenerateSummary && chatHistory && chatHistory.length > 0) {
+  const shouldSkipSummary =
+    options?.skipSummary || process.env.DIRECTION_FINDER_SKIP_SUMMARY === "true";
+
+  if (!shouldSkipSummary && shouldRegenerateSummary && chatHistory && chatHistory.length > 0) {
     try {
       chatContext = await summarizeConversation(chatHistory, answers);
     } catch (e) {
@@ -78,46 +153,44 @@ export async function saveDirectionFinderResult(
     // History comparison (we might have already done partial check, but let's be sure)
     const isHistorySame = JSON.stringify(prevHistory) === JSON.stringify(safeHistory);
     const isContextSame = currentData.chat_context === chatContext;
+    const isModelSame = !options?.modelName || currentData.model_name === options.modelName;
+    const isSessionSame =
+      !options?.generationSessionId ||
+      currentData.generation_session_id === options.generationSessionId;
 
-    if (isAnswersSame && isResultSame && isHistorySame && isContextSame) {
-      console.log("No changes detected, skipping save for ID:", id);
+    if (
+      isAnswersSame &&
+      isResultSame &&
+      isHistorySame &&
+      isContextSame &&
+      isModelSame &&
+      isSessionSame
+    ) {
       return currentData; // Skip DB update
     }
   }
 
-  // Generate cache key if model name is provided
-  const cacheKey = modelName ? `${createHash('md5').update(JSON.stringify(answers)).digest('hex')}_${modelName}` : undefined;
-
   let query;
+  const payload = buildDirectionSavePayload({
+    answers,
+    result,
+    safeHistory,
+    chatContext,
+    options,
+  });
 
-  if (id) {
+  if (effectiveId) {
     // Update existing record
     query = supabase
       .from("direction_finder_results")
-      .update({
-        answers,
-        result,
-        chat_history: safeHistory,
-        chat_context: chatContext,
-        ...(modelName && { model_name: modelName }),
-        ...(cacheKey && { cache_key: cacheKey }),
-        ...(isCached !== undefined && { is_cached: isCached }),
-        ...(originalResultId && { original_result_id: originalResultId }),
-      })
-      .eq("id", id)
+      .update(payload)
+      .eq("id", effectiveId)
       .eq("user_id", user.id);
   } else {
     // Insert new record
     query = supabase.from("direction_finder_results").insert({
       user_id: user.id,
-      answers,
-      result,
-      chat_history: safeHistory,
-      chat_context: chatContext,
-      ...(modelName && { model_name: modelName }),
-      ...(cacheKey && { cache_key: cacheKey }),
-      ...(isCached !== undefined && { is_cached: isCached }),
-      ...(originalResultId && { original_result_id: originalResultId }),
+      ...payload,
     });
   }
 
