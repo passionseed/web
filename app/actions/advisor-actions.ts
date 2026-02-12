@@ -10,6 +10,8 @@ import {
     generateDirectionProfileDetails as generateDetailsLogic,
 } from "@/lib/ai/directionProfileEngine";
 import { DirectionFinderResult } from "@/types/direction-finder";
+import { createClient } from "@/utils/supabase/server";
+import { resolveDirectionModel } from "@/lib/ai/modelResolver";
 
 export async function conductDirectionConversation(
     history: { role: 'user' | 'assistant'; content: string }[],
@@ -45,4 +47,23 @@ export async function generateDirectionProfileDetails(
     language: 'en' | 'th' = 'en'
 ) {
     return generateDetailsLogic(coreResult, answers, modelName, language);
+}
+
+export async function resolveDirectionModelForSession(
+    explicitModel?: string,
+): Promise<string> {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    const allowExplicitOverride =
+        process.env.DIRECTION_FINDER_ALLOW_MODEL_OVERRIDE === "true" ||
+        process.env.NODE_ENV !== "production";
+
+    return resolveDirectionModel({
+        userId: user?.id,
+        explicitModel,
+        allowExplicitOverride,
+    });
 }

@@ -13,31 +13,31 @@ interface ModelBucket {
 
 /**
  * A/B testing model distribution
- * Total: 100% across 9 models from 4 providers
+ * Total: 100% across 9 buckets from 4 providers
  *
- * Distribution strategy:
- * - 35% Google (3 variants: gemini-3-flash, gemini-2.5-flash, gemini-flash-lite-latest)
- * - 13% Anthropic (1 variant: claude-haiku-4-5)
- * - 32% OpenAI (3 variants: gpt-5-mini, gpt-5.2-chat, codex-mini)
- * - 20% DeepSeek (2 variants: deepseek-chat, deepseek-reasoner)
+ * Distribution strategy (stability-biased):
+ * - 48% Google (3 variants)
+ * - 10% Anthropic (1 variant)
+ * - 30% OpenAI (3 variants)
+ * - 12% DeepSeek (2 variants)
  */
 const MODEL_BUCKETS: ModelBucket[] = [
-  // Google Models (35%)
-  { model: 'gemini-3-flash', minHash: 0, maxHash: 10, percentage: 10 },
-  { model: 'gemini-2.5-flash', minHash: 10, maxHash: 25, percentage: 15 },
-  { model: 'gemini-flash-lite-latest', minHash: 25, maxHash: 35, percentage: 10 },
+  // Google Models (48%)
+  { model: 'gemini-2.5-flash', minHash: 0, maxHash: 22, percentage: 22 },
+  { model: 'gemini-3-flash', minHash: 22, maxHash: 36, percentage: 14 },
+  { model: 'gemini-flash-lite-latest', minHash: 36, maxHash: 48, percentage: 12 },
 
-  // Anthropic Claude (13%)
-  { model: 'claude-haiku-4-5', minHash: 35, maxHash: 48, percentage: 13 },
+  // Anthropic Claude (10%)
+  { model: 'claude-haiku-4-5', minHash: 48, maxHash: 58, percentage: 10 },
 
-  // OpenAI Models (32%)
-  { model: 'gpt-5-mini-2025-08-07', minHash: 48, maxHash: 60, percentage: 12 },
-  { model: 'gpt-5.2-chat-latest', minHash: 60, maxHash: 70, percentage: 10 },
-  { model: 'codex-mini-latest', minHash: 70, maxHash: 80, percentage: 10 },
+  // OpenAI Models (30%)
+  { model: 'gpt-5-mini-2025-08-07', minHash: 58, maxHash: 70, percentage: 12 },
+  { model: 'gpt-5.2-chat-latest', minHash: 70, maxHash: 80, percentage: 10 },
+  { model: 'codex-mini-latest', minHash: 80, maxHash: 88, percentage: 8 },
 
-  // DeepSeek Models (20%)
-  { model: 'deepseek-chat', minHash: 80, maxHash: 90, percentage: 10 },
-  { model: 'deepseek-reasoner', minHash: 90, maxHash: 100, percentage: 10 },
+  // DeepSeek Models (12%)
+  { model: 'deepseek-chat', minHash: 88, maxHash: 96, percentage: 8 },
+  { model: 'deepseek-reasoner', minHash: 96, maxHash: 100, percentage: 4 },
 ];
 
 /**
@@ -59,7 +59,7 @@ function hashUserIdToRange(userId: string): number {
  * The same user will always get the same model (consistent A/B testing)
  *
  * This enables:
- * 1. Fair comparison across 9 models from 4 providers
+ * 1. Fair comparison across multiple models from 4 providers
  * 2. Consistent user experience (same user always gets same model)
  * 3. Data-driven decisions on which model to use in production
  *

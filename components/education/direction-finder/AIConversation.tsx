@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import {
+  AIConversationCompletionPayload,
   AssessmentAnswers,
   DirectionFinderResult,
+  DirectionGenerationMetadata,
   Message,
 } from "@/types/direction-finder";
 import { translations, Language } from "@/lib/i18n/direction-finder";
@@ -9,11 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Send,
   Bot,
-  User,
   Loader2,
   Sparkles,
   ArrowLeft,
@@ -23,15 +24,15 @@ import {
 } from "lucide-react";
 import {
   conductDirectionConversation,
-  generateDirectionProfile,
   generateDirectionProfileCore,
   generateDirectionProfileDetails,
+  resolveDirectionModelForSession,
 } from "@/app/actions/advisor-actions";
 import {
+  getCurrentUserId,
   findCachedResult,
-  incrementCacheHitCount
+  incrementCacheHitCount,
 } from "@/app/actions/save-direction";
-import { selectModelForUser } from "@/lib/ai/modelSelector";
 import { recordGenerationMetrics, getModelProvider } from "@/lib/utils/metrics-collector";
 import { toast } from "sonner";
 import { marked } from "marked";
@@ -40,7 +41,7 @@ import { cn } from "@/lib/utils";
 
 interface AIConversationProps {
   answers: AssessmentAnswers;
-  onComplete: (result: DirectionFinderResult) => void;
+  onComplete: (payload: AIConversationCompletionPayload) => void;
   history?: Message[];
   onHistoryChange?: (messages: Message[]) => void;
   onBack: () => void;
@@ -74,6 +75,7 @@ export function AIConversation({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [lastSystemPrompt, setLastSystemPrompt] = useState<string>("");
+  const [resolvedModel, setResolvedModel] = useState<string | null>(null);
 
   const handleResetChat = () => {
     if (confirm("Reset chat history? This cannot be undone.")) {
@@ -87,6 +89,8 @@ export function AIConversation({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasStartedRef = useRef(false);
+  const resolvingModelRef = useRef<Promise<string> | null>(null);
+  const generationSessionRef = useRef<string | null>(null);
 
   const startEditing = (msg: Message) => {
     setEditingId(msg.id);
@@ -125,6 +129,11 @@ export function AIConversation({
     await handleAIResponse(apiHistory);
   };
 
+  useEffect(() => {
+    setResolvedModel(null);
+    resolvingModelRef.current = null;
+  }, [model]);
+
   // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
@@ -161,6 +170,61 @@ export function AIConversation({
   const simulateTyping = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
+  const resolveSessionModel = async () => {
+    if (resolvedModel) return resolvedModel;
+    if (resolvingModelRef.current) return resolvingModelRef.current;
+
+    resolvingModelRef.current = resolveDirectionModelForSession(model)
+      .then((resolved) => {
+        setResolvedModel(resolved);
+        return resolved;
+      })
+      .finally(() => {
+        resolvingModelRef.current = null;
+      });
+
+    return resolvingModelRef.current;
+  };
+
+  const buildDefaultMetadata = (modelName: string): DirectionGenerationMetadata => ({
+    modelName,
+    cacheHit: false,
+    retryCount: 0,
+    timings: {
+      cacheLookupTimeMs: 0,
+      coreGenerationTimeMs: 0,
+      detailsGenerationTimeMs: 0,
+      totalGenerationTimeMs: 0,
+    },
+    errorFlags: {
+      hadTimeout: false,
+      hadRateLimit: false,
+      fallbackUsed: false,
+    },
+    generationSessionId:
+      generationSessionRef.current ??
+      (typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+  });
+
+  const classifyErrorFlags = (error: any) => {
+    const message = (error?.message || "").toLowerCase();
+    return {
+      hadTimeout:
+        message.includes("timeout") ||
+        message.includes("timed out") ||
+        message.includes("504") ||
+        message.includes("unexpected response"),
+      hadRateLimit:
+        message.includes("429") ||
+        message.includes("rate limit") ||
+        message.includes("quota"),
+      errorMessage: error?.message || "Unknown error",
+      retryCount: typeof error?.retryCount === "number" ? error.retryCount : 0,
+    };
+  };
+
   const handleAIResponse = async (
     currentHistory: { role: "user" | "assistant"; content: string }[],
     isInitial = false,
@@ -169,13 +233,13 @@ export function AIConversation({
     setCurrentOptions([]); // Hide options while thinking
 
     try {
+      const selectedModel = await resolveSessionModel();
       // If initial, we send the "Start conversation" trigger to the AI so it knows to begin.
       // The server action expects history.
-
       const response = await conductDirectionConversation(
         currentHistory,
         answers,
-        model,
+        selectedModel,
         lang,
       );
 
@@ -193,8 +257,7 @@ export function AIConversation({
       }
 
       setCurrentOptions(response.options);
-    } catch (error) {
-      console.error("Error getting AI response:", error);
+    } catch {
       toast.error("Failed to connect to AI advisor");
     } finally {
       setIsTyping(false);
@@ -225,9 +288,22 @@ export function AIConversation({
   };
 
   const handleFinish = async () => {
+    if (generationSessionRef.current) {
+      return;
+    }
+    generationSessionRef.current =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
     // If we already have a result, just navigate to it instead of regenerating
     if (existingResult) {
-      onComplete(existingResult);
+      const modelName = resolvedModel || "gemini-2.5-flash";
+      onComplete({
+        result: existingResult,
+        metadata: buildDefaultMetadata(modelName),
+      });
+      generationSessionRef.current = null;
       return;
     }
 
@@ -236,25 +312,13 @@ export function AIConversation({
     let cacheLookupTime = 0;
     let coreGenerationTime = 0;
     let detailsGenerationTime = 0;
-    let selectedModel = model || 'gemini-2.5-flash';
-    let hadTimeout = false;
-    let hadRateLimit = false;
-    let errorMessage: string | undefined;
+    let selectedModel = "gemini-2.5-flash";
+    const userId = await getCurrentUserId();
     let retryCount = 0;
-
-    // Import getCurrentUserId from save-direction
-    const { getCurrentUserId } = await import("@/app/actions/save-direction");
 
     setLoadingStage("core");
     try {
-      // Get current user ID for model selection
-      const userId = await getCurrentUserId();
-
-      // If no userId, default to provided model or gemini-2.5-flash
-      if (userId) {
-        // Select model for this user (consistent A/B testing)
-        selectedModel = selectModelForUser(userId);
-      }
+      selectedModel = await resolveSessionModel();
 
       // Check cache before generating
       const cacheStartTime = Date.now();
@@ -265,34 +329,34 @@ export function AIConversation({
         // Cache hit! Return cached result immediately
         cacheHit = true;
         await incrementCacheHitCount(cachedResult.id);
-
         toast.success("Found matching profile from cache! ⚡");
 
-        // Record metrics for cache hit
-        if (userId) {
-          await recordGenerationMetrics(
-            cachedResult.id,
-            userId,
-            {
-              modelProvider: await getModelProvider(selectedModel),
-              modelName: selectedModel,
-              totalGenerationTimeMs: Date.now() - generationStartTime,
-              cacheHit: true,
+        onComplete({
+          result: cachedResult.result,
+          metadata: {
+            modelName: selectedModel,
+            cacheHit: true,
+            originalResultId: cachedResult.id,
+            retryCount: 0,
+            timings: {
               cacheLookupTimeMs: cacheLookupTime,
+              coreGenerationTimeMs: 0,
+              detailsGenerationTimeMs: 0,
+              totalGenerationTimeMs: Date.now() - generationStartTime,
+            },
+            errorFlags: {
               hadTimeout: false,
               hadRateLimit: false,
-              retryCount: 0,
-              conversationTurnCount: messages.length,
-              language: lang,
-            }
-          );
-        }
-
-        onComplete(cachedResult.result);
+              fallbackUsed: false,
+            },
+            generationSessionId: generationSessionRef.current!,
+          },
+        });
+        setLoadingStage("none");
+        generationSessionRef.current = null;
         return;
       }
 
-      // No cache hit, proceed with fresh generation
       const apiHistory = messages.map((m) => ({
         role: m.role,
         content: m.content,
@@ -321,50 +385,74 @@ export function AIConversation({
       detailsGenerationTime = Date.now() - detailsStartTime;
 
       // Merge results
-      const finalResult: DirectionFinderResult = {
+      const finalResult = {
         ...(coreResult as any),
         ...(detailsResult as any),
       };
+      const fallbackUsed =
+        Boolean(
+          detailsResult?.programs &&
+            detailsResult.programs.length === 1 &&
+            detailsResult.programs[0]?.reason &&
+            (detailsResult.programs[0].reason.includes("High system load detected") ||
+              detailsResult.programs[0].reason.includes("ระบบกำลังโหลดสูง")),
+        ) || false;
 
-      const totalGenerationTime = Date.now() - generationStartTime;
-
-      // Record metrics for successful generation
-      // Note: We don't have resultId yet, will need to get it after save
-      // For now, we'll skip recording metrics here and do it in the parent component
-      // after saveDirectionFinderResult is called
-
-      onComplete(finalResult);
+      onComplete({
+        result: finalResult,
+        metadata: {
+          modelName: selectedModel,
+          cacheHit,
+          retryCount,
+          timings: {
+            cacheLookupTimeMs: cacheLookupTime,
+            coreGenerationTimeMs: coreGenerationTime,
+            detailsGenerationTimeMs: detailsGenerationTime,
+            totalGenerationTimeMs: Date.now() - generationStartTime,
+          },
+          errorFlags: {
+            hadTimeout: false,
+            hadRateLimit: false,
+            fallbackUsed,
+          },
+          generationSessionId: generationSessionRef.current!,
+        },
+      });
+      setLoadingStage("none");
+      generationSessionRef.current = null;
     } catch (error: any) {
-      console.error("Error generating profile:", error);
+      const { hadTimeout, hadRateLimit, errorMessage, retryCount: failureRetries } =
+        classifyErrorFlags(error);
+      retryCount = Math.max(retryCount, failureRetries);
 
-      // Classify error type
-      if (
-        error.message?.includes("unexpected response") ||
-        error.message?.includes("504")
-      ) {
-        hadTimeout = true;
-        errorMessage = "Generation timed out";
+      if (hadTimeout) {
         toast.error(
           "Generation timed out. Please try again or use a faster model.",
         );
-      } else if (error.message?.includes("429") || error.message?.includes("rate limit")) {
-        hadRateLimit = true;
-        errorMessage = "Rate limit exceeded";
+      } else if (hadRateLimit) {
         toast.error("Too many requests. Please wait a moment and try again.");
       } else {
-        errorMessage = error.message || "Unknown error";
         toast.error("Failed to generate profile. Please try again.");
       }
 
-      // Record error metrics (without resultId since generation failed)
-      const userId = await getCurrentUserId();
       if (userId) {
-        // Create a placeholder record to track the failed attempt
-        // This helps us understand error patterns
-        // We'll need to handle this in recordGenerationMetrics by making result_id optional
+        await recordGenerationMetrics(null, userId, {
+          modelProvider: await getModelProvider(selectedModel),
+          modelName: selectedModel,
+          totalGenerationTimeMs: Date.now() - generationStartTime,
+          cacheHit: false,
+          cacheLookupTimeMs: cacheLookupTime,
+          hadTimeout,
+          hadRateLimit,
+          errorMessage,
+          retryCount,
+          conversationTurnCount: messages.length,
+          language: lang,
+        });
       }
-
+    } finally {
       setLoadingStage("none");
+      generationSessionRef.current = null;
     }
   };
 
@@ -398,6 +486,15 @@ export function AIConversation({
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3">
+          {/* DEV: Model Debug Badge */}
+          {process.env.NODE_ENV === "development" && (
+            <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              <span className="text-[10px] font-mono text-blue-300">
+                {resolvedModel || model || "auto"}
+              </span>
+            </div>
+          )}
           {/* Reset Chat Button */}
           {messages.length > 0 && (
             <Button

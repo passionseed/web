@@ -8,6 +8,7 @@ import {
   ZoneGridItem
 } from "@/types/direction-finder";
 import { getModel } from "./modelRegistry";
+import { runWithRetry } from "./reliability";
 
 // ==========================================
 // HELPER FUNCTIONS FOR CONTEXT EXTRACTION
@@ -175,9 +176,11 @@ Generate 3 career direction vectors. For EACH vector:
 Include an "evidence_used" object in each vector showing you used data from Q1-Q6.
 `;
 
-    const { object } = await generateObject({
-      model: getModel(modelName),
-      schema: z.object({
+    const { value } = await runWithRetry(
+      () =>
+        generateObject({
+          model: getModel(modelName),
+          schema: z.object({
         profile: z.object({
           energizers: z.array(z.object({
             name: z.string(),
@@ -249,11 +252,13 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
           this_week: z.array(z.string()),
           this_month: z.array(z.string()),
         }),
-      }),
-      prompt,
-    });
+          }),
+          prompt,
+        }),
+      { stage: "core", maxRetries: 2 },
+    );
 
-    return object;
+    return value.object;
   } catch (error) {
     console.error("Error generating direction profile:", error);
     throw error;
@@ -380,9 +385,11 @@ Ensure 'energizers', 'strengths', and 'values' are arrays of objects with { name
 Ensure vectors include 'industry', 'role', and 'specialization'.
 `;
 
-    const { object } = await generateObject({
-      model: getModel(modelName),
-      schema: z.object({
+    const { value } = await runWithRetry(
+      () =>
+        generateObject({
+          model: getModel(modelName),
+          schema: z.object({
         profile: z.object({
           energizers: z.array(z.object({
             name: z.string(),
@@ -454,11 +461,13 @@ Ensure vectors include 'industry', 'role', and 'specialization'.
           this_week: z.array(z.string()),
           this_month: z.array(z.string()),
         }),
-      }),
-      prompt,
-    });
+          }),
+          prompt,
+        }),
+      { stage: "core", maxRetries: 2 },
+    );
 
-    return object;
+    return value.object;
   } catch (error) {
     console.error("Error generating core profile:", error);
     throw error;
@@ -475,8 +484,43 @@ export async function generateDirectionProfileDetails(
   modelName?: string,
   language: 'en' | 'th' = 'en'
 ): Promise<Partial<DirectionFinderResult>> {
+  const buildDetailsFallback = (): Partial<DirectionFinderResult> => {
+    const firstVector = coreResult.vectors?.[0];
+    const focus = firstVector?.industry || firstVector?.name || "your profile";
+
+    return {
+      programs: [
+        {
+          name: language === "th" ? `หลักสูตรที่เกี่ยวข้องกับ ${focus}` : `${focus} related programs`,
+          match_level: "Good",
+          match_percentage: 75,
+          reason:
+            language === "th"
+              ? "ระบบกำลังโหลดสูง จึงแนะนำเบื้องต้นจากเวกเตอร์หลักของคุณก่อน"
+              : "High system load detected, showing a reliable recommendation from your strongest vector first.",
+        },
+      ],
+      commitments: {
+        this_week: [
+          language === "th"
+            ? "เลือก 1 โปรแกรมที่สนใจและอ่านรายละเอียดให้ครบ"
+            : "Pick one recommended program and review its curriculum thoroughly.",
+        ],
+        this_month: [
+          language === "th"
+            ? "คุยกับรุ่นพี่หรือผู้เชี่ยวชาญ 1 คนเกี่ยวกับสายนี้"
+            : "Talk to one senior/student mentor in this direction and validate fit.",
+        ],
+      },
+    };
+  };
+
   try {
     const context = buildProfileContext(answers);
+
+    if (process.env.DIRECTION_FINDER_SKIP_DETAILS === "true") {
+      return buildDetailsFallback();
+    }
 
     const prompt = `
 Based on the student's Core Direction Vectors, generate supporting details (Programs & Commitments).
@@ -497,9 +541,11 @@ ${JSON.stringify(context.secondary_signals.environment, null, 2)}
 Generate 2-3 recommended programs/faculties and weekly/monthly commitments.
 `;
 
-    const { object } = await generateObject({
-      model: getModel(modelName),
-      schema: z.object({
+    const { value } = await runWithRetry(
+      () =>
+        generateObject({
+          model: getModel(modelName),
+          schema: z.object({
         programs: z.array(z.object({
           name: z.string(),
           match_level: z.enum(['High', 'Good', 'Stretch']),
@@ -512,13 +558,15 @@ Generate 2-3 recommended programs/faculties and weekly/monthly commitments.
           this_week: z.array(z.string()),
           this_month: z.array(z.string()),
         }),
-      }),
-      prompt,
-    });
+          }),
+          prompt,
+        }),
+      { stage: "details", maxRetries: 2 },
+    );
 
-    return object;
+    return value.object;
   } catch (error) {
-    console.error("Error generating profile details:", error);
-    throw error;
+    console.error("Error generating profile details, using fallback:", error);
+    return buildDetailsFallback();
   }
 }

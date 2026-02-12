@@ -46,13 +46,13 @@ export interface GenerationMetrics {
  * Record generation metrics to the database for analysis
  * This enables A/B testing, performance monitoring, and cost tracking
  *
- * @param resultId - ID of the direction_finder_results record
+ * @param resultId - ID of the direction_finder_results record (nullable for failed generations)
  * @param userId - ID of the user who generated the result
  * @param metrics - Performance and quality metrics
  * @returns The created metrics record or null if failed
  */
 export async function recordGenerationMetrics(
-  resultId: string,
+  resultId: string | null,
   userId: string,
   metrics: GenerationMetrics
 ): Promise<{ id: string } | null> {

@@ -1,5 +1,6 @@
 import { useState, useEffect, Suspense } from "react";
 import {
+  AIConversationCompletionPayload,
   AssessmentAnswers,
   DirectionFinderResult,
   AssessmentStep,
@@ -8,6 +9,8 @@ import {
   ActionPlan,
   MilestoneEvaluation,
   Commitment,
+  DirectionGenerationMetadata,
+  DirectionSaveOptions,
 } from "@/types/direction-finder";
 import { translations, Language } from "@/lib/i18n/direction-finder";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +24,7 @@ import { CommitmentContract } from "./CommitmentContract";
 import {
   getDirectionFinderResults,
   getDirectionFinderResultById,
+  getCurrentUserId,
   saveDirectionFinderResult,
   getUserDirectionFinderResult,
 } from "@/app/actions/save-direction";
@@ -34,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
+import { getModelProvider, recordGenerationMetrics } from "@/lib/utils/metrics-collector";
 
 interface DirectionFinderFlowProps {
   onComplete: (result: DirectionFinderResult) => void;
@@ -113,6 +118,8 @@ function DirectionFinderFlowContent({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCheckingServer, setIsCheckingServer] = useState(true);
   const [serverDataId, setServerDataId] = useState<string | null>(null);
+  const [generationMetadata, setGenerationMetadata] =
+    useState<DirectionGenerationMetadata | null>(null);
   const { language: lang, setLanguage: setLang } = useLanguage();
 
   // DEV: Saved sessions state
@@ -274,8 +281,24 @@ function DirectionFinderFlowContent({
     }
   };
 
-  const handleAIComplete = async (finalResult: DirectionFinderResult) => {
+  const getSaveOptions = (
+    metadata?: DirectionGenerationMetadata | null,
+  ): DirectionSaveOptions | undefined => {
+    if (!metadata) return undefined;
+    return {
+      modelName: metadata.modelName,
+      isCached: metadata.cacheHit,
+      originalResultId: metadata.originalResultId,
+      generationSessionId: metadata.generationSessionId,
+    };
+  };
+
+  const handleAIComplete = async ({
+    result: finalResult,
+    metadata,
+  }: AIConversationCompletionPayload) => {
     setResult(finalResult);
+    setGenerationMetadata(metadata);
 
     // Save to Server
     try {
@@ -284,9 +307,29 @@ function DirectionFinderFlowContent({
         finalResult,
         chatHistory,
         serverDataId || undefined,
+        getSaveOptions(metadata),
       );
       if (savedData?.id) {
         setServerDataId(savedData.id);
+
+        const userId = await getCurrentUserId();
+        if (userId) {
+          await recordGenerationMetrics(savedData.id, userId, {
+            modelProvider: await getModelProvider(metadata.modelName),
+            modelName: metadata.modelName,
+            coreGenerationTimeMs: metadata.timings.coreGenerationTimeMs,
+            detailsGenerationTimeMs: metadata.timings.detailsGenerationTimeMs,
+            totalGenerationTimeMs: metadata.timings.totalGenerationTimeMs,
+            cacheHit: metadata.cacheHit,
+            cacheLookupTimeMs: metadata.timings.cacheLookupTimeMs,
+            hadTimeout: metadata.errorFlags.hadTimeout,
+            hadRateLimit: metadata.errorFlags.hadRateLimit,
+            errorMessage: metadata.errorFlags.errorMessage,
+            retryCount: metadata.retryCount,
+            conversationTurnCount: chatHistory?.length ?? 0,
+            language: lang,
+          });
+        }
       }
       clearProgress();
       toast.success("Profile saved!");
@@ -308,6 +351,7 @@ function DirectionFinderFlowContent({
       setResult(null);
       setChatHistory(undefined);
       setServerDataId(null);
+      setGenerationMetadata(null);
       // Reset action plan state
       setSelectedVector(null);
       setSelectedVectorIndex(-1);
@@ -355,6 +399,7 @@ function DirectionFinderFlowContent({
     ) {
       setResult(null);
       setChatHistory(undefined); // Clear chat history so we get a fresh analysis
+      setGenerationMetadata(null);
 
       // Force update local storage to prevent auto-restore jumping to old step
       // We keep 'answers' so the user doesn't lose them, but reset step to q1
@@ -418,6 +463,7 @@ function DirectionFinderFlowContent({
         updatedResult,
         chatHistory,
         serverDataId || undefined,
+        getSaveOptions(generationMetadata),
       );
       toast.success("Journey started! Commitment saved.");
       onComplete(updatedResult); // Call parent onComplete
@@ -465,6 +511,7 @@ function DirectionFinderFlowContent({
             onStartNew={handleStartNewSession}
             onSelect={handleSelectPath}
             onRetake={handleRetake}
+            saveOptions={getSaveOptions(generationMetadata)}
           />
         </div>
       );
@@ -574,27 +621,70 @@ function DirectionFinderFlowContent({
             </div>
           </details>
 
-          {/* ... Model Selector ... */}
+          {/* Model Selector - DEV ONLY */}
           {currentStep === "ai_chat" && (
-            <div className="w-[200px] animate-in fade-in slide-in-from-top-2">
-              <Select value={model} onValueChange={setModel}>
+            <div className="w-[280px] animate-in fade-in slide-in-from-top-2">
+              <Select
+                value={model ?? "__auto__"}
+                onValueChange={(value) =>
+                  setModel(value === "__auto__" ? undefined : value)
+                }
+              >
                 <SelectTrigger className="h-full bg-slate-900 border-slate-700 text-xs">
                   <Settings className="w-3 h-3 mr-2 text-slate-400" />
-                  <SelectValue placeholder="Select AI Model" />
+                  <SelectValue placeholder="Auto (A/B Test)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="google/gemini-2.5-flash">
+                  <SelectItem value="__auto__">
+                    <span className="font-semibold text-blue-400">🎲 Auto (A/B Test)</span>
+                  </SelectItem>
+
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">GOOGLE</div>
+                  <SelectItem value="gemini-3-flash">
                     Gemini 3 Flash
                   </SelectItem>
-                  <SelectItem value="google/gemini-2.5-flash">
-                    Gemini 2.5 Flash Lite
+                  <SelectItem value="gemini-2.5-flash">
+                    Gemini 2.5 Flash
                   </SelectItem>
-                  <SelectItem value="deepseek-v3">DeepSeek V3</SelectItem>
-                  <SelectItem value="deepseek/deepseek-r1">
-                    DeepSeek R1 (Reasoner)
+                  <SelectItem value="gemini-flash-lite-latest">
+                    Gemini Flash Lite
+                  </SelectItem>
+
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">ANTHROPIC</div>
+                  <SelectItem value="claude-haiku-4-5">
+                    Claude Haiku 4.5
+                  </SelectItem>
+
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">OPENAI</div>
+                  <SelectItem value="gpt-5-mini-2025-08-07">
+                    GPT-5 Mini
+                  </SelectItem>
+                  <SelectItem value="gpt-5.2-chat-latest">
+                    GPT-5.2 Chat
+                  </SelectItem>
+                  <SelectItem value="codex-mini-latest">
+                    Codex Mini
+                  </SelectItem>
+
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">DEEPSEEK</div>
+                  <SelectItem value="deepseek-chat">
+                    DeepSeek Chat
+                  </SelectItem>
+                  <SelectItem value="deepseek-reasoner">
+                    DeepSeek Reasoner (R1)
                   </SelectItem>
                 </SelectContent>
               </Select>
+              {model && (
+                <div className="mt-1 text-[10px] text-green-400 font-mono">
+                  ✓ Override: {model}
+                </div>
+              )}
+              {!model && (
+                <div className="mt-1 text-[10px] text-blue-400 font-mono">
+                  🎲 Auto model selection enabled
+                </div>
+              )}
             </div>
           )}
         </div>

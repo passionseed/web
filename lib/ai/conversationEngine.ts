@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { AssessmentAnswers } from "@/types/direction-finder";
 import { getModel } from "./modelRegistry";
+import { runWithRetry } from "./reliability";
 
 export async function summarizeConversation(
     history: { role: 'user' | 'assistant'; content: string }[],
@@ -19,13 +20,17 @@ export async function summarizeConversation(
       ${history.map(m => `${m.role}: ${m.content}`).join('\n')}
     `;
 
-        const { object } = await generateObject({
-            model: getModel("google/gemini-2.5-flash"), // Use fast model for summary
-            schema: z.object({ summary: z.string() }),
-            prompt,
-        });
+        const { value } = await runWithRetry(
+            () =>
+                generateObject({
+                    model: getModel("google/gemini-2.5-flash"), // Use fast model for summary
+                    schema: z.object({ summary: z.string() }),
+                    prompt,
+                }),
+            { stage: "summary", maxRetries: 1 },
+        );
 
-        return object.summary;
+        return value.object.summary;
     } catch (error: any) {
         const errorMessage = error?.message || error?.toString() || "";
 
@@ -46,11 +51,6 @@ export async function conductDirectionConversation(
     language: 'en' | 'th' = 'en'
 ): Promise<{ messages: string[]; options: string[]; debug_system_prompt?: string }> {
     try {
-        console.log("conductDirectionConversation called");
-        console.log("History length:", history.length);
-        console.log("Answers keys:", Object.keys(answers));
-        console.log("Model:", modelName || "default");
-
         // Build structured context for better AI understanding
         const { buildProfileContext } = await import("./directionProfileEngine");
         const context = buildProfileContext(answers);
@@ -107,18 +107,22 @@ export async function conductDirectionConversation(
         - Option 3: A different angle/Disagree.
     `;
 
-        const { object } = await generateObject({
-            model: getModel(modelName),
-            system: systemPrompt,
-            messages: history,
-            schema: z.object({
-                messages: z.array(z.string()),
-                options: z.array(z.string()),
-            }),
-        });
+        const { value } = await runWithRetry(
+            () =>
+                generateObject({
+                    model: getModel(modelName),
+                    system: systemPrompt,
+                    messages: history,
+                    schema: z.object({
+                        messages: z.array(z.string()),
+                        options: z.array(z.string()),
+                    }),
+                }),
+            { stage: "chat", maxRetries: 2 },
+        );
 
         return {
-            ...object,
+            ...value.object,
             debug_system_prompt: systemPrompt
         };
     } catch (error: any) {
