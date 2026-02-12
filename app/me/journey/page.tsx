@@ -1,4 +1,3 @@
-export const maxDuration = 200;
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { JourneyPageClientWrapper } from "./journey-page-client";
