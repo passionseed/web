@@ -284,6 +284,7 @@ function DirectionFinderFlowContent({
         finalResult,
         chatHistory,
         serverDataId || undefined,
+        finalResult.debugMetadata?.modelId,
       );
       if (savedData?.id) {
         setServerDataId(savedData.id);
@@ -418,6 +419,7 @@ function DirectionFinderFlowContent({
         updatedResult,
         chatHistory,
         serverDataId || undefined,
+        updatedResult.debugMetadata?.modelId,
       );
       toast.success("Journey started! Commitment saved.");
       onComplete(updatedResult); // Call parent onComplete
@@ -580,7 +582,7 @@ function DirectionFinderFlowContent({
               <Select
                 value={model}
                 onValueChange={(value) => {
-                  console.log('🎯 [DEV] Model manually selected:', value);
+                  console.log("🎯 [DEV] Model manually selected:", value);
                   setModel(value);
                 }}
               >
@@ -590,10 +592,14 @@ function DirectionFinderFlowContent({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={undefined as any}>
-                    <span className="font-semibold text-blue-400">🎲 Auto (A/B Test)</span>
+                    <span className="font-semibold text-blue-400">
+                      🎲 Auto (A/B Test)
+                    </span>
                   </SelectItem>
 
-                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">GOOGLE</div>
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">
+                    GOOGLE
+                  </div>
                   <SelectItem value="gemini-2.5-flash">
                     Gemini 2.5 Flash
                   </SelectItem>
@@ -601,26 +607,28 @@ function DirectionFinderFlowContent({
                     Gemini Flash Lite
                   </SelectItem>
 
-                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">ANTHROPIC</div>
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">
+                    ANTHROPIC
+                  </div>
                   <SelectItem value="claude-haiku-4-5">
                     Claude Haiku 4.5
                   </SelectItem>
 
-                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">OPENAI</div>
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">
+                    OPENAI
+                  </div>
                   <SelectItem value="gpt-5-mini-2025-08-07">
                     GPT-5 Mini
                   </SelectItem>
                   <SelectItem value="gpt-5.2-chat-latest">
                     GPT-5.2 Chat
                   </SelectItem>
-                  <SelectItem value="codex-mini-latest">
-                    Codex Mini
-                  </SelectItem>
+                  <SelectItem value="codex-mini-latest">Codex Mini</SelectItem>
 
-                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">DEEPSEEK</div>
-                  <SelectItem value="deepseek-chat">
-                    DeepSeek Chat
-                  </SelectItem>
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">
+                    DEEPSEEK
+                  </div>
+                  <SelectItem value="deepseek-chat">DeepSeek Chat</SelectItem>
                   <SelectItem value="deepseek-reasoner">
                     DeepSeek Reasoner (R1)
                   </SelectItem>

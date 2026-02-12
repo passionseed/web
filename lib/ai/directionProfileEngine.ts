@@ -101,13 +101,29 @@ For every Energizer, Strength, and Value, provide:
 For each career vector, calculate fit as:
 - Zone of Genius alignment (Q2 high-high): 25 points
 - Proud Moment/Values alignment (Q5): 20 points (Increased weight)
-- Flow state connection (Q1): 15 points  
+- Flow state connection (Q1): 15 points
 - External validation (Q4): 10 points
 - Environment fit (Q3): 10 points (Decreased weight - Low Stakes)
 - Growth potential (Q2 high-low): 10 points
 - Unique advantage (Q6): 10 points bonus
 
 Total = /100
+
+## Exploration Steps & Skill Tree Requirements
+For EACH career vector, you MUST provide:
+1. **Exploration Steps**: At least 5-7 concrete, actionable steps covering different types:
+   - At least 1 project to build/create
+   - At least 1 study resource (book, course, article)
+   - At least 1 activity to try
+   - At least 1 community to join
+   - At least 1 person to talk to or shadow
+   Each step should be specific, realistic, and achievable.
+
+2. **Skill Tree**: A structured learning path with 3 levels (beginner → intermediate → advanced):
+   - Beginner: 3-4 foundational skills they can start learning now
+   - Intermediate: 3-4 skills that build on beginner level (with clear prerequisites)
+   - Advanced: 2-3 specialized skills that complete the career path
+   Each skill needs: name, clear description, realistic time estimate, and prerequisites.
 `;
 
 // ==========================================
@@ -126,8 +142,12 @@ export async function generateDirectionProfile(
     const prompt = `
 ${SYSTEM_PROMPT}
 
-Language: ${language === 'th' ? 'Thai' : 'English'}
-All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+## LANGUAGE REQUIREMENT (CRITICAL)
+Output Language: ${language === 'th' ? '**ภาษาไทย (Thai)**' : '**English**'}
+${language === 'th'
+        ? 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in THAI language only.'
+        : 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in ENGLISH language only.'}
+Do NOT mix languages. Be consistent throughout the entire response.
 
 ## Student Profile Context (Weighted Data)
 
@@ -172,6 +192,22 @@ Generate 3 career direction vectors. For EACH vector:
 4. Check alignment with q3_environment preferences
 5. Explain how it honors their q5_values
 
+**EXPLORATION STEPS (MANDATORY - 5-7 steps per vector):**
+For each career vector, provide 5-7 diverse, concrete exploration steps:
+- At least 1 PROJECT: Something they can build/create (be specific, not generic)
+- At least 1 STUDY resource: Book, online course, YouTube channel, or article (with specific names when possible)
+- At least 1 ACTIVITY: Workshop, event, or hands-on experience to try
+- At least 1 COMMUNITY: Online forum, Discord server, local group, or club to join
+- At least 1 PERSON: Type of professional to talk to, shadow, or learn from (e.g., "Talk to a UX designer at a startup")
+Make each step specific, actionable, and achievable for a high school/college student.
+
+**SKILL TREE (MANDATORY - 3 levels per vector):**
+For each career vector, create a structured learning path with 3 levels:
+- BEGINNER (3-4 skills): Foundational skills they can start learning immediately
+- INTERMEDIATE (3-4 skills): Skills that build on beginner level (specify which beginner skills are prerequisites)
+- ADVANCED (2-3 skills): Specialized skills for career mastery (specify which intermediate skills are prerequisites)
+Each skill must have: skill_name, clear description, and realistic time_estimate (e.g., "2-3 weeks", "1-2 months").
+
 Include an "evidence_used" object in each vector showing you used data from Q1-Q6.
 `;
 
@@ -212,14 +248,34 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
             skill: z.number().describe('Skill alignment score from 0-100'),
           }),
           exploration_steps: z.array(z.object({
-            type: z.string().describe('Type: project, study, activity, community, camp, or person'),
-            description: z.string(),
-          })),
+            type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe('Type of exploration step'),
+            description: z.string().describe('Specific, actionable description of the step'),
+            reason: z.string().optional().describe('Why this step is important'),
+          })).min(5).describe('At least 5 exploration steps covering different types'),
+          skill_tree: z.object({
+            beginner_level: z.array(z.object({
+              skill_name: z.string(),
+              description: z.string(),
+              time_estimate: z.string().describe('e.g., "2-3 weeks", "1 month"'),
+            })).min(3).describe('3-4 foundational skills'),
+            intermediate_level: z.array(z.object({
+              skill_name: z.string(),
+              description: z.string(),
+              time_estimate: z.string(),
+              prerequisites: z.array(z.string()).describe('Skills from beginner level needed first'),
+            })).min(3).describe('3-4 intermediate skills building on beginner'),
+            advanced_level: z.array(z.object({
+              skill_name: z.string(),
+              description: z.string(),
+              time_estimate: z.string(),
+              prerequisites: z.array(z.string()).describe('Skills from intermediate level needed first'),
+            })).min(2).describe('2-3 advanced specialized skills'),
+          }).describe('Structured learning path from beginner to advanced'),
           first_step: z.string(),
         })),
         programs: z.array(z.object({
           name: z.string(),
-          match_level: z.string().describe('Match level: High, Good, or Stretch'),
+          match_level: z.enum(['High', 'Good', 'Stretch']).describe('Match level: High, Good, or Stretch'),
           match_percentage: z.number().describe('Match percentage from 0-100'),
           reason: z.string(),
         })),
@@ -231,7 +287,14 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
       prompt,
     });
 
-    return object;
+    return {
+      ...(object as any),
+      debugMetadata: {
+        modelId: modelName,
+        prompt,
+        engine: "generateDirectionProfile",
+      },
+    };
   } catch (error) {
     console.error("Error generating direction profile:", error);
     throw error;
@@ -315,8 +378,12 @@ export async function generateDirectionProfileCore(
     const prompt = `
 ${SYSTEM_PROMPT}
 
-Language: ${language === 'th' ? 'Thai' : 'English'}
-All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+## LANGUAGE REQUIREMENT (CRITICAL)
+Output Language: ${language === 'th' ? '**ภาษาไทย (Thai)**' : '**English**'}
+${language === 'th'
+        ? 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in THAI language only.'
+        : 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in ENGLISH language only.'}
+Do NOT mix languages. Be consistent throughout the entire response.
 
 ## Student Profile Context (Weighted Data)
 
@@ -356,6 +423,22 @@ ${JSON.stringify(compressedHistory, null, 2)}
 Generate the CORE profile (Profile + 3 Vectors).
 Ensure 'energizers', 'strengths', and 'values' are arrays of objects with { name, description, insight }.
 Ensure vectors include 'industry', 'role', and 'specialization'.
+
+**EXPLORATION STEPS (MANDATORY - 5-7 steps per vector):**
+For each career vector, provide 5-7 diverse, concrete exploration steps:
+- At least 1 PROJECT: Something they can build/create (be specific, not generic)
+- At least 1 STUDY resource: Book, online course, YouTube channel, or article (with specific names when possible)
+- At least 1 ACTIVITY: Workshop, event, or hands-on experience to try
+- At least 1 COMMUNITY: Online forum, Discord server, local group, or club to join
+- At least 1 PERSON: Type of professional to talk to, shadow, or learn from (e.g., "Talk to a UX designer at a startup")
+Make each step specific, actionable, and achievable for a high school/college student.
+
+**SKILL TREE (MANDATORY - 3 levels per vector):**
+For each career vector, create a structured learning path with 3 levels:
+- BEGINNER (3-4 skills): Foundational skills they can start learning immediately
+- INTERMEDIATE (3-4 skills): Skills that build on beginner level (specify which beginner skills are prerequisites)
+- ADVANCED (2-3 skills): Specialized skills for career mastery (specify which intermediate skills are prerequisites)
+Each skill must have: skill_name, clear description, and realistic time_estimate (e.g., "2-3 weeks", "1-2 months").
 `;
 
     const { object } = await generateObject({
@@ -395,16 +478,43 @@ Ensure vectors include 'industry', 'role', and 'specialization'.
             skill: z.number().describe('Skill alignment score from 0-100'),
           }),
           exploration_steps: z.array(z.object({
-            type: z.string().describe('Type: project, study, activity, community, camp, or person'),
-            description: z.string(),
-          })),
+            type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe('Type of exploration step'),
+            description: z.string().describe('Specific, actionable description of the step'),
+            reason: z.string().optional().describe('Why this step is important'),
+          })).min(5).describe('At least 5 exploration steps covering different types'),
+          skill_tree: z.object({
+            beginner_level: z.array(z.object({
+              skill_name: z.string(),
+              description: z.string(),
+              time_estimate: z.string().describe('e.g., "2-3 weeks", "1 month"'),
+            })).min(3).describe('3-4 foundational skills'),
+            intermediate_level: z.array(z.object({
+              skill_name: z.string(),
+              description: z.string(),
+              time_estimate: z.string(),
+              prerequisites: z.array(z.string()).describe('Skills from beginner level needed first'),
+            })).min(3).describe('3-4 intermediate skills building on beginner'),
+            advanced_level: z.array(z.object({
+              skill_name: z.string(),
+              description: z.string(),
+              time_estimate: z.string(),
+              prerequisites: z.array(z.string()).describe('Skills from intermediate level needed first'),
+            })).min(2).describe('2-3 advanced specialized skills'),
+          }).describe('Structured learning path from beginner to advanced'),
           first_step: z.string(),
         })),
       }),
       prompt,
     });
 
-    return object;
+    return {
+      ...(object as any),
+      debugMetadata: {
+        modelId: modelName,
+        prompt,
+        engine: "generateDirectionProfileCore",
+      },
+    };
   } catch (error) {
     console.error("Error generating core profile:", error);
     throw error;
@@ -427,8 +537,12 @@ export async function generateDirectionProfileDetails(
     const prompt = `
 Based on the student's Core Direction Vectors, generate supporting details (Programs & Commitments).
 
-Language: ${language === 'th' ? 'Thai' : 'English'}
-All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+## LANGUAGE REQUIREMENT (CRITICAL)
+Output Language: ${language === 'th' ? '**ภาษาไทย (Thai)**' : '**English**'}
+${language === 'th'
+        ? 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in THAI language only.'
+        : 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in ENGLISH language only.'}
+Do NOT mix languages. Be consistent throughout the entire response.
 
 Core Vectors Identified:
 ${JSON.stringify(coreResult.vectors, null, 2)}
@@ -462,7 +576,14 @@ Generate 2-3 recommended programs/faculties and weekly/monthly commitments.
       prompt,
     });
 
-    return object;
+    return {
+      ...(object as any),
+      debugMetadata: {
+        modelId: modelName,
+        prompt,
+        engine: "generateDirectionProfileDetails",
+      },
+    };
   } catch (error) {
     console.error("Error generating profile details:", error);
     throw error;
@@ -485,8 +606,12 @@ export async function generatePrograms(
     const prompt = `
 Based on the student's Core Direction Vectors, generate 2-3 recommended programs/faculties.
 
-Language: ${language === 'th' ? 'Thai' : 'English'}
-All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+## LANGUAGE REQUIREMENT (CRITICAL)
+Output Language: ${language === 'th' ? '**ภาษาไทย (Thai)**' : '**English**'}
+${language === 'th'
+        ? 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in THAI language only.'
+        : 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in ENGLISH language only.'}
+Do NOT mix languages. Be consistent throughout the entire response.
 
 Core Vectors Identified:
 ${JSON.stringify(coreResult.vectors, null, 2)}
@@ -507,7 +632,7 @@ Include match level (High/Good/Stretch), match percentage, and reasoning.
       schema: z.object({
         programs: z.array(z.object({
           name: z.string(),
-          match_level: z.string().describe('Match level: High, Good, or Stretch'),
+          match_level: z.enum(['High', 'Good', 'Stretch']).describe('Match level: High, Good, or Stretch'),
           match_percentage: z.number().describe('Match percentage from 0-100'),
           reason: z.string(),
         })),
@@ -515,7 +640,14 @@ Include match level (High/Good/Stretch), match percentage, and reasoning.
       prompt,
     });
 
-    return object;
+    return {
+      ...(object as any),
+      debugMetadata: {
+        modelId: modelName,
+        prompt,
+        engine: "generatePrograms",
+      },
+    };
   } catch (error) {
     console.error("Error generating programs:", error);
     throw error;
@@ -538,8 +670,12 @@ export async function generateCommitments(
     const prompt = `
 Based on the student's Core Direction Vectors, generate actionable commitments (weekly and monthly).
 
-Language: ${language === 'th' ? 'Thai' : 'English'}
-All output values MUST be in ${language === 'th' ? 'Thai' : 'English'}.
+## LANGUAGE REQUIREMENT (CRITICAL)
+Output Language: ${language === 'th' ? '**ภาษาไทย (Thai)**' : '**English**'}
+${language === 'th'
+        ? 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in THAI language only.'
+        : 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in ENGLISH language only.'}
+Do NOT mix languages. Be consistent throughout the entire response.
 
 Core Vectors Identified:
 ${JSON.stringify(coreResult.vectors, null, 2)}
@@ -564,7 +700,14 @@ Generate:
       prompt,
     });
 
-    return object;
+    return {
+      ...(object as any),
+      debugMetadata: {
+        modelId: modelName,
+        prompt,
+        engine: "generateCommitments",
+      },
+    };
   } catch (error) {
     console.error("Error generating commitments:", error);
     throw error;

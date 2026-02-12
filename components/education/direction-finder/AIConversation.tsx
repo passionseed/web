@@ -25,14 +25,18 @@ import {
   conductDirectionConversation,
   generateDirectionProfile,
   generateDirectionProfileCore,
-  generateDirectionProfileDetails,
+  generatePrograms,
+  generateCommitments,
 } from "@/app/actions/advisor-actions";
 import {
   findCachedResult,
-  incrementCacheHitCount
+  incrementCacheHitCount,
 } from "@/app/actions/save-direction";
 import { selectModelForUser } from "@/lib/ai/modelSelector";
-import { recordGenerationMetrics, getModelProvider } from "@/lib/utils/metrics-collector";
+import {
+  recordGenerationMetrics,
+  getModelProvider,
+} from "@/lib/utils/metrics-collector";
 import { toast } from "sonner";
 import { createHash } from "crypto";
 import { marked } from "marked";
@@ -68,9 +72,9 @@ export function AIConversation({
   const [isTyping, setIsTyping] = useState(false);
   // const [isGeneratingProfile, setIsGeneratingProfile] = useState(false); // Deprecated for loadingStage
   const [showIntro, setShowIntro] = useState(!history || history.length === 0);
-  const [loadingStage, setLoadingStage] = useState<"none" | "core" | "details">(
-    "none",
-  );
+  const [loadingStage, setLoadingStage] = useState<
+    "none" | "core" | "programs" | "commitments"
+  >("none");
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -78,9 +82,9 @@ export function AIConversation({
 
   const handleResetChat = () => {
     if (confirm("Reset chat history? This cannot be undone.")) {
-      console.log('🔄 [Chat] Resetting conversation...', {
+      console.log("🔄 [Chat] Resetting conversation...", {
         previousMessages: messages.length,
-        model: model || 'auto'
+        model: model || "auto",
       });
 
       setMessages([]);
@@ -89,9 +93,9 @@ export function AIConversation({
       setLoadingStage("none");
       onHistoryChange?.([]);
 
-      console.log('✅ [Chat] Conversation reset complete');
+      console.log("✅ [Chat] Conversation reset complete");
     } else {
-      console.log('❌ [Chat] Reset cancelled by user');
+      console.log("❌ [Chat] Reset cancelled by user");
     }
   };
 
@@ -116,12 +120,12 @@ export function AIConversation({
 
     const originalMessage = messages[msgIndex];
 
-    console.log('✏️ [Chat] Editing message:', {
+    console.log("✏️ [Chat] Editing message:", {
       id,
       index: msgIndex,
-      oldContent: originalMessage.content.slice(0, 50) + '...',
-      newContent: editValue.slice(0, 50) + '...',
-      role: originalMessage.role
+      oldContent: originalMessage.content.slice(0, 50) + "...",
+      newContent: editValue.slice(0, 50) + "...",
+      role: originalMessage.role,
     });
 
     // Slice history to include everything BEFORE the edited message
@@ -133,9 +137,9 @@ export function AIConversation({
     // New history state starts with [ ...prev, updatedUserMsg ]
     const newHistory = [...prevHistory, newUserMsg];
 
-    console.log('🔄 [Chat] Re-generating from edit...', {
+    console.log("🔄 [Chat] Re-generating from edit...", {
       deletedMessages: messages.length - newHistory.length,
-      newHistoryLength: newHistory.length
+      newHistoryLength: newHistory.length,
     });
 
     setMessages(newHistory);
@@ -152,23 +156,23 @@ export function AIConversation({
 
   // Component mount logging
   useEffect(() => {
-    console.log('🎬 [Chat] AIConversation component mounted', {
+    console.log("🎬 [Chat] AIConversation component mounted", {
       hasHistory: !!(history && history.length > 0),
       historyLength: history?.length || 0,
       hasExistingResult: !!existingResult,
-      model: model || 'auto',
+      model: model || "auto",
       language: lang,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     if (history && history.length > 0) {
-      console.log('📜 [Chat] Loading conversation history:', {
+      console.log("📜 [Chat] Loading conversation history:", {
         messages: history.map((m, i) => ({
           index: i,
           role: m.role,
-          contentPreview: m.content.slice(0, 50) + '...',
-          contentLength: m.content.length
-        }))
+          contentPreview: m.content.slice(0, 50) + "...",
+          contentLength: m.content.length,
+        })),
       });
     }
   }, []); // Only on mount
@@ -194,16 +198,16 @@ export function AIConversation({
 
   // Handle intro start
   const handleStartChat = () => {
-    console.log('🚀 [Chat] Starting conversation...', {
+    console.log("🚀 [Chat] Starting conversation...", {
       hasHistory: !!(history && history.length > 0),
       hasStarted: hasStartedRef.current,
-      model: model || 'auto'
+      model: model || "auto",
     });
 
     setShowIntro(false);
     if ((!history || history.length === 0) && !hasStartedRef.current) {
       hasStartedRef.current = true;
-      console.log('👋 [Chat] Sending initial trigger to AI');
+      console.log("👋 [Chat] Sending initial trigger to AI");
       handleAIResponse(
         [
           { role: "user", content: "Start conversation" }, // Hidden trigger message
@@ -211,8 +215,8 @@ export function AIConversation({
         true,
       );
     } else {
-      console.log('ℹ️ [Chat] Resuming existing conversation', {
-        messageCount: history?.length || 0
+      console.log("ℹ️ [Chat] Resuming existing conversation", {
+        messageCount: history?.length || 0,
       });
     }
   };
@@ -228,12 +232,13 @@ export function AIConversation({
     setIsTyping(true);
     setCurrentOptions([]); // Hide options while thinking
 
-    console.log('🤖 [AI Response] Requesting AI conversation...', {
+    console.log("🤖 [AI Response] Requesting AI conversation...", {
       historyLength: currentHistory.length,
       isInitial,
-      model: model || 'auto',
+      model: model || "auto",
       language: lang,
-      lastUserMessage: currentHistory[currentHistory.length - 1]?.content.slice(0, 50) + '...'
+      lastUserMessage:
+        currentHistory[currentHistory.length - 1]?.content.slice(0, 50) + "...",
     });
 
     try {
@@ -248,11 +253,11 @@ export function AIConversation({
       );
 
       const responseTime = Date.now() - requestStartTime;
-      console.log('✅ [AI Response] Received response', {
-        responseTime: responseTime + 'ms',
+      console.log("✅ [AI Response] Received response", {
+        responseTime: responseTime + "ms",
         messagesCount: response.messages.length,
         optionsCount: response.options.length,
-        hasSystemPrompt: !!response.debug_system_prompt
+        hasSystemPrompt: !!response.debug_system_prompt,
       });
 
       if (response.debug_system_prompt) {
@@ -264,11 +269,15 @@ export function AIConversation({
         const msgContent = response.messages[i];
         const typingDelay = 300 + Math.random() * 300;
 
-        console.log(`💭 [AI Response] Typing message ${i + 1}/${response.messages.length}...`, {
-          contentLength: msgContent.length,
-          delay: Math.round(typingDelay) + 'ms',
-          preview: msgContent.slice(0, 60) + (msgContent.length > 60 ? '...' : '')
-        });
+        console.log(
+          `💭 [AI Response] Typing message ${i + 1}/${response.messages.length}...`,
+          {
+            contentLength: msgContent.length,
+            delay: Math.round(typingDelay) + "ms",
+            preview:
+              msgContent.slice(0, 60) + (msgContent.length > 60 ? "..." : ""),
+          },
+        );
 
         await simulateTyping(typingDelay); // Shorter, snappier delay
 
@@ -280,24 +289,24 @@ export function AIConversation({
 
         console.log(`✅ [AI Response] Message ${i + 1} displayed`, {
           id: messageId,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
 
       if (response.options.length > 0) {
-        console.log('🎯 [AI Response] Showing options:', {
+        console.log("🎯 [AI Response] Showing options:", {
           count: response.options.length,
-          options: response.options
+          options: response.options,
         });
       }
 
       setCurrentOptions(response.options);
     } catch (error: any) {
       const errorTime = Date.now() - requestStartTime;
-      console.error('❌ [AI Response] Failed', {
+      console.error("❌ [AI Response] Failed", {
         error: error.message,
-        time: errorTime + 'ms',
-        stack: error.stack
+        time: errorTime + "ms",
+        stack: error.stack,
       });
       toast.error("Failed to connect to AI advisor");
     } finally {
@@ -315,12 +324,12 @@ export function AIConversation({
     };
     const newHistory = [...messages, userMsg];
 
-    console.log('💬 [Chat] User sent message:', {
+    console.log("💬 [Chat] User sent message:", {
       id: userMsg.id,
-      content: text.slice(0, 100) + (text.length > 100 ? '...' : ''),
+      content: text.slice(0, 100) + (text.length > 100 ? "..." : ""),
       contentLength: text.length,
       totalMessages: newHistory.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     setMessages(newHistory);
@@ -333,10 +342,10 @@ export function AIConversation({
       content: m.content,
     }));
 
-    console.log('🔄 [Chat] Requesting AI response...', {
+    console.log("🔄 [Chat] Requesting AI response...", {
       historyLength: apiHistory.length,
-      model: model || 'auto',
-      language: lang
+      model: model || "auto",
+      language: lang,
     });
 
     await handleAIResponse(apiHistory);
@@ -354,7 +363,7 @@ export function AIConversation({
     let cacheLookupTime = 0;
     let coreGenerationTime = 0;
     let detailsGenerationTime = 0;
-    let selectedModel = model || 'gemini-2.5-flash';
+    let selectedModel = model || "gemini-2.5-flash";
     let hadTimeout = false;
     let hadRateLimit = false;
     let errorMessage: string | undefined;
@@ -372,29 +381,32 @@ export function AIConversation({
       if (userId && !model) {
         // Select model for this user (consistent A/B testing)
         selectedModel = selectModelForUser(userId);
-        console.log('🤖 [AI] Auto-selected model for user:', {
-          userId: userId.slice(0, 8) + '...',
+        console.log("🤖 [AI] Auto-selected model for user:", {
+          userId: userId.slice(0, 8) + "...",
           model: selectedModel,
-          source: 'A/B Testing (hash-based)'
+          source: "A/B Testing (hash-based)",
         });
       } else if (model) {
         selectedModel = model;
-        console.log('🎯 [AI] Using manually selected model:', {
+        console.log("🎯 [AI] Using manually selected model:", {
           model: selectedModel,
-          source: 'Manual Override'
+          source: "Manual Override",
         });
       } else {
-        console.log('⚠️ [AI] Using default model:', {
+        console.log("⚠️ [AI] Using default model:", {
           model: selectedModel,
-          source: 'Fallback (no user ID)'
+          source: "Fallback (no user ID)",
         });
       }
 
       // Check cache before generating
       const cacheStartTime = Date.now();
-      console.log('🔍 [Cache] Checking for cached result...', {
+      console.log("🔍 [Cache] Checking for cached result...", {
         model: selectedModel,
-        answersHash: createHash('md5').update(JSON.stringify(answers)).digest('hex').slice(0, 8)
+        answersHash: createHash("md5")
+          .update(JSON.stringify(answers))
+          .digest("hex")
+          .slice(0, 8),
       });
       const cachedResult = await findCachedResult(answers, selectedModel);
       cacheLookupTime = Date.now() - cacheStartTime;
@@ -404,31 +416,27 @@ export function AIConversation({
         cacheHit = true;
         await incrementCacheHitCount(cachedResult.id);
 
-        console.log('✅ [Cache] HIT! Returning cached result', {
-          resultId: cachedResult.id.slice(0, 8) + '...',
-          lookupTime: cacheLookupTime + 'ms',
-          cacheHitCount: cachedResult.cache_hit_count + 1
+        console.log("✅ [Cache] HIT! Returning cached result", {
+          resultId: cachedResult.id.slice(0, 8) + "...",
+          lookupTime: cacheLookupTime + "ms",
+          cacheHitCount: cachedResult.cache_hit_count + 1,
         });
         toast.success("Found matching profile from cache! ⚡");
 
         // Record metrics for cache hit
         if (userId) {
-          await recordGenerationMetrics(
-            cachedResult.id,
-            userId,
-            {
-              modelProvider: await getModelProvider(selectedModel),
-              modelName: selectedModel,
-              totalGenerationTimeMs: Date.now() - generationStartTime,
-              cacheHit: true,
-              cacheLookupTimeMs: cacheLookupTime,
-              hadTimeout: false,
-              hadRateLimit: false,
-              retryCount: 0,
-              conversationTurnCount: messages.length,
-              language: lang,
-            }
-          );
+          await recordGenerationMetrics(cachedResult.id, userId, {
+            modelProvider: await getModelProvider(selectedModel),
+            modelName: selectedModel,
+            totalGenerationTimeMs: Date.now() - generationStartTime,
+            cacheHit: true,
+            cacheLookupTimeMs: cacheLookupTime,
+            hadTimeout: false,
+            hadRateLimit: false,
+            retryCount: 0,
+            conversationTurnCount: messages.length,
+            language: lang,
+          });
         }
 
         onComplete(cachedResult.result);
@@ -436,8 +444,8 @@ export function AIConversation({
       }
 
       // No cache hit, proceed with fresh generation
-      console.log('❌ [Cache] MISS. Generating fresh profile...', {
-        lookupTime: cacheLookupTime + 'ms'
+      console.log("❌ [Cache] MISS. Generating fresh profile...", {
+        lookupTime: cacheLookupTime + "ms",
       });
 
       const apiHistory = messages.map((m) => ({
@@ -447,10 +455,10 @@ export function AIConversation({
 
       // Step 1: Core generation
       const coreStartTime = Date.now();
-      console.log('🧠 [Generation] Starting CORE generation...', {
+      console.log("🧠 [Generation] Starting CORE generation...", {
         model: selectedModel,
         conversationLength: apiHistory.length,
-        language: lang
+        language: lang,
       });
       const coreResult = await generateDirectionProfileCore(
         apiHistory,
@@ -459,42 +467,61 @@ export function AIConversation({
         lang,
       );
       coreGenerationTime = Date.now() - coreStartTime;
-      console.log('✅ [Generation] CORE complete', {
-        time: coreGenerationTime + 'ms',
-        vectors: coreResult.vectors?.length || 0
+      console.log("✅ [Generation] CORE complete", {
+        time: coreGenerationTime + "ms",
+        vectors: coreResult.vectors?.length || 0,
       });
 
-      setLoadingStage("details");
-
-      // Step 2: Details generation
-      const detailsStartTime = Date.now();
-      console.log('📋 [Generation] Starting DETAILS generation...');
-      const detailsResult = await generateDirectionProfileDetails(
+      // Step 2: Programs generation
+      setLoadingStage("programs");
+      const programsStartTime = Date.now();
+      console.log("📋 [Generation] Starting PROGRAMS generation...");
+      const programsResult = await generatePrograms(
         coreResult,
         answers,
         selectedModel,
         lang,
       );
-      detailsGenerationTime = Date.now() - detailsStartTime;
-      console.log('✅ [Generation] DETAILS complete', {
-        time: detailsGenerationTime + 'ms',
-        programs: detailsResult.programs?.length || 0
+      const programsGenerationTime = Date.now() - programsStartTime;
+      console.log("✅ [Generation] PROGRAMS complete", {
+        time: programsGenerationTime + "ms",
+        programs: programsResult.programs?.length || 0,
+      });
+
+      // Step 3: Commitments generation
+      setLoadingStage("commitments");
+      const commitmentsStartTime = Date.now();
+      console.log("📋 [Generation] Starting COMMITMENTS generation...");
+      const commitmentsResult = await generateCommitments(
+        coreResult,
+        answers,
+        selectedModel,
+        lang,
+      );
+      const commitmentsGenerationTime = Date.now() - commitmentsStartTime;
+      console.log("✅ [Generation] COMMITMENTS complete", {
+        time: commitmentsGenerationTime + "ms",
+        commitments:
+          (commitmentsResult.commitments?.this_week?.length || 0) +
+          (commitmentsResult.commitments?.this_month?.length || 0),
       });
 
       // Merge results
       const finalResult: DirectionFinderResult = {
         ...(coreResult as any),
-        ...(detailsResult as any),
+        ...(programsResult as any),
+        ...(commitmentsResult as any),
       };
 
       const totalGenerationTime = Date.now() - generationStartTime;
 
-      console.log('🎉 [Generation] Complete!', {
-        totalTime: totalGenerationTime + 'ms',
-        coreTime: coreGenerationTime + 'ms',
-        detailsTime: detailsGenerationTime + 'ms',
+      console.log("🎉 [Generation] Complete!", {
+        totalTime: totalGenerationTime + "ms",
+        coreTime: coreGenerationTime + "ms",
+        programsTime: programsGenerationTime + "ms",
+        commitmentsTime: commitmentsGenerationTime + "ms",
         model: selectedModel,
-        cacheUsed: false
+        cacheUsed: false,
       });
 
       // Record metrics for successful generation
@@ -505,11 +532,11 @@ export function AIConversation({
       onComplete(finalResult);
     } catch (error: any) {
       const totalTime = Date.now() - generationStartTime;
-      console.error('❌ [Generation] FAILED', {
+      console.error("❌ [Generation] FAILED", {
         error: error.message,
-        time: totalTime + 'ms',
+        time: totalTime + "ms",
         model: selectedModel,
-        stack: error.stack
+        stack: error.stack,
       });
 
       // Classify error type
@@ -519,18 +546,23 @@ export function AIConversation({
       ) {
         hadTimeout = true;
         errorMessage = "Generation timed out";
-        console.error('⏱️ [Error] TIMEOUT - exceeded 300s limit');
+        console.error("⏱️ [Error] TIMEOUT - exceeded 300s limit");
         toast.error(
           "Generation timed out. Please try again or use a faster model.",
         );
-      } else if (error.message?.includes("429") || error.message?.includes("rate limit")) {
+      } else if (
+        error.message?.includes("429") ||
+        error.message?.includes("rate limit")
+      ) {
         hadRateLimit = true;
         errorMessage = "Rate limit exceeded";
-        console.error('🚫 [Error] RATE LIMIT - too many requests to AI provider');
+        console.error(
+          "🚫 [Error] RATE LIMIT - too many requests to AI provider",
+        );
         toast.error("Too many requests. Please wait a moment and try again.");
       } else {
         errorMessage = error.message || "Unknown error";
-        console.error('💥 [Error] UNKNOWN -', errorMessage);
+        console.error("💥 [Error] UNKNOWN -", errorMessage);
         toast.error("Failed to generate profile. Please try again.");
       }
 
@@ -581,7 +613,7 @@ export function AIConversation({
             <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20">
               <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
               <span className="text-[10px] font-mono text-blue-300">
-                {model || 'auto'}
+                {model || "auto"}
               </span>
             </div>
           )}
@@ -642,7 +674,9 @@ export function AIConversation({
                 <Loader2 className="w-3 h-3 mr-2 animate-spin" />{" "}
                 {loadingStage === "core"
                   ? "Analyzing..."
-                  : "Finding Programs..."}
+                  : loadingStage === "programs"
+                    ? "Finding Programs..."
+                    : "Finalizing..."}
               </>
             ) : (
               <>
@@ -766,7 +800,9 @@ export function AIConversation({
                         <div
                           className="prose prose-invert prose-sm max-w-none [&>p]:m-0 [&>p]:leading-relaxed"
                           dangerouslySetInnerHTML={{
-                            __html: sanitizeHtml(marked.parse(msg.content) as string),
+                            __html: sanitizeHtml(
+                              marked.parse(msg.content) as string,
+                            ),
                           }}
                         />
                         {/* Edit Button for User Messages */}
@@ -817,11 +853,13 @@ export function AIConversation({
                     <button
                       key={idx}
                       onClick={() => {
-                        console.log('🎯 [Chat] Option clicked:', {
+                        console.log("🎯 [Chat] Option clicked:", {
                           index: idx + 1,
                           total: currentOptions.length,
-                          option: option.slice(0, 50) + (option.length > 50 ? '...' : ''),
-                          fullOption: option
+                          option:
+                            option.slice(0, 50) +
+                            (option.length > 50 ? "..." : ""),
+                          fullOption: option,
                         });
                         setInput(option);
                       }}
@@ -976,18 +1014,26 @@ export function AIConversation({
                 ? lang === "th"
                   ? "กำลังวิเคราะห์ตัวตนของคุณ..."
                   : "Analyzing your unique profile..."
-                : lang === "th"
-                  ? "กำลังคัดเลือกคณะที่ใช่..."
-                  : "Curating your personalized programs..."}
+                : loadingStage === "programs"
+                  ? lang === "th"
+                    ? "กำลังคัดเลือกคณะที่ใช่..."
+                    : "Curating your personalized programs..."
+                  : lang === "th"
+                    ? "กำลังวางแผนก้าวแรกของคุณ..."
+                    : "Planning your first steps..."}
             </h3>
             <p className="text-slate-400 text-sm">
               {loadingStage === "core"
                 ? lang === "th"
                   ? "พี่ Seed AI กำลังประมวลผลคำตอบของคุณ"
                   : "Connecting the dots from our chat"
-                : lang === "th"
-                  ? "กำลังหาข้อมูลคณะและมหาวิทยาลัยที่เหมาะกับคุณ"
-                  : "Matching you with top universities"}
+                : loadingStage === "programs"
+                  ? lang === "th"
+                    ? "กำลังหาข้อมูลคณะและมหาวิทยาลัยที่เหมาะกับคุณ"
+                    : "Matching you with top universities"
+                  : lang === "th"
+                    ? "สรุปแผนปฏิบัติการเพื่ออนาคตของคุณ"
+                    : "Outlining your action plan for success"}
             </p>
           </div>
 
@@ -996,7 +1042,10 @@ export function AIConversation({
               className={`h-1.5 rounded-full transition-all duration-500 ${loadingStage === "core" ? "w-12 bg-blue-500" : "w-4 bg-blue-500/30"}`}
             />
             <div
-              className={`h-1.5 rounded-full transition-all duration-500 ${loadingStage === "details" ? "w-12 bg-purple-500" : "w-4 bg-purple-500/30"}`}
+              className={`h-1.5 rounded-full transition-all duration-500 ${loadingStage === "programs" ? "w-12 bg-purple-500" : "w-4 bg-purple-500/30"}`}
+            />
+            <div
+              className={`h-1.5 rounded-full transition-all duration-500 ${loadingStage === "commitments" ? "w-12 bg-emerald-500" : "w-4 bg-emerald-500/30"}`}
             />
           </div>
         </div>

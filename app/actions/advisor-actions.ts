@@ -8,6 +8,8 @@ import {
     generateDirectionProfile as generateLogic,
     generateDirectionProfileCore as generateCoreLogic,
     generateDirectionProfileDetails as generateDetailsLogic,
+    generatePrograms as generateProgramsLogic,
+    generateCommitments as generateCommitmentsLogic,
 } from "@/lib/ai/directionProfileEngine";
 import { DirectionFinderResult } from "@/types/direction-finder";
 
@@ -45,4 +47,22 @@ export async function generateDirectionProfileDetails(
     language: 'en' | 'th' = 'en'
 ) {
     return generateDetailsLogic(coreResult, answers, modelName, language);
+}
+
+export async function generatePrograms(
+    coreResult: Partial<DirectionFinderResult>,
+    answers: AssessmentAnswers,
+    modelName?: string,
+    language: 'en' | 'th' = 'en'
+) {
+    return generateProgramsLogic(coreResult, answers, modelName, language);
+}
+
+export async function generateCommitments(
+    coreResult: Partial<DirectionFinderResult>,
+    answers: AssessmentAnswers,
+    modelName?: string,
+    language: 'en' | 'th' = 'en'
+) {
+    return generateCommitmentsLogic(coreResult, answers, modelName, language);
 }
