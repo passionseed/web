@@ -28,6 +28,38 @@ const openai = createOpenAI({
 export const maxDuration = 300;
 
 /**
+ * Available AI models organized by provider
+ */
+export const AVAILABLE_MODELS = {
+  google: [
+    { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', speed: 'fast', cost: 'low' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', speed: 'fast', cost: 'low' },
+    { id: 'gemini-flash-lite-latest', name: 'Gemini Flash Lite', speed: 'fastest', cost: 'lowest' },
+  ],
+  anthropic: [
+    { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5', speed: 'fast', cost: 'medium' },
+  ],
+  openai: [
+    { id: 'gpt-5-mini-2025-08-07', name: 'GPT-5 Mini', speed: 'medium', cost: 'medium' },
+    { id: 'gpt-5.2-chat-latest', name: 'GPT-5.2 Chat', speed: 'slow', cost: 'high' },
+    { id: 'codex-mini-latest', name: 'Codex Mini', speed: 'medium', cost: 'medium' },
+  ],
+  deepseek: [
+    { id: 'deepseek-chat', name: 'DeepSeek Chat', speed: 'medium', cost: 'low' },
+    { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner (R1)', speed: 'slow', cost: 'medium' },
+  ],
+} as const;
+
+/**
+ * Get a flat list of all available models
+ */
+export function getAllModels() {
+  return Object.entries(AVAILABLE_MODELS).flatMap(([provider, models]) =>
+    models.map(model => ({ ...model, provider }))
+  );
+}
+
+/**
  * Get AI model instance by name
  * Supports multiple models across 4 providers for A/B testing.
  */

@@ -35,15 +35,23 @@ import {
   GraduationCap,
   Award,
   Info,
+  Download,
+  Terminal,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { saveDirectionFinderResult } from "@/app/actions/save-direction";
 import { toPng } from "html-to-image";
 import { SocialSharePreview } from "@/components/journey/SocialSharePreview";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { ModelComparisonDialog } from "./ModelComparisonDialog";
+import {
+  regenerateDirectionProfile,
+  canAccessModelComparison,
+  RegenerateResult,
+} from "@/app/actions/regenerate-direction";
 
 interface DirectionResultsViewProps {
   // Data
@@ -89,12 +97,46 @@ export function DirectionResultsView({
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [hasAutoSaved, setHasAutoSaved] = useState(false);
+  const [canCompareModels, setCanCompareModels] = useState(false);
+  const [isDev, setIsDev] = useState(false);
+  const [comparisonResults, setComparisonResults] = useState<
+    RegenerateResult[] | null
+  >(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // Sync result if prop changes
   useEffect(() => {
     setResult(initialResult);
   }, [initialResult]);
+
+  // Check for dev mode and access
+  useEffect(() => {
+    const isDevMode =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    console.log("[DirectionResultsView] Dev mode check:", {
+      hostname: window.location.hostname,
+      isDevMode,
+    });
+    setIsDev(isDevMode);
+
+    canAccessModelComparison().then((canAccess) => {
+      console.log(
+        "[DirectionResultsView] Can access model comparison:",
+        canAccess,
+      );
+      setCanCompareModels(canAccess);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isDev) {
+      console.log("DirectionResultsView: Dev mode detected");
+      toast("Dev Mode: Debug buttons enabled", {
+        icon: <Terminal className="w-4 h-4 text-amber-400" />,
+      });
+    }
+  }, [isDev]);
 
   // Auto-save logic (only for assessment mode)
   useEffect(() => {
@@ -147,7 +189,13 @@ export function DirectionResultsView({
     setIsSaving(true);
     try {
       // 1. Save to DB first
-      await saveDirectionFinderResult(answers, result, chatHistory, resultId);
+      await saveDirectionFinderResult(
+        answers,
+        result,
+        chatHistory,
+        resultId,
+        result.debugMetadata?.modelId,
+      );
 
       // 2. Download Image
       if (resultsRef.current) {
@@ -172,6 +220,53 @@ export function DirectionResultsView({
     link.click();
   };
 
+  const handleExportDebugData = (data?: any, filename?: string) => {
+    const exportData = data || {
+      modelUsed: result.debugMetadata?.modelId,
+      prompt: result.debugMetadata?.prompt,
+      engine: result.debugMetadata?.engine,
+      answers,
+      chatHistory,
+      result: {
+        ...result,
+        debugMetadata: undefined, // Avoid recursion if stored inside
+      },
+      exportTimestamp: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download =
+      filename ||
+      `direction-dev-data-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Debug data exported!");
+  };
+
+  const handleRegenerate = async (modelIds: string[]) => {
+    if (!chatHistory) {
+      toast.error("Chat history not available");
+      return;
+    }
+
+    const results = await regenerateDirectionProfile(
+      answers,
+      chatHistory,
+      modelIds,
+      lang,
+    );
+
+    setComparisonResults(results);
+    toast.success(`Generated results with ${modelIds.length} model(s)`);
+  };
+
   return (
     <div className="animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto relative px-4 sm:px-6">
       <div ref={resultsRef} className="space-y-4">
@@ -193,6 +288,26 @@ export function DirectionResultsView({
             </Link>
           </div>
           <div className="flex gap-2">
+            {(canCompareModels || isDev) && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleExportDebugData()}
+                  className="text-amber-400 hover:text-amber-300 hover:bg-amber-400/10"
+                  title="Export Dev Data"
+                >
+                  <Terminal className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Export Dev</span>
+                </Button>
+                {mode === "assessment" && (
+                  <ModelComparisonDialog
+                    onRegenerate={handleRegenerate}
+                    disabled={!chatHistory}
+                  />
+                )}
+              </>
+            )}
             {mode === "assessment" && onRetake && (
               <Button
                 variant="outline"
@@ -231,7 +346,7 @@ export function DirectionResultsView({
                 variant="outline"
                 className="text-xs text-yellow-500 border-yellow-500/50"
               >
-                {userRole} Mode
+                {String(userRole)} Mode
               </Badge>
             )}
           </div>
@@ -244,7 +359,7 @@ export function DirectionResultsView({
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 mb-2 animate-pulse">
               <Sparkles className="w-8 h-8 text-purple-400" />
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent px-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent px-4 py-2 leading-tight">
               {mode === "journey_view" && studentName
                 ? `${studentName}${studentName.endsWith("s") ? "'" : "'s"} Profile`
                 : t.results.title}
@@ -284,7 +399,7 @@ export function DirectionResultsView({
         <div className="space-y-8">
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
-            <h2 className="text-2xl md:text-3xl font-bold text-center text-white">
+            <h2 className="text-2xl md:text-3xl font-bold text-center text-white py-1 leading-normal">
               {mode === "journey_view" && studentName
                 ? `${studentName}${studentName.endsWith("s") ? "'" : "'s"} Top 3 Directions`
                 : t.results.directions_title}
@@ -293,18 +408,166 @@ export function DirectionResultsView({
           </div>
 
           <div className="grid grid-cols-1 gap-8">
-            {result.vectors.slice(0, 3).map((vector, index) => (
-              <PathCard
-                key={index}
-                vector={vector}
-                index={index}
-                t={t}
-                mode={mode}
-                onSelect={onSelect ? () => onSelect(vector, index) : undefined}
-              />
-            ))}
+            {result.vectors
+              .slice(0, 3)
+              .map((vector: DirectionVector, index: number) => (
+                <PathCard
+                  key={index}
+                  vector={vector}
+                  index={index}
+                  t={t}
+                  mode={mode}
+                  lang={lang}
+                  onSelect={
+                    onSelect ? () => onSelect(vector, index) : undefined
+                  }
+                />
+              ))}
           </div>
         </div>
+
+        {/* Model Comparison Results */}
+        {comparisonResults && comparisonResults.length > 0 && (
+          <div className="space-y-8 mt-16 pt-16 border-t border-amber-500/30">
+            <div className="flex items-center gap-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-800 to-transparent" />
+              <h2 className="text-2xl md:text-3xl font-bold text-center text-amber-300 flex items-center gap-3">
+                <Sparkles className="w-8 h-8" />
+                Model Comparison Results
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-800 to-transparent" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {comparisonResults.map(
+                (compResult: RegenerateResult, idx: number) => (
+                  <div
+                    key={idx}
+                    className="bg-slate-900/80 border border-amber-500/20 rounded-2xl p-6 space-y-4"
+                  >
+                    {/* Model Header */}
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-700">
+                      <div>
+                        <h3 className="font-bold text-amber-300 text-lg">
+                          {compResult.modelId}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {compResult.generationTime}ms
+                        </p>
+                      </div>
+                      {compResult.error ? (
+                        <Badge
+                          variant="outline"
+                          className="text-red-400 border-red-500/30"
+                        >
+                          Error
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-green-400 border-green-500/30"
+                        >
+                          Success
+                        </Badge>
+                      )}
+                      {canCompareModels && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-slate-500 hover:text-amber-400"
+                          onClick={() =>
+                            handleExportDebugData(
+                              {
+                                modelId: compResult.modelId,
+                                prompt: compResult.prompt,
+                                generationTime: compResult.generationTime,
+                                result: compResult.result,
+                                answers,
+                                chatHistory,
+                              },
+                              `comparison-${compResult.modelId}-${new Date().getTime()}.json`,
+                            )
+                          }
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Error Message */}
+                    {compResult.error && (
+                      <div className="p-3 bg-red-950/30 border border-red-500/20 rounded-lg text-sm text-red-300">
+                        {compResult.error}
+                      </div>
+                    )}
+
+                    {/* Results Preview */}
+                    {!compResult.error && compResult.result.vectors && (
+                      <div className="space-y-3">
+                        <div className="text-sm text-slate-400">
+                          Generated {compResult.result.vectors.length} career
+                          vectors
+                        </div>
+                        {compResult.result.vectors
+                          .slice(0, 3)
+                          .map((vec: DirectionVector, i: number) => (
+                            <div
+                              key={i}
+                              className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50"
+                            >
+                              <div className="font-medium text-white text-sm mb-1">
+                                {vec.industry || vec.name}
+                              </div>
+                              <div className="text-xs text-slate-400 mb-2">
+                                {vec.role}
+                              </div>
+                              <div className="flex gap-2 text-xs">
+                                <span className="text-pink-300">
+                                  Passion: {vec.match_scores?.passion}%
+                                </span>
+                                <span className="text-emerald-300">
+                                  Skill: {vec.match_scores?.skill}%
+                                </span>
+                              </div>
+                              {vec.exploration_steps && (
+                                <div className="text-xs text-slate-500 mt-2">
+                                  {vec.exploration_steps.length} exploration
+                                  steps
+                                </div>
+                              )}
+                              {vec.skill_tree && (
+                                <div className="text-xs text-emerald-400 mt-1">
+                                  Skill tree:{" "}
+                                  {vec.skill_tree.beginner_level?.length || 0}{" "}
+                                  beginner +
+                                  {vec.skill_tree.intermediate_level?.length ||
+                                    0}{" "}
+                                  intermediate +
+                                  {vec.skill_tree.advanced_level?.length || 0}{" "}
+                                  advanced
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                ),
+              )}
+            </div>
+
+            {/* Clear Comparison Button */}
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setComparisonResults(null)}
+                className="border-amber-500/30 hover:bg-amber-500/10 text-amber-400"
+              >
+                Clear Comparison
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Social Share / Action Section */}
@@ -357,6 +620,15 @@ export function DirectionResultsView({
                 <Save className="w-4 h-4" />
               )}
               {t.common.save} Image
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleExportDebugData()}
+              className="gap-2 border-amber-500/30 hover:bg-amber-950/20 text-amber-400"
+            >
+              <Terminal className="w-4 h-4" />
+              Export Dev Data (JSON)
             </Button>
 
             {mode === "assessment" && onRetake && (
@@ -419,7 +691,7 @@ function IkigaiCard({
           <div className={cn("p-2 rounded-lg bg-black/20")}>
             <Icon className="w-5 h-5" />
           </div>
-          <h3 className="font-bold uppercase tracking-wider text-sm">
+          <h3 className="font-bold uppercase tracking-wider text-sm py-1 leading-normal">
             {title}
           </h3>
         </div>
@@ -473,12 +745,14 @@ function PathCard({
   t,
   mode,
   onSelect,
+  lang = "en",
 }: {
   vector: DirectionVector;
   index: number;
   t: any;
   mode: "assessment" | "journey_view";
   onSelect?: () => void;
+  lang?: Language;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isTop = index === 0;
@@ -525,7 +799,7 @@ function PathCard({
           </div>
 
           <div className="flex items-start justify-between">
-            <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-indigo-300 transition-colors">
+            <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-indigo-300 transition-colors py-1 leading-tight">
               {vector.industry || vector.name}
             </h3>
             <span className="text-4xl text-slate-800 font-black hidden sm:block">
@@ -548,15 +822,29 @@ function PathCard({
           </p>
 
           <div className="flex flex-wrap gap-2 pt-2">
-            {vector.differentiators?.skill_tree?.slice(0, 3).map((s, i) => (
-              <Badge
-                key={i}
-                variant="secondary"
-                className="bg-slate-800 text-slate-300 border-slate-700"
-              >
-                {s}
-              </Badge>
-            ))}
+            {/* Show beginner skills from new skill_tree structure, or fallback to old differentiators */}
+            {vector.skill_tree?.beginner_level
+              ?.slice(0, 3)
+              .map((skill: any, i: number) => (
+                <Badge
+                  key={i}
+                  variant="secondary"
+                  className="bg-slate-800 text-slate-300 border-slate-700"
+                >
+                  {skill.skill_name}
+                </Badge>
+              )) ||
+              vector.differentiators?.skill_tree
+                ?.slice(0, 3)
+                .map((s: string, i: number) => (
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className="bg-slate-800 text-slate-300 border-slate-700"
+                  >
+                    {s}
+                  </Badge>
+                ))}
           </div>
         </div>
 
@@ -662,23 +950,142 @@ function PathCard({
               )}
             </div>
 
-            {/* Right Col: Deep Skill Tree */}
+            {/* Right Col: Exploration Steps */}
             <div className="space-y-4">
-              <h4 className="flex items-center gap-2 text-emerald-300 font-semibold">
-                <Award className="w-5 h-5" /> {t.skills_label || "Skill Tree"}
+              <h4 className="flex items-center gap-2 text-blue-300 font-semibold">
+                <Target className="w-5 h-5" />{" "}
+                {t.exploration_label || "Exploration Steps"}
               </h4>
-              <div className="flex flex-wrap gap-2">
-                {vector.differentiators?.skill_tree?.map((skill, i) => (
-                  <Badge
+              <div className="space-y-2">
+                {vector.exploration_steps?.slice(0, 5).map((step, i) => (
+                  <div
                     key={i}
-                    className="px-3 py-1 bg-emerald-950/50 text-emerald-200 border-emerald-500/20 hover:bg-emerald-900/50"
+                    className="flex gap-3 items-start p-3 bg-slate-800/30 rounded-lg border border-slate-700/30 hover:border-blue-500/30 transition-colors"
                   >
-                    {skill}
-                  </Badge>
+                    <Badge
+                      variant="outline"
+                      className="mt-0.5 text-[10px] border-blue-500/30 text-blue-300 shrink-0"
+                    >
+                      {step.type}
+                    </Badge>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      {step.description}
+                    </p>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
+
+          {/* Skill Tree Section - Full Width */}
+          {vector.skill_tree && (
+            <div className="mt-8 pt-8 border-t border-white/5">
+              <h4 className="flex items-center gap-2 text-emerald-300 font-semibold mb-6">
+                <Award className="w-5 h-5" /> {t.skills_label || "Skill Tree"}{" "}
+                {lang === "th" ? "(เส้นทางการเรียนรู้)" : "(Learning Path)"}
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Beginner Level */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-green-500/20 border-2 border-green-500 flex items-center justify-center text-green-300 font-bold text-sm">
+                      1
+                    </div>
+                    <h5 className="font-semibold text-green-300">
+                      {lang === "th" ? "ระดับพื้นฐาน" : "Beginner"}
+                    </h5>
+                  </div>
+                  {vector.skill_tree.beginner_level?.map((skill, i) => (
+                    <div
+                      key={i}
+                      className="p-3 bg-green-950/20 border border-green-500/20 rounded-lg space-y-1 hover:bg-green-950/30 transition-colors"
+                    >
+                      <div className="font-medium text-green-200 text-sm">
+                        {skill.skill_name}
+                      </div>
+                      <div className="text-xs text-slate-400">
+                        {skill.description}
+                      </div>
+                      <div className="text-[10px] text-green-400 font-mono">
+                        ⏱ {skill.time_estimate}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Intermediate Level */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center text-blue-300 font-bold text-sm">
+                      2
+                    </div>
+                    <h5 className="font-semibold text-blue-300">
+                      {lang === "th" ? "ระดับกลาง" : "Intermediate"}
+                    </h5>
+                  </div>
+                  {vector.skill_tree.intermediate_level?.map((skill, i) => (
+                    <div
+                      key={i}
+                      className="p-3 bg-blue-950/20 border border-blue-500/20 rounded-lg space-y-1 hover:bg-blue-950/30 transition-colors"
+                    >
+                      <div className="font-medium text-blue-200 text-sm">
+                        {skill.skill_name}
+                      </div>
+                      <div className="text-xs text-slate-400">
+                        {skill.description}
+                      </div>
+                      <div className="text-[10px] text-blue-400 font-mono">
+                        ⏱ {skill.time_estimate}
+                      </div>
+                      {skill.prerequisites &&
+                        skill.prerequisites.length > 0 && (
+                          <div className="text-[10px] text-slate-500 pt-1">
+                            {lang === "th" ? "ต้องมี:" : "Requires:"}{" "}
+                            {skill.prerequisites.join(", ")}
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Advanced Level */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center text-purple-300 font-bold text-sm">
+                      3
+                    </div>
+                    <h5 className="font-semibold text-purple-300">
+                      {lang === "th" ? "ระดับสูง" : "Advanced"}
+                    </h5>
+                  </div>
+                  {vector.skill_tree.advanced_level?.map((skill, i) => (
+                    <div
+                      key={i}
+                      className="p-3 bg-purple-950/20 border border-purple-500/20 rounded-lg space-y-1 hover:bg-purple-950/30 transition-colors"
+                    >
+                      <div className="font-medium text-purple-200 text-sm">
+                        {skill.skill_name}
+                      </div>
+                      <div className="text-xs text-slate-400">
+                        {skill.description}
+                      </div>
+                      <div className="text-[10px] text-purple-400 font-mono">
+                        ⏱ {skill.time_estimate}
+                      </div>
+                      {skill.prerequisites &&
+                        skill.prerequisites.length > 0 && (
+                          <div className="text-[10px] text-slate-500 pt-1">
+                            {lang === "th" ? "ต้องมี:" : "Requires:"}{" "}
+                            {skill.prerequisites.join(", ")}
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Select This Path Action */}
           {mode === "assessment" && onSelect && (

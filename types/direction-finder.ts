@@ -150,6 +150,19 @@ export interface IkigaiProfile {
   reality: string[];
 }
 
+export interface SkillTreeLevel {
+  skill_name: string;
+  description: string;
+  time_estimate: string;
+  prerequisites?: string[];
+}
+
+export interface SkillTree {
+  beginner_level: SkillTreeLevel[];
+  intermediate_level: SkillTreeLevel[];
+  advanced_level: SkillTreeLevel[];
+}
+
 export interface DirectionVector {
   name: string; // Keep for now, but will likely be Industry + Role
   industry: string;
@@ -190,6 +203,7 @@ export interface DirectionVector {
     description: string;
     reason?: string;
   }[];
+  skill_tree: SkillTree;
   first_step: string;
 }
 
@@ -223,6 +237,13 @@ export interface ActionPlan {
   commitment: Commitment;
 }
 
+export interface DebugMetadata {
+  modelId?: string;
+  prompt?: string;
+  generationTime?: number;
+  engine?: string;
+}
+
 export interface DirectionFinderResult {
   profile: IkigaiProfile;
   vectors: DirectionVector[];
@@ -232,6 +253,7 @@ export interface DirectionFinderResult {
     this_month: string[];
   };
   actionPlan?: ActionPlan;
+  debugMetadata?: DebugMetadata;
 }
 
 // ==========================================
