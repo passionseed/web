@@ -106,8 +106,8 @@ export default async function RootLayout({
           <LanguageProvider>
             <DirectionFinderProvider>
               <ErrorBoundary>
-                <SpeedInsights />
                 <Layout>{children}</Layout>
+                <SpeedInsights />
                 <SonnerToaster />
                 <DevHealthCheck />
                 <TOSAcceptanceModal />
