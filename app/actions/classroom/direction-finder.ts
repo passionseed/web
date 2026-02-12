@@ -86,5 +86,15 @@ export async function getClassroomDirectionFinderResults(classroomId: string) {
         throw new Error("Failed to fetch results");
     }
 
-    return data as DirectionFinderResultRow[];
+    // 3. Deduplicate: keep only the latest result per student
+    const seenUsers = new Set<string>();
+    const uniqueResults = (data || []).filter(result => {
+        if (seenUsers.has(result.user_id)) {
+            return false;
+        }
+        seenUsers.add(result.user_id);
+        return true;
+    });
+
+    return uniqueResults as DirectionFinderResultRow[];
 }

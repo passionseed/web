@@ -7,7 +7,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,21 +18,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Search, Eye, RefreshCw, MessageSquare } from "lucide-react";
+import { Search, Eye, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   getClassroomDirectionFinderResults,
   DirectionFinderResultRow,
 } from "@/app/actions/classroom/direction-finder";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { DirectionResultsView } from "@/components/education/direction-finder/DirectionResultsView";
 
 interface ClassroomDirectionFinderProps {
   classroomId: string;
@@ -47,7 +44,7 @@ export function ClassroomDirectionFinder({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedResult, setSelectedResult] =
     useState<DirectionFinderResultRow | null>(null);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const loadData = async () => {
     try {
@@ -150,22 +147,19 @@ export function ClassroomDirectionFinder({
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Student</TableHead>
-                  <TableHead>Top Vector</TableHead>
-                  <TableHead>Top Program</TableHead>
-                  <TableHead>Chat Length</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={3} className="text-center py-8">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : filteredResults.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={3} className="text-center py-8">
                       No results found
                     </TableCell>
                   </TableRow>
@@ -185,30 +179,13 @@ export function ClassroomDirectionFinder({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {item.result?.vectors?.[0]?.name || (
-                          <span className="text-muted-foreground italic">
-                            No vectors
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {item.result?.programs?.[0]?.name || (
-                          <span className="text-muted-foreground italic">
-                            No programs
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {item.chat_history ? item.chat_history.length : 0}
-                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
                             setSelectedResult(item);
-                            setIsSheetOpen(true);
+                            setIsDialogOpen(true);
                           }}
                         >
                           <Eye className="h-4 w-4 mr-2" />
@@ -224,189 +201,32 @@ export function ClassroomDirectionFinder({
         </CardContent>
       </Card>
 
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="w-[800px] sm:max-w-[100vw] overflow-hidden flex flex-col p-0">
-          <div className="p-6 border-b">
-            <SheetHeader>
-              <SheetTitle>Result Details</SheetTitle>
-              <SheetDescription>
-                Assessment for{" "}
-                {selectedResult?.profiles?.full_name ||
-                  selectedResult?.profiles?.email ||
-                  "N/A"}
-              </SheetDescription>
-            </SheetHeader>
-          </div>
-
-          <div className="flex-1 overflow-auto">
-            {selectedResult && (
-              <Tabs defaultValue="summary" className="h-full flex flex-col">
-                <div className="px-6 pt-4">
-                  <TabsList>
-                    <TabsTrigger value="summary">Concise Summary</TabsTrigger>
-                    <TabsTrigger value="chat">Chat History</TabsTrigger>
-                  </TabsList>
-                </div>
-
-                <TabsContent
-                  value="summary"
-                  className="flex-1 px-6 pb-6 space-y-6 overflow-auto"
-                >
-                  <div className="mt-4 space-y-6">
-                    {/* Results Overview */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        Top Vectors (Directions)
-                      </h3>
-                      <div className="grid gap-4">
-                        {selectedResult.result.vectors.map((vector, idx) => (
-                          <Card key={idx}>
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-base">
-                                {vector.name}
-                              </CardTitle>
-                              <div className="flex gap-2 text-sm text-muted-foreground">
-                                <span>
-                                  Match: {vector.match_scores?.overall ?? "N/A"}
-                                  %
-                                </span>
-                                <span>•</span>
-                                <span>
-                                  Passion:{" "}
-                                  {vector.match_scores?.passion ?? "N/A"}%
-                                </span>
-                                <span>•</span>
-                                <span>
-                                  Skill: {vector.match_scores?.skill ?? "N/A"}%
-                                </span>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm mb-2 font-medium text-muted-foreground">
-                                Why it fits:
-                              </p>
-                              <ul className="text-sm space-y-1 list-disc pl-4 mb-4">
-                                <li>{vector.fit_reason.interest_alignment}</li>
-                                <li>{vector.fit_reason.strength_alignment}</li>
-                                <li>{vector.fit_reason.value_alignment}</li>
-                              </ul>
-                              <p className="text-sm font-medium text-primary">
-                                First Step: {vector.first_step}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        Recommended Programs
-                      </h3>
-                      <div className="space-y-3">
-                        {selectedResult.result.programs.map((program, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3 border rounded-lg bg-muted/50"
-                          >
-                            <div className="flex justify-between items-start mb-1">
-                              <span className="font-medium">
-                                {program.name}
-                              </span>
-                              <Badge
-                                variant={
-                                  program.match_level === "High"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {program.match_level}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {program.reason}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        Profile Analysis
-                      </h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 border rounded-lg">
-                          <h4 className="font-medium mb-2">Energizers</h4>
-                          <ul className="list-disc pl-4 text-sm text-muted-foreground">
-                            {selectedResult.result.profile.energizers.map(
-                              (e, i) => (
-                                <li key={i}>{e}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                        <div className="p-3 border rounded-lg">
-                          <h4 className="font-medium mb-2">Strengths</h4>
-                          <ul className="list-disc pl-4 text-sm text-muted-foreground">
-                            {selectedResult.result.profile.strengths.map(
-                              (s, i) => (
-                                <li key={i}>{s}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                        <div className="p-3 border rounded-lg">
-                          <h4 className="font-medium mb-2">Values</h4>
-                          <ul className="list-disc pl-4 text-sm text-muted-foreground">
-                            {selectedResult.result.profile.values.map(
-                              (v, i) => (
-                                <li key={i}>{v}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent
-                  value="chat"
-                  className="flex-1 px-6 pb-6 overflow-hidden flex flex-col"
-                >
-                  <div className="mt-4 flex-1 border rounded-lg p-4 overflow-y-auto bg-slate-950/50">
-                    <div className="space-y-4">
-                      {selectedResult.chat_history?.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[80%] rounded-lg px-4 py-2 text-sm ${
-                              msg.role === "user"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            }`}
-                          >
-                            {msg.content}
-                          </div>
-                        </div>
-                      ))}
-                      {(!selectedResult.chat_history ||
-                        selectedResult.chat_history.length === 0) && (
-                        <div className="text-center text-muted-foreground py-8">
-                          No chat history available.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-6xl w-[90vw] max-h-[85vh] p-0 overflow-hidden gap-0">
+          <VisuallyHidden>
+            <DialogTitle>
+              Student Direction Profile for{" "}
+              {selectedResult?.profiles?.full_name || selectedResult?.profiles?.email || "Student"}
+            </DialogTitle>
+          </VisuallyHidden>
+          <div className="h-full max-h-[85vh] overflow-auto -mt-8">
+            {selectedResult && selectedResult.result && (
+              <DirectionResultsView
+                result={selectedResult.result}
+                answers={selectedResult.answers}
+                chatHistory={selectedResult.chat_history}
+                mode="journey_view"
+                studentName={
+                  selectedResult.profiles?.full_name ||
+                  selectedResult.profiles?.email?.split("@")[0] ||
+                  "Student"
+                }
+                onBack={() => setIsDialogOpen(false)}
+              />
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -88,13 +88,6 @@ export function MainNav() {
               >
                 Teams
               </Link>
-              <Link
-                href="/me"
-                className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
-                onClick={() => setMenuOpen(false)}
-              >
-                My Journey
-              </Link>
               <a
                 href="/seeds"
                 className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md cursor-pointer"
@@ -102,6 +95,13 @@ export function MainNav() {
               >
                 Seeds
               </a>
+              <Link
+                href="/me"
+                className="text-lg font-medium transition-colors hover:text-primary py-2 px-4 rounded-md"
+                onClick={() => setMenuOpen(false)}
+              >
+                My Journey
+              </Link>
               {hasBuildAccess && (
                 <Link
                   href="/build"
@@ -154,12 +154,6 @@ export function MainNav() {
         >
           Teams
         </Link>
-        <Link
-          href="/me"
-          className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
-        >
-          My Journey
-        </Link>
         <a
           href="/seeds"
           className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap cursor-pointer"
@@ -167,6 +161,12 @@ export function MainNav() {
         >
           Seeds
         </a>
+        <Link
+          href="/me"
+          className="text-xs sm:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+        >
+          My Journey
+        </Link>
         {hasBuildAccess && (
           <Link
             href="/build"
