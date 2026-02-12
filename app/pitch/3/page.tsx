@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -40,14 +40,50 @@ const slideTransition = {
 function SlideBackground() {
   return (
     <>
-      {/* Blur orbs — PassionSeed signature */}
-      <div className="absolute inset-0 w-full h-full">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[128px] animate-pulse-slow" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] animate-pulse-slow" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-pink-500/10 rounded-full blur-[128px]" />
+      {/* Base Background Gradient */}
+      <div className="absolute inset-0 bg-[#060606]" />
+
+      {/* Noise Overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Dynamic Blur Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-purple-600/15 rounded-full blur-[120px]"
+        />
+        <motion.div
+          animate={{
+            x: [0, -40, 0],
+            y: [0, 60, 0],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] bg-blue-600/10 rounded-full blur-[140px]"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.05, 0.08, 0.05],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-pink-500/10 rounded-full blur-[160px]"
+        />
       </div>
-      {/* Grid pattern */}
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+
+      {/* Subtle Grid */}
+      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[length:40px_40px] opacity-[0.05] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
+
+      {/* Vignette */}
+      <div className="absolute inset-0 bg-radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%) pointer-events-none" />
     </>
   );
 }
@@ -59,50 +95,97 @@ function SlideOne() {
     <div className="h-full w-full flex flex-col items-center justify-center relative px-8">
       <SlideBackground />
 
-      <div className="relative z-10 text-center max-w-5xl mx-auto">
-        {/* Logo */}
+      <div className="relative z-10 text-center max-w-6xl mx-auto">
+        {/* Logo with Glow */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-          className="flex justify-center mb-8"
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.8, ease: "easeOut" }}
+          className="flex justify-center mb-12 relative"
         >
+          <div className="absolute inset-0 bg-purple-500/20 blur-2xl rounded-full scale-150" />
           <Image
             src="/passionseed-logo.svg"
             alt="PassionSeed Logo"
-            width={48}
-            height={48}
-            className=""
+            width={72}
+            height={72}
+            className="relative z-10 drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]"
           />
         </motion.div>
 
-        {/* Headline — big, bold, tension */}
+        {/* Headline — High Contrast Typography */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
-          style={{ fontFamily: "League Gothic" }}
-          className="text-[3rem] md:text-[4rem] lg:text-[4rem] leading-[0.95] uppercase tracking-wider mb-10"
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="mb-8 overflow-hidden font-heading"
         >
-          <span className="text-white">Students Are Forced to Choose</span>
-          <br />
-          <span className="text-white">a Future </span>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-            Before They&apos;ve Tested It.
+          <span className="block text-[2.5rem] md:text-[4rem] lg:text-[4.5rem] leading-[1.1] font-bold tracking-tight text-white/90">
+            Students are{" "}
+            <span className="text-white underline decoration-purple-500/50 underline-offset-8">
+              Forced
+            </span>{" "}
+            to Choose
+          </span>
+          <span className="block text-[2.5rem] md:text-[4rem] lg:text-[4.5rem] leading-[1.1] font-bold tracking-tight">
+            a Future{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-orange-500">
+              Before They&apos;ve Tested It.
+            </span>
           </span>
         </motion.h1>
 
-        {/* Subhead — clear + business */}
+        {/* Subhead — Refined & Readable */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-          className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed"
+          transition={{ delay: 0.6, duration: 0.7 }}
+          className="text-xl md:text-2xl text-gray-400 max-w-4xl mx-auto leading-relaxed mb-14 font-light italic"
         >
-          PassionSeed is a 5-day structured exploration platform that lets high
-          school students test real academic and career paths — generating an
-          evidence-backed direction report for families and schools.
+          PassionSeed is a{" "}
+          <span className="text-gray-200 font-medium">
+            5-day structured exploration platform
+          </span>{" "}
+          that lets students test real paths — generating an evidence-backed
+          direction report.
         </motion.p>
+
+        {/* Market Stat Badge */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
+          className="inline-flex items-center gap-4 bg-white/[0.03] border border-white/10 backdrop-blur-md rounded-2xl px-8 py-5 group hover:border-purple-500/40 transition-colors duration-500"
+        >
+          <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group-hover:scale-110 transition-transform duration-500">
+            <ArrowRight className="w-6 h-6 text-purple-400" />
+          </div>
+          <p className="text-left max-w-md">
+            <span className="block text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 font-heading">
+              4.3 MILLION
+            </span>
+            <span className="text-xs text-gray-400 uppercase tracking-[0.2em] leading-none font-medium">
+              Thai secondary students lack structured career guidance.
+            </span>
+          </p>
+        </motion.div>
+
+        {/* Scroll Hint */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 1 }}
+          className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        >
+          <span className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em]">
+            Explore the Vision
+          </span>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-px h-8 bg-gradient-to-b from-purple-500/50 to-transparent"
+          />
+        </motion.div>
       </div>
     </div>
   );
@@ -114,130 +197,138 @@ const REVENUE_MODELS = [
   {
     rank: 1,
     icon: School,
-    title: "School Licensing",
-    points: ["Annual license per cohort", "Scalable, predictable revenue"],
-    challenge: "Long sales cycles",
+    title: "B2B School Licensing",
+    description: "Annual recurring revenue from institutional partnerships.",
+    points: [
+      "~2,600 upper-secondary schools in Thailand",
+      "Public + private + international segmentation",
+    ],
+    challenge: "Long procurement cycles",
     highlighted: true,
+    color: "from-purple-500 to-indigo-600",
   },
   {
     rank: 2,
     icon: Users,
     title: "Parent-Paid Sprint",
-    points: ["$ per 5-day exploration", "Fast validation"],
+    description: "Direct-to-consumer 5-day intensive exploration kits.",
+    points: [
+      "~2M upper-secondary decision-makers",
+      "Willingness to spend on value-backed guidance",
+    ],
     challenge: "Building trust early",
     highlighted: false,
+    color: "from-blue-500 to-cyan-600",
   },
   {
     rank: 3,
     icon: BarChart3,
     title: "Counselor Dashboard",
-    points: ["Subscription analytics", "Recurring SaaS"],
+    description: "SaaS tool for advisors to track student progress at scale.",
+    points: [
+      "High counselor workload with limited tools",
+      "Actionable data from student exploration",
+    ],
     challenge: "Proving measurable advantage",
     highlighted: false,
+    color: "from-pink-500 to-rose-600",
   },
 ];
 
 function SlideTwo() {
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center px-12 py-16 relative">
+    <div className="h-full w-full flex flex-col items-center justify-center px-16 py-16 relative">
       <SlideBackground />
 
-      <div className="relative z-10 w-full max-w-6xl">
-        {/* Header */}
+      <div className="relative z-10 w-full max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-14"
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
         >
-          <h2
-            style={{ fontFamily: "League Gothic" }}
-            className="text-5xl md:text-6xl uppercase tracking-wider mb-3"
-          >
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-4 leading-tight font-heading">
+            <span className="text-white/20">Our </span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
               Revenue Models
             </span>
           </h2>
-          <div className="w-24 h-1 bg-gradient-to-r from-purple-400 to-pink-600 mx-auto mb-4 rounded-full" />
-          <p className="text-gray-500 font-mono text-sm tracking-wider uppercase">
-            Ranked by scalability &amp; predictability
-          </p>
+          <div className="flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-white/10" />
+            <p className="text-gray-500 font-mono text-xs tracking-[0.3em] uppercase">
+              Scalability & Predictability
+            </p>
+            <div className="h-px w-12 bg-white/10" />
+          </div>
         </motion.div>
 
         {/* 3 Columns */}
-        <div className="grid grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
           {REVENUE_MODELS.map((model, i) => {
             const Icon = model.icon;
             return (
               <motion.div
                 key={model.rank}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + i * 0.15, duration: 0.6 }}
-                className={`relative rounded-xl border p-8 flex flex-col backdrop-blur-sm ${
+                transition={{
+                  delay: 0.2 + i * 0.15,
+                  duration: 0.8,
+                  ease: "easeOut",
+                }}
+                whileHover={{ y: -10 }}
+                className={`group relative rounded-3xl border p-10 flex flex-col transition-all duration-500 backdrop-blur-xl ${
                   model.highlighted
-                    ? "border-purple-500/40 bg-purple-600/[0.08] scale-105 shadow-[0_0_40px_rgba(168,85,247,0.1)]"
-                    : "border-white/10 bg-white/5"
+                    ? "border-purple-500/30 bg-purple-500/[0.04] shadow-[0_20px_60px_-15px_rgba(168,85,247,0.15)] ring-1 ring-purple-500/20"
+                    : "border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10"
                 }`}
               >
-                {/* Rank badge */}
+                {/* Ranking */}
+                <span className="absolute top-10 right-10 font-mono text-8xl text-white/[0.03] leading-none pointer-events-none select-none italic font-black">
+                  0{model.rank}
+                </span>
+
+                {/* Icon Container */}
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold mb-6 ${
-                    model.highlighted
-                      ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white"
-                      : "bg-white/10 text-gray-400"
-                  }`}
-                  style={{ fontFamily: "League Gothic" }}
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 bg-gradient-to-br ${model.color} shadow-lg shadow-purple-500/10`}
                 >
-                  {model.rank}
+                  <Icon className="w-8 h-8 text-white" />
                 </div>
 
-                {/* Icon */}
-                <div
-                  className={`w-12 h-12 rounded-xl border shadow-xl flex items-center justify-center mb-4 ${
-                    model.highlighted
-                      ? "bg-purple-600/10 border-purple-500/30"
-                      : "bg-white/5 border-white/10"
-                  }`}
-                >
-                  <Icon
-                    className={`w-6 h-6 ${
-                      model.highlighted ? "text-purple-400" : "text-gray-500"
-                    }`}
-                  />
-                </div>
-
-                {/* Title */}
-                <h3 className="text-xl font-bold text-white mb-4">
+                {/* Content */}
+                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-400 transition-colors">
                   {model.title}
                 </h3>
+                <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+                  {model.description}
+                </p>
 
-                {/* Points */}
-                <ul className="space-y-2 mb-auto">
+                {/* Metrics/Points */}
+                <div className="space-y-4 mb-10">
                   {model.points.map((point, j) => (
-                    <li
+                    <div
                       key={j}
-                      className="flex items-start gap-2 text-gray-400 text-sm"
+                      className="flex items-center gap-3 text-sm text-gray-300"
                     >
                       <div
-                        className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
-                          model.highlighted ? "bg-purple-400" : "bg-gray-600"
-                        }`}
+                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 bg-gradient-to-r ${model.color}`}
                       />
                       {point}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
 
-                {/* Challenge */}
-                <div className="mt-6 pt-4 border-t border-white/10">
-                  <div className="flex items-center gap-2 mb-1">
-                    <AlertTriangle className="w-4 h-4 flex-shrink-0 text-orange-400" />
-                    <span className="text-xs font-mono tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-                      Challenge
+                {/* Challenge Footer */}
+                <div className="mt-auto pt-6 border-t border-white/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                    <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-orange-400/80">
+                      Primary Challenge
                     </span>
                   </div>
-                  <p className="text-gray-500 text-sm">{model.challenge}</p>
+                  <p className="text-gray-500 text-sm italic">
+                    {model.challenge}
+                  </p>
                 </div>
               </motion.div>
             );
@@ -250,51 +341,45 @@ function SlideTwo() {
 
 // ─── Slide 3: Steps to Revenue ──────────────────────────────────────────────
 
-const LANE_ICON_CLASS: Record<string, string> = {
-  purple: "text-purple-400",
-  blue: "text-blue-400",
-  pink: "text-pink-400",
-};
-
-const SWIMLANES = [
+const REVENUE_PATHS = [
   {
-    label: "School",
     icon: School,
-    color: "purple",
+    title: "Step 1: Pilot Phase",
+    label: "Institutional validation",
+    color: "from-purple-500 to-indigo-600",
     steps: [
-      { text: "Pilot", hard: false },
-      { text: "Measure clarity improvement", hard: true },
-      { text: "Convert to paid contract", hard: false },
-      { text: "Expand", hard: false },
+      { text: "Onboard 5-10 Private Thai High Schools", hard: false },
+      { text: "Measure 'Clarity Score' increase per student", hard: true },
+      { text: "Generate case studies for government outreach", hard: false },
     ],
   },
   {
-    label: "Parents",
     icon: Users,
-    color: "blue",
+    title: "Step 2: D2C Scale",
+    label: "Growth & Viral Loop",
+    color: "from-blue-500 to-cyan-600",
     steps: [
-      { text: "Beta cohort", hard: false },
-      { text: "Testimonials", hard: true },
-      { text: "Paid launch", hard: false },
-      { text: "Repeat cohorts", hard: false },
+      { text: "Social-first student community & challenges", hard: false },
+      { text: "Influencer-led 5-day exploration sprints", hard: false },
+      { text: "Automated upsell to family strategy sessions", hard: false },
     ],
   },
   {
-    label: "Counselor",
     icon: BarChart3,
-    color: "pink",
+    title: "Step 3: Ecosystem",
+    label: "Market Saturation",
+    color: "from-pink-500 to-rose-600",
     steps: [
-      { text: "Aggregate data", hard: false },
-      { text: "Build report", hard: false },
-      { text: "Pilot", hard: true },
-      { text: "Subscription", hard: false },
+      { text: "Open API for university recruiters", hard: true },
+      { text: "Counselor-certified dashboard rollout", hard: false },
+      { text: "National-level policy integration", hard: false },
     ],
   },
 ];
 
 function SlideThree() {
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center px-12 py-16 relative">
+    <div className="h-full w-full flex flex-col items-center justify-center px-16 py-16 relative">
       <SlideBackground />
 
       <div className="relative z-10 w-full max-w-6xl">
@@ -302,69 +387,86 @@ function SlideThree() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-14"
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
         >
-          <h2
-            style={{ fontFamily: "League Gothic" }}
-            className="text-5xl md:text-6xl uppercase tracking-wider mb-3"
-          >
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-              Steps to Revenue
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-2 font-heading">
+            The Path to{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+              Revenue
             </span>
           </h2>
-          <div className="w-24 h-1 bg-gradient-to-r from-purple-400 to-pink-600 mx-auto mb-4 rounded-full" />
-          <p className="text-gray-500 font-mono text-sm tracking-wider uppercase">
-            Three parallel paths to monetization
+          <p className="text-gray-500 font-mono text-sm tracking-[0.4em] uppercase">
+            Execution Roadmap 2026
           </p>
         </motion.div>
 
-        {/* Swimlanes */}
-        <div className="space-y-6">
-          {SWIMLANES.map((lane, laneIdx) => {
-            const LaneIcon = lane.icon;
+        {/* Timeline Flow */}
+        <div className="flex flex-col md:flex-row gap-4 relative">
+          {REVENUE_PATHS.map((path, idx) => {
+            const StepIcon = path.icon;
             return (
               <motion.div
-                key={lane.label}
-                initial={{ opacity: 0, x: -30 }}
+                key={path.title}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + laneIdx * 0.2, duration: 0.5 }}
-                className="flex items-center gap-4"
+                transition={{ delay: 0.3 + idx * 0.2, duration: 0.8 }}
+                className="flex-1 flex flex-col group"
               >
-                {/* Lane label */}
-                <div className="w-36 flex-shrink-0 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                    <LaneIcon
-                      className={`w-4 h-4 ${LANE_ICON_CLASS[lane.color]}`}
-                    />
+                {/* Visual Step Marker & Header */}
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="relative">
+                    <div
+                      className={`w-14 h-14 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover:border-purple-500/50 transition-colors`}
+                    >
+                      <div
+                        className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${path.color} opacity-10 blur-xl group-hover:opacity-30 transition-opacity`}
+                      />
+                      <StepIcon className="w-6 h-6 text-white relative z-10" />
+                    </div>
+                    {/* Connector line to next phase */}
+                    {idx < REVENUE_PATHS.length - 1 && (
+                      <div className="absolute top-1/2 left-full w-full h-[2px] bg-gradient-to-r from-white/10 to-transparent -translate-y-1/2 hidden md:block z-0" />
+                    )}
                   </div>
-                  <span className="text-white font-bold text-sm uppercase tracking-wider">
-                    {lane.label}
-                  </span>
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 block">
+                      {path.label}
+                    </span>
+                    <h3 className="text-lg font-bold text-white font-heading">
+                      {path.title}
+                    </h3>
+                  </div>
                 </div>
 
-                {/* Steps */}
-                <div className="flex-1 flex items-center gap-2">
-                  {lane.steps.map((step, stepIdx) => (
-                    <Fragment key={stepIdx}>
-                      {stepIdx > 0 && (
-                        <ArrowRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                      )}
+                {/* Steps Flow Vertical */}
+                <div className="space-y-6 relative pl-7">
+                  {/* Vertical connector line */}
+                  <div className="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-white/20 via-white/5 to-transparent" />
+
+                  {path.steps.map((step, sIdx) => (
+                    <motion.div
+                      key={sIdx}
+                      className="relative flex gap-4 items-center group/step"
+                      whileHover={{ x: 5 }}
+                    >
+                      {/* Interaction Dot */}
                       <div
-                        className={`relative flex-1 px-4 py-3 rounded-xl text-center text-sm border backdrop-blur-sm transition-colors ${
+                        className={`absolute -left-[1.35rem] w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0a] z-10 transition-colors ${
                           step.hard
-                            ? "border-orange-500/30 bg-orange-500/[0.06] text-orange-300"
-                            : "border-white/10 bg-white/5 text-gray-400"
+                            ? "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]"
+                            : "bg-white/40 group-hover/step:bg-purple-500"
                         }`}
-                      >
-                        {step.text}
-                        {step.hard && (
-                          <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center">
-                            <AlertTriangle className="w-3 h-3 text-orange-400" />
-                          </div>
-                        )}
+                      />
+
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4 flex-1 backdrop-blur-sm group-hover/step:bg-white/[0.06] group-hover/step:border-white/10 transition-all">
+                        <p
+                          className={`text-sm leading-tight ${step.hard ? "text-orange-200/90 font-medium" : "text-gray-300 font-light"}`}
+                        >
+                          {step.text}
+                        </p>
                       </div>
-                    </Fragment>
+                    </motion.div>
                   ))}
                 </div>
               </motion.div>
@@ -372,15 +474,19 @@ function SlideThree() {
           })}
         </div>
 
-        {/* Legend */}
+        {/* Footer Hint */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="mt-10 flex items-center gap-2 justify-center text-xs text-gray-600 font-mono"
+          transition={{ delay: 1.5 }}
+          className="mt-16 flex items-center justify-center gap-8 text-[10px] font-mono text-gray-600 uppercase tracking-[0.3em]"
         >
-          <AlertTriangle className="w-3 h-3 text-orange-400" />
-          <span>= Hardest step (key risk)</span>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_5px_rgba(249,115,22,0.8)]" />
+            <span>High Complexity Milestone</span>
+          </div>
+          <div className="w-1 h-1 rounded-full bg-white/20" />
+          <span>Thailand Expansion Protocol</span>
         </motion.div>
       </div>
     </div>
@@ -484,6 +590,21 @@ export default function PitchDeck3Page() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Persistent Brand Header */}
+      <div className="absolute top-8 left-10 z-[110] flex items-center gap-4 pointer-events-none">
+        <Image
+          src="/passionseed-logo.svg"
+          alt="PS"
+          width={24}
+          height={24}
+          className="opacity-50"
+        />
+        <div className="h-4 w-px bg-white/10" />
+        <span className="text-[10px] font-mono text-gray-600 uppercase tracking-[0.4em]">
+          Pitch Deck v3.0
+        </span>
+      </div>
+
       {/* Slide content */}
       <div className="relative w-full h-full">
         <AnimatePresence mode="wait" custom={direction}>
