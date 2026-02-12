@@ -574,27 +574,68 @@ function DirectionFinderFlowContent({
             </div>
           </details>
 
-          {/* ... Model Selector ... */}
+          {/* Model Selector - DEV ONLY */}
           {currentStep === "ai_chat" && (
-            <div className="w-[200px] animate-in fade-in slide-in-from-top-2">
-              <Select value={model} onValueChange={setModel}>
+            <div className="w-[280px] animate-in fade-in slide-in-from-top-2">
+              <Select
+                value={model}
+                onValueChange={(value) => {
+                  console.log('🎯 [DEV] Model manually selected:', value);
+                  setModel(value);
+                }}
+              >
                 <SelectTrigger className="h-full bg-slate-900 border-slate-700 text-xs">
                   <Settings className="w-3 h-3 mr-2 text-slate-400" />
-                  <SelectValue placeholder="Select AI Model" />
+                  <SelectValue placeholder="Auto (A/B Test)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="google/gemini-2.5-flash">
-                    Gemini 3 Flash
+                  <SelectItem value={undefined as any}>
+                    <span className="font-semibold text-blue-400">🎲 Auto (A/B Test)</span>
                   </SelectItem>
-                  <SelectItem value="google/gemini-2.5-flash">
-                    Gemini 2.5 Flash Lite
+
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">GOOGLE</div>
+                  <SelectItem value="gemini-2.5-flash">
+                    Gemini 2.5 Flash
                   </SelectItem>
-                  <SelectItem value="deepseek-v3">DeepSeek V3</SelectItem>
-                  <SelectItem value="deepseek/deepseek-r1">
-                    DeepSeek R1 (Reasoner)
+                  <SelectItem value="gemini-flash-lite-latest">
+                    Gemini Flash Lite
+                  </SelectItem>
+
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">ANTHROPIC</div>
+                  <SelectItem value="claude-haiku-4-5">
+                    Claude Haiku 4.5
+                  </SelectItem>
+
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">OPENAI</div>
+                  <SelectItem value="gpt-5-mini-2025-08-07">
+                    GPT-5 Mini
+                  </SelectItem>
+                  <SelectItem value="gpt-5.2-chat-latest">
+                    GPT-5.2 Chat
+                  </SelectItem>
+                  <SelectItem value="codex-mini-latest">
+                    Codex Mini
+                  </SelectItem>
+
+                  <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">DEEPSEEK</div>
+                  <SelectItem value="deepseek-chat">
+                    DeepSeek Chat
+                  </SelectItem>
+                  <SelectItem value="deepseek-reasoner">
+                    DeepSeek Reasoner (R1)
                   </SelectItem>
                 </SelectContent>
               </Select>
+              {model && (
+                <div className="mt-1 text-[10px] text-green-400 font-mono">
+                  ✓ Override: {model}
+                </div>
+              )}
+              {!model && (
+                <div className="mt-1 text-[10px] text-blue-400 font-mono">
+                  🎲 Auto model selection enabled
+                </div>
+              )}
             </div>
           )}
         </div>
