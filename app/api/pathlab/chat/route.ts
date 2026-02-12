@@ -16,6 +16,21 @@ interface ChatRequest {
   conversationHistory: Array<{ role: "user" | "assistant"; content: string }>;
   userMessage: string;
   generationParams?: ConversationParams;
+  existingMap?: {
+    id: string;
+    title: string;
+    description: string | null;
+    nodes: Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      day: number | null;
+    }>;
+    edges: Array<{
+      source: string;
+      target: string;
+    }>;
+  };
 }
 
 interface ChatResponse {
@@ -42,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: ChatRequest = await request.json();
-    const { conversationHistory, userMessage, generationParams = {} } = body;
+    const { conversationHistory, userMessage, generationParams = {}, existingMap } = body;
 
     // Extract parameters from user message
     const updatedParams = extractParamsFromMessage(userMessage, generationParams);
@@ -61,6 +76,7 @@ export async function POST(request: NextRequest) {
     const systemPrompt = buildChatSystemPrompt({
       accumulatedParams: updatedParams,
       missingParams: missingParams.map((p) => p.label),
+      existingMap,
     });
 
     // Safety check if topic/constraints are available

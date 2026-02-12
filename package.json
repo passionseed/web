@@ -17,6 +17,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.42",
     "@ai-sdk/deepseek": "^1.0.33",
     "@ai-sdk/google": "^2.0.52",
     "@ai-sdk/openai": "^2.0.89",

@@ -1642,9 +1642,18 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
 
       switch (key) {
         case "c":
-          // Copy node when not typing
-          event.preventDefault();
-          copyNode();
+          // Only intercept copy for node copying if:
+          // 1. There's no text selected on the page
+          // 2. There's actually a node selected to copy
+          const selection = window.getSelection();
+          const hasTextSelection = selection && selection.toString().length > 0;
+
+          if (!hasTextSelection) {
+            // No text selected - this is a node copy operation
+            event.preventDefault();
+            copyNode();
+          }
+          // Otherwise, let browser handle normal text copy
           break;
         case "v":
           // Paste nodes only if we have some in clipboard; otherwise allow normal paste
@@ -1825,6 +1834,41 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
   ]);
 
   // ReactFlow handles node data and selection internally - no manual sync needed
+
+  // Prepare existing map data for AI assistant (editing mode)
+  const existingMapData = useMemo(() => {
+    if (!map || !map.map_nodes || map.map_nodes.length === 0) {
+      return undefined;
+    }
+
+    // Extract all edges from node paths
+    const allEdges: Array<{ source: string; target: string }> = [];
+    map.map_nodes.forEach((node) => {
+      if (node.node_paths_source) {
+        node.node_paths_source.forEach((path) => {
+          allEdges.push({
+            source: path.source_node_id,
+            target: path.destination_node_id,
+          });
+        });
+      }
+    });
+
+    return {
+      id: map.id,
+      title: map.title,
+      description: map.description,
+      nodes: map.map_nodes.map((node) => ({
+        id: node.id,
+        title: node.title,
+        description: node.instructions || null,
+        day: (node.metadata as any)?.day || null,
+        x: (node.metadata as any)?.x || 0,
+        y: (node.metadata as any)?.y || 0,
+      })),
+      edges: allEdges,
+    };
+  }, [map]);
 
   // AI Generation Complete Handler
   const handleAIGenerationComplete = useCallback(
@@ -2968,6 +3012,7 @@ export function MapEditor({ map, onMapChange, pathDays = [], seedInfo, onPathDay
               <PathLabGeneratorChat
                 onGenerationComplete={handleAIGenerationComplete}
                 onClose={() => setShowAIAssistant(false)}
+                existingMap={existingMapData}
               />
             </ResizablePanel>
           </>

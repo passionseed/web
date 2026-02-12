@@ -8,6 +8,7 @@ export const pathLabGeneratorRequestSchema = z.object({
   tone: z.string().min(2).max(80),
   constraints: z.string().max(1000).optional().or(z.literal("")),
   categoryId: z.string().uuid().nullable().optional(),
+  existingMapId: z.string().uuid().optional(), // For editing existing maps
 });
 
 const contentItemSchema = z.object({

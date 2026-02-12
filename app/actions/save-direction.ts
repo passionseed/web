@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "crypto";
 import { createClient } from "@/utils/supabase/server";
 import { AssessmentAnswers, DirectionFinderResult, Message } from "@/types/direction-finder";
 import { summarizeConversation } from "@/lib/ai/conversationEngine";
@@ -8,7 +9,10 @@ export async function saveDirectionFinderResult(
   answers: AssessmentAnswers,
   result: DirectionFinderResult | null,
   chatHistory?: Message[],
-  id?: string
+  id?: string,
+  modelName?: string,
+  isCached?: boolean,
+  originalResultId?: string
 ) {
   const supabase = await createClient();
   const {
@@ -81,6 +85,9 @@ export async function saveDirectionFinderResult(
     }
   }
 
+  // Generate cache key if model name is provided
+  const cacheKey = modelName ? `${createHash('md5').update(JSON.stringify(answers)).digest('hex')}_${modelName}` : undefined;
+
   let query;
 
   if (id) {
@@ -92,6 +99,10 @@ export async function saveDirectionFinderResult(
         result,
         chat_history: safeHistory,
         chat_context: chatContext,
+        ...(modelName && { model_name: modelName }),
+        ...(cacheKey && { cache_key: cacheKey }),
+        ...(isCached !== undefined && { is_cached: isCached }),
+        ...(originalResultId && { original_result_id: originalResultId }),
       })
       .eq("id", id)
       .eq("user_id", user.id);
@@ -103,6 +114,10 @@ export async function saveDirectionFinderResult(
       result,
       chat_history: safeHistory,
       chat_context: chatContext,
+      ...(modelName && { model_name: modelName }),
+      ...(cacheKey && { cache_key: cacheKey }),
+      ...(isCached !== undefined && { is_cached: isCached }),
+      ...(originalResultId && { original_result_id: originalResultId }),
     });
   }
 
@@ -150,6 +165,21 @@ export async function getDirectionFinderResultById(id: string) {
   }
 
   return data as { id: string; user_id: string; answers: AssessmentAnswers; result: DirectionFinderResult; chat_history: Message[]; created_at: string; updated_at: string };
+}
+
+/**
+ * Get the current authenticated user's ID
+ * Used for model selection and metrics tracking
+ *
+ * @returns User ID or null if not authenticated
+ */
+export async function getCurrentUserId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user?.id || null;
 }
 
 export async function getUserDirectionFinderResult() {
@@ -201,4 +231,78 @@ export async function getAllUserDirectionFinderResults() {
   }
 
   return data as { id: string; user_id: string; answers: AssessmentAnswers; result: DirectionFinderResult; chat_history: Message[]; created_at: string; updated_at: string }[];
+}
+
+/**
+ * Find a cached Direction Finder result based on answers and model name
+ * Returns the most recent matching result within a 7-day cache window
+ * This significantly reduces AI generation load during high-concurrency scenarios
+ *
+ * @param answers - The assessment answers to look up
+ * @param modelName - The AI model name used for generation (default: gemini-2.5-flash)
+ * @returns Cached result if found, null otherwise
+ */
+export async function findCachedResult(
+  answers: AssessmentAnswers,
+  modelName: string = 'gemini-2.5-flash'
+): Promise<{
+  id: string;
+  user_id: string;
+  answers: AssessmentAnswers;
+  result: DirectionFinderResult;
+  created_at: string;
+  updated_at: string;
+  model_name: string;
+  is_cached: boolean;
+  cache_hit_count: number;
+  original_result_id: string | null;
+} | null> {
+  const supabase = await createClient();
+
+  // Call the PostgreSQL function to find cached result
+  const { data, error } = await supabase.rpc('find_cached_direction_result', {
+    p_answers: answers,
+    p_model_name: modelName
+  });
+
+  if (error) {
+    console.error("Error finding cached result:", error);
+    return null;
+  }
+
+  // If no cached result found, return null
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  return data[0] as {
+    id: string;
+    user_id: string;
+    answers: AssessmentAnswers;
+    result: DirectionFinderResult;
+    created_at: string;
+    updated_at: string;
+    model_name: string;
+    is_cached: boolean;
+    cache_hit_count: number;
+    original_result_id: string | null;
+  };
+}
+
+/**
+ * Increment the cache hit count for a result when it's served from cache
+ * This helps track cache effectiveness and popular assessment patterns
+ *
+ * @param resultId - The ID of the cached result being reused
+ */
+export async function incrementCacheHitCount(resultId: string): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc('increment_cache_hit_count', {
+    p_result_id: resultId
+  });
+
+  if (error) {
+    console.error("Error incrementing cache hit count:", error);
+  }
 }

@@ -26,11 +26,29 @@ interface Message {
 interface PathLabGeneratorChatProps {
   onGenerationComplete: (draft: PathLabGeneratorDraftInput, params: ConversationParams) => void;
   onClose: () => void;
+  existingMap?: {
+    id: string;
+    title: string;
+    description: string | null;
+    nodes: Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      day: number | null;
+      x: number;
+      y: number;
+    }>;
+    edges: Array<{
+      source: string;
+      target: string;
+    }>;
+  };
 }
 
 export function PathLabGeneratorChat({
   onGenerationComplete,
   onClose,
+  existingMap,
 }: PathLabGeneratorChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -59,7 +77,12 @@ export function PathLabGeneratorChat({
   useEffect(() => {
     if (!hasStartedRef.current) {
       hasStartedRef.current = true;
-      const greeting = buildGreetingMessage();
+      const isEditMode = !!existingMap && existingMap.nodes.length > 0;
+
+      const greeting = isEditMode
+        ? `👋 Hi! I see you have an existing PathLab with **${existingMap.nodes.length} nodes** called "${existingMap.title}".\n\nI can help you edit and improve it! What would you like to change?\n\n**Examples:**\n- "Add more nodes about [topic]"\n- "Make day 3 more challenging"\n- "Add assessments to existing nodes"\n- "Reorganize the learning path"\n- "Change the difficulty level"`
+        : buildGreetingMessage();
+
       setMessages([
         {
           id: "greeting",
@@ -68,8 +91,17 @@ export function PathLabGeneratorChat({
           timestamp: new Date(),
         },
       ]);
+
+      // If editing, pre-populate params from existing map
+      if (isEditMode && existingMap) {
+        setAccumulatedParams({
+          existingMapId: existingMap.id,
+          topic: existingMap.title,
+          // Extract other params from existing structure if available
+        });
+      }
     }
-  }, []);
+  }, [existingMap]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isTyping || isGenerating) return;
@@ -98,6 +130,7 @@ export function PathLabGeneratorChat({
           })),
           userMessage: content,
           generationParams: accumulatedParams,
+          existingMap: existingMap, // Pass existing map data for editing context
         }),
       });
 
@@ -275,7 +308,10 @@ export function PathLabGeneratorChat({
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">PathLab AI Assistant</h3>
+          <h3 className="font-semibold">
+            PathLab AI{" "}
+            {existingMap && existingMap.nodes.length > 0 ? "Editor" : "Assistant"}
+          </h3>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={handleReset}>

@@ -3,7 +3,72 @@ import type { ConversationParams } from "@/lib/pathlab/conversation-flow";
 export function buildChatSystemPrompt(params: {
   accumulatedParams: ConversationParams;
   missingParams: string[];
+  existingMap?: {
+    id: string;
+    title: string;
+    description: string | null;
+    nodes: Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      day: number | null;
+    }>;
+    edges: Array<{
+      source: string;
+      target: string;
+    }>;
+  };
 }): string {
+  const isEditMode = params.existingMap && params.existingMap.nodes.length > 0;
+
+  if (isEditMode) {
+    // Editing mode prompt
+    return `You are an AI assistant that helps instructors edit existing PathLab learning experiences.
+
+TASK
+You are editing an existing PathLab. Help the instructor modify, improve, or expand it based on their requests.
+
+EXISTING PATHLAB
+Title: ${params.existingMap!.title}
+Description: ${params.existingMap!.description || "No description"}
+Nodes: ${params.existingMap!.nodes.length} learning nodes
+Current structure:
+${params.existingMap!.nodes.map((node, idx) => `  ${idx + 1}. ${node.title} (Day ${node.day || "unassigned"})`).join("\n")}
+
+EDITING CAPABILITIES
+- Add new nodes on specific topics
+- Modify existing nodes (change difficulty, content, assessments)
+- Reorganize the learning path structure
+- Add or modify assessments
+- Change the overall difficulty or tone
+- Extend the PathLab with more days
+
+CONVERSATION FLOW
+1) Understand what the instructor wants to change
+2) Collect any missing parameters needed for the edit (difficulty, tone, etc.)
+3) When you understand the changes needed and have the required info:
+   - Output a summary of the changes
+   - Ask for confirmation
+4) ONLY after explicit confirmation:
+   - Respond with EXACTLY: READY_TO_GENERATE
+
+REQUIRED PARAMETERS for generation (collect if changing major aspects)
+- topic: ${params.accumulatedParams.topic || params.existingMap!.title}
+- audience: ${params.accumulatedParams.audience || "Not specified"}
+- difficulty: ${params.accumulatedParams.difficulty || "Not specified"}
+- totalDays: ${params.accumulatedParams.totalDays || "Current: " + (Math.max(...params.existingMap!.nodes.map(n => n.day || 0)))}
+- tone: ${params.accumulatedParams.tone || "Not specified"}
+
+Missing params: ${params.missingParams.join(", ") || "None"}
+
+STYLE
+- Be direct and concise
+- Focus on understanding what needs to change
+- Suggest improvements based on the existing structure
+- Ask clarifying questions when the edit request is unclear`;
+  }
+
+  // Creation mode prompt (original)
   return `You are an AI assistant that helps instructors create PathLab learning experiences.
 
 TASK
