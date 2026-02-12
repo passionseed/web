@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  GitFork,
   ArrowRight,
   AlertTriangle,
   School,
@@ -60,73 +59,50 @@ function SlideOne() {
     <div className="h-full w-full flex flex-col items-center justify-center relative px-8">
       <SlideBackground />
 
-      <div className="relative z-10 text-center max-w-4xl mx-auto">
+      <div className="relative z-10 text-center max-w-5xl mx-auto">
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1, duration: 0.5 }}
-          className="flex justify-center mb-6"
+          className="flex justify-center mb-8"
         >
           <Image
             src="/passionseed-logo.svg"
             alt="PassionSeed Logo"
             width={48}
             height={48}
-            className="brightness-0 invert drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+            className=""
           />
         </motion.div>
 
-        {/* Problem headline */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-sm tracking-[0.3em] uppercase text-gray-500 mb-10 font-mono"
-        >
-          Students choose their future before they try it.
-        </motion.p>
-
-        {/* Hero text */}
+        {/* Headline — big, bold, tension */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.7 }}
+          transition={{ delay: 0.3, duration: 0.7 }}
           style={{ fontFamily: "League Gothic" }}
-          className="text-[5rem] md:text-[6rem] lg:text-[7rem] leading-[0.9] uppercase tracking-wider mb-10"
+          className="text-[3rem] md:text-[4rem] lg:text-[4rem] leading-[0.95] uppercase tracking-wider mb-10"
         >
-          <span className="text-white">Try Before You</span>
+          <span className="text-white">Students Are Forced to Choose</span>
           <br />
+          <span className="text-white">a Future </span>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-            Commit.
+            Before They&apos;ve Tested It.
           </span>
         </motion.h1>
 
-        {/* Description */}
+        {/* Subhead — clear + business */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed"
+          className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed"
         >
-          A 5-day career exploration platform that helps students test real
-          paths before choosing university.
+          PassionSeed is a 5-day structured exploration platform that lets high
+          school students test real academic and career paths — generating an
+          evidence-backed direction report for families and schools.
         </motion.p>
-
-        {/* Forked icon + bottom tagline */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-          className="flex flex-col items-center gap-5"
-        >
-          <GitFork className="w-10 h-10 text-purple-400/60 rotate-180" />
-          <p className="text-sm font-mono tracking-widest uppercase">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-              Reducing costly wrong education decisions.
-            </span>
-          </p>
-        </motion.div>
       </div>
     </div>
   );
@@ -459,26 +435,22 @@ export default function PitchDeck3Page() {
       setDirection(index > currentSlide ? 1 : -1);
       setCurrentSlide(index);
     },
-    [currentSlide, totalSlides]
+    [currentSlide, totalSlides],
   );
 
   const nextSlide = useCallback(
     () => goToSlide(currentSlide + 1),
-    [currentSlide, goToSlide]
+    [currentSlide, goToSlide],
   );
   const prevSlide = useCallback(
     () => goToSlide(currentSlide - 1),
-    [currentSlide, goToSlide]
+    [currentSlide, goToSlide],
   );
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "ArrowRight" ||
-        e.key === "ArrowDown" ||
-        e.key === " "
-      ) {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") {
         e.preventDefault();
         nextSlide();
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
