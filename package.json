@@ -14,7 +14,14 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:load": "tsx scripts/test-concurrent-jobs.ts",
+    "test:load:20": "tsx scripts/test-concurrent-jobs.ts --users=20",
+    "test:load:prod": "tsx scripts/test-concurrent-jobs.ts --production",
+    "jobs:trigger": "tsx scripts/trigger-worker.ts",
+    "jobs:trigger:loop": "tsx scripts/trigger-worker.ts --loop",
+    "jobs:monitor": "tsx scripts/monitor-jobs.ts",
+    "jobs:monitor:watch": "tsx scripts/monitor-jobs.ts --watch"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.42",
@@ -136,6 +143,7 @@
     "tailwindcss": "^3.4.19",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
