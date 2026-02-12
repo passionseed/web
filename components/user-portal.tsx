@@ -35,6 +35,8 @@ import {
   Brain,
   Target,
   Award,
+  Sparkles,
+  Compass,
 } from "lucide-react";
 import Link from "next/link";
 import { Project } from "@/types/project";
@@ -99,6 +101,8 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
     }>
   >([]);
   const [isLoadingNextNodes, setIsLoadingNextNodes] = useState(true);
+  const [hasNorthStarResult, setHasNorthStarResult] = useState(false);
+  const [isLoadingNorthStar, setIsLoadingNorthStar] = useState(true);
 
   useEffect(() => {
     const fetchReflections = async () => {
@@ -142,6 +146,25 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
       }
     };
     fetchReflections();
+  }, []);
+
+  useEffect(() => {
+    const checkNorthStarResult = async () => {
+      try {
+        setIsLoadingNorthStar(true);
+        const { getUserDirectionFinderResult } = await import(
+          "@/app/actions/save-direction"
+        );
+        const result = await getUserDirectionFinderResult();
+        setHasNorthStarResult(!!result?.result);
+      } catch (error) {
+        console.error("Error checking North Star result:", error);
+        setHasNorthStarResult(false);
+      } finally {
+        setIsLoadingNorthStar(false);
+      }
+    };
+    checkNorthStarResult();
   }, []);
 
   useEffect(() => {
@@ -248,31 +271,65 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
       </div>
 
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-        <Card className="col-span-1 h-[400px] md:h-[500px] overflow-hidden">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center text-lg md:text-xl">
-                <MapIcon className="mr-2 h-4 w-4 md:h-5 md:w-5 text-purple-500" />
-                Journey Map
-              </CardTitle>
-              <Button
-                size="sm"
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-                onClick={() => {
-                  console.log('Navigating to /me/journey');
-                  window.location.assign('/me/journey');
-                }}
-              >
-                <ArrowRight className="h-3 w-3 mr-1" />
-                Enter
-              </Button>
+        <Card
+          className="col-span-1 h-[480px] md:h-[580px] overflow-hidden cursor-pointer group hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 border-purple-500/20 hover:border-purple-500/50"
+          onClick={() => {
+            if (isLoadingNorthStar) return;
+            if (hasNorthStarResult) {
+              window.location.assign("/me/journey/new-northstar?step=results");
+            } else {
+              window.location.assign("/me/journey/new-northstar");
+            }
+          }}
+        >
+          <CardContent className="h-full p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-2xl" />
+
+            {/* Icon with glow effect */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-blue-600 rounded-3xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity" />
+              <div className="relative bg-gradient-to-br from-purple-500 to-blue-600 p-6 rounded-3xl shadow-lg group-hover:scale-110 transition-transform">
+                <Compass className="w-12 h-12 md:w-16 md:h-16 text-white" />
+              </div>
             </div>
-            <CardDescription className="text-xs md:text-sm">
-              Your projects and milestones at a glance
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="h-[calc(100%-80px)] p-4">
-            <MilestoneList />
+
+            {/* Title */}
+            <h3 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-purple-200 to-blue-300 mb-3">
+              {isLoadingNorthStar
+                ? "Loading..."
+                : hasNorthStarResult
+                  ? "Your North Star"
+                  : "Find Your North Star"}
+            </h3>
+
+            {/* Description */}
+            <p className="text-slate-400 text-sm md:text-base mb-6 max-w-md leading-relaxed">
+              {isLoadingNorthStar
+                ? "Checking your progress..."
+                : hasNorthStarResult
+                  ? "View your personalized direction profile and career recommendations"
+                  : "Discover your strengths, values, and ideal career paths through our AI-powered assessment"}
+            </p>
+
+            {/* Button */}
+            {!isLoadingNorthStar && (
+              <div className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full text-white font-semibold shadow-lg group-hover:shadow-purple-500/50 group-hover:scale-105 transition-all">
+                {hasNorthStarResult ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>View Results</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Start Assessment</span>
+                  </>
+                )}
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            )}
           </CardContent>
         </Card>
 

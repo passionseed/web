@@ -54,6 +54,7 @@ interface DirectionResultsViewProps {
   // Context
   mode: "assessment" | "journey_view"; // Controls auto-save, specific buttons
   userRole?: string; // For journey view debug/admin
+  studentName?: string; // For showing student name in journey_view mode
 
   // Callbacks
   onBack: () => void;
@@ -70,6 +71,7 @@ export function DirectionResultsView({
   chatHistory,
   mode,
   userRole,
+  studentName,
   onBack,
   onSelect,
   onRetake,
@@ -172,12 +174,24 @@ export function DirectionResultsView({
 
   return (
     <div className="animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto relative px-4 sm:px-6">
-      <div ref={resultsRef} className="space-y-12">
+      <div ref={resultsRef} className="space-y-4">
         {/* Top Navigation */}
         <div
-          className="flex items-center justify-end pt-4"
+          className="flex items-center justify-between pt-12"
           data-hide-on-share="true"
         >
+          <div>
+            <Link href="/me/direction-history">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-slate-400 hover:text-white"
+              >
+                <History className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">History</span>
+              </Button>
+            </Link>
+          </div>
           <div className="flex gap-2">
             {mode === "assessment" && onRetake && (
               <Button
@@ -220,28 +234,20 @@ export function DirectionResultsView({
                 {userRole} Mode
               </Badge>
             )}
-            <Link href="/me/direction-history">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-slate-400 hover:text-white"
-              >
-                <History className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">History</span>
-              </Button>
-            </Link>
           </div>
         </div>
 
         {/* Hero Section */}
-        <div className="text-center space-y-6 relative py-4 sm:py-8">
+        <div className="text-center space-y-6 relative py-0 sm:py-2">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-transparent blur-3xl pointer-events-none" />
           <div className="relative z-10 space-y-4">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 mb-2 animate-pulse">
               <Sparkles className="w-8 h-8 text-purple-400" />
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-br from-white via-white to-slate-400 bg-clip-text text-transparent px-4">
-              {t.results.title}
+              {mode === "journey_view" && studentName
+                ? `${studentName}${studentName.endsWith("s") ? "'" : "'s"} Profile`
+                : t.results.title}
             </h1>
             <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed px-4">
               {t.results.subtitle}
@@ -279,7 +285,9 @@ export function DirectionResultsView({
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
             <h2 className="text-2xl md:text-3xl font-bold text-center text-white">
-              {t.results.directions_title}
+              {mode === "journey_view" && studentName
+                ? `${studentName}${studentName.endsWith("s") ? "'" : "'s"} Top 3 Directions`
+                : t.results.directions_title}
             </h2>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
           </div>
