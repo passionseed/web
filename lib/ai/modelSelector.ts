@@ -13,18 +13,19 @@ interface ModelBucket {
 
 /**
  * A/B testing model distribution
- * Total: 100% across 9 models from 4 providers
+ * Total: 100% across 9 buckets from 4 providers
  *
  * Distribution strategy:
- * - 35% Google (3 variants: gemini-3-flash, gemini-2.5-flash, gemini-flash-lite-latest)
+ * - 35% Google (2 active variants: gemini-3-flash-preview, gemini-flash-lite-latest)
  * - 13% Anthropic (1 variant: claude-haiku-4-5)
  * - 32% OpenAI (3 variants: gpt-5-mini, gpt-5.2-chat, codex-mini)
  * - 20% DeepSeek (2 variants: deepseek-chat, deepseek-reasoner)
  */
 const MODEL_BUCKETS: ModelBucket[] = [
   // Google Models (35%)
-  { model: 'gemini-3-flash', minHash: 0, maxHash: 10, percentage: 10 },
-  { model: 'gemini-2.5-flash', minHash: 10, maxHash: 25, percentage: 15 },
+  // Legacy gemini-3-flash-preview bucket.
+  { model: 'gemini-3-flash-preview', minHash: 0, maxHash: 10, percentage: 10 },
+  { model: 'gemini-3-flash-preview', minHash: 10, maxHash: 25, percentage: 15 },
   { model: 'gemini-flash-lite-latest', minHash: 25, maxHash: 35, percentage: 10 },
 
   // Anthropic Claude (13%)
@@ -59,7 +60,7 @@ function hashUserIdToRange(userId: string): number {
  * The same user will always get the same model (consistent A/B testing)
  *
  * This enables:
- * 1. Fair comparison across 9 models from 4 providers
+ * 1. Fair comparison across multiple models from 4 providers
  * 2. Consistent user experience (same user always gets same model)
  * 3. Data-driven decisions on which model to use in production
  *
@@ -76,8 +77,8 @@ export function selectModelForUser(userId: string): string {
   );
 
   if (!bucket) {
-    console.error(`No bucket found for hash value ${hashValue}, defaulting to gemini-2.5-flash`);
-    return 'gemini-2.5-flash';
+    console.error(`No bucket found for hash value ${hashValue}, defaulting to gemini-3-flash-preview`);
+    return 'gemini-3-flash-preview';
   }
 
   return bucket.model;
@@ -102,7 +103,7 @@ export function getUserModelBucket(userId: string): {
 
   if (!bucket) {
     return {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       hashValue,
       percentage: 0,
     };

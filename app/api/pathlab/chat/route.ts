@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Generate AI response
     const result = await generateText({
-      model: getModel("google/gemini-3-flash"),
+      model: getModel("gemini-2.5-flash"),
       system: systemPrompt,
       messages: messages.map((m) => ({
         role: m.role,
