@@ -27,6 +27,12 @@ import {
   generateDirectionProfileCore,
   generateDirectionProfileDetails,
 } from "@/app/actions/advisor-actions";
+import {
+  findCachedResult,
+  incrementCacheHitCount
+} from "@/app/actions/save-direction";
+import { selectModelForUser } from "@/lib/ai/modelSelector";
+import { recordGenerationMetrics, getModelProvider } from "@/lib/utils/metrics-collector";
 import { toast } from "sonner";
 import { marked } from "marked";
 import { sanitizeHtml } from "@/lib/security/sanitize-html";
@@ -225,51 +231,139 @@ export function AIConversation({
       return;
     }
 
-    // setIsGeneratingProfile(true);
+    const generationStartTime = Date.now();
+    let cacheHit = false;
+    let cacheLookupTime = 0;
+    let coreGenerationTime = 0;
+    let detailsGenerationTime = 0;
+    let selectedModel = model || 'gemini-2.5-flash';
+    let hadTimeout = false;
+    let hadRateLimit = false;
+    let errorMessage: string | undefined;
+    let retryCount = 0;
+
+    // Import getCurrentUserId from save-direction
+    const { getCurrentUserId } = await import("@/app/actions/save-direction");
+
     setLoadingStage("core");
     try {
+      // Get current user ID for model selection
+      const userId = await getCurrentUserId();
+
+      // If no userId, default to provided model or gemini-2.5-flash
+      if (userId) {
+        // Select model for this user (consistent A/B testing)
+        selectedModel = selectModelForUser(userId);
+      }
+
+      // Check cache before generating
+      const cacheStartTime = Date.now();
+      const cachedResult = await findCachedResult(answers, selectedModel);
+      cacheLookupTime = Date.now() - cacheStartTime;
+
+      if (cachedResult) {
+        // Cache hit! Return cached result immediately
+        cacheHit = true;
+        await incrementCacheHitCount(cachedResult.id);
+
+        toast.success("Found matching profile from cache! ⚡");
+
+        // Record metrics for cache hit
+        if (userId) {
+          await recordGenerationMetrics(
+            cachedResult.id,
+            userId,
+            {
+              modelProvider: await getModelProvider(selectedModel),
+              modelName: selectedModel,
+              totalGenerationTimeMs: Date.now() - generationStartTime,
+              cacheHit: true,
+              cacheLookupTimeMs: cacheLookupTime,
+              hadTimeout: false,
+              hadRateLimit: false,
+              retryCount: 0,
+              conversationTurnCount: messages.length,
+              language: lang,
+            }
+          );
+        }
+
+        onComplete(cachedResult.result);
+        return;
+      }
+
+      // No cache hit, proceed with fresh generation
       const apiHistory = messages.map((m) => ({
         role: m.role,
         content: m.content,
       }));
 
-      // Step 1: Core
+      // Step 1: Core generation
+      const coreStartTime = Date.now();
       const coreResult = await generateDirectionProfileCore(
         apiHistory,
         answers,
-        model,
+        selectedModel,
         lang,
       );
+      coreGenerationTime = Date.now() - coreStartTime;
 
       setLoadingStage("details");
 
-      // Step 2: Details
+      // Step 2: Details generation
+      const detailsStartTime = Date.now();
       const detailsResult = await generateDirectionProfileDetails(
         coreResult,
         answers,
-        model,
+        selectedModel,
         lang,
       );
+      detailsGenerationTime = Date.now() - detailsStartTime;
 
-      // Merge
+      // Merge results
       const finalResult: DirectionFinderResult = {
         ...(coreResult as any),
         ...(detailsResult as any),
       };
 
+      const totalGenerationTime = Date.now() - generationStartTime;
+
+      // Record metrics for successful generation
+      // Note: We don't have resultId yet, will need to get it after save
+      // For now, we'll skip recording metrics here and do it in the parent component
+      // after saveDirectionFinderResult is called
+
       onComplete(finalResult);
     } catch (error: any) {
       console.error("Error generating profile:", error);
+
+      // Classify error type
       if (
         error.message?.includes("unexpected response") ||
         error.message?.includes("504")
       ) {
+        hadTimeout = true;
+        errorMessage = "Generation timed out";
         toast.error(
           "Generation timed out. Please try again or use a faster model.",
         );
+      } else if (error.message?.includes("429") || error.message?.includes("rate limit")) {
+        hadRateLimit = true;
+        errorMessage = "Rate limit exceeded";
+        toast.error("Too many requests. Please wait a moment and try again.");
       } else {
+        errorMessage = error.message || "Unknown error";
         toast.error("Failed to generate profile. Please try again.");
       }
+
+      // Record error metrics (without resultId since generation failed)
+      const userId = await getCurrentUserId();
+      if (userId) {
+        // Create a placeholder record to track the failed attempt
+        // This helps us understand error patterns
+        // We'll need to handle this in recordGenerationMetrics by making result_id optional
+      }
+
       setLoadingStage("none");
     }
   };
