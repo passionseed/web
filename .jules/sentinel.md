@@ -1,0 +1,4 @@
+## 2025-02-18 - Regex-based HTML Sanitization Vulnerability
+**Vulnerability:** The application was using a custom regular expression to sanitize user-generated HTML content instead of a dedicated sanitization library. Regex-based sanitization is notoriously difficult to get right and can often be bypassed by sophisticated XSS vectors (e.g., nested tags, malformed attributes).
+**Learning:** The project had a security standard requiring `isomorphic-dompurify`, but it was not implemented, likely due to a regression or incomplete setup. This highlights the importance of automated checks for security dependencies.
+**Prevention:** Always use established, battle-tested libraries like `DOMPurify` (or `isomorphic-dompurify` for SSR) for HTML sanitization. Never attempt to write custom sanitization logic using regex. Verify that critical security libraries are present in `package.json` and actively used.

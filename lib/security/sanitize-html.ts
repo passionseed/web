@@ -1,6 +1,7 @@
 import { marked } from "marked";
+import DOMPurify from "isomorphic-dompurify";
 
-const ALLOWED_TAGS = new Set([
+const ALLOWED_TAGS = [
   "p",
   "br",
   "strong",
@@ -28,117 +29,50 @@ const ALLOWED_TAGS = new Set([
   "tr",
   "th",
   "td",
-]);
+];
 
-const GLOBAL_ALLOWED_ATTRS = new Set(["class", "title", "aria-label"]);
-const TAG_ALLOWED_ATTRS: Record<string, Set<string>> = {
-  a: new Set(["href", "target", "rel"]),
-  img: new Set(["src", "alt", "width", "height", "loading"]),
-};
+const ALLOWED_ATTR = [
+  "class",
+  "title",
+  "aria-label", // Global
+  "href",
+  "target",
+  "rel", // a
+  "src",
+  "alt",
+  "width",
+  "height",
+  "loading", // img
+];
 
-function escapeHtml(input: string): string {
-  return input
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function sanitizeUrl(value: string): string {
-  const trimmed = value.trim();
-  const lower = trimmed.toLowerCase();
-
-  if (
-    lower.startsWith("javascript:") ||
-    lower.startsWith("vbscript:") ||
-    lower.startsWith("data:text/html")
-  ) {
-    return "";
+// Configure hooks once to ensure security attributes are added
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  // Ensure target="_blank" links have rel="noopener noreferrer"
+  if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
+    node.setAttribute("rel", "noopener noreferrer");
   }
 
-  return trimmed;
-}
-
-function sanitizeAttributes(tag: string, rawAttrs: string): string {
-  const attrs: string[] = [];
-  const attrRe = /([a-zA-Z0-9_:-]+)\s*=\s*(["'])(.*?)\2/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = attrRe.exec(rawAttrs)) !== null) {
-    const attrName = match[1].toLowerCase();
-    let attrValue = match[3];
-
-    if (attrName.startsWith("on")) continue;
-    if (attrName === "style") continue;
-
-    const allowedForTag = TAG_ALLOWED_ATTRS[tag] ?? new Set<string>();
-    if (!GLOBAL_ALLOWED_ATTRS.has(attrName) && !allowedForTag.has(attrName)) {
-      continue;
-    }
-
-    if (attrName === "href" || attrName === "src") {
-      attrValue = sanitizeUrl(attrValue);
-      if (!attrValue) continue;
-    }
-
-    if (tag === "a" && attrName === "target") {
-      if (attrValue !== "_blank" && attrValue !== "_self") continue;
-    }
-
-    attrs.push(`${attrName}="${escapeHtml(attrValue)}"`);
+  // Ensure images have loading="lazy" for performance
+  if (node.tagName === "IMG" && !node.hasAttribute("loading")) {
+    node.setAttribute("loading", "lazy");
   }
-
-  if (tag === "a") {
-    const hasTargetBlank = attrs.some((a) => a === 'target="_blank"');
-    const hasRel = attrs.some((a) => a.startsWith("rel="));
-    if (hasTargetBlank && !hasRel) {
-      attrs.push('rel="noopener noreferrer"');
-    }
-  }
-
-  if (tag === "img") {
-    const hasLoading = attrs.some((a) => a.startsWith("loading="));
-    if (!hasLoading) attrs.push('loading="lazy"');
-  }
-
-  return attrs.length > 0 ? " " + attrs.join(" ") : "";
-}
+});
 
 export function sanitizeHtml(input: string): string {
   if (!input) return "";
 
-  let sanitized = input;
-
-  sanitized = sanitized.replace(/<!--[\s\S]*?-->/g, "");
-  sanitized = sanitized.replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, "");
-  sanitized = sanitized.replace(/<\s*style[\s\S]*?<\s*\/\s*style\s*>/gi, "");
-  sanitized = sanitized.replace(/<\s*iframe[\s\S]*?<\s*\/\s*iframe\s*>/gi, "");
-  sanitized = sanitized.replace(/<\s*object[\s\S]*?<\s*\/\s*object\s*>/gi, "");
-  sanitized = sanitized.replace(/<\s*embed[\s\S]*?<\s*\/\s*embed\s*>/gi, "");
-  sanitized = sanitized.replace(/<\s*svg[\s\S]*?<\s*\/\s*svg\s*>/gi, "");
-
-  sanitized = sanitized.replace(/<\/?([a-zA-Z0-9-]+)([^>]*)>/g, (full, tagName, attrs) => {
-    const isClosing = full.startsWith("</");
-    const tag = String(tagName).toLowerCase();
-
-    if (!ALLOWED_TAGS.has(tag)) {
-      return "";
-    }
-
-    if (isClosing) {
-      return `</${tag}>`;
-    }
-
-    const attrString = sanitizeAttributes(tag, String(attrs || ""));
-    const selfClosing = /\/$/.test(full.trim()) || tag === "br" || tag === "hr";
-    return selfClosing ? `<${tag}${attrString} />` : `<${tag}${attrString}>`;
-  });
+  // Use DOMPurify to sanitize the HTML
+  // We explicitly cast to string as per memory instructions regarding TrustedHTML types
+  const sanitized = DOMPurify.sanitize(input, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+  }) as string;
 
   return sanitized;
 }
 
 export function markdownToSafeHtml(markdown: string): string {
-  const rendered = marked.parse(markdown ?? "") as string;
+  // marked.parse can be async in newer versions, force sync execution
+  const rendered = marked.parse(markdown ?? "", { async: false }) as string;
   return sanitizeHtml(rendered);
 }
