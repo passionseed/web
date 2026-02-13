@@ -972,7 +972,7 @@ export function AIConversation({
               value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={t.ai_chat.input_placeholder}
-                className="bg-slate-800/80 border-slate-700 focus-visible:ring-blue-500 min-h-[44px] max-h-[120px] resize-none py-3 pr-10 text-sm md:text-base rounded-xl"
+                className="bg-slate-800/80 border-slate-700 focus-visible:ring-blue-500 min-h-[44px] max-h-[120px] resize-none py-3 pr-10 text-base rounded-xl"
                 disabled={loadingStage !== "none" || isTyping}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
