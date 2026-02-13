@@ -192,21 +192,25 @@ Generate 3 career direction vectors. For EACH vector:
 4. Check alignment with q3_environment preferences
 5. Explain how it honors their q5_values
 
-**EXPLORATION STEPS (MANDATORY - 5-7 steps per vector):**
-For each career vector, provide 5-7 diverse, concrete exploration steps:
+**EXPLORATION STEPS (REQUIRED - NEVER OMIT):**
+For EVERY career vector, you MUST provide exploration_steps array with 5-7 items:
 - At least 1 PROJECT: Something they can build/create (be specific, not generic)
 - At least 1 STUDY resource: Book, online course, YouTube channel, or article (with specific names when possible)
 - At least 1 ACTIVITY: Workshop, event, or hands-on experience to try
 - At least 1 COMMUNITY: Online forum, Discord server, local group, or club to join
 - At least 1 PERSON: Type of professional to talk to, shadow, or learn from (e.g., "Talk to a UX designer at a startup")
 Make each step specific, actionable, and achievable for a high school/college student.
+If you cannot think of steps, provide an empty array []. NEVER omit this field.
 
-**SKILL TREE (MANDATORY - 3 levels per vector):**
-For each career vector, create a structured learning path with 3 levels:
-- BEGINNER (3-4 skills): Foundational skills they can start learning immediately
-- INTERMEDIATE (3-4 skills): Skills that build on beginner level (specify which beginner skills are prerequisites)
-- ADVANCED (2-3 skills): Specialized skills for career mastery (specify which intermediate skills are prerequisites)
-Each skill must have: skill_name, clear description, and realistic time_estimate (e.g., "2-3 weeks", "1-2 months").
+**SKILL TREE (REQUIRED - NEVER OMIT):**
+For EVERY career vector, you MUST provide skill_tree object with ALL THREE levels:
+- beginner_level: Array of 3-4 foundational skills (or empty array [] if none)
+- intermediate_level: Array of 3-4 intermediate skills (or empty array [] if none)
+  - MUST include prerequisites array (use beginner skill names, or [] if independent)
+- advanced_level: Array of 2-3 advanced skills (or empty array [] if none)
+  - MUST include prerequisites array (use intermediate skill names, or [] if independent)
+Each skill object MUST have: skill_name, description, time_estimate, and prerequisites (for intermediate/advanced).
+NEVER omit skill_tree, beginner_level, intermediate_level, or advanced_level. Always provide the structure even if empty.
 
 Include an "evidence_used" object in each vector showing you used data from Q1-Q6.
 `;
@@ -250,26 +254,25 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
           exploration_steps: z.array(z.object({
             type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe('Type of exploration step'),
             description: z.string().describe('Specific, actionable description of the step'),
-            reason: z.string().optional().describe('Why this step is important'),
-          })).min(5).describe('At least 5 exploration steps covering different types'),
+          })).describe('5-7 exploration steps covering different types (project, study, activity, community, person) - use empty array if none'),
           skill_tree: z.object({
             beginner_level: z.array(z.object({
               skill_name: z.string(),
               description: z.string(),
               time_estimate: z.string().describe('e.g., "2-3 weeks", "1 month"'),
-            })).min(3).describe('3-4 foundational skills'),
+            })).describe('3-4 foundational skills - use empty array if none'),
             intermediate_level: z.array(z.object({
               skill_name: z.string(),
               description: z.string(),
               time_estimate: z.string(),
-              prerequisites: z.array(z.string()).describe('Skills from beginner level needed first'),
-            })).min(3).describe('3-4 intermediate skills building on beginner'),
+              prerequisites: z.array(z.string()).describe('Skills from beginner level needed first (use empty array if none)'),
+            })).describe('3-4 intermediate skills building on beginner - use empty array if none'),
             advanced_level: z.array(z.object({
               skill_name: z.string(),
               description: z.string(),
               time_estimate: z.string(),
-              prerequisites: z.array(z.string()).describe('Skills from intermediate level needed first'),
-            })).min(2).describe('2-3 advanced specialized skills'),
+              prerequisites: z.array(z.string()).describe('Skills from intermediate level needed first (use empty array if none)'),
+            })).describe('2-3 advanced specialized skills - use empty array if none'),
           }).describe('Structured learning path from beginner to advanced'),
           first_step: z.string(),
         })),
@@ -297,6 +300,16 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
     };
   } catch (error) {
     console.error("Error generating direction profile:", error);
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      // @ts-ignore - check if it's a zod validation error
+      if (error.cause) {
+        console.error("Error cause:", JSON.stringify(error.cause, null, 2));
+      }
+    }
     throw error;
   }
 }
@@ -424,21 +437,25 @@ Generate the CORE profile (Profile + 3 Vectors).
 Ensure 'energizers', 'strengths', and 'values' are arrays of objects with { name, description, insight }.
 Ensure vectors include 'industry', 'role', and 'specialization'.
 
-**EXPLORATION STEPS (MANDATORY - 5-7 steps per vector):**
-For each career vector, provide 5-7 diverse, concrete exploration steps:
+**EXPLORATION STEPS (REQUIRED - NEVER OMIT):**
+For EVERY career vector, you MUST provide exploration_steps array with 5-7 items:
 - At least 1 PROJECT: Something they can build/create (be specific, not generic)
 - At least 1 STUDY resource: Book, online course, YouTube channel, or article (with specific names when possible)
 - At least 1 ACTIVITY: Workshop, event, or hands-on experience to try
 - At least 1 COMMUNITY: Online forum, Discord server, local group, or club to join
 - At least 1 PERSON: Type of professional to talk to, shadow, or learn from (e.g., "Talk to a UX designer at a startup")
 Make each step specific, actionable, and achievable for a high school/college student.
+If you cannot think of steps, provide an empty array []. NEVER omit this field.
 
-**SKILL TREE (MANDATORY - 3 levels per vector):**
-For each career vector, create a structured learning path with 3 levels:
-- BEGINNER (3-4 skills): Foundational skills they can start learning immediately
-- INTERMEDIATE (3-4 skills): Skills that build on beginner level (specify which beginner skills are prerequisites)
-- ADVANCED (2-3 skills): Specialized skills for career mastery (specify which intermediate skills are prerequisites)
-Each skill must have: skill_name, clear description, and realistic time_estimate (e.g., "2-3 weeks", "1-2 months").
+**SKILL TREE (REQUIRED - NEVER OMIT):**
+For EVERY career vector, you MUST provide skill_tree object with ALL THREE levels:
+- beginner_level: Array of 3-4 foundational skills (or empty array [] if none)
+- intermediate_level: Array of 3-4 intermediate skills (or empty array [] if none)
+  - MUST include prerequisites array (use beginner skill names, or [] if independent)
+- advanced_level: Array of 2-3 advanced skills (or empty array [] if none)
+  - MUST include prerequisites array (use intermediate skill names, or [] if independent)
+Each skill object MUST have: skill_name, description, time_estimate, and prerequisites (for intermediate/advanced).
+NEVER omit skill_tree, beginner_level, intermediate_level, or advanced_level. Always provide the structure even if empty.
 `;
 
     const { object } = await generateObject({
@@ -480,26 +497,25 @@ Each skill must have: skill_name, clear description, and realistic time_estimate
           exploration_steps: z.array(z.object({
             type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe('Type of exploration step'),
             description: z.string().describe('Specific, actionable description of the step'),
-            reason: z.string().optional().describe('Why this step is important'),
-          })).min(5).describe('At least 5 exploration steps covering different types'),
+          })).describe('5-7 exploration steps covering different types (project, study, activity, community, person) - use empty array if none'),
           skill_tree: z.object({
             beginner_level: z.array(z.object({
               skill_name: z.string(),
               description: z.string(),
               time_estimate: z.string().describe('e.g., "2-3 weeks", "1 month"'),
-            })).min(3).describe('3-4 foundational skills'),
+            })).describe('3-4 foundational skills - use empty array if none'),
             intermediate_level: z.array(z.object({
               skill_name: z.string(),
               description: z.string(),
               time_estimate: z.string(),
-              prerequisites: z.array(z.string()).describe('Skills from beginner level needed first'),
-            })).min(3).describe('3-4 intermediate skills building on beginner'),
+              prerequisites: z.array(z.string()).describe('Skills from beginner level needed first (use empty array if none)'),
+            })).describe('3-4 intermediate skills building on beginner - use empty array if none'),
             advanced_level: z.array(z.object({
               skill_name: z.string(),
               description: z.string(),
               time_estimate: z.string(),
-              prerequisites: z.array(z.string()).describe('Skills from intermediate level needed first'),
-            })).min(2).describe('2-3 advanced specialized skills'),
+              prerequisites: z.array(z.string()).describe('Skills from intermediate level needed first (use empty array if none)'),
+            })).describe('2-3 advanced specialized skills - use empty array if none'),
           }).describe('Structured learning path from beginner to advanced'),
           first_step: z.string(),
         })),

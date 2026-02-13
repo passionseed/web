@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import {
   AssessmentAnswers,
   DirectionFinderResult,
@@ -10,6 +11,21 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Send,
   Bot,
@@ -79,6 +95,10 @@ export function AIConversation({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [lastSystemPrompt, setLastSystemPrompt] = useState<string>("");
+  const [showDevPreview, setShowDevPreview] = useState(false);
+  const [devSelectedModel, setDevSelectedModel] = useState<string>(
+    model || "gemini-3-flash-preview",
+  );
 
   const handleResetChat = () => {
     if (confirm("Reset chat history? This cannot be undone.")) {
@@ -358,12 +378,28 @@ export function AIConversation({
       return;
     }
 
+    // In development mode, show preview dialog first
+    if (process.env.NODE_ENV === "development" && !showDevPreview) {
+      setShowDevPreview(true);
+      return;
+    }
+
+    // Proceed with generation
+    await proceedWithGeneration();
+  };
+
+  const proceedWithGeneration = async () => {
+    setShowDevPreview(false); // Close preview if open
+
     const generationStartTime = Date.now();
     let cacheHit = false;
     let cacheLookupTime = 0;
     let coreGenerationTime = 0;
     let detailsGenerationTime = 0;
-    let selectedModel = model || "gemini-2.5-flash";
+    let selectedModel =
+      process.env.NODE_ENV === "development"
+        ? devSelectedModel
+        : model || "gemini-3-flash-preview";
     let hadTimeout = false;
     let hadRateLimit = false;
     let errorMessage: string | undefined;
@@ -506,12 +542,16 @@ export function AIConversation({
           (commitmentsResult.commitments?.this_month?.length || 0),
       });
 
-      // Merge results
+      // Merge results while preserving all metadata
       const finalResult: DirectionFinderResult = {
-        ...(coreResult as any),
-        ...(programsResult as any),
-        ...(commitmentsResult as any),
-      };
+        profile: coreResult.profile!,
+        vectors: coreResult.vectors!,
+        programs: programsResult.programs!,
+        commitments: commitmentsResult.commitments!,
+        debugMetadata: (coreResult as any).debugMetadata,
+        programsMetadata: (programsResult as any).debugMetadata,
+        commitmentsMetadata: (commitmentsResult as any).debugMetadata,
+      } as any;
 
       const totalGenerationTime = Date.now() - generationStartTime;
 
@@ -595,8 +635,14 @@ export function AIConversation({
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="bg-gradient-to-br from-purple-500 to-blue-600 p-1.5 md:p-2 rounded-full">
-            <Bot className="w-4 h-4 md:w-5 md:h-5 text-white" />
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-slate-700 bg-white/5 shrink-0 relative flex items-center justify-center">
+            <Image
+              src="/passionseed-logo.svg"
+              alt="PassionSeed"
+              width={48}
+              height={48}
+              className="absolute max-w-none w-[120%] h-[120%] object-contain scale-110 translate-y-0.5 pointer-events-none drop-shadow-lg"
+            />
           </div>
           <div>
             <CardTitle className="text-sm md:text-base text-white">
@@ -690,8 +736,14 @@ export function AIConversation({
       {showIntro ? (
         <CardContent className="flex-1 flex flex-col items-center justify-center p-6 md:p-8 text-center bg-slate-900/50">
           <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500 w-full">
-            <div className="bg-gradient-to-br from-purple-500 to-blue-600 w-14 h-14 md:w-16 md:h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <Bot className="w-7 h-7 md:w-8 md:h-8 text-white" />
+            <div className="bg-slate-800 w-16 h-16 md:w-20 md:h-20 rounded-2xl mx-auto flex items-center justify-center shadow-lg border border-slate-700 bg-white/5 relative">
+              <Image
+                src="/passionseed-logo.svg"
+                alt="PassionSeed"
+                width={100}
+                height={100}
+                className="absolute max-w-none w-[115%] h-[115%] object-contain translate-y-[-2%] drop-shadow-2xl"
+              />
             </div>
 
             <div className="space-y-2">
@@ -756,7 +808,12 @@ export function AIConversation({
                   className={`flex gap-2 md:gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"} group relative`}
                 >
                   {msg.role === "assistant" && (
-                    <Avatar className="w-7 h-7 md:w-8 md:h-8 border border-slate-700 shrink-0 mt-1">
+                    <Avatar className="w-7 h-7 md:w-8 md:h-8 border border-slate-700 shrink-0 mt-1 bg-white/5 overflow-visible relative ml-1">
+                      <AvatarImage
+                        src="/passionseed-logo.svg"
+                        alt="AI Advisor"
+                        className="absolute max-w-none w-[125%] h-[125%] left-1/2 top-1/2 -translate-x-1/2 -translate-y-[45%] object-contain drop-shadow-md"
+                      />
                       <AvatarFallback className="bg-slate-800 text-purple-400">
                         AI
                       </AvatarFallback>
@@ -996,6 +1053,186 @@ export function AIConversation({
           </div>
         </details>
       )}
+      {/* Dev Preview Dialog */}
+      {process.env.NODE_ENV === "development" && (
+        <Dialog open={showDevPreview} onOpenChange={setShowDevPreview}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700 z-[110] [&~div]:z-[100]">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                Generation Preview
+              </DialogTitle>
+              <DialogDescription className="text-slate-400">
+                Configure and review before generating the direction profile
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {/* Model Selection */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-white">
+                  AI Model
+                </label>
+                <Select
+                  value={devSelectedModel}
+                  onValueChange={setDevSelectedModel}
+                >
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {/* Google Models */}
+                    <SelectItem value="gemini-3-flash-preview">
+                      Gemini 3 Flash Preview (Default) - Fast, Low Cost
+                    </SelectItem>
+                    <SelectItem value="gemini-2.5-flash">
+                      Gemini 2.5 Flash - Fast, Low Cost
+                    </SelectItem>
+                    <SelectItem value="gemini-flash-lite-latest">
+                      Gemini Flash Lite - Fastest, Lowest Cost
+                    </SelectItem>
+
+                    {/* OpenAI Models */}
+                    <SelectItem value="gpt-5-mini-2025-08-07">
+                      GPT-5 Mini - Medium Speed, Medium Cost
+                    </SelectItem>
+                    <SelectItem value="gpt-5.2-chat-latest">
+                      GPT-5.2 Chat - Slow, High Cost
+                    </SelectItem>
+                    <SelectItem value="codex-mini-latest">
+                      Codex Mini - Medium Speed, Medium Cost
+                    </SelectItem>
+
+                    {/* Anthropic Models */}
+                    <SelectItem value="claude-haiku-4-5">
+                      Claude Haiku 4.5 - Fast, Medium Cost
+                    </SelectItem>
+
+                    {/* DeepSeek Models */}
+                    <SelectItem value="deepseek-chat">
+                      DeepSeek Chat - Medium Speed, Low Cost
+                    </SelectItem>
+                    <SelectItem value="deepseek-reasoner">
+                      DeepSeek Reasoner (R1) - Slow, Medium Cost
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500">
+                  Selected: <span className="font-mono">{devSelectedModel}</span>
+                </p>
+              </div>
+
+              {/* Generation Info */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-white">
+                  Generation Pipeline
+                </label>
+                <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-slate-300">
+                      Step 1: Core Profile (Energizers, Strengths, Values,
+                      Vectors)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 rounded-full bg-purple-500" />
+                    <span className="text-slate-300">
+                      Step 2: Program Recommendations (Universities & Faculties)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-300">
+                      Step 3: Action Commitments (Weekly & Monthly)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Conversation Summary */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-white">
+                  Conversation Context
+                </label>
+                <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-500">Total Messages:</span>
+                      <span className="text-white font-semibold ml-2">
+                        {messages.length}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">User Responses:</span>
+                      <span className="text-white font-semibold ml-2">
+                        {messages.filter((m) => m.role === "user").length}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Language:</span>
+                      <span className="text-white font-semibold ml-2">
+                        {lang === "th" ? "Thai" : "English"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Cache Check:</span>
+                      <span className="text-emerald-400 font-semibold ml-2">
+                        Enabled ✓
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assessment Answers Preview */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-white">
+                  Assessment Data
+                </label>
+                <details className="bg-slate-800 border border-slate-700 rounded-lg">
+                  <summary className="p-3 cursor-pointer text-sm text-slate-300 hover:text-white">
+                    View raw assessment answers (click to expand)
+                  </summary>
+                  <div className="p-3 pt-0">
+                    <pre className="text-xs text-slate-400 overflow-auto max-h-60 font-mono">
+                      {JSON.stringify(answers, null, 2)}
+                    </pre>
+                  </div>
+                </details>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex gap-3">
+                <div className="text-amber-400 shrink-0">⚠️</div>
+                <div className="text-sm text-amber-200">
+                  <strong>Generation Time:</strong> This may take 30-90 seconds
+                  depending on the model. The process will check cache first
+                  before generating fresh results.
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={() => setShowDevPreview(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={proceedWithGeneration}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate Profile
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Loading Overlay */}
       {loadingStage !== "none" && (
         <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 space-y-8 animate-in fade-in duration-500">

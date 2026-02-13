@@ -14,7 +14,7 @@ export interface RegenerateResult {
 
 /**
  * Regenerate direction profile with specific model(s) for comparison
- * Only accessible by admin users
+ * Only accessible by admin users (or in development mode)
  */
 export async function regenerateDirectionProfile(
   answers: AssessmentAnswers,
@@ -24,23 +24,34 @@ export async function regenerateDirectionProfile(
 ): Promise<RegenerateResult[]> {
   const supabase = await createClient();
 
-  // Check if user is admin
+  // Allow in development mode (NODE_ENV === 'development')
+  const isDevelopment =
+    process.env.NODE_ENV === 'development' ||
+    process.env.VERCEL_ENV === 'preview';
+
+  // Allow everyone in dev/preview to compare models
+  const isAllowedEnv = isDevelopment;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
 
-  // Check admin role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  // If in dev/preview, we can be more lenient, but still track the user if logged in
+  // Check admin role (skip check in dev/preview mode)
+  if (!isAllowedEnv) {
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
 
-  if (profile?.role !== "admin" && profile?.role !== "teacher") {
-    throw new Error("Only admins and teachers can use model comparison");
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "admin") {
+      throw new Error("Only admins can use model comparison");
+    }
   }
 
   // Generate profiles for each model
@@ -85,8 +96,18 @@ export async function regenerateDirectionProfile(
 
 /**
  * Check if current user can access model comparison feature
+ * Returns true for admins only (not teachers)
+ * Always returns true in development mode
  */
 export async function canAccessModelComparison(): Promise<boolean> {
+  // Allow in development mode
+  // Allow in development and preview modes
+  const isDevelopment =
+    process.env.NODE_ENV === 'development' ||
+    process.env.VERCEL_ENV === 'preview';
+
+  if (isDevelopment) return true;
+
   const supabase = await createClient();
 
   const {
@@ -100,5 +121,6 @@ export async function canAccessModelComparison(): Promise<boolean> {
     .eq("id", user.id)
     .single();
 
-  return profile?.role === "admin" || profile?.role === "teacher";
+  // Only admins, not teachers
+  return profile?.role === "admin";
 }

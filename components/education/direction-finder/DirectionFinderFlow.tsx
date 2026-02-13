@@ -158,9 +158,8 @@ function DirectionFinderFlowContent({
           setServerDataId(data.id);
 
           // If we have a result, we should be on the results page unless explicitly overriding via URL or internal state?
-          // But usually we want to show results.
-          if (!result && !searchParams.get("step")) {
-            // Only set if not already set locally
+          // Check data directly because the state update (setResult) is asynchronous
+          if (!searchParams.get("step")) {
             setCurrentStepIndex(STEPS_ORDER.indexOf("results"));
           }
         }
@@ -453,7 +452,29 @@ function DirectionFinderFlowContent({
       );
     }
 
-    if (currentStep === "results" && result) {
+    if (currentStep === "results") {
+      if (!result) {
+        return (
+          <div className="flex flex-col items-center justify-center h-[400px] text-center space-y-6 animate-in fade-in duration-500">
+            <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-slate-800">
+              <RefreshCw className="w-8 h-8 text-slate-500" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">No Result Found</h3>
+              <p className="text-slate-400 max-w-xs mx-auto">
+                We couldn't find your assessment result. You might need to take
+                the assessment again.
+              </p>
+            </div>
+            <Button
+              onClick={() => updateStep(0)}
+              className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-8"
+            >
+              Start New Assessment
+            </Button>
+          </div>
+        );
+      }
       return (
         <div className="relative">
           <DirectionResultsView
@@ -472,7 +493,19 @@ function DirectionFinderFlowContent({
       );
     }
 
-    if (currentStep === "milestone_eval" && selectedVector) {
+    if (currentStep === "milestone_eval") {
+      if (!selectedVector) {
+        return (
+          <div className="flex flex-col items-center justify-center h-[400px] text-center space-y-6">
+            <p className="text-slate-400">
+              Please select a direction from your results first.
+            </p>
+            <Button onClick={() => updateStep(STEPS_ORDER.indexOf("results"))}>
+              View Results
+            </Button>
+          </div>
+        );
+      }
       return (
         <MilestoneEvaluator
           vector={selectedVector}
@@ -483,6 +516,20 @@ function DirectionFinderFlowContent({
     }
 
     if (currentStep === "commitment") {
+      if (!actionPlan?.evaluations) {
+        return (
+          <div className="flex flex-col items-center justify-center h-[400px] text-center space-y-6">
+            <p className="text-slate-400">
+              Please evaluate your milestones first.
+            </p>
+            <Button
+              onClick={() => updateStep(STEPS_ORDER.indexOf("milestone_eval"))}
+            >
+              Go to Evaluation
+            </Button>
+          </div>
+        );
+      }
       return (
         <CommitmentContract
           onComplete={handleCommitmentComplete}
