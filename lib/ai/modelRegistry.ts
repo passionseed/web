@@ -29,6 +29,7 @@ export const maxDuration = 300;
 
 /**
  * Available AI models organized by provider
+ * Currently using 3 providers: Google, Anthropic, and OpenAI
  */
 export const AVAILABLE_MODELS = {
   google: [
@@ -44,10 +45,11 @@ export const AVAILABLE_MODELS = {
     { id: 'gpt-5.2-chat-latest', name: 'GPT-5.2 Chat', speed: 'slow', cost: 'high' },
     // { id: 'codex-mini-latest', name: 'Codex Mini', speed: 'medium', cost: 'medium' },
   ],
-  deepseek: [
-    { id: 'deepseek-chat', name: 'DeepSeek Chat', speed: 'medium', cost: 'low' },
-    { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner (R1)', speed: 'slow', cost: 'medium' },
-  ],
+  // DeepSeek disabled - not used in A/B testing
+  // deepseek: [
+  //   { id: 'deepseek-chat', name: 'DeepSeek Chat', speed: 'medium', cost: 'low' },
+  //   { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner (R1)', speed: 'slow', cost: 'medium' },
+  // ],
 } as const;
 
 /**
@@ -61,7 +63,7 @@ export function getAllModels() {
 
 /**
  * Get AI model instance by name
- * Supports multiple models across 4 providers for A/B testing.
+ * Supports multiple models across 3 providers for A/B testing.
  */
 export function normalizeModelName(modelName?: string): string | undefined {
   if (!modelName) return undefined;

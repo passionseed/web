@@ -1,8 +1,10 @@
 # Testing Concurrent Direction Finder Jobs
 
-This guide shows how to test if the background job system can handle 10+ concurrent users submitting direction finder jobs simultaneously.
+> **⚠️ DEPRECATED**: The cron job system has been removed. This testing guide is kept for historical reference only and the described workflow is no longer functional.
 
-## Prerequisites
+This guide previously showed how to test if the background job system could handle 10+ concurrent users submitting direction finder jobs simultaneously using Vercel cron jobs.
+
+## Prerequisites (Historical)
 
 ### 1. Install tsx (TypeScript executor)
 
@@ -22,7 +24,7 @@ pnpm dev
 npx supabase db push --local
 ```
 
-### 4. Set environment variables
+### 4. Environment Variables (Updated)
 
 Make sure `.env.local` has:
 
@@ -30,7 +32,7 @@ Make sure `.env.local` has:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-CRON_SECRET=your_random_secret
+# CRON_SECRET - NO LONGER NEEDED (removed)
 ```
 
 ---
@@ -194,11 +196,9 @@ This simulates cron running every 3 seconds.
 
 ---
 
-## Testing Workflow
+## Previous Testing Workflow (Deprecated)
 
-### Full Test Flow
-
-Here's how to do a complete test:
+### Full Test Flow (No Longer Functional)
 
 **Terminal 1: Start dev server**
 
@@ -212,10 +212,11 @@ pnpm dev
 pnpm jobs:monitor:watch
 ```
 
-**Terminal 3: Run worker loop** (simulates cron)
+**Terminal 3: Run worker loop** (**REMOVED** - endpoint no longer exists)
 
 ```bash
-pnpm jobs:trigger:loop
+# This command is deprecated:
+# pnpm jobs:trigger:loop
 ```
 
 **Terminal 4: Run load test**
@@ -224,10 +225,7 @@ pnpm jobs:trigger:loop
 pnpm test:load
 ```
 
-Now watch:
-- Terminal 2 shows job status updates in real-time
-- Terminal 3 shows worker processing each step
-- Terminal 4 shows user-by-user completion
+**Note**: Without the worker endpoint, the full testing workflow cannot function as originally designed.
 
 ---
 
@@ -427,7 +425,7 @@ Or wait for auto-cleanup (deletes completed jobs after 30 days).
 
 ---
 
-## Troubleshooting
+## Troubleshooting (Historical Reference)
 
 ### "Module not found: tsx"
 
@@ -443,12 +441,9 @@ Apply migration:
 npx supabase db push --local
 ```
 
-### "Unauthorized" Error
+### "Unauthorized" Error (Deprecated)
 
-Set CRON_SECRET in `.env.local`:
-```bash
-CRON_SECRET=$(openssl rand -base64 32)
-```
+This error was related to `CRON_SECRET` which is no longer used.
 
 ### Jobs Complete but No Result
 
