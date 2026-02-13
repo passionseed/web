@@ -18,8 +18,7 @@ import {
   ChevronLeft,
   MoreHorizontal,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { debounce } from "lodash";
+import { cn, debounce } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
