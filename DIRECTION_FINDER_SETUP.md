@@ -1,10 +1,14 @@
 # Direction Finder Background Job System
 
+> **⚠️ DEPRECATED**: The cron job implementation described in this document has been removed. This document is kept for historical reference only.
+
 ## Problem Solved
 
-The Direction Finder AI generation took 130-190 seconds, which exceeded Vercel's 60-second timeout limit. This system splits the work into 3 steps, each under 60 seconds, and processes them asynchronously in the background.
+The Direction Finder AI generation took 130-190 seconds, which exceeded Vercel's 60-second timeout limit. The previous system split the work into 3 steps, each under 60 seconds, and processed them asynchronously in the background using Vercel cron jobs.
 
-## Architecture
+**Note**: This cron-based approach has been replaced with a different scheduling mechanism.
+
+## Previous Architecture
 
 ### 3-Step Process
 
@@ -12,23 +16,25 @@ The Direction Finder AI generation took 130-190 seconds, which exceeded Vercel's
 2. **Step 2 (Programs)**: Generate recommended programs (~30-40s)
 3. **Step 3 (Commitments)**: Generate commitments (~20-30s)
 
-Each step is independent, resumable, and completes under Vercel's 60s limit.
+Each step was independent, resumable, and completed under Vercel's 60s limit.
 
-### Flow
+### Previous Flow (Deprecated)
 
 ```
 User Request
     ↓
 POST /api/direction/enqueue (returns jobId in <1s)
     ↓
-Vercel Cron runs every 1 minute
+[REMOVED] Vercel Cron runs every 1 minute
     ↓
-POST /api/direction/worker (processes one step)
+[REMOVED] POST /api/direction/worker (processes one step)
     ↓
 Frontend polls GET /api/direction/status/[jobId] (every 3s)
     ↓
 Job complete! Return results to user
 ```
+
+**Note**: The worker and cleanup cron endpoints have been removed.
 
 ### Database Schema
 
@@ -39,7 +45,9 @@ Jobs are tracked in `direction_finder_jobs` table with:
 - Retry logic (max 3 retries)
 - Stuck job recovery (resets after 10 min)
 
-## Setup Instructions
+## Previous Setup Instructions (Deprecated)
+
+The following setup instructions are for the removed cron job system and are kept for historical reference only.
 
 ### 1. Apply Database Migration
 
@@ -53,28 +61,23 @@ This creates:
 - RLS policies
 - Indexes
 
-### 2. Set Environment Variables
+### 2. Environment Variables (Deprecated)
 
-Add to `.env.local`:
+The following environment variables were previously required:
 
 ```bash
-# Supabase (you already have these)
+# Supabase (still required)
 NEXT_PUBLIC_SUPABASE_URL=your_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# Cron Secret (generate a random string)
-CRON_SECRET=your_random_secret_here
+# [REMOVED] Cron Secret (no longer needed)
+# CRON_SECRET=your_random_secret_here
 ```
 
-Generate CRON_SECRET:
-```bash
-openssl rand -base64 32
-```
+### 3. Vercel Cron Configuration (Removed)
 
-### 3. Configure Vercel Cron
-
-The `vercel.json` file is already configured with:
+The `vercel.json` file previously contained cron configuration but has been removed:
 
 ```json
 {
@@ -91,29 +94,7 @@ The `vercel.json` file is already configured with:
 }
 ```
 
-- Worker runs every 1 minute
-- Cleanup runs daily at 2 AM
-
-### 4. Deploy to Vercel
-
-```bash
-git add .
-git commit -m "Add background job system for direction finder"
-git push origin main
-```
-
-### 5. Add Environment Variables to Vercel
-
-In Vercel Dashboard:
-1. Go to Project Settings → Environment Variables
-2. Add `CRON_SECRET` (same value as local)
-3. Ensure `SUPABASE_SERVICE_ROLE_KEY` is set
-
-### 6. Enable Cron in Vercel
-
-Vercel automatically enables cron for projects with `vercel.json` crons.
-
-Check status at: `https://vercel.com/[your-team]/[your-project]/settings/cron`
+These endpoints no longer exist.
 
 ## Usage
 
@@ -202,40 +183,39 @@ Response:
 }
 ```
 
-## How It Works
+## How the Previous System Worked
 
-### Worker Process
+### Worker Process (Deprecated)
 
-1. Cron triggers `/api/direction/worker` every minute
-2. Worker atomically grabs ONE job with pending work
-3. Determines next pending step (core → programs → commitments)
-4. Processes that step (calls AI function)
-5. Saves result to database
-6. Next cron iteration processes next step
+1. Cron triggered `/api/direction/worker` every minute (**removed**)
+2. Worker atomically grabbed ONE job with pending work (**removed**)
+3. Determined next pending step (core → programs → commitments)
+4. Processed that step (called AI function)
+5. Saved result to database
+6. Next cron iteration processed next step
 
 ### Atomic Locking
 
-Uses PostgreSQL `SELECT FOR UPDATE SKIP LOCKED` to prevent:
+The system used PostgreSQL `SELECT FOR UPDATE SKIP LOCKED` to prevent:
 - Race conditions (two workers processing same job)
 - Double execution
 - Lost updates
 
 ### Retry Logic
 
-- Each step retries up to 3 times on failure
+- Each step retried up to 3 times on failure
 - Exponential backoff handled by cron schedule
 - After 3 failures, job marked as `failed`
 
-### Stuck Job Recovery
+### Stuck Job Recovery (Deprecated)
 
-- Daily cleanup cron resets jobs stuck in `processing` > 10 minutes
-- Prevents jobs from getting permanently stuck due to crashes
+- Daily cleanup cron reset jobs stuck in `processing` > 10 minutes (**removed**)
+- This feature is no longer available
 
-### Old Job Cleanup
+### Old Job Cleanup (Deprecated)
 
-- Completed jobs older than 30 days are automatically deleted
-- Keeps database size manageable
-- Failed jobs kept for debugging
+- Completed jobs older than 30 days were automatically deleted (**removed**)
+- This cleanup process is no longer automated
 
 ## Monitoring
 
@@ -272,13 +252,11 @@ Look for log messages:
 - `[Worker xxx] Processing step: core/programs/commitments`
 - `[Worker xxx] Step completed`
 
-## Troubleshooting
+## Troubleshooting (Historical Reference)
 
 ### Job Stuck in Processing
 
-**Cause**: Worker crashed or timed out
-
-**Fix**: Wait for daily cleanup cron (2 AM) or manually reset:
+**Previous Fix (Deprecated)**: Wait for daily cleanup cron (2 AM) or manually reset:
 
 ```sql
 UPDATE direction_finder_jobs
@@ -290,29 +268,23 @@ WHERE id = 'your-job-id';
 
 ### Job Failing Repeatedly
 
-**Cause**: AI timeout or error
-
-**Check logs**:
-1. Go to Vercel Dashboard → Functions → `/api/direction/worker`
+**Previous Fix (Deprecated)**:
+1. Check Vercel Dashboard → Functions → `/api/direction/worker` (**no longer exists**)
 2. Look for error messages
 
-**Fix**:
+**Current Fix**:
 - Check AI model availability
 - Verify Supabase connection
 - Check if prompt is too large
 
-### Worker Not Running
+### Worker Not Running (No Longer Applicable)
 
-**Cause**: Cron not configured
-
-**Fix**:
-1. Check `vercel.json` exists
-2. Verify `CRON_SECRET` is set in Vercel
-3. Check cron status in Vercel Dashboard
+**This issue is no longer relevant** as the worker endpoint has been removed.
 
 ### Polling Not Updating
 
-**Cause**: Frontend not polling correctly
+**Still Relevant**:
+Frontend polling should still work if properly configured.
 
 **Debug**:
 ```tsx

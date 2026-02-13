@@ -389,21 +389,21 @@ export default function FinishProfilePage() {
   }
 
   return (
-    <div className="container max-w-4xl py-10">
+    <div className="container max-w-4xl py-6 px-4">
       <Card className="w-full max-w-2xl mx-auto shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">
+        <CardHeader className="space-y-2 px-4 pt-6 pb-4">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-center leading-tight">
             Complete Your Profile
           </CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-xs sm:text-sm">
             Set up your profile and select your skills before continuing
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleProfileUpdate} className="space-y-8">
+        <CardContent className="px-4 sm:px-6">
+          <form onSubmit={handleProfileUpdate} className="space-y-6 sm:space-y-8">
             {/* Basic Profile Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b pb-2">
+              <h3 className="text-base sm:text-lg font-medium border-b pb-2">
                 Basic Information
               </h3>
 
@@ -481,10 +481,10 @@ export default function FinishProfilePage() {
 
             {/* Education & Background Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b pb-2">
+              <h3 className="text-base sm:text-lg font-medium border-b pb-2">
                 Education & Background
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Help us personalize your learning journey based on your current education level
               </p>
 
@@ -497,48 +497,48 @@ export default function FinishProfilePage() {
                   <Button
                     type="button"
                     variant={educationLevel === 'high_school' ? "default" : "outline"}
-                    className="h-auto p-4 justify-start text-left"
+                    className="h-auto p-3 sm:p-4 justify-start text-left"
                     onClick={() => setEducationLevel('high_school')}
                   >
-                    <div className="flex items-start gap-3 w-full">
-                      <School className="h-5 w-5 mt-1 flex-shrink-0" />
-                      <div>
-                        <div className="font-semibold text-sm">High School</div>
-                        <div className="text-xs text-muted-foreground mt-1">
+                    <div className="flex items-start gap-2 sm:gap-3 w-full min-w-0">
+                      <School className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm sm:text-base break-words">High School</div>
+                        <div className="text-xs text-muted-foreground mt-1 break-words">
                           Currently in high school
                         </div>
                       </div>
                     </div>
                   </Button>
-                  
+
                   <Button
                     type="button"
                     variant={educationLevel === 'university' ? "default" : "outline"}
-                    className="h-auto p-4 justify-start text-left"
+                    className="h-auto p-3 sm:p-4 justify-start text-left"
                     onClick={() => setEducationLevel('university')}
                   >
-                    <div className="flex items-start gap-3 w-full">
-                      <GraduationCap className="h-5 w-5 mt-1 flex-shrink-0" />
-                      <div>
-                        <div className="font-semibold text-sm">University</div>
-                        <div className="text-xs text-muted-foreground mt-1">
+                    <div className="flex items-start gap-2 sm:gap-3 w-full min-w-0">
+                      <GraduationCap className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm sm:text-base break-words">University</div>
+                        <div className="text-xs text-muted-foreground mt-1 break-words">
                           Currently in university
                         </div>
                       </div>
                     </div>
                   </Button>
-                  
+
                   <Button
                     type="button"
                     variant={educationLevel === 'unaffiliated' ? "default" : "outline"}
-                    className="h-auto p-4 justify-start text-left"
+                    className="h-auto p-3 sm:p-4 justify-start text-left"
                     onClick={() => setEducationLevel('unaffiliated')}
                   >
-                    <div className="flex items-start gap-3 w-full">
-                      <Building className="h-5 w-5 mt-1 flex-shrink-0" />
-                      <div>
-                        <div className="font-semibold text-sm">Unaffiliated</div>
-                        <div className="text-xs text-muted-foreground mt-1">
+                    <div className="flex items-start gap-2 sm:gap-3 w-full min-w-0">
+                      <Building className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm sm:text-base break-words">Unaffiliated</div>
+                        <div className="text-xs text-muted-foreground mt-1 break-words">
                           Not currently in formal education
                         </div>
                       </div>
@@ -550,10 +550,10 @@ export default function FinishProfilePage() {
 
             {/* Language Preference Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b pb-2">
+              <h3 className="text-base sm:text-lg font-medium border-b pb-2">
                 Language Preference
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Choose your preferred language for the interface
               </p>
 
@@ -561,35 +561,35 @@ export default function FinishProfilePage() {
                 <Button
                   type="button"
                   variant={preferredLanguage === 'en' ? "default" : "outline"}
-                  className="h-auto p-4 justify-start text-left"
+                  className="h-auto p-3 sm:p-4 justify-start text-left"
                   onClick={() => setPreferredLanguage('en')}
                 >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 flex-shrink-0">
-                      <span className="text-lg">🇺🇸</span>
+                  <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/50 flex-shrink-0">
+                      <span className="text-xl">🇺🇸</span>
                     </div>
-                    <div>
-                      <div className="font-semibold text-sm">English</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm sm:text-base break-words">English</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 break-words">
                         English
                       </div>
                     </div>
                   </div>
                 </Button>
-                
+
                 <Button
                   type="button"
                   variant={preferredLanguage === 'th' ? "default" : "outline"}
-                  className="h-auto p-4 justify-start text-left"
+                  className="h-auto p-3 sm:p-4 justify-start text-left"
                   onClick={() => setPreferredLanguage('th')}
                 >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 flex-shrink-0">
-                      <span className="text-lg">🇹🇭</span>
+                  <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/50 flex-shrink-0">
+                      <span className="text-xl">🇹🇭</span>
                     </div>
-                    <div>
-                      <div className="font-semibold text-sm">Thai</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm sm:text-base break-words">Thai</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 break-words">
                         ภาษาไทย
                       </div>
                     </div>
@@ -600,8 +600,8 @@ export default function FinishProfilePage() {
 
             {/* Skills Selection */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium border-b pb-2">Your Skills</h3>
-              <p className="text-sm text-muted-foreground mb-2">
+              <h3 className="text-base sm:text-lg font-medium border-b pb-2">Your Skills</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                 Choose your top 5 skills you excel in
               </p>
               <p className="text-xs text-muted-foreground">
@@ -612,7 +612,7 @@ export default function FinishProfilePage() {
               {!selectedCategory ? (
                 /* Step 1: Category Selection */
                 <div className="space-y-4">
-                  <h4 className="font-medium">
+                  <h4 className="font-medium text-sm sm:text-base">
                     Step 1: Choose a skill category
                   </h4>
                   <div className="space-y-3">
@@ -622,18 +622,18 @@ export default function FinishProfilePage() {
                           key={categoryKey}
                           type="button"
                           variant="outline"
-                          className="w-full h-auto p-4 justify-start text-left"
+                          className="w-full h-auto p-3 sm:p-4 justify-start text-left overflow-hidden"
                           onClick={() => setSelectedCategory(categoryKey)}
                         >
-                          <div className="flex items-start gap-3 w-full">
-                            <div className="flex-shrink-0 mt-1">
+                          <div className="flex items-start gap-2 sm:gap-3 w-full min-w-0">
+                            <div className="flex-shrink-0 mt-0.5">
                               {category.icon}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm mb-1">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <div className="font-medium text-sm sm:text-base mb-1 break-words">
                                 {category.name}
                               </div>
-                              <div className="text-xs text-muted-foreground leading-relaxed">
+                              <div className="text-xs text-muted-foreground leading-snug break-words overflow-wrap-anywhere">
                                 {category.description}
                               </div>
                             </div>
@@ -707,28 +707,30 @@ export default function FinishProfilePage() {
 
               {/* Selected Skills Summary */}
               {selectedSkills.length > 0 && (
-                <div className="space-y-3 mt-6 p-4 border rounded-lg bg-muted/30">
-                  <h4 className="font-medium">
+                <div className="space-y-3 mt-6 p-3 sm:p-4 border rounded-lg bg-muted/30 overflow-hidden">
+                  <h4 className="font-medium text-sm sm:text-base break-words">
                     Selected Skills ({selectedSkills.length}/5)
                     {selectedSkills.length === 5 && (
-                      <span className="text-green-600 text-sm ml-2">
+                      <span className="text-green-600 text-xs sm:text-sm ml-2">
                         ✓ Complete
                       </span>
                     )}
                   </h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 max-w-full">
                     {selectedSkills.map((skill) => (
                       <div
                         key={skill.name}
-                        className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full"
+                        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 bg-primary/10 text-primary rounded-full max-w-full"
                       >
-                        <div className="flex items-center gap-1">
-                          {
-                            skillCategories[
-                              skill.category as keyof typeof skillCategories
-                            ]?.icon
-                          }
-                          <span className="font-medium text-xs">
+                        <div className="flex items-center gap-1 min-w-0 flex-1">
+                          <div className="flex-shrink-0">
+                            {
+                              skillCategories[
+                                skill.category as keyof typeof skillCategories
+                              ]?.icon
+                            }
+                          </div>
+                          <span className="font-medium text-xs truncate">
                             {skill.name}
                           </span>
                         </div>
@@ -737,7 +739,7 @@ export default function FinishProfilePage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveSkill(skill.name)}
-                          className="h-4 w-4 p-0 hover:bg-destructive/20"
+                          className="h-4 w-4 p-0 hover:bg-destructive/20 flex-shrink-0"
                         >
                           <X className="h-2 w-2" />
                         </Button>
@@ -750,7 +752,7 @@ export default function FinishProfilePage() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full text-sm sm:text-base"
               disabled={submitting || !!usernameError}
             >
               {submitting
