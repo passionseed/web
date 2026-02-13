@@ -13,31 +13,26 @@ interface ModelBucket {
 
 /**
  * A/B testing model distribution
- * Total: 100% across 9 buckets from 4 providers
+ * Total: 100% across 7 buckets from 3 providers
  *
  * Distribution strategy:
- * - 35% Google (2 active variants: gemini-3-flash-preview, gemini-flash-lite-latest)
- * - 23% Anthropic (1 variant: claude-haiku-4-5)
- * - 22% OpenAI (2 variants: gpt-5-mini, gpt-5.2-chat)
- * - 20% DeepSeek (2 variants: deepseek-chat, deepseek-reasoner)
+ * - 40% Google (2 active variants: gemini-3-flash-preview, gemini-flash-lite-latest)
+ * - 30% Anthropic (1 variant: claude-haiku-4-5)
+ * - 30% OpenAI (2 variants: gpt-5-mini, gpt-5.2-chat)
  */
 const MODEL_BUCKETS: ModelBucket[] = [
-  // Google Models (35%)
+  // Google Models (40%)
   // Legacy gemini-3-flash-preview bucket.
-  { model: 'gemini-3-flash-preview', minHash: 0, maxHash: 10, percentage: 10 },
-  { model: 'gemini-3-flash-preview', minHash: 10, maxHash: 25, percentage: 15 },
-  { model: 'gemini-flash-lite-latest', minHash: 25, maxHash: 35, percentage: 10 },
+  { model: 'gemini-3-flash-preview', minHash: 0, maxHash: 15, percentage: 15 },
+  { model: 'gemini-3-flash-preview', minHash: 15, maxHash: 30, percentage: 15 },
+  { model: 'gemini-flash-lite-latest', minHash: 30, maxHash: 40, percentage: 10 },
 
-  // Anthropic Claude (23%)
-  { model: 'claude-haiku-4-5', minHash: 35, maxHash: 58, percentage: 23 },
+  // Anthropic Claude (30%)
+  { model: 'claude-haiku-4-5', minHash: 40, maxHash: 70, percentage: 30 },
 
-  // OpenAI Models (22%)
-  { model: 'gpt-5-mini-2025-08-07', minHash: 58, maxHash: 70, percentage: 12 },
-  { model: 'gpt-5.2-chat-latest', minHash: 70, maxHash: 80, percentage: 10 },
-
-  // DeepSeek Models (20%)
-  { model: 'deepseek-chat', minHash: 80, maxHash: 90, percentage: 10 },
-  { model: 'deepseek-reasoner', minHash: 90, maxHash: 100, percentage: 10 },
+  // OpenAI Models (30%)
+  { model: 'gpt-5-mini-2025-08-07', minHash: 70, maxHash: 85, percentage: 15 },
+  { model: 'gpt-5.2-chat-latest', minHash: 85, maxHash: 100, percentage: 15 },
 ];
 
 /**
