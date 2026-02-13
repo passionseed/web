@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Users, Calendar } from "lucide-react";
@@ -8,15 +8,22 @@ import { CreateRoomButton } from "@/components/seeds/CreateRoomButton";
 import { SeedSettingsButton } from "@/components/seeds/SeedSettingsButton";
 import { markdownToSafeHtml } from "@/lib/security/sanitize-html";
 import { BeginPathButton } from "@/components/pathlab/BeginPathButton";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface SeedDetailPageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    suggested?: string;
+    suggestError?: string;
+  }>;
 }
 
-export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
+export default async function SeedDetailPage({ params, searchParams }: SeedDetailPageProps) {
   const { id } = await params;
+  const query = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -127,6 +134,39 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
   const descriptionHtml = seed.description
     ? markdownToSafeHtml(seed.description.replace(/\n/g, "  \n"))
     : null;
+
+  async function submitPathSuggestion(formData: FormData) {
+    "use server";
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      redirect(`/login?next=/seeds/${id}`);
+    }
+
+    const suggestedPath = String(formData.get("suggestedPath") || "").trim();
+    const notes = String(formData.get("notes") || "").trim();
+
+    if (!suggestedPath) {
+      redirect(`/seeds/${id}?suggestError=${encodeURIComponent("Please tell us the path you want to explore.")}`);
+    }
+
+    const { error } = await supabase.from("seed_path_suggestions").insert({
+      user_id: user.id,
+      seed_id: id,
+      suggested_path: suggestedPath,
+      notes: notes || null,
+    });
+
+    if (error) {
+      redirect(`/seeds/${id}?suggestError=${encodeURIComponent("Couldn't save your suggestion right now. Please try again.")}`);
+    }
+
+    redirect(`/seeds/${id}?suggested=1`);
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden font-sans">
@@ -319,6 +359,67 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
               </div>
             )}
           </div>
+        </section>
+
+        <section className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8">
+          <h2 className="text-2xl font-semibold text-white mb-3 flex items-center gap-2">
+            <span className="w-1 h-8 bg-emerald-500 rounded-full mr-2" />
+            Suggest a path to explore
+          </h2>
+          <p className="text-neutral-300 mb-6">
+            Tell us what direction you want to explore next so instructors can design future learning paths around student interests.
+          </p>
+
+          {query.suggested === "1" && (
+            <div className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+              Thanks! Your path suggestion has been saved.
+            </div>
+          )}
+
+          {query.suggestError && (
+            <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {query.suggestError}
+            </div>
+          )}
+
+          {user ? (
+            <form action={submitPathSuggestion} className="space-y-4 max-w-2xl">
+              <div className="space-y-2">
+                <label htmlFor="suggestedPath" className="text-sm text-white font-medium">
+                  Path you want to explore
+                </label>
+                <Input
+                  id="suggestedPath"
+                  name="suggestedPath"
+                  placeholder="e.g. AI product design for education"
+                  required
+                  maxLength={160}
+                  className="bg-black/20 border-white/20 text-white placeholder:text-neutral-400"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="notes" className="text-sm text-white font-medium">
+                  Why this path? (optional)
+                </label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  placeholder="Share goals, topics, or projects you'd like to build."
+                  maxLength={600}
+                  className="bg-black/20 border-white/20 text-white placeholder:text-neutral-400 min-h-28"
+                />
+              </div>
+              <Button type="submit" className="bg-white text-black hover:bg-neutral-200 font-semibold">
+                Submit suggestion
+              </Button>
+            </form>
+          ) : (
+            <Link href={`/login?next=/seeds/${seed.id}`}>
+              <Button className="bg-white text-black hover:bg-neutral-200 font-semibold">
+                Sign in to suggest a path
+              </Button>
+            </Link>
+          )}
         </section>
       </div>
     </div>
