@@ -27,4 +27,4 @@ Please refer to the new scheduling mechanism documentation for updated testing p
 - `CRON_SECRET` environment variable requirement
 - Manual worker trigger scripts
 
-See `TESTING_CONCURRENT_JOBS.md` for historical reference.
+Please refer to the project documentation for information about the replacement job processing mechanism (to be implemented).
