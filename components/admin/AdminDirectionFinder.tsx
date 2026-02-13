@@ -379,7 +379,7 @@ export function AdminDirectionFinder() {
                           <ul className="list-disc pl-4 text-sm text-muted-foreground">
                             {selectedResult.result.profile.energizers.map(
                               (e, i) => (
-                                <li key={i}>{e}</li>
+                                <li key={i}>{e.name}</li>
                               )
                             )}
                           </ul>
@@ -389,7 +389,7 @@ export function AdminDirectionFinder() {
                           <ul className="list-disc pl-4 text-sm text-muted-foreground">
                             {selectedResult.result.profile.strengths.map(
                               (s, i) => (
-                                <li key={i}>{s}</li>
+                                <li key={i}>{s.name}</li>
                               )
                             )}
                           </ul>
@@ -399,7 +399,7 @@ export function AdminDirectionFinder() {
                           <ul className="list-disc pl-4 text-sm text-muted-foreground">
                             {selectedResult.result.profile.values.map(
                               (v, i) => (
-                                <li key={i}>{v}</li>
+                                <li key={i}>{v.name}</li>
                               )
                             )}
                           </ul>

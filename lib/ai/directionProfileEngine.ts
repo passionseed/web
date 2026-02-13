@@ -97,17 +97,23 @@ For every Energizer, Strength, and Value, provide:
 - **Description**: A user-friendly explanation.
 - **Insight**: "Why this matters for YOU" based on the assessment data (e.g., "because you love [Q1 activity]...").
 
-## Match Score Calculation
-For each career vector, calculate fit as:
-- Zone of Genius alignment (Q2 high-high): 25 points
-- Proud Moment/Values alignment (Q5): 20 points (Increased weight)
-- Flow state connection (Q1): 15 points
-- External validation (Q4): 10 points
-- Environment fit (Q3): 10 points (Decreased weight - Low Stakes)
-- Growth potential (Q2 high-low): 10 points
-- Unique advantage (Q6): 10 points bonus
+## Match Score Calculation & Integrity (CRITICAL)
+Be conservative and critical. Avoid "grade inflation". A score of 90+ should be rare and requires overwhelming evidence across all data points.
 
-Total = /100
+1. **Passion Score (Emotional Fit)**:
+   - Must be derived from **Q1 (Flow)** and **Q5 (Values/Proud Moment)**.
+   - If a career vector does not directly ignite the "Gold Signal" from their Q5 story, the Passion score **cannot exceed 75%**.
+   - If Q1 activity is completely unrelated to the industry, be critical.
+
+2. **Skill Score (Current Capability)**:
+   - Must be derived from **Q2 (Zone of Genius)** and **Q4 (Reputation)**.
+   - If the vector aligns with a **Growth Edge** (Q2: High Interest, Low Skill), the Skill score **MUST NOT exceed 50%** (they are just starting).
+   - Only "Zone of Genius" vectors should receive Skill scores above 80%.
+
+3. **Overall Match Score**:
+   - A weighted reflection of Passion (50%) and Skill (50%).
+   - Deduct points for significant mismatches in Q3 (Work Style) even if it's "low stakes".
+   - Total = /100.
 
 ## Exploration Steps & Skill Tree Requirements
 For EACH career vector, you MUST provide:
@@ -247,9 +253,9 @@ Include an "evidence_used" object in each vector showing you used data from Q1-Q
             value_alignment: z.string(),
           }),
           match_scores: z.object({
-            overall: z.number().describe('Overall match score from 0-100'),
-            passion: z.number().describe('Passion alignment score from 0-100'),
-            skill: z.number().describe('Skill alignment score from 0-100'),
+            overall: z.number().describe('Overall match score (0-100). Be conservative and critical.'),
+            passion: z.number().describe('Passion alignment (0-100). Capped at 75 if not a Q5 Gold Signal match.'),
+            skill: z.number().describe('Current skill level (0-100). Capped at 50 for Growth Edges.'),
           }),
           exploration_steps: z.array(z.object({
             type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe('Type of exploration step'),
@@ -490,9 +496,9 @@ NEVER omit skill_tree, beginner_level, intermediate_level, or advanced_level. Al
             value_alignment: z.string(),
           }),
           match_scores: z.object({
-            overall: z.number().describe('Overall match score from 0-100'),
-            passion: z.number().describe('Passion alignment score from 0-100'),
-            skill: z.number().describe('Skill alignment score from 0-100'),
+            overall: z.number().describe('Overall match score (0-100). Be conservative and critical.'),
+            passion: z.number().describe('Passion alignment (0-100). Capped at 75 if not a Q5 Gold Signal match.'),
+            skill: z.number().describe('Current skill level (0-100). Capped at 50 for Growth Edges.'),
           }),
           first_step: z.string(),
         })),

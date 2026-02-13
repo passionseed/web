@@ -272,7 +272,7 @@ export function DirectionResultsView({
   };
 
   return (
-    <div className="animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto relative px-4 sm:px-6">
+    <div className="animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto relative px-2 sm:px-6">
       <div ref={resultsRef} className="space-y-4">
         {/* Top Navigation */}
         <div
@@ -430,6 +430,28 @@ export function DirectionResultsView({
           </div>
         </div>
 
+        {/* Education & Programs Section */}
+        {result.programs && result.programs.length > 0 && (
+          <div className="space-y-8 pt-8">
+            <div className="flex items-center gap-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+              <h2 className="text-2xl md:text-3xl font-bold text-center text-white py-1 flex items-center gap-3">
+                <GraduationCap className="w-8 h-8 text-indigo-400" />
+                {lang === "th"
+                  ? "คณะและหลักสูตรที่แนะนำ"
+                  : "Education & Programs"}
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {result.programs.map((program, idx) => (
+                <ProgramCard key={idx} program={program} lang={lang} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Dev View Panel */}
         {isDev && mode === "assessment" && (
           <div className="mt-12">
@@ -437,11 +459,11 @@ export function DirectionResultsView({
               result={result}
               onRegenerateSection={async (section, prompt, model) => {
                 toast.loading(`Regenerating ${section}...`, {
-                  id: 'regenerate-section',
+                  id: "regenerate-section",
                 });
                 // TODO: Implement section-specific regeneration
                 toast.info("Section regeneration coming soon!", {
-                  id: 'regenerate-section',
+                  id: "regenerate-section",
                 });
               }}
             />
@@ -784,6 +806,7 @@ function PathCard({
   lang?: Language;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [activeSkillLevel, setActiveSkillLevel] = useState<1 | 2 | 3>(1);
   const isTop = index === 0;
 
   // Rarity Colors
@@ -828,25 +851,26 @@ function PathCard({
           </div>
 
           <div className="flex items-start justify-between">
-            <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-indigo-300 transition-colors py-1 leading-tight">
-              {vector.industry || vector.name}
-            </h3>
+            <div className="space-y-1">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-indigo-300 transition-colors py-1 leading-tight">
+                {vector.name}
+              </h3>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-400 font-medium">
+                <span className="text-sm md:text-base text-indigo-400">
+                  {vector.role}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-slate-700 hidden md:block" />
+                <span className="text-xs md:text-sm uppercase tracking-wider opacity-70">
+                  {vector.industry}
+                </span>
+              </div>
+            </div>
             <span className="text-4xl text-slate-800 font-black hidden sm:block">
               0{index + 1}
             </span>
           </div>
 
-          {/* Mobile only rank number */}
-          <div className="flex justify-between items-center sm:hidden">
-            <span className="text-sm text-slate-400 font-medium">
-              {vector.role}
-            </span>
-            <span className="text-2xl text-slate-800 font-black">
-              0{index + 1}
-            </span>
-          </div>
-
-          <p className="text-slate-300 leading-relaxed text-base sm:text-lg hidden sm:block">
+          <p className="text-slate-300 leading-relaxed text-base sm:text-lg">
             {vector.fit_reason.interest_alignment}
           </p>
 
@@ -1009,14 +1033,43 @@ function PathCard({
           {/* Skill Tree Section - Full Width */}
           {vector.skill_tree && (
             <div className="mt-8 pt-8 border-t border-white/5">
-              <h4 className="flex items-center gap-2 text-emerald-300 font-semibold mb-6">
-                <Award className="w-5 h-5" /> {t.skills_label || "Skill Tree"}{" "}
-                {lang === "th" ? "(เส้นทางการเรียนรู้)" : "(Learning Path)"}
-              </h4>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <h4 className="flex items-center gap-2 text-emerald-300 font-semibold">
+                  <Award className="w-5 h-5" /> {t.skills_label || "Skill Tree"}{" "}
+                  {lang === "th" ? "(เส้นทางการเรียนรู้)" : "(Learning Path)"}
+                </h4>
+
+                {/* Mobile Level Selector */}
+                <div className="flex sm:hidden p-1 bg-slate-900/50 border border-slate-700/50 rounded-xl">
+                  {[1, 2, 3].map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => setActiveSkillLevel(level as 1 | 2 | 3)}
+                      className={cn(
+                        "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
+                        activeSkillLevel === level
+                          ? level === 1
+                            ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                            : level === 2
+                              ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                              : "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                          : "text-slate-500",
+                      )}
+                    >
+                      LEVEL {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Beginner Level */}
-                <div className="space-y-3">
+                <div
+                  className={cn(
+                    "space-y-3",
+                    activeSkillLevel !== 1 && "hidden md:block",
+                  )}
+                >
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-8 w-8 rounded-full bg-green-500/20 border-2 border-green-500 flex items-center justify-center text-green-300 font-bold text-sm">
                       1
@@ -1044,7 +1097,12 @@ function PathCard({
                 </div>
 
                 {/* Intermediate Level */}
-                <div className="space-y-3">
+                <div
+                  className={cn(
+                    "space-y-3",
+                    activeSkillLevel !== 2 && "hidden md:block",
+                  )}
+                >
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-8 w-8 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center text-blue-300 font-bold text-sm">
                       2
@@ -1079,7 +1137,12 @@ function PathCard({
                 </div>
 
                 {/* Advanced Level */}
-                <div className="space-y-3">
+                <div
+                  className={cn(
+                    "space-y-3",
+                    activeSkillLevel !== 3 && "hidden md:block",
+                  )}
+                >
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-8 w-8 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center text-purple-300 font-bold text-sm">
                       3
@@ -1126,6 +1189,73 @@ function PathCard({
                 Select This Path <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Sub-component: ProgramCard
+function ProgramCard({ program, lang }: { program: any; lang: string }) {
+  const matchColors = {
+    High: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10",
+    Good: "text-blue-400 border-blue-500/30 bg-blue-500/10",
+    Stretch: "text-purple-400 border-purple-500/30 bg-purple-500/10",
+  };
+
+  return (
+    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-slate-700 transition-all group relative overflow-hidden h-full flex flex-col">
+      <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+        <GraduationCap className="w-12 h-12" />
+      </div>
+
+      <div className="flex justify-between items-start relative z-10">
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-[10px] font-bold uppercase tracking-wider",
+            matchColors[program.match_level as keyof typeof matchColors],
+          )}
+        >
+          {program.match_level} Match
+        </Badge>
+        <div className="text-right">
+          <div className="text-xl font-bold text-white">
+            {program.match_percentage}%
+          </div>
+          <div className="text-[10px] text-slate-500 uppercase tracking-tighter">
+            FIT SCORE
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2 relative z-10 flex-1">
+        <h4 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+          {program.name}
+        </h4>
+        <p className="text-sm text-slate-300 leading-relaxed line-clamp-4">
+          {program.reason}
+        </p>
+      </div>
+
+      {(program.deadline || program.application_link) && (
+        <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs mt-auto">
+          {program.deadline && (
+            <span className="text-slate-500">
+              Deadline:{" "}
+              <span className="text-slate-300">{program.deadline}</span>
+            </span>
+          )}
+          {program.application_link && (
+            <a
+              href={program.application_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
+            >
+              Apply Now <ArrowRight className="w-3 h-3" />
+            </a>
           )}
         </div>
       )}

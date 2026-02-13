@@ -30,14 +30,7 @@ type FlowStep = "tos" | "ikigai" | "ai-chat" | "results";
 
 // Map our custom steps to CoreAssessment steps
 // CoreAssessment expects: 'intro' | 'q1' | ... | 'q6' | ...
-const IKIGAI_STEPS: AssessmentStep[] = [
-  "intro",
-  "q1",
-  "q2",
-  "q3",
-  "q4",
-  "q5",
-];
+const IKIGAI_STEPS: AssessmentStep[] = ["intro", "q1", "q2", "q3", "q4", "q5"];
 
 export function NewNorthStarFlow() {
   return (
@@ -255,7 +248,7 @@ function NewNorthStarFlowContent() {
   return (
     <div
       className={cn(
-        "w-full min-h-screen",
+        "w-full min-h-screen px-2 sm:px-8",
         currentFlowStep === "ai-chat"
           ? "" // Fullscreen for chat on mobile
           : "container mx-auto py-8", // Normal container for other steps
@@ -321,7 +314,7 @@ function NewNorthStarFlowContent() {
         )}
 
         {currentFlowStep === "results" && result && (
-          <div className="px-4 sm:px-6">
+          <div className="px-2 sm:px-6">
             <DirectionResultsView
               result={result}
               answers={answers as AssessmentAnswers}
