@@ -645,7 +645,7 @@ export function AIConversation({
   return (
     <Card
       className={cn(
-        "flex flex-col bg-slate-900 border-slate-700 relative h-[100dvh] max-h-screen overflow-hidden",
+        "flex flex-col bg-slate-900 border-slate-700 relative h-full",
         className,
       )}
     >
