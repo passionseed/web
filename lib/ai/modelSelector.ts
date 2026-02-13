@@ -17,8 +17,8 @@ interface ModelBucket {
  *
  * Distribution strategy:
  * - 35% Google (2 active variants: gemini-3-flash-preview, gemini-flash-lite-latest)
- * - 13% Anthropic (1 variant: claude-haiku-4-5)
- * - 32% OpenAI (3 variants: gpt-5-mini, gpt-5.2-chat, codex-mini)
+ * - 23% Anthropic (1 variant: claude-haiku-4-5)
+ * - 22% OpenAI (2 variants: gpt-5-mini, gpt-5.2-chat)
  * - 20% DeepSeek (2 variants: deepseek-chat, deepseek-reasoner)
  */
 const MODEL_BUCKETS: ModelBucket[] = [
@@ -28,13 +28,12 @@ const MODEL_BUCKETS: ModelBucket[] = [
   { model: 'gemini-3-flash-preview', minHash: 10, maxHash: 25, percentage: 15 },
   { model: 'gemini-flash-lite-latest', minHash: 25, maxHash: 35, percentage: 10 },
 
-  // Anthropic Claude (13%)
-  { model: 'claude-haiku-4-5', minHash: 35, maxHash: 48, percentage: 13 },
+  // Anthropic Claude (23%)
+  { model: 'claude-haiku-4-5', minHash: 35, maxHash: 58, percentage: 23 },
 
-  // OpenAI Models (32%)
-  { model: 'gpt-5-mini-2025-08-07', minHash: 48, maxHash: 60, percentage: 12 },
-  { model: 'gpt-5.2-chat-latest', minHash: 60, maxHash: 70, percentage: 10 },
-  { model: 'codex-mini-latest', minHash: 70, maxHash: 80, percentage: 10 },
+  // OpenAI Models (22%)
+  { model: 'gpt-5-mini-2025-08-07', minHash: 58, maxHash: 70, percentage: 12 },
+  { model: 'gpt-5.2-chat-latest', minHash: 70, maxHash: 80, percentage: 10 },
 
   // DeepSeek Models (20%)
   { model: 'deepseek-chat', minHash: 80, maxHash: 90, percentage: 10 },

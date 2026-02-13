@@ -10,6 +10,7 @@ import {
     generateDirectionProfileDetails as generateDetailsLogic,
     generatePrograms as generateProgramsLogic,
     generateCommitments as generateCommitmentsLogic,
+    generateVectorDetails as generateVectorDetailsLogic,
 } from "@/lib/ai/directionProfileEngine";
 import { DirectionFinderResult } from "@/types/direction-finder";
 
@@ -65,4 +66,13 @@ export async function generateCommitments(
     language: 'en' | 'th' = 'en'
 ) {
     return generateCommitmentsLogic(coreResult, answers, modelName, language);
+}
+
+export async function generateVectorDetails(
+    vector: { name: string; industry: string; role: string; specialization: string },
+    answers: AssessmentAnswers,
+    modelName?: string,
+    language: 'en' | 'th' = 'en'
+) {
+    return generateVectorDetailsLogic(vector, answers, modelName, language);
 }
