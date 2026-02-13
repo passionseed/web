@@ -205,6 +205,32 @@ function DirectionFinderFlowContent({
     }
   }, []);
 
+  // Disable zoom for AI chat page only
+  useEffect(() => {
+    const currentStep = STEPS_ORDER[currentStepIndex];
+
+    if (currentStep === "ai_chat") {
+      // Store original viewport meta tag
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      const originalContent = viewportMeta?.getAttribute('content') || '';
+
+      // Disable zoom
+      if (viewportMeta) {
+        viewportMeta.setAttribute(
+          'content',
+          'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+        );
+      }
+
+      // Restore original viewport on cleanup
+      return () => {
+        if (viewportMeta && originalContent) {
+          viewportMeta.setAttribute('content', originalContent);
+        }
+      };
+    }
+  }, [currentStepIndex]);
+
   // Save progress on change
   useEffect(() => {
     if (!isLoaded || isCheckingServer) return;
@@ -551,7 +577,7 @@ function DirectionFinderFlowContent({
   };
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto min-h-screen">
+    <div className={`max-w-3xl mx-auto ${currentStep === 'ai_chat' ? 'h-screen overflow-hidden' : 'space-y-4 min-h-screen'}`}>
       {/* Header with Language Toggle - Hide progress during quiz (handled by CoreAssessment) */}
       {currentStep !== "results" &&
         currentStep !== "milestone_eval" &&
@@ -576,7 +602,7 @@ function DirectionFinderFlowContent({
         )}
 
       {/* DEV: Load Saved Session */}
-      {process.env.NODE_ENV === "development" && (
+      {process.env.NODE_ENV === "development" && currentStep !== 'ai_chat' && (
         <div className="flex gap-2 mb-4">
           <details className="flex-1 text-xs bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-2">
             <summary className="cursor-pointer text-yellow-400 font-bold flex items-center gap-2">
@@ -697,7 +723,7 @@ function DirectionFinderFlowContent({
       )}
 
       {/* Main Content Area */}
-      <div className="min-h-[500px]">{renderContent()}</div>
+      <div className={currentStep === 'ai_chat' ? 'h-full' : 'min-h-[500px]'}>{renderContent()}</div>
     </div>
   );
 }
