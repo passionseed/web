@@ -308,7 +308,7 @@ function NewNorthStarFlowContent() {
               updateURL("ikigai", IKIGAI_STEPS[IKIGAI_STEPS.length - 1])
             }
             lang={language as any}
-            className="h-screen w-screen sm:h-[700px] sm:w-auto sm:max-w-4xl sm:mx-auto sm:border sm:border-slate-800 sm:shadow-2xl sm:rounded-xl border-0 rounded-none"
+            className="h-[100dvh] w-screen sm:h-[700px] sm:w-auto sm:max-w-4xl sm:mx-auto sm:border sm:border-slate-800 sm:shadow-2xl sm:rounded-xl border-0 rounded-none"
             existingResult={result}
           />
         )}
