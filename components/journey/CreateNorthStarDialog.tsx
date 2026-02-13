@@ -358,7 +358,7 @@ export function CreateNorthStarDialog({
     setShowDirectionFinder(false);
 
     // Use the Ikigai profile and direction vectors to populate the vision
-    const vision = `My Ikigai is to leverage my strengths in ${result.profile.strengths.join(", ")} and my passion for ${result.profile.energizers.join(", ")} to address ${result.profile.values.join(", ")}. I aim to explore paths like ${result.vectors[0]?.name || "my chosen direction"}.`;
+    const vision = `My Ikigai is to leverage my strengths in ${result.profile.strengths.map(s => s.name).join(", ")} and my passion for ${result.profile.energizers.map(e => e.name).join(", ")} to address ${result.profile.values.map(v => v.name).join(", ")}. I aim to explore paths like ${result.vectors[0]?.name || "my chosen direction"}.`;
 
     // Pre-populate milestones from the first direction's exploration_steps
     const explorationSteps = result.vectors[0]?.exploration_steps || [];
