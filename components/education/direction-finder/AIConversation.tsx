@@ -200,12 +200,7 @@ export function AIConversation({
   // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
-      const scrollElement = scrollRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]",
-      );
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight;
-      }
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping, currentOptions]);
 
@@ -645,11 +640,11 @@ export function AIConversation({
   return (
     <Card
       className={cn(
-        "flex flex-col bg-slate-900 border-slate-700 relative h-full",
+        "flex flex-col bg-slate-900 border-slate-700 relative h-full overflow-hidden",
         className,
       )}
     >
-      <CardHeader className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 py-2 md:py-3 flex flex-row items-center justify-between shrink-0">
+      <CardHeader className="z-50 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 py-2 md:py-3 flex flex-row items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -826,9 +821,9 @@ export function AIConversation({
         </CardContent>
       ) : (
         <>
-          <CardContent className="flex-1 flex flex-col p-0 overflow-y-auto overscroll-contain">
-          <div className="p-3 md:p-4" ref={scrollRef as any}>
-            <div className="space-y-4 pb-4">
+          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+          <div ref={scrollRef as any} className="h-full overflow-y-auto overscroll-contain">
+            <div className="p-3 md:p-4 space-y-4 pb-4">
               {messages.map((msg, index) => (
                 <div
                   key={msg.id}
