@@ -551,7 +551,7 @@ function DirectionFinderFlowContent({
   };
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto">
+    <div className="space-y-4 max-w-3xl mx-auto min-h-screen">
       {/* Header with Language Toggle - Hide progress during quiz (handled by CoreAssessment) */}
       {currentStep !== "results" &&
         currentStep !== "milestone_eval" &&

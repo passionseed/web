@@ -9,7 +9,6 @@ import { translations, Language } from "@/lib/i18n/direction-finder";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -646,11 +645,11 @@ export function AIConversation({
   return (
     <Card
       className={cn(
-        "flex flex-col bg-slate-900 border-slate-700 relative overflow-hidden",
+        "flex flex-col bg-slate-900 border-slate-700 relative h-[100dvh] max-h-screen overflow-hidden",
         className,
       )}
     >
-      <CardHeader className="border-b border-slate-800 py-2 md:py-3 flex flex-row items-center justify-between shrink-0">
+      <CardHeader className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 py-2 md:py-3 flex flex-row items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -826,8 +825,9 @@ export function AIConversation({
           </div>
         </CardContent>
       ) : (
-        <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-          <ScrollArea className="flex-1 p-3 md:p-4" ref={scrollRef}>
+        <>
+          <CardContent className="flex-1 flex flex-col p-0 overflow-y-auto overscroll-contain">
+          <div className="p-3 md:p-4" ref={scrollRef as any}>
             <div className="space-y-4 pb-4">
               {messages.map((msg, index) => (
                 <div
@@ -956,18 +956,20 @@ export function AIConversation({
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
+        </CardContent>
 
-          <div className="p-3 md:p-4 border-t border-slate-800 bg-slate-900/80 backdrop-blur-md">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSend(input);
-              }}
-              className="flex gap-2 relative"
-            >
-              <Textarea
-                value={input}
+        {/* Input Form - Fixed at bottom */}
+        <div className="p-3 md:p-4 border-t border-slate-800 bg-slate-950/95 backdrop-blur-sm shrink-0">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend(input);
+            }}
+            className="flex gap-2 relative"
+          >
+            <Textarea
+              value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={t.ai_chat.input_placeholder}
                 className="bg-slate-800/80 border-slate-700 focus-visible:ring-blue-500 min-h-[44px] max-h-[120px] resize-none py-3 pr-10 text-sm md:text-base rounded-xl"
@@ -989,7 +991,7 @@ export function AIConversation({
               </Button>
             </form>
           </div>
-        </CardContent>
+        </>
       )}
 
       {/* ... (Dev Debug View remains same) */}
