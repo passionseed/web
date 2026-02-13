@@ -42,7 +42,7 @@ export const AVAILABLE_MODELS = {
   openai: [
     { id: 'gpt-5-mini-2025-08-07', name: 'GPT-5 Mini', speed: 'medium', cost: 'medium' },
     { id: 'gpt-5.2-chat-latest', name: 'GPT-5.2 Chat', speed: 'slow', cost: 'high' },
-    { id: 'codex-mini-latest', name: 'Codex Mini', speed: 'medium', cost: 'medium' },
+    // { id: 'codex-mini-latest', name: 'Codex Mini', speed: 'medium', cost: 'medium' },
   ],
   deepseek: [
     { id: 'deepseek-chat', name: 'DeepSeek Chat', speed: 'medium', cost: 'low' },
