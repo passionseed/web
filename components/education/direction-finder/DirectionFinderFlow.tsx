@@ -670,7 +670,7 @@ function DirectionFinderFlowContent({
                   <SelectItem value="gpt-5.2-chat-latest">
                     GPT-5.2 Chat
                   </SelectItem>
-                  <SelectItem value="codex-mini-latest">Codex Mini</SelectItem>
+                  {/* <SelectItem value="codex-mini-latest">Codex Mini</SelectItem> */}
 
                   <div className="px-2 py-1 text-[10px] text-slate-500 font-bold">
                     DEEPSEEK

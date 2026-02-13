@@ -494,29 +494,6 @@ NEVER omit skill_tree, beginner_level, intermediate_level, or advanced_level. Al
             passion: z.number().describe('Passion alignment score from 0-100'),
             skill: z.number().describe('Skill alignment score from 0-100'),
           }),
-          exploration_steps: z.array(z.object({
-            type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']).describe('Type of exploration step'),
-            description: z.string().describe('Specific, actionable description of the step'),
-          })).describe('5-7 exploration steps covering different types (project, study, activity, community, person) - use empty array if none'),
-          skill_tree: z.object({
-            beginner_level: z.array(z.object({
-              skill_name: z.string(),
-              description: z.string(),
-              time_estimate: z.string().describe('e.g., "2-3 weeks", "1 month"'),
-            })).describe('3-4 foundational skills - use empty array if none'),
-            intermediate_level: z.array(z.object({
-              skill_name: z.string(),
-              description: z.string(),
-              time_estimate: z.string(),
-              prerequisites: z.array(z.string()).describe('Skills from beginner level needed first (use empty array if none)'),
-            })).describe('3-4 intermediate skills building on beginner - use empty array if none'),
-            advanced_level: z.array(z.object({
-              skill_name: z.string(),
-              description: z.string(),
-              time_estimate: z.string(),
-              prerequisites: z.array(z.string()).describe('Skills from intermediate level needed first (use empty array if none)'),
-            })).describe('2-3 advanced specialized skills - use empty array if none'),
-          }).describe('Structured learning path from beginner to advanced'),
           first_step: z.string(),
         })),
       }),
@@ -726,6 +703,91 @@ Generate:
     };
   } catch (error) {
     console.error("Error generating commitments:", error);
+    throw error;
+  }
+}
+
+// ==========================================
+// VECTOR DETAILS GENERATION (Split for timeout safety)
+// ==========================================
+
+export async function generateVectorDetails(
+  vector: { name: string; industry: string; role: string; specialization: string },
+  answers: AssessmentAnswers,
+  modelName?: string,
+  language: 'en' | 'th' = 'en'
+): Promise<{ exploration_steps: any[]; skill_tree: any }> {
+  try {
+    const context = buildProfileContext(answers);
+
+    const prompt = `
+Generate detailed exploration steps and a skill tree for the following career vector.
+
+## LANGUAGE REQUIREMENT (CRITICAL)
+Output Language: ${language === 'th' ? '**ภาษาไทย (Thai)**' : '**English**'}
+${language === 'th'
+        ? 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in THAI language only.'
+        : 'ALL fields including names, descriptions, insights, exploration steps, skill names, and skill descriptions MUST be in ENGLISH language only.'}
+
+## Target Career Vector:
+- Name: ${vector.name}
+- Industry: ${vector.industry}
+- Role: ${vector.role}
+- Specialization: ${vector.specialization}
+
+## Student Context:
+- Zone of Genius: ${JSON.stringify(context.primary_signals.zone_of_genius)}
+- Flow Evidence: "${context.primary_signals.flow_evidence}"
+
+---
+**EXPLORATION STEPS (REQUIRED):**
+Provide 5-7 concrete, actionable steps:
+- At least 1 PROJECT (specific build/create)
+- At least 1 STUDY resource (named book/course)
+- At least 1 ACTIVITY (hands-on)
+- At least 1 COMMUNITY (where to join)
+- At least 1 PERSON (who to talk to)
+
+**SKILL TREE (REQUIRED):**
+A structured path (Beginner -> Intermediate -> Advanced).
+- Beginner: 3-4 foundational
+- Intermediate: 3-4 (with prerequisites)
+- Advanced: 2-3 (with prerequisites)
+`;
+
+    const { object } = await generateObject({
+      model: getModel(modelName),
+      schema: z.object({
+        exploration_steps: z.array(z.object({
+          type: z.enum(['project', 'study', 'activity', 'community', 'camp', 'person']),
+          description: z.string(),
+        })),
+        skill_tree: z.object({
+          beginner_level: z.array(z.object({
+            skill_name: z.string(),
+            description: z.string(),
+            time_estimate: z.string(),
+          })),
+          intermediate_level: z.array(z.object({
+            skill_name: z.string(),
+            description: z.string(),
+            time_estimate: z.string(),
+            prerequisites: z.array(z.string()),
+          })),
+          advanced_level: z.array(z.object({
+            skill_name: z.string(),
+            description: z.string(),
+            time_estimate: z.string(),
+            prerequisites: z.array(z.string()),
+          })),
+        }),
+      }),
+      prompt,
+    });
+
+    return object as any;
+  } catch (error) {
+    console.error("Error generating vector details:", error);
     throw error;
   }
 }

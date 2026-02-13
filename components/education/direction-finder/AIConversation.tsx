@@ -43,6 +43,7 @@ import {
   generateDirectionProfileCore,
   generatePrograms,
   generateCommitments,
+  generateVectorDetails,
 } from "@/app/actions/advisor-actions";
 import {
   findCachedResult,
@@ -89,7 +90,7 @@ export function AIConversation({
   // const [isGeneratingProfile, setIsGeneratingProfile] = useState(false); // Deprecated for loadingStage
   const [showIntro, setShowIntro] = useState(!history || history.length === 0);
   const [loadingStage, setLoadingStage] = useState<
-    "none" | "core" | "programs" | "commitments"
+    "none" | "core" | "details" | "programs" | "commitments"
   >("none");
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -508,12 +509,36 @@ export function AIConversation({
         vectors: coreResult.vectors?.length || 0,
       });
 
+      // Step 1.5: Vector details generation (Split for timeout safety)
+      setLoadingStage("details");
+      const detailsStartTime = Date.now();
+      console.log(
+        "🔍 [Generation] Starting details generation for each vector...",
+      );
+
+      const detailedVectors = await Promise.all(
+        (coreResult.vectors || []).map(async (v: any) => {
+          const details = await generateVectorDetails(
+            v,
+            answers,
+            selectedModel,
+            lang,
+          );
+          return { ...v, ...details };
+        }),
+      );
+
+      const vectorDetailsTime = Date.now() - detailsStartTime;
+      console.log("✅ [Generation] Details complete", {
+        time: vectorDetailsTime + "ms",
+      });
+
       // Step 2: Programs generation
       setLoadingStage("programs");
       const programsStartTime = Date.now();
       console.log("📋 [Generation] Starting PROGRAMS generation...");
       const programsResult = await generatePrograms(
-        coreResult,
+        { ...coreResult, vectors: detailedVectors },
         answers,
         selectedModel,
         lang,
@@ -529,7 +554,7 @@ export function AIConversation({
       const commitmentsStartTime = Date.now();
       console.log("📋 [Generation] Starting COMMITMENTS generation...");
       const commitmentsResult = await generateCommitments(
-        coreResult,
+        { ...coreResult, vectors: detailedVectors },
         answers,
         selectedModel,
         lang,
@@ -545,7 +570,7 @@ export function AIConversation({
       // Merge results while preserving all metadata
       const finalResult: DirectionFinderResult = {
         profile: coreResult.profile!,
-        vectors: coreResult.vectors!,
+        vectors: detailedVectors as any,
         programs: programsResult.programs!,
         commitments: commitmentsResult.commitments!,
         debugMetadata: (coreResult as any).debugMetadata,
@@ -720,9 +745,11 @@ export function AIConversation({
                 <Loader2 className="w-3 h-3 mr-2 animate-spin" />{" "}
                 {loadingStage === "core"
                   ? "Analyzing..."
-                  : loadingStage === "programs"
-                    ? "Finding Programs..."
-                    : "Finalizing..."}
+                  : loadingStage === "details"
+                    ? "Building Skill Trees..."
+                    : loadingStage === "programs"
+                      ? "Finding Programs..."
+                      : "Finalizing..."}
               </>
             ) : (
               <>
@@ -1099,9 +1126,9 @@ export function AIConversation({
                     <SelectItem value="gpt-5.2-chat-latest">
                       GPT-5.2 Chat - Slow, High Cost
                     </SelectItem>
-                    <SelectItem value="codex-mini-latest">
+                    {/* <SelectItem value="codex-mini-latest">
                       Codex Mini - Medium Speed, Medium Cost
-                    </SelectItem>
+                    </SelectItem> */}
 
                     {/* Anthropic Models */}
                     <SelectItem value="claude-haiku-4-5">
@@ -1118,7 +1145,8 @@ export function AIConversation({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-slate-500">
-                  Selected: <span className="font-mono">{devSelectedModel}</span>
+                  Selected:{" "}
+                  <span className="font-mono">{devSelectedModel}</span>
                 </p>
               </div>
 
