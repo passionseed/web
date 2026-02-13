@@ -205,7 +205,7 @@ function DirectionFinderFlowContent({
     }
   }, []);
 
-  // Disable zoom for AI chat page only
+  // Disable zoom and page scroll for AI chat page only
   useEffect(() => {
     const currentStep = STEPS_ORDER[currentStepIndex];
 
@@ -222,11 +222,21 @@ function DirectionFinderFlowContent({
         );
       }
 
-      // Restore original viewport on cleanup
+      // Prevent page/body scroll - only allow chatbox to scroll
+      const originalOverflow = document.body.style.overflow;
+      const originalPosition = document.body.style.position;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+
+      // Restore original viewport and scroll on cleanup
       return () => {
         if (viewportMeta && originalContent) {
           viewportMeta.setAttribute('content', originalContent);
         }
+        document.body.style.overflow = originalOverflow;
+        document.body.style.position = originalPosition;
+        document.body.style.width = '';
       };
     }
   }, [currentStepIndex]);
