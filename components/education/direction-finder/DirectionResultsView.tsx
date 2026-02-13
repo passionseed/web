@@ -52,6 +52,7 @@ import {
   canAccessModelComparison,
   RegenerateResult,
 } from "@/app/actions/regenerate-direction";
+import { DevViewPanel } from "./DevViewPanel";
 
 interface DirectionResultsViewProps {
   // Data
@@ -113,7 +114,10 @@ export function DirectionResultsView({
   useEffect(() => {
     const isDevMode =
       window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.endsWith(".vercel.app") ||
+      window.location.hostname.startsWith("192.168.") ||
+      window.location.hostname.includes(".local");
     console.log("[DirectionResultsView] Dev mode check:", {
       hostname: window.location.hostname,
       isDevMode,
@@ -426,6 +430,24 @@ export function DirectionResultsView({
           </div>
         </div>
 
+        {/* Dev View Panel */}
+        {isDev && mode === "assessment" && (
+          <div className="mt-12">
+            <DevViewPanel
+              result={result}
+              onRegenerateSection={async (section, prompt, model) => {
+                toast.loading(`Regenerating ${section}...`, {
+                  id: 'regenerate-section',
+                });
+                // TODO: Implement section-specific regeneration
+                toast.info("Section regeneration coming soon!", {
+                  id: 'regenerate-section',
+                });
+              }}
+            />
+          </div>
+        )}
+
         {/* Model Comparison Results */}
         {comparisonResults && comparisonResults.length > 0 && (
           <div className="space-y-8 mt-16 pt-16 border-t border-amber-500/30">
@@ -703,6 +725,10 @@ function IkigaiCard({
           <Popover key={i}>
             <PopoverTrigger asChild>
               <button
+                onClick={() => {
+                  console.log("[IkigaiCard] Clicked:", item.name);
+                  console.log("[IkigaiCard] Item data:", item);
+                }}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors cursor-pointer text-left active:scale-95",
                   badgeStyles[color],
@@ -711,7 +737,10 @@ function IkigaiCard({
                 {item.name}
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-64 bg-slate-900 border-slate-700 text-slate-200 p-4 shadow-xl z-50">
+            <PopoverContent
+              className="w-64 bg-slate-900 border-slate-700 text-slate-200 p-4 shadow-xl"
+              style={{ zIndex: 9999 }}
+            >
               <div className="space-y-2">
                 <h4 className="font-bold text-white flex items-center gap-2">
                   {item.name}

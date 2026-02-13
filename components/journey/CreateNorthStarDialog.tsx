@@ -579,28 +579,6 @@ export function CreateNorthStarDialog({
                   </div>
                 )}
 
-                {/* Gated Access Message */}
-                {currentStep === 0 && !isDirectionLoading && !hasResult && (
-                  <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-8 space-y-6">
-                    <Sparkles className="w-16 h-16 text-yellow-400 animate-pulse" />
-                    <h3 className="text-2xl font-bold text-white">
-                      Unlock Your North Star
-                    </h3>
-                    <p className="text-slate-400 max-w-md">
-                      Before you can design your future, let's find your
-                      direction specifically tailored to you.
-                    </p>
-                    <Button
-                      size="lg"
-                      onClick={() => setShowDirectionFinder(true)}
-                      className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-8"
-                    >
-                      Take Assessment First{" "}
-                      <ChevronRight className="ml-2 w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-
                 {/* STEP 1: VISION */}
                 {currentStep === 1 && (
                   <div className="space-y-8">
