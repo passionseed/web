@@ -579,6 +579,8 @@ export function ClassroomDetailsDashboard({
                 students={students}
                 assignments={assignments}
                 canManage={canManage}
+                classroomId={classroom.id}
+                onStudentRemoved={loadStudentsData}
               />
             ) : (
               <StudentProgressView

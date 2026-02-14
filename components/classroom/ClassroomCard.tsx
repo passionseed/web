@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -9,8 +10,9 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Calendar, BookOpen, TrendingUp, Clock, CheckCircle, AlertCircle, GraduationCap } from "lucide-react";
+import { Users, Calendar, BookOpen, TrendingUp, Clock, CheckCircle, AlertCircle, GraduationCap, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { ClassroomWithAssignments } from "@/types/classroom";
 
 interface ClassroomCardProps {
@@ -34,6 +36,7 @@ interface ClassroomCardProps {
 
 export function ClassroomCard({ classroom }: ClassroomCardProps) {
   const router = useRouter();
+  const [copied, setCopied] = useState(false);
   const memberCount = classroom.member_count || 0;
   const studentCount = classroom.student_count || 0;
   const instructorCount = classroom.instructor_count || 0;
@@ -73,6 +76,19 @@ export function ClassroomCard({ classroom }: ClassroomCardProps) {
 
   const handleCardClick = () => {
     router.push(`/classrooms/${classroom.id}`);
+  };
+
+  const handleCopyJoinCode = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(classroom.join_code);
+      setCopied(true);
+      toast.success("Join code copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+      toast.error("Failed to copy join code");
+    }
   };
 
   return (
@@ -276,9 +292,17 @@ export function ClassroomCard({ classroom }: ClassroomCardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigator.clipboard.writeText(classroom.join_code)}
+                onClick={handleCopyJoinCode}
+                className={copied ? "bg-green-50 border-green-500 text-green-700" : ""}
               >
-                Copy
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-1" />
+                    Copied
+                  </>
+                ) : (
+                  "Copy"
+                )}
               </Button>
             </div>
 
