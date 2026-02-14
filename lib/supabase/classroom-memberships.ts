@@ -76,7 +76,7 @@ export const getClassroomMembers = async (
 export const addUserToClassroom = async (
   classroomId: string,
   userId: string,
-  role: "student" | "ta" = "student"
+  role: "student" | "ta" | "instructor" = "student"
 ): Promise<ClassroomMembership> => {
   const supabase = createClient();
 
@@ -212,7 +212,7 @@ export const removeUserFromClassroom = async (
 export const updateUserRoleInClassroom = async (
   classroomId: string,
   userId: string,
-  newRole: "student" | "ta"
+  newRole: "student" | "ta" | "instructor"
 ): Promise<ClassroomMembership> => {
   const supabase = createClient();
 
