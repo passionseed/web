@@ -581,11 +581,16 @@ export function MapViewer({
         data,
         selected,
       }: {
-        data: MapNode & { progress?: StudentProgress | any };
+        data: MapNode & {
+          progress?: StudentProgress | any;
+          isUnlocked?: boolean;
+          isCompleted?: boolean;
+          submissionRequirement?: string;
+        };
         selected?: boolean;
       }) => {
         const progress = data.progress;
-        const isUnlocked = isNodeUnlocked(data.id);
+        const isUnlocked = data.isUnlocked ?? false;
         const spriteUrl = data.sprite_url || "/islands/crystal.png";
 
         // Determine node state and styling
@@ -605,7 +610,7 @@ export function MapViewer({
         } else if (progress) {
           // Handle both individual progress (StudentProgress) and team progress (any) structures
           const status = progress.status || (progress as any)?.status;
-          const isCompleted = isNodeCompleted(data.id, progress);
+          const isCompleted = data.isCompleted ?? false;
 
           if (isCompleted) {
             // Node is completed based on submission requirements
@@ -691,7 +696,7 @@ export function MapViewer({
         // Submission requirement badge (Little icon near the node to show distinct requirements)
         let requirementBadge = null;
         if (isTeamMap) {
-          const requirement = getSubmissionRequirement(data.id);
+          const requirement = data.submissionRequirement;
           if (requirement === "all") {
             requirementBadge = (
               <div
@@ -882,7 +887,7 @@ export function MapViewer({
         );
       },
     }),
-    [progressMap, isInstructorOrTA, isTeamMap, map.map_nodes],
+    [isInstructorOrTA, isTeamMap, userRole],
   );
 
   useEffect(() => {
@@ -895,10 +900,22 @@ export function MapViewer({
         nodeType = "comment";
       }
 
+      // Pre-calculate dynamic properties to avoid closure dependencies in nodeTypes
+      const progress = progressMap[node.id];
+      const isUnlocked = isNodeUnlocked(node.id);
+      const isCompleted = isNodeCompleted(node.id, progress);
+      const submissionRequirement = getSubmissionRequirement(node.id);
+
       return {
         id: node.id,
         type: nodeType,
-        data: { ...node, progress: progressMap[node.id] },
+        data: {
+          ...node,
+          progress,
+          isUnlocked,
+          isCompleted,
+          submissionRequirement,
+        },
         position: (node.metadata as any)?.position || {
           x: Math.random() * 400,
           y: Math.random() * 400,
