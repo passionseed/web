@@ -33,7 +33,10 @@ export function InviteInstructorModal({
   const supabase = createClient();
 
   const handleInvite = async () => {
+    console.log("🔵 [InviteInstructor] handleInvite called", { email, classroomId });
+
     if (!email.trim()) {
+      console.log("❌ [InviteInstructor] Email is empty");
       toast({
         title: "Error",
         description: "Please enter an email address",
@@ -43,15 +46,21 @@ export function InviteInstructorModal({
     }
 
     setIsLoading(true);
+    console.log("🔵 [InviteInstructor] Starting invite process for:", email.toLowerCase().trim());
+
     try {
       // Find user by email
+      console.log("🔵 [InviteInstructor] Searching for user in profiles table...");
       const { data: profiles, error: profileError } = await supabase
         .from("profiles")
         .select("id, email, full_name, username")
         .eq("email", email.toLowerCase().trim())
         .single();
 
+      console.log("🔵 [InviteInstructor] Profile search result:", { profiles, profileError });
+
       if (profileError || !profiles) {
+        console.log("❌ [InviteInstructor] User not found");
         toast({
           title: "User not found",
           description: "No user found with this email address",
@@ -62,6 +71,7 @@ export function InviteInstructorModal({
       }
 
       // Check if user is already a member
+      console.log("🔵 [InviteInstructor] Checking existing membership for user:", profiles.id);
       const { data: existingMembership, error: membershipCheckError } = await supabase
         .from("classroom_memberships")
         .select("id, role")
@@ -69,11 +79,14 @@ export function InviteInstructorModal({
         .eq("user_id", profiles.id)
         .maybeSingle();
 
+      console.log("🔵 [InviteInstructor] Membership check result:", { existingMembership, membershipCheckError });
+
       if (membershipCheckError) {
-        console.error("Error checking membership:", membershipCheckError);
+        console.error("❌ [InviteInstructor] Error checking membership:", membershipCheckError);
       }
 
       if (existingMembership) {
+        console.log("❌ [InviteInstructor] User is already a member with role:", existingMembership.role);
         toast({
           title: "Already a member",
           description: `This user is already a ${existingMembership.role} in this classroom`,
@@ -84,18 +97,29 @@ export function InviteInstructorModal({
       }
 
       // Add user as instructor
-      const { error: addError } = await supabase
+      console.log("🔵 [InviteInstructor] Adding user as instructor...", {
+        classroom_id: classroomId,
+        user_id: profiles.id,
+        role: "instructor"
+      });
+
+      const { data: insertData, error: addError } = await supabase
         .from("classroom_memberships")
         .insert({
           classroom_id: classroomId,
           user_id: profiles.id,
           role: "instructor",
-        });
+        })
+        .select();
+
+      console.log("🔵 [InviteInstructor] Insert result:", { insertData, addError });
 
       if (addError) {
+        console.error("❌ [InviteInstructor] Insert error:", addError);
         throw addError;
       }
 
+      console.log("✅ [InviteInstructor] Instructor added successfully!");
       toast({
         title: "Instructor added successfully",
         description: `${profiles.full_name || profiles.username || profiles.email} has been added as an instructor`,
@@ -105,7 +129,7 @@ export function InviteInstructorModal({
       setOpen(false);
       onInstructorAdded?.();
     } catch (error) {
-      console.error("Error adding instructor:", error);
+      console.error("❌ [InviteInstructor] Error adding instructor:", error);
       toast({
         title: "Error",
         description: "Failed to add instructor. Please try again.",
@@ -113,6 +137,7 @@ export function InviteInstructorModal({
       });
     } finally {
       setIsLoading(false);
+      console.log("🔵 [InviteInstructor] Process complete");
     }
   };
 
