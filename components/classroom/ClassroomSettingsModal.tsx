@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,13 +11,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Copy, RefreshCw } from "lucide-react";
+import { Settings, Copy, RefreshCw, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { Classroom } from "@/types/classroom";
+import { InstructorManagement } from "./InstructorManagement";
+import { createClient } from "@/utils/supabase/client";
 
 interface ClassroomSettingsModalProps {
   classroom: Classroom;
@@ -31,6 +34,8 @@ export function ClassroomSettingsModal({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [generatingCode, setGeneratingCode] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const supabase = createClient();
 
   const [formData, setFormData] = useState({
     name: classroom.name,
@@ -39,6 +44,16 @@ export function ClassroomSettingsModal({
     is_active: classroom.is_active,
     enable_assignments: classroom.enable_assignments ?? true,
   });
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,19 +141,28 @@ export function ClassroomSettingsModal({
           Settings
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-[700px] h-[90vh] flex flex-col gap-0">
+        <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center space-x-2">
             <Settings className="h-5 w-5" />
             <span>Classroom Settings</span>
           </DialogTitle>
           <DialogDescription>
-            Manage classroom settings and access controls.
+            Manage classroom settings, instructors, and access controls.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-          <form onSubmit={handleSubmit} className="space-y-6 pb-2">
+        <Tabs defaultValue="settings" className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="instructors" className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              Instructors
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="settings" className="flex-1 overflow-y-auto mt-4 data-[state=active]:flex data-[state=active]:flex-col">
+            <form onSubmit={handleSubmit} className="space-y-6 pb-2 px-1">
           {/* Basic Settings */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -294,10 +318,20 @@ export function ClassroomSettingsModal({
               </div>
             </div>
           </div>
-          </form>
-        </div>
+            </form>
+          </TabsContent>
 
-        <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
+          <TabsContent value="instructors" className="flex-1 overflow-y-auto mt-4 px-1 data-[state=active]:flex data-[state=active]:flex-col">
+            <InstructorManagement
+              classroomId={classroom.id}
+              ownerId={classroom.instructor_id}
+              currentUserId={currentUserId}
+              canManage={true}
+            />
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4 bg-background">
           <Button
             type="button"
             variant="outline"
