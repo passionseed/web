@@ -4,6 +4,7 @@ import { memo, useMemo } from "react";
 import Embed, { defaultProviders } from "react-tiny-oembed";
 import { ExternalLink, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isSafeUrl } from "@/lib/security/sanitize-html";
 
 interface CanvaEmbedProps {
   contentUrl: string;
@@ -28,21 +29,25 @@ const ErrorFallback = memo(({ url }: { url: string }) => (
     <p className="text-sm text-red-600 mb-4">
       Unable to embed this Canva slide directly
     </p>
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center"
-    >
-      <Button
-        variant="outline"
-        size="sm"
-        className="border-red-300 hover:bg-red-50"
+    {isSafeUrl(url) ? (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center"
       >
-        <ExternalLink className="h-4 w-4 mr-2" />
-        Open in Canva
-      </Button>
-    </a>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-red-300 hover:bg-red-50"
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Open in Canva
+        </Button>
+      </a>
+    ) : (
+      <p className="text-xs text-red-500">Invalid Canva URL</p>
+    )}
   </div>
 ));
 
@@ -104,7 +109,7 @@ export const CanvaEmbed = memo(({ contentUrl }: CanvaEmbedProps) => {
   console.log("🎨 CanvaEmbed rendering for URL:", contentUrl);
 
   const isValidCanvaUrl = useMemo(() => {
-    return contentUrl.includes("canva.com/design/");
+    return isSafeUrl(contentUrl) && contentUrl.includes("canva.com/design/");
   }, [contentUrl]);
 
   const embedUrl = useMemo(() => {
@@ -156,16 +161,20 @@ export const CanvaEmbed = memo(({ contentUrl }: CanvaEmbedProps) => {
         <p className="text-sm text-orange-600 mb-4">
           Please provide a valid Canva design URL
         </p>
-        <a href={contentUrl} target="_blank" rel="noopener noreferrer">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-orange-300 hover:bg-orange-50"
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Check Link
-          </Button>
-        </a>
+        {isSafeUrl(contentUrl) ? (
+          <a href={contentUrl} target="_blank" rel="noopener noreferrer">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-orange-300 hover:bg-orange-50"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Check Link
+            </Button>
+          </a>
+        ) : (
+          <p className="text-xs text-orange-600">Invalid URL format</p>
+        )}
       </div>
     );
   }

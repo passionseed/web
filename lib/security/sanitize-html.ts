@@ -76,3 +76,35 @@ export function markdownToSafeHtml(markdown: string): string {
   const rendered = marked.parse(markdown ?? "", { async: false }) as string;
   return sanitizeHtml(rendered);
 }
+
+/**
+ * Validates if a URL is safe to use in href or src attributes.
+ * Allows http, https, mailto, tel, and relative URLs.
+ * Rejects javascript:, data:, vbscript:, and other potentially dangerous schemes.
+ */
+export function isSafeUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const trimmed = url.trim();
+
+  try {
+    // If it's a relative URL, new URL(url) throws, so we provide a base.
+    // This serves only to parse the URL structure.
+    // eslint-disable-next-line no-new
+    new URL(trimmed, "http://dummy.com");
+
+    // Check if the URL string starts with a protocol scheme
+    // A simple regex for scheme: ^[a-zA-Z][a-zA-Z0-9+.-]*: matches standard schemes
+    const schemeMatch = trimmed.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/);
+    if (schemeMatch) {
+      const scheme = schemeMatch[0].toLowerCase();
+      // Only allow specific safe schemes
+      return ["http:", "https:", "mailto:", "tel:"].includes(scheme);
+    }
+
+    // If no scheme is present, it's a relative URL or protocol-relative URL (//example.com), which is generally safe
+    return true;
+  } catch (e) {
+    // URL parsing failed, treat as unsafe
+    return false;
+  }
+}

@@ -7,7 +7,7 @@ import Embed, { defaultProviders } from "react-tiny-oembed";
 import { CanvaEmbed } from "./CanvaEmbed";
 import { marked } from "marked";
 import { OrderCodeActivity } from "./OrderCodeActivity";
-import { sanitizeHtml } from "@/lib/security/sanitize-html";
+import { sanitizeHtml, isSafeUrl } from "@/lib/security/sanitize-html";
 
 // Configure marked options for security and consistency
 marked.setOptions({
@@ -70,21 +70,25 @@ const ErrorFallback = memo(({ url }: { url: string }) => (
     <p className="text-sm text-red-600 mb-4">
       Unable to embed this content directly
     </p>
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center"
-    >
-      <Button
-        variant="outline"
-        size="sm"
-        className="border-red-300 hover:bg-red-50"
+    {isSafeUrl(url) ? (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center"
       >
-        <ExternalLink className="h-4 w-4 mr-2" />
-        Open in new tab
-      </Button>
-    </a>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-red-300 hover:bg-red-50"
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Open in new tab
+        </Button>
+      </a>
+    ) : (
+      <p className="text-xs text-red-500">Invalid content URL</p>
+    )}
   </div>
 ));
 ErrorFallback.displayName = "ErrorFallback";
@@ -345,7 +349,7 @@ export const renderContent = (content: NodeContent) => {
 
   switch (contentType) {
     case "video":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
       return (
@@ -364,7 +368,7 @@ export const renderContent = (content: NodeContent) => {
       );
 
     case "image":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
       return (
@@ -375,7 +379,7 @@ export const renderContent = (content: NodeContent) => {
       );
 
     case "pdf":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" />;
       }
 
@@ -501,7 +505,7 @@ export const renderContent = (content: NodeContent) => {
       );
 
     case "canva_slide":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
       return (
@@ -512,7 +516,7 @@ export const renderContent = (content: NodeContent) => {
       );
 
     case "resource_link":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" />;
       }
 

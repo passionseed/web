@@ -1,4 +1,4 @@
-## 2025-02-18 - Custom Regex Sanitization Risks
-**Vulnerability:** The codebase used a custom regex-based implementation (`lib/security/sanitize-html.ts`) for HTML sanitization, which is fragile and prone to XSS bypasses (e.g. unquoted attributes).
-**Learning:** Developers often underestimate the complexity of HTML parsing. Relying on custom regex creates a false sense of security.
-**Prevention:** Always use established, battle-tested libraries like `isomorphic-dompurify` for HTML sanitization. Ensure `jsdom` is added as a production dependency for `isomorphic-dompurify` to work correctly in SSR environments.
+## 2025-02-18 - [Prevent XSS via unsafe URLs in embed components]
+**Vulnerability:** User-provided URLs in content embeds (Video, Image, PDF, Canva, Resource links) were rendered directly in `href` and `src` attributes without scheme validation. This allowed potential Stored XSS via `javascript:` schemes, especially in fallback error messages and resource links.
+**Learning:** React escapes HTML attributes, but it does NOT validate protocol schemes. `javascript:` links are a classic XSS vector even in modern frameworks if user input is passed to `href`.
+**Prevention:** Always validate user-provided URLs against an allowlist of safe schemes (`http`, `https`, `mailto`, `tel`) before rendering them in `href` or `src` attributes. Used `new URL()` parsing combined with regex scheme detection for robust validation in `lib/security/sanitize-html.ts` via `isSafeUrl`.
