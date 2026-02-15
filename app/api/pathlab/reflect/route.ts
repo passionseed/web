@@ -36,10 +36,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (
-      [energyLevel, confusionLevel, interestLevel].some((value) => Number.isNaN(value) || value < 1 || value > 5)
+      [energyLevel, confusionLevel, interestLevel].some((value) => Number.isNaN(value) || value < 1 || value > 10)
     ) {
       return NextResponse.json(
-        { error: "energyLevel, confusionLevel, and interestLevel must be between 1 and 5" },
+        { error: "energyLevel, confusionLevel, and interestLevel must be between 1 and 10" },
         { status: 400 }
       );
     }
@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       openResponse: body?.openResponse || null,
       decision,
       timeSpentMinutes: body?.timeSpentMinutes ?? null,
+      extraPromptResponses: body?.extraPromptResponses || null,
       exitReflection: body?.exitReflection,
       endReflection: body?.endReflection,
     });

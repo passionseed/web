@@ -263,6 +263,12 @@ export function PathDayBuilder({
   const [previewDayNumbers, setPreviewDayNumbers] = useState<Set<number>>(
     new Set(),
   );
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration errors from dnd-kit and Radix UI auto-generated IDs
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Dirty tracking
   const snapshotRef = useRef(JSON.stringify(ensuredInitial));
@@ -492,6 +498,9 @@ export function PathDayBuilder({
       )}
 
       {/* Day Cards with DnD + Accordion */}
+      {!isMounted ? (
+        <div className="text-center text-neutral-400 py-8">Loading...</div>
+      ) : (
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -642,6 +651,7 @@ export function PathDayBuilder({
           </Accordion>
         </SortableContext>
       </DndContext>
+      )}
 
       {/* Add Day + Save */}
       <div className="flex items-center justify-between">

@@ -195,10 +195,12 @@ export function PathLabExperience({
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [progressMap, setProgressMap] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [restarting, setRestarting] = useState(false);
+  const [actionStartTime, setActionStartTime] = useState<number | null>(null);
   const [reflectionDraft, setReflectionDraft] = useState<DailyReflectionDraft>({
-    energyLevel: 3,
-    confusionLevel: 3,
-    interestLevel: 3,
+    energyLevel: 5,
+    confusionLevel: 5,
+    interestLevel: 5,
     openResponse: "",
     timeSpentMinutes: null,
   });
@@ -305,6 +307,15 @@ export function PathLabExperience({
     if (previousRenderedDay.current !== activeDayNumber) {
       setPhase("context");
       previousRenderedDay.current = activeDayNumber;
+      // Reset reflection draft and time tracking for new day
+      setReflectionDraft({
+        energyLevel: 5,
+        confusionLevel: 5,
+        interestLevel: 5,
+        openResponse: "",
+        timeSpentMinutes: null,
+      });
+      setActionStartTime(null);
     }
   }, [day?.day_number]);
 
@@ -319,6 +330,55 @@ export function PathLabExperience({
       setSelectedNodeId(dayNodes[0]?.id || null);
     }
   }, [dayNodes, selectedNodeId]);
+
+  // Auto time tracking - start when entering action phase
+  useEffect(() => {
+    const storageKey = `pathlab_time_${enrollment.id}_day_${day?.day_number}`;
+
+    if (phase === "action" && !actionStartTime) {
+      // Check if we have a stored start time (in case of refresh)
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const storedTime = parseInt(stored, 10);
+        if (!isNaN(storedTime)) {
+          console.log("⏱️ Resumed time tracking from:", new Date(storedTime));
+          setActionStartTime(storedTime);
+        }
+      } else {
+        // Start new timer
+        const now = Date.now();
+        console.log("⏱️ Started time tracking at:", new Date(now));
+        setActionStartTime(now);
+        localStorage.setItem(storageKey, String(now));
+      }
+    }
+
+    // When entering reflection phase, calculate elapsed time
+    if (phase === "reflection" && actionStartTime) {
+      const elapsedMs = Date.now() - actionStartTime;
+      const elapsedMinutes = Math.round(elapsedMs / 60000); // Convert to minutes
+
+      console.log("⏱️ Time tracking ended. Elapsed:", elapsedMinutes, "minutes");
+
+      // Auto-fill time if not already set
+      if (reflectionDraft.timeSpentMinutes === null) {
+        setReflectionDraft((prev) => ({
+          ...prev,
+          timeSpentMinutes: elapsedMinutes,
+        }));
+        console.log("✅ Auto-filled time spent:", elapsedMinutes, "minutes");
+      }
+
+      // Clear localStorage for this day
+      localStorage.removeItem(storageKey);
+    }
+
+    // Clean up on day change
+    if (phase === "context") {
+      setActionStartTime(null);
+      localStorage.removeItem(storageKey);
+    }
+  }, [phase, actionStartTime, day?.day_number, enrollment.id, reflectionDraft.timeSpentMinutes]);
 
   const navigateToDay = (dayNumber: number) => {
     router.push(`/seeds/pathlab/${enrollment.id}?day=${dayNumber}`);
@@ -342,6 +402,7 @@ export function PathLabExperience({
           interestLevel: reflectionDraft.interestLevel,
           openResponse: reflectionDraft.openResponse,
           timeSpentMinutes: reflectionDraft.timeSpentMinutes,
+          extraPromptResponses: reflectionDraft.extraPromptResponses,
           decision,
           exitReflection: extra?.exitReflection,
         }),
@@ -393,6 +454,7 @@ export function PathLabExperience({
           interestLevel: reflectionDraft.interestLevel,
           openResponse: reflectionDraft.openResponse,
           timeSpentMinutes: reflectionDraft.timeSpentMinutes,
+          extraPromptResponses: reflectionDraft.extraPromptResponses,
           decision: "final_reflection",
           endReflection: {
             overallInterest: payload.overallInterest,
@@ -447,24 +509,78 @@ export function PathLabExperience({
   }
 
   if (enrollment.status === "explored" || endReflection) {
+    const handleRestart = async () => {
+      console.log("🔄 Starting restart...");
+      setRestarting(true);
+      try {
+        console.log("📤 Sending restart request for seed:", seed.id);
+        const response = await fetch("/api/pathlab/enroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seedId: seed.id,
+            whyJoined: "Restarting path exploration",
+            restart: true,
+          }),
+        });
+
+        console.log("📥 Response status:", response.status);
+        const payload = await response.json();
+        console.log("📦 Response payload:", payload);
+
+        if (!response.ok) {
+          console.error("❌ Response not OK:", payload);
+          throw new Error(payload?.error || "Failed to restart path");
+        }
+
+        const enrollmentId = payload?.enrollment?.id;
+        console.log("🎫 Enrollment ID:", enrollmentId);
+
+        if (!enrollmentId) {
+          console.error("❌ No enrollment ID in response");
+          throw new Error("Enrollment was created without id");
+        }
+
+        console.log("✅ Restarting complete, redirecting to:", `/seeds/pathlab/${enrollmentId}`);
+
+        // Refresh the page to show Day 1
+        router.refresh();
+        router.push(`/seeds/pathlab/${enrollmentId}`);
+      } catch (error: any) {
+        console.error("💥 Restart error:", error);
+        toast.error(error?.message || "Failed to restart path");
+        setRestarting(false);
+      }
+    };
+
     return (
       <div className="space-y-4">
         <Card className="border-neutral-800 bg-neutral-900/80">
           <CardHeader>
             <CardTitle className="text-white">Explored</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-neutral-200">
+          <CardContent className="space-y-4 text-neutral-200">
             <p>You completed this PathLab exploration.</p>
             <p>
-              Final interest: {endReflection?.overall_interest ?? "-"} / 5, fit:{" "}
-              {endReflection?.fit_level ?? "-"} / 5
+              Final interest: {endReflection?.overall_interest ?? "-"} / 10, fit:{" "}
+              {endReflection?.fit_level ?? "-"} / 10
             </p>
-            <Button
-              onClick={() => router.push("/seeds?gallery=1&type=pathlab")}
-              className="mt-2 bg-white text-black hover:bg-neutral-200"
-            >
-              Back to PathLab
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => router.push("/seeds?gallery=1&type=pathlab")}
+                variant="outline"
+                className="flex-1 border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
+              >
+                Back to PathLab
+              </Button>
+              <Button
+                onClick={handleRestart}
+                disabled={restarting}
+                className="flex-1 bg-white text-black hover:bg-neutral-200"
+              >
+                {restarting ? "Restarting..." : "Restart Path"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
         <TrendSummary trend={reflections || []} />
