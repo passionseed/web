@@ -15,6 +15,7 @@ interface SubmitPathReflectionInput {
   openResponse?: string | null;
   decision: PathReflectionDecision;
   timeSpentMinutes?: number | null;
+  extraPromptResponses?: string[];
   exitReflection?: {
     reasonCategory: "boring" | "confusing" | "stressful" | "not_me";
     interestChange: "more" | "less" | "same";
@@ -103,6 +104,7 @@ export async function submitPathReflection(input: SubmitPathReflectionInput) {
         open_response: input.openResponse || null,
         decision: input.decision,
         time_spent_minutes: input.timeSpentMinutes ?? null,
+        extra_prompt_responses: input.extraPromptResponses || null,
       },
       { onConflict: "enrollment_id,day_number" }
     )

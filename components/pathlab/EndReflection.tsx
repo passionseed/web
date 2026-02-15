@@ -20,8 +20,8 @@ interface EndReflectionProps {
 }
 
 export function EndReflection({ submitting = false, onSubmit }: EndReflectionProps) {
-  const [overallInterest, setOverallInterest] = useState(3);
-  const [fitLevel, setFitLevel] = useState(3);
+  const [overallInterest, setOverallInterest] = useState(5);
+  const [fitLevel, setFitLevel] = useState(5);
   const [surpriseResponse, setSurpriseResponse] = useState("");
   const [wouldExploreDeeper, setWouldExploreDeeper] = useState<PathWouldExploreDeeper>("maybe");
 
@@ -34,17 +34,17 @@ export function EndReflection({ submitting = false, onSubmit }: EndReflectionPro
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-neutral-200">How interested are you now?</Label>
-            <span className="text-sm text-neutral-400">{overallInterest}/5</span>
+            <span className="text-sm text-neutral-400">{overallInterest}/10</span>
           </div>
-          <Slider min={1} max={5} step={1} value={[overallInterest]} onValueChange={(value) => setOverallInterest(value[0] || 1)} />
+          <Slider min={1} max={10} step={1} value={[overallInterest]} onValueChange={(value) => setOverallInterest(value[0] || 1)} />
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-neutral-200">How well did this fit how you like to work?</Label>
-            <span className="text-sm text-neutral-400">{fitLevel}/5</span>
+            <span className="text-sm text-neutral-400">{fitLevel}/10</span>
           </div>
-          <Slider min={1} max={5} step={1} value={[fitLevel]} onValueChange={(value) => setFitLevel(value[0] || 1)} />
+          <Slider min={1} max={10} step={1} value={[fitLevel]} onValueChange={(value) => setFitLevel(value[0] || 1)} />
         </div>
 
         <div className="space-y-2">

@@ -13,6 +13,7 @@ export interface DailyReflectionDraft {
   interestLevel: number;
   openResponse: string;
   timeSpentMinutes: number | null;
+  extraPromptResponses?: string[];
 }
 
 interface ReflectionFormProps {
@@ -27,19 +28,27 @@ function MetricRow(props: {
   label: string;
   value: number;
   onChange: (value: number) => void;
+  color?: "green" | "amber" | "blue";
 }) {
+  const colorClass = props.color === "green"
+    ? "[&_[role=slider]]:bg-green-500 [&_.bg-primary]:bg-green-500"
+    : props.color === "amber"
+    ? "[&_[role=slider]]:bg-amber-500 [&_.bg-primary]:bg-amber-500"
+    : "[&_[role=slider]]:bg-blue-500 [&_.bg-primary]:bg-blue-500";
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-neutral-200">{props.label}</Label>
-        <span className="text-sm text-neutral-400">{props.value}/5</span>
+        <span className="text-sm text-neutral-400">{props.value}/10</span>
       </div>
       <Slider
         min={1}
-        max={5}
+        max={10}
         step={1}
         value={[props.value]}
         onValueChange={(value) => props.onChange(value[0] || 1)}
+        className={colorClass}
       />
     </div>
   );
@@ -67,16 +76,19 @@ export function ReflectionForm({
           label="How's your energy?"
           value={value.energyLevel}
           onChange={(energyLevel) => onChange({ ...value, energyLevel })}
+          color="green"
         />
         <MetricRow
           label="How confused are you?"
           value={value.confusionLevel}
           onChange={(confusionLevel) => onChange({ ...value, confusionLevel })}
+          color="amber"
         />
         <MetricRow
           label="How interested are you?"
           value={value.interestLevel}
           onChange={(interestLevel) => onChange({ ...value, interestLevel })}
+          color="blue"
         />
 
         <div className="space-y-2">
@@ -90,18 +102,40 @@ export function ReflectionForm({
         </div>
 
         {extraPrompts.length > 0 && (
-          <div className="space-y-2 rounded-lg border border-neutral-800 bg-neutral-950/70 p-4">
-            <p className="text-sm text-neutral-400">Today’s extra prompts</p>
-            {extraPrompts.map((prompt, index) => (
-              <p key={`${prompt}-${index}`} className="text-sm text-neutral-200">
-                {index + 1}. {prompt}
-              </p>
-            ))}
+          <div className="space-y-4 rounded-lg border border-neutral-800 bg-neutral-950/70 p-4">
+            <p className="text-sm text-neutral-400">Today's extra prompts</p>
+            {extraPrompts.map((prompt, index) => {
+              const responses = value.extraPromptResponses || [];
+              const response = responses[index] || "";
+
+              return (
+                <div key={`${prompt}-${index}`} className="space-y-2">
+                  <Label className="text-sm text-neutral-200">
+                    {index + 1}. {prompt}
+                  </Label>
+                  <Textarea
+                    value={response}
+                    onChange={(event) => {
+                      const newResponses = [...responses];
+                      newResponses[index] = event.target.value;
+                      onChange({ ...value, extraPromptResponses: newResponses });
+                    }}
+                    placeholder="Your response..."
+                    className="min-h-20 bg-neutral-950 border-neutral-700 text-white"
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
 
         <div className="space-y-2">
-          <Label className="text-neutral-200">Time spent today (minutes)</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-neutral-200">Time spent today (minutes)</Label>
+            {value.timeSpentMinutes !== null && (
+              <span className="text-xs text-neutral-400">Auto-tracked</span>
+            )}
+          </div>
           <input
             type="number"
             min={0}
@@ -114,7 +148,8 @@ export function ReflectionForm({
                 timeSpentMinutes: Number.isFinite(numeric as number) ? (numeric as number | null) : null,
               });
             }}
-            className="h-10 w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 text-sm text-white outline-none focus:border-neutral-500"
+            placeholder="Auto-tracked when you start activities"
+            className="h-10 w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 text-sm text-white placeholder:text-neutral-600 outline-none focus:border-neutral-500"
           />
         </div>
 

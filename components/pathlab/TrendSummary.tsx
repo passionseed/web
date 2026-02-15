@@ -43,7 +43,7 @@ export function TrendSummary({ trend }: TrendSummaryProps) {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <XAxis dataKey="day" stroke="#9ca3af" />
-              <YAxis domain={[1, 5]} stroke="#9ca3af" />
+              <YAxis domain={[1, 10]} stroke="#9ca3af" />
               <Tooltip />
               <Legend />
               <Line type="monotone" dataKey="energy" stroke="#34d399" strokeWidth={2} dot={{ r: 3 }} />
