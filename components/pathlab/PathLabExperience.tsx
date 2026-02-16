@@ -77,16 +77,16 @@ function PhaseStepper({
   if (currentIndex === -1) return null;
 
   return (
-    <div className="mb-6 px-2">
-      <div className="relative flex justify-between">
+    <div className="mb-8 px-4">
+      <div className="relative flex justify-between rounded-2xl border border-neutral-800/50 bg-gradient-to-br from-neutral-900/50 to-neutral-950/50 p-8 shadow-xl">
         {/* Background Line */}
-        <div className="absolute top-4 left-0 h-[2px] w-full bg-neutral-800" />
+        <div className="absolute top-1/2 left-8 right-8 h-[3px] -translate-y-1/2 rounded-full bg-neutral-800/50" />
 
-        {/* Progress Line */}
+        {/* Progress Line with Gradient */}
         <div
-          className="absolute top-4 left-0 h-[2px] bg-blue-500 transition-all duration-500 ease-in-out"
+          className="absolute top-1/2 left-8 h-[3px] -translate-y-1/2 rounded-full bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)] transition-all duration-700 ease-out"
           style={{
-            width: `${(currentIndex / (stepsToShow.length - 1)) * 100}%`,
+            width: `calc(${(currentIndex / (stepsToShow.length - 1)) * 100}% - 1rem)`,
           }}
         />
 
@@ -97,20 +97,20 @@ function PhaseStepper({
           return (
             <div
               key={step.id}
-              className="relative z-10 flex flex-col items-center"
+              className="relative z-10 flex flex-col items-center gap-3"
             >
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all duration-500 ${
                   isActive
-                    ? "border-blue-500 bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                    ? "scale-110 border-blue-500 bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-[0_0_25px_rgba(59,130,246,0.8)]"
                     : isCompleted
-                      ? "border-blue-500 bg-neutral-900 text-blue-500"
-                      : "border-neutral-700 bg-neutral-900 text-neutral-500"
+                      ? "border-blue-500/70 bg-gradient-to-br from-neutral-900 to-neutral-950 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                      : "border-neutral-700/50 bg-gradient-to-br from-neutral-900 to-neutral-950 text-neutral-500"
                 }`}
               >
                 {isCompleted ? (
                   <svg
-                    className="h-5 w-5"
+                    className="h-6 w-6 animate-in zoom-in duration-300"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -123,12 +123,18 @@ function PhaseStepper({
                     />
                   </svg>
                 ) : (
-                  <span className="text-xs font-bold">{idx + 1}</span>
+                  <span className="text-sm font-bold">{idx + 1}</span>
                 )}
               </div>
-              <div className="mt-2 text-center">
+              <div className="text-center">
                 <p
-                  className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-white" : "text-neutral-500"}`}
+                  className={`text-xs font-bold uppercase tracking-widest transition-colors duration-300 ${
+                    isActive
+                      ? "text-blue-300"
+                      : isCompleted
+                        ? "text-neutral-400"
+                        : "text-neutral-600"
+                  }`}
                 >
                   {step.label}
                 </p>
