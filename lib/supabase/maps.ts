@@ -139,9 +139,7 @@ export const getMapsWithStats = async (
       cover_image_key,
       cover_image_updated_at,
       map_nodes!inner (
-        id,
-        difficulty,
-        node_assessments (id)
+        node_assessments (count)
       )`;
 
     // Add enrollment data only for authenticated users
@@ -555,17 +553,16 @@ export const getMapsWithStats = async (
       .map((map: any) => {
         const nodes = map.map_nodes || [];
         const nodeCount = nodes.length;
-        const avgDifficulty =
-          nodeCount > 0
-            ? Math.round(
-              nodes.reduce(
-                (sum: number, node: any) => sum + (node.difficulty || 1),
-                0
-              ) / nodeCount
-            )
-            : 1;
+        // Use map's difficulty column directly instead of recalculating from nodes
+        const avgDifficulty = map.difficulty || 1;
+
+        // Calculate total assessments from the count objects
         const totalAssessments = nodes.reduce(
-          (sum: number, node: any) => sum + (node.node_assessments?.length || 0),
+          (sum: number, node: any) => {
+            // Handle Supabase count response format: [{ count: 5 }]
+            const assessmentCount = node.node_assessments?.[0]?.count || 0;
+            return sum + assessmentCount;
+          },
           0
         );
 
