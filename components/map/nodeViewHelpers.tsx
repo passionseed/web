@@ -7,7 +7,7 @@ import Embed, { defaultProviders } from "react-tiny-oembed";
 import { CanvaEmbed } from "./CanvaEmbed";
 import { marked } from "marked";
 import { OrderCodeActivity } from "./OrderCodeActivity";
-import { sanitizeHtml } from "@/lib/security/sanitize-html";
+import { sanitizeHtml, isSafeUrl } from "@/lib/security/sanitize-html";
 
 // Configure marked options for security and consistency
 marked.setOptions({
@@ -345,7 +345,7 @@ export const renderContent = (content: NodeContent) => {
 
   switch (contentType) {
     case "video":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
       return (
@@ -364,7 +364,7 @@ export const renderContent = (content: NodeContent) => {
       );
 
     case "image":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
       return (
@@ -375,7 +375,7 @@ export const renderContent = (content: NodeContent) => {
       );
 
     case "pdf":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" />;
       }
 
@@ -501,7 +501,7 @@ export const renderContent = (content: NodeContent) => {
       );
 
     case "canva_slide":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
       return (
@@ -512,7 +512,7 @@ export const renderContent = (content: NodeContent) => {
       );
 
     case "resource_link":
-      if (!contentUrl) {
+      if (!contentUrl || !isSafeUrl(contentUrl)) {
         return <ErrorFallback url="#" />;
       }
 

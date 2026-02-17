@@ -76,3 +76,5 @@ export function markdownToSafeHtml(markdown: string): string {
   const rendered = marked.parse(markdown ?? "", { async: false }) as string;
   return sanitizeHtml(rendered);
 }
+
+export { isSafeUrl } from "./url-validation";
