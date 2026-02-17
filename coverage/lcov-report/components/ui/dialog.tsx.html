@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>124/124</span>
+                <span class='fraction'>128/128</span>
             </div>
 
 
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>124/124</span>
+                <span class='fraction'>128/128</span>
             </div>
 
 
@@ -187,7 +187,11 @@
 <a name='L122'></a><a href='#L122'>122</a>
 <a name='L123'></a><a href='#L123'>123</a>
 <a name='L124'></a><a href='#L124'>124</a>
-<a name='L125'></a><a href='#L125'>125</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -311,21 +315,26 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use client"
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">"use client";
 &nbsp;
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
+import * as React from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 &nbsp;
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 &nbsp;
-const Dialog = DialogPrimitive.Root
+const Dialog = DialogPrimitive.Root;
 &nbsp;
-const DialogTrigger = DialogPrimitive.Trigger
+const DialogTrigger = DialogPrimitive.Trigger;
 &nbsp;
-const DialogPortal = DialogPrimitive.Portal
+const DialogPortal = DialogPrimitive.Portal;
 &nbsp;
-const DialogClose = DialogPrimitive.Close
+const DialogClose = DialogPrimitive.Close;
 &nbsp;
 const DialogOverlay = React.forwardRef&lt;
   React.ElementRef&lt;typeof DialogPrimitive.Overlay&gt;,
@@ -335,16 +344,18 @@ const DialogOverlay = React.forwardRef&lt;
     ref={ref}
     className={cn(
       "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
+      className,
     )}
     {...props}
   /&gt;
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 &nbsp;
 const DialogContent = React.forwardRef&lt;
   React.ElementRef&lt;typeof DialogPrimitive.Content&gt;,
-  React.ComponentPropsWithoutRef&lt;typeof DialogPrimitive.Content&gt; &amp; { hideClose?: boolean }
+  React.ComponentPropsWithoutRef&lt;typeof DialogPrimitive.Content&gt; &amp; {
+    hideClose?: boolean;
+  }
 &gt;(({ className, children, hideClose, ...props }, ref) =&gt; (
   &lt;DialogPortal&gt;
     &lt;DialogOverlay /&gt;
@@ -352,7 +363,7 @@ const DialogContent = React.forwardRef&lt;
       ref={ref}
       className={cn(
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-        className
+        className,
       )}
       {...props}
     &gt;
@@ -365,8 +376,8 @@ const DialogContent = React.forwardRef&lt;
       )}
     &lt;/DialogPrimitive.Content&gt;
   &lt;/DialogPortal&gt;
-))
-DialogContent.displayName = DialogPrimitive.Content.displayName
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
 &nbsp;
 const DialogHeader = ({
   className,
@@ -375,12 +386,12 @@ const DialogHeader = ({
   &lt;div
     className={cn(
       "flex flex-col space-y-1.5 text-center sm:text-left",
-      className
+      className,
     )}
     {...props}
   /&gt;
-)
-DialogHeader.displayName = "DialogHeader"
+);
+DialogHeader.displayName = "DialogHeader";
 &nbsp;
 const DialogFooter = ({
   className,
@@ -389,12 +400,12 @@ const DialogFooter = ({
   &lt;div
     className={cn(
       "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-      className
+      className,
     )}
     {...props}
   /&gt;
-)
-DialogFooter.displayName = "DialogFooter"
+);
+DialogFooter.displayName = "DialogFooter";
 &nbsp;
 const DialogTitle = React.forwardRef&lt;
   React.ElementRef&lt;typeof DialogPrimitive.Title&gt;,
@@ -404,12 +415,12 @@ const DialogTitle = React.forwardRef&lt;
     ref={ref}
     className={cn(
       "text-lg font-semibold leading-none tracking-tight",
-      className
+      className,
     )}
     {...props}
   /&gt;
-))
-DialogTitle.displayName = DialogPrimitive.Title.displayName
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
 &nbsp;
 const DialogDescription = React.forwardRef&lt;
   React.ElementRef&lt;typeof DialogPrimitive.Description&gt;,
@@ -420,8 +431,8 @@ const DialogDescription = React.forwardRef&lt;
     className={cn("text-sm text-muted-foreground", className)}
     {...props}
   /&gt;
-))
-DialogDescription.displayName = DialogPrimitive.Description.displayName
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
 &nbsp;
 export {
   Dialog,
@@ -434,7 +445,8 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-}
+  VisuallyHidden,
+};
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -442,7 +454,7 @@ export {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-28T20:08:08.381Z
+                at 2026-02-17T04:36:13.146Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

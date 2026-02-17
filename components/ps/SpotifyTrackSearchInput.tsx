@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Music, Search, Loader2, X, ExternalLink } from "lucide-react";
-import { debounce } from "lodash";
+import { debounce } from "@/lib/utils";
 import { spotifyAPI, SearchResult } from "@/lib/spotify-api";
 import { getVinylColorsFromCover, VinylColorScheme } from "@/utils/color-extraction";
 
