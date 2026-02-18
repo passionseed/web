@@ -1,4 +1,4 @@
-## 2025-02-18 - Custom Regex Sanitization Risks
-**Vulnerability:** The codebase used a custom regex-based implementation (`lib/security/sanitize-html.ts`) for HTML sanitization, which is fragile and prone to XSS bypasses (e.g. unquoted attributes).
-**Learning:** Developers often underestimate the complexity of HTML parsing. Relying on custom regex creates a false sense of security.
-**Prevention:** Always use established, battle-tested libraries like `isomorphic-dompurify` for HTML sanitization. Ensure `jsdom` is added as a production dependency for `isomorphic-dompurify` to work correctly in SSR environments.
+## 2024-05-22 - Missing Authentication on AI Server Actions
+**Vulnerability:** Found `app/actions/advisor-actions.ts` exposing expensive AI operations via Server Actions without any authentication or rate limiting checks.
+**Learning:** Next.js Server Actions are public API endpoints by default. Without explicit auth guards, they can be abused for DoS or resource exhaustion, especially when wrapping paid APIs like LLMs.
+**Prevention:** Always implement a `checkAuth` guard or similar middleware-like check at the start of every "use server" action that performs sensitive or expensive operations.
