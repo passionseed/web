@@ -41,7 +41,7 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
   const { data: seed } = await supabase
     .from("seeds")
     .select(
-      "*, learning_maps!map_id(title, description), category:seed_categories(id, name, logo_url), path:paths(id, total_days)",
+      "*, learning_maps!map_id(title, description), category:seed_categories(id, name, logo_url)",
     )
     .eq("id", id)
     .single();
@@ -51,9 +51,19 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
   }
 
   const isPathLab = seed.seed_type === "pathlab";
-  const pathTotalDays = Array.isArray((seed as any).path)
-    ? (seed as any).path[0]?.total_days
-    : (seed as any).path?.total_days;
+
+  // Fetch path data separately so a missing table doesn't break the whole page
+  let pathData: { id: string; total_days: number } | null = null;
+  if (isPathLab) {
+    const { data: pathResult } = await supabase
+      .from("paths")
+      .select("id, total_days")
+      .eq("seed_id", id)
+      .maybeSingle();
+    pathData = pathResult;
+  }
+
+  const pathTotalDays = pathData?.total_days;
 
   // Check if user is already in a room for this seed
   let userRoom = null;
@@ -97,22 +107,16 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
 
   // Check if user is already enrolled in pathlab
   let pathEnrollmentId: string | undefined = undefined;
-  if (user && isPathLab) {
-    const pathId = Array.isArray((seed as any).path)
-      ? (seed as any).path[0]?.id
-      : (seed as any).path?.id;
+  if (user && isPathLab && pathData?.id) {
+    const { data: enrollment } = await supabase
+      .from("path_enrollments")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("path_id", pathData.id)
+      .maybeSingle();
 
-    if (pathId) {
-      const { data: enrollment } = await supabase
-        .from("path_enrollments")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("path_id", pathId)
-        .maybeSingle();
-
-      if (enrollment) {
-        pathEnrollmentId = enrollment.id;
-      }
+    if (enrollment) {
+      pathEnrollmentId = enrollment.id;
     }
   }
 
