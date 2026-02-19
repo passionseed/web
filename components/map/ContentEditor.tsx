@@ -1010,16 +1010,18 @@ export function ContentEditor({
             (window as any).__finishContentAutoSave();
           }
         } else {
+          // Guard: node must be saved to DB before content can be created
+          if (nodeId.startsWith("temp_")) {
+            toast({
+              title: "Save the map first",
+              description: "Please save the map before adding content to new nodes.",
+              variant: "destructive",
+            });
+            return;
+          }
+
           // Create new content in database
           console.log("➕ Creating content in database for node:", nodeId);
-          console.log("Content data being sent:", {
-            node_id: nodeId,
-            content_type: savedContent.content_type,
-            content_title: savedContent.content_title,
-            content_url: savedContent.content_url,
-            content_body: savedContent.content_body,
-            display_order: savedContent.display_order,
-          });
 
           finalContent = await createNodeContent({
             node_id: nodeId,

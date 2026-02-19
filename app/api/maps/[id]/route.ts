@@ -300,3 +300,6 @@ export async function PUT(
     );
   }
 }
+
+// sendBeacon always uses POST, so alias POST to the same handler
+export const POST = PUT;

@@ -1751,7 +1751,7 @@ export const batchUpdateMap = async (
 
       // Extract temp_id from nodes before database insert (similar to assessments)
       const nodesToCreate = updates.nodes.create.map((node) => {
-        const { temp_id, ...nodeData } = node as any; // Remove temp_id from database insert
+        const { temp_id, node_assessments, node_content, node_paths_source, node_paths_destination, ...nodeData } = node as any; // Remove temp_id and related table fields
         return nodeData;
       });
 
@@ -1990,20 +1990,19 @@ export const batchUpdateMap = async (
 
       // Map temp node IDs to real IDs in content
       const contentToCreate = updates.content.create.map((content) => {
+        const { id, ...rest } = content as any;
         const mappedContent = {
-          ...content,
-          node_id: createdNodeMap.get(content.node_id!) || content.node_id,
+          // Only include id if it's a real UUID (not temp), so DB can auto-generate otherwise
+          ...(id && !id.startsWith("temp_") ? { id } : {}),
+          ...rest,
+          node_id: createdNodeMap.get(rest.node_id!) || rest.node_id,
         };
-        console.log("🔗 Content mapping:", {
-          original: content,
-          mapped: mappedContent,
-        });
         return mappedContent;
       });
 
       const { error } = await supabase
         .from("node_content")
-        .insert(contentToCreate);
+        .upsert(contentToCreate, { onConflict: "id", ignoreDuplicates: true });
       if (error) {
         console.error("❌ Content creation failed:", error);
         throw new Error(`Content creation failed: ${error.message}`);
@@ -2017,7 +2016,7 @@ export const batchUpdateMap = async (
       // Map temp node IDs to real IDs in assessments
       const assessmentsToCreate = updates.assessments.create.map(
         (assessment) => {
-          const { temp_id, ...assessmentData } = assessment; // Remove temp_id from database insert
+          const { temp_id, quiz_questions, id, ...assessmentData } = assessment as any; // Remove temp_id, id (temp uuid), and quiz_questions (related table, not a column)
           console.log(`🔍 Processing assessment with temp_id: ${temp_id}, node_id: ${assessmentData.node_id}`);
           const mappedAssessment = {
             ...assessmentData,
@@ -2169,7 +2168,7 @@ export const batchUpdateMap = async (
 
     for (const node of updates.nodes.update) {
       console.log("📝 Updating node:", node.id);
-      const { id, ...nodeData } = node;
+      const { id, node_assessments, node_content, node_paths_source, node_paths_destination, ...nodeData } = node as any;
       const { error } = await supabase
         .from("map_nodes")
         .update(nodeData)

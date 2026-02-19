@@ -1,9 +1,8 @@
 // app/components/NodeViewPanel/nodeViewHelpers.ts
 import { memo, useMemo } from "react";
 import { NodeContent } from "@/types/map";
-import { ImageIcon, PlayCircle, ExternalLink } from "lucide-react";
+import { ImageIcon, ExternalLink } from "lucide-react";
 import { Button } from "../ui/button";
-import Embed, { defaultProviders } from "react-tiny-oembed";
 import { CanvaEmbed } from "./CanvaEmbed";
 import { marked } from "marked";
 import { OrderCodeActivity } from "./OrderCodeActivity";
@@ -53,16 +52,6 @@ const processTextContent = (content: string): string => {
   return sanitizeHtml(content);
 };
 
-// Custom fallback components for better UX - memoized to prevent unnecessary re-renders
-const LoadingFallback = memo(({ url }: { url: string }) => (
-  <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex flex-col items-center justify-center text-center p-6 animate-pulse">
-    <PlayCircle className="h-12 w-12 text-slate-400 mb-4" />
-    <h3 className="font-semibold text-slate-600 mb-2">Loading content...</h3>
-    <p className="text-sm text-slate-500">Preparing your media for viewing</p>
-  </div>
-));
-LoadingFallback.displayName = "LoadingFallback";
-
 const ErrorFallback = memo(({ url }: { url: string }) => (
   <div className="aspect-video bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center text-center p-6">
     <ExternalLink className="h-12 w-12 text-red-400 mb-4" />
@@ -89,63 +78,59 @@ const ErrorFallback = memo(({ url }: { url: string }) => (
 ));
 ErrorFallback.displayName = "ErrorFallback";
 
-// Custom image component for better styling - memoized
-const CustomImageComponent = memo(({ responce }: { responce?: any }) => {
-  if (!responce?.url) return null;
+// Resolve a video URL to an embeddable iframe src, or null if not supported.
+function resolveVideoEmbedSrc(url: string): string | null {
+  try {
+    const u = new URL(url);
 
-  return (
-    <div className="relative overflow-hidden rounded-lg shadow-lg bg-white">
-      <img
-        src={responce.url}
-        alt={responce.title || responce.author_name || "Embedded content"}
-        className="w-full h-auto object-cover"
-        style={{ maxHeight: "400px" }}
-      />
-      {responce.provider_name && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-          <p className="text-white text-sm font-medium">
-            From {responce.provider_name}
-          </p>
-          {responce.title && (
-            <p className="text-white/90 text-xs mt-1">{responce.title}</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-});
-CustomImageComponent.displayName = "CustomImageComponent";
+    // YouTube: youtube.com/watch?v=ID or youtu.be/ID or youtube.com/embed/ID
+    const ytMatch =
+      u.hostname.replace("www.", "") === "youtube.com"
+        ? u.searchParams.get("v") ||
+          u.pathname.match(/\/(?:embed|shorts)\/([^/?]+)/)?.[1]
+        : u.hostname === "youtu.be"
+          ? u.pathname.slice(1)
+          : null;
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch}`;
+
+    // Vimeo: vimeo.com/ID or player.vimeo.com/video/ID
+    const vimeoMatch = u.pathname.match(/\/(?:video\/)?(\d+)/);
+    if (
+      (u.hostname.replace("www.", "") === "vimeo.com" ||
+        u.hostname === "player.vimeo.com") &&
+      vimeoMatch
+    ) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+
+    // Google Drive: drive.google.com/file/d/ID/view
+    const driveMatch = u.pathname.match(/\/file\/d\/([^/]+)/);
+    if (u.hostname === "drive.google.com" && driveMatch) {
+      return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 // Video Embed Component - memoized to prevent re-renders
 const VideoEmbed = memo(({ contentUrl }: { contentUrl: string }) => {
-  console.log("🎥 VideoEmbed rendering for URL:", contentUrl);
+  const embedSrc = useMemo(() => resolveVideoEmbedSrc(contentUrl), [contentUrl]);
 
-  const embedOptions = useMemo(() => ({
-    maxwidth: 800,
-    maxheight: 450,
-    align: "center" as const,
-  }), []);
-
-  const embedStyle = useMemo(() => ({
-    width: "100%",
-    maxWidth: "100%",
-    borderRadius: "8px",
-    overflow: "hidden",
-  }), []);
-
-  const embedKey = useMemo(() => {
-    return `video-${contentUrl.split('/').pop()?.split('?')[0] || 'embed'}`;
-  }, [contentUrl]);
+  if (!embedSrc) {
+    return <ErrorFallback url={contentUrl} />;
+  }
 
   return (
-    <div className="w-full" key={embedKey}>
-      <Embed
-        url={contentUrl}
-        options={embedOptions}
-        style={embedStyle}
-        LoadingFallbackElement={<LoadingFallback url={contentUrl} />}
-        FallbackElement={<ErrorFallback url={contentUrl} />}
-        ImgComponent={CustomImageComponent}
+    <div className="w-full aspect-video overflow-hidden rounded-lg shadow-lg">
+      <iframe
+        src={embedSrc}
+        className="w-full h-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+        title="Video content"
       />
     </div>
   );
