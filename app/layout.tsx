@@ -5,6 +5,8 @@ import {
   Libre_Franklin,
   Krub,
   Bai_Jamjuree,
+  Poppins,
+  Reenie_Beanie,
 } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
@@ -42,6 +44,18 @@ const baiJamjuree = Bai_Jamjuree({
   weight: ["200", "300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   variable: "--font-bai-jamjuree",
+});
+
+const poppins = Poppins({
+  weight: ["700"],
+  subsets: ["latin"],
+  variable: "--font-poppins",
+});
+
+const reenieBeanie = Reenie_Beanie({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-reenie-beanie",
 });
 
 export const metadata: Metadata = {
@@ -95,7 +109,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable}`}
+        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${poppins.variable} ${reenieBeanie.variable}`}
       >
         <ThemeProvider
           attribute="class"

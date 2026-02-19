@@ -3,21 +3,65 @@
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Trophy, Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import gsap from "gsap";
 
 export default function HackathonPage() {
+  const router = useRouter();
   const starsRef = useRef<HTMLDivElement>(null);
+  const subtitleRef = useRef<HTMLHeadingElement>(null);
+  const waterRef = useRef<HTMLDivElement>(null);
   const [showTitle, setShowTitle] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const handleRegister = () => {
+    if (isTransitioning || !waterRef.current) return;
+    setIsTransitioning(true);
+
+    const tl = gsap.timeline();
+
+    // Water rises to fill screen
+    tl.fromTo(
+      waterRef.current,
+      { yPercent: 100 },
+      { yPercent: 0, duration: 0.9, ease: "power3.inOut" }
+    )
+    // Hold briefly at peak, then navigate
+    .call(() => router.push("/hackathon/register"))
+    // Water drains upward after navigation
+    .to(waterRef.current, {
+      yPercent: -100,
+      duration: 0.7,
+      ease: "power3.inOut",
+      delay: 0.3,
+      onComplete: () => setIsTransitioning(false),
+    });
+  };
 
   useEffect(() => {
-    // Start title glow immediately
+    if (!subtitleRef.current) return;
+
+    // Step 1: title glow starts immediately
     setShowTitle(true);
 
-    // Animation timeline - everything else appears after title glows up
-    const timer = setTimeout(() => setShowContent(true), 2000); // Everything else at 2s
+    // Step 2: after title glow finishes (~1.2s), start handwriting
+    const writeTimer = setTimeout(() => {
+      gsap.fromTo(
+        subtitleRef.current,
+        { clipPath: "inset(0 100% 0 0)" },
+        {
+          clipPath: "inset(0 0% 0 0)",
+          duration: 2,
+          ease: "power2.inOut",
+          // Step 3: after writing finishes, fade in the rest
+          onComplete: () => setShowContent(true),
+        }
+      );
+    }, 1400);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(writeTimer);
     };
   }, []);
 
@@ -41,7 +85,7 @@ export default function HackathonPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a] text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[#03050a] text-white relative overflow-hidden">
       {/* Black overlay that fades out */}
       <div
         className={`fixed inset-0 bg-black z-40 transition-opacity duration-1000 ${
@@ -89,7 +133,31 @@ export default function HackathonPage() {
         .animate-titleGlowUp {
           animation: titleGlowUp 1.2s ease-out forwards;
         }
+        @keyframes waveShift {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-wave {
+          animation: waveShift 2s linear infinite;
+        }
       `}</style>
+
+      {/* Water transition overlay */}
+      <div
+        ref={waterRef}
+        className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
+        style={{ transform: 'translateY(100%)', background: 'linear-gradient(to bottom, #4a90c4 0%, #1a5a8a 50%, #0d3a5c 100%)' }}
+      >
+        {/* Animated wave at the top surface */}
+        <div className="absolute -top-10 left-0 w-[200%] h-16 animate-wave">
+          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" className="w-1/2 h-full inline-block">
+            <path d="M0,30 C180,60 360,0 540,30 C720,60 900,0 1080,30 C1260,60 1440,0 1440,30 L1440,60 L0,60 Z" fill="#4a90c4" />
+          </svg>
+          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" className="w-1/2 h-full inline-block">
+            <path d="M0,30 C180,60 360,0 540,30 C720,60 900,0 1080,30 C1260,60 1440,0 1440,30 L1440,60 L0,60 Z" fill="#4a90c4" />
+          </svg>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-screen flex items-center">
@@ -185,30 +253,51 @@ export default function HackathonPage() {
         />
 
         <div className="container mx-auto px-4 py-20 relative z-50">
-          <div className="text-center max-w-4xl mx-auto space-y-8">
+          <div className="text-center max-w-4xl mx-auto space-y-4">
+            {/* Partner logos */}
+            <div
+              className={`flex items-center justify-center gap-16 -mt-36 mb-16 transition-opacity duration-1000 ${
+                showContent ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <div className="w-20 h-20 flex items-center justify-center">
+                <img src="/hackathon/PS.png" alt="Passion Seed" className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 0 14px rgba(145,196,227,0.9))' }} />
+              </div>
+              <div className="w-28 h-28 flex items-center justify-center">
+                <img src="/hackathon/AMSA.png" alt="AMSA Thailand" className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 0 14px rgba(145,196,227,0.9))' }} />
+              </div>
+              <div className="w-28 h-28 flex items-center justify-center">
+                <img src="/hackathon/StemLike.png" alt="STEM like Her" className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 0 14px rgba(145,196,227,0.9))' }} />
+              </div>
+            </div>
+
             {/* Title with glow-up animation - higher z-index to appear above black overlay */}
             <h1
               className={`text-6xl md:text-7xl font-bold tracking-tight relative z-50 ${showTitle ? 'animate-titleGlowUp' : 'opacity-0'}`}
               style={{ textShadow: '0 0 40px rgba(145,196,227,0.3)' }}
             >
-              <span className="bg-gradient-to-r from-[#91C4E3] via-[#A594BA] to-[#91C4E3] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#91C4E3] to-[#65ABFC] bg-clip-text text-transparent font-[family-name:var(--font-poppins)] font-bold">
                 The Next Decade Hackathon
               </span>
             </h1>
-            {/* Content that fades in after title (including subtitle) */}
+            {/* Subtitle - GSAP handwriting animation */}
+            <h2
+              ref={subtitleRef}
+              className="text-5xl md:text-6xl font-semibold text-white mb-3 font-[family-name:var(--font-reenie-beanie)]"
+              style={{
+                clipPath: 'inset(0 100% 0 0)',
+                textShadow: '0 0 30px rgba(145,196,227,0.4)',
+              }}
+            >
+              Preventive Healthcare
+            </h2>
+
+            {/* Content that fades in after title */}
             <div
               className={`transition-opacity duration-1000 ${
                 showContent ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              <h2
-                className="text-3xl md:text-4xl font-semibold text-[#91C4E3] mb-8"
-                style={{
-                  textShadow: '0 0 30px rgba(145,196,227,0.4)'
-                }}
-              >
-                Preventive Healthcare
-              </h2>
               <p className="text-xl text-gray-400 max-w-2xl mx-auto">
                 Join us in shaping the future of healthcare through innovation, technology, and collaboration
               </p>
@@ -217,7 +306,8 @@ export default function HackathonPage() {
               <div className="pt-6">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] hover:from-[#7ab3d3] hover:to-[#9484aa] text-white text-xl px-12 py-6 rounded-full shadow-[0_0_40px_rgba(145,196,227,0.6)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(145,196,227,1)] transform hover:scale-105"
+                  onClick={handleRegister}
+                  className="bg-[#9D81AC] hover:bg-[#8a6f99] text-white text-xl px-12 py-6 rounded-full shadow-[0_0_40px_rgba(157,129,172,0.6)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(157,129,172,1)] transform hover:scale-105"
                 >
                   Register Now
                 </Button>
@@ -568,6 +658,7 @@ export default function HackathonPage() {
             </p>
             <Button
               size="lg"
+              onClick={handleRegister}
               className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] hover:from-[#7ab3d3] hover:to-[#9484aa] text-white text-xl px-12 py-6 rounded-full shadow-[0_0_30px_rgba(145,196,227,0.5)] transition-all duration-300 hover:shadow-[0_0_50px_rgba(145,196,227,0.8)] transform hover:scale-105"
             >
               Register for Free
