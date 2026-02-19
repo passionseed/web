@@ -26,6 +26,7 @@ import { LearningMap, UserMapEnrollment } from "@/types/map";
 import { useProgressMaps } from "@/hooks/use-progress-maps";
 import { LearningMapsSkeleton } from "@/components/learning-maps-skeleton";
 import { ClassroomSection } from "@/components/dashboard/ClassroomSection";
+import { RECOMMENDED_WORKSHOPS, DISCOVER_COMMUNITIES } from "@/lib/constants/dashboard";
 
 interface DashboardHomeProps {
   user: any;
@@ -64,39 +65,39 @@ type EnrolledMapWithStats = MapWithStats & {
   };
 };
 
+const getProgressStatus = (map: MapWithStats | EnrolledMapWithStats) => {
+  // For enrolled maps with real-time progress, use the calculated progress
+  if ("isEnrolled" in map && map.isEnrolled && map.realTimeProgress) {
+    const progress = map.realTimeProgress.progressPercentage;
+    const { passedNodes, failedNodes, submittedNodes, inProgressNodes } =
+      map.realTimeProgress;
+
+    if (progress === 100) return { status: "Completed", progress: 100 };
+    if (
+      passedNodes > 0 ||
+      failedNodes > 0 ||
+      submittedNodes > 0 ||
+      inProgressNodes > 0
+    ) {
+      return { status: "In Progress", progress };
+    }
+    return { status: "Not Started", progress: 0 };
+  }
+
+  // For enrolled maps without real-time progress (fallback), use enrollment progress
+  if ("isEnrolled" in map && map.isEnrolled) {
+    const progress = map.enrollment.progress_percentage;
+    if (progress === 0) return { status: "Not Started", progress: 0 };
+    if (progress < 100) return { status: "In Progress", progress };
+    return { status: "Completed", progress: 100 };
+  }
+
+  // For non-enrolled maps, show as "Not Started"
+  return { status: "Not Started", progress: 0 };
+};
+
 export function DashboardHome({ user }: DashboardHomeProps) {
   const { enrolledMaps, availableMaps, isLoading, error } = useProgressMaps();
-
-  const getProgressStatus = (map: MapWithStats | EnrolledMapWithStats) => {
-    // For enrolled maps with real-time progress, use the calculated progress
-    if ("isEnrolled" in map && map.isEnrolled && map.realTimeProgress) {
-      const progress = map.realTimeProgress.progressPercentage;
-      const { passedNodes, failedNodes, submittedNodes, inProgressNodes } =
-        map.realTimeProgress;
-
-      if (progress === 100) return { status: "Completed", progress: 100 };
-      if (
-        passedNodes > 0 ||
-        failedNodes > 0 ||
-        submittedNodes > 0 ||
-        inProgressNodes > 0
-      ) {
-        return { status: "In Progress", progress };
-      }
-      return { status: "Not Started", progress: 0 };
-    }
-
-    // For enrolled maps without real-time progress (fallback), use enrollment progress
-    if ("isEnrolled" in map && map.isEnrolled) {
-      const progress = map.enrollment.progress_percentage;
-      if (progress === 0) return { status: "Not Started", progress: 0 };
-      if (progress < 100) return { status: "In Progress", progress };
-      return { status: "Completed", progress: 100 };
-    }
-
-    // For non-enrolled maps, show as "Not Started"
-    return { status: "Not Started", progress: 0 };
-  };
 
   return (
     <div className="container py-10 px-4 md:px-6">
@@ -394,26 +395,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
           </Button>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              title: "Advanced JavaScript Patterns",
-              description: "Master modern JavaScript techniques",
-              category: "Build",
-              date: "Starting in 2 days",
-            },
-            {
-              title: "Creative UI Design",
-              description: "Learn the principles of beautiful design",
-              category: "Inspire",
-              date: "Starting tomorrow",
-            },
-            {
-              title: "Community Leadership",
-              description: "Become an effective community leader",
-              category: "Scale",
-              date: "Starting next week",
-            },
-          ].map((workshop, index) => (
+          {RECOMMENDED_WORKSHOPS.map((workshop, index) => (
             <Card key={index} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -455,26 +437,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
           </Button>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              name: "JavaScript Developers",
-              members: 1250,
-              description: "Share knowledge and build amazing things together",
-              tag: "Technology",
-            },
-            {
-              name: "Creative Designers",
-              members: 980,
-              description: "Explore design principles and share your work",
-              tag: "Design",
-            },
-            {
-              name: "Community Builders",
-              members: 750,
-              description: "Learn how to build and grow communities",
-              tag: "Leadership",
-            },
-          ].map((community, index) => (
+          {DISCOVER_COMMUNITIES.map((community, index) => (
             <Card key={index} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
