@@ -8,6 +8,7 @@
  *   npx tsx scripts/test-concurrent-jobs.ts
  *   npx tsx scripts/test-concurrent-jobs.ts --users 20
  *   npx tsx scripts/test-concurrent-jobs.ts --production
+ *   npx tsx scripts/test-concurrent-jobs.ts --users=100 --token=YOUR_SUPABASE_ACCESS_TOKEN
  */
 
 import { AssessmentAnswers } from '../types/direction-finder';
@@ -15,6 +16,7 @@ import { AssessmentAnswers } from '../types/direction-finder';
 // Configuration
 const CONCURRENT_USERS = parseInt(process.argv.find(arg => arg.startsWith('--users='))?.split('=')[1] || '10');
 const IS_PRODUCTION = process.argv.includes('--production');
+const AUTH_TOKEN = process.argv.find(arg => arg.startsWith('--token='))?.split('=')[1];
 const BASE_URL = IS_PRODUCTION
   ? 'https://your-production-domain.vercel.app'
   : 'http://localhost:3000';
@@ -26,18 +28,19 @@ function generateTestAssessment(userId: number): AssessmentAnswers {
     'Writing', 'Business', 'Teaching', 'Healthcare', 'Engineering'
   ];
 
-  const interests = ['interested', 'very_interested', 'neutral'] as const;
-  const capabilities = ['capable', 'very_capable', 'somewhat_capable'] as const;
+  const interests = [9, 8, 7, 6] as const;
+  const capabilities = [8, 7, 6, 5] as const;
 
   return {
     q1_flow: {
       description: `User ${userId}: I love coding and building things. Time flies when I'm working on a challenging problem.`,
+      activities: ['creating', 'solving', 'building'],
     },
     q2_zone_grid: {
       items: domains.slice(0, 6).map((domain, idx) => ({
         domain,
-        interest: interests[idx % 3],
-        capability: capabilities[idx % 3],
+        interest: interests[idx % interests.length],
+        capability: capabilities[idx % capabilities.length],
       })),
     },
     q3_work_style: {
@@ -59,6 +62,7 @@ function generateTestAssessment(userId: number): AssessmentAnswers {
     },
     q6_unique: {
       description: `User ${userId}: I can explain complex technical concepts in simple terms that anyone can understand.`,
+      skipped: false,
     },
   };
 }
@@ -157,6 +161,12 @@ async function pollJobStatus(
     attempts++;
 
     try {
+      // Trigger one processing step per polling cycle (request-driven worker)
+      await fetch(`${BASE_URL}/api/direction/process/${jobId}`, {
+        method: 'POST',
+        headers,
+      });
+
       const response = await fetch(`${BASE_URL}/api/direction/status/${jobId}`, {
         headers,
       });
@@ -206,6 +216,7 @@ async function runLoadTest() {
   console.log('='.repeat(60));
   console.log(`📊 Testing ${CONCURRENT_USERS} concurrent users`);
   console.log(`🌐 Target: ${BASE_URL}`);
+  console.log(`🔐 Auth token: ${AUTH_TOKEN ? 'provided' : 'not provided (will likely fail with 401)'}`);
   console.log(`⏰ Started: ${new Date().toLocaleString()}`);
   console.log('='.repeat(60) + '\n');
 
@@ -215,7 +226,7 @@ async function runLoadTest() {
   const testStartTime = Date.now();
 
   const jobPromises = Array.from({ length: CONCURRENT_USERS }, (_, i) =>
-    createJob(i + 1)
+    createJob(i + 1, AUTH_TOKEN)
   );
 
   let jobs: { jobId: string; startTime: number; userId: number }[];
@@ -247,7 +258,7 @@ async function runLoadTest() {
   console.log(`\n⏳ PHASE 2: Monitoring ${jobs.length} jobs...\n`);
 
   const pollPromises = jobs.map(job =>
-    pollJobStatus(job.jobId, job.userId, job.startTime)
+    pollJobStatus(job.jobId, job.userId, job.startTime, AUTH_TOKEN)
   );
 
   const results = await Promise.allSettled(pollPromises);
