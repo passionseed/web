@@ -45,23 +45,27 @@ const ALLOWED_ATTR = [
   "loading", // for 'img'
 ];
 
-// Configure DOMPurify hooks
-// These run on every sanitization call.
-// We add them once at module scope.
-DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-  // Ensure we are dealing with an element
-  if ("tagName" in node) {
-    if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
-      node.setAttribute("rel", "noopener noreferrer");
-    }
-    if (node.tagName === "IMG" && !node.getAttribute("loading")) {
-      node.setAttribute("loading", "lazy");
-    }
-  }
-});
+// Hook is registered lazily inside sanitizeHtml to avoid issues
+// with module-scope JSDOM initialization in Next.js serverless production.
+let hookRegistered = false;
 
 export function sanitizeHtml(input: string): string {
   if (!input) return "";
+
+  // Register the hook once, lazily, to avoid module-scope JSDOM issues in serverless.
+  if (!hookRegistered) {
+    DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+      if ("tagName" in node) {
+        if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
+          node.setAttribute("rel", "noopener noreferrer");
+        }
+        if (node.tagName === "IMG" && !node.getAttribute("loading")) {
+          node.setAttribute("loading", "lazy");
+        }
+      }
+    });
+    hookRegistered = true;
+  }
 
   // Note: isomorphic-dompurify automatically detects environment (Node/JSDOM or Browser).
   // We explicitly cast to string to satisfy TypeScript as sanitize() return type can vary.
