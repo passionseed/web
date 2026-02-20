@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtmlLib from "sanitize-html";
 import { marked } from "marked";
 
 const ALLOWED_TAGS = [
@@ -31,48 +31,49 @@ const ALLOWED_TAGS = [
   "td",
 ];
 
-const ALLOWED_ATTR = [
-  "class",
-  "title",
-  "aria-label",
-  "href",
-  "target",
-  "rel", // for 'a'
-  "src",
-  "alt",
-  "width",
-  "height",
-  "loading", // for 'img'
-];
-
-// Hook is registered lazily inside sanitizeHtml to avoid issues
-// with module-scope JSDOM initialization in Next.js serverless production.
-let hookRegistered = false;
+const ALLOWED_ATTR = {
+  '*': [
+    "class",
+    "title",
+    "aria-label",
+    "href",
+    "target",
+    "rel", // for 'a'
+    "src",
+    "alt",
+    "width",
+    "height",
+    "loading", // for 'img'
+  ]
+};
 
 export function sanitizeHtml(input: string): string {
   if (!input) return "";
 
-  // Register the hook once, lazily, to avoid module-scope JSDOM issues in serverless.
-  if (!hookRegistered) {
-    DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-      if ("tagName" in node) {
-        if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
-          node.setAttribute("rel", "noopener noreferrer");
-        }
-        if (node.tagName === "IMG" && !node.getAttribute("loading")) {
-          node.setAttribute("loading", "lazy");
-        }
+  return sanitizeHtmlLib(input, {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: ALLOWED_ATTR,
+    transformTags: {
+      a: (tagName, attribs) => {
+        return {
+          tagName: 'a',
+          attribs: {
+            ...attribs,
+            ...(attribs.target === '_blank' ? { rel: 'noopener noreferrer' } : {})
+          }
+        };
+      },
+      img: (tagName, attribs) => {
+        return {
+          tagName: 'img',
+          attribs: {
+            ...attribs,
+            ...(!attribs.loading ? { loading: 'lazy' } : {})
+          }
+        };
       }
-    });
-    hookRegistered = true;
-  }
-
-  // Note: isomorphic-dompurify automatically detects environment (Node/JSDOM or Browser).
-  // We explicitly cast to string to satisfy TypeScript as sanitize() return type can vary.
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-  }) as string;
+    }
+  });
 }
 
 export function markdownToSafeHtml(markdown: string): string {
