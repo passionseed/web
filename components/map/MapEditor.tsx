@@ -263,7 +263,7 @@ const CustomNode = React.memo(
             src={spriteUrl}
             alt={data.title}
             loading="lazy" // Improve performance
-            className={`w-max h-max object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200 ${
+            className={`w-auto h-auto block object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200 ${
               selected ? "brightness-110 saturate-120" : "brightness-100"
             }`}
           />

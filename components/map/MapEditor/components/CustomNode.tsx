@@ -54,7 +54,7 @@ export function CustomNode({ data, selected }: CustomNodeProps) {
         <img
           src={spriteUrl}
           alt={data.title}
-          className="relative w-max h-max object-contain transition-all duration-300"
+          className="relative w-auto h-auto block object-contain transition-all duration-300"
           style={{ filter: imageFilter }}
         />
 
