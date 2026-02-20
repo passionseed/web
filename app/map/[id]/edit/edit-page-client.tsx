@@ -359,8 +359,18 @@ export default function EditMapPage({
       currentNodes.forEach((cnode) => {
         const inode = initialNodes.find((n) => n.id === cnode.id);
         if (!inode) {
-          // New node
-          batchUpdate.nodes.create.push(cnode);
+          // New node - only include actual column fields
+          const { node_content, node_assessments, node_paths_source, node_paths_destination, id, ...nodeData } = cnode;
+
+          // If it's a temp ID, preserve it as temp_id for mapping
+          if (id?.startsWith('temp_')) {
+            batchUpdate.nodes.create.push({
+              ...nodeData,
+              temp_id: id,
+            });
+          } else {
+            batchUpdate.nodes.create.push(nodeData);
+          }
         } else {
           // Check for differences
           const hasChanges =
@@ -371,15 +381,18 @@ export default function EditMapPage({
             JSON.stringify(cnode.metadata) !== JSON.stringify(inode.metadata);
 
           if (hasChanges) {
-            batchUpdate.nodes.update.push(cnode);
+            // Only include actual column fields, not relationship fields
+            const { node_content, node_assessments, node_paths_source, node_paths_destination, ...nodeData } = cnode;
+            batchUpdate.nodes.update.push(nodeData);
           }
         }
       });
 
       console.log("🛣️ Detecting path changes...");
       // Detect path changes (create, delete) - edges in React Flow
-      const currentPaths = map.node_paths_source || [];
-      const initialPaths = initialMap.node_paths_source || [];
+      // Gather all paths from all nodes
+      const currentPaths = currentNodes.flatMap(node => node.node_paths_source || []);
+      const initialPaths = initialNodes.flatMap(node => node.node_paths_source || []);
 
       // Paths to delete
       batchUpdate.paths.delete = initialPaths
@@ -391,7 +404,8 @@ export default function EditMapPage({
                 cpath.destination_node_id === ipath.destination_node_id,
             ),
         )
-        .map((ipath) => ipath.id);
+        .map((ipath) => ipath.id)
+        .filter(id => !id.startsWith('temp_')); // Don't try to delete temp IDs
 
       // Paths to create
       batchUpdate.paths.create = currentPaths.filter(
@@ -423,8 +437,15 @@ export default function EditMapPage({
         // Content to create or update
         currentContent.forEach((cc) => {
           const ic = initialContent.find((c) => c.id === cc.id);
+          const { id, ...contentData } = cc;
+
           if (!ic) {
-            batchUpdate.content.create.push(cc);
+            // For new content, remove temp IDs
+            if (!id?.startsWith('temp_')) {
+              batchUpdate.content.create.push({ ...contentData, id });
+            } else {
+              batchUpdate.content.create.push(contentData);
+            }
           } else if (
             cc.content_type !== ic.content_type ||
             cc.content_title !== ic.content_title ||
@@ -432,7 +453,7 @@ export default function EditMapPage({
             cc.content_body !== ic.content_body ||
             cc.display_order !== ic.display_order
           ) {
-            batchUpdate.content.update.push(cc);
+            batchUpdate.content.update.push({ ...contentData, id });
           }
         });
 
@@ -450,8 +471,19 @@ export default function EditMapPage({
         // Assessment to create or update
         currentAssessments.forEach((ca) => {
           const ia = initialAssessments.find((a) => a.id === ca.id);
+          // Strip out relationship fields
+          const { quiz_questions, id, ...assessmentData } = ca;
+
           if (!ia) {
-            batchUpdate.assessments.create.push(ca);
+            // For new assessments, preserve temp_id for mapping and remove the id field
+            if (id?.startsWith('temp_')) {
+              batchUpdate.assessments.create.push({
+                ...assessmentData,
+                temp_id: id,
+              });
+            } else {
+              batchUpdate.assessments.create.push(assessmentData);
+            }
           } else {
             // Check for assessment-level changes
             const hasAssessmentChanges =
@@ -461,7 +493,7 @@ export default function EditMapPage({
               JSON.stringify(ca.metadata) !== JSON.stringify(ia.metadata);
 
             if (hasAssessmentChanges) {
-              batchUpdate.assessments.update.push(ca);
+              batchUpdate.assessments.update.push({ ...assessmentData, id });
             }
           }
         });
