@@ -5,6 +5,7 @@ import {
   Libre_Franklin,
   Krub,
   Bai_Jamjuree,
+  Mitr,
   Poppins,
   Reenie_Beanie,
 } from "next/font/google";
@@ -44,6 +45,12 @@ const baiJamjuree = Bai_Jamjuree({
   weight: ["200", "300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   variable: "--font-bai-jamjuree",
+});
+
+const mitr = Mitr({
+  weight: ["200", "300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  variable: "--font-mitr",
 });
 
 const poppins = Poppins({
@@ -109,7 +116,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${poppins.variable} ${reenieBeanie.variable}`}
+        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${mitr.variable} ${poppins.variable} ${reenieBeanie.variable}`}
       >
         <ThemeProvider
           attribute="class"
