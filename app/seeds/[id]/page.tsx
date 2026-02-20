@@ -17,34 +17,41 @@ interface SeedDetailPageProps {
 
 export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
   const { id } = await params;
+  console.log("[SeedPage] Loading seed id:", id);
   const supabase = await createClient();
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+  if (authError) console.error("[SeedPage] Auth error:", authError.message);
+  console.log("[SeedPage] User:", user?.id ?? "anonymous");
 
   // Check if user is admin
   let isAdmin = false;
   if (user) {
-    const { data: roles } = await supabase
+    const { data: roles, error: rolesError } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
 
+    if (rolesError) console.error("[SeedPage] user_roles error:", rolesError.message, rolesError.code);
     isAdmin = roles?.some((r) => r.role === "admin") || false;
-    console.log("User ID:", user.id);
-    console.log("User roles:", roles);
-    console.log("Is admin:", isAdmin);
+    console.log("[SeedPage] User ID:", user.id, "| is admin:", isAdmin);
   }
 
   // Fetch seed details
-  const { data: seed } = await supabase
+  console.log("[SeedPage] Fetching seed…");
+  const { data: seed, error: seedError } = await supabase
     .from("seeds")
     .select(
       "*, learning_maps!map_id(title, description), category:seed_categories(id, name, logo_url)",
     )
     .eq("id", id)
     .single();
+
+  if (seedError) console.error("[SeedPage] seeds fetch error:", seedError.message, seedError.code);
+  console.log("[SeedPage] Seed found:", !!seed, "| type:", seed?.seed_type);
 
   if (!seed) {
     notFound();
@@ -55,11 +62,14 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
   // Fetch path data separately so a missing table doesn't break the whole page
   let pathData: { id: string; total_days: number } | null = null;
   if (isPathLab) {
-    const { data: pathResult } = await supabase
+    console.log("[SeedPage] Fetching pathlab path data…");
+    const { data: pathResult, error: pathError } = await supabase
       .from("paths")
       .select("id, total_days")
       .eq("seed_id", id)
       .maybeSingle();
+    if (pathError) console.error("[SeedPage] paths fetch error:", pathError.message, pathError.code);
+    console.log("[SeedPage] Path data:", pathResult);
     pathData = pathResult;
   }
 
@@ -69,7 +79,8 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
   let userRoom = null;
   let userHasCompletedRoom = false;
   if (user && !isPathLab) {
-    const { data: membershipData } = await supabase
+    console.log("[SeedPage] Fetching room membership…");
+    const { data: membershipData, error: membershipError } = await supabase
       .from("seed_room_members")
       .select(
         `
@@ -82,8 +93,12 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
       .limit(1)
       .maybeSingle();
 
+    if (membershipError) console.error("[SeedPage] seed_room_members error:", membershipError.message, membershipError.code);
+    console.log("[SeedPage] Membership found:", !!membershipData);
+
     if (membershipData && (membershipData as any).room) {
       const room = (membershipData as any).room;
+      console.log("[SeedPage] Room id:", room.id, "| status:", room.status, "| seed_id:", room.seed_id);
       // Check if the room is for this seed
       if (
         room.seed_id === id &&
@@ -92,12 +107,15 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
         userRoom = room;
 
         // Check if user has completed this room
-        const { data: completionData } = await supabase
+        const { data: completionData, error: completionError } = await supabase
           .from("seed_room_completions")
           .select("*")
           .eq("room_id", room.id)
           .eq("user_id", user.id)
           .maybeSingle();
+
+        if (completionError) console.error("[SeedPage] seed_room_completions error:", completionError.message, completionError.code);
+        console.log("[SeedPage] Completion found:", !!completionData);
 
         if (completionData) {
           userHasCompletedRoom = true;
@@ -109,12 +127,16 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
   // Check if user is already enrolled in pathlab
   let pathEnrollmentId: string | undefined = undefined;
   if (user && isPathLab && pathData?.id) {
-    const { data: enrollment } = await supabase
+    console.log("[SeedPage] Fetching path enrollment…");
+    const { data: enrollment, error: enrollmentError } = await supabase
       .from("path_enrollments")
       .select("id")
       .eq("user_id", user.id)
       .eq("path_id", pathData.id)
       .maybeSingle();
+
+    if (enrollmentError) console.error("[SeedPage] path_enrollments error:", enrollmentError.message, enrollmentError.code);
+    console.log("[SeedPage] Enrollment:", enrollment?.id ?? "none");
 
     if (enrollment) {
       pathEnrollmentId = enrollment.id;
@@ -124,9 +146,8 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
   const isCreator = user && seed.created_by === user.id;
   const canEdit = isAdmin || isCreator;
 
-  console.log("Seed created by:", seed.created_by);
-  console.log("Is creator:", isCreator);
-  console.log("Can edit:", canEdit);
+  console.log("[SeedPage] Seed created by:", seed.created_by, "| is creator:", isCreator, "| can edit:", canEdit);
+  console.log("[SeedPage] Rendering page ✓");
 
   // Parse description markdown with line breaks preserved
   const descriptionHtml = seed.description
