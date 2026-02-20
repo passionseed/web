@@ -26,6 +26,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  serverExternalPackages: ["jsdom", "html-encoding-sniffer"],
   // Enable image optimization for production
   images: {
     unoptimized: process.env.NODE_ENV === "development",
@@ -51,7 +52,7 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
     serverActions: {
-      bodySizeLimit: '50mb', // Allow up to 50MB for server actions and streaming
+      bodySizeLimit: "50mb", // Allow up to 50MB for server actions and streaming
     },
   },
   // Webpack optimizations
