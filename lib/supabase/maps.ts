@@ -17,6 +17,7 @@ import {
   dedupeRequest,
   createCacheKey,
 } from "@/lib/utils/request-deduplication";
+import { sanitizeHtml } from "@/lib/security/sanitize-html";
 
 // Helper: classroom_teams may be returned as an object or an array depending on select syntax
 export const extractClassroomTeamName = (
@@ -1435,11 +1436,85 @@ export interface BatchMapUpdate {
   };
 }
 
+// Helper to sanitize batch updates
+const sanitizeBatchUpdates = (updates: BatchMapUpdate): void => {
+  if (updates.map) {
+    if (updates.map.title) updates.map.title = sanitizeHtml(updates.map.title);
+    if (updates.map.description)
+      updates.map.description = sanitizeHtml(updates.map.description);
+  }
+
+  // Nodes
+  if (updates.nodes) {
+    if (updates.nodes.create) {
+      updates.nodes.create.forEach((node) => {
+        if (node.title) node.title = sanitizeHtml(node.title);
+        if (node.instructions)
+          node.instructions = sanitizeHtml(node.instructions);
+      });
+    }
+    if (updates.nodes.update) {
+      updates.nodes.update.forEach((node) => {
+        if (node.title) node.title = sanitizeHtml(node.title);
+        if (node.instructions)
+          node.instructions = sanitizeHtml(node.instructions);
+      });
+    }
+  }
+
+  // Content
+  if (updates.content) {
+    if (updates.content.create) {
+      updates.content.create.forEach((content) => {
+        if (content.content_title)
+          content.content_title = sanitizeHtml(content.content_title);
+        if (content.content_body)
+          content.content_body = sanitizeHtml(content.content_body);
+      });
+    }
+    if (updates.content.update) {
+      updates.content.update.forEach((content) => {
+        if (content.content_title)
+          content.content_title = sanitizeHtml(content.content_title);
+        if (content.content_body)
+          content.content_body = sanitizeHtml(content.content_body);
+      });
+    }
+  }
+
+  // Quiz Questions
+  const sanitizeQuizQuestion = (question: Partial<QuizQuestion>) => {
+    if (question.question_text)
+      question.question_text = sanitizeHtml(question.question_text);
+    if (question.correct_option)
+      question.correct_option = sanitizeHtml(question.correct_option);
+
+    if (question.options && Array.isArray(question.options)) {
+      question.options.forEach((opt) => {
+        if (opt.text) opt.text = sanitizeHtml(opt.text);
+        if (opt.option) opt.option = sanitizeHtml(opt.option);
+      });
+    }
+  };
+
+  if (updates.quizQuestions) {
+    if (updates.quizQuestions.create) {
+      updates.quizQuestions.create.forEach(sanitizeQuizQuestion);
+    }
+    if (updates.quizQuestions.update) {
+      updates.quizQuestions.update.forEach(sanitizeQuizQuestion);
+    }
+  }
+};
+
 export const batchUpdateMap = async (
   mapId: string,
   updates: BatchMapUpdate,
   supabaseClient?: ReturnType<typeof createClient>
 ): Promise<void> => {
+  // Sanitize updates immediately
+  sanitizeBatchUpdates(updates);
+
   console.log("🔄 Starting batch update for map:", mapId);
   console.log("📦 Updates to apply:", JSON.stringify(updates, null, 2));
 
