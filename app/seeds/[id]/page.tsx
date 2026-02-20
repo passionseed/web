@@ -74,12 +74,13 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
       .select(
         `
                 *,
-                room:seed_rooms(*)
+                room:seed_rooms!inner(*)
             `,
       )
       .eq("user_id", user.id)
+      .eq("room.seed_id", id)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (membershipData && (membershipData as any).room) {
       const room = (membershipData as any).room;
