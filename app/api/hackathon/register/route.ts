@@ -4,9 +4,12 @@ import { findParticipantByEmail, createParticipant, createSession } from "@/lib/
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, university, role, team_name } = await req.json();
+    const body = await req.json();
+    console.log("Register API received body:", body);
+    const { name, email, password, university, track, grade_level, experience_level, referral_source, bio, team_name } = body;
 
-    if (!name || !email || !password || !university || !role) {
+    if (!name || !email || !password || !university || !track || !grade_level || !experience_level || !referral_source || !bio) {
+      console.log("Missing required fields:", { name, email, password, university, track, grade_level, experience_level, referral_source, bio });
       return NextResponse.json({ error: "All required fields must be filled" }, { status: 400 });
     }
 
@@ -16,11 +19,12 @@ export async function POST(req: NextRequest) {
 
     const existing = await findParticipantByEmail(email);
     if (existing) {
+      console.log("Email already registered:", email);
       return NextResponse.json({ error: "This email is already registered for the hackathon" }, { status: 409 });
     }
 
     const password_hash = hashPassword(password);
-    const participant = await createParticipant({ name, email, password_hash, university, role, team_name });
+    const participant = await createParticipant({ name, email, password_hash, university, role: "Participant", track, grade_level, experience_level, referral_source, bio, team_name });
 
     const token = generateSessionToken();
     await createSession(participant.id, token);
