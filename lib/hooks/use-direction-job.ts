@@ -40,7 +40,12 @@ interface UseDirectionJobResult {
   error: string | null;
 
   // Actions
-  startJob: (answers: AssessmentAnswers, history: any[], language?: 'en' | 'th') => Promise<void>;
+  startJob: (
+    answers: AssessmentAnswers,
+    history: any[],
+    language?: 'en' | 'th',
+    modelName?: string
+  ) => Promise<void>;
   reset: () => void;
 
   // Flags
@@ -80,13 +85,29 @@ export function useDirectionJob(): UseDirectionJobResult {
   const [isLoading, setIsLoading] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
 
+  const triggerProcess = useCallback(async (targetJobId: string): Promise<void> => {
+    try {
+      const response = await fetch(`/api/direction/process/${targetJobId}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok && response.status !== 202) {
+        console.warn('Non-fatal process trigger response:', response.status);
+      }
+    } catch (err) {
+      // Keep polling even if this trigger fails; status endpoint remains source of truth.
+      console.warn('Failed to trigger process step:', err);
+    }
+  }, []);
+
   /**
    * Start a new direction finder job
    */
   const startJob = useCallback(async (
     answers: AssessmentAnswers,
     history: any[],
-    language: 'en' | 'th' = 'en'
+    language: 'en' | 'th' = 'en',
+    modelName?: string
   ) => {
     try {
       setIsLoading(true);
@@ -95,7 +116,7 @@ export function useDirectionJob(): UseDirectionJobResult {
       const response = await fetch('/api/direction/enqueue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers, history, language }),
+        body: JSON.stringify({ answers, history, language, modelName }),
       });
 
       if (!response.ok) {
@@ -106,6 +127,7 @@ export function useDirectionJob(): UseDirectionJobResult {
       setJobId(data.jobId);
       setStatus('pending');
       setIsPolling(true);
+      await triggerProcess(data.jobId);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start job');
@@ -113,7 +135,7 @@ export function useDirectionJob(): UseDirectionJobResult {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [triggerProcess]);
 
   /**
    * Poll for job status
@@ -123,6 +145,7 @@ export function useDirectionJob(): UseDirectionJobResult {
 
     const pollInterval = setInterval(async () => {
       try {
+        await triggerProcess(jobId);
         const response = await fetch(`/api/direction/status/${jobId}`);
 
         if (!response.ok) {
@@ -156,7 +179,7 @@ export function useDirectionJob(): UseDirectionJobResult {
     }, 3000); // Poll every 3 seconds
 
     return () => clearInterval(pollInterval);
-  }, [jobId, isPolling]);
+  }, [jobId, isPolling, triggerProcess]);
 
   /**
    * Reset the hook state

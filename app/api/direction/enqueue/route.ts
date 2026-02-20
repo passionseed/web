@@ -22,10 +22,39 @@ import { createClient } from "@/utils/supabase/server";
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
+    let userId: string | null = null;
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Primary auth path: session cookie
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (!authError && user) {
+      userId = user.id;
+    }
+
+    // Fallback auth path: bearer token (for load testing / non-browser clients)
+    if (!userId) {
+      const authHeader = request.headers.get("authorization");
+      const token = authHeader?.startsWith("Bearer ")
+        ? authHeader.slice("Bearer ".length)
+        : null;
+
+      if (token) {
+        const { createAdminClient } = await import("@/utils/supabase/admin");
+        const admin = createAdminClient();
+        const {
+          data: { user: bearerUser },
+          error: bearerError,
+        } = await admin.auth.getUser(token);
+
+        if (!bearerError && bearerUser) {
+          userId = bearerUser.id;
+        }
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -51,11 +80,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create job record
-    const { data: job, error: insertError } = await supabase
+    // Cookie auth can insert via RLS client; bearer token flow inserts via admin.
+    const authHeader = request.headers.get("authorization");
+    const hasBearerToken = Boolean(authHeader?.startsWith("Bearer "));
+
+    const dbClient = hasBearerToken
+      ? (await import("@/utils/supabase/admin")).createAdminClient()
+      : supabase;
+
+    const { data: job, error: insertError } = await dbClient
       .from('direction_finder_jobs')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         input_data: {
           answers,
           history,
