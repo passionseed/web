@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
 
 interface Student {
   id: string;
@@ -51,15 +64,26 @@ interface ClassroomMap {
 
 interface StudentProgressTableProps {
   students: Student[];
-  classroomMaps: ClassroomMap[];
+  assignments?: ClassroomMap[]; // Legacy prop name, actually contains classroom maps
+  classroomMaps?: ClassroomMap[];
   canManage: boolean;
+  classroomId?: string;
+  onStudentRemoved?: () => void;
 }
 
 export function StudentProgressTable({
   students,
+  assignments,
   classroomMaps,
   canManage,
+  classroomId,
+  onStudentRemoved,
 }: StudentProgressTableProps) {
+  // Use assignments if provided (legacy), otherwise classroomMaps
+  const maps = assignments || classroomMaps || [];
+  const supabase = createClient();
+  const [studentToRemove, setStudentToRemove] = useState<Student | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
   const getStudentName = (student: Student) => {
     console.log("🎭 [DEBUG] Getting student name for student ID:", student.user_id);
     console.log("🔍 [DEBUG] Full student object:", JSON.stringify(student, null, 2));
@@ -117,7 +141,7 @@ export function StudentProgressTable({
   };
 
   const getOverallProgress = (student: Student) => {
-    if (!student.map_progress || (classroomMaps || []).length === 0) {
+    if (!student.map_progress || maps.length === 0) {
       return 0;
     }
 
@@ -128,7 +152,7 @@ export function StudentProgressTable({
       0
     );
 
-    return Math.round(totalProgress / (classroomMaps || []).length);
+    return Math.round(totalProgress / maps.length);
   };
 
   const formatDate = (dateString: string) => {
@@ -149,7 +173,53 @@ export function StudentProgressTable({
     console.log("View progress for student:", student.id);
   };
 
+  const handleRemoveStudent = async () => {
+    if (!studentToRemove || !classroomId) {
+      console.log("❌ [RemoveStudent] Missing studentToRemove or classroomId");
+      return;
+    }
+
+    console.log("🔵 [RemoveStudent] Starting removal process", {
+      studentId: studentToRemove.id,
+      userId: studentToRemove.user_id,
+      classroomId,
+      studentName: getStudentName(studentToRemove),
+    });
+
+    setIsRemoving(true);
+    try {
+      console.log("🔵 [RemoveStudent] Deleting classroom_memberships record...");
+
+      const { data, error } = await supabase
+        .from("classroom_memberships")
+        .delete()
+        .eq("id", studentToRemove.id)
+        .eq("classroom_id", classroomId)
+        .select();
+
+      console.log("🔵 [RemoveStudent] Delete result:", { data, error });
+
+      if (error) {
+        console.error("❌ [RemoveStudent] Database error:", error);
+        throw error;
+      }
+
+      console.log("✅ [RemoveStudent] Student removed successfully!");
+      toast.success(`${getStudentName(studentToRemove)} has been removed from the classroom`);
+
+      setStudentToRemove(null);
+      onStudentRemoved?.();
+    } catch (error) {
+      console.error("❌ [RemoveStudent] Error:", error);
+      toast.error("Failed to remove student. Please try again.");
+    } finally {
+      setIsRemoving(false);
+      console.log("🔵 [RemoveStudent] Process complete");
+    }
+  };
+
   return (
+    <>
     <Card>
       <div className="overflow-x-auto">
         <Table>
@@ -157,13 +227,13 @@ export function StudentProgressTable({
             <TableRow>
               <TableHead>Student</TableHead>
               <TableHead>Overall Progress</TableHead>
-              {(classroomMaps || []).slice(0, 3).map((map) => (
+              {maps.slice(0, 3).map((map) => (
                 <TableHead key={map.map_id} className="min-w-[120px]">
                   {map.map_title}
                 </TableHead>
               ))}
-              {(classroomMaps || []).length > 3 && (
-                <TableHead>+{(classroomMaps || []).length - 3} more</TableHead>
+              {maps.length > 3 && (
+                <TableHead>+{maps.length - 3} more</TableHead>
               )}
               <TableHead>Joined</TableHead>
               {canManage && <TableHead className="w-[50px]"></TableHead>}
@@ -175,9 +245,9 @@ export function StudentProgressTable({
                 <TableCell
                   colSpan={
                     5 +
-                    ((classroomMaps || []).length > 3
+                    (maps.length > 3
                       ? 1
-                      : Math.min((classroomMaps || []).length, 3)) +
+                      : Math.min(maps.length, 3)) +
                     (canManage ? 1 : 0)
                   }
                   className="text-center py-8 text-muted-foreground"
@@ -241,7 +311,7 @@ export function StudentProgressTable({
                     </div>
                   </TableCell>
 
-                  {(classroomMaps || []).slice(0, 3).map((map) => {
+                  {maps.slice(0, 3).map((map) => {
                     const progress = student.map_progress?.find(
                       (p) => p.map_id === map.map_id
                     );
@@ -261,7 +331,7 @@ export function StudentProgressTable({
                     );
                   })}
 
-                  {(classroomMaps || []).length > 3 && (
+                  {maps.length > 3 && (
                     <TableCell>
                       <Button
                         variant="ghost"
@@ -298,7 +368,13 @@ export function StudentProgressTable({
                             <Mail className="h-4 w-4 mr-2" />
                             Contact Student
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => {
+                              console.log("🔵 [RemoveStudent] Remove button clicked for:", student.user_id);
+                              setStudentToRemove(student);
+                            }}
+                          >
                             <User className="h-4 w-4 mr-2" />
                             Remove from Classroom
                           </DropdownMenuItem>
@@ -313,5 +389,31 @@ export function StudentProgressTable({
         </Table>
       </div>
     </Card>
+
+    <AlertDialog open={!!studentToRemove} onOpenChange={(open) => !open && setStudentToRemove(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove Student from Classroom</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to remove{" "}
+            <span className="font-semibold">
+              {studentToRemove ? getStudentName(studentToRemove) : ""}
+            </span>{" "}
+            from this classroom? This will remove their access to all classroom materials and assignments.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isRemoving}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleRemoveStudent}
+            disabled={isRemoving}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isRemoving ? "Removing..." : "Remove Student"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

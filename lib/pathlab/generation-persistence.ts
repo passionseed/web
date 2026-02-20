@@ -835,7 +835,9 @@ export function snapshotToDraft(snapshot: PathLabDraftSnapshot): PathLabGenerato
             prompt:
               typeof node.assessment.metadata?.prompt === "string"
                 ? String(node.assessment.metadata.prompt)
-                : null,
+                : typeof node.assessment.metadata?.question === "string"
+                  ? String(node.assessment.metadata.question)
+                  : null,
             checklist_items: Array.isArray(node.assessment.metadata?.items)
               ? (node.assessment.metadata?.items as string[])
               : undefined,

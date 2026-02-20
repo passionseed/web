@@ -45,6 +45,12 @@ export function GeneratedPathReview({ seedId, nodes }: GeneratedPathReviewProps)
   const [validating, setValidating] = useState(false);
   const [regeneratingScope, setRegeneratingScope] = useState<"all" | "day" | "node" | null>(null);
   const [validation, setValidation] = useState<ValidationResponse | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration errors from Radix UI auto-generated IDs
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!selectedNodeId && nodes[0]?.id) {
@@ -258,6 +264,11 @@ export function GeneratedPathReview({ seedId, nodes }: GeneratedPathReviewProps)
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
             <div className="space-y-1 md:col-span-2">
               <Label className="text-neutral-300 text-xs">Node</Label>
+              {!isMounted ? (
+                <div className="h-10 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-400">
+                  Loading...
+                </div>
+              ) : (
               <Select value={selectedNodeId} onValueChange={setSelectedNodeId}>
                 <SelectTrigger className="bg-neutral-900 border-neutral-700">
                   <SelectValue placeholder="Select node" />
@@ -270,6 +281,7 @@ export function GeneratedPathReview({ seedId, nodes }: GeneratedPathReviewProps)
                   ))}
                 </SelectContent>
               </Select>
+              )}
             </div>
 
             <Button

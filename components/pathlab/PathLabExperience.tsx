@@ -77,16 +77,16 @@ function PhaseStepper({
   if (currentIndex === -1) return null;
 
   return (
-    <div className="mb-6 px-2">
-      <div className="relative flex justify-between">
+    <div className="mb-8 px-4">
+      <div className="relative flex justify-between rounded-2xl border border-neutral-800/50 bg-gradient-to-br from-neutral-900/50 to-neutral-950/50 p-8 shadow-xl">
         {/* Background Line */}
-        <div className="absolute top-4 left-0 h-[2px] w-full bg-neutral-800" />
+        <div className="absolute top-1/2 left-8 right-8 h-[3px] -translate-y-1/2 rounded-full bg-neutral-800/50" />
 
-        {/* Progress Line */}
+        {/* Progress Line with Gradient */}
         <div
-          className="absolute top-4 left-0 h-[2px] bg-blue-500 transition-all duration-500 ease-in-out"
+          className="absolute top-1/2 left-8 h-[3px] -translate-y-1/2 rounded-full bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)] transition-all duration-700 ease-out"
           style={{
-            width: `${(currentIndex / (stepsToShow.length - 1)) * 100}%`,
+            width: `calc(${(currentIndex / (stepsToShow.length - 1)) * 100}% - 1rem)`,
           }}
         />
 
@@ -97,20 +97,20 @@ function PhaseStepper({
           return (
             <div
               key={step.id}
-              className="relative z-10 flex flex-col items-center"
+              className="relative z-10 flex flex-col items-center gap-3"
             >
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all duration-500 ${
                   isActive
-                    ? "border-blue-500 bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                    ? "scale-110 border-blue-500 bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-[0_0_25px_rgba(59,130,246,0.8)]"
                     : isCompleted
-                      ? "border-blue-500 bg-neutral-900 text-blue-500"
-                      : "border-neutral-700 bg-neutral-900 text-neutral-500"
+                      ? "border-blue-500/70 bg-gradient-to-br from-neutral-900 to-neutral-950 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                      : "border-neutral-700/50 bg-gradient-to-br from-neutral-900 to-neutral-950 text-neutral-500"
                 }`}
               >
                 {isCompleted ? (
                   <svg
-                    className="h-5 w-5"
+                    className="h-6 w-6 animate-in zoom-in duration-300"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -123,12 +123,18 @@ function PhaseStepper({
                     />
                   </svg>
                 ) : (
-                  <span className="text-xs font-bold">{idx + 1}</span>
+                  <span className="text-sm font-bold">{idx + 1}</span>
                 )}
               </div>
-              <div className="mt-2 text-center">
+              <div className="text-center">
                 <p
-                  className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-white" : "text-neutral-500"}`}
+                  className={`text-xs font-bold uppercase tracking-widest transition-colors duration-300 ${
+                    isActive
+                      ? "text-blue-300"
+                      : isCompleted
+                        ? "text-neutral-400"
+                        : "text-neutral-600"
+                  }`}
                 >
                   {step.label}
                 </p>
@@ -195,10 +201,12 @@ export function PathLabExperience({
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [progressMap, setProgressMap] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [restarting, setRestarting] = useState(false);
+  const [actionStartTime, setActionStartTime] = useState<number | null>(null);
   const [reflectionDraft, setReflectionDraft] = useState<DailyReflectionDraft>({
-    energyLevel: 3,
-    confusionLevel: 3,
-    interestLevel: 3,
+    energyLevel: 5,
+    confusionLevel: 5,
+    interestLevel: 5,
     openResponse: "",
     timeSpentMinutes: null,
   });
@@ -305,6 +313,15 @@ export function PathLabExperience({
     if (previousRenderedDay.current !== activeDayNumber) {
       setPhase("context");
       previousRenderedDay.current = activeDayNumber;
+      // Reset reflection draft and time tracking for new day
+      setReflectionDraft({
+        energyLevel: 5,
+        confusionLevel: 5,
+        interestLevel: 5,
+        openResponse: "",
+        timeSpentMinutes: null,
+      });
+      setActionStartTime(null);
     }
   }, [day?.day_number]);
 
@@ -319,6 +336,55 @@ export function PathLabExperience({
       setSelectedNodeId(dayNodes[0]?.id || null);
     }
   }, [dayNodes, selectedNodeId]);
+
+  // Auto time tracking - start when entering action phase
+  useEffect(() => {
+    const storageKey = `pathlab_time_${enrollment.id}_day_${day?.day_number}`;
+
+    if (phase === "action" && !actionStartTime) {
+      // Check if we have a stored start time (in case of refresh)
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const storedTime = parseInt(stored, 10);
+        if (!isNaN(storedTime)) {
+          console.log("⏱️ Resumed time tracking from:", new Date(storedTime));
+          setActionStartTime(storedTime);
+        }
+      } else {
+        // Start new timer
+        const now = Date.now();
+        console.log("⏱️ Started time tracking at:", new Date(now));
+        setActionStartTime(now);
+        localStorage.setItem(storageKey, String(now));
+      }
+    }
+
+    // When entering reflection phase, calculate elapsed time
+    if (phase === "reflection" && actionStartTime) {
+      const elapsedMs = Date.now() - actionStartTime;
+      const elapsedMinutes = Math.round(elapsedMs / 60000); // Convert to minutes
+
+      console.log("⏱️ Time tracking ended. Elapsed:", elapsedMinutes, "minutes");
+
+      // Auto-fill time if not already set
+      if (reflectionDraft.timeSpentMinutes === null) {
+        setReflectionDraft((prev) => ({
+          ...prev,
+          timeSpentMinutes: elapsedMinutes,
+        }));
+        console.log("✅ Auto-filled time spent:", elapsedMinutes, "minutes");
+      }
+
+      // Clear localStorage for this day
+      localStorage.removeItem(storageKey);
+    }
+
+    // Clean up on day change
+    if (phase === "context") {
+      setActionStartTime(null);
+      localStorage.removeItem(storageKey);
+    }
+  }, [phase, actionStartTime, day?.day_number, enrollment.id, reflectionDraft.timeSpentMinutes]);
 
   const navigateToDay = (dayNumber: number) => {
     router.push(`/seeds/pathlab/${enrollment.id}?day=${dayNumber}`);
@@ -342,6 +408,7 @@ export function PathLabExperience({
           interestLevel: reflectionDraft.interestLevel,
           openResponse: reflectionDraft.openResponse,
           timeSpentMinutes: reflectionDraft.timeSpentMinutes,
+          extraPromptResponses: reflectionDraft.extraPromptResponses,
           decision,
           exitReflection: extra?.exitReflection,
         }),
@@ -393,6 +460,7 @@ export function PathLabExperience({
           interestLevel: reflectionDraft.interestLevel,
           openResponse: reflectionDraft.openResponse,
           timeSpentMinutes: reflectionDraft.timeSpentMinutes,
+          extraPromptResponses: reflectionDraft.extraPromptResponses,
           decision: "final_reflection",
           endReflection: {
             overallInterest: payload.overallInterest,
@@ -447,24 +515,78 @@ export function PathLabExperience({
   }
 
   if (enrollment.status === "explored" || endReflection) {
+    const handleRestart = async () => {
+      console.log("🔄 Starting restart...");
+      setRestarting(true);
+      try {
+        console.log("📤 Sending restart request for seed:", seed.id);
+        const response = await fetch("/api/pathlab/enroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seedId: seed.id,
+            whyJoined: "Restarting path exploration",
+            restart: true,
+          }),
+        });
+
+        console.log("📥 Response status:", response.status);
+        const payload = await response.json();
+        console.log("📦 Response payload:", payload);
+
+        if (!response.ok) {
+          console.error("❌ Response not OK:", payload);
+          throw new Error(payload?.error || "Failed to restart path");
+        }
+
+        const enrollmentId = payload?.enrollment?.id;
+        console.log("🎫 Enrollment ID:", enrollmentId);
+
+        if (!enrollmentId) {
+          console.error("❌ No enrollment ID in response");
+          throw new Error("Enrollment was created without id");
+        }
+
+        console.log("✅ Restarting complete, redirecting to:", `/seeds/pathlab/${enrollmentId}`);
+
+        // Refresh the page to show Day 1
+        router.refresh();
+        router.push(`/seeds/pathlab/${enrollmentId}`);
+      } catch (error: any) {
+        console.error("💥 Restart error:", error);
+        toast.error(error?.message || "Failed to restart path");
+        setRestarting(false);
+      }
+    };
+
     return (
       <div className="space-y-4">
         <Card className="border-neutral-800 bg-neutral-900/80">
           <CardHeader>
             <CardTitle className="text-white">Explored</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-neutral-200">
+          <CardContent className="space-y-4 text-neutral-200">
             <p>You completed this PathLab exploration.</p>
             <p>
-              Final interest: {endReflection?.overall_interest ?? "-"} / 5, fit:{" "}
-              {endReflection?.fit_level ?? "-"} / 5
+              Final interest: {endReflection?.overall_interest ?? "-"} / 10, fit:{" "}
+              {endReflection?.fit_level ?? "-"} / 10
             </p>
-            <Button
-              onClick={() => router.push("/seeds?gallery=1&type=pathlab")}
-              className="mt-2 bg-white text-black hover:bg-neutral-200"
-            >
-              Back to PathLab
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => router.push("/seeds?gallery=1&type=pathlab")}
+                variant="outline"
+                className="flex-1 border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
+              >
+                Back to PathLab
+              </Button>
+              <Button
+                onClick={handleRestart}
+                disabled={restarting}
+                className="flex-1 bg-white text-black hover:bg-neutral-200"
+              >
+                {restarting ? "Restarting..." : "Restart Path"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
         <TrendSummary trend={reflections || []} />
