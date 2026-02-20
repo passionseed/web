@@ -26,7 +26,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: ["jsdom", "html-encoding-sniffer"],
   // Enable image optimization for production
   images: {
     unoptimized: process.env.NODE_ENV === "development",
