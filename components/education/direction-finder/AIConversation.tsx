@@ -28,7 +28,6 @@ import {
 import {
   Send,
   Bot,
-  User,
   Loader2,
   Sparkles,
   ArrowLeft,
@@ -36,25 +35,9 @@ import {
   RefreshCw,
   Braces,
 } from "lucide-react";
-import {
-  conductDirectionConversation,
-  generateDirectionProfile,
-  generateDirectionProfileCore,
-  generatePrograms,
-  generateCommitments,
-  generateVectorDetails,
-} from "@/app/actions/advisor-actions";
-import {
-  findCachedResult,
-  incrementCacheHitCount,
-} from "@/app/actions/save-direction";
-import { selectModelForUser } from "@/lib/ai/modelSelector";
-import {
-  recordGenerationMetrics,
-  getModelProvider,
-} from "@/lib/utils/metrics-collector";
+import { conductDirectionConversation } from "@/app/actions/advisor-actions";
+import { useDirectionJob } from "@/lib/hooks/use-direction-job";
 import { toast } from "sonner";
-import { createHash } from "crypto";
 import { marked } from "marked";
 import { sanitizeHtml } from "@/lib/security/sanitize-html";
 import { cn } from "@/lib/utils";
@@ -99,6 +82,15 @@ export function AIConversation({
   const [devSelectedModel, setDevSelectedModel] = useState<string>(
     model || "gemini-3-flash-preview",
   );
+  const {
+    startJob,
+    status: jobStatus,
+    steps: jobSteps,
+    result: jobResult,
+    error: jobError,
+    isLoading: isJobStarting,
+    isPolling: isJobPolling,
+  } = useDirectionJob();
 
   const handleResetChat = () => {
     if (confirm("Reset chat history? This cannot be undone.")) {
@@ -213,6 +205,40 @@ export function AIConversation({
   useEffect(() => {
     onHistoryChange?.(messages);
   }, [messages, onHistoryChange]);
+
+  useEffect(() => {
+    if (!jobResult) return;
+    setLoadingStage("none");
+    onComplete(jobResult as DirectionFinderResult);
+  }, [jobResult, onComplete]);
+
+  useEffect(() => {
+    if (!jobError) return;
+    setLoadingStage("none");
+    toast.error(jobError);
+  }, [jobError]);
+
+  useEffect(() => {
+    if (!isJobStarting && !isJobPolling && !jobSteps) {
+      return;
+    }
+
+    if (jobSteps?.core === "processing") {
+      setLoadingStage("core");
+      return;
+    }
+    if (jobSteps?.programs === "processing") {
+      setLoadingStage("details");
+      return;
+    }
+    if (jobSteps?.commitments === "processing") {
+      setLoadingStage("commitments");
+      return;
+    }
+    if ((jobStatus === "completed" || jobStatus === "failed") && !isJobPolling) {
+      setLoadingStage("none");
+    }
+  }, [isJobStarting, isJobPolling, jobStatus, jobSteps]);
 
   // Initial greeting if no history
 
@@ -389,256 +415,28 @@ export function AIConversation({
   };
 
   const proceedWithGeneration = async () => {
-    setShowDevPreview(false); // Close preview if open
+    setShowDevPreview(false);
+    setLoadingStage("core");
 
-    const generationStartTime = Date.now();
-    let cacheHit = false;
-    let cacheLookupTime = 0;
-    let coreGenerationTime = 0;
-    let detailsGenerationTime = 0;
-    let selectedModel =
+    const selectedModel =
       process.env.NODE_ENV === "development"
         ? devSelectedModel
-        : model || "gemini-3-flash-preview";
-    let hadTimeout = false;
-    let hadRateLimit = false;
-    let errorMessage: string | undefined;
-    let retryCount = 0;
+        : model;
 
-    // Import getCurrentUserId from save-direction
-    const { getCurrentUserId } = await import("@/app/actions/save-direction");
+    const apiHistory = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
 
-    setLoadingStage("core");
     try {
-      // Get current user ID for model selection
-      const userId = await getCurrentUserId();
-
-      // If no userId, default to provided model or gemini-2.5-flash
-      if (userId && !model) {
-        // Select model for this user (consistent A/B testing)
-        selectedModel = selectModelForUser(userId);
-        console.log("🤖 [AI] Auto-selected model for user:", {
-          userId: userId.slice(0, 8) + "...",
-          model: selectedModel,
-          source: "A/B Testing (hash-based)",
-        });
-      } else if (model) {
-        selectedModel = model;
-        console.log("🎯 [AI] Using manually selected model:", {
-          model: selectedModel,
-          source: "Manual Override",
-        });
-      } else {
-        console.log("⚠️ [AI] Using default model:", {
-          model: selectedModel,
-          source: "Fallback (no user ID)",
-        });
-      }
-
-      // Check cache before generating
-      const cacheStartTime = Date.now();
-      console.log("🔍 [Cache] Checking for cached result...", {
-        model: selectedModel,
-        answersHash: createHash("md5")
-          .update(JSON.stringify(answers))
-          .digest("hex")
-          .slice(0, 8),
-      });
-      const cachedResult = await findCachedResult(answers, selectedModel);
-      cacheLookupTime = Date.now() - cacheStartTime;
-
-      if (cachedResult) {
-        // Cache hit! Return cached result immediately
-        cacheHit = true;
-        await incrementCacheHitCount(cachedResult.id);
-
-        console.log("✅ [Cache] HIT! Returning cached result", {
-          resultId: cachedResult.id.slice(0, 8) + "...",
-          lookupTime: cacheLookupTime + "ms",
-          cacheHitCount: cachedResult.cache_hit_count + 1,
-        });
-        toast.success("Found matching profile from cache! ⚡");
-
-        // Record metrics for cache hit
-        if (userId) {
-          await recordGenerationMetrics(cachedResult.id, userId, {
-            modelProvider: await getModelProvider(selectedModel),
-            modelName: selectedModel,
-            totalGenerationTimeMs: Date.now() - generationStartTime,
-            cacheHit: true,
-            cacheLookupTimeMs: cacheLookupTime,
-            hadTimeout: false,
-            hadRateLimit: false,
-            retryCount: 0,
-            conversationTurnCount: messages.length,
-            language: lang,
-          });
-        }
-
-        onComplete(cachedResult.result);
-        return;
-      }
-
-      // No cache hit, proceed with fresh generation
-      console.log("❌ [Cache] MISS. Generating fresh profile...", {
-        lookupTime: cacheLookupTime + "ms",
-      });
-
-      const apiHistory = messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-      // Step 1: Core generation
-      const coreStartTime = Date.now();
-      console.log("🧠 [Generation] Starting CORE generation...", {
-        model: selectedModel,
-        conversationLength: apiHistory.length,
-        language: lang,
-      });
-      const coreResult = await generateDirectionProfileCore(
-        apiHistory,
-        answers,
-        selectedModel,
-        lang,
-      );
-      coreGenerationTime = Date.now() - coreStartTime;
-      console.log("✅ [Generation] CORE complete", {
-        time: coreGenerationTime + "ms",
-        vectors: coreResult.vectors?.length || 0,
-      });
-
-      // Step 1.5: Vector details generation (Split for timeout safety)
-      setLoadingStage("details");
-      const detailsStartTime = Date.now();
-      console.log(
-        "🔍 [Generation] Starting details generation for each vector...",
-      );
-
-      const detailedVectors = await Promise.all(
-        (coreResult.vectors || []).map(async (v: any) => {
-          const details = await generateVectorDetails(
-            v,
-            answers,
-            selectedModel,
-            lang,
-          );
-          return { ...v, ...details };
-        }),
-      );
-
-      const vectorDetailsTime = Date.now() - detailsStartTime;
-      console.log("✅ [Generation] Details complete", {
-        time: vectorDetailsTime + "ms",
-      });
-
-      // Step 2: Programs generation
-      setLoadingStage("programs");
-      const programsStartTime = Date.now();
-      console.log("📋 [Generation] Starting PROGRAMS generation...");
-      const programsResult = await generatePrograms(
-        { ...coreResult, vectors: detailedVectors },
-        answers,
-        selectedModel,
-        lang,
-      );
-      const programsGenerationTime = Date.now() - programsStartTime;
-      console.log("✅ [Generation] PROGRAMS complete", {
-        time: programsGenerationTime + "ms",
-        programs: programsResult.programs?.length || 0,
-      });
-
-      // Step 3: Commitments generation
-      setLoadingStage("commitments");
-      const commitmentsStartTime = Date.now();
-      console.log("📋 [Generation] Starting COMMITMENTS generation...");
-      const commitmentsResult = await generateCommitments(
-        { ...coreResult, vectors: detailedVectors },
-        answers,
-        selectedModel,
-        lang,
-      );
-      const commitmentsGenerationTime = Date.now() - commitmentsStartTime;
-      console.log("✅ [Generation] COMMITMENTS complete", {
-        time: commitmentsGenerationTime + "ms",
-        commitments:
-          (commitmentsResult.commitments?.this_week?.length || 0) +
-          (commitmentsResult.commitments?.this_month?.length || 0),
-      });
-
-      // Merge results while preserving all metadata
-      const finalResult: DirectionFinderResult = {
-        profile: coreResult.profile!,
-        vectors: detailedVectors as any,
-        programs: programsResult.programs!,
-        commitments: commitmentsResult.commitments!,
-        debugMetadata: (coreResult as any).debugMetadata,
-        programsMetadata: (programsResult as any).debugMetadata,
-        commitmentsMetadata: (commitmentsResult as any).debugMetadata,
-      } as any;
-
-      const totalGenerationTime = Date.now() - generationStartTime;
-
-      console.log("🎉 [Generation] Complete!", {
-        totalTime: totalGenerationTime + "ms",
-        coreTime: coreGenerationTime + "ms",
-        programsTime: programsGenerationTime + "ms",
-        commitmentsTime: commitmentsGenerationTime + "ms",
-        model: selectedModel,
-        cacheUsed: false,
-      });
-
-      // Record metrics for successful generation
-      // Note: We don't have resultId yet, will need to get it after save
-      // For now, we'll skip recording metrics here and do it in the parent component
-      // after saveDirectionFinderResult is called
-
-      onComplete(finalResult);
+      await startJob(answers, apiHistory, lang, selectedModel);
+      toast.success("Analysis started. We are processing your profile now.");
     } catch (error: any) {
-      const totalTime = Date.now() - generationStartTime;
-      console.error("❌ [Generation] FAILED", {
-        error: error.message,
-        time: totalTime + "ms",
-        model: selectedModel,
-        stack: error.stack,
+      console.error("❌ [Generation] Failed to start async job", {
+        error: error?.message || String(error),
       });
-
-      // Classify error type
-      if (
-        error.message?.includes("unexpected response") ||
-        error.message?.includes("504")
-      ) {
-        hadTimeout = true;
-        errorMessage = "Generation timed out";
-        console.error("⏱️ [Error] TIMEOUT - exceeded 300s limit");
-        toast.error(
-          "Generation timed out. Please try again or use a faster model.",
-        );
-      } else if (
-        error.message?.includes("429") ||
-        error.message?.includes("rate limit")
-      ) {
-        hadRateLimit = true;
-        errorMessage = "Rate limit exceeded";
-        console.error(
-          "🚫 [Error] RATE LIMIT - too many requests to AI provider",
-        );
-        toast.error("Too many requests. Please wait a moment and try again.");
-      } else {
-        errorMessage = error.message || "Unknown error";
-        console.error("💥 [Error] UNKNOWN -", errorMessage);
-        toast.error("Failed to generate profile. Please try again.");
-      }
-
-      // Record error metrics (without resultId since generation failed)
-      const userId = await getCurrentUserId();
-      if (userId) {
-        // Create a placeholder record to track the failed attempt
-        // This helps us understand error patterns
-        // We'll need to handle this in recordGenerationMetrics by making result_id optional
-      }
-
       setLoadingStage("none");
+      toast.error("Failed to start generation. Please try again.");
     }
   };
 

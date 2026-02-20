@@ -25,22 +25,58 @@ export async function GET(
     const { jobId } = await params;
 
     const supabase = await createClient();
+    let userId: string | null = null;
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Primary auth path: session cookie
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (!authError && user) {
+      userId = user.id;
+    }
+
+    // Fallback auth path: bearer token
+    if (!userId) {
+      const authHeader = request.headers.get("authorization");
+      const token = authHeader?.startsWith("Bearer ")
+        ? authHeader.slice("Bearer ".length)
+        : null;
+
+      if (token) {
+        const { createAdminClient } = await import("@/utils/supabase/admin");
+        const admin = createAdminClient();
+        const {
+          data: { user: bearerUser },
+          error: bearerError,
+        } = await admin.auth.getUser(token);
+
+        if (!bearerError && bearerUser) {
+          userId = bearerUser.id;
+        }
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    // Fetch job (with RLS - user can only see their own jobs)
-    const { data: job, error: fetchError } = await supabase
+    const authHeader = request.headers.get("authorization");
+    const hasBearerToken = Boolean(authHeader?.startsWith("Bearer "));
+    const dbClient = hasBearerToken
+      ? (await import("@/utils/supabase/admin")).createAdminClient()
+      : supabase;
+
+    const query = dbClient
       .from('direction_finder_jobs')
       .select('*')
       .eq('id', jobId)
-      .single();
+      .eq('user_id', userId);
+
+    const { data: job, error: fetchError } = await query.single();
 
     if (fetchError || !job) {
       return NextResponse.json(
