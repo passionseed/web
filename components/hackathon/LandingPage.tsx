@@ -48,15 +48,8 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
             { yPercent: 0, y: 0, duration: 0.9, ease: "power3.inOut" }
         )
             // Hold briefly at peak, then navigate
-            .call(() => router.push(targetPath))
-            // Water drains upward after navigation
-            .to(waterRef.current, {
-                yPercent: -100,
-                duration: 0.7,
-                ease: "power3.inOut",
-                delay: 0.3,
-                onComplete: () => setIsTransitioning(false),
-            });
+            // Target pages (register, team dashboard) will handle the start of their own transitions
+            .call(() => router.push(targetPath));
     };
 
     useEffect(() => {
