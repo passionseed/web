@@ -390,7 +390,7 @@ export function PathDayBuilder({
             day_number: day.day_number,
             title: day.title,
             context_text: day.context_text,
-            reflection_prompts: day.reflection_prompts,
+            reflection_prompts: day.reflection_prompts.map(s => s.trim()).filter(Boolean),
             node_ids: day.node_ids,
           })),
         }),
@@ -501,156 +501,153 @@ export function PathDayBuilder({
       {!isMounted ? (
         <div className="text-center text-neutral-400 py-8">Loading...</div>
       ) : (
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={allDndIds}
-          strategy={verticalListSortingStrategy}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
         >
-          <Accordion
-            type="multiple"
-            defaultValue={defaultOpenValues}
-            className="space-y-2"
+          <SortableContext
+            items={allDndIds}
+            strategy={verticalListSortingStrategy}
           >
-            {days.map((day, idx) => {
-              const dndId = allDndIds[idx];
-              const isPreviewing = previewDayNumbers.has(day.day_number);
+            <Accordion
+              type="multiple"
+              defaultValue={defaultOpenValues}
+              className="space-y-2"
+            >
+              {days.map((day, idx) => {
+                const dndId = allDndIds[idx];
+                const isPreviewing = previewDayNumbers.has(day.day_number);
 
-              return (
-                <AccordionItem
-                  key={dndId}
-                  value={dndId}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/80 px-3"
-                >
-                  <SortableDayTrigger
-                    dndId={dndId}
-                    day={day}
-                    nodeCount={day.node_ids.length}
-                    onRemove={() => removeDay(day.day_number)}
-                    canRemove={days.length > 1}
-                  />
+                return (
+                  <AccordionItem
+                    key={dndId}
+                    value={dndId}
+                    className="rounded-lg border border-neutral-800 bg-neutral-900/80 px-3"
+                  >
+                    <SortableDayTrigger
+                      dndId={dndId}
+                      day={day}
+                      nodeCount={day.node_ids.length}
+                      onRemove={() => removeDay(day.day_number)}
+                      canRemove={days.length > 1}
+                    />
 
-                  <AccordionContent className="space-y-4 pt-2">
-                    {/* Title */}
-                    <div className="space-y-1">
-                      <Label className="text-neutral-300">Day title</Label>
-                      <Input
-                        value={day.title ?? ""}
-                        onChange={(e) =>
-                          updateDay(day.day_number, {
-                            title: e.target.value || null,
-                          })
-                        }
-                        placeholder={`Day ${day.day_number}`}
-                        className="border-neutral-700 bg-neutral-950 text-white"
-                      />
-                    </div>
-
-                    {/* Context text + preview toggle */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-neutral-300">
-                          Context text (markdown)
-                        </Label>
-                        <button
-                          type="button"
-                          onClick={() => togglePreview(day.day_number)}
-                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-                        >
-                          {isPreviewing ? (
-                            <>
-                              <EyeOff className="h-3 w-3" /> Edit
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="h-3 w-3" /> Preview
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      {isPreviewing ? (
-                        <MarkdownPreview markdown={day.context_text} />
-                      ) : (
-                        <Textarea
-                          value={day.context_text}
+                    <AccordionContent className="space-y-4 pt-2">
+                      {/* Title */}
+                      <div className="space-y-1">
+                        <Label className="text-neutral-300">Day title</Label>
+                        <Input
+                          value={day.title ?? ""}
                           onChange={(e) =>
                             updateDay(day.day_number, {
-                              context_text: e.target.value,
+                              title: e.target.value || null,
                             })
                           }
-                          className="min-h-24 border-neutral-700 bg-neutral-950 text-white"
+                          placeholder={`Day ${day.day_number}`}
+                          className="border-neutral-700 bg-neutral-950 text-white"
                         />
-                      )}
-                    </div>
-
-                    {/* Reflection prompts */}
-                    <div className="space-y-1">
-                      <Label className="text-neutral-300">
-                        Reflection prompts (one per line)
-                      </Label>
-                      <Textarea
-                        value={day.reflection_prompts.join("\n")}
-                        onChange={(e) =>
-                          updateDay(day.day_number, {
-                            reflection_prompts: e.target.value
-                              .split("\n")
-                              .map((s) => s.trim())
-                              .filter(Boolean),
-                          })
-                        }
-                        className="min-h-16 border-neutral-700 bg-neutral-950 text-white"
-                      />
-                    </div>
-
-                    {/* Node assignment */}
-                    {mapNodes.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-neutral-300 text-base font-semibold">
-                            Nodes for this day
-                          </Label>
-                          <span className="text-xs text-neutral-500">
-                            {day.node_ids.length} selected
-                          </span>
-                        </div>
-                        <p className="text-xs text-neutral-400 -mt-1">
-                          Check the nodes you want students to complete on Day {day.day_number}
-                        </p>
-                        <div className="grid gap-2 md:grid-cols-2">
-                          {mapNodes.map((node) => {
-                            const checked = day.node_ids.includes(node.id);
-                            const allDayNums =
-                              nodeAssignmentMap.get(node.id) || [];
-                            const otherDayNumbers = allDayNums.filter(
-                              (n) => n !== day.day_number,
-                            );
-
-                            return (
-                              <NodeCheckbox
-                                key={node.id}
-                                node={node}
-                                checked={checked}
-                                otherDayNumbers={otherDayNumbers}
-                                onToggle={() =>
-                                  toggleNodeForDay(day.day_number, node.id)
-                                }
-                              />
-                            );
-                          })}
-                        </div>
                       </div>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-        </SortableContext>
-      </DndContext>
+
+                      {/* Context text + preview toggle */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-neutral-300">
+                            Context text (markdown)
+                          </Label>
+                          <button
+                            type="button"
+                            onClick={() => togglePreview(day.day_number)}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
+                          >
+                            {isPreviewing ? (
+                              <>
+                                <EyeOff className="h-3 w-3" /> Edit
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-3 w-3" /> Preview
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {isPreviewing ? (
+                          <MarkdownPreview markdown={day.context_text} />
+                        ) : (
+                          <Textarea
+                            value={day.context_text}
+                            onChange={(e) =>
+                              updateDay(day.day_number, {
+                                context_text: e.target.value,
+                              })
+                            }
+                            className="min-h-24 border-neutral-700 bg-neutral-950 text-white"
+                          />
+                        )}
+                      </div>
+
+                      {/* Reflection prompts */}
+                      <div className="space-y-1">
+                        <Label className="text-neutral-300">
+                          Reflection prompts (one per line)
+                        </Label>
+                        <Textarea
+                          value={day.reflection_prompts.join("\n")}
+                          onChange={(e) =>
+                            updateDay(day.day_number, {
+                              reflection_prompts: e.target.value.split("\n"),
+                            })
+                          }
+                          className="min-h-16 border-neutral-700 bg-neutral-950 text-white"
+                        />
+                      </div>
+
+                      {/* Node assignment */}
+                      {mapNodes.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-neutral-300 text-base font-semibold">
+                              Nodes for this day
+                            </Label>
+                            <span className="text-xs text-neutral-500">
+                              {day.node_ids.length} selected
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-400 -mt-1">
+                            Check the nodes you want students to complete on Day {day.day_number}
+                          </p>
+                          <div className="grid gap-2 md:grid-cols-2">
+                            {mapNodes.map((node) => {
+                              const checked = day.node_ids.includes(node.id);
+                              const allDayNums =
+                                nodeAssignmentMap.get(node.id) || [];
+                              const otherDayNumbers = allDayNums.filter(
+                                (n) => n !== day.day_number,
+                              );
+
+                              return (
+                                <NodeCheckbox
+                                  key={node.id}
+                                  node={node}
+                                  checked={checked}
+                                  otherDayNumbers={otherDayNumbers}
+                                  onToggle={() =>
+                                    toggleNodeForDay(day.day_number, node.id)
+                                  }
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Add Day + Save */}
