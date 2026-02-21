@@ -52,6 +52,22 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
             .call(() => router.push(targetPath));
     };
 
+    // Lock scroll during opening animation
+    useEffect(() => {
+        if (!showContent && !instant) {
+            // Lock scroll
+            document.body.style.overflow = 'hidden';
+        } else {
+            // Restore scroll
+            document.body.style.overflow = '';
+        }
+
+        // Cleanup on unmount
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [showContent, instant]);
+
     useEffect(() => {
         // If coming back from register page, skip animation
         if (sessionStorage.getItem("hackathon_skip_intro")) {

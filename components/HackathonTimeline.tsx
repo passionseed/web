@@ -90,13 +90,13 @@ export default function HackathonTimeline() {
   const numSpansRef = useRef<(HTMLSpanElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Lazy-init: use real window size immediately on client (avoids flash)
-  const [cfg, setCfg] = useState<CircleCfg>(() =>
-    buildCfg(typeof window !== "undefined" ? window.innerWidth : 1440)
-  );
+  // Use a fixed SSR-safe default (1440) so server and client initial render match.
+  // useEffect corrects to the real viewport width after hydration.
+  const [cfg, setCfg] = useState<CircleCfg>(() => buildCfg(1440));
 
-  // Keep cfg in sync with viewport width
+  // Correct cfg to real viewport width after mount, and keep in sync on resize
   useEffect(() => {
+    setCfg(buildCfg(window.innerWidth));
     const onResize = () => setCfg(buildCfg(window.innerWidth));
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -164,7 +164,7 @@ export default function HackathonTimeline() {
 
   // Derived positions (all relative to viewport left via calc)
   const circleLEdge = `calc(${centerPct}% - ${R}px)`;   // left edge of circle = active point x
-  const dotLeft     = `calc(${centerPct}% - ${R + 5}px)`;
+  const dotLeft = `calc(${centerPct}% - ${R + 5}px)`;
   const contentLeft = `calc(${centerPct}% - ${R - 32}px)`;
   // Max width: from content start to right viewport edge minus padding
   const contentMaxW = `calc(100% - (${centerPct}% - ${R - 32}px) - 20px)`;
@@ -225,7 +225,7 @@ export default function HackathonTimeline() {
               <div
                 key={i}
                 className="absolute"
-                style={{ left: x, top: y, transform: "translate(-50%, -50%)" }}
+                style={{ left: `${x}px`, top: `${y}px`, transform: "translate(-50%, -50%)" }}
               >
                 <div
                   ref={(el) => { itemDivsRef.current[i] = el; }}
