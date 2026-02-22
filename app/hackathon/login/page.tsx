@@ -40,7 +40,7 @@ export default function HackathonLoginPage() {
         return;
       }
 
-      router.push("/hackathon/dashboard");
+      router.push("/hackathon/team");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
