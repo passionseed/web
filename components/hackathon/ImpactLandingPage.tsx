@@ -305,10 +305,10 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                         </h1>
 
                         <div
-                            className={`max-w-3xl mx-auto ${instant ? '' : 'transition-all duration-1000 delay-500'} ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                            className={`max-w-4xl mx-auto ${instant ? '' : 'transition-all duration-1000 delay-500'} ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                         >
-                            <p className="text-xl md:text-2xl text-gray-300 leading-relaxed" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                                โครงการนี้ไม่ใช่แค่การแข่งขัน แต่เป็น<span className="text-cyan-400 font-semibold"> พื้นที่ให้แต่ละคนได้สร้าง impact</span> โดยการจำลองการทำ Startup โดยแต่ละคนไม่ต้องกังวลว่าจะทำได้ไหม<span className="text-amber-400 font-semibold"> เราจะมีทีมที่พร้อมช่วยเหลือ</span>
+                            <p className="text-xl md:text-2xl text-gray-300 leading-relaxed text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                                ที่ The Next Decade Hackathon 2026 <span className="text-cyan-400 font-semibold">พื้นฐานไม่ใช่ข้อจำกัด แต่คือจุดเริ่มต้นของการเรียนรู้</span> เราเปลี่ยนพื้นที่แข่งขันให้กลายเป็นโอกาสให้คุณได้ทดลอง สร้างสรรค์ และเรียนรู้จากการลงมือทำจริงได้แบบไม่ต้องกังวล ผ่านระบบเหล่านี้:
                             </p>
                         </div>
 
