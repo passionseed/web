@@ -1,4 +1,4 @@
-import sanitizeHtmlLib from "sanitize-html";
+import DOMPurify from "isomorphic-dompurify";
 import { marked } from "marked";
 
 const ALLOWED_TAGS = [
@@ -31,49 +31,41 @@ const ALLOWED_TAGS = [
   "td",
 ];
 
-const ALLOWED_ATTR = {
-  '*': [
-    "class",
-    "title",
-    "aria-label",
-    "href",
-    "target",
-    "rel", // for 'a'
-    "src",
-    "alt",
-    "width",
-    "height",
-    "loading", // for 'img'
-  ]
-};
+const ALLOWED_ATTR = [
+  "class",
+  "title",
+  "aria-label",
+  "href",
+  "target",
+  "rel", // for 'a'
+  "src",
+  "alt",
+  "width",
+  "height",
+  "loading", // for 'img'
+];
+
+// Configure hooks for custom transformations
+// Note: hooks are global in DOMPurify
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  // Ensure target="_blank" has rel="noopener noreferrer"
+  if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+
+  // Ensure images have loading="lazy" if not present
+  if (node.tagName === "IMG" && !node.hasAttribute("loading")) {
+    node.setAttribute("loading", "lazy");
+  }
+});
 
 export function sanitizeHtml(input: string): string {
   if (!input) return "";
 
-  return sanitizeHtmlLib(input, {
-    allowedTags: ALLOWED_TAGS,
-    allowedAttributes: ALLOWED_ATTR,
-    transformTags: {
-      a: (tagName, attribs) => {
-        return {
-          tagName: 'a',
-          attribs: {
-            ...attribs,
-            ...(attribs.target === '_blank' ? { rel: 'noopener noreferrer' } : {})
-          }
-        };
-      },
-      img: (tagName, attribs) => {
-        return {
-          tagName: 'img',
-          attribs: {
-            ...attribs,
-            ...(!attribs.loading ? { loading: 'lazy' } : {})
-          }
-        };
-      }
-    }
-  });
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: ALLOWED_TAGS,
+    ALLOWED_ATTR: ALLOWED_ATTR,
+  }) as string;
 }
 
 export function markdownToSafeHtml(markdown: string): string {
