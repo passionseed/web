@@ -13,37 +13,49 @@ interface TimelineItem {
 const ITEMS: TimelineItem[] = [
   {
     num: "01",
-    title: "Registration & Welcome",
-    desc: "Sign up your team, grab breakfast, and meet your fellow innovators.",
-    date: "Mar 15 · 9:00 AM",
+    title: "Registration",
+    desc: "Sign up your team and prepare for the journey ahead.",
+    date: "23 Feb – 5 Apr",
   },
   {
     num: "02",
     title: "Opening Ceremony",
-    desc: "Keynote talks, challenge reveal, and the official kickoff of 48 hours of innovation.",
-    date: "Mar 15 · 10:00 AM",
+    desc: "Kickoff event to introduce the challenge and inspire participants.",
+    date: "7 Apr",
   },
   {
     num: "03",
-    title: "Hacking Begins",
-    desc: "48 hours of non-stop building. Mentors, workshops, and resources throughout.",
-    date: "Mar 15 · 12:00 PM",
+    title: "Workshops & Hacking",
+    desc: "Learn, build, and develop your preventive healthcare solution.",
+    date: "7 Apr – 28 May",
   },
   {
     num: "04",
-    title: "Project Submissions",
-    desc: "Final deadline. Present your preventive healthcare solution to the world.",
-    date: "Mar 17 · 12:00 PM",
+    title: "1st Submission",
+    desc: "Submit your prototype and presentation slides.",
+    date: "29 May",
   },
   {
     num: "05",
-    title: "Awards Ceremony",
-    desc: "Celebrate the winners and the collective impact on the future of healthcare.",
-    date: "Mar 17 · 5:00 PM",
+    title: "2nd Submission",
+    desc: "Submit your project video presentation.",
+    date: "6 Jun",
+  },
+  {
+    num: "06",
+    title: "Final Pitch",
+    desc: "Present your solution to judges and showcase your work.",
+    date: "20 Jun",
+  },
+  {
+    num: "07",
+    title: "Futurist Fest 2026",
+    desc: "Connect with researchers, experts, and investors to grow your ideas.",
+    date: "21 Jun",
   },
 ];
 
-const ANGLE_STEP = 42;
+const ANGLE_STEP = 30;
 const SCROLL_PER_ITEM = 300;
 
 interface CircleCfg {
@@ -164,10 +176,10 @@ export default function HackathonTimeline() {
 
   // Derived positions (all relative to viewport left via calc)
   const circleLEdge = `calc(${centerPct}% - ${R}px)`;   // left edge of circle = active point x
-  const dotLeft = `calc(${centerPct}% - ${R + 5}px)`;
-  const contentLeft = `calc(${centerPct}% - ${R - 32}px)`;
+  const dotLeft = `calc(${centerPct}% - ${R - numSize - 20}px)`;   // dot positioned right of number
+  const contentLeft = `calc(${centerPct}% - ${R - numSize - 50}px)`;  // content starts after dot
   // Max width: from content start to right viewport edge minus padding
-  const contentMaxW = `calc(100% - (${centerPct}% - ${R - 32}px) - 20px)`;
+  const contentMaxW = `calc(100% - (${centerPct}% - ${R - numSize - 50}px) - 20px)`;
 
   return (
     <section
@@ -307,25 +319,6 @@ export default function HackathonTimeline() {
             >
               {active.desc}
             </p>
-          </div>
-        </div>
-
-        {/* Progress pips */}
-        <div className="absolute bottom-8 z-10" style={{ left: contentLeft }}>
-          <div className="flex gap-2">
-            {ITEMS.map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  width: i === activeIndex ? 20 : 6,
-                  height: 6,
-                  borderRadius: 3,
-                  background: i === activeIndex ? "#91C4E3" : "rgba(145,196,227,0.25)",
-                  transition: "width 0.35s ease, background 0.35s ease",
-                  boxShadow: i === activeIndex ? "0 0 8px rgba(145,196,227,0.6)" : "none",
-                }}
-              />
-            ))}
           </div>
         </div>
 
