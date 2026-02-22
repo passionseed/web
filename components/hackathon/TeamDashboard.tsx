@@ -147,6 +147,23 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         setView("home");
     };
 
+    const handleLeaveTeam = async () => {
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการออกจากทีม?")) return;
+        setLoading(true);
+        const res = await fetch("/api/hackathon/team/leave", { method: "POST" });
+        setLoading(false);
+        if (res.ok) {
+            setTeam(null);
+        } else {
+            const data = await res.json();
+            setError(data.error || "ไม่สามารถออกจากทีมได้");
+        }
+    };
+
+    const handleBackToHome = () => {
+        router.push("/hackathon");
+    };
+
     const LogoutButton = () => (
         <button
             onClick={handleLogout}
@@ -157,12 +174,25 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         </button>
     );
 
+    const BackButton = () => (
+        <button
+            onClick={handleBackToHome}
+            className="fixed top-4 left-4 z-50 text-sm text-gray-600 hover:text-[#5a7a94] bg-[#0d1219]/80 border border-white/5 hover:border-[#5a7a94]/30 px-3 py-2 rounded-lg transition-all duration-200 backdrop-blur-sm flex items-center gap-2"
+        >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 12L6 8l4-4" />
+            </svg>
+            กลับหน้าหลัก
+        </button>
+    );
+
     // ─── Team Lobby View ───────────────────────────────────────────────────
     if (team) {
         const isOwner = team.owner_id === participant.id;
         return (
             <div className="min-h-screen relative text-white flex items-center justify-center px-4 font-[family-name:var(--font-mitr)] overflow-hidden">
                 <FractalGlassBackground />
+                <BackButton />
                 <LogoutButton />
                 <div className="w-full max-w-lg space-y-6 relative z-10">
                     <div className="text-center">
@@ -224,6 +254,15 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                     {isOwner && (
                         <p className="text-center text-gray-600 text-sm">รอสมาชิกเข้าร่วมทีม...</p>
                     )}
+
+                    {/* Leave Team Button */}
+                    <button
+                        onClick={handleLeaveTeam}
+                        disabled={loading}
+                        className="w-full bg-gradient-to-r from-[#3a3a3a] to-[#2a2a2a] hover:from-[#2a2a2a] hover:to-[#3a3a3a] text-gray-400 hover:text-red-400 font-medium py-3 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/5 hover:border-red-400/30"
+                    >
+                        {loading ? "กำลังออกจากทีม..." : "ออกจากทีม"}
+                    </button>
                 </div>
             </div>
         );
@@ -234,6 +273,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         return (
             <div className="min-h-screen relative text-white flex items-center justify-center px-4 font-[family-name:var(--font-mitr)] overflow-hidden">
                 <FractalGlassBackground />
+                <BackButton />
                 <LogoutButton />
                 <div className="w-full max-w-md space-y-6 relative z-10">
                     <button onClick={() => { setView("home"); setError(""); }} className="text-gray-600 hover:text-[#5a7a94] text-sm flex items-center gap-2 transition-colors group">
@@ -278,6 +318,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         return (
             <div className="min-h-screen relative text-white flex items-center justify-center px-4 font-[family-name:var(--font-mitr)] overflow-hidden">
                 <FractalGlassBackground />
+                <BackButton />
                 <LogoutButton />
                 <div className="w-full max-w-md space-y-6 relative z-10">
                     <button onClick={() => { setView("home"); setError(""); }} className="text-gray-600 hover:text-[#5a7a94] text-sm flex items-center gap-2 transition-colors group">
@@ -323,6 +364,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         return (
             <div className="min-h-screen relative text-white flex items-center justify-center px-4 font-[family-name:var(--font-mitr)] overflow-hidden">
                 <FractalGlassBackground />
+                <BackButton />
                 <LogoutButton />
                 <div className="w-full max-w-md space-y-6 relative z-10">
                     <button onClick={handleCancelMatching} disabled={loading} className="text-gray-600 hover:text-red-400 text-sm flex items-center gap-2 transition-colors group">
@@ -390,6 +432,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
     return (
         <div className="min-h-screen relative text-white flex items-center justify-center px-4 font-[family-name:var(--font-mitr)] overflow-hidden">
             <FractalGlassBackground />
+            <BackButton />
             <LogoutButton />
 
             <div className="w-full max-w-xl space-y-8 text-center relative z-10">

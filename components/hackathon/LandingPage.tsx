@@ -982,7 +982,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                     <div className="flex justify-between items-end border-b border-[#cbd5e1] pb-6 relative z-20 px-2">
                                         <div className="flex flex-col text-left">
                                             <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] mb-1">Pass Type</span>
-                                            <span className="text-2xl md:text-3xl font-black text-[#1e293b] uppercase tracking-tight">VIP PASS</span>
+                                            <span className="text-2xl md:text-3xl font-black text-[#1e293b] uppercase tracking-tight">SPECIAL INVITE</span>
                                         </div>
                                         <div className="flex flex-col items-end text-right">
                                             <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] mb-1">Roles</span>
