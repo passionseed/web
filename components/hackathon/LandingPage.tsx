@@ -1,11 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Trophy, Clock, UsersRound, Microscope, BookOpenCheck } from "lucide-react";
+import { Calendar, MapPin, Trophy, Clock, UsersRound, Microscope, BookOpenCheck, HeartPulse, Brain, Globe, Rocket, Target, Lightbulb, Workflow, Network, Presentation, LightbulbIcon, ArrowUpRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import HackathonTimeline from "@/components/HackathonTimeline";
+import { MentorshipIllustration, GuidelineIllustration, TesterIllustration } from './Illustrations';
 
 interface LandingPageProps {
     isLoggedIn: boolean;
@@ -33,6 +35,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
     const [showContent, setShowContent] = useState(false);
     const [instant, setInstant] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     const handleRegister = () => {
         if (isTransitioning || !waterRef.current) return;
@@ -129,21 +132,26 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
         }
     }, []);
 
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     return (
-        <div className="min-h-screen bg-[#03050a] text-white relative [overflow:clip]">
-            {/* Black overlay that fades out */}
-            <div
-                className={`fixed inset-0 bg-black z-40 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-            />
+        <>
+            <div className="min-h-screen bg-[#03050a] text-white relative [overflow:clip]">
+                {/* Black overlay that fades out */}
+                <div
+                    className={`fixed inset-0 bg-black z-40 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                />
 
-            {/* Starfield background */}
-            <div
-                ref={starsRef}
-                className={`fixed inset-0 pointer-events-none z-0 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
-            />
+                {/* Starfield background */}
+                <div
+                    ref={starsRef}
+                    className={`fixed inset-0 pointer-events-none z-0 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
+                />
 
-            {/* CSS Animations */}
-            <style jsx>{`
+                {/* CSS Animations */}
+                <style jsx>{`
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 1; }
@@ -219,730 +227,907 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
         .shore { animation: shorePulse 3.2s ease-in-out infinite; }
       `}</style>
 
-            {/* Water transition overlay */}
-            <div
-                ref={setWaterRef}
-                className="fixed inset-0 z-[200] pointer-events-none"
-                style={{
-                    background: "linear-gradient(to bottom, #020C1A 0%, #0A1E38 20%, #122E5A 45%, #1E4A82 70%, #2A62A0 88%, #3A7CC0 100%)",
-                    overflow: "visible",
-                }}
-            >
-                {/* Internal glow blobs */}
-                <div style={{ position: "absolute", top: "20%", left: "25%", width: "500px", height: "250px", background: "#65ABFC", filter: "blur(140px)", opacity: 0.07, borderRadius: "50%", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", top: "55%", right: "15%", width: "350px", height: "180px", background: "#91C4E3", filter: "blur(120px)", opacity: 0.06, borderRadius: "50%", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", bottom: "5%", left: "50%", transform: "translateX(-50%)", width: "900px", height: "200px", background: "#65ABFC", filter: "blur(90px)", opacity: 0.12, borderRadius: "50%", pointerEvents: "none" }} />
-
-                {/* Wave 1 — back, slowest */}
-                <div className="absolute left-0 w1" style={{ top: "-130px", width: "200%", height: "130px" }}>
-                    <svg viewBox="0 0 1440 130" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 6px rgba(100,160,230,0.5))" }}>
-                        <path d="M0,65 C120,110 240,20 360,65 C480,110 600,20 720,65 C840,110 960,20 1080,65 C1200,110 1320,20 1440,65 L1440,130 L0,130 Z" fill="rgba(70,130,200,0.28)" />
-                    </svg>
-                    <svg viewBox="0 0 1440 130" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 6px rgba(100,160,230,0.5))" }}>
-                        <path d="M0,65 C120,110 240,20 360,65 C480,110 600,20 720,65 C840,110 960,20 1080,65 C1200,110 1320,20 1440,65 L1440,130 L0,130 Z" fill="rgba(70,130,200,0.28)" />
-                    </svg>
-                </div>
-
-                {/* Wave 2 — middle */}
-                <div className="absolute left-0 w2" style={{ top: "-95px", width: "200%", height: "95px" }}>
-                    <svg viewBox="0 0 1440 95" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 10px rgba(145,196,227,0.6))" }}>
-                        <path d="M0,48 C180,85 360,11 540,48 C720,85 900,11 1080,48 C1260,85 1440,11 1440,48 L1440,95 L0,95 Z" fill="rgba(101,171,252,0.4)" />
-                    </svg>
-                    <svg viewBox="0 0 1440 95" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 10px rgba(145,196,227,0.6))" }}>
-                        <path d="M0,48 C180,85 360,11 540,48 C720,85 900,11 1080,48 C1260,85 1440,11 1440,48 L1440,95 L0,95 Z" fill="rgba(101,171,252,0.4)" />
-                    </svg>
-                </div>
-
-                {/* Wave 3 — front, brightest */}
-                <div className="absolute left-0 w3" style={{ top: "-65px", width: "200%", height: "65px" }}>
-                    <svg viewBox="0 0 1440 65" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 14px rgba(101,171,252,0.75)) drop-shadow(0 0 30px rgba(145,196,227,0.4))" }}>
-                        <path d="M0,32 C240,58 480,6 720,32 C960,58 1200,6 1440,32 L1440,65 L0,65 Z" fill="rgba(145,196,227,0.6)" />
-                    </svg>
-                    <svg viewBox="0 0 1440 65" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 14px rgba(101,171,252,0.75)) drop-shadow(0 0 30px rgba(145,196,227,0.4))" }}>
-                        <path d="M0,32 C240,58 480,6 720,32 C960,58 1200,6 1440,32 L1440,65 L0,65 Z" fill="rgba(145,196,227,0.6)" />
-                    </svg>
-                </div>
-
-                {/* Shore glow line */}
+                {/* Water transition overlay */}
                 <div
-                    className="absolute left-0 w-full shore"
-                    style={{ top: "-30px", height: "1px", background: "#91C4E3" }}
-                />
-            </div>
-
-            {/* Hero Section */}
-            <section className="relative overflow-hidden min-h-screen flex items-center">
-                {/* Jellyfish - Top Left */}
-                <div
-                    className="absolute top-10 -left-10 pointer-events-none z-[45]"
-                    style={showJellyfish ? {
-                        animation: instant ? 'float 6s infinite ease-in-out' : 'jellyfishGlowBlue 1s ease-out forwards, float 6s infinite ease-in-out',
-                    } : { opacity: 0 }}
+                    ref={setWaterRef}
+                    className="fixed inset-0 z-[200] pointer-events-none"
+                    style={{
+                        background: "linear-gradient(to bottom, #020C1A 0%, #0A1E38 20%, #122E5A 45%, #1E4A82 70%, #2A62A0 88%, #3A7CC0 100%)",
+                        overflow: "visible",
+                    }}
                 >
-                    <img
-                        src="/hackathon/Creature/Jellyfish 1.svg"
-                        alt=""
-                        className="w-64 h-64"
+                    {/* Internal glow blobs */}
+                    <div style={{ position: "absolute", top: "20%", left: "25%", width: "500px", height: "250px", background: "#65ABFC", filter: "blur(140px)", opacity: 0.07, borderRadius: "50%", pointerEvents: "none" }} />
+                    <div style={{ position: "absolute", top: "55%", right: "15%", width: "350px", height: "180px", background: "#91C4E3", filter: "blur(120px)", opacity: 0.06, borderRadius: "50%", pointerEvents: "none" }} />
+                    <div style={{ position: "absolute", bottom: "5%", left: "50%", transform: "translateX(-50%)", width: "900px", height: "200px", background: "#65ABFC", filter: "blur(90px)", opacity: 0.12, borderRadius: "50%", pointerEvents: "none" }} />
+
+                    {/* Wave 1 — back, slowest */}
+                    <div className="absolute left-0 w1" style={{ top: "-130px", width: "200%", height: "130px" }}>
+                        <svg viewBox="0 0 1440 130" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 6px rgba(100,160,230,0.5))" }}>
+                            <path d="M0,65 C120,110 240,20 360,65 C480,110 600,20 720,65 C840,110 960,20 1080,65 C1200,110 1320,20 1440,65 L1440,130 L0,130 Z" fill="rgba(70,130,200,0.28)" />
+                        </svg>
+                        <svg viewBox="0 0 1440 130" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 6px rgba(100,160,230,0.5))" }}>
+                            <path d="M0,65 C120,110 240,20 360,65 C480,110 600,20 720,65 C840,110 960,20 1080,65 C1200,110 1320,20 1440,65 L1440,130 L0,130 Z" fill="rgba(70,130,200,0.28)" />
+                        </svg>
+                    </div>
+
+                    {/* Wave 2 — middle */}
+                    <div className="absolute left-0 w2" style={{ top: "-95px", width: "200%", height: "95px" }}>
+                        <svg viewBox="0 0 1440 95" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 10px rgba(145,196,227,0.6))" }}>
+                            <path d="M0,48 C180,85 360,11 540,48 C720,85 900,11 1080,48 C1260,85 1440,11 1440,48 L1440,95 L0,95 Z" fill="rgba(101,171,252,0.4)" />
+                        </svg>
+                        <svg viewBox="0 0 1440 95" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 10px rgba(145,196,227,0.6))" }}>
+                            <path d="M0,48 C180,85 360,11 540,48 C720,85 900,11 1080,48 C1260,85 1440,11 1440,48 L1440,95 L0,95 Z" fill="rgba(101,171,252,0.4)" />
+                        </svg>
+                    </div>
+
+                    {/* Wave 3 — front, brightest */}
+                    <div className="absolute left-0 w3" style={{ top: "-65px", width: "200%", height: "65px" }}>
+                        <svg viewBox="0 0 1440 65" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 14px rgba(101,171,252,0.75)) drop-shadow(0 0 30px rgba(145,196,227,0.4))" }}>
+                            <path d="M0,32 C240,58 480,6 720,32 C960,58 1200,6 1440,32 L1440,65 L0,65 Z" fill="rgba(145,196,227,0.6)" />
+                        </svg>
+                        <svg viewBox="0 0 1440 65" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "inline-block", filter: "drop-shadow(0 0 14px rgba(101,171,252,0.75)) drop-shadow(0 0 30px rgba(145,196,227,0.4))" }}>
+                            <path d="M0,32 C240,58 480,6 720,32 C960,58 1200,6 1440,32 L1440,65 L0,65 Z" fill="rgba(145,196,227,0.6)" />
+                        </svg>
+                    </div>
+
+                    {/* Shore glow line */}
+                    <div
+                        className="absolute left-0 w-full shore"
+                        style={{ top: "-30px", height: "1px", background: "#91C4E3" }}
                     />
                 </div>
 
-                {/* Jellyfish - Top Right (larger, slower) */}
-                <div
-                    className="absolute top-32 -right-16 pointer-events-none z-[45]"
-                    style={showJellyfish ? {
-                        animation: instant ? 'floatReverse 9s infinite ease-in-out' : 'jellyfishGlowPurple 1s ease-out forwards, floatReverse 9s infinite ease-in-out',
-                    } : { opacity: 0 }}
-                >
-                    <img
-                        src="/hackathon/Creature/Jellyfish 1.svg"
-                        alt=""
-                        className="w-80 h-80"
-                        style={{ transform: 'scaleX(-1)' }}
+                {/* Hero Section */}
+                <section className="relative overflow-hidden min-h-screen flex items-center">
+                    {/* Jellyfish - Top Left */}
+                    <div
+                        className="absolute top-10 -left-10 pointer-events-none z-[45]"
+                        style={showJellyfish ? {
+                            animation: instant ? 'float 6s infinite ease-in-out' : 'jellyfishGlowBlue 1s ease-out forwards, float 6s infinite ease-in-out',
+                        } : { opacity: 0 }}
+                    >
+                        <img
+                            src="/hackathon/Creature/Jellyfish 1.svg"
+                            alt=""
+                            className="w-64 h-64"
+                        />
+                    </div>
+
+                    {/* Jellyfish - Top Right (larger, slower) */}
+                    <div
+                        className="absolute top-32 -right-16 pointer-events-none z-[45]"
+                        style={showJellyfish ? {
+                            animation: instant ? 'floatReverse 9s infinite ease-in-out' : 'jellyfishGlowPurple 1s ease-out forwards, floatReverse 9s infinite ease-in-out',
+                        } : { opacity: 0 }}
+                    >
+                        <img
+                            src="/hackathon/Creature/Jellyfish 1.svg"
+                            alt=""
+                            className="w-80 h-80"
+                            style={{ transform: 'scaleX(-1)' }}
+                        />
+                    </div>
+
+                    {/* Additional glowing effects */}
+                    <div
+                        className={`absolute top-40 left-1/4 w-[500px] h-[500px] bg-[#91C4E3] blur-[150px] rounded-full ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-5' : 'opacity-0'}`}
                     />
-                </div>
+                    <div
+                        className={`absolute top-60 right-1/3 w-[400px] h-[400px] bg-[#A594BA] blur-[150px] rounded-full ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-5' : 'opacity-0'}`}
+                    />
 
-                {/* Additional glowing effects */}
-                <div
-                    className={`absolute top-40 left-1/4 w-[500px] h-[500px] bg-[#91C4E3] blur-[150px] rounded-full ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-5' : 'opacity-0'}`}
-                />
-                <div
-                    className={`absolute top-60 right-1/3 w-[400px] h-[400px] bg-[#A594BA] blur-[150px] rounded-full ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-5' : 'opacity-0'}`}
-                />
+                    <div className="container mx-auto px-4 py-20 pt-36 relative z-50">
+                        <div className="text-center max-w-4xl mx-auto space-y-4">
+                            {/* Logo with glow-up animation - higher z-index to appear above black overlay */}
+                            <div
+                                className={`relative z-50 flex justify-center ${showTitle ? (instant ? 'opacity-100' : 'animate-titleGlowUp') : 'opacity-0'}`}
+                            >
+                                <img
+                                    src="/hackathon/HackLogo.png"
+                                    alt="The Next Decade Hackathon"
+                                    className="w-full max-w-xl md:max-w-2xl h-auto"
+                                    style={{ filter: 'drop-shadow(0 0 40px rgba(145,196,227,0.3))' }}
+                                />
+                            </div>
+                            {/* Subtitle - GSAP handwriting animation */}
+                            <h2
+                                ref={subtitleRef}
+                                className="text-4xl md:text-5xl font-semibold text-white mb-3 font-[family-name:var(--font-reenie-beanie)]"
+                                style={{
+                                    clipPath: 'inset(0 100% 0 0)',
+                                    textShadow: '0 0 30px rgba(145,196,227,0.4)',
+                                }}
+                            >
+                                Preventive & Predictive Healthcare
+                            </h2>
 
-                <div className="container mx-auto px-4 py-20 pt-36 relative z-50">
-                    <div className="text-center max-w-4xl mx-auto space-y-4">
-                        {/* Partner logos */}
-                        <div
-                            className={`flex items-center justify-center gap-16 -mt-36 mb-16 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
-                        >
-                            <div className="w-20 h-20 flex items-center justify-center">
-                                <img src="/hackathon/PS.png" alt="Passion Seed" className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 0 14px rgba(145,196,227,0.9))' }} />
-                            </div>
-                            <div className="w-28 h-28 flex items-center justify-center">
-                                <img src="/hackathon/AMSA.png" alt="AMSA Thailand" className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 0 14px rgba(145,196,227,0.9))' }} />
-                            </div>
-                            <div className="w-28 h-28 flex items-center justify-center">
-                                <img src="/hackathon/StemLike.png" alt="STEM like Her" className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 0 14px rgba(145,196,227,0.9))' }} />
+                            {/* Content that fades in after title */}
+                            <div
+                                className={`${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
+                            >
+                                {/* Register Button */}
+                                <div className="pt-6">
+                                    <Button
+                                        size="lg"
+                                        onClick={handleRegister}
+                                        className="bg-[#9D81AC] hover:bg-[#8a6f99] text-white text-xl px-12 py-6 rounded-full shadow-[0_0_40px_rgba(157,129,172,0.6)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(157,129,172,1)] transform hover:scale-105"
+                                    >
+                                        {isLoggedIn ? "Your Team" : "Register Now"}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Title with glow-up animation - higher z-index to appear above black overlay */}
-                        <h1
-                            className={`text-6xl md:text-7xl font-bold tracking-tight relative z-50 ${showTitle ? (instant ? 'opacity-100' : 'animate-titleGlowUp') : 'opacity-0'}`}
-                            style={{ textShadow: '0 0 40px rgba(145,196,227,0.3)' }}
-                        >
-                            <span className="bg-gradient-to-r from-[#91C4E3] to-[#65ABFC] bg-clip-text text-transparent font-[family-name:var(--font-poppins)] font-bold">
-                                The Next Decade Hackathon
-                            </span>
-                        </h1>
-                        {/* Subtitle - GSAP handwriting animation */}
-                        <h2
-                            ref={subtitleRef}
-                            className="text-4xl md:text-5xl font-semibold text-white mb-3 font-[family-name:var(--font-reenie-beanie)]"
-                            style={{
-                                clipPath: 'inset(0 100% 0 0)',
-                                textShadow: '0 0 30px rgba(145,196,227,0.4)',
-                            }}
-                        >
-                            Reimagining Preventive & Predictive Healthcare
-                        </h2>
+                    </div>
 
-                        {/* Content that fades in after title */}
-                        <div
-                            className={`${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
-                        >
-                            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                                Join us in shaping the future of healthcare through innovation, technology, and collaboration
-                            </p>
+                    {/* Scroll indicator — anchored to section bottom */}
+                    <div
+                        className={`absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-50 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
+                    >
+                        <span className="text-xs tracking-widest uppercase text-gray-400">Detail</span>
+                        <div className="flex flex-col items-center gap-1 animate-bounce">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-gray-400">
+                                <path d="M8 3 L8 13 M3 8 L8 13 L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </div>
+                    </div>
+                </section>
 
-                            {/* Register Button */}
-                            <div className="pt-6">
+                {/* All content sections that fade in after title */}
+                <div
+                    className={`${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
+                >
+                    {/* Anyone Can Make an Impact Section */}
+                    <section className="py-20 relative z-10 overflow-hidden">
+                        {/* Ambient glow */}
+                        <div className="absolute right-0 top-1/2 w-[600px] h-[600px] bg-[#91C4E3] opacity-5 blur-[150px] rounded-full" />
+                        <div className="absolute left-0 bottom-0 w-[500px] h-[500px] bg-[#A594BA] opacity-5 blur-[150px] rounded-full" />
+
+                        {/* Jellyfish decoration */}
+                        <div className="absolute right-16 top-1/4 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 9s infinite ease-in-out' }}>
+                            <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-44 h-44" style={{ filter: 'drop-shadow(0 0 16px rgba(145,196,227,0.4))', transform: 'scaleX(-1)' }} />
+                        </div>
+
+                        <div className="container mx-auto px-4 relative z-10">
+                            <div className="max-w-5xl mx-auto">
+                                <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
+                                    <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
+                                        Anyone Can Make an Impact
+                                    </span>
+                                </h2>
+                                <div className="space-y-6">
+                                    <div className="mb-12">
+                                        <p className="text-gray-200 text-lg md:text-xl leading-relaxed text-center">
+                                            ที่ The Next Decade Hackathon 2026 <span className="text-[#91C4E3] font-semibold">พื้นฐานไม่ใช่ข้อจำกัด แต่คือจุดเริ่มต้นของการเรียนรู้</span> เราเปลี่ยนพื้นที่แข่งขันให้กลายเป็นโอกาสให้คุณได้ทดลอง สร้างสรรค์ และเรียนรู้จากการลงมือทำจริงได้แบบไม่ต้องกังวล ผ่านระบบเหล่านี้:
+                                        </p>
+                                    </div>
+
+                                    {/* Personal Mentorship */}
+                                    <div className="bg-[#0d1219]/70 backdrop-blur-md p-6 md:p-8 rounded-3xl border border-[#91C4E3]/20 shadow-[0_0_40px_rgba(145,196,227,0.08)] hover:border-[#91C4E3]/40 transition-all duration-500 max-w-4xl mx-auto w-full">
+                                        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                                            <div className="flex-shrink-0 w-24 h-24 md:w-40 md:h-40">
+                                                <MentorshipIllustration className="w-full h-full" />
+                                            </div>
+                                            <div className="flex-1 text-center md:text-left">
+                                                <h4 className="text-[#91C4E3] font-semibold text-xl md:text-2xl mb-3">Personal Mentorship</h4>
+                                                <p className="text-gray-300 text-base md:text-lg leading-relaxed">
+                                                    เรามีการจัดสรร Mentor ประจำแต่ละกลุ่มเพื่อคอยให้คำปรึกษาและ Feedback อย่างใกล้ชิด พี่ๆจะช่วยให้คำแนะนำและดูแลให้น้องๆมือใหม่ยังคงอยู่ในเส้นทางและพัฒนาไอเดียได้อย่างเต็มศักยภาพ
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Learning Guideline */}
+                                    <div className="bg-[#0d1219]/70 backdrop-blur-md p-6 md:p-8 rounded-3xl border border-[#A594BA]/20 shadow-[0_0_40px_rgba(165,148,186,0.08)] hover:border-[#A594BA]/40 transition-all duration-500 max-w-4xl mx-auto w-full">
+                                        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                                            <div className="flex-shrink-0 w-24 h-24 md:w-40 md:h-40">
+                                                <GuidelineIllustration className="w-full h-full" />
+                                            </div>
+                                            <div className="flex-1 text-center md:text-left">
+                                                <h4 className="text-[#A594BA] font-semibold text-xl md:text-2xl mb-3">Learning Guideline</h4>
+                                                <p className="text-gray-300 text-base md:text-lg leading-relaxed">
+                                                    คุณจะได้เรียนรู้กระบวนการสร้างนวัตกรรมอย่างเป็นระบบผ่านหลักสูตร <span className="text-[#A594BA] font-semibold">Design Thinking</span> ที่มุ่งเน้นการลงมือทำจริงเพื่อให้ได้ผลงานที่ใช้งานได้จริง (Functional Prototype) และมีเว็บคอย guide ทางให้ในแต่ละขั้นตอน
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Tester */}
+                                    <div className="bg-[#0d1219]/70 backdrop-blur-md p-6 md:p-8 rounded-3xl border border-[#91C4E3]/20 shadow-[0_0_40px_rgba(145,196,227,0.08)] hover:border-[#91C4E3]/40 transition-all duration-500 max-w-4xl mx-auto w-full">
+                                        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                                            <div className="flex-shrink-0 w-24 h-24 md:w-40 md:h-40">
+                                                <TesterIllustration className="w-full h-full" />
+                                            </div>
+                                            <div className="flex-1 text-center md:text-left">
+                                                <h4 className="text-[#91C4E3] font-semibold text-xl md:text-2xl mb-3">Tester</h4>
+                                                <p className="text-gray-300 text-base md:text-lg leading-relaxed">
+                                                    หัวใจสำคัญคือการนำ Prototype ไปทดลองใช้จริง เพื่อรับ Feedback มาพัฒนาผลงานให้แม่นยำ ขั้นตอนนี้จะช่วยสร้างความมั่นใจว่าสิ่งที่คุณสร้างขึ้นนั้นสามารถแก้ปัญหาได้ตรงจุดและตอบโจทย์คนใช้งานจริง ก่อนนำเสนอผลงานในรอบสุดท้าย
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Who Can Join & Team Format */}
+                    <section className="py-32 relative z-10 overflow-hidden">
+                        {/* Ambient glow effects */}
+                        <div className="absolute left-1/4 top-1/2 w-[500px] h-[500px] bg-[#91C4E3] opacity-5 blur-[150px] rounded-full" />
+                        <div className="absolute right-1/4 bottom-1/4 w-[400px] h-[400px] bg-[#A594BA] opacity-5 blur-[150px] rounded-full" />
+
+                        {/* Floating jellyfish decorations */}
+                        <div className="absolute right-1/4 top-1/3 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 7s infinite ease-in-out' }}>
+                            <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-36 h-36" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.4))', transform: 'scaleX(-1)' }} />
+                        </div>
+
+                        <div className="container mx-auto px-4 relative z-10">
+                            <div className="max-w-6xl mx-auto">
+                                {/* Grid layout with two cards */}
+                                <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                                    {/* Who Can Join Card */}
+                                    <div className="group relative">
+                                        {/* Glowing border effect */}
+                                        <div className="absolute -inset-0.5 bg-gradient-to-br from-[#91C4E3] via-[#91C4E3]/50 to-transparent rounded-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-500 blur-sm" />
+
+                                        {/* Card content */}
+                                        <div className="relative bg-gradient-to-br from-[#0d1219]/95 to-[#0a0f16]/95 backdrop-blur-xl rounded-3xl border border-[#91C4E3]/30 p-10 md:p-12 group-hover:border-[#91C4E3]/50 transition-all duration-500 h-full">
+                                            {/* Icon/Number */}
+                                            <div className="mb-8 flex items-center justify-center">
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 bg-[#91C4E3] blur-2xl opacity-30" />
+                                                    <UsersRound className="w-20 h-20 text-[#91C4E3] relative z-10" strokeWidth={1.5} />
+                                                </div>
+                                            </div>
+
+                                            {/* Title */}
+                                            <h3 className="text-3xl md:text-4xl font-bold text-[#91C4E3] mb-8 text-center"
+                                                style={{
+                                                    textShadow: '0 0 30px rgba(145,196,227,0.5)',
+                                                    letterSpacing: '-0.02em'
+                                                }}>
+                                                Who can join?
+                                            </h3>
+
+                                            {/* Content */}
+                                            <div className="space-y-6">
+                                                <p className="text-xl md:text-2xl text-gray-200 leading-relaxed text-center font-light">
+                                                    เปิดรับผู้เข้าร่วมจาก
+                                                </p>
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="relative group/item">
+                                                        <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#91C4E3] opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                                        <p className="text-lg md:text-xl text-[#91C4E3] font-medium text-center group-hover/item:translate-x-2 transition-transform">
+                                                            มัธยมปลาย
+                                                        </p>
+                                                    </div>
+                                                    <div className="relative group/item">
+                                                        <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#91C4E3] opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                                        <p className="text-lg md:text-xl text-[#91C4E3] font-medium text-center group-hover/item:translate-x-2 transition-transform">
+                                                            มหาวิทยาลัย
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="pt-4 mt-4 border-t border-[#91C4E3]/20">
+                                                    <p className="text-base text-gray-400 text-center italic">
+                                                        ทุกพื้นฐาน ไม่จำกัดสาขา
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Bottom decorative element */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#91C4E3]/40 to-transparent" />
+                                        </div>
+                                    </div>
+
+                                    {/* Team Format Card */}
+                                    <div className="group relative">
+                                        {/* Glowing border effect */}
+                                        <div className="absolute -inset-0.5 bg-gradient-to-br from-[#A594BA] via-[#A594BA]/50 to-transparent rounded-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-500 blur-sm" />
+
+                                        {/* Card content */}
+                                        <div className="relative bg-gradient-to-br from-[#0d1219]/95 to-[#0a0f16]/95 backdrop-blur-xl rounded-3xl border border-[#A594BA]/30 p-10 md:p-12 group-hover:border-[#A594BA]/50 transition-all duration-500 h-full">
+                                            {/* Icon/Number */}
+                                            <div className="mb-8 flex items-center justify-center">
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 bg-[#A594BA] blur-2xl opacity-30" />
+                                                    <UsersRound className="w-20 h-20 text-[#A594BA] relative z-10" strokeWidth={1.5} />
+                                                </div>
+                                            </div>
+
+                                            {/* Title */}
+                                            <h3 className="text-3xl md:text-4xl font-bold text-[#A594BA] mb-8 text-center"
+                                                style={{
+                                                    textShadow: '0 0 30px rgba(165,148,186,0.5)',
+                                                    letterSpacing: '-0.02em'
+                                                }}>
+                                                Team Format
+                                            </h3>
+
+                                            {/* Content */}
+                                            <div className="space-y-6">
+                                                <ul className="space-y-6">
+                                                    <li className="flex items-start gap-4 group/item">
+                                                        <div className="flex-shrink-0 mt-1.5">
+                                                            <div className="w-8 h-8 rounded-full border-2 border-[#A594BA]/40 flex items-center justify-center group-hover/item:border-[#A594BA] group-hover/item:bg-[#A594BA]/10 transition-all">
+                                                                <div className="w-2 h-2 rounded-full bg-[#A594BA]" />
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-lg md:text-xl text-gray-200 leading-relaxed group-hover/item:text-white transition-colors">
+                                                            สามารถสมัครเดี่ยว แล้วมาทีม matching ได้
+                                                        </span>
+                                                    </li>
+                                                    <li className="flex items-start gap-4 group/item">
+                                                        <div className="flex-shrink-0 mt-1.5">
+                                                            <div className="w-8 h-8 rounded-full border-2 border-[#A594BA]/40 flex items-center justify-center group-hover/item:border-[#A594BA] group-hover/item:bg-[#A594BA]/10 transition-all">
+                                                                <div className="w-2 h-2 rounded-full bg-[#A594BA]" />
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-lg md:text-xl text-gray-200 leading-relaxed group-hover/item:text-white transition-colors">
+                                                            ทีมละ 2–5 คน
+                                                        </span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            {/* Bottom decorative element */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#A594BA]/40 to-transparent" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Tracks Section - Minimal Design */}
+                    <section className="py-32 relative z-10">
+                        <div className="container mx-auto px-4 relative z-10">
+                            <h2 className="text-5xl md:text-6xl font-bold mb-20 text-center">
+                                <span className="text-white/90">
+                                    Tracks
+                                </span>
+                            </h2>
+
+                            <div className="max-w-7xl mx-auto space-y-2">
+                                {/* Track 1 */}
+                                <div
+                                    onClick={() => setExpandedTrack(expandedTrack === 1 ? null : 1)}
+                                    className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#91C4E3]/5 rounded-2xl"
+                                >
+                                    <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
+                                        <div className="flex items-center gap-8 md:gap-12 flex-1">
+                                            {/* Number */}
+                                            <div className="flex-shrink-0 flex items-center gap-6">
+                                                <span className="text-6xl md:text-8xl font-bold text-white group-hover:text-[#91C4E3] transition-all duration-500 leading-none">
+                                                    01
+                                                </span>
+                                                <HeartPulse className="w-12 h-12 md:w-16 md:h-16 text-[#91C4E3] transition-all duration-500" strokeWidth={1} />
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="flex-1 space-y-2 relative z-10">
+                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
+                                                    Traditional & Integrative Healthcare
+                                                </h3>
+                                                {expandedTrack !== 1 && (
+                                                    <p className="text-sm text-gray-500 group-hover:text-[#91C4E3]/60 transition-colors">
+                                                        Click to see detail
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Arrow indicator */}
+                                        <div className={`flex-shrink-0 text-white/20 group-hover:text-[#91C4E3] transition-all duration-300 ${expandedTrack === 1 ? 'rotate-90' : ''}`}>
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    {/* Details - Hidden by default, shown on click */}
+                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 1 ? 'max-h-96' : 'max-h-0'}`}>
+                                        <div className="px-8 md:px-12 pb-8">
+                                            <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Early detection & screening</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Chronic disease prevention</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Patient journeys</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Integration of traditional practices</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Assistive health technology</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom border */}
+                                    <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 1 ? 'via-[#91C4E3]/40' : 'via-white/5 group-hover:via-[#91C4E3]/40'}`} />
+                                </div>
+
+                                {/* Track 2 */}
+                                <div
+                                    onClick={() => setExpandedTrack(expandedTrack === 2 ? null : 2)}
+                                    className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#A594BA]/5 rounded-2xl"
+                                >
+                                    <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
+                                        <div className="flex items-center gap-8 md:gap-12 flex-1">
+                                            {/* Number */}
+                                            <div className="flex-shrink-0 flex items-center gap-6">
+                                                <span className="text-6xl md:text-8xl font-bold text-white group-hover:text-[#A594BA] transition-all duration-500 leading-none">
+                                                    02
+                                                </span>
+                                                <Brain className="w-12 h-12 md:w-16 md:h-16 text-[#A594BA] transition-all duration-500" strokeWidth={1} />
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="flex-1 space-y-2 relative z-10">
+                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#A594BA] transition-colors duration-300">
+                                                    Mental Health
+                                                </h3>
+                                                {expandedTrack !== 2 && (
+                                                    <p className="text-sm text-gray-500 group-hover:text-[#A594BA]/60 transition-colors">
+                                                        Click to see detail
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Arrow indicator */}
+                                        <div className={`flex-shrink-0 text-white/20 group-hover:text-[#A594BA] transition-all duration-300 ${expandedTrack === 2 ? 'rotate-90' : ''}`}>
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    {/* Details - Hidden by default, shown on click */}
+                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 2 ? 'max-h-96' : 'max-h-0'}`}>
+                                        <div className="px-8 md:px-12 pb-8">
+                                            <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#A594BA] mt-1">•</span>
+                                                    <span>Stress, burnout, anxiety prevention</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#A594BA] mt-1">•</span>
+                                                    <span>Early risk detection</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#A594BA] mt-1">•</span>
+                                                    <span>Loneliness & social isolation</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#A594BA] mt-1">•</span>
+                                                    <span>Well-being in schools/workplaces</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#A594BA] mt-1">•</span>
+                                                    <span>Empathetic chatbots & LLMs</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom border */}
+                                    <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 2 ? 'via-[#A594BA]/40' : 'via-white/5 group-hover:via-[#A594BA]/40'}`} />
+                                </div>
+
+                                {/* Track 3 */}
+                                <div
+                                    onClick={() => setExpandedTrack(expandedTrack === 3 ? null : 3)}
+                                    className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#91C4E3]/5 rounded-2xl"
+                                >
+                                    <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
+                                        <div className="flex items-center gap-8 md:gap-12 flex-1">
+                                            {/* Number */}
+                                            <div className="flex-shrink-0 flex items-center gap-6">
+                                                <span className="text-6xl md:text-8xl font-bold text-white group-hover:text-[#91C4E3] transition-all duration-500 leading-none">
+                                                    03
+                                                </span>
+                                                <Globe className="w-12 h-12 md:w-16 md:h-16 text-[#91C4E3] transition-all duration-500" strokeWidth={1} />
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="flex-1 space-y-2 relative z-10">
+                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
+                                                    Community, Public & Environmental Health
+                                                </h3>
+                                                {expandedTrack !== 3 && (
+                                                    <p className="text-sm text-gray-500 group-hover:text-[#91C4E3]/60 transition-colors">
+                                                        Click to see detail
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Arrow indicator */}
+                                        <div className={`flex-shrink-0 text-white/20 group-hover:text-[#91C4E3] transition-all duration-300 ${expandedTrack === 3 ? 'rotate-90' : ''}`}>
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    {/* Details - Hidden by default, shown on click */}
+                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 3 ? 'max-h-96' : 'max-h-0'}`}>
+                                        <div className="px-8 md:px-12 pb-8">
+                                            <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Population prevention</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Health equity & accessibility</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Environmental health</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Prediction & monitoring</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Community interventions</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-[#91C4E3] mt-1">•</span>
+                                                    <span>Wearables & sensing</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom border */}
+                                    <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 3 ? 'via-[#91C4E3]/40' : 'via-white/5 group-hover:via-[#91C4E3]/40'}`} />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+
+
+                    <HackathonTimeline />
+
+                    {/* What Participants Will Experience */}
+                    <section className="py-20 relative z-10">
+                        <div className="absolute left-1/4 top-1/3 opacity-15 pointer-events-none" style={{ animation: 'float 9s infinite ease-in-out' }}>
+                            <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-32 h-32" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.4))' }} />
+                        </div>
+
+                        <div className="container mx-auto px-4 relative z-10">
+                            <h2 className="text-4xl md:text-5xl font-bold mb-16 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
+                                <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
+                                    What Participants Will Experience
+                                </span>
+                            </h2>
+
+                            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                                {/* Card 1: Large Wide */}
+                                <div className="group relative overflow-hidden bg-gradient-to-br from-[#0d1219]/90 to-[#121c29]/80 backdrop-blur-xl rounded-3xl border border-[#91C4E3]/20 p-8 md:p-10 hover:border-[#91C4E3]/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(145,196,227,0.15)] flex flex-col md:col-span-2 lg:col-span-3">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-[100px] -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110" />
+                                    <div className="flex-shrink-0 mb-6 w-16 h-16 rounded-2xl bg-[#91C4E3]/10 border border-[#91C4E3]/20 flex items-center justify-center group-hover:bg-[#91C4E3]/20 transition-colors duration-500">
+                                        <Microscope className="w-8 h-8 text-[#91C4E3]" />
+                                    </div>
+                                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-wide">Health & Tech Workshops</h3>
+                                    <p className="text-gray-300 leading-relaxed text-lg flex-1">
+                                        Workshops ที่ช่วยให้เข้าใจปัญหาสุขภาพจริง ตั้งแต่ <span className="text-[#91C4E3] font-semibold">problem discovery → research → prototyping</span>
+                                    </p>
+                                </div>
+                                {/* Card 2: Square */}
+                                <div className="group relative overflow-hidden bg-[#0d1219]/80 backdrop-blur-xl rounded-3xl border border-[#A594BA]/20 p-8 hover:border-[#A594BA]/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(165,148,186,0.15)] flex flex-col md:col-span-1 lg:col-span-2">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-[100px] -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110" />
+                                    <div className="flex-shrink-0 mb-6 w-16 h-16 rounded-2xl bg-[#A594BA]/10 border border-[#A594BA]/20 flex items-center justify-center group-hover:bg-[#A594BA]/20 transition-colors duration-500">
+                                        <Target className="w-8 h-8 text-[#A594BA]" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-4 tracking-wide">Evidence-Based </h3>
+                                    <p className="text-gray-300 leading-relaxed text-lg flex-1">
+                                        การพัฒนาแนวคิดโดยอ้างอิงข้อมูล งานวิจัย และบริบทจริง
+                                    </p>
+                                </div>
+                                {/* Card 3: Square */}
+                                <div className="group relative overflow-hidden bg-[#0d1219]/80 backdrop-blur-xl rounded-3xl border border-[#91C4E3]/20 p-8 hover:border-[#91C4E3]/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(145,196,227,0.15)] flex flex-col md:col-span-1 lg:col-span-2">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-[100px] -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110" />
+                                    <div className="flex-shrink-0 mb-6 w-16 h-16 rounded-2xl bg-[#91C4E3]/10 border border-[#91C4E3]/20 flex items-center justify-center group-hover:bg-[#91C4E3]/20 transition-colors duration-500">
+                                        <Rocket className="w-8 h-8 text-[#91C4E3]" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-4 tracking-wide">Scalable Prototyping</h3>
+                                    <p className="text-gray-300 leading-relaxed text-lg flex-1">
+                                        การสร้าง prototype ที่ทดลองและพัฒนาต่อได้
+                                    </p>
+                                </div>
+                                {/* Card 4: Large Wide */}
+                                <div className="group relative overflow-hidden bg-gradient-to-tl from-[#0d1219]/90 to-[#161423]/80 backdrop-blur-xl rounded-3xl border border-[#A594BA]/20 p-8 md:p-10 hover:border-[#A594BA]/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(165,148,186,0.15)] flex flex-col md:col-span-2 lg:col-span-3">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-[100px] -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110" />
+                                    <div className="flex-shrink-0 mb-6 w-16 h-16 rounded-2xl bg-[#A594BA]/10 border border-[#A594BA]/20 flex items-center justify-center group-hover:bg-[#A594BA]/20 transition-colors duration-500">
+                                        <UsersRound className="w-8 h-8 text-[#A594BA]" />
+                                    </div>
+                                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-wide">Expert Mentorship</h3>
+                                    <p className="text-gray-300 leading-relaxed text-lg flex-1">
+                                        Mentorship และ feedback จากผู้เชี่ยวชาญด้าน <span className="text-[#A594BA] font-semibold">health, tech และ business</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Beyond the Hackathon */}
+                    <section className="py-24 relative z-10">
+                        <div className="absolute right-20 top-1/3 opacity-20 pointer-events-none" style={{ animation: 'floatReverse 11s infinite ease-in-out' }}>
+                            <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-40 h-40" style={{ filter: 'drop-shadow(0 0 16px rgba(165,148,186,0.5))', transform: 'scaleX(-1)' }} />
+                        </div>
+
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#A594BA] opacity-[0.03] blur-[150px] rounded-[100%]" />
+
+                        <div className="container mx-auto px-4 relative z-10">
+                            <div className="text-center mb-16">
+                                <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight" style={{ textShadow: '0 0 40px rgba(165,148,186,0.4)' }}>
+                                    <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
+                                        Beyond the Hackathon
+                                    </span>
+                                </h2>
+                                <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto flex flex-col md:inline-block">
+                                    <span>ประสบการณ์ไม่ได้จบลงที่การแข่งขัน</span>{' '}
+                                    <span className="text-[#91C4E3] whitespace-nowrap">แต่ต่อยอดสู่การพัฒนาในโลกจริง</span>
+                                </p>
+                            </div>
+
+                            <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+                                {[
+                                    {
+                                        title: 'Showcase in Futurist Fest',
+                                        desc: 'การนำเสนอผลงานในงาน Futurist Fest ต่อหน้าสาธารณชน',
+                                        icon: <Presentation className="w-10 h-10 text-[#A594BA]" />
+                                    },
+                                    {
+                                        title: 'Expand Your Network',
+                                        desc: 'การเชื่อมต่อกับนักวิจัย ผู้เชี่ยวชาญ และนักลงทุนในอุตสาหกรรม',
+                                        icon: <Network className="w-10 h-10 text-[#91C4E3]" />
+                                    },
+                                    {
+                                        title: 'Real-world Incubation',
+                                        desc: 'โอกาสพัฒนาแนวคิดและ Prototype ต่อหลังจบโครงการ',
+                                        icon: <Rocket className="w-10 h-10 text-[#A594BA]" />
+                                    }
+                                ].map((item, idx) => (
+                                    <div key={idx} className="group relative bg-[#0d1219]/60 backdrop-blur-xl border border-white/5 p-10 rounded-3xl hover:bg-[#0d1219]/80 hover:border-[#91C4E3]/30 transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(145,196,227,0.1)] flex flex-col items-center text-center">
+                                        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-3xl pointer-events-none" />
+                                        <div className="mb-8 p-5 bg-white/5 rounded-full border border-white/10 group-hover:scale-110 group-hover:border-[#91C4E3]/40 transition-all duration-500 shadow-inner">
+                                            {item.icon}
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-white mb-4">{item.title}</h3>
+                                        <p className="text-gray-400 text-lg leading-relaxed">{item.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Futurist Fest Section */}
+                    <section className="py-32 relative z-10 overflow-hidden flex items-center justify-center min-h-[60vh]">
+                        {/* Dramatic Lighting Background */}
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#91C4E3]/10 via-[#03050a]/80 to-[#03050a] pointer-events-none" />
+
+                        {/* Animated Orbits/Rings */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-[#91C4E3]/10 rounded-full animate-[spin_60s_linear_infinite] pointer-events-none" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-[#A594BA]/10 rounded-full animate-[spin_40s_linear_infinite_reverse] pointer-events-none" />
+
+                        <div className="absolute right-20 bottom-1/4 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 8s infinite ease-in-out' }}>
+                            <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-48 h-48" style={{ filter: 'drop-shadow(0 0 18px rgba(145,196,227,0.5))', transform: 'scaleX(-1)' }} />
+                        </div>
+
+                        <div className="container mx-auto px-4 relative z-20 text-center">
+                            <div className="relative mx-auto w-full max-w-2xl flex flex-col drop-shadow-2xl">
+                                {/* Top Ticket Section (Blue Gradient with Circles & Grain) */}
+                                <div className="relative bg-[#2563eb] bg-gradient-to-tr from-[#1d4ed8] to-[#3b82f6] rounded-t-[3rem] p-12 md:p-16 overflow-hidden min-h-[300px] flex flex-col justify-center">
+                                    {/* Grain Effect */}
+                                    <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+
+                                    {/* Background Decorative Circles */}
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border-[1px] border-white/20 pointer-events-none" />
+                                    <div className="absolute top-[60%] left-[10%] w-[120px] h-[120px] rounded-full border-[1px] border-white/20 pointer-events-none" />
+                                    <div className="absolute -top-10 -right-10 w-[200px] h-[200px] rounded-full bg-white/10 blur-xl pointer-events-none" />
+
+                                    {/* Top Info */}
+                                    <div className="absolute top-8 left-10 text-white/70 tracking-widest text-sm font-medium">
+                                        2025 EDITION
+                                    </div>
+                                    <div className="absolute top-8 right-10 flex gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-white/40" />
+                                        <div className="w-3 h-3 rounded-full bg-white/40" />
+                                    </div>
+
+                                    {/* Main Event Title */}
+                                    <div className="relative z-10 flex flex-col items-center text-center mt-4">
+                                        <h2 className="text-5xl md:text-7xl font-black text-white mb-2 tracking-widest drop-shadow-sm">
+                                            FUTURIST
+                                        </h2>
+                                        <h3 className="text-xl md:text-2xl text-white/80 font-light tracking-[0.3em] uppercase">
+                                            The Grand Finale
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                {/* Separation Line with Cutouts */}
+                                <div className="relative h-px w-full bg-[#EADDCD] flex items-center justify-center">
+                                    {/* Left Cutout */}
+                                    <div className="absolute -left-6 bottom-0 translate-y-1/2 w-12 h-24 rounded-r-full bg-[#03050a] z-10" />
+                                    {/* Perforated Dashed Line */}
+                                    <div className="absolute inset-x-8 -top-px border-t-[3px] border-dashed border-black/10" />
+                                    {/* Right Cutout */}
+                                    <div className="absolute -right-6 bottom-0 translate-y-1/2 w-12 h-24 rounded-l-full bg-[#03050a] z-10" />
+                                </div>
+
+                                {/* Bottom Ticket Section (Cream color) */}
+                                <div className="relative bg-[#EADDCD] text-gray-900 rounded-b-[3rem] p-10 md:p-14 pt-16 flex flex-col gap-10">
+
+                                    {/* Details Row 1 */}
+                                    <div className="flex justify-between items-end border-b-[2px] border-black/10 pb-6 relative z-20">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-1">Pass Type</span>
+                                            <span className="text-4xl font-black text-[#1e293b] uppercase tracking-tight">VIP PASS</span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-1">Roles</span>
+                                            <span className="text-3xl font-black text-[#1e293b] uppercase tracking-tighter">Innovator</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Thai Description Text */}
+                                    <div className="mt-4 text-center">
+                                        <p className="text-[#475569] font-medium leading-relaxed md:text-lg">
+                                            พื้นที่ที่ผลงานไม่ได้จบลงที่การแข่งขัน ทุกทีมสามารถนำเสนอ prototype แลกเปลี่ยนแนวคิด และเชื่อมต่อกับนักวิจัย เพื่อต่อยอดในโลกจริง
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Organizations & Partners Section */}
+                    <section className="py-20 relative z-10">
+                        <div className="absolute right-1/4 bottom-10 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 6s infinite ease-in-out' }}>
+                            <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-28 h-28" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.4))', transform: 'scaleX(-1)' }} />
+                        </div>
+
+                        <div className="container mx-auto px-4">
+                            <h2 className="text-4xl md:text-5xl font-bold mb-16 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
+                                <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
+                                    Organizations & Partners
+                                </span>
+                            </h2>
+
+                            <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12">
+                                {/* AMSA Thailand */}
+                                <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#91C4E3]/25 p-8 hover:border-[#91C4E3]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(145,196,227,0.2)] flex flex-col">
+                                    <div className="flex flex-col items-center text-center gap-6">
+                                        <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
+                                            <img src="/hackathon/AMSA.png" alt="AMSA Thailand" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">AMSA Thailand</h3>
+                                            <p className="text-gray-300 leading-relaxed text-sm">
+                                                เครือข่ายนักศึกษาแพทย์ที่ทำงานด้านสาธารณสุข การแลกเปลี่ยนความรู้ และความร่วมมือด้านสุขภาพ
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Passionseed */}
+                                <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#A594BA]/25 p-8 hover:border-[#A594BA]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(165,148,186,0.2)] flex flex-col">
+                                    <div className="flex flex-col items-center text-center gap-6">
+                                        <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
+                                            <img src="/hackathon/PS.png" alt="Passionseed" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.3))' }} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">Passionseed</h3>
+                                            <p className="text-gray-300 leading-relaxed text-sm">
+                                                องค์กรที่พัฒนาเยาวชนผ่านการเรียนรู้ด้านเทคโนโลยี เช่น AI การสร้างผลิตภัณฑ์ดิจิทัล และนวัตกรรม เพื่อสร้างโปรเจกต์ที่ใช้ได้จริง
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* STEM Like Her */}
+                                <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#91C4E3]/25 p-8 hover:border-[#91C4E3]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(145,196,227,0.2)] flex flex-col">
+                                    <div className="flex flex-col items-center text-center gap-6">
+                                        <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
+                                            <img src="/hackathon/StemLike.png" alt="STEM Like Her" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">STEM Like Her</h3>
+                                            <p className="text-gray-300 leading-relaxed text-sm">
+                                                องค์กรนักศึกษาที่สนับสนุนและสร้างแรงบันดาลใจให้ผู้หญิงและเยาวชนในสาย STEM
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* CTA Section */}
+                    <section className="py-24 relative z-10">
+                        {/* Large jellyfish decoration */}
+                        <div className="absolute top-10 right-1/3 opacity-20 pointer-events-none" style={{ animation: 'float 12s infinite ease-in-out' }}>
+                            <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-52 h-52" style={{ filter: 'drop-shadow(0 0 20px rgba(165,148,186,0.4))' }} />
+                        </div>
+
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#91C4E3]/5 to-[#A594BA]/5 blur-3xl" />
+
+                        <div className="container mx-auto px-4 relative z-10">
+                            <div className="text-center max-w-4xl mx-auto space-y-8">
+                                <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                                    <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
+                                        มาร่วมสำรวจและสร้างอนาคตของการดูแลสุขภาพไปด้วยกัน
+                                    </span>
+                                </h2>
                                 <Button
                                     size="lg"
                                     onClick={handleRegister}
-                                    className="bg-[#9D81AC] hover:bg-[#8a6f99] text-white text-xl px-12 py-6 rounded-full shadow-[0_0_40px_rgba(157,129,172,0.6)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(157,129,172,1)] transform hover:scale-105"
+                                    className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] hover:from-[#7ab3d3] hover:to-[#9484aa] text-white text-xl px-14 py-7 rounded-full shadow-[0_0_40px_rgba(145,196,227,0.5)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(145,196,227,0.8)] transform hover:scale-105"
                                 >
                                     {isLoggedIn ? "Your Team" : "Register Now"}
                                 </Button>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
+                    {/* Footer */}
+                    <footer className="py-12 border-t border-[#91C4E3]/20 relative z-10">
+                        <div className="container mx-auto px-4">
+                            <div className="text-center space-y-4">
+                                <p className="text-gray-400 text-lg">
+                                    The Next Decade Hackathon 2026
+                                </p>
+                                <p className="text-gray-500 text-sm">
+                                    Reimagining Preventive & Predictive Healthcare
+                                </p>
+                            </div>
+                        </div>
+                    </footer>
                 </div>
-
-                {/* Scroll indicator — anchored to section bottom */}
-                <div
-                    className={`absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-50 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
-                >
-                    <span className="text-xs tracking-widest uppercase text-gray-400">Detail</span>
-                    <div className="flex flex-col items-center gap-1 animate-bounce">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-gray-400">
-                            <path d="M8 3 L8 13 M3 8 L8 13 L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                    </div>
-                </div>
-            </section>
-
-            {/* All content sections that fade in after title */}
-            <div
-                className={`${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
-            >
-                {/* Anyone Can Make an Impact Section */}
-                <section className="py-20 relative z-10 overflow-hidden">
-                    {/* Ambient glow */}
-                    <div className="absolute right-0 top-1/2 w-[600px] h-[600px] bg-[#91C4E3] opacity-5 blur-[150px] rounded-full" />
-                    <div className="absolute left-0 bottom-0 w-[500px] h-[500px] bg-[#A594BA] opacity-5 blur-[150px] rounded-full" />
-
-                    {/* Jellyfish decoration */}
-                    <div className="absolute right-16 top-1/4 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 9s infinite ease-in-out' }}>
-                        <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-44 h-44" style={{ filter: 'drop-shadow(0 0 16px rgba(145,196,227,0.4))', transform: 'scaleX(-1)' }} />
-                    </div>
-
-                    <div className="container mx-auto px-4 relative z-10">
-                        <div className="max-w-5xl mx-auto">
-                            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
-                                <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
-                                    Anyone Can Make an Impact
-                                </span>
-                            </h2>
-                            <p className="text-center text-xl md:text-2xl text-gray-300 mb-12 italic">
-                                "เปลี่ยนไอเดียให้เป็นอิมแพ็ค เริ่มสร้างจากศูนย์...สู่ผลงานจริง"
-                            </p>
-                            <div className="space-y-6">
-                                <div className="bg-[#0d1219]/70 backdrop-blur-md p-8 md:p-10 rounded-3xl border border-[#91C4E3]/20 shadow-[0_0_40px_rgba(145,196,227,0.08)] hover:border-[#91C4E3]/40 transition-all duration-500">
-                                    <p className="text-gray-200 text-lg md:text-xl leading-relaxed">
-                                        ที่ The Next Decade Hackathon 2026 <span className="text-[#91C4E3] font-semibold">พื้นฐานไม่ใช่ข้อจำกัด แต่คือจุดเริ่มต้นของการเรียนรู้</span> เราเปลี่ยนพื้นที่แข่งขันให้กลายเป็นโอกาสให้คุณได้ทดลอง สร้างสรรค์ และเรียนรู้จากการลงมือทำจริงได้แบบไม่ต้องกังวล ผ่านระบบเหล่านี้:
-                                    </p>
-                                </div>
-
-                                {/* Personal Mentorship */}
-                                <div className="bg-[#0d1219]/70 backdrop-blur-md p-8 md:p-10 rounded-3xl border border-[#91C4E3]/20 shadow-[0_0_40px_rgba(145,196,227,0.08)] hover:border-[#91C4E3]/40 transition-all duration-500">
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#91C4E3]/10 border border-[#91C4E3]/40 flex items-center justify-center shadow-[0_0_15px_rgba(145,196,227,0.3)]">
-                                            <UsersRound className="text-[#91C4E3] w-6 h-6" style={{ filter: 'drop-shadow(0 0 8px rgba(145,196,227,0.8))' }} strokeWidth={1.5} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="text-[#91C4E3] font-semibold text-xl md:text-2xl mb-3">Personal Mentorship</h4>
-                                            <p className="text-gray-300 text-base md:text-lg leading-relaxed">
-                                                เรามีการจัดสรร Mentor ประจำแต่ละกลุ่มเพื่อคอยให้คำปรึกษาและ Feedback อย่างใกล้ชิด พี่ๆจะช่วยให้คำแนะนำและดูแลให้น้องๆมือใหม่ยังคงอยู่ในเส้นทางและพัฒนาไอเดียได้อย่างเต็มศักยภาพ
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Learning Guideline */}
-                                <div className="bg-[#0d1219]/70 backdrop-blur-md p-8 md:p-10 rounded-3xl border border-[#A594BA]/20 shadow-[0_0_40px_rgba(165,148,186,0.08)] hover:border-[#A594BA]/40 transition-all duration-500">
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#91C4E3]/10 border border-[#91C4E3]/40 flex items-center justify-center shadow-[0_0_15px_rgba(145,196,227,0.3)]">
-                                            <BookOpenCheck className="text-[#91C4E3] w-6 h-6" style={{ filter: 'drop-shadow(0 0 8px rgba(145,196,227,0.8))' }} strokeWidth={1.5} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="text-[#A594BA] font-semibold text-xl md:text-2xl mb-3">Learning Guideline</h4>
-                                            <p className="text-gray-300 text-base md:text-lg leading-relaxed">
-                                                คุณจะได้เรียนรู้กระบวนการสร้างนวัตกรรมอย่างเป็นระบบผ่านหลักสูตร <span className="text-[#A594BA] font-semibold">Design Thinking</span> ที่มุ่งเน้นการลงมือทำจริงเพื่อให้ได้ผลงานที่ใช้งานได้จริง (Functional Prototype) และมีเว็บคอย guide ทางให้ในแต่ละขั้นตอน
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Tester */}
-                                <div className="bg-[#0d1219]/70 backdrop-blur-md p-8 md:p-10 rounded-3xl border border-[#91C4E3]/20 shadow-[0_0_40px_rgba(145,196,227,0.08)] hover:border-[#91C4E3]/40 transition-all duration-500">
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#91C4E3]/10 border border-[#91C4E3]/40 flex items-center justify-center shadow-[0_0_15px_rgba(145,196,227,0.3)]">
-                                            <Microscope className="text-[#91C4E3] w-6 h-6" style={{ filter: 'drop-shadow(0 0 8px rgba(145,196,227,0.8))' }} strokeWidth={1.5} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="text-[#91C4E3] font-semibold text-xl md:text-2xl mb-3">Tester</h4>
-                                            <p className="text-gray-300 text-base md:text-lg leading-relaxed">
-                                                หัวใจสำคัญคือการนำ Prototype ไปทดลองใช้จริง เพื่อรับ Feedback มาพัฒนาผลงานให้แม่นยำ ขั้นตอนนี้จะช่วยสร้างความมั่นใจว่าสิ่งที่คุณสร้างขึ้นนั้นสามารถแก้ปัญหาได้ตรงจุดและตอบโจทย์คนใช้งานจริง ก่อนนำเสนอผลงานในรอบสุดท้าย
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Tracks Section - Minimal Design */}
-                <section className="py-32 relative z-10">
-                    <div className="container mx-auto px-4 relative z-10">
-                        <h2 className="text-5xl md:text-6xl font-bold mb-20 text-center">
-                            <span className="text-white/90">
-                                Tracks
-                            </span>
-                        </h2>
-
-                        <div className="max-w-7xl mx-auto space-y-2">
-                            {/* Track 1 */}
-                            <div
-                                onClick={() => setExpandedTrack(expandedTrack === 1 ? null : 1)}
-                                className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#91C4E3]/5 rounded-2xl"
-                            >
-                                <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
-                                    <div className="flex items-center gap-8 md:gap-12 flex-1">
-                                        {/* Number */}
-                                        <div className="flex-shrink-0">
-                                            <span className="text-6xl md:text-8xl font-bold text-white/10 group-hover:text-[#91C4E3]/40 transition-all duration-500">
-                                                01
-                                            </span>
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-3xl group-hover:scale-110 transition-transform duration-300">🏥</span>
-                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
-                                                    Traditional & Integrative Healthcare
-                                                </h3>
-                                            </div>
-                                            {expandedTrack !== 1 && (
-                                                <p className="text-sm text-gray-500 ml-[3.5rem] group-hover:text-[#91C4E3]/60 transition-colors">
-                                                    Click to see detail
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Arrow indicator */}
-                                    <div className={`flex-shrink-0 text-white/20 group-hover:text-[#91C4E3] transition-all duration-300 ${expandedTrack === 1 ? 'rotate-90' : ''}`}>
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="9 18 15 12 9 6"></polyline>
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                {/* Details - Hidden by default, shown on click */}
-                                <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 1 ? 'max-h-96' : 'max-h-0'}`}>
-                                    <div className="px-8 md:px-12 pb-8">
-                                        <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Early detection & screening</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Chronic disease prevention</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Patient journeys</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Integration of traditional practices</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Assistive health technology</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                {/* Bottom border */}
-                                <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 1 ? 'via-[#91C4E3]/40' : 'via-white/5 group-hover:via-[#91C4E3]/40'}`} />
-                            </div>
-
-                            {/* Track 2 */}
-                            <div
-                                onClick={() => setExpandedTrack(expandedTrack === 2 ? null : 2)}
-                                className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#A594BA]/5 rounded-2xl"
-                            >
-                                <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
-                                    <div className="flex items-center gap-8 md:gap-12 flex-1">
-                                        {/* Number */}
-                                        <div className="flex-shrink-0">
-                                            <span className="text-6xl md:text-8xl font-bold text-white/10 group-hover:text-[#A594BA]/40 transition-all duration-500">
-                                                02
-                                            </span>
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-3xl group-hover:scale-110 transition-transform duration-300">🧠</span>
-                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#A594BA] transition-colors duration-300">
-                                                    Mental Health
-                                                </h3>
-                                            </div>
-                                            {expandedTrack !== 2 && (
-                                                <p className="text-sm text-gray-500 ml-[3.5rem] group-hover:text-[#A594BA]/60 transition-colors">
-                                                    Click to see detail
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Arrow indicator */}
-                                    <div className={`flex-shrink-0 text-white/20 group-hover:text-[#A594BA] transition-all duration-300 ${expandedTrack === 2 ? 'rotate-90' : ''}`}>
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="9 18 15 12 9 6"></polyline>
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                {/* Details - Hidden by default, shown on click */}
-                                <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 2 ? 'max-h-96' : 'max-h-0'}`}>
-                                    <div className="px-8 md:px-12 pb-8">
-                                        <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#A594BA] mt-1">•</span>
-                                                <span>Stress, burnout, anxiety prevention</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#A594BA] mt-1">•</span>
-                                                <span>Early risk detection</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#A594BA] mt-1">•</span>
-                                                <span>Loneliness & social isolation</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#A594BA] mt-1">•</span>
-                                                <span>Well-being in schools/workplaces</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#A594BA] mt-1">•</span>
-                                                <span>Empathetic chatbots & LLMs</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                {/* Bottom border */}
-                                <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 2 ? 'via-[#A594BA]/40' : 'via-white/5 group-hover:via-[#A594BA]/40'}`} />
-                            </div>
-
-                            {/* Track 3 */}
-                            <div
-                                onClick={() => setExpandedTrack(expandedTrack === 3 ? null : 3)}
-                                className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#91C4E3]/5 rounded-2xl"
-                            >
-                                <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
-                                    <div className="flex items-center gap-8 md:gap-12 flex-1">
-                                        {/* Number */}
-                                        <div className="flex-shrink-0">
-                                            <span className="text-6xl md:text-8xl font-bold text-white/10 group-hover:text-[#91C4E3]/40 transition-all duration-500">
-                                                03
-                                            </span>
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-3xl group-hover:scale-110 transition-transform duration-300">🌍</span>
-                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
-                                                    Community, Public & Environmental Health
-                                                </h3>
-                                            </div>
-                                            {expandedTrack !== 3 && (
-                                                <p className="text-sm text-gray-500 ml-[3.5rem] group-hover:text-[#91C4E3]/60 transition-colors">
-                                                    Click to see detail
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Arrow indicator */}
-                                    <div className={`flex-shrink-0 text-white/20 group-hover:text-[#91C4E3] transition-all duration-300 ${expandedTrack === 3 ? 'rotate-90' : ''}`}>
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="9 18 15 12 9 6"></polyline>
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                {/* Details - Hidden by default, shown on click */}
-                                <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 3 ? 'max-h-96' : 'max-h-0'}`}>
-                                    <div className="px-8 md:px-12 pb-8">
-                                        <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Population prevention</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Health equity & accessibility</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Environmental health</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Prediction & monitoring</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Community interventions</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <span className="text-[#91C4E3] mt-1">•</span>
-                                                <span>Wearables & sensing</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                {/* Bottom border */}
-                                <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 3 ? 'via-[#91C4E3]/40' : 'via-white/5 group-hover:via-[#91C4E3]/40'}`} />
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Who Can Join & Team Format */}
-                <section className="py-20 relative z-10">
-                    <div className="absolute right-1/4 top-1/3 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 7s infinite ease-in-out' }}>
-                        <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-36 h-36" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.4))', transform: 'scaleX(-1)' }} />
-                    </div>
-
-                    <div className="container mx-auto px-4 relative z-10">
-                        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-                            {/* Who Can Join */}
-                            <div className="bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#91C4E3]/30 p-10 hover:border-[#91C4E3]/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(145,196,227,0.2)]">
-                                <h3 className="text-3xl font-bold text-[#91C4E3] mb-6" style={{ textShadow: '0 0 20px rgba(145,196,227,0.4)' }}>
-                                    Who Can Join
-                                </h3>
-                                <p className="text-xl text-gray-200 leading-relaxed">
-                                    เปิดรับผู้เข้าร่วมทุกพื้นฐาน<br />
-                                    <span className="text-gray-400">ไม่จำกัดสาขา</span>
-                                </p>
-                            </div>
-
-                            {/* Team Format */}
-                            <div className="bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#A594BA]/30 p-10 hover:border-[#A594BA]/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(165,148,186,0.2)]">
-                                <h3 className="text-3xl font-bold text-[#A594BA] mb-6" style={{ textShadow: '0 0 20px rgba(165,148,186,0.4)' }}>
-                                    Team Format
-                                </h3>
-                                <ul className="space-y-3 text-gray-200 text-lg">
-                                    <li className="flex items-center gap-3">
-                                        <span className="w-2 h-2 rounded-full bg-[#A594BA]" />
-                                        <span>สามารถสมัครเดี่ยว</span>
-                                    </li>
-                                    <li className="flex items-center gap-3">
-                                        <span className="w-2 h-2 rounded-full bg-[#A594BA]" />
-                                        <span>ทีมละ 2–5 คน</span>
-                                    </li>
-                                    <li className="flex items-center gap-3">
-                                        <span className="w-2 h-2 rounded-full bg-[#A594BA]" />
-                                        <span>High School & University</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <HackathonTimeline />
-
-                {/* Futurist Fest Section */}
-                <section className="py-20 relative z-10 overflow-hidden">
-                    <div className="absolute right-16 bottom-1/4 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 8s infinite ease-in-out' }}>
-                        <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-48 h-48" style={{ filter: 'drop-shadow(0 0 18px rgba(145,196,227,0.5))', transform: 'scaleX(-1)' }} />
-                    </div>
-
-                    <div className="absolute left-0 top-1/2 w-[600px] h-[600px] bg-[#91C4E3] opacity-5 blur-[150px] rounded-full" />
-
-                    <div className="container mx-auto px-4 relative z-10">
-                        <div className="max-w-5xl mx-auto">
-                            <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
-                                <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
-                                    Futurist Fest
-                                </span>
-                            </h2>
-                            <div className="bg-gradient-to-br from-[#0d1219]/90 via-[#0d1219]/70 to-[#0d1219]/90 backdrop-blur-xl rounded-3xl border border-[#91C4E3]/30 p-10 md:p-14 shadow-[0_0_60px_rgba(145,196,227,0.12)] hover:border-[#91C4E3]/50 transition-all duration-500">
-                                <p className="text-xl md:text-2xl text-gray-200 leading-relaxed text-center">
-                                    Futurist Fest คือพื้นที่ที่<span className="text-[#91C4E3] font-semibold"> ผลงานไม่ได้จบลงที่การแข่งขัน</span>
-                                </p>
-                                <div className="mt-10 h-px bg-gradient-to-r from-transparent via-[#91C4E3]/30 to-transparent" />
-                                <p className="text-gray-300 text-lg leading-relaxed mt-10">
-                                    ทุกทีมสามารถนำเสนอ prototype แลกเปลี่ยนแนวคิด และเชื่อมต่อกับนักวิจัย ผู้เชี่ยวชาญ นักลงทุน และ ecosystem ด้านสุขภาพ เทคโนโลยี และนวัตกรรม เพื่อเปิดโอกาสให้แนวคิดเติบโตต่อในโลกจริง
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* What Participants Will Experience */}
-                <section className="py-20 relative z-10">
-                    <div className="absolute left-1/4 top-1/3 opacity-15 pointer-events-none" style={{ animation: 'float 9s infinite ease-in-out' }}>
-                        <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-32 h-32" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.4))' }} />
-                    </div>
-
-                    <div className="container mx-auto px-4 relative z-10">
-                        <h2 className="text-4xl md:text-5xl font-bold mb-16 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
-                            <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
-                                What Participants Will Experience
-                            </span>
-                        </h2>
-
-                        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
-                            {[
-                                'Workshops ที่ช่วยให้เข้าใจปัญหาสุขภาพจริง ตั้งแต่ problem discovery → research → prototyping',
-                                'การพัฒนาแนวคิดโดยอ้างอิงข้อมูล งานวิจัย และบริบทจริง',
-                                'การสร้าง prototype ที่ทดลองและพัฒนาต่อได้',
-                                'Mentorship และ feedback จากผู้เชี่ยวชาญด้าน health, tech และ business',
-                            ].map((text, idx) => (
-                                <div
-                                    key={idx}
-                                    className="group bg-[#0d1219]/70 backdrop-blur-md rounded-2xl border border-[#91C4E3]/20 p-8 hover:border-[#91C4E3]/40 transition-all duration-300 hover:shadow-[0_0_35px_rgba(145,196,227,0.15)]"
-                                >
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#91C4E3]/20 border border-[#91C4E3]/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                            <span className="text-[#91C4E3] font-bold">{idx + 1}</span>
-                                        </div>
-                                        <p className="text-gray-300 leading-relaxed flex-1">{text}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Beyond the Hackathon */}
-                <section className="py-20 relative z-10">
-                    <div className="absolute right-20 top-1/3 opacity-20 pointer-events-none" style={{ animation: 'floatReverse 11s infinite ease-in-out' }}>
-                        <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-40 h-40" style={{ filter: 'drop-shadow(0 0 16px rgba(165,148,186,0.5))', transform: 'scaleX(-1)' }} />
-                    </div>
-
-                    <div className="absolute left-0 bottom-0 w-[500px] h-[500px] bg-[#A594BA] opacity-5 blur-[150px] rounded-full" />
-
-                    <div className="container mx-auto px-4 relative z-10">
-                        <h2 className="text-4xl md:text-5xl font-bold mb-16 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
-                            <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
-                                Beyond the Hackathon
-                            </span>
-                        </h2>
-
-                        <div className="max-w-4xl mx-auto">
-                            <div className="bg-gradient-to-br from-[#0d1219]/90 to-[#0d1219]/70 backdrop-blur-xl rounded-3xl border border-[#A594BA]/30 p-10 shadow-[0_0_50px_rgba(165,148,186,0.1)] hover:border-[#A594BA]/50 transition-all duration-500">
-                                <div className="space-y-6">
-                                    {[
-                                        'การนำเสนอผลงานใน Futurist Fest',
-                                        'การเชื่อมต่อกับนักวิจัย ผู้เชี่ยวชาญ นักลงทุน',
-                                        'โอกาสพัฒนาแนวคิดต่อหลังจบโครงการ',
-                                    ].map((text, idx) => (
-                                        <div key={idx} className="flex items-center gap-4 group">
-                                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-[#91C4E3] to-[#A594BA] group-hover:scale-125 transition-transform duration-300" />
-                                            <p className="text-gray-200 text-lg">{text}</p>
-                                        </div>
-                                    ))}
-                                    <div className="mt-10 pt-8 border-t border-[#A594BA]/20">
-                                        <p className="text-xl text-center text-gray-300 leading-relaxed">
-                                            ประสบการณ์ไม่ได้จบลงที่การแข่งขัน<br />
-                                            <span className="text-[#A594BA] font-semibold">แต่ต่อยอดสู่การพัฒนาในโลกจริง</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Organizations & Partners Section */}
-                <section className="py-20 relative z-10">
-                    <div className="absolute right-1/4 bottom-10 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 6s infinite ease-in-out' }}>
-                        <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-28 h-28" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.4))', transform: 'scaleX(-1)' }} />
-                    </div>
-
-                    <div className="container mx-auto px-4">
-                        <h2 className="text-4xl md:text-5xl font-bold mb-16 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
-                            <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
-                                Organizations & Partners
-                            </span>
-                        </h2>
-
-                        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12">
-                            {/* AMSA Thailand */}
-                            <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#91C4E3]/25 p-8 hover:border-[#91C4E3]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(145,196,227,0.2)] flex flex-col">
-                                <div className="flex flex-col items-center text-center gap-6">
-                                    <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
-                                        <img src="/hackathon/AMSA.png" alt="AMSA Thailand" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">AMSA Thailand</h3>
-                                        <p className="text-gray-300 leading-relaxed text-sm">
-                                            เครือข่ายนักศึกษาแพทย์ที่ทำงานด้านสาธารณสุข การแลกเปลี่ยนความรู้ และความร่วมมือด้านสุขภาพ
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Passionseed */}
-                            <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#A594BA]/25 p-8 hover:border-[#A594BA]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(165,148,186,0.2)] flex flex-col">
-                                <div className="flex flex-col items-center text-center gap-6">
-                                    <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
-                                        <img src="/hackathon/PS.png" alt="Passionseed" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.3))' }} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">Passionseed</h3>
-                                        <p className="text-gray-300 leading-relaxed text-sm">
-                                            องค์กรที่พัฒนาเยาวชนผ่านการเรียนรู้ด้านเทคโนโลยี เช่น AI การสร้างผลิตภัณฑ์ดิจิทัล และนวัตกรรม เพื่อสร้างโปรเจกต์ที่ใช้ได้จริง
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* STEM Like Her */}
-                            <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#91C4E3]/25 p-8 hover:border-[#91C4E3]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(145,196,227,0.2)] flex flex-col">
-                                <div className="flex flex-col items-center text-center gap-6">
-                                    <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
-                                        <img src="/hackathon/StemLike.png" alt="STEM Like Her" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">STEM Like Her</h3>
-                                        <p className="text-gray-300 leading-relaxed text-sm">
-                                            องค์กรนักศึกษาที่สนับสนุนและสร้างแรงบันดาลใจให้ผู้หญิงและเยาวชนในสาย STEM
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* CTA Section */}
-                <section className="py-24 relative z-10">
-                    {/* Large jellyfish decoration */}
-                    <div className="absolute top-10 right-1/3 opacity-20 pointer-events-none" style={{ animation: 'float 12s infinite ease-in-out' }}>
-                        <img src="/hackathon/Creature/Jellyfish 1.svg" alt="" className="w-52 h-52" style={{ filter: 'drop-shadow(0 0 20px rgba(165,148,186,0.4))' }} />
-                    </div>
-
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#91C4E3]/5 to-[#A594BA]/5 blur-3xl" />
-
-                    <div className="container mx-auto px-4 relative z-10">
-                        <div className="text-center max-w-4xl mx-auto space-y-8">
-                            <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-                                <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
-                                    มาร่วมสำรวจและสร้างอนาคตของการดูแลสุขภาพไปด้วยกัน
-                                </span>
-                            </h2>
-                            <Button
-                                size="lg"
-                                onClick={handleRegister}
-                                className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] hover:from-[#7ab3d3] hover:to-[#9484aa] text-white text-xl px-14 py-7 rounded-full shadow-[0_0_40px_rgba(145,196,227,0.5)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(145,196,227,0.8)] transform hover:scale-105"
-                            >
-                                {isLoggedIn ? "Your Team" : "Register Now"}
-                            </Button>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Footer */}
-                <footer className="py-12 border-t border-[#91C4E3]/20 relative z-10">
-                    <div className="container mx-auto px-4">
-                        <div className="text-center space-y-4">
-                            <p className="text-gray-400 text-lg">
-                                The Next Decade Hackathon 2026
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                                Reimagining Preventive & Predictive Healthcare
-                            </p>
-                        </div>
-                    </div>
-                </footer>
             </div>
-        </div>
+
+            {/* Partner logos - rendered via portal to bypass overflow:clip */}
+            {mounted && createPortal(
+                <div
+                    className="absolute top-6 right-6 z-[9999] flex items-center gap-3"
+                    style={{
+                        opacity: showContent ? 1 : 0,
+                        transition: instant ? 'none' : 'opacity 1000ms',
+                        pointerEvents: 'auto'
+                    }}
+                >
+                    <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
+                        <img src="/hackathon/PS.png" alt="PS Logo" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
+                        <img src="/hackathon/StemLike.png" alt="STEM Like Her Logo" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
+                        <img src="/hackathon/AMSA.png" alt="AMSA Logo" className="w-full h-full object-contain" />
+                    </div>
+                </div>,
+                document.body
+            )}
+        </>
     );
 }

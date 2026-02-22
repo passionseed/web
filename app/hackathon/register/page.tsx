@@ -150,7 +150,7 @@ export default function RegisterPage() {
               setLoading(false);
               return;
             }
-            router.push("/hackathon/dashboard");
+            router.push("/hackathon/team");
           })();
         },
       }
@@ -567,7 +567,7 @@ export default function RegisterPage() {
                 />
                 <div className="flex justify-between text-[10px] font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
                   <span>ครั้งแรก</span>
-                  <span>ตั้งแต่คลอดมาเลย</span>
+                  <span>ชำนาญสุดๆ</span>
                 </div>
               </div>
             </div>
