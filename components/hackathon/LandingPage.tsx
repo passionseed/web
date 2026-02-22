@@ -493,20 +493,17 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                                             {/* Content */}
                                             <div className="space-y-6">
-                                                <p className="text-xl md:text-2xl text-gray-200 leading-relaxed text-center font-light">
-                                                    เปิดรับผู้เข้าร่วมจาก
-                                                </p>
                                                 <div className="flex flex-col gap-4">
                                                     <div className="relative group/item">
                                                         <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#91C4E3] opacity-0 group-hover/item:opacity-100 transition-opacity" />
                                                         <p className="text-lg md:text-xl text-[#91C4E3] font-medium text-center group-hover/item:translate-x-2 transition-transform">
-                                                            มัธยมปลาย
+                                                            Track 1: ระดับมัธยมศึกษา หรือเทียบเท่า (ปวช.)
                                                         </p>
                                                     </div>
                                                     <div className="relative group/item">
                                                         <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#91C4E3] opacity-0 group-hover/item:opacity-100 transition-opacity" />
                                                         <p className="text-lg md:text-xl text-[#91C4E3] font-medium text-center group-hover/item:translate-x-2 transition-transform">
-                                                            มหาวิทยาลัย
+                                                            Track 2: ระดับมหาวิทยาลัย (ปริญญาตรี - ปริญญาเอก) หรือเทียบเท่า (ปวส.)
                                                         </p>
                                                     </div>
                                                 </div>
