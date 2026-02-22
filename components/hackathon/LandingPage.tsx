@@ -934,66 +934,66 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                         </div>
 
                         <div className="container mx-auto px-4 relative z-20 text-center">
-                            <div className="relative mx-auto w-full max-w-2xl flex flex-col drop-shadow-2xl">
+                            <div className="relative mx-auto w-full max-w-[500px] flex flex-col drop-shadow-2xl">
                                 {/* Top Ticket Section (Blue Gradient with Circles & Grain) */}
-                                <div className="relative bg-[#2563eb] bg-gradient-to-tr from-[#1d4ed8] to-[#3b82f6] rounded-t-[3rem] p-12 md:p-16 overflow-hidden min-h-[300px] flex flex-col justify-center">
+                                <div className="relative bg-[#3b82f6] bg-gradient-to-tr from-[#2563eb] to-[#60a5fa] rounded-t-[2.5rem] p-10 md:p-14 overflow-hidden min-h-[250px] flex flex-col justify-center pb-12">
                                     {/* Grain Effect */}
-                                    <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+                                    <div className="absolute inset-0 opacity-[0.15] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
 
                                     {/* Background Decorative Circles */}
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border-[1px] border-white/20 pointer-events-none" />
-                                    <div className="absolute top-[60%] left-[10%] w-[120px] h-[120px] rounded-full border-[1px] border-white/20 pointer-events-none" />
-                                    <div className="absolute -top-10 -right-10 w-[200px] h-[200px] rounded-full bg-white/10 blur-xl pointer-events-none" />
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] rounded-full border-[1px] border-white/20 pointer-events-none" />
+                                    <div className="absolute top-[60%] left-[10%] w-[100px] h-[100px] rounded-full border-[1px] border-white/20 pointer-events-none" />
+                                    <div className="absolute -top-10 -right-10 w-[150px] h-[150px] rounded-full bg-white/10 blur-xl pointer-events-none" />
 
                                     {/* Top Info */}
-                                    <div className="absolute top-8 left-10 text-white/70 tracking-widest text-sm font-medium">
+                                    <div className="absolute top-8 left-8 text-white/80 tracking-widest text-xs font-medium">
                                         2025 EDITION
                                     </div>
-                                    <div className="absolute top-8 right-10 flex gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-white/40" />
-                                        <div className="w-3 h-3 rounded-full bg-white/40" />
+                                    <div className="absolute top-8 right-8 flex gap-2">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-white/50" />
+                                        <div className="w-2.5 h-2.5 rounded-full bg-white/50" />
                                     </div>
 
                                     {/* Main Event Title */}
-                                    <div className="relative z-10 flex flex-col items-center text-center mt-4">
-                                        <h2 className="text-5xl md:text-7xl font-black text-white mb-2 tracking-widest drop-shadow-sm">
+                                    <div className="relative z-10 flex flex-col items-center text-center mt-2">
+                                        <h2 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-[0.2em] drop-shadow-sm ml-2">
                                             FUTURIST
                                         </h2>
-                                        <h3 className="text-xl md:text-2xl text-white/80 font-light tracking-[0.3em] uppercase">
+                                        <h3 className="text-sm md:text-base text-white/90 font-medium tracking-[0.3em] uppercase ml-1">
                                             The Grand Finale
                                         </h3>
                                     </div>
                                 </div>
 
-                                {/* Separation Line with Cutouts */}
+                                {/* Separation Line with Postaged-Stamp Edge */}
                                 <div className="relative h-px w-full bg-[#EADDCD] flex items-center justify-center">
+                                    <div className="absolute -top-[5px] inset-x-0 h-[6px] bg-[radial-gradient(circle_at_50%_0%,_transparent_2px,_#EADDCD_2.5px)] bg-[length:10px_6px] bg-repeat-x z-20"></div>
+
                                     {/* Left Cutout */}
-                                    <div className="absolute -left-6 bottom-0 translate-y-1/2 w-12 h-24 rounded-r-full bg-[#03050a] z-10" />
-                                    {/* Perforated Dashed Line */}
-                                    <div className="absolute inset-x-8 -top-px border-t-[3px] border-dashed border-black/10" />
+                                    <div className="absolute -left-6 bottom-0 translate-y-1/2 w-8 h-16 rounded-r-full bg-[#03050a] z-30" />
                                     {/* Right Cutout */}
-                                    <div className="absolute -right-6 bottom-0 translate-y-1/2 w-12 h-24 rounded-l-full bg-[#03050a] z-10" />
+                                    <div className="absolute -right-6 bottom-0 translate-y-1/2 w-8 h-16 rounded-l-full bg-[#03050a] z-30" />
                                 </div>
 
                                 {/* Bottom Ticket Section (Cream color) */}
-                                <div className="relative bg-[#EADDCD] text-gray-900 rounded-b-[3rem] p-10 md:p-14 pt-16 flex flex-col gap-10">
+                                <div className="relative bg-[#EADDCD] text-gray-900 rounded-b-[2.5rem] p-10 md:p-12 pt-14 flex flex-col gap-8 z-10">
 
                                     {/* Details Row 1 */}
-                                    <div className="flex justify-between items-end border-b-[2px] border-black/10 pb-6 relative z-20">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-1">Pass Type</span>
-                                            <span className="text-4xl font-black text-[#1e293b] uppercase tracking-tight">VIP PASS</span>
+                                    <div className="flex justify-between items-end border-b border-[#cbd5e1] pb-6 relative z-20 px-2">
+                                        <div className="flex flex-col text-left">
+                                            <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] mb-1">Pass Type</span>
+                                            <span className="text-2xl md:text-3xl font-black text-[#1e293b] uppercase tracking-tight">VIP PASS</span>
                                         </div>
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-1">Roles</span>
-                                            <span className="text-3xl font-black text-[#1e293b] uppercase tracking-tighter">Innovator</span>
+                                        <div className="flex flex-col items-end text-right">
+                                            <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] mb-1">Roles</span>
+                                            <span className="text-xl md:text-2xl font-black text-[#1e293b] uppercase tracking-tight">INNOVATOR</span>
                                         </div>
                                     </div>
 
                                     {/* Thai Description Text */}
-                                    <div className="mt-4 text-center">
-                                        <p className="text-[#475569] font-medium leading-relaxed md:text-lg">
-                                            พื้นที่ที่ผลงานไม่ได้จบลงที่การแข่งขัน ทุกทีมสามารถนำเสนอ prototype แลกเปลี่ยนแนวคิด และเชื่อมต่อกับนักวิจัย เพื่อต่อยอดในโลกจริง
+                                    <div className="mt-2 text-center px-4">
+                                        <p className="text-[#475569] font-medium leading-[1.8] text-sm md:text-[15px]">
+                                            พื้นที่ที่ผลงานไม่ได้จบลงที่การแข่งขัน ทุกทีมสามารถนำเสนอ prototype<br className="hidden md:block" /> แลกเปลี่ยนแนวคิด และเชื่อมต่อกับนักวิจัย เพื่อต่อยอดในโลกจริง
                                         </p>
                                     </div>
                                 </div>
