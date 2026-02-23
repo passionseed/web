@@ -54,7 +54,7 @@ supabase/ – Database migrations and config. schema.sql defines the schema for 
 styles/ – Tailwind setup (globals.css) and configuration (tailwind.config.ts shows custom fonts and color tokens).
 
 Authentication & Middleware
-system-prompt.md contains strict rules for implementing Supabase Auth with SSR, emphasizing the use of cookie getAll/setAll and forbidding deprecated APIs. The project’s proxy.ts imports updateSession from utils/supabase/proxy.ts, applying these rules to every request path except static assets.
+system-prompt.md contains strict rules for implementing Supabase Auth with SSR, emphasizing the use of cookie getAll/setAll and forbidding deprecated APIs. The project’s middleware.ts imports updateSession from utils/supabase/proxy.ts, applying these rules to every request path except static assets.
 
 Styling Guidelines
 The .trae/rules/project_rules.md file outlines aesthetic choices—fonts, color palette, layout guidelines, and animation cues—to maintain a cohesive look.
