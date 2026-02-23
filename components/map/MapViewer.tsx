@@ -581,11 +581,18 @@ export function MapViewer({
         data,
         selected,
       }: {
-        data: MapNode & { progress?: StudentProgress | any };
+        data: MapNode & {
+          progress?: StudentProgress | any;
+          isUnlocked?: boolean;
+          submissionRequirement?: "single" | "all";
+          isInstructorOrTA?: boolean;
+          isTeamMap?: boolean;
+        };
         selected?: boolean;
       }) => {
         const progress = data.progress;
-        const isUnlocked = isNodeUnlocked(data.id);
+        // Use derived property from data instead of checking via function
+        const isUnlocked = data.isUnlocked;
         const spriteUrl = data.sprite_url || "/islands/crystal.png";
 
         // Determine node state and styling
@@ -605,7 +612,28 @@ export function MapViewer({
         } else if (progress) {
           // Handle both individual progress (StudentProgress) and team progress (any) structures
           const status = progress.status || (progress as any)?.status;
-          const isCompleted = isNodeCompleted(data.id, progress);
+
+          // Inline isNodeCompleted logic using data props
+          const requirement = data.submissionRequirement || "single";
+          let isCompleted = false;
+
+          if (requirement === "single") {
+            // Single requirement: any team member completion counts
+            isCompleted =
+              progress?.status === "passed" || progress?.status === "submitted";
+          } else {
+            // All requirement: check if all team members have submitted
+            if (progress?.member_progress) {
+              isCompleted = progress.member_progress.every(
+                (member: any) =>
+                  member.status === "passed" || member.status === "submitted",
+              );
+            } else {
+              isCompleted =
+                progress?.status === "passed" ||
+                progress?.status === "submitted";
+            }
+          }
 
           if (isCompleted) {
             // Node is completed based on submission requirements
@@ -636,6 +664,10 @@ export function MapViewer({
 
         // Instructor/TA grading indicator
         let gradingIndicator = null;
+        // Use data prop for instructor check
+        const isInstructorOrTA = data.isInstructorOrTA;
+        const isTeamMap = data.isTeamMap;
+
         if (isInstructorOrTA) {
           const needsGrading =
             progress?.status === "submitted" &&
@@ -691,7 +723,7 @@ export function MapViewer({
         // Submission requirement badge (Little icon near the node to show distinct requirements)
         let requirementBadge = null;
         if (isTeamMap) {
-          const requirement = getSubmissionRequirement(data.id);
+          const requirement = data.submissionRequirement;
           if (requirement === "all") {
             requirementBadge = (
               <div
@@ -882,7 +914,7 @@ export function MapViewer({
         );
       },
     }),
-    [progressMap, isInstructorOrTA, isTeamMap, map.map_nodes],
+    [isInstructorOrTA, isTeamMap, userRole],
   );
 
   useEffect(() => {
@@ -895,10 +927,23 @@ export function MapViewer({
         nodeType = "comment";
       }
 
+      // Calculate derived properties here to keep nodeTypes stable
+      // This prevents nodeTypes from needing progressMap as a dependency
+      const isUnlocked = isNodeUnlocked(node.id);
+      const submissionRequirement = getSubmissionRequirement(node.id);
+
       return {
         id: node.id,
         type: nodeType,
-        data: { ...node, progress: progressMap[node.id] },
+        data: {
+          ...node,
+          progress: progressMap[node.id],
+          isUnlocked,
+          submissionRequirement,
+          isInstructorOrTA,
+          isTeamMap,
+          userRole,
+        },
         position: (node.metadata as any)?.position || {
           x: Math.random() * 400,
           y: Math.random() * 400,
@@ -943,7 +988,15 @@ export function MapViewer({
 
     setNodes(transformedNodes as any);
     setEdges(transformedEdges);
-  }, [map, progressMap, setNodes, setEdges]);
+  }, [
+    map,
+    progressMap,
+    setNodes,
+    setEdges,
+    isInstructorOrTA,
+    isTeamMap,
+    userRole,
+  ]);
 
   const onSelectionChange = useCallback(
     (params: OnSelectionChangeParams) => {
