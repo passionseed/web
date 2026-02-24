@@ -243,6 +243,494 @@ const SilverSeed = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// --- Animated SVG Components for Sections ---
+
+const InnovationTrackingAnimation = ({ className }: { className?: string }) => {
+  return (
+    <div className={`relative w-full aspect-square ${className || ''}`}>
+      <svg viewBox="0 0 400 400" className="w-full h-full overflow-visible">
+        <defs>
+          <radialGradient id="radar-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(168,85,247,0.15)" />
+            <stop offset="100%" stopColor="rgba(168,85,247,0)" />
+          </radialGradient>
+          <linearGradient id="sweep-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(216,180,254,0.6)" />
+            <stop offset="100%" stopColor="rgba(168,85,247,0)" />
+          </linearGradient>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+          <filter id="glow-strong" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* Background Glow */}
+        <circle cx="200" cy="200" r="180" fill="url(#radar-glow)" />
+
+        {/* Radar Grid */}
+        <circle cx="200" cy="200" r="160" fill="none" stroke="rgba(168,85,247,0.2)" strokeWidth="1" strokeDasharray="4 4" />
+        <circle cx="200" cy="200" r="110" fill="none" stroke="rgba(168,85,247,0.3)" strokeWidth="1" strokeDasharray="4 4" />
+        <circle cx="200" cy="200" r="60" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="1" />
+        
+        <line x1="40" y1="200" x2="360" y2="200" stroke="rgba(168,85,247,0.2)" strokeWidth="1" />
+        <line x1="200" y1="40" x2="200" y2="360" stroke="rgba(168,85,247,0.2)" strokeWidth="1" />
+
+        {/* Radar Sweep */}
+        <motion.g
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          style={{ transformOrigin: "50% 50%" }}
+        >
+          {/* Invisible rect to force bounding box for transformOrigin */}
+          <rect x="0" y="0" width="400" height="400" fill="transparent" />
+          <path d="M 200 200 L 200 40 A 160 160 0 0 1 313 87 Z" fill="url(#sweep-grad)" opacity="0.4" />
+          <line x1="200" y1="200" x2="200" y2="40" stroke="rgba(216,180,254,0.8)" strokeWidth="2" />
+        </motion.g>
+
+        {/* Background Nodes (Participants) */}
+        <motion.circle r="4" fill="#a855f7" animate={{ cx: [100, 120, 150, 100], cy: [100, 150, 120, 100], opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} />
+        <motion.circle r="3" fill="#c084fc" animate={{ cx: [300, 280, 250, 300], cy: [150, 100, 120, 150], opacity: [0.2, 0.6, 0.2] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }} />
+        <motion.circle r="5" fill="#e879f9" animate={{ cx: [150, 100, 120, 150], cy: [300, 280, 250, 300], opacity: [0.4, 0.9, 0.4] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }} />
+        <motion.circle r="4" fill="#818cf8" animate={{ cx: [280, 320, 300, 280], cy: [280, 250, 300, 280], opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 0.5 }} />
+
+        {/* The "Top Talent" Node Journey */}
+        <motion.g
+          animate={{ x: [60, 140, 200], y: [260, 220, 200] }}
+          transition={{ duration: 4, times: [0, 0.6, 1], ease: "easeOut", repeat: Infinity, repeatDelay: 5 }}
+        >
+          {/* Trail */}
+          <motion.path
+            d="M -140 60 Q -60 20 0 0"
+            fill="none"
+            stroke="rgba(232,121,249,0.5)"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 4, ease: "easeOut", repeat: Infinity, repeatDelay: 5 }}
+          />
+          
+          {/* The Node itself */}
+          <motion.circle
+            cx="0" cy="0" r="8"
+            fill="#f0abfc"
+            filter="url(#glow-strong)"
+            animate={{ scale: [1, 1.5, 1.2], fill: ["#c084fc", "#e879f9", "#fdf4ff"] }}
+            transition={{ duration: 4, times: [0, 0.8, 1], repeat: Infinity, repeatDelay: 5 }}
+          />
+          
+          {/* Target Reticle */}
+          <motion.g
+            initial={{ opacity: 0, scale: 2, rotate: 45 }}
+            animate={{ opacity: [0, 0, 1, 1], scale: [2, 2, 1, 1], rotate: [45, 45, 0, 0] }}
+            transition={{ duration: 4, times: [0, 0.8, 0.9, 1], repeat: Infinity, repeatDelay: 5 }}
+          >
+            <path d="M -20 -10 L -20 -20 L -10 -20" fill="none" stroke="#fdf4ff" strokeWidth="2" />
+            <path d="M 20 -10 L 20 -20 L 10 -20" fill="none" stroke="#fdf4ff" strokeWidth="2" />
+            <path d="M -20 10 L -20 20 L -10 20" fill="none" stroke="#fdf4ff" strokeWidth="2" />
+            <path d="M 20 10 L 20 20 L 10 20" fill="none" stroke="#fdf4ff" strokeWidth="2" />
+          </motion.g>
+        </motion.g>
+
+        {/* Analysis Lines & Popups */}
+        <motion.g
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 9, times: [0, 0.44, 0.88, 1], repeat: Infinity }}
+        >
+          {/* Think (Top Left) */}
+          <g>
+            <motion.line
+              x1="200" y1="200" x2="120" y2="100"
+              stroke="rgba(232,121,249,0.6)" strokeWidth="2" strokeDasharray="4 4"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.5, delay: 4 }}
+            />
+            <motion.circle cx="120" cy="100" r="24" fill="rgba(15,23,42,0.8)" stroke="#e879f9" strokeWidth="2" filter="url(#glow)"
+              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 4.2 }}
+            />
+            <motion.path d="M 120 90 C 114 90 110 94 110 100 C 110 104 113 107 116 108 L 116 112 L 124 112 L 124 108 C 127 107 130 104 130 100 C 130 94 126 90 120 90 Z" fill="none" stroke="#fdf4ff" strokeWidth="2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.4 }}
+            />
+            <motion.line x1="118" y1="115" x2="122" y2="115" stroke="#fdf4ff" strokeWidth="2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.4 }}
+            />
+          </g>
+
+          {/* Collaborate (Top Right) */}
+          <g>
+            <motion.line
+              x1="200" y1="200" x2="280" y2="100"
+              stroke="rgba(129,140,248,0.6)" strokeWidth="2" strokeDasharray="4 4"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.5, delay: 4.2 }}
+            />
+            <motion.circle cx="280" cy="100" r="24" fill="rgba(15,23,42,0.8)" stroke="#818cf8" strokeWidth="2" filter="url(#glow)"
+              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 4.4 }}
+            />
+            <motion.circle cx="272" cy="96" r="4" fill="none" stroke="#e0e7ff" strokeWidth="2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.6 }}
+            />
+            <motion.circle cx="288" cy="96" r="4" fill="none" stroke="#e0e7ff" strokeWidth="2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.6 }}
+            />
+            <motion.path d="M 266 108 C 266 104 270 102 272 102 C 274 102 278 104 278 108" fill="none" stroke="#e0e7ff" strokeWidth="2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.6 }}
+            />
+            <motion.path d="M 282 108 C 282 104 286 102 288 102 C 290 102 294 104 294 108" fill="none" stroke="#e0e7ff" strokeWidth="2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.6 }}
+            />
+            <motion.line x1="276" y1="96" x2="284" y2="96" stroke="#e0e7ff" strokeWidth="1.5" strokeDasharray="2 2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.6 }}
+            />
+          </g>
+
+          {/* Solve (Bottom) */}
+          <g>
+            <motion.line
+              x1="200" y1="200" x2="200" y2="300"
+              stroke="rgba(52,211,153,0.6)" strokeWidth="2" strokeDasharray="4 4"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.5, delay: 4.4 }}
+            />
+            <motion.circle cx="200" cy="300" r="24" fill="rgba(15,23,42,0.8)" stroke="#34d399" strokeWidth="2" filter="url(#glow)"
+              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 4.6 }}
+            />
+            <motion.path d="M 192 300 L 198 306 L 208 294" fill="none" stroke="#d1fae5" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+              initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 4.8 }}
+            />
+          </g>
+        </motion.g>
+      </svg>
+    </div>
+  );
+};
+
+const TrackTraditionalIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    {/* Lotus Petals forming a cross in negative space */}
+    <motion.g
+      animate={{ rotate: 360 }}
+      transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+      style={{ transformOrigin: "50px 50px" }}
+    >
+      {/* Top Petal */}
+      <motion.path d="M50 10 C 65 30, 65 45, 50 50 C 35 45, 35 30, 50 10 Z" fill="none" stroke="currentColor" strokeWidth="3"
+        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} style={{ transformOrigin: "50px 50px" }} />
+      {/* Bottom Petal */}
+      <motion.path d="M50 90 C 65 70, 65 55, 50 50 C 35 55, 35 70, 50 90 Z" fill="none" stroke="currentColor" strokeWidth="3"
+        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} style={{ transformOrigin: "50px 50px" }} />
+      {/* Left Petal */}
+      <motion.path d="M10 50 C 30 35, 45 35, 50 50 C 45 65, 30 65, 10 50 Z" fill="none" stroke="currentColor" strokeWidth="3"
+        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }} style={{ transformOrigin: "50px 50px" }} />
+      {/* Right Petal */}
+      <motion.path d="M90 50 C 70 35, 55 35, 50 50 C 55 65, 70 65, 90 50 Z" fill="none" stroke="currentColor" strokeWidth="3"
+        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }} style={{ transformOrigin: "50px 50px" }} />
+    </motion.g>
+    {/* Central Medical Cross */}
+    <motion.path
+      d="M46 40 h8 v6 h6 v8 h-6 v6 h-8 v-6 h-6 v-8 h6 z"
+      fill="currentColor"
+      animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.7, 1, 0.7] }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      style={{ transformOrigin: "50px 50px" }}
+    />
+  </svg>
+);
+
+const TrackMentalIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    {/* Heart Outline */}
+    <motion.path
+      d="M50 85 C 50 85, 15 55, 15 30 C 15 15, 35 10, 50 25 C 65 10, 85 15, 85 30 C 85 55, 50 85, 50 85 Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      animate={{ scale: [1, 1.05, 1] }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      style={{ transformOrigin: "50px 50px" }}
+    />
+    {/* Neural Network inside the Heart */}
+    {/* Left Node */}
+    <motion.circle cx="35" cy="35" r="4" fill="currentColor"
+      animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1.2, 0.8] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0 }} />
+    {/* Right Node */}
+    <motion.circle cx="65" cy="35" r="4" fill="currentColor"
+      animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1.2, 0.8] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }} />
+    {/* Bottom Node */}
+    <motion.circle cx="50" cy="55" r="5" fill="currentColor"
+      animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1.2, 0.8] }} transition={{ duration: 1.5, repeat: Infinity, delay: 1 }} />
+    {/* Top Center Node */}
+    <motion.circle cx="50" cy="25" r="3" fill="currentColor"
+      animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1.2, 0.8] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.25 }} />
+
+    {/* Connecting Lines */}
+    <motion.line x1="35" y1="35" x2="50" y2="55" stroke="currentColor" strokeWidth="2"
+      animate={{ opacity: [0.2, 0.8, 0.2] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }} />
+    <motion.line x1="65" y1="35" x2="50" y2="55" stroke="currentColor" strokeWidth="2"
+      animate={{ opacity: [0.2, 0.8, 0.2] }} transition={{ duration: 1.5, repeat: Infinity, delay: 1 }} />
+    <motion.line x1="35" y1="35" x2="50" y2="25" stroke="currentColor" strokeWidth="2"
+      animate={{ opacity: [0.2, 0.8, 0.2] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.25 }} />
+    <motion.line x1="65" y1="35" x2="50" y2="25" stroke="currentColor" strokeWidth="2"
+      animate={{ opacity: [0.2, 0.8, 0.2] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.75 }} />
+    <motion.line x1="35" y1="35" x2="65" y2="35" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3"
+      animate={{ opacity: [0.1, 0.5, 0.1] }} transition={{ duration: 3, repeat: Infinity }} />
+  </svg>
+);
+
+const TrackCommunityIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    <motion.circle
+      cx="50"
+      cy="50"
+      r="10"
+      fill="currentColor"
+      animate={{ scale: [1, 1.3, 1] }}
+      transition={{ duration: 2, repeat: Infinity }}
+    />
+    <motion.circle
+      cx="25"
+      cy="35"
+      r="7"
+      fill="currentColor"
+      animate={{ scale: [1, 1.4, 1] }}
+      transition={{ duration: 2, delay: 0.5, repeat: Infinity }}
+    />
+    <motion.circle
+      cx="75"
+      cy="35"
+      r="7"
+      fill="currentColor"
+      animate={{ scale: [1, 1.4, 1] }}
+      transition={{ duration: 2, delay: 1, repeat: Infinity }}
+    />
+    <motion.circle
+      cx="35"
+      cy="75"
+      r="7"
+      fill="currentColor"
+      animate={{ scale: [1, 1.4, 1] }}
+      transition={{ duration: 2, delay: 1.5, repeat: Infinity }}
+    />
+    <motion.circle
+      cx="65"
+      cy="75"
+      r="7"
+      fill="currentColor"
+      animate={{ scale: [1, 1.4, 1] }}
+      transition={{ duration: 2, delay: 2, repeat: Infinity }}
+    />
+    <motion.path
+      d="M30 40 L45 48 M70 40 L55 48 M38 70 L48 58 M62 70 L52 58"
+      stroke="currentColor"
+      strokeWidth="2"
+      animate={{ opacity: [0.2, 1, 0.2] }}
+      transition={{ duration: 2, repeat: Infinity }}
+    />
+  </svg>
+);
+
+const OutcomeResearchIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    <motion.rect
+      x="25"
+      y="15"
+      width="50"
+      height="70"
+      rx="6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="4"
+      animate={{ strokeDasharray: ["0 240", "240 0"] }}
+      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+    />
+    <motion.line
+      x1="40"
+      y1="35"
+      x2="60"
+      y2="35"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+      animate={{ x2: [40, 60, 40] }}
+      transition={{ duration: 2, repeat: Infinity }}
+    />
+    <motion.line
+      x1="40"
+      y1="50"
+      x2="55"
+      y2="50"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+      animate={{ x2: [40, 55, 40] }}
+      transition={{ duration: 2, delay: 0.5, repeat: Infinity }}
+    />
+    <motion.circle
+      cx="65"
+      cy="70"
+      r="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="4"
+      animate={{ scale: [1, 1.2, 1] }}
+      transition={{ duration: 2, repeat: Infinity }}
+    />
+    <motion.line
+      x1="75"
+      y1="80"
+      x2="88"
+      y2="93"
+      stroke="currentColor"
+      strokeWidth="5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const OutcomePrototypeIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    <motion.polygon
+      points="50,15 85,35 85,65 50,85 15,65 15,35"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="4"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+      style={{ transformOrigin: "50px 50px" }}
+    />
+    <motion.polygon
+      points="50,35 65,45 65,60 50,70 35,60 35,45"
+      fill="currentColor"
+      animate={{ scale: [0.8, 1.1, 0.8] }}
+      transition={{ duration: 2, repeat: Infinity }}
+      style={{ transformOrigin: "50px 50px" }}
+    />
+    <motion.circle cx="50" cy="50" r="4" fill="#0B0415" />
+  </svg>
+);
+
+const OutcomeCollabIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    <motion.circle
+      cx="35"
+      cy="50"
+      r="22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="4"
+      animate={{ cx: [35, 30, 35] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
+    <motion.circle
+      cx="65"
+      cy="50"
+      r="22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="4"
+      animate={{ cx: [65, 70, 65] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
+    <motion.path
+      d="M50 33 A 17 17 0 0 1 50 67 A 17 17 0 0 1 50 33"
+      fill="currentColor"
+      animate={{ opacity: [0.2, 0.8, 0.2] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
+  </svg>
+);
+
+const OutcomeSystemsIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className}>
+    <motion.circle
+      cx="50"
+      cy="50"
+      r="32"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeDasharray="12 6"
+      animate={{ rotate: -360 }}
+      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+      style={{ transformOrigin: "50px 50px" }}
+    />
+    <motion.circle
+      cx="50"
+      cy="50"
+      r="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeDasharray="6 6"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+      style={{ transformOrigin: "50px 50px" }}
+    />
+    <motion.circle
+      cx="50"
+      cy="50"
+      r="6"
+      fill="currentColor"
+      animate={{ scale: [1, 1.5, 1] }}
+      transition={{ duration: 2, repeat: Infinity }}
+    />
+    <motion.line
+      x1="50"
+      y1="18"
+      x2="50"
+      y2="32"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      animate={{ opacity: [0, 1, 0] }}
+      transition={{ duration: 2, repeat: Infinity }}
+    />
+    <motion.line
+      x1="50"
+      y1="68"
+      x2="50"
+      y2="82"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      animate={{ opacity: [0, 1, 0] }}
+      transition={{ duration: 2, delay: 1, repeat: Infinity }}
+    />
+    <motion.line
+      x1="18"
+      y1="50"
+      x2="32"
+      y2="50"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      animate={{ opacity: [0, 1, 0] }}
+      transition={{ duration: 2, delay: 0.5, repeat: Infinity }}
+    />
+    <motion.line
+      x1="68"
+      y1="50"
+      x2="82"
+      y2="50"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      animate={{ opacity: [0, 1, 0] }}
+      transition={{ duration: 2, delay: 1.5, repeat: Infinity }}
+    />
+  </svg>
+);
+
 const sponsorshipPackages = [
   {
     name: "Diamond",
@@ -578,10 +1066,8 @@ export default function SponsorshipPage() {
                   </span>
                 </p>
               </div>
-              <div className="w-full md:w-1/3 flex justify-center">
-                <div className="w-32 h-32 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
-                  <Target className="w-16 h-16 text-purple-300" />
-                </div>
+              <div className="w-full md:w-1/2 flex justify-center">
+                <InnovationTrackingAnimation className="w-full max-w-[320px]" />
               </div>
             </div>
           </div>
@@ -606,6 +1092,9 @@ export default function SponsorshipPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Track 1 */}
             <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:bg-white/[0.04] transition-colors">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-6 border border-purple-500/30">
+                <TrackTraditionalIcon className="w-8 h-8 text-purple-400" />
+              </div>
               <h3 className="text-xl font-bold text-purple-400 mb-2">
                 Traditional & Integrative Healthcare
               </h3>
@@ -624,6 +1113,9 @@ export default function SponsorshipPage() {
             </div>
             {/* Track 2 */}
             <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:bg-white/[0.04] transition-colors">
+              <div className="w-14 h-14 rounded-2xl bg-fuchsia-500/20 flex items-center justify-center mb-6 border border-fuchsia-500/30">
+                <TrackMentalIcon className="w-8 h-8 text-fuchsia-400" />
+              </div>
               <h3 className="text-xl font-bold text-fuchsia-400 mb-2">
                 Mental Health
               </h3>
@@ -640,6 +1132,9 @@ export default function SponsorshipPage() {
             </div>
             {/* Track 3 */}
             <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:bg-white/[0.04] transition-colors">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/30">
+                <TrackCommunityIcon className="w-8 h-8 text-indigo-400" />
+              </div>
               <h3 className="text-xl font-bold text-indigo-400 mb-2">
                 Community & Public Health
               </h3>
@@ -680,24 +1175,45 @@ export default function SponsorshipPage() {
               {
                 title: "Evidence-Based Research Skills",
                 desc: "Ability to navigate medical databases (e.g., PubMed), validate problem statements, and ground solutions in clinical reality.",
+                Icon: OutcomeResearchIcon,
+                color: "text-blue-400",
+                bg: "bg-blue-500/20",
+                border: "border-blue-500/30",
               },
               {
                 title: "Rapid Prototyping & Testing",
                 desc: "Hands-on experience building viable, testable prototypes and iterating based on real user feedback.",
+                Icon: OutcomePrototypeIcon,
+                color: "text-pink-400",
+                bg: "bg-pink-500/20",
+                border: "border-pink-500/30",
               },
               {
                 title: "Interdisciplinary Collaboration",
                 desc: "Working across health, tech, business, and design to solve complex systemic challenges.",
+                Icon: OutcomeCollabIcon,
+                color: "text-emerald-400",
+                bg: "bg-emerald-500/20",
+                border: "border-emerald-500/30",
               },
               {
                 title: "Systems & Critical Thinking",
                 desc: "Understanding patient journeys and healthcare contexts to design preventive and predictive solutions.",
+                Icon: OutcomeSystemsIcon,
+                color: "text-amber-400",
+                bg: "bg-amber-500/20",
+                border: "border-amber-500/30",
               },
             ].map((outcome, i) => (
               <div
                 key={i}
                 className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8 hover:bg-white/[0.04] transition-colors"
               >
+                <div
+                  className={`w-12 h-12 rounded-2xl ${outcome.bg} flex items-center justify-center mb-6 border ${outcome.border}`}
+                >
+                  <outcome.Icon className={`w-7 h-7 ${outcome.color}`} />
+                </div>
                 <h3 className="text-xl font-bold text-white mb-3">
                   {outcome.title}
                 </h3>
