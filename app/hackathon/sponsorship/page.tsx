@@ -1,8 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Check, Trophy, ArrowRight } from "lucide-react";
+import {
+  Check,
+  Trophy,
+  ArrowRight,
+  Target,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 
 // The official Passion Seed logo path used as the base for our bioluminescent icons
 const PASSION_SEED_PATH =
@@ -327,13 +334,56 @@ const itemVariants = {
   },
 };
 
+// Starfield component
+const Starfield = () => {
+  const starsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (starsRef.current && starsRef.current.children.length === 0) {
+      const starCount = 40; // Reduced for performance
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement("div");
+        star.className = "absolute rounded-full bg-white";
+        const size = Math.random() * 2 + 1;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.opacity = `${Math.random() * 0.7 + 0.3}`;
+        star.style.animation = `twinkle ${Math.random() * 3 + 2}s infinite ease-in-out`;
+        starsRef.current.appendChild(star);
+      }
+    }
+  }, []);
+
+  return (
+    <>
+      <div
+        ref={starsRef}
+        className="absolute inset-0 pointer-events-none z-0"
+      />
+      <style jsx>{`
+        @keyframes twinkle {
+          0%,
+          100% {
+            opacity: 0.3;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </>
+  );
+};
+
 // Background floating particles component
 const BackgroundParticles = () => {
   const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
     // Generate particles only on client to avoid hydration mismatch
-    const newParticles = Array.from({ length: 40 }).map((_, i) => ({
+    const newParticles = Array.from({ length: 15 }).map((_, i) => ({
       id: i,
       size: Math.random() * 6 + 2,
       left: Math.random() * 100,
@@ -384,34 +434,13 @@ export default function SponsorshipPage() {
   return (
     <div className="min-h-screen bg-[#0B0415] text-white overflow-hidden relative selection:bg-purple-500/30">
       {/* Bioluminescent Background Elements */}
+      <Starfield />
       <BackgroundParticles />
 
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.3, 0.2] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-900/30 blur-[120px]"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1,
-          }}
-          className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-900/30 blur-[120px]"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.2, 0.1] }}
-          transition={{
-            duration: 9,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2,
-          }}
-          className="absolute top-[40%] left-[50%] translate-x-[-50%] w-[60%] h-[20%] rounded-full bg-fuchsia-900/20 blur-[100px]"
-        />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-900/20 blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-900/20 blur-[100px]" />
+        <div className="absolute top-[40%] left-[50%] translate-x-[-50%] w-[60%] h-[20%] rounded-full bg-fuchsia-900/10 blur-[80px]" />
 
         {/* Subtle grid pattern for tech feel */}
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
@@ -434,14 +463,158 @@ export default function SponsorshipPage() {
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
             Empower the Next <br className="hidden md:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-400 to-indigo-400 drop-shadow-[0_0_15px_rgba(192,132,252,0.3)]">
+            <span className="inline-block transform-gpu text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-400 to-indigo-400 drop-shadow-[0_0_15px_rgba(192,132,252,0.3)]">
               Generation of Innovators
             </span>
           </h1>
           <p className="text-lg md:text-xl text-gray-400 leading-relaxed">
-            Position your brand at the forefront of technology and education.
-            Connect with top-tier talent, showcase your commitment to
-            innovation, and make a lasting impact at the Futurist Fest.
+            Position your brand at the forefront of healthcare innovation and
+            education. Connect with top-tier talent, showcase your commitment to
+            preventive health, and make a lasting impact at The Next Decade
+            Hackathon.
+          </p>
+        </motion.div>
+
+        {/* Why Sponsor Us Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+          className="mb-32 max-w-5xl mx-auto mt-12"
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Why Sponsor The Next Decade Hackathon?
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Move beyond passive marketing. Hackathon sponsorship creates
+              active, memorable engagement with the next generation of tech
+              leaders.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Value Prop 1 */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 backdrop-blur-sm hover:bg-white/[0.04] transition-colors relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-6 border border-purple-500/30 relative z-10">
+                <Target className="w-6 h-6 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3 relative z-10">
+                Hyper-Targeted Reach
+              </h3>
+              <p className="text-gray-400 leading-relaxed relative z-10 text-sm">
+                Connect directly with 500+ highly motivated high school and
+                university students, designers, and early adopters. Unlike broad
+                digital marketing, every impression here is a qualified,
+                high-intent innovator actively looking for tools and
+                opportunities to shape healthcare.
+              </p>
+            </div>
+
+            {/* Value Prop 2 */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 backdrop-blur-sm hover:bg-white/[0.04] transition-colors relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="w-12 h-12 rounded-2xl bg-fuchsia-500/20 flex items-center justify-center mb-6 border border-fuchsia-500/30 relative z-10">
+                <TrendingUp className="w-6 h-6 text-fuchsia-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3 relative z-10">
+                Learning, Adaptation & Resilience
+              </h3>
+              <p className="text-gray-400 leading-relaxed relative z-10 text-sm">
+                Traditional marketing is ignored; hands-on tools are embraced.
+                Put your APIs, platforms, and research directly into the hands
+                of the next generation. They won't just see your brand—they will
+                use it to build solutions that foster learning, adaptation, and
+                resilience.
+              </p>
+            </div>
+
+            {/* Value Prop 3 */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 backdrop-blur-sm hover:bg-white/[0.04] transition-colors relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/30 relative z-10">
+                <Users className="w-6 h-6 text-indigo-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3 relative z-10">
+                Train a Capable Workforce
+              </h3>
+              <p className="text-gray-400 leading-relaxed relative z-10 text-sm">
+                Support an inclusive environment where high school and
+                university students learn to tackle real-world challenges. Watch
+                them become a more capable, AI-ready workforce, demonstrating
+                empathy, teamwork, and problem-solving skills in real-time.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* By the Numbers / Targets Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          className="mb-32 max-w-5xl mx-auto"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
+            <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] transition-colors">
+              <div className="inline-block transform-gpu text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-400 mb-2">
+                500+
+              </div>
+              <div className="text-sm text-gray-400 font-medium uppercase tracking-wider">
+                Hackers
+              </div>
+            </div>
+            <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] transition-colors">
+              <div className="inline-block transform-gpu text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-400 mb-2">
+                48 Hrs
+              </div>
+              <div className="text-sm text-gray-400 font-medium uppercase tracking-wider">
+                Of Innovation
+              </div>
+            </div>
+            <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] transition-colors">
+              <div className="inline-block transform-gpu text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-indigo-400 mb-2">
+                100+
+              </div>
+              <div className="text-sm text-gray-400 font-medium uppercase tracking-wider">
+                Projects Built
+              </div>
+            </div>
+            <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] transition-colors">
+              <div className="inline-block transform-gpu text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
+                50K+
+              </div>
+              <div className="text-sm text-gray-400 font-medium uppercase tracking-wider">
+                Community Reach
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Urgency / Limited Availability Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
+          className="mb-20 max-w-4xl mx-auto text-center"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 mb-4">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <span className="text-sm font-medium text-red-400 tracking-wide uppercase">
+              Limited Availability
+            </span>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">
+            Secure Your Sponsorship Early
+          </h2>
+          <p className="text-gray-400 text-lg">
+            To ensure maximum visibility and ROI for our partners, we strictly
+            limit the number of sponsors at each tier. Diamond and Platinum
+            tiers are highly sought after and fill up quickly.
           </p>
         </motion.div>
 
@@ -522,7 +695,7 @@ export default function SponsorshipPage() {
               {/* Price Tag */}
               <div className="relative z-10 px-6 pb-6 pt-4 text-center border-b border-white/10">
                 <div
-                  className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r ${pkg.textGradient} ${pkg.isPremium ? "drop-shadow-[0_0_10px_rgba(232,121,249,0.5)] text-4xl" : ""}`}
+                  className={`inline-block transform-gpu text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r ${pkg.textGradient} ${pkg.isPremium ? "drop-shadow-[0_0_10px_rgba(232,121,249,0.5)] text-4xl" : ""}`}
                 >
                   {pkg.price}
                 </div>

@@ -88,6 +88,10 @@ function circlePos(angleDeg: number, R: number): { x: number; y: number } {
   return { x: R + R * Math.cos(rad), y: R + R * Math.sin(rad) };
 }
 
+function toStablePx(value: number): string {
+  return `${Number(value.toFixed(6))}px`;
+}
+
 function itemOpacity(distance: number): number {
   if (distance === 0) return 1;
   if (distance === 1) return 0.55;
@@ -237,7 +241,11 @@ export default function HackathonTimeline() {
               <div
                 key={i}
                 className="absolute"
-                style={{ left: `${x}px`, top: `${y}px`, transform: "translate(-50%, -50%)" }}
+                style={{
+                  left: toStablePx(x),
+                  top: toStablePx(y),
+                  transform: "translate(-50%, -50%)",
+                }}
               >
                 <div
                   ref={(el) => { itemDivsRef.current[i] = el; }}
