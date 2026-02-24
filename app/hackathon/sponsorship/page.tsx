@@ -257,6 +257,7 @@ const sponsorshipPackages = [
     features: [
       'Primary placement as "Presented by _" across all leagues',
       "Full digital campaign + featured Brand Story video",
+      "Full access to the Innovation Tracking System for talent discovery",
       "Access to Top 50 Teams' CVs & skill profiles",
       "Premium central booth at Futurist Fest + 6 VIP passes",
       "Exclusive Workshop Slot (Workshop 4 - June 9)",
@@ -276,6 +277,7 @@ const sponsorshipPackages = [
     features: [
       "Large logo placement on official merchandise (T-shirts / lanyards)",
       "2 dedicated social posts + 1 collaborative short video/Reel",
+      "Full access to the Innovation Tracking System for talent discovery",
       "Access to Top 30 Teams' CVs & skill profiles",
       "Standard booth at Futurist Fest + 4 VIP passes + product sampling rights",
       'Sponsor 1 Track Award (e.g., "Best Tech for Health")',
@@ -549,6 +551,363 @@ export default function SponsorshipPage() {
           </div>
         </motion.div>
 
+        {/* Innovation Tracking System Callout */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
+          className="mb-32 max-w-5xl mx-auto"
+        >
+          <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-3xl p-8 md:p-10 backdrop-blur-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl -mr-20 -mt-20" />
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1">
+                <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                  Exclusive Talent Discovery
+                </h3>
+                <p className="text-gray-300 text-lg leading-relaxed">
+                  We built our own <strong>Innovation Tracking System</strong>{" "}
+                  that monitors the journey of every participant. Identify top
+                  talent early by seeing how they think, collaborate, and solve
+                  problems.
+                  <br />
+                  <br />
+                  <span className="text-purple-300 font-semibold">
+                    Full access to this system is exclusively shared with our
+                    Diamond and Platinum tier sponsors.
+                  </span>
+                </p>
+              </div>
+              <div className="w-full md:w-1/3 flex justify-center">
+                <div className="w-32 h-32 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
+                  <Target className="w-16 h-16 text-purple-300" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Hackathon Tracks */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          className="mb-32 max-w-5xl mx-auto"
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Hackathon Tracks
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Participants will build solutions across three critical areas of
+              healthcare.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Track 1 */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:bg-white/[0.04] transition-colors">
+              <h3 className="text-xl font-bold text-purple-400 mb-2">
+                Traditional & Integrative Healthcare
+              </h3>
+              <p className="text-sm text-gray-400 mb-6">
+                Clinical care, prevention, and holistic health systems
+              </p>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li>• Early detection & risk screening</li>
+                <li>• Chronic disease prevention & management</li>
+                <li>• Patient journeys across care systems</li>
+                <li>
+                  • Safe integration of traditional & alternative practices
+                </li>
+                <li>• Assistive technology for traditional healthcare</li>
+              </ul>
+            </div>
+            {/* Track 2 */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:bg-white/[0.04] transition-colors">
+              <h3 className="text-xl font-bold text-fuchsia-400 mb-2">
+                Mental Health
+              </h3>
+              <p className="text-sm text-gray-400 mb-6">
+                Emotional well-being, resilience, and early support
+              </p>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li>• Stress, burnout & anxiety prevention</li>
+                <li>• Early risk detection & intervention</li>
+                <li>• Loneliness & social isolation</li>
+                <li>• Mental well-being in schools, workplaces, communities</li>
+                <li>• Empathetic chatbots & LLMs</li>
+              </ul>
+            </div>
+            {/* Track 3 */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:bg-white/[0.04] transition-colors">
+              <h3 className="text-xl font-bold text-indigo-400 mb-2">
+                Community & Public Health
+              </h3>
+              <p className="text-sm text-gray-400 mb-6">
+                Community, Public & Environmental Health
+              </p>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li>• Population-level prevention</li>
+                <li>• Health equity & accessibility</li>
+                <li>• Environmental health (air, water, climate)</li>
+                <li>• Early risk detection & prediction</li>
+                <li>• Community-based interventions</li>
+                <li>• Real-time monitoring & wearables</li>
+              </ul>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Participant Outcomes */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          className="mb-32 max-w-5xl mx-auto"
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What Participants Will Gain
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              We focus on building real-world capabilities, ensuring every
+              participant leaves with tangible skills and portfolio-ready
+              experience.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                title: "Evidence-Based Research Skills",
+                desc: "Ability to navigate medical databases (e.g., PubMed), validate problem statements, and ground solutions in clinical reality.",
+              },
+              {
+                title: "Rapid Prototyping & Testing",
+                desc: "Hands-on experience building viable, testable prototypes and iterating based on real user feedback.",
+              },
+              {
+                title: "Interdisciplinary Collaboration",
+                desc: "Working across health, tech, business, and design to solve complex systemic challenges.",
+              },
+              {
+                title: "Systems & Critical Thinking",
+                desc: "Understanding patient journeys and healthcare contexts to design preventive and predictive solutions.",
+              },
+            ].map((outcome, i) => (
+              <div
+                key={i}
+                className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8 hover:bg-white/[0.04] transition-colors"
+              >
+                <h3 className="text-xl font-bold text-white mb-3">
+                  {outcome.title}
+                </h3>
+                <p className="text-gray-400 leading-relaxed">{outcome.desc}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Timeline */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          className="mb-32 max-w-5xl mx-auto"
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Innovation Journey
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              A structured pipeline designed to identify talent and produce
+              viable solutions.
+            </p>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch relative">
+            {/* Connecting Line */}
+            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-white/10 -translate-y-1/2 z-0" />
+
+            {[
+              {
+                phase: "Ideation & Research",
+                date: "April",
+                focus: "Problem Validation",
+                output: "Evidence-backed proposals",
+              },
+              {
+                phase: "Prototyping",
+                date: "May",
+                focus: "Skill Building",
+                output: "Testable MVPs",
+              },
+              {
+                phase: "Acceleration",
+                date: "Early June",
+                focus: "Talent Identification",
+                output: "Top 30 Teams Shortlisted",
+              },
+              {
+                phase: "Final Showcase",
+                date: "Late June",
+                focus: "Industry Exposure",
+                output: "Winning Solutions Pitched",
+              },
+            ].map((step, i) => (
+              <div
+                key={i}
+                className="relative z-10 flex-1 flex flex-col items-center text-center group"
+              >
+                <div className="w-4 h-4 rounded-full bg-purple-500 mb-4 shadow-[0_0_10px_rgba(168,85,247,0.8)] group-hover:scale-150 transition-transform" />
+                <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 w-full backdrop-blur-sm hover:bg-white/[0.05] transition-colors">
+                  <div className="text-purple-400 text-sm font-bold mb-1 uppercase tracking-wider">
+                    {step.date}
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">
+                    {step.phase}
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="bg-white/5 rounded-lg py-1.5 px-2">
+                      <span className="text-gray-400 block text-xs mb-0.5">
+                        Focus
+                      </span>
+                      <span className="text-gray-200 font-medium">
+                        {step.focus}
+                      </span>
+                    </div>
+                    <div className="bg-purple-500/10 rounded-lg py-1.5 px-2 border border-purple-500/20">
+                      <span className="text-purple-300/70 block text-xs mb-0.5">
+                        Output
+                      </span>
+                      <span className="text-purple-200 font-medium">
+                        {step.output}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Partners */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          className="mb-32 max-w-5xl mx-auto"
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Our Partners
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Collaborating with industry leaders to ensure medical integrity
+              and strategic growth.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* AMSA THAILAND */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center overflow-hidden p-1">
+                  <img
+                    src="/hackathon/AMSA.png"
+                    alt="AMSA Thailand"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <h3 className="text-2xl font-bold text-blue-400">
+                  AMSA THAILAND
+                </h3>
+              </div>
+              <ul className="space-y-4 text-sm text-gray-300">
+                <li>
+                  <strong className="text-white block mb-1">
+                    Medical Integrity and Scientific Oversight
+                  </strong>
+                  Serve as the primary authority on medical accuracy, ensuring
+                  that all participant problem statements and solutions align
+                  with current healthcare standards and scientific principles.
+                </li>
+                <li>
+                  <strong className="text-white block mb-1">
+                    Research Validation Guidance
+                  </strong>
+                  Provide participants with the necessary framework and
+                  expertise to conduct research based on credible medical
+                  databases and evidence.
+                </li>
+                <li>
+                  <strong className="text-white block mb-1">
+                    Clinical Mentorship & Community Engagement
+                  </strong>
+                  Facilitate access to medical students and professionals to act
+                  as mentors. Leverage AMSA's network to recruit
+                  interdisciplinary teams.
+                </li>
+                <li>
+                  <strong className="text-white block mb-1">
+                    Expert Judging Panel
+                  </strong>
+                  Appoint qualified representatives to evaluate the final
+                  deliverables based on medical feasibility, potential health
+                  impact, and the rigor of the research used.
+                </li>
+              </ul>
+            </div>
+            {/* STEM like Her */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center overflow-hidden p-1">
+                  <img
+                    src="/hackathon/StemLike.png"
+                    alt="STEM like Her"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <h3 className="text-2xl font-bold text-pink-400">
+                  STEM like Her
+                </h3>
+              </div>
+              <ul className="space-y-4 text-sm text-gray-300">
+                <li>
+                  <strong className="text-white block mb-1">
+                    Strategic Marketing & Content Production
+                  </strong>
+                  Collaborate on marketing strategies to build awareness and
+                  produce video contents to showcase the partnership and attract
+                  the target audience.
+                </li>
+                <li>
+                  <strong className="text-white block mb-1">
+                    Strategic Networking
+                  </strong>
+                  Connect the initiative with other organizations within their
+                  network to expand the project's impact and create
+                  opportunities for international growth.
+                </li>
+                <li>
+                  <strong className="text-white block mb-1">
+                    Technical Mentorship & Workshops
+                  </strong>
+                  Support experts and mentors to lead workshops on prototyping
+                  and provide guidance to ensure participant ideas are developed
+                  into tangible products.
+                </li>
+                <li>
+                  <strong className="text-white block mb-1">
+                    Expert Panel & Talent Recruitment
+                  </strong>
+                  Provide qualified judges for the competition and assist in
+                  recruiting additional personnel to strengthen the project
+                  management and operational team.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </motion.div>
+
         {/* By the Numbers / Targets Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -578,7 +937,7 @@ export default function SponsorshipPage() {
                 100+
               </div>
               <div className="text-sm text-gray-400 font-medium uppercase tracking-wider">
-                Projects Built
+                Projects Expected
               </div>
             </div>
             <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] transition-colors">
