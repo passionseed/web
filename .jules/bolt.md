@@ -1,0 +1,3 @@
+## 2024-05-22 - Lodash Removal for Bundle Optimization
+**Learning:** The `lodash` library was found to be used only for its `debounce` function across the entire codebase. This single utility function was costing a significant amount of bundle size (approx 24KB gzipped for full lodash, or less if tree-shaken but still overhead).
+**Action:** Replaced `lodash.debounce` with a custom 20-line implementation in `lib/utils.ts` and removed the dependency. Future debouncing needs should use this custom utility. Always check if a heavy library is truly needed or if a small utility function can replace it.
