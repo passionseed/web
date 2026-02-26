@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useDebounce } from "@/hooks/use-debounce";
 import { CurriculumGraph } from "@/components/csii/CurriculumGraph";
 import { CourseDetailPanel } from "@/components/csii/CourseDetailPanel";
 import { CategoryLegend } from "@/components/csii/CategoryLegend";
@@ -18,6 +19,7 @@ export default function CSIIClientPage() {
   const [selectedCourse, setSelectedCourse] = useState<CSIICourse | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [chargeStrength, setChargeStrength] = useState(-100);
   const [linkDistance, setLinkDistance] = useState(50);
 
@@ -27,8 +29,8 @@ export default function CSIIClientPage() {
 
   // Apply filters
   const filteredGraphData = useMemo(
-    () => filterGraphData(fullGraphData, selectedCategories, searchQuery),
-    [fullGraphData, selectedCategories, searchQuery]
+    () => filterGraphData(fullGraphData, selectedCategories, debouncedSearchQuery),
+    [fullGraphData, selectedCategories, debouncedSearchQuery]
   );
 
   const handleNodeClick = (course: CSIICourse) => {
