@@ -12,6 +12,8 @@ export type HackathonParticipant = {
   id: string;
   name: string;
   email: string;
+  phone: string;
+  line_id: string;
   university: string;
   role: string;
   track: string;
@@ -35,6 +37,8 @@ export async function findParticipantByEmail(email: string) {
 export async function createParticipant(params: {
   name: string;
   email: string;
+  phone: string;
+  line_id: string;
   password_hash: string;
   university: string;
   role: string;
@@ -52,7 +56,7 @@ export async function createParticipant(params: {
       email: params.email.toLowerCase(),
       team_name: params.team_name || null,
     })
-    .select("id, name, email, university, role, track, grade_level, experience_level, referral_source, bio, team_name, created_at")
+    .select("id, name, email, phone, line_id, university, role, track, grade_level, experience_level, referral_source, bio, team_name, created_at")
     .single();
   if (error) throw error;
   return data as HackathonParticipant;
@@ -74,7 +78,7 @@ export async function getSessionParticipant(token: string): Promise<HackathonPar
   const now = new Date().toISOString();
   const { data } = await getClient()
     .from("hackathon_sessions")
-    .select("expires_at, hackathon_participants(id, name, email, university, role, track, grade_level, experience_level, referral_source, bio, team_name, created_at)")
+    .select("expires_at, hackathon_participants(id, name, email, phone, line_id, university, role, track, grade_level, experience_level, referral_source, bio, team_name, created_at)")
     .eq("token", token)
     .gt("expires_at", now)
     .single();

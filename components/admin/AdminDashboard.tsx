@@ -14,6 +14,7 @@ import { AdminUserManagement } from "./AdminUserManagement";
 import { AdminMapsManagement } from "./AdminMapsManagement";
 import { AdminJourneyPeek } from "./AdminJourneyPeek";
 import { AdminDirectionFinder } from "./AdminDirectionFinder";
+import { AdminHackathonParticipants } from "./AdminHackathonParticipants";
 import {
   Users,
   Activity,
@@ -22,6 +23,7 @@ import {
   Eye,
   Archive,
   Compass,
+  Trophy,
 } from "lucide-react";
 
 export function AdminDashboard() {
@@ -53,6 +55,10 @@ export function AdminDashboard() {
           >
             <Compass className="h-4 w-4" />
             Direction Results
+          </TabsTrigger>
+          <TabsTrigger value="hackathon" className="flex items-center gap-2">
+            <Trophy className="h-4 w-4" />
+            Hackathon
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -88,6 +94,10 @@ export function AdminDashboard() {
 
         <TabsContent value="direction-finder" className="space-y-4">
           <AdminDirectionFinder />
+        </TabsContent>
+
+        <TabsContent value="hackathon" className="space-y-4">
+          <AdminHackathonParticipants key={`hackathon-${refreshKey}`} />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

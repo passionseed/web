@@ -12,6 +12,16 @@ const TRACKS = [
   "นักศึกษามหาวิทยาลัย",
 ];
 
+const REFERRAL_SOURCES = [
+  "Facebook",
+  "Instagram",
+  "TikTok",
+  "X (Twitter)",
+  "เพื่อนแนะนำ",
+  "ครู/อาจารย์แนะนำ",
+  "อื่นๆ",
+];
+
 // Education levels and grades
 const GRADES: Record<string, string[]> = {
   "นักเรียนมัธยมปลาย หรือเทียบเท่า": ["ม.4", "ม.5", "ม.6", "ปวช.", "อื่นๆ"],
@@ -49,6 +59,8 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
+    line_id: "",
     password: "",
     university: "",
     track: "",
@@ -452,6 +464,8 @@ export default function RegisterPage() {
             {([
               { name: "name", label: "ชื่อ-นามสกุล", type: "text", placeholder: "สมชาย ใจดี", required: true },
               { name: "email", label: "อีเมล", type: "email", placeholder: "somchai@example.com", required: true },
+              { name: "phone", label: "เบอร์โทรศัพท์", type: "tel", placeholder: "0812345678", required: true },
+              { name: "line_id", label: "Line ID", type: "text", placeholder: "@somchai", required: true },
               { name: "password", label: "รหัสผ่าน", type: "password", placeholder: "อย่างน้อย 6 ตัวอักษร", required: true },
             ] as const).map((f) => (
               <div key={f.name}>
@@ -600,18 +614,29 @@ export default function RegisterPage() {
               <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
                 รู้จักเราจากทางไหน
               </label>
-              <input
+              <select
                 name="referral_source"
-                type="text"
                 value={form.referral_source}
                 onChange={handleChange}
                 onFocus={() => setFocused("referral_source")}
                 onBlur={() => setFocused(null)}
                 required
-                placeholder="Facebook, Instagram, เพื่อนแนะนำ..."
-                style={inputStyle("referral_source")}
+                style={{
+                  ...inputStyle("referral_source"),
+                  appearance: "none",
+                  color: form.referral_source ? "#C0D8F0" : "#2A3A50",
+                }}
                 className="font-[family-name:var(--font-mitr)]"
-              />
+              >
+                <option value="" disabled style={{ background: "#010D18", color: "#2A3A50" }}>
+                  เลือกช่องทาง
+                </option>
+                {REFERRAL_SOURCES.map((source) => (
+                  <option key={source} value={source} style={{ background: "#010D18", color: "#C0D8F0" }}>
+                    {source}
+                  </option>
+                ))}
+              </select>
             </div>
 
 

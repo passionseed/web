@@ -67,6 +67,10 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                 setIsMatching(false);
             } else if (data.status === "waiting") {
                 setMatchingPosition(data.position);
+                setIsMatching(true);
+                if (view !== "matching") {
+                    setView("matching");
+                }
             } else {
                 // Not in waitlist
                 setIsMatching(false);
@@ -76,6 +80,14 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
             }
         }
     }, [view, refreshTeam]);
+
+    // Check matching status on mount
+    useEffect(() => {
+        if (!team) {
+            checkMatchingStatus();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [team]);
 
     useEffect(() => {
         if (!team) return;
@@ -186,6 +198,20 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         </button>
     );
 
+    const LineButton = () => (
+        <a
+            href="https://line.me/ti/g2/5prSQrsDW52jlyXOWzmuQwIw7MB31rA1fL4DzA?utm_source=invitation&utm_medium=link_copy&utm_campaign=default"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-[#06C755] hover:bg-[#05b34c] border border-[#06C755]/30 hover:border-[#06C755] rounded-full flex items-center justify-center transition-all duration-200 shadow-[0_0_20px_rgba(6,199,85,0.3)] hover:shadow-[0_0_30px_rgba(6,199,85,0.5)] hover:scale-110"
+            title="Join LINE Group"
+        >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+            </svg>
+        </a>
+    );
+
     // ─── Team Lobby View ───────────────────────────────────────────────────
     if (team) {
         const isOwner = team.owner_id === participant.id;
@@ -194,6 +220,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                 <FractalGlassBackground />
                 <BackButton />
                 <LogoutButton />
+                <LineButton />
                 <div className="w-full max-w-lg space-y-6 relative z-10">
                     <div className="text-center">
                         <p className="text-[#5a7a94] text-sm tracking-widest uppercase mb-1">ทีมของคุณ</p>
@@ -275,6 +302,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                 <FractalGlassBackground />
                 <BackButton />
                 <LogoutButton />
+                <LineButton />
                 <div className="w-full max-w-md space-y-6 relative z-10">
                     <button onClick={() => { setView("home"); setError(""); }} className="text-gray-600 hover:text-[#5a7a94] text-sm flex items-center gap-2 transition-colors group">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-1 transition-transform">
@@ -320,6 +348,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                 <FractalGlassBackground />
                 <BackButton />
                 <LogoutButton />
+                <LineButton />
                 <div className="w-full max-w-md space-y-6 relative z-10">
                     <button onClick={() => { setView("home"); setError(""); }} className="text-gray-600 hover:text-[#5a7a94] text-sm flex items-center gap-2 transition-colors group">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-1 transition-transform">
@@ -366,6 +395,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                 <FractalGlassBackground />
                 <BackButton />
                 <LogoutButton />
+                <LineButton />
                 <div className="w-full max-w-md space-y-6 relative z-10">
                     <button onClick={handleCancelMatching} disabled={loading} className="text-gray-600 hover:text-red-400 text-sm flex items-center gap-2 transition-colors group">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-1 transition-transform">
@@ -381,37 +411,28 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                                     <FindIcon className="w-8 h-8 text-[#5a7a94]" />
                                 </div>
                             </div>
-                            <h2 className="text-3xl font-bold text-[#5a7a94] mb-3">กำลังหาทีม...</h2>
-                            <p className="text-gray-400 text-sm">เรากำลังจับคู่คุณกับทีมที่เหมาะสม</p>
+                            <h2 className="text-3xl font-bold text-[#5a7a94] mb-3">เข้าสู่รายชื่อหาทีมแล้ว!</h2>
+                            <p className="text-gray-400 text-sm">เราได้เพิ่มคุณเข้าสู่รายชื่อหาทีมแล้ว</p>
                         </div>
-
-                        {matchingPosition !== null && (
-                            <div className="bg-[#0d1219]/60 border border-[#5a7a94]/15 rounded-2xl p-6 text-center mb-6">
-                                <p className="text-gray-500 text-sm mb-2">ตำแหน่งในคิว</p>
-                                <p className="text-5xl font-bold text-[#5a7a94]" style={{ textShadow: '0 0 15px rgba(90,122,148,0.3)' }}>
-                                    #{matchingPosition}
-                                </p>
-                            </div>
-                        )}
 
                         <div className="space-y-3">
                             <div className="flex items-start gap-3 text-gray-400 text-sm">
                                 <div className="w-5 h-5 rounded-full bg-[#5a7a94]/20 border border-[#5a7a94]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                                     <div className="w-2 h-2 rounded-full bg-[#5a7a94]" />
                                 </div>
-                                <span>ระบบจะจับคู่คุณกับทีมที่มีสมาชิกใกล้เคียง</span>
+                                <span>เราจะจัดให้คุณเจอทีมในงานวันที่ 4 เมษายน</span>
                             </div>
                             <div className="flex items-start gap-3 text-gray-400 text-sm">
                                 <div className="w-5 h-5 rounded-full bg-[#5a7a94]/20 border border-[#5a7a94]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                                     <div className="w-2 h-2 rounded-full bg-[#5a7a94]" />
                                 </div>
-                                <span>อาจใช้เวลาสักครู่ กรุณารอสักครู่</span>
+                                <span>ติดตามกิจกรรมหาทีมได้ทาง Instagram</span>
                             </div>
                             <div className="flex items-start gap-3 text-gray-400 text-sm">
                                 <div className="w-5 h-5 rounded-full bg-[#5a7a94]/20 border border-[#5a7a94]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                                     <div className="w-2 h-2 rounded-full bg-[#5a7a94]" />
                                 </div>
-                                <span>หากไม่ต้องการรอ คุณสามารถยกเลิกและสร้างทีมเองได้</span>
+                                <span>หรือคุณสามารถสร้างทีมหรือเข้าร่วมทีมได้เลยตอนนี้</span>
                             </div>
                         </div>
 
@@ -420,7 +441,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                             disabled={loading}
                             className="w-full mt-6 bg-gradient-to-r from-[#3a3a3a] to-[#2a2a2a] hover:from-[#2a2a2a] hover:to-[#3a3a3a] text-gray-400 hover:text-red-400 font-medium py-3 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/5 hover:border-red-400/30"
                         >
-                            {loading ? "กำลังยกเลิก..." : "ยกเลิกการหาทีม"}
+                            {loading ? "กำลังออกจากรายชื่อ..." : "ออกจากรายชื่อหาทีม"}
                         </button>
                     </div>
                 </div>
@@ -434,6 +455,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
             <FractalGlassBackground />
             <BackButton />
             <LogoutButton />
+            <LineButton />
 
             <div className="w-full max-w-xl space-y-8 text-center relative z-10">
                 <div>
@@ -442,7 +464,10 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                             <PartyIcon className="w-10 h-10 text-[#5a7a94]" />
                         </div>
                     </div>
-                    <p className="text-[#5a7a94] text-sm tracking-[0.3em] uppercase mb-3 font-light">
+                    <p className="text-gray-400 text-sm tracking-widest uppercase mb-2 font-medium">
+                        คุณสมัครเสร็จสิ้น
+                    </p>
+                    <p className="text-[#5a7a94] text-base tracking-[0.3em] uppercase mb-3 font-light">
                         ยินดีต้อนรับ
                     </p>
                     <h1 className="text-5xl md:text-6xl font-bold mb-2 text-gray-300" style={{ letterSpacing: '-0.02em' }}>

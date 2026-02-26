@@ -6,10 +6,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     console.log("Register API received body:", body);
-    const { name, email, password, university, track, grade_level, experience_level, referral_source, bio, team_name } = body;
+    const { name, email, phone, line_id, password, university, track, grade_level, experience_level, referral_source, bio, team_name } = body;
 
-    if (!name || !email || !password || !university || !track || !grade_level || !experience_level || !referral_source || !bio) {
-      console.log("Missing required fields:", { name, email, password, university, track, grade_level, experience_level, referral_source, bio });
+    if (!name || !email || !phone || !line_id || !password || !university || !track || !grade_level || !experience_level || !referral_source || !bio) {
+      console.log("Missing required fields:", { name, email, phone, line_id, password, university, track, grade_level, experience_level, referral_source, bio });
       return NextResponse.json({ error: "All required fields must be filled" }, { status: 400 });
     }
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     const password_hash = hashPassword(password);
-    const participant = await createParticipant({ name, email, password_hash, university, role: "Participant", track, grade_level, experience_level, referral_source, bio, team_name });
+    const participant = await createParticipant({ name, email, phone, line_id, password_hash, university, role: "Participant", track, grade_level, experience_level, referral_source, bio, team_name });
 
     const token = generateSessionToken();
     await createSession(participant.id, token);
