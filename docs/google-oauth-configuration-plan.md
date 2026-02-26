@@ -26,7 +26,7 @@ This document provides a comprehensive plan for implementing Google OAuth alongs
 - **Callback Handler**: [`app/auth/callback/route.ts`](app/auth/callback/route.ts) - Handles OAuth callback
 - **Auth Utilities**: [`lib/supabase/auth-client.ts`](lib/supabase/auth-client.ts) - Client-side auth functions
 - **Server Utils**: [`utils/supabase/server.ts`](utils/supabase/server.ts) - Server-side Supabase client
-- **Middleware**: [`utils/supabase/proxy.ts`](utils/supabase/proxy.ts) - Session management
+- **Middleware**: [`middleware.ts`](middleware.ts) - Session management
 
 ## 1. Supabase Dashboard Configuration Steps
 
