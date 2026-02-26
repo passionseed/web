@@ -173,11 +173,6 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
           will-change: transform;
           transform: translateZ(0);
         }
-
-        /* Contain layout calculations for animated sections */
-        section {
-          contain: layout style paint;
-        }
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 1; }
