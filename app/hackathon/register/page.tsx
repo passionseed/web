@@ -60,7 +60,6 @@ export default function RegisterPage() {
     name: "",
     email: "",
     phone: "",
-    line_id: "",
     password: "",
     university: "",
     track: "",
@@ -162,7 +161,7 @@ export default function RegisterPage() {
               setLoading(false);
               return;
             }
-            router.push("/hackathon/team");
+            router.push("/hackathon/line-oa");
           })();
         },
       }
@@ -465,7 +464,6 @@ export default function RegisterPage() {
               { name: "name", label: "ชื่อ-นามสกุล", type: "text", placeholder: "สมชาย ใจดี", required: true },
               { name: "email", label: "อีเมล", type: "email", placeholder: "somchai@example.com", required: true },
               { name: "phone", label: "เบอร์โทรศัพท์", type: "tel", placeholder: "0812345678", required: true },
-              { name: "line_id", label: "Line ID", type: "text", placeholder: "@somchai", required: true },
               { name: "password", label: "รหัสผ่าน", type: "password", placeholder: "อย่างน้อย 6 ตัวอักษร", required: true },
             ] as const).map((f) => (
               <div key={f.name}>
