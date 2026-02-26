@@ -36,6 +36,17 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
     const [instant, setInstant] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Detect mobile devices for performance optimization
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const handleRegister = () => {
         if (isTransitioning || !waterRef.current) return;
@@ -114,9 +125,9 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
     }, []);
 
     useEffect(() => {
-        // Generate random stars
+        // Generate random stars (fewer on mobile for performance)
         if (starsRef.current) {
-            const starCount = 100;
+            const starCount = isMobile ? 30 : 100;
             for (let i = 0; i < starCount; i++) {
                 const star = document.createElement("div");
                 star.className = "absolute rounded-full bg-white";
@@ -126,11 +137,14 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                 star.style.left = `${Math.random() * 100}%`;
                 star.style.top = `${Math.random() * 100}%`;
                 star.style.opacity = `${Math.random() * 0.7 + 0.3}`;
-                star.style.animation = `twinkle ${Math.random() * 3 + 2}s infinite ease-in-out`;
+                // Disable animation on mobile for better performance
+                if (!isMobile) {
+                    star.style.animation = `twinkle ${Math.random() * 3 + 2}s infinite ease-in-out`;
+                }
                 starsRef.current.appendChild(star);
             }
         }
-    }, []);
+    }, [isMobile]);
 
     useEffect(() => {
         setMounted(true);
@@ -138,31 +152,43 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
     return (
         <>
-            <div className="min-h-screen bg-[#03050a] text-white relative [overflow:clip]">
+            <div className="min-h-screen bg-[#03050a] text-white relative [overflow:clip]" style={{ willChange: 'auto' }}>
                 {/* Black overlay that fades out */}
                 <div
                     className={`fixed inset-0 bg-black z-40 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                    style={{ willChange: showContent ? 'auto' : 'opacity' }}
                 />
 
                 {/* Starfield background */}
                 <div
                     ref={starsRef}
                     className={`fixed inset-0 pointer-events-none z-0 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
+                    style={{ willChange: showContent ? 'auto' : 'opacity' }}
                 />
 
                 {/* CSS Animations */}
                 <style jsx>{`
+        /* Performance optimizations */
+        img, svg {
+          will-change: transform;
+          transform: translateZ(0);
+        }
+
+        /* Contain layout calculations for animated sections */
+        section {
+          contain: layout style paint;
+        }
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 1; }
         }
         @keyframes float {
-          0%, 100% { transform: translateY(0) translateX(0); }
-          50% { transform: translateY(-20px) translateX(10px); }
+          0%, 100% { transform: translate3d(0, 0, 0); }
+          50% { transform: translate3d(10px, -20px, 0); }
         }
         @keyframes floatReverse {
-          0%, 100% { transform: translateY(0) translateX(0); }
-          50% { transform: translateY(20px) translateX(-10px); }
+          0%, 100% { transform: translate3d(0, 0, 0); }
+          50% { transform: translate3d(-10px, 20px, 0); }
         }
         @keyframes titleGlowUp {
           0% {
@@ -291,6 +317,8 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                             src="/hackathon/Creature/Jellyfish 1.svg"
                             alt=""
                             className="w-64 h-64"
+                            loading="lazy"
+                            decoding="async"
                         />
                     </div>
 
@@ -306,6 +334,8 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                             alt=""
                             className="w-80 h-80"
                             style={{ transform: 'scaleX(-1)' }}
+                            loading="lazy"
+                            decoding="async"
                         />
                     </div>
 
@@ -386,7 +416,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                         {/* Clione decoration */}
                         <div className="absolute right-16 top-1/4 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 9s infinite ease-in-out' }}>
-                            <img src="/hackathon/Creature/Clione.svg" alt="" className="w-44 h-44" style={{ filter: 'drop-shadow(0 0 16px rgba(145,196,227,0.4))', transform: 'rotate(-25deg)' }} />
+                            <img src="/hackathon/Creature/Clione.svg" alt="" className="w-44 h-44" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 16px rgba(145,196,227,0.4))', transform: 'rotate(-25deg)' }} />
                         </div>
 
                         <div className="container mx-auto px-4 relative z-10">
@@ -460,7 +490,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                         {/* Floating small jelly decorations */}
                         <div className="absolute right-1/4 top-1/3 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 7s infinite ease-in-out' }}>
-                            <img src="/hackathon/Creature/Small Jelly.svg" alt="" className="w-36 h-36" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.4))', transform: 'scaleX(-1) rotate(10deg)' }} />
+                            <img src="/hackathon/Creature/Small Jelly.svg" alt="" className="w-36 h-36" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.4))', transform: 'scaleX(-1) rotate(10deg)' }} />
                         </div>
 
                         <div className="container mx-auto px-4 relative z-10">
@@ -496,13 +526,13 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                                 <div className="flex flex-col gap-4">
                                                     <div className="relative group/item">
                                                         <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#91C4E3] opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                                                        <p className="text-lg md:text-xl text-[#91C4E3] font-medium text-center group-hover/item:translate-x-2 transition-transform">
+                                                        <p className="text-lg md:text-xl text-[#91C4E3] font-medium text-left group-hover/item:translate-x-2 transition-transform">
                                                             Track 1: ระดับมัธยมศึกษา หรือเทียบเท่า (ปวช.)
                                                         </p>
                                                     </div>
                                                     <div className="relative group/item">
                                                         <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#91C4E3] opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                                                        <p className="text-lg md:text-xl text-[#91C4E3] font-medium text-center group-hover/item:translate-x-2 transition-transform">
+                                                        <p className="text-lg md:text-xl text-[#91C4E3] font-medium text-left group-hover/item:translate-x-2 transition-transform">
                                                             Track 2: ระดับมหาวิทยาลัย (ปริญญาตรี - ปริญญาเอก) หรือเทียบเท่า (ปวส.)
                                                         </p>
                                                     </div>
@@ -806,7 +836,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                     {/* Beyond the Hackathon */}
                     <section className="py-24 relative z-10">
                         <div className="absolute right-20 top-1/3 opacity-20 pointer-events-none" style={{ animation: 'floatReverse 11s infinite ease-in-out' }}>
-                            <img src="/hackathon/Creature/Small Jelly.svg" alt="" className="w-40 h-40" style={{ filter: 'drop-shadow(0 0 16px rgba(165,148,186,0.5))', transform: 'scaleX(-1) rotate(-15deg)' }} />
+                            <img src="/hackathon/Creature/Small Jelly.svg" alt="" className="w-40 h-40" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 16px rgba(165,148,186,0.5))', transform: 'scaleX(-1) rotate(-15deg)' }} />
                         </div>
 
                         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#A594BA] opacity-[0.03] blur-[150px] rounded-[100%]" />
@@ -865,7 +895,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-[#A594BA]/10 rounded-full animate-[spin_40s_linear_infinite_reverse] pointer-events-none" />
 
                         <div className="absolute right-20 bottom-1/4 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 8s infinite ease-in-out' }}>
-                            <img src="/hackathon/Creature/Clione.svg" alt="" className="w-48 h-48" style={{ filter: 'drop-shadow(0 0 18px rgba(145,196,227,0.5))', transform: 'rotate(30deg)' }} />
+                            <img src="/hackathon/Creature/Clione.svg" alt="" className="w-48 h-48" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 18px rgba(145,196,227,0.5))', transform: 'rotate(30deg)' }} />
                         </div>
 
                         <div className="container mx-auto px-4 relative z-20 text-center">
@@ -939,7 +969,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                     {/* Organizations & Partners Section */}
                     <section className="py-20 relative z-10">
                         <div className="absolute right-1/4 bottom-10 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 6s infinite ease-in-out' }}>
-                            <img src="/hackathon/Creature/Small Jelly.svg" alt="" className="w-28 h-28" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.4))', transform: 'scaleX(-1) rotate(20deg)' }} />
+                            <img src="/hackathon/Creature/Small Jelly.svg" alt="" className="w-28 h-28" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.4))', transform: 'scaleX(-1) rotate(20deg)' }} />
                         </div>
 
                         <div className="container mx-auto px-4">
@@ -954,7 +984,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                 <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#91C4E3]/25 p-8 hover:border-[#91C4E3]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(145,196,227,0.2)] flex flex-col">
                                     <div className="flex flex-col items-center text-center gap-6">
                                         <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
-                                            <img src="/hackathon/AMSA.png" alt="AMSA Thailand" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
+                                            <img src="/hackathon/AMSA.png" alt="AMSA Thailand" className="w-24 h-24 object-contain" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
                                         </div>
                                         <div className="flex-1">
                                             <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">AMSA Thailand</h3>
@@ -969,7 +999,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                 <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#A594BA]/25 p-8 hover:border-[#A594BA]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(165,148,186,0.2)] flex flex-col">
                                     <div className="flex flex-col items-center text-center gap-6">
                                         <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
-                                            <img src="/hackathon/PS.png" alt="Passionseed" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.3))' }} />
+                                            <img src="/hackathon/PS.png" alt="Passionseed" className="w-24 h-24 object-contain" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.3))' }} />
                                         </div>
                                         <div className="flex-1">
                                             <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">Passionseed</h3>
@@ -984,7 +1014,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                 <div className="group bg-[#0d1219]/80 backdrop-blur-md rounded-3xl border border-[#91C4E3]/25 p-8 hover:border-[#91C4E3]/40 transition-all duration-500 hover:shadow-[0_0_45px_rgba(145,196,227,0.2)] flex flex-col">
                                     <div className="flex flex-col items-center text-center gap-6">
                                         <div className="flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
-                                            <img src="/hackathon/StemLike.png" alt="STEM Like Her" className="w-24 h-24 object-contain" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
+                                            <img src="/hackathon/StemLike.png" alt="STEM Like Her" className="w-24 h-24 object-contain" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
                                         </div>
                                         <div className="flex-1">
                                             <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">STEM Like Her</h3>
@@ -1002,11 +1032,11 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                     <section className="py-24 relative z-10">
                         {/* Large clione decoration */}
                         <div className="absolute top-10 right-1/3 opacity-20 pointer-events-none" style={{ animation: 'float 12s infinite ease-in-out' }}>
-                            <img src="/hackathon/Creature/Clione.svg" alt="" className="w-52 h-52" style={{ filter: 'drop-shadow(0 0 20px rgba(145,196,227,0.4))', transform: 'rotate(-20deg)' }} />
+                            <img src="/hackathon/Creature/Clione.svg" alt="" className="w-52 h-52" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 20px rgba(145,196,227,0.4))', transform: 'rotate(-20deg)' }} />
                         </div>
                         {/* Small Jelly decoration on left */}
                         <div className="absolute bottom-20 left-1/4 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 9s infinite ease-in-out' }}>
-                            <img src="/hackathon/Creature/Small Jelly.svg" alt="" className="w-36 h-36" style={{ filter: 'drop-shadow(0 0 16px rgba(165,148,186,0.4))', transform: 'scaleX(-1) rotate(-30deg)' }} />
+                            <img src="/hackathon/Creature/Small Jelly.svg" alt="" className="w-36 h-36" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 16px rgba(165,148,186,0.4))', transform: 'scaleX(-1) rotate(-30deg)' }} />
                         </div>
 
                         <div className="absolute inset-0 bg-gradient-to-r from-[#91C4E3]/5 to-[#A594BA]/5 blur-3xl" />
@@ -1056,13 +1086,13 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                     }}
                 >
                     <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                        <img src="/hackathon/PS.png" alt="PS Logo" className="w-full h-full object-contain" />
+                        <img src="/hackathon/PS.png" alt="PS Logo" className="w-full h-full object-contain" loading="lazy" decoding="async" />
                     </div>
                     <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                        <img src="/hackathon/StemLike.png" alt="STEM Like Her Logo" className="w-full h-full object-contain" />
+                        <img src="/hackathon/StemLike.png" alt="STEM Like Her Logo" className="w-full h-full object-contain" loading="lazy" decoding="async" />
                     </div>
                     <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                        <img src="/hackathon/AMSA.png" alt="AMSA Logo" className="w-full h-full object-contain" />
+                        <img src="/hackathon/AMSA.png" alt="AMSA Logo" className="w-full h-full object-contain" loading="lazy" decoding="async" />
                     </div>
                 </div>,
                 document.body
