@@ -152,7 +152,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
     return (
         <>
-            <div className="min-h-screen bg-[#03050a] text-white relative overflow-x-hidden" style={{ willChange: 'auto' }}>
+            <div className="min-h-screen bg-[#03050a] text-white relative [overflow:clip]" style={{ willChange: 'auto' }}>
                 {/* Black overlay that fades out */}
                 <div
                     className={`fixed inset-0 bg-black z-40 ${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
