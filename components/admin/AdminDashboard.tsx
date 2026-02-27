@@ -15,6 +15,7 @@ import { AdminMapsManagement } from "./AdminMapsManagement";
 import { AdminJourneyPeek } from "./AdminJourneyPeek";
 import { AdminDirectionFinder } from "./AdminDirectionFinder";
 import { AdminHackathonParticipants } from "./AdminHackathonParticipants";
+import { AdminHackathonAnalytics } from "./AdminHackathonAnalytics";
 import {
   Users,
   Activity,
@@ -97,7 +98,28 @@ export function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="hackathon" className="space-y-4">
-          <AdminHackathonParticipants key={`hackathon-${refreshKey}`} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Hackathon Management</CardTitle>
+              <CardDescription>
+                View hackathon participants and analytics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="participants" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="participants">Participants</TabsTrigger>
+                  <TabsTrigger value="analytics">Page Analytics</TabsTrigger>
+                </TabsList>
+                <TabsContent value="participants">
+                  <AdminHackathonParticipants key={`hackathon-${refreshKey}`} />
+                </TabsContent>
+                <TabsContent value="analytics">
+                  <AdminHackathonAnalytics />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
