@@ -124,7 +124,6 @@ export default function RegisterPage() {
     if (loading || !waterRef.current) return;
     setLoading(true);
     setError("");
-    console.log("Submitting form data:", form);
 
     let apiError = "";
     let apiSettled = false;
@@ -136,7 +135,6 @@ export default function RegisterPage() {
     })
       .then(async (res) => {
         const data = await res.json();
-        console.log("API Response:", res.status, data);
         if (!res.ok) apiError = data.error || "Registration failed";
       })
       .catch((err) => {
