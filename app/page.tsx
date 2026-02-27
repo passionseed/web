@@ -127,8 +127,16 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Robust check for anonymous users
+  const isAnonymous =
+    user?.is_anonymous === true ||
+    user?.app_metadata?.provider === "anonymous" ||
+    user?.aud === "anonymous" ||
+    false;
+
   // Check if logged-in user has completed their profile
-  if (user) {
+  console.log("HOME PAGE USER OBJECT:", JSON.stringify(user, null, 2));
+  if (user && !isAnonymous) {
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("full_name, username, date_of_birth")
@@ -151,7 +159,7 @@ export default async function Home() {
 
   return (
     <>
-      {user ? (
+      {user && !isAnonymous ? (
         <DashboardHome user={user} />
       ) : (
         <LandingPageWrapper>
