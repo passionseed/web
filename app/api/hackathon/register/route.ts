@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, generateSessionToken, SESSION_COOKIE, SESSION_EXPIRY_DAYS } from "@/lib/hackathon/auth";
 import { findParticipantByEmail, createParticipant, createSession } from "@/lib/hackathon/db";
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log("Register API received body:", body);
     const { name, email, phone, password, university, track, grade_level, experience_level, referral_source, bio, team_name } = body;
 
     if (!name || !email || !phone || !password || !university || !track || !grade_level || !experience_level || !referral_source || !bio) {
-      console.log("Missing required fields:", { name, email, phone, password, university, track, grade_level, experience_level, referral_source, bio });
       return NextResponse.json({ error: "All required fields must be filled" }, { status: 400 });
     }
 
@@ -19,7 +17,6 @@ export async function POST(req: NextRequest) {
 
     const existing = await findParticipantByEmail(email);
     if (existing) {
-      console.log("Email already registered:", email);
       return NextResponse.json({ error: "This email is already registered for the hackathon" }, { status: 409 });
     }
 
@@ -41,6 +38,15 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (err) {
     console.error("Hackathon register error:", err);
+    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    return await handlePOST(req);
+  } catch (err) {
+    console.error("Critical error in register API:", err);
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }
