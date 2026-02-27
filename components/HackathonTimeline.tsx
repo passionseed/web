@@ -72,7 +72,7 @@ function buildCfg(vw: number): CircleCfg {
     return { R, centerPct: 72, numSize: 40 };
   }
   if (vw < 1024) {
-    const R = Math.min(Math.round(vw * 0.50), 400);
+    const R = Math.min(Math.round(vw * 0.5), 400);
     return { R, centerPct: 62, numSize: 56 };
   }
   return { R: 480, centerPct: 55, numSize: 72 };
@@ -112,8 +112,16 @@ export default function HackathonTimeline() {
 
   // Correct cfg to real viewport width after mount, and keep in sync on resize
   useEffect(() => {
-    setCfg(buildCfg(window.innerWidth));
-    const onResize = () => setCfg(buildCfg(window.innerWidth));
+    let currentWidth = window.innerWidth;
+    setCfg(buildCfg(currentWidth));
+    const onResize = () => {
+      const newWidth = window.innerWidth;
+      // ONLY recalculate if width changes (ignores mobile address bar vertical rescale)
+      if (newWidth !== currentWidth) {
+        currentWidth = newWidth;
+        setCfg(buildCfg(newWidth));
+      }
+    };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -127,48 +135,60 @@ export default function HackathonTimeline() {
 
     itemDivsRef.current.forEach((el, i) => {
       if (!el) return;
-      gsap.set(el, { scale: i === 0 ? 1 : 0.5, opacity: itemOpacity(i), rotation: 0 });
+      gsap.set(el, {
+        scale: i === 0 ? 1 : 0.5,
+        opacity: itemOpacity(i),
+        rotation: 0,
+      });
     });
     numSpansRef.current.forEach((span, i) => {
       if (!span) return;
       gsap.set(span, { color: i === 0 ? "#e8f4fd" : "rgba(145,196,227,0.28)" });
     });
 
+    let ticking = false;
+
     const handleScroll = () => {
-      const scrolled = Math.max(0, -section.getBoundingClientRect().top);
-      const progress = Math.min(1, scrolled / totalScroll);
-      const rot = progress * (ITEMS.length - 1) * ANGLE_STEP;
-      const newActive = Math.round(progress * (ITEMS.length - 1));
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrolled = Math.max(0, -section.getBoundingClientRect().top);
+          const progress = Math.min(1, scrolled / totalScroll);
+          const rot = progress * (ITEMS.length - 1) * ANGLE_STEP;
+          const newActive = Math.round(progress * (ITEMS.length - 1));
 
-      gsap.to(circleRef.current, {
-        rotation: rot,
-        duration: 0.45,
-        ease: "power2.out",
-        overwrite: true,
-      });
+          gsap.to(circleRef.current, {
+            rotation: rot,
+            duration: 0.45,
+            ease: "power2.out",
+            overwrite: true,
+          });
 
-      itemDivsRef.current.forEach((el, i) => {
-        if (!el) return;
-        gsap.to(el, {
-          rotation: -rot,
-          scale: i === newActive ? 1 : 0.5,
-          opacity: itemOpacity(Math.abs(i - newActive)),
-          duration: 0.45,
-          ease: "power2.out",
-          overwrite: true,
+          itemDivsRef.current.forEach((el, i) => {
+            if (!el) return;
+            gsap.to(el, {
+              rotation: -rot,
+              scale: i === newActive ? 1 : 0.5,
+              opacity: itemOpacity(Math.abs(i - newActive)),
+              duration: 0.45,
+              ease: "power2.out",
+              overwrite: true,
+            });
+          });
+
+          numSpansRef.current.forEach((span, i) => {
+            if (!span) return;
+            gsap.to(span, {
+              color: i === newActive ? "#e8f4fd" : "rgba(145,196,227,0.28)",
+              duration: 0.35,
+              overwrite: true,
+            });
+          });
+
+          setActiveIndex(newActive);
+          ticking = false;
         });
-      });
-
-      numSpansRef.current.forEach((span, i) => {
-        if (!span) return;
-        gsap.to(span, {
-          color: i === newActive ? "#e8f4fd" : "rgba(145,196,227,0.28)",
-          duration: 0.35,
-          overwrite: true,
-        });
-      });
-
-      setActiveIndex(newActive);
+        ticking = true;
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -179,19 +199,21 @@ export default function HackathonTimeline() {
   const { R, centerPct, numSize } = cfg;
 
   // Derived positions (all relative to viewport left via calc)
-  const circleLEdge = `calc(${centerPct}% - ${R}px)`;   // left edge of circle = active point x
-  const dotLeft = `calc(${centerPct}% - ${R - numSize - 20}px)`;   // dot positioned right of number
-  const contentLeft = `calc(${centerPct}% - ${R - numSize - 50}px)`;  // content starts after dot
+  const circleLEdge = `calc(${centerPct}% - ${R}px)`; // left edge of circle = active point x
+  const dotLeft = `calc(${centerPct}% - ${R - numSize - 20}px)`; // dot positioned right of number
+  const contentLeft = `calc(${centerPct}% - ${R - numSize - 50}px)`; // content starts after dot
   // Max width: from content start to right viewport edge minus padding
   const contentMaxW = `calc(100% - (${centerPct}% - ${R - numSize - 50}px) - 20px)`;
 
   return (
     <section
       ref={sectionRef}
-      style={{ height: `calc(100vh + ${(ITEMS.length - 1) * SCROLL_PER_ITEM}px)` }}
+      style={{
+        height: `calc(100svh + ${(ITEMS.length - 1) * SCROLL_PER_ITEM}px)`,
+      }}
       className="relative"
     >
-      <div className="sticky top-0 h-screen overflow-hidden">
+      <div className="sticky top-0 h-[100svh] overflow-hidden">
         <div className="absolute inset-0 bg-[#03050a]" />
 
         {/* Ambient glow at active point */}
@@ -204,7 +226,8 @@ export default function HackathonTimeline() {
             width: Math.min(R * 0.7, 320),
             height: Math.min(R * 0.7, 320),
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(101,171,252,0.09) 0%, transparent 68%)",
+            background:
+              "radial-gradient(circle, rgba(101,171,252,0.09) 0%, transparent 68%)",
           }}
         />
 
@@ -248,11 +271,18 @@ export default function HackathonTimeline() {
                 }}
               >
                 <div
-                  ref={(el) => { itemDivsRef.current[i] = el; }}
-                  style={{ display: "inline-block", transformOrigin: "center center" }}
+                  ref={(el) => {
+                    itemDivsRef.current[i] = el;
+                  }}
+                  style={{
+                    display: "inline-block",
+                    transformOrigin: "center center",
+                  }}
                 >
                   <span
-                    ref={(el) => { numSpansRef.current[i] = el; }}
+                    ref={(el) => {
+                      numSpansRef.current[i] = el;
+                    }}
                     style={{
                       fontSize: numSize,
                       fontWeight: 700,
@@ -283,16 +313,24 @@ export default function HackathonTimeline() {
             height: 8,
             borderRadius: "50%",
             background: "#91C4E3",
-            boxShadow: "0 0 10px rgba(145,196,227,0.95), 0 0 22px rgba(145,196,227,0.45)",
+            boxShadow:
+              "0 0 10px rgba(145,196,227,0.95), 0 0 22px rgba(145,196,227,0.45)",
           }}
         />
 
         {/* Content panel */}
         <div
           className="absolute z-10"
-          style={{ left: contentLeft, top: "50%", transform: "translateY(-50%)" }}
+          style={{
+            left: contentLeft,
+            top: "50%",
+            transform: "translateY(-50%)",
+          }}
         >
-          <div key={activeIndex} style={{ animation: "tlFadeIn 0.38s ease forwards" }}>
+          <div
+            key={activeIndex}
+            style={{ animation: "tlFadeIn 0.38s ease forwards" }}
+          >
             <p
               style={{
                 color: "#65ABFC",

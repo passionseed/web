@@ -7,6 +7,7 @@ import { LandingFeatures } from "@/components/landing-features";
 import { LandingParents } from "@/components/landing-parents";
 import { WorkshopCategories } from "@/components/workshop-categories";
 import { CommunitySection } from "@/components/community-section";
+import { HackathonPromo } from "@/components/hackathon-promo";
 
 interface LandingPageWrapperProps {
   children?: React.ReactNode;
@@ -34,6 +35,7 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
       </div>
 
       <main className="flex flex-col">
+        <HackathonPromo />
         <LandingHero lang={lang} />
         <LandingFeatures lang={lang} />
         {children}
