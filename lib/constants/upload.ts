@@ -48,6 +48,7 @@ export const ALLOWED_GENERAL_TYPES = new Set([
 
 // Dangerous file extensions to block
 export const DANGEROUS_EXTENSIONS = [
+  // Executables
   ".exe",
   ".bat",
   ".cmd",
@@ -58,6 +59,33 @@ export const DANGEROUS_EXTENSIONS = [
   ".app",
   ".deb",
   ".rpm",
+  ".jar",
+  ".dll",
+  ".so",
+  ".bin",
+  ".hta",
+  ".ps1",
+  // Scripts
+  ".php",
+  ".php3",
+  ".php4",
+  ".php5",
+  ".phtml",
+  ".pl",
+  ".py",
+  ".sh",
+  ".cgi",
+  // Web
+  ".html",
+  ".htm",
+  ".shtml",
+  ".xhtml",
+  ".xml",
+  ".svg",
+  ".jsp",
+  ".asp",
+  ".aspx",
+  ".phps",
 ];
 
 // Upload configuration
