@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Music, ExternalLink, Search, Play, Pause, Loader2 } from "lucide-react";
-import { debounce } from "lodash";
+import { debounce } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Song {
