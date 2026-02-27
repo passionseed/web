@@ -440,12 +440,8 @@ export default function EditMapPage({
           const { id, ...contentData } = cc;
 
           if (!ic) {
-            // For new content, remove temp IDs
-            if (!id?.startsWith('temp_')) {
-              batchUpdate.content.create.push({ ...contentData, id });
-            } else {
-              batchUpdate.content.create.push(contentData);
-            }
+            // For new content, always exclude the id field and let the database generate it
+            batchUpdate.content.create.push(contentData);
           } else if (
             cc.content_type !== ic.content_type ||
             cc.content_title !== ic.content_title ||
