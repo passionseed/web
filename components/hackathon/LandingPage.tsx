@@ -38,6 +38,30 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
     const [mounted, setMounted] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
+    // Track page view for analytics
+    useEffect(() => {
+        // Track the page view
+        const trackPageView = async () => {
+            try {
+                await fetch("/api/hackathon/track-view", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        page_path: "/hackathon",
+                        referrer: document.referrer || null,
+                    }),
+                });
+            } catch (error) {
+                // Silently fail - analytics shouldn't break the user experience
+                console.debug("Failed to track page view:", error);
+            }
+        };
+
+        trackPageView();
+    }, []); // Run once on mount
+
     // Detect mobile devices for performance optimization
     useEffect(() => {
         const checkMobile = () => {
