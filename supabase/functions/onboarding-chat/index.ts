@@ -168,11 +168,10 @@ Deno.serve(async (req) => {
     let response: OnboardingResponse;
 
     if (mode === "chat") {
-      const text = await callGemini(
-        SYSTEM_PROMPTS.chat,
-        chat_history,
-        chat_history.length === 0 ? "Hi, I'm new here!" : undefined
-      );
+      const userMsg = chat_history.length === 0 
+        ? "Hi, I'm new here!" 
+        : chat_history[chat_history.length - 1].parts[0]?.text || "Continue";
+      const text = await callGemini(SYSTEM_PROMPTS.chat, chat_history, userMsg);
       const readyForInterests = text.includes("[READY_FOR_INTERESTS]");
       const cleanText = text.replace("[READY_FOR_INTERESTS]", "").trim();
 
@@ -181,11 +180,10 @@ Deno.serve(async (req) => {
         action: readyForInterests ? "transition_to_interests" : null,
       };
     } else if (mode === "generate_interests") {
-      const text = await callGemini(
-        SYSTEM_PROMPTS.generate_interests,
-        chat_history,
-        chat_history.length === 0 ? "Generate interest categories for me" : undefined
-      );
+      const userMsg = chat_history.length === 0 
+        ? "Generate interest categories for me" 
+        : chat_history[chat_history.length - 1].parts[0]?.text || "Continue";
+      const text = await callGemini(SYSTEM_PROMPTS.generate_interests, chat_history, userMsg);
       const parsed = parseJsonBlock(text);
       const categories = parsed.categories;
 
