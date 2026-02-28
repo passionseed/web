@@ -107,3 +107,61 @@ export async function GET() {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    // Check if user is admin
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin");
+
+    if (!roles || roles.length === 0) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
+    // Get participant IDs from request body
+    const { participantIds } = await request.json();
+
+    if (!participantIds || !Array.isArray(participantIds) || participantIds.length === 0) {
+      return NextResponse.json({ error: "No participant IDs provided" }, { status: 400 });
+    }
+
+    // Use service client to delete participants
+    const serviceClient = getServiceClient();
+
+    const { error: deleteError } = await serviceClient
+      .from("hackathon_participants")
+      .delete()
+      .in("id", participantIds);
+
+    if (deleteError) {
+      console.error("Error deleting participants:", deleteError);
+      return NextResponse.json(
+        { error: "Failed to delete participants" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      deletedCount: participantIds.length,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    console.error("Error in delete participants API:", err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
