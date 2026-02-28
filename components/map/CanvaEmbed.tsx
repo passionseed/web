@@ -9,6 +9,18 @@ interface CanvaEmbedProps {
   contentUrl: string;
 }
 
+const getSafeUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return url;
+    }
+  } catch {
+    // ignore
+  }
+  return "#";
+};
+
 const LoadingFallback = memo(({ url }: { url: string }) => (
   <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex flex-col items-center justify-center text-center p-6 animate-pulse">
     <div className="h-12 w-12 text-slate-400 mb-4 flex items-center justify-center">
@@ -29,7 +41,7 @@ const ErrorFallback = memo(({ url }: { url: string }) => (
       Unable to embed this Canva slide directly
     </p>
     <a
-      href={url}
+      href={getSafeUrl(url)}
       target="_blank"
       rel="noopener noreferrer"
       className="inline-flex items-center"
@@ -104,7 +116,16 @@ export const CanvaEmbed = memo(({ contentUrl }: CanvaEmbedProps) => {
   console.log("🎨 CanvaEmbed rendering for URL:", contentUrl);
 
   const isValidCanvaUrl = useMemo(() => {
-    return contentUrl.includes("canva.com/design/");
+    try {
+      const url = new URL(contentUrl);
+      return (
+        url.protocol === "https:" &&
+        (url.hostname === "canva.com" || url.hostname.endsWith(".canva.com")) &&
+        url.pathname.startsWith("/design/")
+      );
+    } catch {
+      return false;
+    }
   }, [contentUrl]);
 
   const embedUrl = useMemo(() => {
@@ -156,7 +177,7 @@ export const CanvaEmbed = memo(({ contentUrl }: CanvaEmbedProps) => {
         <p className="text-sm text-orange-600 mb-4">
           Please provide a valid Canva design URL
         </p>
-        <a href={contentUrl} target="_blank" rel="noopener noreferrer">
+        <a href={getSafeUrl(contentUrl)} target="_blank" rel="noopener noreferrer">
           <Button
             variant="outline"
             size="sm"
