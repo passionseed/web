@@ -1,0 +1,180 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")!;
+const GEMINI_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+
+interface ChatMessage {
+  role: "user" | "model";
+  parts: [{ text: string }];
+}
+
+interface RequestBody {
+  mode: "chat" | "generate_interests" | "suggest_careers";
+  chat_history: ChatMessage[];
+  user_context: {
+    name: string;
+    education_level: string;
+    selected_interests?: string[];
+  };
+}
+
+interface OnboardingResponse {
+  message: string;
+  action:
+    | null
+    | "transition_to_interests"
+    | "show_interest_categories"
+    | "show_career_suggestions";
+  action_data?: {
+    categories?: { name: string; statements: string[] }[];
+    careers?: string[];
+  };
+}
+
+const SYSTEM_PROMPTS: Record<string, string> = {
+  chat: `You are a friendly onboarding guide for Passion Seed, a Thai app that helps students discover their career paths. You are having a warm, encouraging conversation with a new user.
+
+Your goal is to understand their personality, values, and interests through natural conversation. Ask 2-4 thoughtful open-ended questions — one at a time. Keep responses concise and conversational (2-3 sentences max).
+
+When you feel you have enough context to identify 3-4 distinct interest themes, end your message with the exact token: [READY_FOR_INTERESTS]
+
+Do not mention this token to the user. Keep it casual and supportive.`,
+
+  generate_interests: `Based on the conversation history, generate exactly 3-4 interest categories that reflect this user's personality and values.
+
+For each category:
+- Give it a vivid, role-like name (e.g. "System Architect", "Human Connector", "Creative Catalyst")
+- Write exactly 6 statements in first person starting with "I" that someone in that role would deeply resonate with
+- Make statements specific and emotionally resonant, not generic
+
+Respond ONLY with valid JSON in this exact shape:
+{
+  "categories": [
+    {
+      "name": "Category Name",
+      "statements": ["I statement 1", "I statement 2", "I statement 3", "I statement 4", "I statement 5", "I statement 6"]
+    }
+  ]
+}`,
+
+  suggest_careers: `Based on the user's selected interest statements, suggest 6-8 specific career paths they might want to explore.
+
+Rules:
+- Be specific (e.g. "Product Designer" not "Designer")
+- Mix conventional and unconventional options
+- Bias toward careers that are explorable in a 4-5 day micro-journey format
+- Consider the Thai education context
+
+Respond ONLY with valid JSON:
+{
+  "careers": ["Career 1", "Career 2", "Career 3", "Career 4", "Career 5", "Career 6"]
+}`,
+};
+
+async function callGemini(
+  systemPrompt: string,
+  history: ChatMessage[],
+  userMessage?: string
+): Promise<string> {
+  const contents: ChatMessage[] = [...history];
+  if (userMessage) {
+    contents.push({ role: "user", parts: [{ text: userMessage }] });
+  }
+
+  const body = {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents,
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 1024,
+    },
+  };
+
+  const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini API error: ${err}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      },
+    });
+  }
+
+  try {
+    const body: RequestBody = await req.json();
+    const { mode, chat_history, user_context } = body;
+
+    let response: OnboardingResponse;
+
+    if (mode === "chat") {
+      const text = await callGemini(
+        SYSTEM_PROMPTS.chat.replace("{name}", user_context.name),
+        chat_history
+      );
+
+      const readyForInterests = text.includes("[READY_FOR_INTERESTS]");
+      const cleanText = text.replace("[READY_FOR_INTERESTS]", "").trim();
+
+      response = {
+        message: cleanText,
+        action: readyForInterests ? "transition_to_interests" : null,
+      };
+    } else if (mode === "generate_interests") {
+      const text = await callGemini(SYSTEM_PROMPTS.generate_interests, chat_history);
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON in Gemini response");
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      response = {
+        message: "Here are some themes I noticed about you. Select statements that feel true:",
+        action: "show_interest_categories",
+        action_data: { categories: parsed.categories },
+      };
+    } else if (mode === "suggest_careers") {
+      const interestContext = user_context.selected_interests?.join(", ") ?? "";
+      const prompt = `User's selected interests: ${interestContext}`;
+      const text = await callGemini(SYSTEM_PROMPTS.suggest_careers, [
+        { role: "user", parts: [{ text: prompt }] },
+      ]);
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON in Gemini response");
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      response = {
+        message: "Based on your interests, here are some paths you might want to try:",
+        action: "show_career_suggestions",
+        action_data: { careers: parsed.careers },
+      };
+    } else {
+      throw new Error(`Unknown mode: ${mode}`);
+    }
+
+    return new Response(JSON.stringify(response), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+});
