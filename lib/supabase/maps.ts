@@ -243,17 +243,11 @@ export const getMapsWithStats = async (
       );
 
       // OPTIMIZATION: Execute all initial queries concurrently
+      // Removed unnecessary user_roles query that was only used for debugging
       const [
-        userRolesResult,
         classroomMembershipsResult,
         teamMembershipsResult
       ] = await Promise.all([
-        // Get user's roles for debugging
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id),
-
         // Get user's classrooms (as student or instructor)
         supabase
           .from("classroom_memberships")
@@ -290,14 +284,8 @@ export const getMapsWithStats = async (
           .eq("user_id", user.id)
       ]);
 
-      const { data: userRoles } = userRolesResult;
       const { data: classroomMemberships } = classroomMembershipsResult;
       const { data: teamMemberships, error: teamMembershipError } = teamMembershipsResult;
-
-      console.log(
-        `User ${user.id} has roles:`,
-        userRoles?.map((r) => r.role) || ["no explicit roles"]
-      );
 
       if (classroomMemberships) {
         userClassrooms = classroomMemberships.flatMap(
