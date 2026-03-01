@@ -29,11 +29,12 @@ const ALLOWED_TAGS = [
   "tr",
   "th",
   "td",
+  "span",
 ];
 
 const ALLOWED_ATTR = {
   '*': [
-    "class",
+    "class", // Added class to allow Prism.js styling
     "title",
     "aria-label",
     "href",
