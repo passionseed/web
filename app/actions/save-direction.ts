@@ -134,10 +134,18 @@ export async function saveDirectionFinderResult(
 // DEV ONLY: Get all saved direction finder results (for loading previous sessions)
 export async function getDirectionFinderResults(limit = 10) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
 
   const { data, error } = await supabase
     .from("direction_finder_results")
     .select("id, user_id, result, created_at")
+    .eq("user_id", user.id) // SECURITY: Prevent IDOR, scope to current user
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -152,11 +160,19 @@ export async function getDirectionFinderResults(limit = 10) {
 // DEV ONLY: Get a specific direction finder result by ID
 export async function getDirectionFinderResultById(id: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
 
   const { data, error } = await supabase
     .from("direction_finder_results")
     .select("*")
     .eq("id", id)
+    .eq("user_id", user.id) // SECURITY: Prevent IDOR, ensure ownership
     .single();
 
   if (error) {
