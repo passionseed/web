@@ -1,0 +1,3 @@
+## 2024-05-24 - API route mapping optimization
+**Learning:** In Next.js server components / API routes, processing multiple records where each relies on aggregate counts from another query was written with `.find()` inside a `.reduce()` resulting in O(N*M) nested time complexity.
+**Action:** Replaced arrays and `.find()` with dictionary objects keyed by IDs, resolving the operation in O(N+M) time complexity. Always ensure derived data mapping is structured to O(1) lookups rather than finding in loops.

@@ -68,8 +68,11 @@ export async function GET(
 
     // Get additional data separately to avoid complex join issues
     const assignmentIds = assignments?.map((a) => a.id) || [];
-    let enrollmentCounts: any[] = [];
-    let nodeCounts: any[] = [];
+
+    // Use O(1) Map lookups instead of O(N) array finds
+    // ⚡ Bolt Performance Optimization: Changed array reduction to map for faster lookups
+    let enrollmentCountsMap: Record<string, any> = {};
+    let nodeCountsMap: Record<string, { node_count: number }> = {};
 
     if (assignmentIds.length > 0) {
       // Get enrollment counts and status
@@ -84,49 +87,42 @@ export async function GET(
         .select("assignment_id")
         .in("assignment_id", assignmentIds);
 
-      // Process enrollment data
-      enrollmentCounts = (enrollments || []).reduce((acc, enrollment) => {
-        const existingAssignment = acc.find(
-          (a) => a.assignment_id === enrollment.assignment_id
-        );
-        if (existingAssignment) {
-          existingAssignment.total_enrollments++;
-          existingAssignment[enrollment.status] =
-            (existingAssignment[enrollment.status] || 0) + 1;
-        } else {
-          acc.push({
-            assignment_id: enrollment.assignment_id,
-            total_enrollments: 1,
-            [enrollment.status]: 1,
-          });
-        }
-        return acc;
-      }, [] as any[]);
+      // Process enrollment data into O(1) lookup map
+      if (enrollments) {
+        enrollmentCountsMap = enrollments.reduce((acc, enrollment) => {
+          const aid = enrollment.assignment_id;
+          if (!acc[aid]) {
+            acc[aid] = {
+              total_enrollments: 0,
+              completed: 0,
+              in_progress: 0,
+              assigned: 0,
+            };
+          }
+          acc[aid].total_enrollments++;
+          acc[aid][enrollment.status] = (acc[aid][enrollment.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, any>);
+      }
 
-      // Process node data
-      nodeCounts = (nodes || []).reduce((acc, node) => {
-        const existingAssignment = acc.find(
-          (a) => a.assignment_id === node.assignment_id
-        );
-        if (existingAssignment) {
-          existingAssignment.node_count++;
-        } else {
-          acc.push({
-            assignment_id: node.assignment_id,
-            node_count: 1,
-          });
-        }
-        return acc;
-      }, [] as any[]);
+      // Process node data into O(1) lookup map
+      if (nodes) {
+        nodeCountsMap = nodes.reduce((acc, node) => {
+          const aid = node.assignment_id;
+          if (!acc[aid]) {
+            acc[aid] = { node_count: 0 };
+          }
+          acc[aid].node_count++;
+          return acc;
+        }, {} as Record<string, { node_count: number }>);
+      }
     }
 
     // Process assignments to add computed fields
     const processedAssignments =
       assignments?.map((assignment: any) => {
-        const enrollmentData =
-          enrollmentCounts.find((e) => e.assignment_id === assignment.id) || {};
-        const nodeData =
-          nodeCounts.find((n) => n.assignment_id === assignment.id) || {};
+        const enrollmentData = enrollmentCountsMap[assignment.id] || {};
+        const nodeData = nodeCountsMap[assignment.id] || {};
 
         return {
           ...assignment,
