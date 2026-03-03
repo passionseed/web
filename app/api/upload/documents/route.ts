@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { b2 } from "@/lib/backblaze";
 import {
   validateFile,
   ALLOWED_DOCUMENT_TYPES,
   MAX_DOCUMENT_SIZE,
 } from "@/lib/constants/upload";
+import { requireUploadAccess } from "@/lib/security/upload-access";
+import { safeServerError } from "@/lib/security/route-guards";
 
 function validateDocumentFile(file: File): { valid: boolean; error?: string } {
   return validateFile(
@@ -23,20 +24,6 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get("user-agent") || "";
     if (userAgent.includes("bot") || userAgent.includes("crawler")) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
-
-    // Authentication
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
     }
 
     // Parse form data
@@ -58,6 +45,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const access = await requireUploadAccess(nodeId);
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
     const fileValidation = validateDocumentFile(file);
     if (!fileValidation.valid) {
       return NextResponse.json(
@@ -66,76 +58,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has access to this node (skip validation for temporary node IDs)
-    if (!nodeId.startsWith("temp_node_")) {
-      try {
-        const { data: nodeExists, error: nodeError } = await supabase
-          .from("map_nodes")
-          .select("id, map_id, title")
-          .eq("id", nodeId)
-          .single();
-
-        if (nodeError || !nodeExists) {
-          console.error("Node validation error:", nodeError);
-          return NextResponse.json(
-            {
-              error: "Node not found or access denied",
-              details:
-                process.env.NODE_ENV === "development"
-                  ? nodeError?.message
-                  : undefined,
-            },
-            { status: 403 }
-          );
-        }
-
-        console.log("Node validation passed:", nodeExists.title);
-      } catch (validationError) {
-        console.error("Node validation exception:", validationError);
-        return NextResponse.json(
-          {
-            error: "Unable to validate node access",
-            details:
-              process.env.NODE_ENV === "development"
-                ? String(validationError)
-                : undefined,
-          },
-          { status: 500 }
-        );
-      }
-    } else {
-      console.log("Skipping node validation for temporary node ID:", nodeId);
-    }
-
     // Upload to Backblaze B2
-    let uploadResult;
-    try {
-      console.log("Starting B2 document upload for user:", user.id, "node:", nodeId);
-      uploadResult = await b2.uploadFile(file, user.id, nodeId);
-      console.log("B2 document upload successful:", uploadResult.fileName);
-    } catch (uploadError) {
-      console.error("B2 document upload failed:", uploadError);
-
-      const errorMessage =
-        uploadError instanceof Error
-          ? uploadError.message
-          : "Document upload service unavailable";
-      return NextResponse.json(
-        {
-          error: `Document upload failed: ${errorMessage}`,
-          details:
-            process.env.NODE_ENV === "development"
-              ? String(uploadError)
-              : undefined,
-        },
-        { status: 500 }
-      );
-    }
-
-    // Log successful upload
-    console.log(
-      `Document uploaded successfully: ${uploadResult.fileName} by user ${user.id}`
-    );
+    const uploadResult = await b2.uploadFile(file, access.userId, nodeId);
 
     return NextResponse.json({
       success: true,
@@ -149,16 +73,7 @@ export async function POST(request: NextRequest) {
       category: "document",
     });
   } catch (error) {
-    console.error("Document upload API error:", error);
-
-    return NextResponse.json(
-      {
-        error: "Internal server error. Please try again later.",
-        details:
-          process.env.NODE_ENV === "development" ? String(error) : undefined,
-      },
-      { status: 500 }
-    );
+    return safeServerError("Internal server error. Please try again later.", error);
   }
 }
 
