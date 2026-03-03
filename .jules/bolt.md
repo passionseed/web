@@ -1,0 +1,3 @@
+## 2024-03-03 - Replaced O(N²) array `.find()` in `.reduce()` and `.map()` with O(N) hash map lookups
+**Learning:** In list processing (e.g., matching database join results like enrollments to base records like assignments), nesting `.find()` calls inside `.reduce()` and `.map()` loops creates an O(N * M) or O(N²) bottleneck. This is a common pattern that degrades performance sharply as the dataset grows.
+**Action:** When aggregating database relations across lists, replace the output accumulator from an array to an object or a Map dictionary keyed by the ID. This ensures `O(1)` inserts inside the `.reduce()` loop and `O(1)` retrievals inside subsequent `.map()` operations, bringing the overall time complexity down to `O(N + M)`.
