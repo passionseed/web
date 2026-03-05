@@ -43,7 +43,8 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/hackathon') &&
-    !request.nextUrl.pathname.startsWith('/api/hackathon')
+    !request.nextUrl.pathname.startsWith('/api/hackathon') &&
+    !request.nextUrl.pathname.startsWith('/app/beta')
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
@@ -66,5 +67,4 @@ export async function updateSession(request: NextRequest) {
 
   return supabaseResponse
 }
-
 
