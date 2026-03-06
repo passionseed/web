@@ -112,17 +112,17 @@ export default function BetaInfoPage() {
                         <motion.div
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="inline-block"
+                            className="w-full sm:inline-block"
                         >
-                            <Link href="/app/beta/registration">
-                                <Button className="group relative h-16 w-auto overflow-hidden rounded-2xl bg-transparent border-none">
+                            <Link href="/app/beta/registration" className="block w-full sm:inline-block">
+                                <Button className="group relative h-16 w-full sm:w-auto overflow-hidden rounded-2xl bg-transparent border-none">
                                     <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 opacity-90 transition-opacity group-hover:opacity-100"></div>
                                     <motion.div
                                         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"
                                     />
-                                    <div className="relative z-10 flex items-center justify-center gap-4 text-white font-black text-3xl sm:text-4xl w-full h-full rounded-2xl shadow-[0_0_40px_rgba(249,115,22,0.3)] px-10">
+                                    <div className="relative z-10 flex items-center justify-center gap-3 text-white font-black text-2xl sm:text-4xl w-full h-full rounded-2xl shadow-[0_0_40px_rgba(249,115,22,0.3)] px-6 sm:px-10">
                                         <span>สมัคร (Register Now)</span>
-                                        <ArrowRight className="w-8 h-8 transition-transform group-hover:translate-x-1" />
+                                        <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 transition-transform group-hover:translate-x-1" />
                                     </div>
                                 </Button>
                             </Link>
