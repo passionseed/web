@@ -31,6 +31,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, RotateCcw, Copy } from "lucide-react";
 import Prism from "prismjs";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/security/sanitize-html";
 import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-javascript";
@@ -162,19 +163,23 @@ function SortableItem({
     };
 
     const highlightedHeader = useMemo(() => {
-        return Prism.highlight(
-            item.content,
-            Prism.languages.typescript || Prism.languages.javascript,
-            "typescript"
+        return sanitizeHtml(
+            Prism.highlight(
+                item.content,
+                Prism.languages.typescript || Prism.languages.javascript,
+                "typescript"
+            )
         );
     }, [item.content]);
 
     const highlightedFooter = useMemo(() => {
         if (!item.footer) return "";
-        return Prism.highlight(
-            item.footer,
-            Prism.languages.typescript || Prism.languages.javascript,
-            "typescript"
+        return sanitizeHtml(
+            Prism.highlight(
+                item.footer,
+                Prism.languages.typescript || Prism.languages.javascript,
+                "typescript"
+            )
         );
     }, [item.footer]);
 

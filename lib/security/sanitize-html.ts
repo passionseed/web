@@ -29,6 +29,7 @@ const ALLOWED_TAGS = [
   "tr",
   "th",
   "td",
+  "span", // Added for Prism.js highlighting
 ];
 
 const ALLOWED_ATTR = {
