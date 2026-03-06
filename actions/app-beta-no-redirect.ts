@@ -2,7 +2,6 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { redirect } from "next/navigation";
 
 type BetaFormField = {
   id: string;
@@ -180,7 +179,7 @@ async function getOrCreateBetaForm(supabase: ReturnType<typeof createAdminClient
   return formWithFields as unknown as BetaForm;
 }
 
-export async function registerAppBetaUser(formData: FormData) {
+export async function registerAppBetaUserNoRedirect(formData: FormData) {
   const fullName = sanitizeFieldValue(formData.get("full_name"));
   const nickname = sanitizeFieldValue(formData.get("nickname"));
   const email = sanitizeFieldValue(formData.get("email"));
@@ -191,91 +190,117 @@ export async function registerAppBetaUser(formData: FormData) {
   const motivation = sanitizeFieldValue(formData.get("motivation"));
 
   if (!fullName || !nickname || !email || !phone || !school || !grade || !platform || !motivation) {
-    throw new Error("Name, nickname, email, phone, school, grade, platform, and motivation are required.");
+    return {
+      success: false,
+      error: "Name, nickname, email, phone, school, grade, platform, and motivation are required.",
+    };
   }
 
   if (!email.includes("@")) {
-    throw new Error("Please enter a valid email address.");
+    return {
+      success: false,
+      error: "Please enter a valid email address.",
+    };
   }
 
-  const supabaseAdmin = createAdminClient();
-  const form = await getOrCreateBetaForm(supabaseAdmin);
-  const fields = (form.ps_form_fields || []).sort(
-    (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
-  );
+  try {
+    const supabaseAdmin = createAdminClient();
+    const form = await getOrCreateBetaForm(supabaseAdmin);
+    const fields = (form.ps_form_fields || []).sort(
+      (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
+    );
 
-  const fieldByLabel = new Map(fields.map((field) => [field.label, field.id]));
+    const fieldByLabel = new Map(fields.map((field) => [field.label, field.id]));
 
-  const missingField = BETA_FIELDS.find((field) => !fieldByLabel.has(field.label));
-  if (missingField) {
-    throw new Error(`Missing required form field: ${missingField.label}`);
+    const missingField = BETA_FIELDS.find((field) => !fieldByLabel.has(field.label));
+    if (missingField) {
+      return {
+        success: false,
+        error: `Missing required form field: ${missingField.label}`,
+      };
+    }
+
+    const supabase = await createClient();
+    const { data: userSession } = await supabase.auth.getUser();
+
+    const { data: submission, error: submissionError } = await supabaseAdmin
+      .from("ps_submissions")
+      .insert({
+        form_id: form.id,
+        user_id: userSession.user?.id ?? null,
+      })
+      .select("id")
+      .single();
+
+    if (submissionError || !submission) {
+      return {
+        success: false,
+        error: "Failed to save your registration.",
+      };
+    }
+
+    const answerRows = [
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("Full name")!,
+        answer_text: fullName,
+      },
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("Nickname")!,
+        answer_text: nickname,
+      },
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("Email address")!,
+        answer_text: email,
+      },
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("Phone number")!,
+        answer_text: phone,
+      },
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("School")!,
+        answer_text: school,
+      },
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("Grade")!,
+        answer_text: grade,
+      },
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("Platform")!,
+        answer_text: platform,
+      },
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("What interests you about testing?")!,
+        answer_text: motivation,
+      },
+    ];
+
+    const { error: answerError } = await supabaseAdmin
+      .from("ps_submission_answers")
+      .insert(answerRows);
+
+    if (answerError) {
+      return {
+        success: false,
+        error: "Failed to save your registration details.",
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Registration error:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred. Please try again.",
+    };
   }
-
-  const { data: userSession } = await createClient().auth.getUser();
-
-  const { data: submission, error: submissionError } = await supabaseAdmin
-    .from("ps_submissions")
-    .insert({
-      form_id: form.id,
-      user_id: userSession.user?.id ?? null,
-    })
-    .select("id")
-    .single();
-
-  if (submissionError || !submission) {
-    throw new Error("Failed to save your registration.");
-  }
-
-  const answerRows = [
-    {
-      submission_id: submission.id,
-      field_id: fieldByLabel.get("Full name")!,
-      answer_text: fullName,
-    },
-    {
-      submission_id: submission.id,
-      field_id: fieldByLabel.get("Nickname")!,
-      answer_text: nickname,
-    },
-    {
-      submission_id: submission.id,
-      field_id: fieldByLabel.get("Email address")!,
-      answer_text: email,
-    },
-    {
-      submission_id: submission.id,
-      field_id: fieldByLabel.get("Phone number")!,
-      answer_text: phone,
-    },
-    {
-      submission_id: submission.id,
-      field_id: fieldByLabel.get("School")!,
-      answer_text: school,
-    },
-    {
-      submission_id: submission.id,
-      field_id: fieldByLabel.get("Grade")!,
-      answer_text: grade,
-    },
-    {
-      submission_id: submission.id,
-      field_id: fieldByLabel.get("Platform")!,
-      answer_text: platform,
-    },
-    {
-      submission_id: submission.id,
-      field_id: fieldByLabel.get("What interests you about testing?")!,
-      answer_text: motivation,
-    },
-  ];
-
-  const { error: answerError } = await supabaseAdmin
-    .from("ps_submission_answers")
-    .insert(answerRows);
-
-  if (answerError) {
-    throw new Error("Failed to save your registration details.");
-  }
-
-  redirect("/app/beta/success");
 }

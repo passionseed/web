@@ -16,6 +16,7 @@ import { AdminJourneyPeek } from "./AdminJourneyPeek";
 import { AdminDirectionFinder } from "./AdminDirectionFinder";
 import { AdminHackathonParticipants } from "./AdminHackathonParticipants";
 import { AdminHackathonAnalytics } from "./AdminHackathonAnalytics";
+import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
 import {
   Users,
   Activity,
@@ -25,6 +26,7 @@ import {
   Archive,
   Compass,
   Trophy,
+  TestTube,
 } from "lucide-react";
 
 export function AdminDashboard() {
@@ -60,6 +62,10 @@ export function AdminDashboard() {
           <TabsTrigger value="hackathon" className="flex items-center gap-2">
             <Trophy className="h-4 w-4" />
             Hackathon
+          </TabsTrigger>
+          <TabsTrigger value="beta" className="flex items-center gap-2">
+            <TestTube className="h-4 w-4" />
+            Beta
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -120,6 +126,10 @@ export function AdminDashboard() {
               </Tabs>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="beta" className="space-y-4">
+          <AdminBetaRegistrations key={`beta-${refreshKey}`} />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">

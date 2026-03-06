@@ -17,7 +17,7 @@ export default function DirectionFinderPage() {
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="mb-8 flex items-center gap-4">
+        <div className="mb-8 flex items-center justify-between gap-4">
           <Button
             variant="ghost"
             size="sm"
@@ -25,6 +25,14 @@ export default function DirectionFinderPage() {
             className="text-slate-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/me")}
+            className="text-slate-400 hover:text-white border-slate-700"
+          >
+            Skip for now
           </Button>
         </div>
 
