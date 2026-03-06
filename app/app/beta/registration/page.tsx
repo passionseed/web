@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Rocket, Sparkles, Zap, ChevronRight, Upload, Share2, Download, CheckCircle2, ArrowRight } from "lucide-react";
+import { Rocket, Sparkles, Zap, ChevronRight, Upload, Share2, Download, CheckCircle2, ArrowRight, Copy, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
 import { registerAppBetaUserNoRedirect } from "@/actions/app-beta-no-redirect";
@@ -77,6 +77,7 @@ export default function AppBetaPage() {
   const [currentStep, setCurrentStep] = useState<"registration" | "invite">("registration");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "error" | "success" | "info" } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const showToast = (message: string, type: "error" | "success" | "info" = "error") => {
     setToast({ message, type });
@@ -144,15 +145,22 @@ export default function AppBetaPage() {
     if (!ticketRef.current) return;
 
     try {
-      const canvas = await html2canvas(ticketRef.current, {
+      // Temporarily remove drop-shadow filter so html2canvas can produce a clean transparent PNG
+      const el = ticketRef.current;
+      const prevFilter = el.style.filter;
+      el.style.filter = "none";
+
+      const canvas = await html2canvas(el, {
         scale: 2,
         backgroundColor: null,
         useCORS: true,
       });
 
+      el.style.filter = prevFilter;
+
       const link = document.createElement("a");
       link.download = "passionseed-beta-ticket.png";
-      link.href = canvas.toDataURL();
+      link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (error) {
       console.error("Failed to download ticket:", error);
@@ -163,11 +171,18 @@ export default function AppBetaPage() {
     if (!ticketRef.current) return;
 
     try {
-      const canvas = await html2canvas(ticketRef.current, {
+      // Temporarily remove drop-shadow filter so html2canvas produces a clean transparent PNG
+      const el = ticketRef.current;
+      const prevFilter = el.style.filter;
+      el.style.filter = "none";
+
+      const canvas = await html2canvas(el, {
         scale: 2,
         backgroundColor: null,
         useCORS: true,
       });
+
+      el.style.filter = prevFilter;
 
       canvas.toBlob(async (blob) => {
         if (!blob) return;
@@ -177,7 +192,7 @@ export default function AppBetaPage() {
         if (navigator.share && navigator.canShare({ files: [file] })) {
           await navigator.share({
             title: "เข้าร่วม Close Beta Test กับ Passion Seed",
-            text: "เข้าร่วม Close Beta Test กับ Passion Seed แอปสำหรับนักเรียนมัธยมปลายเพื่อทดสอบคณะที่เหมาะสำหรับคุณ และ วางแผนมหาลัยที่ใช่ passionseed.org/app/beta",
+            text: "เข้าร่วม Close Beta Test กับ Passion Seed แอปสำหรับนักเรียนมัธยมปลายเพื่อทดสอบคณะที่เหมาะสำหรับคุณ และ วางแผนมหาลัยที่ใช่ https://www.passionseed.org/app/beta",
             files: [file],
           });
         } else {
@@ -187,6 +202,18 @@ export default function AppBetaPage() {
       });
     } catch (error) {
       console.error("Failed to share ticket:", error);
+    }
+  };
+
+  const handleCopyInvite = async () => {
+    const text = "เข้าร่วม Close Beta Test กับ Passion Seed แอปสำหรับนักเรียนมัธยมปลายเพื่อทดสอบคณะที่เหมาะสำหรับคุณ และ วางแผนมหาลัยที่ใช่ https://www.passionseed.org/app/beta";
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      showToast("คัดลอกข้อความแล้ว!", "success");
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      showToast("ไม่สามารถคัดลอกได้ กรุณาลองใหม่");
     }
   };
 
@@ -660,14 +687,23 @@ export default function AppBetaPage() {
                   </div>
                 </div>
 
-                {/* Share Button */}
+                {/* Share / Copy Button */}
                 <div className="flex gap-4 justify-center">
+                  {/* Mobile: native share */}
                   <Button
                     onClick={handleShareTicket}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl transition-all"
+                    className="md:hidden bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl transition-all"
                   >
                     <Share2 className="w-4 h-4 mr-2" />
                     แชร์ตั๋ว
+                  </Button>
+                  {/* Desktop: copy invite text */}
+                  <Button
+                    onClick={handleCopyInvite}
+                    className="hidden md:flex items-center bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl transition-all"
+                  >
+                    {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                    {copied ? "คัดลอกแล้ว!" : "คัดลอกข้อความเชิญ"}
                   </Button>
                 </div>
               </motion.div>
