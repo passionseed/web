@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 const BETA_FORM_TOKEN = "2d1a7a73-e3dd-4c5a-b0d5-1b7f5a5c2e11";
 
 export async function GET() {
   try {
+    // Use regular client only for auth check
     const supabase = await createClient();
 
-    // Check if user is admin
     const {
       data: { user },
       error: authError,
@@ -27,8 +28,11 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Use admin client to bypass RLS for reading submissions
+    const supabaseAdmin = createAdminClient();
+
     // Get the beta form
-    const { data: form, error: formError } = await supabase
+    const { data: form, error: formError } = await supabaseAdmin
       .from("ps_feedback_forms")
       .select("id")
       .eq("token", BETA_FORM_TOKEN)
@@ -41,8 +45,8 @@ export async function GET() {
       );
     }
 
-    // Get all submissions for this form
-    const { data: submissions, error: submissionsError } = await supabase
+    // Get all submissions for this form using admin client
+    const { data: submissions, error: submissionsError } = await supabaseAdmin
       .from("ps_submissions")
       .select(
         `
@@ -94,6 +98,7 @@ export async function GET() {
         grade: answers["Grade"] || "",
         platform: answers["Platform"] || "",
         motivation: answers["What interests you about testing?"] || "",
+        faculty_interest: answers["Faculty of Interest"] || "",
       };
     });
 

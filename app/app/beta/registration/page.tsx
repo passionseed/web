@@ -50,12 +50,38 @@ const GlowingInputWrap = ({ children, delay }: { children: React.ReactNode; dela
   );
 };
 
+// Custom toast notification
+const Toast = ({ message, type, onClose }: { message: string; type: "error" | "success" | "info"; onClose: () => void }) => {
+  const colors = {
+    error: "bg-red-500/20 border-red-500/50 text-red-200",
+    success: "bg-emerald-500/20 border-emerald-500/50 text-emerald-200",
+    info: "bg-blue-500/20 border-blue-500/50 text-blue-200",
+  };
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+      className={`fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-4 rounded-2xl border backdrop-blur-xl shadow-2xl max-w-md w-[92vw] ${colors[type]}`}
+    >
+      <span className="flex-1 text-sm font-medium leading-snug">{message}</span>
+      <button onClick={onClose} className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity text-lg leading-none">&times;</button>
+    </motion.div>
+  );
+};
+
 export default function AppBetaPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<"registration" | "invite">("registration");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "error" | "success" | "info" } | null>(null);
+
+  const showToast = (message: string, type: "error" | "success" | "info" = "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   // Store registration form data to submit after evidence upload
   const [registrationData, setRegistrationData] = useState<FormData | null>(null);
@@ -91,19 +117,20 @@ export default function AppBetaPage() {
     const school = formData.get("school");
     const grade = formData.get("grade");
     const platform = formData.get("platform");
+    const facultyInterest = formData.get("faculty_interest");
     const motivation = formData.get("motivation");
 
-    if (!fullName || !nickname || !email || !phone || !school || !grade || !platform || !motivation) {
-      alert("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+    if (!fullName || !nickname || !email || !phone || !school || !grade || !platform || !facultyInterest || !motivation) {
+      showToast("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       setIsSubmitting(false);
       return;
     }
 
-    // Store form data to submit after evidence upload
+    // Store form data — DB save happens after evidence upload
     setRegistrationData(formData);
     setIsSubmitting(false);
 
-    // Move to invite step without saving to database yet
+    // Move to invite step
     setCurrentStep("invite");
   };
 
@@ -167,28 +194,28 @@ export default function AppBetaPage() {
     e.preventDefault();
 
     if (!file) {
-      alert("กรุณาอัพโหลดรูปภาพหลักฐานที่แสดงว่าคุณได้เชิญเพื่อน");
+      showToast("กรุณาอัพโหลดรูปภาพหลักฐานที่แสดงว่าคุณได้เชิญเพื่อน");
       return;
     }
 
     if (!registrationData) {
-      alert("ไม่พบข้อมูลการลงทะเบียน กรุณาลองใหม่อีกครั้ง");
+      showToast("ไม่พบข้อมูลการลงทะเบียน กรุณาลองใหม่อีกครั้ง");
       return;
     }
 
     setUploading(true);
 
     try {
-      // Now save the registration to database
+      // Save registration to database after evidence is uploaded
       const result = await registerAppBetaUserNoRedirect(registrationData);
 
       if (!result.success) {
-        alert(result.error || "เกิดข้อผิดพลาดในการลงทะเบียน");
+        showToast(result.error || "เกิดข้อผิดพลาดในการลงทะเบียน");
         setUploading(false);
         return;
       }
 
-      // Simulate evidence upload delay (you can add actual file upload logic here later)
+      // Simulate evidence upload delay (actual file upload can be added later)
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setUploadComplete(true);
@@ -200,7 +227,7 @@ export default function AppBetaPage() {
       }, 1000);
     } catch (error) {
       console.error("Submit error:", error);
-      alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      showToast("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
       setUploading(false);
     }
   };
@@ -209,6 +236,13 @@ export default function AppBetaPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#0A0A0B] selection:bg-purple-500/30 text-slate-200 font-[family-name:var(--font-kodchasan)] flex items-center justify-center py-16 px-4 sm:px-6">
+      {/* Toast notification */}
+      <AnimatePresence>
+        {toast && (
+          <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+        )}
+      </AnimatePresence>
+
       {/* Animated Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <FloatingOrb color="bg-blue-600/30" size="40vw" initialX="-10%" initialY="10%" duration={15} delay={0} />
@@ -436,9 +470,25 @@ export default function AppBetaPage() {
                       </GlowingInputWrap>
                     </div>
 
+                    <GlowingInputWrap delay={0.92}>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="faculty_interest" className="text-xs font-medium text-slate-400 uppercase tracking-wider">สนใจเข้าคณะไหนมากสุด / Faculty of Interest</Label>
+                        <Input
+                          id="faculty_interest"
+                          name="faculty_interest"
+                          type="text"
+                          required
+                          placeholder="e.g. Engineering, Medicine, Arts"
+                          onFocus={() => setActiveInput('faculty_interest')}
+                          onBlur={() => setActiveInput(null)}
+                          className="bg-black/40 border-white/10 text-white focus:border-purple-500/50 focus:ring-purple-500/20 placeholder:text-slate-600 transition-all h-12 rounded-xl"
+                        />
+                      </div>
+                    </GlowingInputWrap>
+
                     <GlowingInputWrap delay={0.95}>
                       <div className="space-y-1.5">
-                        <Label htmlFor="motivation" className="text-xs font-medium text-slate-400 uppercase tracking-wider">แรงบันดาลใจ / Motivation</Label>
+                        <Label htmlFor="motivation" className="text-xs font-medium text-slate-400 uppercase tracking-wider">อะไรทำให้สนใจเข้าร่วม Close Beta Test / Motivation</Label>
                         <Textarea
                           id="motivation"
                           name="motivation"

@@ -41,6 +41,7 @@ interface BetaRegistration {
   grade: string;
   platform: string;
   motivation: string;
+  faculty_interest: string;
 }
 
 type ChartDataType = "platform" | "grade" | "school";
@@ -64,6 +65,8 @@ export function AdminBetaRegistrations() {
   const [searchQuery, setSearchQuery] = useState("");
   const [chartDataType, setChartDataType] = useState<ChartDataType>("platform");
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchRegistrations();
   }, []);
@@ -75,9 +78,13 @@ export function AdminBetaRegistrations() {
 
       if (response.ok && data.registrations) {
         setRegistrations(data.registrations);
+      } else {
+        setError(`API error (${response.status}): ${data.error || "Unknown error"}`);
+        console.error("API error:", data);
       }
     } catch (error) {
       console.error("Error fetching registrations:", error);
+      setError("Network error — could not reach the API.");
     } finally {
       setLoading(false);
     }
@@ -135,6 +142,17 @@ export function AdminBetaRegistrations() {
       <Card>
         <CardContent className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
+          <p className="text-sm font-semibold text-destructive">Failed to load registrations</p>
+          <p className="text-xs text-muted-foreground">{error}</p>
         </CardContent>
       </Card>
     );
@@ -274,6 +292,7 @@ export function AdminBetaRegistrations() {
                   <TableHead>Phone</TableHead>
                   <TableHead>School</TableHead>
                   <TableHead>Grade</TableHead>
+                  <TableHead>Faculty Interest</TableHead>
                   <TableHead>Platform</TableHead>
                   <TableHead>Registered</TableHead>
                 </TableRow>
@@ -282,7 +301,7 @@ export function AdminBetaRegistrations() {
                 {filteredRegistrations.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center text-muted-foreground"
                     >
                       {searchQuery
@@ -311,6 +330,9 @@ export function AdminBetaRegistrations() {
                       <TableCell>
                         <Badge variant="outline">{registration.grade}</Badge>
                       </TableCell>
+                      <TableCell className="text-sm">
+                        {registration.faculty_interest || "-"}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant="secondary"
@@ -318,8 +340,8 @@ export function AdminBetaRegistrations() {
                             registration.platform.toLowerCase().includes("ios")
                               ? "bg-blue-500/10 text-blue-500"
                               : registration.platform.toLowerCase().includes("android")
-                              ? "bg-green-500/10 text-green-500"
-                              : "bg-purple-500/10 text-purple-500"
+                                ? "bg-green-500/10 text-green-500"
+                                : "bg-purple-500/10 text-purple-500"
                           }
                         >
                           {registration.platform}
