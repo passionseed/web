@@ -68,6 +68,12 @@ const BETA_FIELDS = [
     is_required: true,
     order_index: 7,
   },
+  {
+    label: "Faculty of Interest",
+    field_type: "text" as const,
+    is_required: true,
+    order_index: 8,
+  },
 ] as const;
 
 function sanitizeFieldValue(value: FormDataEntryValue | null): string {
@@ -83,10 +89,13 @@ async function getOrCreateBetaForm(supabase: ReturnType<typeof createAdminClient
 
   if (!fetchError && existingForm) {
     const existing = existingForm as unknown as BetaForm;
+    const existingLabels = new Set((existing.ps_form_fields || []).map((f) => f.label));
 
-    if (!existing.ps_form_fields || existing.ps_form_fields.length === 0) {
+    const missingFields = BETA_FIELDS.filter((f) => !existingLabels.has(f.label));
+
+    if (missingFields.length > 0) {
       await supabase.from("ps_form_fields").insert(
-        BETA_FIELDS.map((field) => ({
+        missingFields.map((field) => ({
           form_id: existing.id,
           label: field.label,
           field_type: field.field_type,
@@ -95,21 +104,19 @@ async function getOrCreateBetaForm(supabase: ReturnType<typeof createAdminClient
           options: null,
         }))
       );
-
-      const { data: updatedForm, error: updatedFormError } = await supabase
-        .from("ps_feedback_forms")
-        .select("id, ps_form_fields(*)")
-        .eq("id", existing.id)
-        .single();
-
-      if (updatedFormError) {
-        throw new Error("Failed to load beta registration form.");
-      }
-
-      return updatedForm as unknown as BetaForm;
     }
 
-    return existing;
+    const { data: updatedForm, error: updatedFormError } = await supabase
+      .from("ps_feedback_forms")
+      .select("id, ps_form_fields(*)")
+      .eq("id", existing.id)
+      .single();
+
+    if (updatedFormError) {
+      throw new Error("Failed to load beta registration form.");
+    }
+
+    return updatedForm as unknown as BetaForm;
   }
 
   if (fetchError && (fetchError as { code?: string }).code !== "PGRST116") {
@@ -188,11 +195,12 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
   const grade = sanitizeFieldValue(formData.get("grade"));
   const platform = sanitizeFieldValue(formData.get("platform"));
   const motivation = sanitizeFieldValue(formData.get("motivation"));
+  const facultyInterest = sanitizeFieldValue(formData.get("faculty_interest"));
 
-  if (!fullName || !nickname || !email || !phone || !school || !grade || !platform || !motivation) {
+  if (!fullName || !nickname || !email || !phone || !school || !grade || !platform || !motivation || !facultyInterest) {
     return {
       success: false,
-      error: "Name, nickname, email, phone, school, grade, platform, and motivation are required.",
+      error: "Name, nickname, email, phone, school, grade, platform, faculty interest, and motivation are required.",
     };
   }
 
@@ -279,6 +287,11 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
         submission_id: submission.id,
         field_id: fieldByLabel.get("What interests you about testing?")!,
         answer_text: motivation,
+      },
+      {
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("Faculty of Interest")!,
+        answer_text: facultyInterest,
       },
     ];
 
