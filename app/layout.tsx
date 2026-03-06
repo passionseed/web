@@ -8,6 +8,7 @@ import {
   Mitr,
   Poppins,
   Reenie_Beanie,
+  Kodchasan,
 } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
@@ -65,6 +66,12 @@ const reenieBeanie = Reenie_Beanie({
   variable: "--font-reenie-beanie",
 });
 
+const kodchasan = Kodchasan({
+  weight: ["200", "300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  variable: "--font-kodchasan",
+});
+
 export const metadata: Metadata = {
   title: "Passion Seed",
   description: "Discover and nurture your passions",
@@ -116,7 +123,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${mitr.variable} ${poppins.variable} ${reenieBeanie.variable}`}
+        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${mitr.variable} ${poppins.variable} ${reenieBeanie.variable} ${kodchasan.variable}`}
       >
         <ThemeProvider
           attribute="class"
