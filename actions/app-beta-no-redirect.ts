@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { sendBetaSignupNotification } from "./discord-notifications";
 
 type BetaFormField = {
   id: string;
@@ -80,7 +81,9 @@ function sanitizeFieldValue(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-async function getOrCreateBetaForm(supabase: ReturnType<typeof createAdminClient>): Promise<BetaForm> {
+async function getOrCreateBetaForm(
+  supabase: ReturnType<typeof createAdminClient>,
+): Promise<BetaForm> {
   const { data: existingForm, error: fetchError } = await supabase
     .from("ps_feedback_forms")
     .select("id, is_active, ps_form_fields(*)")
@@ -89,9 +92,13 @@ async function getOrCreateBetaForm(supabase: ReturnType<typeof createAdminClient
 
   if (!fetchError && existingForm) {
     const existing = existingForm as unknown as BetaForm;
-    const existingLabels = new Set((existing.ps_form_fields || []).map((f) => f.label));
+    const existingLabels = new Set(
+      (existing.ps_form_fields || []).map((f) => f.label),
+    );
 
-    const missingFields = BETA_FIELDS.filter((f) => !existingLabels.has(f.label));
+    const missingFields = BETA_FIELDS.filter(
+      (f) => !existingLabels.has(f.label),
+    );
 
     if (missingFields.length > 0) {
       await supabase.from("ps_form_fields").insert(
@@ -102,7 +109,7 @@ async function getOrCreateBetaForm(supabase: ReturnType<typeof createAdminClient
           is_required: field.is_required,
           order_index: field.order_index,
           options: null,
-        }))
+        })),
       );
     }
 
@@ -166,7 +173,7 @@ async function getOrCreateBetaForm(supabase: ReturnType<typeof createAdminClient
       is_required: field.is_required,
       order_index: field.order_index,
       options: null,
-    }))
+    })),
   );
 
   if (fieldError) {
@@ -197,10 +204,21 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
   const motivation = sanitizeFieldValue(formData.get("motivation"));
   const facultyInterest = sanitizeFieldValue(formData.get("faculty_interest"));
 
-  if (!fullName || !nickname || !email || !phone || !school || !grade || !platform || !motivation || !facultyInterest) {
+  if (
+    !fullName ||
+    !nickname ||
+    !email ||
+    !phone ||
+    !school ||
+    !grade ||
+    !platform ||
+    !motivation ||
+    !facultyInterest
+  ) {
     return {
       success: false,
-      error: "Name, nickname, email, phone, school, grade, platform, faculty interest, and motivation are required.",
+      error:
+        "Name, nickname, email, phone, school, grade, platform, faculty interest, and motivation are required.",
     };
   }
 
@@ -215,12 +233,16 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
     const supabaseAdmin = createAdminClient();
     const form = await getOrCreateBetaForm(supabaseAdmin);
     const fields = (form.ps_form_fields || []).sort(
-      (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
+      (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0),
     );
 
-    const fieldByLabel = new Map(fields.map((field) => [field.label, field.id]));
+    const fieldByLabel = new Map(
+      fields.map((field) => [field.label, field.id]),
+    );
 
-    const missingField = BETA_FIELDS.find((field) => !fieldByLabel.has(field.label));
+    const missingField = BETA_FIELDS.find(
+      (field) => !fieldByLabel.has(field.label),
+    );
     if (missingField) {
       return {
         success: false,
@@ -305,6 +327,19 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
         error: "Failed to save your registration details.",
       };
     }
+
+    // Send Discord notification (non-blocking)
+    sendBetaSignupNotification({
+      fullName,
+      nickname,
+      email,
+      phone,
+      school,
+      grade,
+      platform,
+      motivation,
+      facultyInterest,
+    }).catch(console.error);
 
     return {
       success: true,
