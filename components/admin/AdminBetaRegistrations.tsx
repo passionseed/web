@@ -25,9 +25,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search, Users, PieChart as PieChartIcon } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  Users,
+  PieChart as PieChartIcon,
+  Filter,
+} from "lucide-react";
 import { format } from "date-fns";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+} from "recharts";
+import { getBetaFunnelStats } from "@/actions/beta-funnel";
 
 interface BetaRegistration {
   id: string;
@@ -42,6 +56,14 @@ interface BetaRegistration {
   platform: string;
   motivation: string;
   faculty_interest: string;
+}
+
+interface FunnelStats {
+  total: number;
+  completed: number;
+  abandoned: number;
+  completionRate: string;
+  recentAbandoned: number;
 }
 
 type ChartDataType = "platform" | "grade" | "school";
@@ -64,12 +86,24 @@ export function AdminBetaRegistrations() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [chartDataType, setChartDataType] = useState<ChartDataType>("platform");
-
+  const [funnelStats, setFunnelStats] = useState<FunnelStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRegistrations();
+    fetchFunnelStats();
   }, []);
+
+  async function fetchFunnelStats() {
+    try {
+      const stats = await getBetaFunnelStats();
+      if (stats) {
+        setFunnelStats(stats);
+      }
+    } catch (error) {
+      console.error("Error fetching funnel stats:", error);
+    }
+  }
 
   async function fetchRegistrations() {
     try {
@@ -79,7 +113,9 @@ export function AdminBetaRegistrations() {
       if (response.ok && data.registrations) {
         setRegistrations(data.registrations);
       } else {
-        setError(`API error (${response.status}): ${data.error || "Unknown error"}`);
+        setError(
+          `API error (${response.status}): ${data.error || "Unknown error"}`,
+        );
         console.error("API error:", data);
       }
     } catch (error) {
@@ -133,8 +169,11 @@ export function AdminBetaRegistrations() {
   const chartData = getChartData();
   const stats = {
     total: registrations.length,
-    ios: registrations.filter((r) => r.platform.toLowerCase().includes("ios")).length,
-    android: registrations.filter((r) => r.platform.toLowerCase().includes("android")).length,
+    ios: registrations.filter((r) => r.platform.toLowerCase().includes("ios"))
+      .length,
+    android: registrations.filter((r) =>
+      r.platform.toLowerCase().includes("android"),
+    ).length,
   };
 
   if (loading) {
@@ -151,7 +190,9 @@ export function AdminBetaRegistrations() {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
-          <p className="text-sm font-semibold text-destructive">Failed to load registrations</p>
+          <p className="text-sm font-semibold text-destructive">
+            Failed to load registrations
+          </p>
           <p className="text-xs text-muted-foreground">{error}</p>
         </CardContent>
       </Card>
@@ -206,6 +247,57 @@ export function AdminBetaRegistrations() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Funnel Analytics */}
+      {funnelStats && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              <CardTitle>Registration Funnel</CardTitle>
+            </div>
+            <CardDescription>
+              Track users who completed form vs uploaded evidence
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Reached Invite Step
+                </p>
+                <p className="text-2xl font-bold">{funnelStats.total}</p>
+                <p className="text-xs text-muted-foreground">Completed form</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Completed</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {funnelStats.completed}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Uploaded evidence
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Abandoned</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {funnelStats.abandoned}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {funnelStats.recentAbandoned} recently (&gt;1h)
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Completion Rate</p>
+                <p className="text-2xl font-bold">
+                  {funnelStats.completionRate}%
+                </p>
+                <p className="text-xs text-muted-foreground">Form → Upload</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Pie Chart */}
       <Card>
@@ -339,7 +431,9 @@ export function AdminBetaRegistrations() {
                           className={
                             registration.platform.toLowerCase().includes("ios")
                               ? "bg-blue-500/10 text-blue-500"
-                              : registration.platform.toLowerCase().includes("android")
+                              : registration.platform
+                                    .toLowerCase()
+                                    .includes("android")
                                 ? "bg-green-500/10 text-green-500"
                                 : "bg-purple-500/10 text-purple-500"
                           }
@@ -350,7 +444,7 @@ export function AdminBetaRegistrations() {
                       <TableCell className="text-sm text-muted-foreground">
                         {format(
                           new Date(registration.created_at),
-                          "MMM d, yyyy HH:mm"
+                          "MMM d, yyyy HH:mm",
                         )}
                       </TableCell>
                     </TableRow>
@@ -380,7 +474,7 @@ export function AdminBetaRegistrations() {
                         <Badge variant="outline" className="text-xs">
                           {format(
                             new Date(registration.created_at),
-                            "MMM d, yyyy"
+                            "MMM d, yyyy",
                           )}
                         </Badge>
                       </div>

@@ -38,6 +38,10 @@ import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
 import { registerAppBetaUserNoRedirect } from "@/actions/app-beta-no-redirect";
 import { sendBetaEvidenceToDiscord } from "@/actions/discord-notifications";
+import {
+  trackBetaRegistrationStarted,
+  trackBetaRegistrationCompleted,
+} from "@/actions/beta-funnel";
 
 // Liquid Orb for dark background
 const LiquidOrb = ({
@@ -245,6 +249,12 @@ export default function AppBetaPage() {
     setRegistrationData(formData);
     setIsSubmitting(false);
 
+    // Track funnel: user reached invite step
+    trackBetaRegistrationStarted({
+      email: email as string,
+      fullName: fullName as string,
+    }).catch(console.error);
+
     // Move to invite step
     setCurrentStep("invite");
   };
@@ -363,6 +373,9 @@ export default function AppBetaPage() {
       const fullName = registrationData.get("full_name") as string;
       const email = registrationData.get("email") as string;
       await sendBetaEvidenceToDiscord(file, { fullName, email });
+
+      // Track funnel: registration completed
+      await trackBetaRegistrationCompleted(email);
 
       setUploadComplete(true);
       setUploading(false);
