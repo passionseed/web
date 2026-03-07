@@ -63,9 +63,10 @@ export async function sendBetaSignupNotification(data: BetaSignupData) {
       },
       {
         name: "💭 Motivation",
-        value: data.motivation.length > 200 
-          ? data.motivation.substring(0, 200) + "..." 
-          : data.motivation,
+        value:
+          data.motivation.length > 200
+            ? data.motivation.substring(0, 200) + "..."
+            : data.motivation,
         inline: false,
       },
     ],
@@ -93,10 +94,51 @@ export async function sendBetaSignupNotification(data: BetaSignupData) {
       console.error(
         "Failed to send Discord notification:",
         response.status,
-        await response.text()
+        await response.text(),
       );
     }
   } catch (error) {
     console.error("Error sending Discord notification:", error);
+  }
+}
+
+export async function sendBetaEvidenceToDiscord(
+  file: File,
+  userData: {
+    fullName: string;
+    email: string;
+  },
+) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    console.warn("DISCORD_WEBHOOK_URL not set, skipping evidence upload");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append(
+    "payload_json",
+    JSON.stringify({
+      content: `📸 Beta evidence uploaded by **${userData.fullName}** (${userData.email})`,
+    }),
+  );
+  formData.append("file", file);
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      console.error(
+        "Failed to send evidence to Discord:",
+        response.status,
+        await response.text(),
+      );
+    }
+  } catch (error) {
+    console.error("Error sending evidence to Discord:", error);
   }
 }
