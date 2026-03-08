@@ -2,11 +2,13 @@ import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_PRIMARY_MODEL = "gemini-3.1-flash-lite-preview";
+const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
 
 interface ChatMessage {
   role: "user" | "model";
@@ -25,7 +27,11 @@ interface RequestBody {
 
 interface OnboardingResponse {
   message: string;
-  action: null | "transition_to_interests" | "show_interest_categories" | "show_career_suggestions";
+  action:
+    | null
+    | "transition_to_interests"
+    | "show_interest_categories"
+    | "show_career_suggestions";
   action_data?: {
     categories?: { name: string; statements: string[] }[];
     careers?: string[];
@@ -73,30 +79,46 @@ Respond ONLY with valid JSON:
 async function callGemini(
   systemPrompt: string,
   history: ChatMessage[],
-  userMessage?: string
+  userMessage?: string,
 ): Promise<string> {
   if (!GEMINI_API_KEY) {
     throw new Error("Missing GEMINI_API_KEY");
   }
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
   const contents: ChatMessage[] = [...history];
   if (userMessage) {
     contents.push({ role: "user", parts: [{ text: userMessage }] });
   }
 
-  const result = await model.generateContent({
+  const request = {
     contents,
     systemInstruction: systemPrompt,
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 1024,
     },
-  });
+  };
 
-  return result.response.text() ?? "";
+  try {
+    const primaryModel = genAI.getGenerativeModel({
+      model: GEMINI_PRIMARY_MODEL,
+    });
+    const result = await primaryModel.generateContent(request);
+    return result.response.text() ?? "";
+  } catch (error) {
+    console.error(
+      `[onboarding-chat] Primary Gemini model failed (${GEMINI_PRIMARY_MODEL}), trying fallback (${GEMINI_FALLBACK_MODEL})`,
+      error,
+    );
+
+    const fallbackModel = genAI.getGenerativeModel({
+      model: GEMINI_FALLBACK_MODEL,
+    });
+    const result = await fallbackModel.generateContent(request);
+    return result.response.text() ?? "";
+  }
 }
 
 function extractJsonObject(text: string): string | null {
@@ -115,13 +137,13 @@ function extractJsonObject(text: string): string | null {
         escaped = false;
       } else if (ch === "\\") {
         escaped = true;
-      } else if (ch === "\"") {
+      } else if (ch === '"') {
         inString = false;
       }
       continue;
     }
 
-    if (ch === "\"") {
+    if (ch === '"') {
       inString = true;
       continue;
     }
@@ -163,14 +185,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { mode, chat_history, user_context } = await req.json() as RequestBody;
+    const { mode, chat_history, user_context } =
+      (await req.json()) as RequestBody;
 
     let response: OnboardingResponse;
 
     if (mode === "chat") {
-      const userMsg = chat_history.length === 0 
-        ? "Hi, I'm new here!" 
-        : chat_history[chat_history.length - 1].parts[0]?.text || "Continue";
+      const userMsg =
+        chat_history.length === 0
+          ? "Hi, I'm new here!"
+          : chat_history[chat_history.length - 1].parts[0]?.text || "Continue";
       const text = await callGemini(SYSTEM_PROMPTS.chat, chat_history, userMsg);
       const readyForInterests = text.includes("[READY_FOR_INTERESTS]");
       const cleanText = text.replace("[READY_FOR_INTERESTS]", "").trim();
@@ -180,10 +204,15 @@ Deno.serve(async (req) => {
         action: readyForInterests ? "transition_to_interests" : null,
       };
     } else if (mode === "generate_interests") {
-      const userMsg = chat_history.length === 0 
-        ? "Generate interest categories for me" 
-        : chat_history[chat_history.length - 1].parts[0]?.text || "Continue";
-      const text = await callGemini(SYSTEM_PROMPTS.generate_interests, chat_history, userMsg);
+      const userMsg =
+        chat_history.length === 0
+          ? "Generate interest categories for me"
+          : chat_history[chat_history.length - 1].parts[0]?.text || "Continue";
+      const text = await callGemini(
+        SYSTEM_PROMPTS.generate_interests,
+        chat_history,
+        userMsg,
+      );
       const parsed = parseJsonBlock(text);
       const categories = parsed.categories;
 
@@ -192,7 +221,8 @@ Deno.serve(async (req) => {
       }
 
       response = {
-        message: "Here are some themes I noticed about you. Select statements that feel true:",
+        message:
+          "Here are some themes I noticed about you. Select statements that feel true:",
         action: "show_interest_categories",
         action_data: {
           categories: categories as { name: string; statements: string[] }[],
@@ -212,7 +242,8 @@ Deno.serve(async (req) => {
       }
 
       response = {
-        message: "Based on your interests, here are some paths you might want to try:",
+        message:
+          "Based on your interests, here are some paths you might want to try:",
         action: "show_career_suggestions",
         action_data: { careers: careers as string[] },
       };
@@ -223,9 +254,12 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("[onboarding-chat error]", err);
-    return new Response(JSON.stringify({ error: "onboarding chat failed", details: String(err) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "onboarding chat failed", details: String(err) }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });
