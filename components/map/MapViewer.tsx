@@ -141,6 +141,86 @@ export function MapViewer({
   const reactFlowInstance = useReactFlow();
 
   // Seed completion state
+
+
+
+  // ⚡ Bolt: Pre-calculate O(1) lookup maps to prevent O(N^2) render bottlenecks
+  // when checking node unlocks and submission requirements.
+  const { nodeMap, prerequisitesMap } = useMemo(() => {
+    const nMap = new Map<string, typeof map.map_nodes[0]>();
+    const pMap = new Map<string, typeof map.map_nodes>();
+
+    // First pass: populate nodeMap
+    map.map_nodes.forEach((node) => {
+      nMap.set(node.id, node);
+    });
+
+    // Second pass: populate prerequisitesMap
+    map.map_nodes.forEach((node) => {
+      node.node_paths_source?.forEach((path) => {
+        const destId = path.destination_node_id;
+        if (!pMap.has(destId)) {
+          pMap.set(destId, []);
+        }
+        pMap.get(destId)!.push(node);
+      });
+    });
+
+    return { nodeMap: nMap, prerequisitesMap: pMap };
+  }, [map.map_nodes]);
+
+
+  // ⚡ Bolt: Pre-calculate O(1) lookup maps to prevent O(N^2) render bottlenecks
+  // when checking node unlocks and submission requirements.
+  const { nodeMap, prerequisitesMap } = useMemo(() => {
+    const nMap = new Map<string, typeof map.map_nodes[0]>();
+    const pMap = new Map<string, typeof map.map_nodes>();
+
+    // First pass: populate nodeMap
+    map.map_nodes.forEach((node) => {
+      nMap.set(node.id, node);
+    });
+
+    // Second pass: populate prerequisitesMap
+    map.map_nodes.forEach((node) => {
+      node.node_paths_source?.forEach((path) => {
+        const destId = path.destination_node_id;
+        if (!pMap.has(destId)) {
+          pMap.set(destId, []);
+        }
+        pMap.get(destId).push(node);
+      });
+    });
+
+    return { nodeMap: nMap, prerequisitesMap: pMap };
+  }, [map.map_nodes]);
+
+
+  // ⚡ Bolt: Pre-calculate O(1) lookup maps to prevent O(N^2) render bottlenecks
+  // when checking node unlocks and submission requirements.
+  const { nodeMap, prerequisitesMap } = useMemo(() => {
+    const nMap = new Map<string, typeof map.map_nodes[0]>();
+    const pMap = new Map<string, typeof map.map_nodes>();
+
+    // First pass: populate nodeMap
+    map.map_nodes.forEach((node) => {
+      nMap.set(node.id, node);
+    });
+
+    // Second pass: populate prerequisitesMap
+    map.map_nodes.forEach((node) => {
+      node.node_paths_source?.forEach((path) => {
+        const destId = path.destination_node_id;
+        if (!pMap.has(destId)) {
+          pMap.set(destId, []);
+        }
+        pMap.get(destId).push(node);
+      });
+    });
+
+    return { nodeMap: nMap, prerequisitesMap: pMap };
+  }, [map.map_nodes]);
+
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [hasCompletedSeed, setHasCompletedSeed] = useState(false);
   const [showCompletionBanner, setShowCompletionBanner] = useState(false);
@@ -486,9 +566,9 @@ export function MapViewer({
   }, [currentUser, map.id]);
 
   // Check if node is unlocked based on prerequisites
-  const isNodeUnlocked = (nodeId: string): boolean => {
-    // Find the node data
-    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+  const isNodeUnlocked = useCallback((nodeId: string): boolean => {
+    // ⚡ Bolt: Use O(1) lookup instead of O(N) .find()
+    const nodeData = nodeMap.get(nodeId);
 
     // Text nodes are always "unlocked" (visible) since they're just annotations
     if ((nodeData as any)?.node_type === "text") {
@@ -500,12 +580,8 @@ export function MapViewer({
       return true;
     }
 
-    // Find all nodes that have paths leading to this node
-    const prerequisites = map.map_nodes.filter((node) =>
-      node.node_paths_source.some(
-        (path) => path.destination_node_id === nodeId,
-      ),
-    );
+    // ⚡ Bolt: Use O(1) lookup instead of O(N) .filter() + .some()
+    const prerequisites = prerequisitesMap.get(nodeId) || [];
 
     // If no prerequisites, node is unlocked (starting node)
     if (prerequisites.length === 0) return true;
@@ -515,16 +591,17 @@ export function MapViewer({
       const progress = progressMap[prereq.id];
       return progress?.status === "passed" || progress?.status === "submitted";
     });
-  };
+  }, [nodeMap, prerequisitesMap, isInstructorOrTA, progressMap]);
 
   // Get submission requirement for a node (single or all team members)
-  const getSubmissionRequirement = (nodeId: string): "single" | "all" => {
-    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+  const getSubmissionRequirement = useCallback((nodeId: string): "single" | "all" => {
+    // ⚡ Bolt: Use O(1) lookup instead of O(N) .find()
+    const nodeData = nodeMap.get(nodeId);
     return nodeData?.metadata?.submission_requirement || "single";
-  };
+  }, [nodeMap]);
 
   // Check if node is completed based on submission requirements
-  const isNodeCompleted = (nodeId: string, progress: any): boolean => {
+  const isNodeCompleted = useCallback((nodeId: string, progress: any): boolean => {
     const requirement = getSubmissionRequirement(nodeId);
 
     if (requirement === "single") {
@@ -540,7 +617,7 @@ export function MapViewer({
       }
       return progress?.status === "passed" || progress?.status === "submitted";
     }
-  };
+  }, [getSubmissionRequirement]);
 
   // Calculate progress statistics by requirement type
   const getProgressStats = () => {
@@ -882,7 +959,7 @@ export function MapViewer({
         );
       },
     }),
-    [progressMap, isInstructorOrTA, isTeamMap, map.map_nodes],
+    [progressMap, isInstructorOrTA, isTeamMap, map.map_nodes, isNodeUnlocked, isNodeCompleted],
   );
 
   useEffect(() => {
