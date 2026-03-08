@@ -116,6 +116,7 @@
     "react-resizable-panels": "^2.1.9",
     "react-tiny-oembed": "^1.1.0",
     "recharts": "2.15.0",
+    "resend": "^6.9.3",
     "sanitize-html": "2.17.1",
     "sonner": "^1.7.4",
     "streamdown": "^1.6.11",
