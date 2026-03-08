@@ -209,3 +209,44 @@ export async function getParticipantTeam(participantId: string): Promise<Hackath
 
   return { ...team, members } as HackathonTeamWithMembers;
 }
+
+export async function updateParticipantPassword(participantId: string, passwordHash: string) {
+  const { error } = await getClient()
+    .from("hackathon_participants")
+    .update({ password_hash: passwordHash })
+    .eq("id", participantId);
+  if (error) throw error;
+}
+
+export async function createPasswordResetToken(participantId: string, token: string) {
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
+
+  const { error } = await getClient().from("hackathon_password_resets").insert({
+    participant_id: participantId,
+    token,
+    expires_at: expiresAt.toISOString(),
+  });
+  if (error) throw error;
+}
+
+export async function getPasswordResetToken(token: string) {
+  const now = new Date().toISOString();
+  const { data } = await getClient()
+    .from("hackathon_password_resets")
+    .select("*, hackathon_participants(id, email)")
+    .eq("token", token)
+    .eq("used", false)
+    .gt("expires_at", now)
+    .single();
+
+  return data;
+}
+
+export async function markPasswordResetTokenAsUsed(token: string) {
+  const { error } = await getClient()
+    .from("hackathon_password_resets")
+    .update({ used: true })
+    .eq("token", token);
+  if (error) throw error;
+}
