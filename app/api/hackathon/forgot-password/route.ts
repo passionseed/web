@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { generateSessionToken } from "@/lib/hackathon/auth";
-import { findParticipantByEmail, createPasswordResetToken } from "@/lib/hackathon/db";
+import {
+  findParticipantByEmail,
+  createPasswordResetToken,
+} from "@/lib/hackathon/db";
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
+const resendFromEmail =
+  process.env.RESEND_FROM_EMAIL || "hi@noreply.passionseed.org";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +25,8 @@ export async function POST(req: NextRequest) {
     // Always return success to prevent email enumeration
     if (!participant) {
       return NextResponse.json({
-        message: "If an account with that email exists, a password reset link has been sent."
+        message:
+          "If an account with that email exists, a password reset link has been sent.",
       });
     }
 
@@ -31,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (resend) {
       try {
         await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
+          from: `The Next Decade Hackathon 2026 <${resendFromEmail}>`,
           to: email,
           subject: "Reset Your Password - The Next Decade Hackathon 2026",
           html: `
@@ -67,12 +75,19 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      message: "If an account with that email exists, a password reset link has been sent.",
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
       // Only show reset URL in development mode when Resend is not configured
-      resetUrl: !resend && process.env.NODE_ENV === "development" ? resetUrl : undefined
+      resetUrl:
+        !resend && process.env.NODE_ENV === "development"
+          ? resetUrl
+          : undefined,
     });
   } catch (err) {
     console.error("Forgot password error:", err);
-    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to process request" },
+      { status: 500 },
+    );
   }
 }
