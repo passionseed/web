@@ -19,6 +19,7 @@ import { buildCertificateData } from "@/lib/supabase/certificates";
 import type { SeedCertificateConfig, CertificateData } from "@/types/seeds";
 import { BadgeSettings } from "./badges/BadgeSettings";
 import type { BadgeData } from "@/types/badges";
+import { NPCAvatarSettings } from "./npc-avatars/NPCAvatarSettings";
 
 interface SeedSettingsModalProps {
     seed: any; // Type should be Seed but using any for flexibility with joins
@@ -218,6 +219,9 @@ export function SeedSettingsModal({ seed, isOpen, onClose, onUpdate }: SeedSetti
                                 seedTitle={title}
                                 onPreview={handleBadgePreview}
                             />
+
+                            {/* NPC Avatar Section */}
+                            <NPCAvatarSettings seedId={seed.id} />
 
                             <div className="space-y-4">
                                 <div className="space-y-2">

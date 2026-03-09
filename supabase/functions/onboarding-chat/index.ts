@@ -178,6 +178,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("[onboarding-chat] Request received");
+
     if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: "Missing GEMINI_API_KEY" }), {
         status: 500,
