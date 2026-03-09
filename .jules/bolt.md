@@ -1,0 +1,3 @@
+## 2024-05-14 - MapViewer O(N^2) Render Bottleneck Optimization
+**Learning:** In complex graph rendering components like `MapViewer.tsx` inside ReactFlow, O(N) array methods like `.find()` and `.filter()` inside highly-used helper functions (like `isNodeUnlocked`) can quickly cause severe O(N^2) rendering bottlenecks, especially on maps with many interconnected nodes.
+**Action:** Always pre-calculate O(1) lookup structures using `useMemo` (e.g., mapping nodes by `id`, pre-grouping prerequisites) before passing data down into graph node render loops or frequent callbacks.

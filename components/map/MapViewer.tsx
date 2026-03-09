@@ -156,6 +156,36 @@ export function MapViewer({
     setIsMounted(true);
   }, []);
 
+  // OPTIMIZATION: Memoize node and prerequisite lookups to change O(N^2) render complexity to O(N)
+  const nodeById = useMemo(() => {
+    const mapNodes = new Map<string, MapNode>();
+    map.map_nodes.forEach((node) => {
+      mapNodes.set(node.id, node);
+    });
+    return mapNodes;
+  }, [map.map_nodes]);
+
+  const prerequisitesByNodeId = useMemo(() => {
+    const prerequisites = new Map<string, MapNode[]>();
+
+    // Initialize map
+    map.map_nodes.forEach((node) => {
+      prerequisites.set(node.id, []);
+    });
+
+    // Populate with actual prerequisites
+    map.map_nodes.forEach((node) => {
+      node.node_paths_source.forEach((path) => {
+        const destNodeList = prerequisites.get(path.destination_node_id);
+        if (destNodeList) {
+          destNodeList.push(node);
+        }
+      });
+    });
+
+    return prerequisites;
+  }, [map.map_nodes]);
+
   // Role detection for instructor/TA functionality
   const { user: authUser, userRoles, isAuthenticated } = useAuth();
 
@@ -486,9 +516,9 @@ export function MapViewer({
   }, [currentUser, map.id]);
 
   // Check if node is unlocked based on prerequisites
-  const isNodeUnlocked = (nodeId: string): boolean => {
-    // Find the node data
-    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+  const isNodeUnlocked = useCallback((nodeId: string): boolean => {
+    // OPTIMIZATION: O(1) node lookup instead of O(N) .find()
+    const nodeData = nodeById.get(nodeId);
 
     // Text nodes are always "unlocked" (visible) since they're just annotations
     if ((nodeData as any)?.node_type === "text") {
@@ -500,12 +530,8 @@ export function MapViewer({
       return true;
     }
 
-    // Find all nodes that have paths leading to this node
-    const prerequisites = map.map_nodes.filter((node) =>
-      node.node_paths_source.some(
-        (path) => path.destination_node_id === nodeId,
-      ),
-    );
+    // OPTIMIZATION: O(1) prerequisites lookup instead of O(N^2) .filter() + .some()
+    const prerequisites = prerequisitesByNodeId.get(nodeId) || [];
 
     // If no prerequisites, node is unlocked (starting node)
     if (prerequisites.length === 0) return true;
@@ -515,13 +541,14 @@ export function MapViewer({
       const progress = progressMap[prereq.id];
       return progress?.status === "passed" || progress?.status === "submitted";
     });
-  };
+  }, [nodeById, prerequisitesByNodeId, isInstructorOrTA, progressMap]);
 
   // Get submission requirement for a node (single or all team members)
-  const getSubmissionRequirement = (nodeId: string): "single" | "all" => {
-    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+  const getSubmissionRequirement = useCallback((nodeId: string): "single" | "all" => {
+    // OPTIMIZATION: O(1) lookup
+    const nodeData = nodeById.get(nodeId);
     return nodeData?.metadata?.submission_requirement || "single";
-  };
+  }, [nodeById]);
 
   // Check if node is completed based on submission requirements
   const isNodeCompleted = (nodeId: string, progress: any): boolean => {
@@ -543,7 +570,7 @@ export function MapViewer({
   };
 
   // Calculate progress statistics by requirement type
-  const getProgressStats = () => {
+  const getProgressStats = useCallback(() => {
     const stats = {
       singleRequirement: { completed: 0, total: 0 },
       allRequirement: { completed: 0, total: 0 },
@@ -572,7 +599,7 @@ export function MapViewer({
     });
 
     return stats;
-  };
+  }, [map.map_nodes, getSubmissionRequirement, progressMap]);
 
   // Custom node component with sprite-based gamified design and floating animations
   const nodeTypes = useMemo(
@@ -882,7 +909,7 @@ export function MapViewer({
         );
       },
     }),
-    [progressMap, isInstructorOrTA, isTeamMap, map.map_nodes],
+    [progressMap, isInstructorOrTA, isTeamMap, map.map_nodes, isNodeUnlocked, getSubmissionRequirement],
   );
 
   useEffect(() => {
