@@ -173,9 +173,10 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
       </div>
 
       {/* Ambient Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-blue-900/10 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[800px] h-[800px] bg-purple-900/10 rounded-full blur-[120px] mix-blend-screen" />
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-blue-600/20 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-purple-600/20 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-[40%] left-[20%] w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[100px] mix-blend-screen animate-pulse-slow" style={{ animationDelay: "4s" }} />
       </div>
 
       {/* Settings Button - Positioned below navbar */}
@@ -205,89 +206,93 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
 
             <div className="flex flex-col gap-8">
               <div className="max-w-4xl">
-                <h1 className="text-5xl md:text-7xl font-bold text-white mb-2 tracking-tight drop-shadow-lg leading-tight">
+                <h1 className="text-5xl md:text-7xl font-extrabold mb-4 tracking-tight leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                   {seed.title}
                 </h1>
                 {seed.slogan && (
-                  <p className="text-xl md:text-2xl text-white/80 font-medium mb-6 drop-shadow-md">
+                  <p className="text-xl md:text-2xl text-white/90 font-medium mb-8 drop-shadow-md border-l-4 border-blue-500 pl-4 py-1">
                     {seed.slogan}
                   </p>
                 )}
 
                 {/* Quick Stats Row (Glassmorphism) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mb-6">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-col gap-1 transition-transform hover:scale-105 duration-300">
-                    <div className="flex items-center gap-2 text-white/60 text-xs uppercase tracking-wider font-semibold">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mb-8">
+                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/30 hover:bg-white/10 rounded-2xl p-5 flex flex-col gap-2 transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] duration-300 group">
+                    <div className="flex items-center gap-2 text-white/50 group-hover:text-white/70 transition-colors text-xs uppercase tracking-widest font-bold">
                       <span>Series</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {seed.category?.logo_url && (
-                        <img
-                          src={seed.category.logo_url}
-                          alt={seed.category.name}
-                          className="w-10 h-10 object-contain"
-                        />
+                        <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-md">
+                          <img
+                            src={seed.category.logo_url}
+                            alt={seed.category.name}
+                            className="w-8 h-8 object-contain"
+                          />
+                        </div>
                       )}
-                      <p className="text-2xl font-bold text-white">
+                      <p className="text-2xl font-bold text-white tracking-tight">
                         {seed.category?.name || "Uncategorized"}
                       </p>
                     </div>
                   </div>
 
                   {isPathLab ? (
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-col gap-1 transition-transform hover:scale-105 duration-300">
-                      <div className="flex items-center gap-2 text-white/60 text-xs uppercase tracking-wider font-semibold">
+                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/30 hover:bg-white/10 rounded-2xl p-5 flex flex-col gap-2 transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] duration-300 group">
+                      <div className="flex items-center gap-2 text-white/50 group-hover:text-white/70 transition-colors text-xs uppercase tracking-widest font-bold">
                         <Calendar className="w-4 h-4" />
                         <span>Duration</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-white">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl font-bold text-white tracking-tight">
                           {pathTotalDays || 5}
                         </span>
-                        <span className="text-white/60 text-sm">
-                          days (~30 min each)
+                        <span className="text-white/50 text-sm font-medium">
+                          days <br />(~30 min each)
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-col gap-1 transition-transform hover:scale-105 duration-300">
-                      <div className="flex items-center gap-2 text-white/60 text-xs uppercase tracking-wider font-semibold">
+                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/30 hover:bg-white/10 rounded-2xl p-5 flex flex-col gap-2 transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] duration-300 group">
+                      <div className="flex items-center gap-2 text-white/50 group-hover:text-white/70 transition-colors text-xs uppercase tracking-widest font-bold">
                         <Users className="w-4 h-4" />
                         <span>Group Size</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-white">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-white tracking-tight">
                           {seed.min_students || 1}
                         </span>
-                        <span className="text-white/50">-</span>
-                        <span className="text-2xl font-bold text-white">
+                        <span className="text-white/40 font-light text-2xl">-</span>
+                        <span className="text-3xl font-bold text-white tracking-tight">
                           {seed.max_students || 50}
                         </span>
-                        <span className="text-white/60 text-sm">students</span>
+                        <span className="text-white/50 text-sm font-medium ml-1">students</span>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Hero CTA */}
-                <div className="max-w-xs">
+                <div className="max-w-sm pt-4">
                   {user ? (
-                    isPathLab ? (
-                      <BeginPathButton
-                        seedId={seed.id}
-                        existingEnrollmentId={pathEnrollmentId}
-                      />
-                    ) : (
-                      <CreateRoomButton
-                        seedId={seed.id}
-                        userId={user.id}
-                        existingRoom={userRoom}
-                        isCompleted={userHasCompletedRoom}
-                      />
-                    )
+                    <div className="transform transition-all hover:scale-[1.02] active:scale-[0.98]">
+                      {isPathLab ? (
+                        <BeginPathButton
+                          seedId={seed.id}
+                          existingEnrollmentId={pathEnrollmentId}
+                        />
+                      ) : (
+                        <CreateRoomButton
+                          seedId={seed.id}
+                          userId={user.id}
+                          existingRoom={userRoom}
+                          isCompleted={userHasCompletedRoom}
+                        />
+                      )}
+                    </div>
                   ) : (
                     <Link href="/login">
-                      <Button className="w-full bg-white text-black hover:bg-neutral-200 text-lg py-6 font-bold shadow-xl">
+                      <Button className="w-full bg-white/90 text-black hover:bg-white text-lg py-7 font-bold shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.5)] transition-all duration-300 rounded-xl hover:-translate-y-1">
                         Sign in to Start
                       </Button>
                     </Link>
@@ -321,27 +326,37 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
 
       {/* Main Content Layout */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 space-y-12">
-        <section className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8">
-          <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-            <span className="w-1 h-8 bg-blue-500 rounded-full mr-2" />
+        <section className="bg-neutral-900/40 backdrop-blur-2xl border border-white/10 hover:border-white/20 transition-all duration-500 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+          <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-4">
+            <span className="w-1.5 h-8 bg-gradient-to-b from-blue-400 to-purple-600 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
             {isPathLab ? "About this Exploration" : "About this Journey"}
           </h2>
-          <div className="prose prose-invert prose-lg max-w-none text-neutral-300 leading-relaxed space-y-4">
+
+          <div className="prose prose-invert prose-lg max-w-none text-neutral-300 leading-relaxed prose-headings:text-white prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-strong:text-white prose-strong:font-semibold">
             {descriptionHtml ? (
-              <div dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
+              <div className="space-y-6" dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
             ) : (
-              <p>
+              <p className="text-neutral-400 italic">
                 No description provided for this journey seed. It's ready to be
                 explored!
               </p>
             )}
+
             {isPathLab && (
-              <div className="rounded-lg border border-white/10 bg-black/20 p-4">
-                <p className="text-sm text-neutral-200">
-                  PathLab is solo and self-paced. You will complete each day,
-                  reflect, then intentionally decide whether to continue, pause,
-                  or quit.
-                </p>
+              <div className="mt-10 rounded-2xl border border-blue-500/30 bg-blue-500/10 p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center backdrop-blur-md">
+                <div className="p-3 bg-blue-500/20 rounded-full text-blue-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
+                </div>
+                <div>
+                  <h4 className="text-white font-semibold m-0 text-lg">Self-Paced Journey</h4>
+                  <p className="text-sm text-blue-200/80 m-0 mt-1">
+                    PathLab is solo and self-paced. You will complete each day,
+                    reflect, then intentionally decide whether to continue, pause,
+                    or quit.
+                  </p>
+                </div>
               </div>
             )}
           </div>
