@@ -4,18 +4,20 @@ create table if not exists university_insights_cache (
   faculty_name    text not null,
   career_goal     text not null default '',
   data            jsonb not null,
-  source          text not null default 'ai', -- 'seeded' | 'ai'
+  source          text not null default 'ai'
+    constraint university_insights_cache_source_check check (source in ('ai', 'seeded')), -- 'seeded' | 'ai'
   created_at      timestamptz not null default now(),
   expires_at      timestamptz not null default (now() + interval '7 days'),
   constraint university_insights_cache_unique
     unique (university_name, faculty_name, career_goal)
 );
 
-create index university_insights_cache_lookup
-  on university_insights_cache (university_name, faculty_name, career_goal);
-
 alter table university_insights_cache enable row level security;
 
 create policy "University cache readable by authenticated"
   on university_insights_cache for select
   to authenticated using (true);
+
+create policy "University cache writable by service role"
+  on university_insights_cache for all
+  to service_role using (true) with check (true);
