@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.career_insights_cache (
 ALTER TABLE public.career_insights_cache ENABLE ROW LEVEL SECURITY;
 
 -- Anyone can read cached insights
+DROP POLICY IF EXISTS "Anyone can read career insights cache" ON public.career_insights_cache;
 CREATE POLICY "Anyone can read career insights cache"
     ON public.career_insights_cache
     FOR SELECT
@@ -21,6 +22,7 @@ CREATE POLICY "Anyone can read career insights cache"
     USING (true);
 
 -- Only service role can write (edge function uses service key)
+DROP POLICY IF EXISTS "Service role can upsert career insights cache" ON public.career_insights_cache;
 CREATE POLICY "Service role can upsert career insights cache"
     ON public.career_insights_cache
     FOR ALL
