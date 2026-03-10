@@ -42,6 +42,7 @@ import {
   trackBetaRegistrationStarted,
   trackBetaRegistrationCompleted,
 } from "@/actions/beta-funnel";
+import { BetaTicket } from "@/components/beta-ticket";
 
 // Liquid Orb for dark background
 const LiquidOrb = ({
@@ -777,133 +778,24 @@ export default function AppBetaPage() {
             </motion.div>
 
             <div className="grid lg:grid-cols-2 gap-8 items-start">
-              {/* Left: Ticket */}
               <motion.div
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="space-y-6"
+                className="space-y-6 flex flex-col items-center"
               >
-                <div
-                  ref={ticketRef}
-                  className="relative mx-auto w-full max-w-[480px]"
-                  style={{
-                    filter: "drop-shadow(0 20px 40px rgba(0, 0, 0, 0.08))",
-                    maskImage:
-                      "radial-gradient(circle at 0% calc(240px + 1px), transparent 16px, black 16.5px), radial-gradient(circle at 100% calc(240px + 1px), transparent 16px, black 16.5px)",
-                    maskSize: "51% 100%",
-                    maskPosition: "left top, right top",
-                    maskRepeat: "no-repeat",
-                    WebkitMaskImage:
-                      "radial-gradient(circle at 0% calc(240px + 1px), transparent 16px, black 16.5px), radial-gradient(circle at 100% calc(240px + 1px), transparent 16px, black 16.5px)",
-                    WebkitMaskSize: "51% 100%",
-                    WebkitMaskPosition: "left top, right top",
-                    WebkitMaskRepeat: "no-repeat",
-                  }}
-                >
-                  <div className="absolute inset-0 rounded-[2.5rem] border border-slate-200 bg-white overflow-hidden">
-                    {/* Subtle noise texture */}
-                    <div
-                      className="absolute inset-0 opacity-[0.02] mix-blend-multiply pointer-events-none"
-                      style={{
-                        backgroundImage:
-                          'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")',
-                      }}
-                    ></div>
-
-                    {/* Firecrawl inspired grid */}
-                    <div
-                      className="absolute inset-0 opacity-[0.2]"
-                      style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 19V21M19 20H21' stroke='%23CBD5E1' stroke-width='1' stroke-linecap='round'/%3E%3C/svg%3E")`,
-                        backgroundSize: "40px 40px",
-                      }}
-                    />
-                  </div>
-
-                  {/* Top Ticket Section */}
-                  <div className="relative rounded-t-[2.5rem] p-8 md:p-12 h-[240px] flex flex-col justify-center overflow-hidden">
-                    {/* Background gradient blob */}
-                    <div className="absolute -top-32 -right-32 w-64 h-64 bg-[#FF521B]/10 rounded-full blur-[60px]" />
-
-                    {/* Top Info */}
-                    <div className="absolute top-8 left-8 flex items-center gap-2">
-                      <Sparkles className="text-[#FF521B] w-4 h-4" />
-                      <span className="text-slate-500 tracking-[0.2em] text-[10px] font-bold">
-                        PASSION SEED
-                      </span>
-                    </div>
-                    <div className="absolute top-8 right-8 flex gap-1.5 items-center">
-                      <span className="text-[10px] font-bold tracking-wider text-[#FF521B] uppercase mr-2">
-                        Live
-                      </span>
-                      <div className="w-2 h-2 rounded-full bg-[#FF521B] shadow-[0_0_8px_rgba(255,82,27,0.6)] animate-pulse" />
-                    </div>
-
-                    {/* Main Event Title */}
-                    <div className="relative z-10 flex flex-col items-center text-center mt-6">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 mb-4">
-                        <span className="text-slate-600 font-semibold text-[10px] tracking-[0.1em] uppercase">
-                          Invitation
-                        </span>
-                      </div>
-                      <h3 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-2">
-                        CLOSED BETA
-                      </h3>
-                      <p className="text-slate-500 text-[10px] md:text-xs tracking-[0.2em] font-medium">
-                        CLASS OF 2026 EDITION
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Separation Line (Dashed) */}
-                  <div className="relative h-px w-full flex items-center justify-center">
-                    <div className="absolute inset-x-8 border-t-[1.5px] border-dashed border-slate-200"></div>
-                    {/* Cutout overlays */}
-                    <div className="absolute -left-1 w-4 h-8 bg-[#FAFAFA] rounded-r-full border-r border-slate-200"></div>
-                    <div className="absolute -right-1 w-4 h-8 bg-[#FAFAFA] rounded-l-full border-l border-slate-200"></div>
-                  </div>
-
-                  {/* Bottom Ticket Section */}
-                  <div className="relative p-8 md:p-12 pt-10 flex flex-col gap-8 z-10 bg-white/50 backdrop-blur-sm">
-                    {/* Details Row */}
-                    <div className="flex justify-between items-end relative z-20">
-                      <div className="flex flex-col text-left">
-                        <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-1.5">
-                          Pass Type
-                        </span>
-                        <span className="text-lg md:text-xl font-black text-[#FF521B] uppercase tracking-tight">
-                          BETA TESTER
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-end text-right">
-                        <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mb-1.5">
-                          Access
-                        </span>
-                        <span className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight">
-                          EXCLUSIVE
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Barcode & Description */}
-                    <div className="pt-6 border-t border-slate-100 text-center w-full flex flex-col items-center gap-5">
-                      <div className="flex gap-[2px] h-8 w-full max-w-[200px] opacity-40 justify-center">
-                        {[...Array(40)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`h-full bg-slate-900 rounded-sm ${Math.random() > 0.5 ? "w-0.5" : Math.random() > 0.5 ? "w-1" : "w-1.5"}`}
-                            style={{ opacity: Math.random() * 0.5 + 0.5 }}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-slate-500 font-medium leading-relaxed text-[12px] md:text-[13px] max-w-[280px]">
-                        คุณได้รับเชิญให้เข้าร่วม Beta Test ของ Passion Seed
-                        <br />
-                        แอปช่วยคุณวางแผนเข้ามหาลัยที่ใช่และทดสอบคณะที่เหมาะกับคุณ
-                      </p>
-                    </div>
-                  </div>
+                <div className="mx-auto w-[320px]">
+                  <BetaTicket
+                    ticketRef={ticketRef}
+                    nickname={
+                      (registrationData?.get("nickname") as string) ||
+                      "Beta Tester"
+                    }
+                    facultyInterest={
+                      (registrationData?.get("faculty_interest") as string) ||
+                      "Future Innovator"
+                    }
+                  />
                 </div>
 
                 {/* Share / Copy Button */}

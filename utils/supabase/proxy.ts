@@ -1,6 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Fail fast when Supabase is unreachable (e.g. Docker not running in dev)
+const fetchWithTimeout = (url: RequestInfo | URL, options?: RequestInit) => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 3000)
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer))
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -12,6 +20,7 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      global: { fetch: fetchWithTimeout },
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -23,7 +32,6 @@ export async function updateSession(request: NextRequest) {
           })
           cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
-
       },
     }
   )
@@ -34,9 +42,16 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: If you remove getClaims() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims()
-
-  const user = data?.claims
+  let user = null
+  try {
+    const { data } = await supabase.auth.getClaims()
+    user = data?.claims
+  } catch {
+    // Supabase unreachable (e.g. Docker not running in dev).
+    // Skip auth check and let the request through — pages will
+    // handle their own auth state gracefully.
+    return supabaseResponse
+  }
 
   if (
     !user &&
