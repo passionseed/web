@@ -38,12 +38,14 @@ CREATE TABLE IF NOT EXISTS public.job_listings (
 ALTER TABLE public.job_listings ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies
+DROP POLICY IF EXISTS "Anyone can read job listings" ON public.job_listings;
 CREATE POLICY "Anyone can read job listings"
     ON public.job_listings
     FOR SELECT
     TO authenticated, anon
     USING (true);
 
+DROP POLICY IF EXISTS "Only system can insert job listings" ON public.job_listings;
 CREATE POLICY "Only system can insert job listings"
     ON public.job_listings
     FOR INSERT
