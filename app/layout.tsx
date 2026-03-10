@@ -115,10 +115,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  let session = null;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getSession();
+    session = data.session;
+  } catch {
+    // Supabase is unreachable (e.g. Docker not running in dev).
+    // Continue rendering with no session — auth-gated pages will
+    // show their own error/login state.
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>

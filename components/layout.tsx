@@ -16,17 +16,25 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
-  
+
   // Hide navbar for profile completion pages, hackathon page, and beta page
-  const hideNavbar = pathname?.includes('finish-profile') || pathname?.includes('complete-profile') || pathname?.includes('hackathon') || pathname?.includes('/app/beta');
+  const hideNavbar =
+    pathname?.includes("finish-profile") ||
+    pathname?.includes("complete-profile") ||
+    pathname?.includes("hackathon") ||
+    pathname?.includes("/app/beta");
 
   useEffect(() => {
     async function getUser() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setUser(user);
+      } catch {
+        // Supabase unreachable — stay as logged-out state
+      }
     }
     getUser();
   }, []);
