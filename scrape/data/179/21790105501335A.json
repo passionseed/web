@@ -1,0 +1,30 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f881759ec1a4bec72227dd",
+      "university_id": "179",
+      "program_id": "21790105501335A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีการผลิตพืชสมัยใหม่ (4 ปี)",
+      "condition": "ม.6 หรือเทียบเท่า หรือ ปวช.",
+      "interview_location": "มหาวิทยาลัยราชภัฏเพชรบุรี 38 หมู่ 8 ต.นาวุ้ง อ.เมือง จ.เพชรบุรี 76000",
+      "interview_date": "29 พฤษภาคม 2568 (ผ่านระบบออนไลน์)",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://acad.pbru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T07:02:13.410Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "program": [
+    {
+      "program_id": "41800205800101A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศล.บ.การออกแบบนิเทศศิลป์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 32.683,
+      "max_score": 45.6496,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 30,
+      "scores": {
+        "tgat": 30,
+        "tpat2": 60,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e36d5ff6124a010031452a",
+      "university_id": "180",
+      "program_id": "41800205800101A",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปบัณฑิต สาขาวิชาการออกแบบนิเทศศิลป์ (4 ปี) เรียนรู้และปฏิบัติการเชิงสร้างสรรค์ทางวิชาชีพด้านการออกแบบ",
+      "condition": "มีความประพฤติดี",
+      "link": "https://kbu.ac.th/arch/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-06T07:18:55.276Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat2": 60,
+        "a_lv_82": 10
+      },
+      "score_conditions": {}
+    }
+  ]
+}

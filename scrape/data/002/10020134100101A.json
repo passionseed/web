@@ -1,0 +1,93 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e3880b2ef4c36c489acfff",
+      "university_id": "002",
+      "program_id": "10020134100101A",
+      "project_id": "A0100",
+      "project_name_th": "ช้างเผือก (รอบ 1.1)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "คณะแพทยศาสตร์ พ.บ.(แพทยศาสตรบัณฑิต) (ภาษาไทย ปกติ)",
+      "condition": "",
+      "interview_location": "มหาวิทยาลัยเกษตรศาสตร์",
+      "interview_date": "8 ธ.ค. 68",
+      "interview_time": "",
+      "link": "https://admission.ku.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "13/11/2568",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-06T09:12:43.887Z",
+      "score_conditions": {},
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e3880c2ef4c36c489ad07d",
+      "university_id": "002",
+      "program_id": "10020134100101A",
+      "project_id": "A0200",
+      "project_name_th": "เรียนล่วงหน้า",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "คณะแพทยศาสตร์ พ.บ.(แพทยศาสตรบัณฑิต) (ภาษาไทย ปกติ)",
+      "condition": "",
+      "interview_location": "มหาวิทยาลัยเกษตรศาสตร์",
+      "interview_date": "8 ธ.ค. 68",
+      "interview_time": "",
+      "link": "https://admission.ku.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "13/11/2568",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-06T09:12:44.268Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f830fc0f9e01f4e78ed9ff",
+      "university_id": "002",
+      "program_id": "10020134100101A",
+      "project_id": "B3500",
+      "project_name_th": "ส่งเสริมโอกาสศึกษาต่อในกลุ่มวิทยาศาสตร์สุขภาพ",
+      "type": "2_2569",
+      "receive_student_number": 12,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "คณะแพทยศาสตร์ พ.บ.(แพทยศาสตรบัณฑิต) (ภาษาไทย ปกติ)",
+      "condition": "",
+      "interview_location": "มหาวิทยาลัยเกษตรศาสตร์",
+      "interview_date": "27 เม.ย. 69",
+      "interview_time": "",
+      "link": "https://admission.ku.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T01:18:52.323Z",
+      "score_conditions": {}
+    }
+  ]
+}

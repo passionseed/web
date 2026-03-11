@@ -1,0 +1,47 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e4bdc7d3ededb150f146ba",
+      "university_id": "919",
+      "program_id": "49190101610305A",
+      "major_id": "A",
+      "project_id": "A0005",
+      "project_name_th": "นักเรียน ม.6 ที่กำลังจะสำเร็จการศึกษาหรือสำเร็จการศึกษาแล้ว,กศน.,อาชีวะ",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจ สาขาวิชาการจัดการธุรกิจยุคดิจิทัล(เรียนออนไลน์) (4ปี)",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษาและ กศน.",
+      "interview_location": "ที่อยู่ งานรับสมัคร มหาวิทยาลัยราชพฤกษ์ เลขที่ 9 หมู่ 1 ถนนนครอินทร์ ตำบลบางขนุน อำเภอบางกรวย จังหวัดนนบุรี 11000 ",
+      "interview_date": "13-31 มกราคม 2569",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://bus.rpu.ac.th/?page_id=1000",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "คุณคิดว่า \"การบริหารธุรกิจด้วยเทคโนโลยีดิจิทัล\" คืออะไร",
+        "folio_q1_type": "B",
+        "folio_q2": "คุณเคยมีผลงานด้านกิจกรรมใดบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "15/12/2568",
+        "page_limit": "8"
+      },
+      "created_at": "2025-10-07T07:14:15.125Z",
+      "min_total_score": 50,
+      "scores": {
+        "cal_type": "1",
+        "cal_score_sum": 100,
+        "cal_subject_name": "portfolio interview"
+      }
+    }
+  ]
+}

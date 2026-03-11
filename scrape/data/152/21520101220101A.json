@@ -1,0 +1,91 @@
+{
+  "program": [
+    {
+      "program_id": "21520101220101A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสารสนเทศ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "min_score": 52.5,
+      "max_score": 91.5,
+      "min_score_ds": 52.5,
+      "max_score_ds": 77.25,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f1bf876e0a26276271e087",
+      "university_id": "152",
+      "program_id": "21520101220101A",
+      "type": "1_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสารสนเทศ (4 ปี)",
+      "condition": "รับผู้กำลังศึกษาอยู่ภาคเรียนสุดท้าย หรือสำเร็จการศึกษา ม.6 สกร. ปวช. หรือเทียบเท่า ทุกแผนการเรียน",
+      "interview_location": "ไม่มีสอบสัมภาษณ์",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "interview_time": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://reg.psru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-17T04:01:11.829Z"
+    },
+    {
+      "_id": "68f1bf876e0a26276271e089",
+      "university_id": "152",
+      "program_id": "21520101220101A",
+      "type": "2_2569",
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสารสนเทศ (4 ปี)",
+      "condition": "รับผู้กำลังศึกษาอยู่ภาคเรียนสุดท้าย หรือสำเร็จการศึกษา ม.6 สกร. ปวช. หรือเทียบเท่า ทุกแผนการเรียน",
+      "interview_location": "ไม่มีสอบสัมภาษณ์",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "interview_time": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://reg.psru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-17T04:01:11.835Z"
+    },
+    {
+      "_id": "68f1bf876e0a26276271e08b",
+      "university_id": "152",
+      "program_id": "21520101220101A",
+      "type": "3_2569",
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสารสนเทศ (4 ปี)",
+      "condition": "รับผู้กำลังศึกษาอยู่ภาคเรียนสุดท้าย หรือสำเร็จการศึกษา ม.6 สกร. ปวช. หรือเทียบเท่า ทุกแผนการเรียน",
+      "interview_location": "ไม่มีสอบสัมภาษณ์",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "interview_time": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://reg.psru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-17T04:01:11.841Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

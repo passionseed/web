@@ -1,0 +1,50 @@
+{
+  "program": [
+    {
+      "program_id": "41800261900301A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.ธุรกิจการบิน",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 120,
+      "scores": {
+        "tgat1": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e36d5ff6124a010031453c",
+      "university_id": "180",
+      "program_id": "41800261900301A",
+      "type": "3_2569",
+      "receive_student_number": 100,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาธุรกิจการบิน",
+      "condition": "ตามข้อบังคับมหาวิทยาลัยเกษมบัณฑิต ว่าด้วย การศึกษาขั้นปริญญาบัณฑิต พ.ศ.2566  หมวด 6 ข้อ12",
+      "link": "https://kbu.ac.th/course/airline-business/",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "score_condition": 1,
+        "subject_names": "min_tgat",
+        "score_minimum": "100"
+      },
+      "created_at": "2025-10-06T07:18:55.343Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    }
+  ]
+}

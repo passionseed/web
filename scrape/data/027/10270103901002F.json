@@ -1,0 +1,93 @@
+{
+  "program": [
+    {
+      "program_id": "10270103901002F",
+      "project_id": "A0001",
+      "major_id": "0",
+      "program_name_th": "การจัดการศึกษาหลักสูตรควบระดับปริญญาตรี 2 ปริญญา (หลักสูตรนิติศาสตรบัณฑิต และหลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาอังกฤษ)",
+      "program_type_name_th": "Double Degree - ภาษาไทย ปกติ",
+      "major_name_th": "",
+      "project_name_th": "Admission",
+      "min_score": 57.45,
+      "max_score": 73.4776,
+      "min_score_ds": 56.044,
+      "max_score_ds": 73.4776,
+      "receive_student_number": 30,
+      "scores": {
+        "gpax": 20,
+        "tgat": 80
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8ed17b58d5ed1fd8a2eb7",
+      "university_id": "027",
+      "program_id": "10270103901002F",
+      "project_id": "P0001",
+      "project_name_th": "โครงการรับตรงมหาวิทยาลัยพะเยา",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การจัดการศึกษาหลักสูตรควบระดับปริญญาตรี 2 ปริญญา (หลักสูตรนิติศาสตรบัณฑิต และหลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาอังกฤษ)",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-22T14:41:27.964Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8ed16b58d5ed1fd8a2d79",
+      "university_id": "027",
+      "program_id": "10270103901002F",
+      "project_id": "P0002",
+      "project_name_th": "โครงการรับตรงโรงเรียนในเขตพื้นที่บริการ",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การจัดการศึกษาหลักสูตรควบระดับปริญญาตรี 2 ปริญญา (หลักสูตรนิติศาสตรบัณฑิต และหลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาอังกฤษ)",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "created_at": "2025-10-22T14:41:26.880Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8ed16b58d5ed1fd8a2d77",
+      "university_id": "027",
+      "program_id": "10270103901002F",
+      "project_id": "A0001",
+      "project_name_th": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "การจัดการศึกษาหลักสูตรควบระดับปริญญาตรี 2 ปริญญา (หลักสูตรนิติศาสตรบัณฑิต และหลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาอังกฤษ)",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T14:41:26.874Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 20,
+        "tgat": 80
+      },
+      "score_conditions": {}
+    }
+  ]
+}

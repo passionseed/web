@@ -1,0 +1,115 @@
+{
+  "program": [
+    {
+      "program_id": "31950101301901A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วศ.บ.  วิศวกรรมเมคคาทรอนิกส์ 4 ปี",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 78.75,
+      "max_score": 89.75,
+      "min_score_ds": 78.75,
+      "max_score_ds": 89.75,
+      "receive_student_number": 20,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f5be8884df8e9fee9b456b",
+      "university_id": "195",
+      "program_id": "31950101301901A",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "วศ.บ.  วิศวกรรมเมคคาทรอนิกส์และหุ่นยนต์ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "18/1/2569",
+        "page_limit": "ม.ค.-15"
+      },
+      "created_at": "2025-10-20T04:46:00.067Z",
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "min_gpax": 2.5
+    },
+    {
+      "_id": "68f5be8884df8e9fee9b460b",
+      "university_id": "195",
+      "program_id": "31950101301901A",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "วศ.บ.  วิศวกรรมเมคคาทรอนิกส์และหุ่นยนต์ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T04:46:00.605Z",
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "min_gpax": 2.5
+    },
+    {
+      "_id": "68f5be8984df8e9fee9b46ab",
+      "university_id": "195",
+      "program_id": "31950101301901A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วศ.บ.  วิศวกรรมเมคคาทรอนิกส์และหุ่นยนต์ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T04:46:01.136Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 10,
+        "tgat1": 10,
+        "tgat2": 10,
+        "tgat3": 10,
+        "tpat11": 10,
+        "tpat3": 10,
+        "a_lv_61": 10,
+        "a_lv_62": 10,
+        "a_lv_63": 10,
+        "a_lv_64": 10
+      },
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "min_gpax": 2.5
+    }
+  ]
+}

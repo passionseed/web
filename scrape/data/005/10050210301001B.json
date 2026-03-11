@@ -1,0 +1,137 @@
+{
+  "program": [
+    {
+      "program_id": "10050210301001B",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วศ.บ.สาขาวิชาวิศวกรรมซอฟต์แวร์ (โครงการพิเศษ)",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 41.4333,
+      "max_score": 49.15,
+      "min_score_ds": 41.4164,
+      "max_score_ds": 49.15,
+      "receive_student_number": 25,
+      "scores": {
+        "tgat1": 15,
+        "tpat3": 25,
+        "a_lv_61": 30,
+        "a_lv_64": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37f2d2ef4c36c489aba8a",
+      "university_id": "005",
+      "program_id": "10050210301001B",
+      "project_name_th": "รอบ 1 แฟ้มสะสมผลงาน Portfolio ",
+      "type": "1_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "interview_location": "",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-9",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "closed_date": "17/11/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-06T08:34:53.641Z",
+      "min_total_score": 0,
+      "scores": {
+        "tpat3": 40,
+        "portfolio": 40,
+        "interview": 20
+      }
+    },
+    {
+      "_id": "68f7478b27b76be0eb0981b9",
+      "university_id": "005",
+      "program_id": "10050210301001B",
+      "project_id": "B0061",
+      "project_name_th": "โครงการรับนักเรียนจากโรงเรียนสาธิตแห่งมหาวิทยาลัยธรรมศาสตร์",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "1. ผู้สมัครต้องเป็นผู้ที่กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 จากโรงเรียนสาธิตแห่งมหาวิทยาลัยธรรมศาสตร์ 2. ผู้สมัครต้องมีผลการเรียนคะแนนเฉลี่ยสะสม (GPAX) ในชั้นมัธยมศึกษาปีที่ 4 ถึง มัธยมศึกษาปีที่ 6 (ภาค 1) รวม 5 ภาคการศึกษา ไม่ต่ำกว่า 3.00\nเกณฑ์การคัดเลือก \nพิจารณาผลการเรียนเฉลี่ยสะสม (GPAX) ของระดับชั้นมัธยมศึกษาตอนปลาย หรือเทียบเท่า ไม่ต่ำกว่า 3.00 (ประกอบด้วยกลุ่มวิชา วิทยาศาสตร์ (เคมีและฟิสิกส์) และกลุ่มวิชาคณิตศาสตร์) และสอบสัมภาษณ์",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2025-10-21T08:42:51.192Z"
+    },
+    {
+      "_id": "68f7478a27b76be0eb09810e",
+      "university_id": "005",
+      "program_id": "10050210301001B",
+      "project_id": "B0060",
+      "project_name_th": "โครงการโควตาพื้นที่คณะวิศวกรรมศาสตร์ หลักสูตรวิศวกรรมศาสตรบัณฑิต ",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "ผู้สมัครเป็นนักเรียนที่มีภูมิลำเนาและกำลังศึกษา หรือสำเร็จการศึกษาสายสามัญของโรงเรียนในเขตพื้นที่ 12 จังหวัด ได้แก่ จังหวัดนนทบุรี จังหวัดปทุมธานี จังหวัดสระบุรี จังหวัดพระนครศรีอยุธยา จังหวัดอ่างทอง จังหวัดสิงห์บุรี จังหวัดลพบุรี จังหวัดนครนายก จังหวัดนครปฐม จังหวัดสุพรรณบุรี จังหวัดชัยนาท และจังหวัดนครสวรรค์ และมีที่อยู่ตามทะเบียนบ้านในจังหวัดที่ระบุไว้ หากย้ายที่อยู่อาศัย ต้องเข้ามาอาศัยในเขตภูมิลำเนาที่กล่าวมาข้างต้น ไม่น้อยกว่า 3 ปี",
+      "link": "www.tuadmissions.in.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T08:42:50.579Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 20,
+        "tpat3": 60,
+        "interview": 20
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985d4",
+      "university_id": "005",
+      "program_id": "10050210301001B",
+      "type": "3_2569",
+      "receive_student_number": 14,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "ผู้สำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช. 3 ปี)\nต้องเป็นผู้สำเร็จการศึกษาในสาขาวิชาช่างอุตสาหกรรม\n(เกณฑ์คุณสมบัติเฉพาะอื่น ๆ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือก แต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.400Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 10,
+        "tpat3": 30,
+        "a_lv_61": 40,
+        "a_lv_64": 20
+      }
+    }
+  ]
+}

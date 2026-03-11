@@ -1,0 +1,99 @@
+{
+  "program": [
+    {
+      "program_id": "49180102902501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาอังกฤษเพื่อการสื่อสารทางธุรกิจ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 59.5,
+      "max_score": 87,
+      "min_score_ds": 59.5,
+      "max_score_ds": 87,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f076da195067d96fc9050e",
+      "university_id": "918",
+      "program_id": "49180102902501A",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรที่มุ่งมั่นสร้างผู้เชี่ยวชาญด้านภาษาอังกฤษเพื่อโลกธุรกิจ พัฒนาผู้เรียนสู่การเป็นมืออาชีพที่ไม่ได้แค่สื่อสารภาษาอังกฤษได้ แต่ยังสามารถประยุกต์ใช้ความรู้ด้านธุรกิจ ความหลากหลายทางวัฒนธรรมและนวัตกรรม เพื่อสร้างความได้เปรียบในโลกการทำงานยุคใหม่ นำพาผู้เรียนไปสู่การเรียนรู้ที่แตกต่าง ด้วยรูปแบบ Work-based Education ที่เปิดโอกาสให้ผู้เรียนได้ฝึกปฏิบัติงานจริง ในบริษัทชั้นนำระดับโลกทั้งในและต่างประเทศ สั่งสมประสบการณ์ตรง ในธุรกิจที่มีศักยภาพสูง ไม่ว่าจะเป็นธุรกิจการค้าสมัยใหม่, ธุรกิจบริการ, หรือธุรกิจด้านสุขภาพและความเป็นอยู่ที่ดี พร้อมทั้งติดอาวุธด้วยทักษะรอบด้าน ทั้ง Hard Skills และ Soft Skills ที่จำเป็นสำหรับการทำงานในองค์กรระดับสากล ช่วยยกระดับศักยภาพของผู้เรียนให้โดดเด่น และเปิดประตูสู่เส้นทางอาชีพที่ท้าทายและมั่นคง อาทิ Wellness and Medical Service Specialist, Global Sales and Brand Engagement Associate, International Events and Guest Experience Specialist และอีกหลากหลายตำแหน่งงานในองค์กรชั้นนำที่ต้องการบุคลากรผู้เชี่ยวชาญด้านภาษาอังกฤษเพื่อขับเคลื่อนธุรกิจสู่ความสำเร็จระดับโลก\n：รู้จักคณะศิลปศาสตร์ https://www.pim.ac.th/la\n：หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาอังกฤษเพื่อการสื่อสารทางธุรกิจ https://la.pim.ac.th/wp/communicative-english-for-business\n：ค่าเล่าเรียน https://la.pim.ac.th/wp/faculty/bachelor/tuition-fee\n：เรียนแล้วเวิร์กกับสามภาษาที่คณะศิลปศาสตร์ https://m.facebook.com/story.php?story_fbid=pfbid02qY7KXFusF8EAehyrP6yvQBE7n5FHphBVJFY9kdJxVwnpmr5ETz5mYP27nn7rMTHpl&id=100069492579187&mi\n：Facebook Page คณะศิลปศาสตร์ https://www.facebook.com/pim.LiberalArts",
+      "condition": "เขียน SOP (Statement of purpose) บอกเรื่องราวเกี่ยวกับตัวเอง เหตุผล / ทัศนคติต่อสาขาวิชาที่เลือกสมัคร และผลงานการเข้าร่วมกิจกรรมด้านคุณธรรม จริยธรรม  และการประพฤติตนเป็นประโยชน์แก่สังคม (ความยาวไม่เกิน 2 หน้ากระดาษ ขนาดตัวอักษร 16 ไม่จำกัดตัวอักษร) สมัครและแนบ Portfolio ผ่านทาง: https://bit.ly/3tmSir9  รายละเอียดหลักสูตรอื่นๆ ของสถาบัน: https://www.pim.ac.th/faculty/bachelor",
+      "interview_location": "สถาบันการจัดการปัญญาภิวัฒน์ สำนักแนะแนวและรับสมัคร ชั้น L อาคาร CPALL Academy โทร. 02-855-0360",
+      "link": "https://bit.ly/3tmSir9 ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-16T04:38:50.592Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68f076da195067d96fc90510",
+      "university_id": "918",
+      "program_id": "49180102902501A",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรที่มุ่งมั่นสร้างผู้เชี่ยวชาญด้านภาษาอังกฤษเพื่อโลกธุรกิจ พัฒนาผู้เรียนสู่การเป็นมืออาชีพที่ไม่ได้แค่สื่อสารภาษาอังกฤษได้ แต่ยังสามารถประยุกต์ใช้ความรู้ด้านธุรกิจ ความหลากหลายทางวัฒนธรรมและนวัตกรรม เพื่อสร้างความได้เปรียบในโลกการทำงานยุคใหม่ นำพาผู้เรียนไปสู่การเรียนรู้ที่แตกต่าง ด้วยรูปแบบ Work-based Education ที่เปิดโอกาสให้ผู้เรียนได้ฝึกปฏิบัติงานจริง ในบริษัทชั้นนำระดับโลกทั้งในและต่างประเทศ สั่งสมประสบการณ์ตรง ในธุรกิจที่มีศักยภาพสูง ไม่ว่าจะเป็นธุรกิจการค้าสมัยใหม่, ธุรกิจบริการ, หรือธุรกิจด้านสุขภาพและความเป็นอยู่ที่ดี พร้อมทั้งติดอาวุธด้วยทักษะรอบด้าน ทั้ง Hard Skills และ Soft Skills ที่จำเป็นสำหรับการทำงานในองค์กรระดับสากล ช่วยยกระดับศักยภาพของผู้เรียนให้โดดเด่น และเปิดประตูสู่เส้นทางอาชีพที่ท้าทายและมั่นคง อาทิ Wellness and Medical Service Specialist, Global Sales and Brand Engagement Associate, International Events and Guest Experience Specialist และอีกหลากหลายตำแหน่งงานในองค์กรชั้นนำที่ต้องการบุคลากรผู้เชี่ยวชาญด้านภาษาอังกฤษเพื่อขับเคลื่อนธุรกิจสู่ความสำเร็จระดับโลก\n：รู้จักคณะศิลปศาสตร์ https://www.pim.ac.th/la\n：หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาอังกฤษเพื่อการสื่อสารทางธุรกิจ https://la.pim.ac.th/wp/communicative-english-for-business\n：ค่าเล่าเรียน https://la.pim.ac.th/wp/faculty/bachelor/tuition-fee\n：เรียนแล้วเวิร์กกับสามภาษาที่คณะศิลปศาสตร์ https://m.facebook.com/story.php?story_fbid=pfbid02qY7KXFusF8EAehyrP6yvQBE7n5FHphBVJFY9kdJxVwnpmr5ETz5mYP27nn7rMTHpl&id=100069492579187&mi\n：Facebook Page คณะศิลปศาสตร์ https://www.facebook.com/pim.LiberalArts",
+      "condition": "สมัครผ่านทาง: https://bit.ly/3tmSir9  รายละเอียดหลักสูตรอื่นๆ ของสถาบัน: https://www.pim.ac.th/faculty/bachelor",
+      "interview_location": "สถาบันการจัดการปัญญาภิวัฒน์ สำนักแนะแนวและรับสมัคร ชั้น L อาคาร CPALL Academy โทร. 02-855-0360",
+      "link": "https://bit.ly/3tmSir9 ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-16T04:38:50.599Z"
+    },
+    {
+      "_id": "68f076da195067d96fc90512",
+      "university_id": "918",
+      "program_id": "49180102902501A",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรที่มุ่งมั่นสร้างผู้เชี่ยวชาญด้านภาษาอังกฤษเพื่อโลกธุรกิจ พัฒนาผู้เรียนสู่การเป็นมืออาชีพที่ไม่ได้แค่สื่อสารภาษาอังกฤษได้ แต่ยังสามารถประยุกต์ใช้ความรู้ด้านธุรกิจ ความหลากหลายทางวัฒนธรรมและนวัตกรรม เพื่อสร้างความได้เปรียบในโลกการทำงานยุคใหม่ นำพาผู้เรียนไปสู่การเรียนรู้ที่แตกต่าง ด้วยรูปแบบ Work-based Education ที่เปิดโอกาสให้ผู้เรียนได้ฝึกปฏิบัติงานจริง ในบริษัทชั้นนำระดับโลกทั้งในและต่างประเทศ สั่งสมประสบการณ์ตรง ในธุรกิจที่มีศักยภาพสูง ไม่ว่าจะเป็นธุรกิจการค้าสมัยใหม่, ธุรกิจบริการ, หรือธุรกิจด้านสุขภาพและความเป็นอยู่ที่ดี พร้อมทั้งติดอาวุธด้วยทักษะรอบด้าน ทั้ง Hard Skills และ Soft Skills ที่จำเป็นสำหรับการทำงานในองค์กรระดับสากล ช่วยยกระดับศักยภาพของผู้เรียนให้โดดเด่น และเปิดประตูสู่เส้นทางอาชีพที่ท้าทายและมั่นคง อาทิ Wellness and Medical Service Specialist, Global Sales and Brand Engagement Associate, International Events and Guest Experience Specialist และอีกหลากหลายตำแหน่งงานในองค์กรชั้นนำที่ต้องการบุคลากรผู้เชี่ยวชาญด้านภาษาอังกฤษเพื่อขับเคลื่อนธุรกิจสู่ความสำเร็จระดับโลก\n：รู้จักคณะศิลปศาสตร์ https://www.pim.ac.th/la\n：หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาอังกฤษเพื่อการสื่อสารทางธุรกิจ https://la.pim.ac.th/wp/communicative-english-for-business\n：ค่าเล่าเรียน https://la.pim.ac.th/wp/faculty/bachelor/tuition-fee\n：เรียนแล้วเวิร์กกับสามภาษาที่คณะศิลปศาสตร์ https://m.facebook.com/story.php?story_fbid=pfbid02qY7KXFusF8EAehyrP6yvQBE7n5FHphBVJFY9kdJxVwnpmr5ETz5mYP27nn7rMTHpl&id=100069492579187&mi\n：Facebook Page คณะศิลปศาสตร์ https://www.facebook.com/pim.LiberalArts",
+      "interview_location": "สถาบันการจัดการปัญญาภิวัฒน์ สำนักแนะแนวและรับสมัคร ชั้น L อาคาร CPALL Academy โทร. 02-855-0360",
+      "link": "https://bit.ly/3tmSir9 ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-16T04:38:50.606Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

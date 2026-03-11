@@ -1,0 +1,104 @@
+{
+  "program": [
+    {
+      "program_id": "10050206902501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.สาขาวิชาภาษาอังกฤษ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 76.125,
+      "max_score": 82.75,
+      "min_score_ds": 76,
+      "max_score_ds": 82.75,
+      "receive_student_number": 67,
+      "scores": {
+        "a_lv_70": 25,
+        "a_lv_81": 25,
+        "a_lv_82": 50
+      }
+    },
+    {
+      "program_id": "10050206902501A",
+      "project_id": "T3033",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.สาขาวิชาภาษาอังกฤษ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "ผู้สมัครกลุ่มเทียบวุฒิมัธยมศึกษาตอนปลาย (GED)",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 67,
+      "scores": {
+        "a_lv_70": 25,
+        "a_lv_81": 25,
+        "a_lv_82": 50
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7478e27b76be0eb098552",
+      "university_id": "005",
+      "program_id": "10050206902501A",
+      "join_id": "3013",
+      "type": "3_2569",
+      "receive_student_number": 70,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_a_lv_82": 60
+      },
+      "created_at": "2025-10-21T08:42:54.025Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_70": 25,
+        "a_lv_81": 25,
+        "a_lv_82": 50
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb098554",
+      "university_id": "005",
+      "program_id": "10050206902501A",
+      "project_id": "T3033",
+      "project_name_th": "ผู้สมัครกลุ่มเทียบวุฒิมัธยมศึกษาตอนปลาย (GED)",
+      "join_id": "3013",
+      "type": "3_2569",
+      "receive_student_number": 70,
+      "only_formal": 2,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "สำหรับผู้ที่สอบเทียบวุฒิความรู้ต่างประเทศ GED ในการสอบแต่ละวิชาต้องมีผลคะแนนสอบ 165 คะแนนขึ้นไป โดยมีคะแนนรวมขั้นต่ำ 660 คะแนน (4 รายวิชาไม่ซ้ำกัน)\n(เกณฑ์คุณสมบัติเฉพาะอื่น ๆ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือก แต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_a_lv_82": 60,
+        "min_ged_score": 660
+      },
+      "created_at": "2025-10-21T08:42:54.032Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_70": 25,
+        "a_lv_81": 25,
+        "a_lv_82": 50
+      }
+    }
+  ]
+}

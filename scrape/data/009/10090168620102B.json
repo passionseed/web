@@ -1,0 +1,131 @@
+{
+  "program": [
+    {
+      "program_id": "10090168620102B",
+      "project_id": "A0001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาการท่องเที่ยวและการโรงแรม (โครงการพิเศษ)",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 50.5915,
+      "max_score": 56.6831,
+      "min_score_ds": 50.4915,
+      "max_score_ds": 56.6831,
+      "receive_student_number": 20,
+      "scores": {
+        "tgat": 30,
+        "a_lv_62": 10,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 30,
+        "cal_type": "1",
+        "cal_score_sum": 10,
+        "cal_subject_name": "a_lv_85|a_lv_86|a_lv_87"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc347a1b0969b83dd6da03",
+      "university_id": "009",
+      "program_id": "10090168620102B",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "folio_q1": "มีหนังสือรับรอง / เกียรติบัตร / ภาพถ่าย ในการมีส่วนร่วมในการดำเนินงาน หรือเข้าร่วมกิจกรรมเพื่อสังคม และสาธารณประโยชน์ โครงการจิตอาสา/จิตสาธารณะ/บำเพ็ญประโยชน์/กิจกรรมที่ทำนอกห้องเรียน/อุทิศตนช่วยเหลือกิจกรรมของชุมชนและสังคม ซึ่งจัดโดยหน่วยงานภาครัฐ หรือเอกชน",
+        "folio_q1_type": "C",
+        "folio_q2": "เรียงความในหัวข้อ เรียงความเรื่อง “ใจรักในงานบริการคืออะไร นักเรียนคิดว่า ตนเองเป็นผู้ที่มีสิ่งนี้ในตัวเองหรือไม่ และเพราะเหตุใด พร้อมอธิบายว่า ทำไมผู้ที่ทำงานบริการจึงจำเป็นจะต้องมีสิ่งนี้เป็นอันดับแรก”",
+        "folio_q2_type": "B",
+        "folio_q3": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม (ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 1 ฉบับ จากบุคคลต่อไปนี้ โดยเลือกอย่างใดอย่างหนึ่ง\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ หรือ\n2) อาจารย์ประจำชั้น หรือ อาจารย์ผู้สอน จำนวน 1 ฉบับ",
+        "folio_q3_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:50.205Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6da05",
+      "university_id": "009",
+      "program_id": "10090168620102B",
+      "project_id": "D0009",
+      "project_name_th": "โครงการโรงเรียนในเขตพื้นที่มหาวิทยาลัยและปริมณฑล",
+      "project_name_en": "",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tgat": 1,
+        "score_condition": 1,
+        "subject_names": "min_a_lv_85 min_a_lv_86 min_a_lv_87",
+        "score_minimum": "1 1 1"
+      },
+      "created_at": "2025-10-25T02:22:50.211Z"
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6da07",
+      "university_id": "009",
+      "program_id": "10090168620102B",
+      "project_id": "A0001",
+      "project_name_th": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tgat": 1,
+        "score_condition": 1,
+        "subject_names": "min_a_lv_85 min_a_lv_86 min_a_lv_87",
+        "score_minimum": "1 1 1"
+      },
+      "created_at": "2025-10-25T02:22:50.217Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "a_lv_62": 10,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 30,
+        "cal_type": "1",
+        "cal_score_sum": 10,
+        "cal_subject_name": "a_lv_85|a_lv_86|a_lv_87"
+      }
+    }
+  ]
+}

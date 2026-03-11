@@ -1,0 +1,97 @@
+{
+  "program": [
+    {
+      "program_id": "31920105610901A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "บธ.บ. (นวัตกรรมระบบสารสนเทศ)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 44.5,
+      "max_score": 87.5,
+      "min_score_ds": 44.5,
+      "max_score_ds": 87.5,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fe3f5fb722e19cb80f9611",
+      "university_id": "192",
+      "program_id": "31920105610901A",
+      "type": "1_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (นวัตกรรมระบบสารสนเทศ)",
+      "condition": "สำหรับผู้จบหลักสูตรนานาชาติต้องเป็นโรงเรียนนานาชาติในประเทศไทยเท่านั้น",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-26T15:33:51.191Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f9677",
+      "university_id": "192",
+      "program_id": "31920105610901A",
+      "type": "2_2569",
+      "receive_student_number": 45,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (นวัตกรรมระบบสารสนเทศ)",
+      "condition": "สำหรับผู้จบหลักสูตรนานาชาติต้องเป็นโรงเรียนนานาชาติในประเทศไทยเท่านั้น",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-26T15:33:51.509Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f96dd",
+      "university_id": "192",
+      "program_id": "31920105610901A",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (นวัตกรรมระบบสารสนเทศ)",
+      "condition": "สำหรับผู้จบหลักสูตรนานาชาติต้องเป็นโรงเรียนนานาชาติในประเทศไทยเท่านั้น",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 1.75,
+      "score_conditions": {
+        "min_gpax": 1.75
+      },
+      "created_at": "2025-10-26T15:33:51.829Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f5afeb84df8e9fee9b179a",
+      "university_id": "010",
+      "program_id": "10100102210501A",
+      "project_id": "A0208",
+      "project_name_th": "โครงการ \"Sci Seed สานฝัน คนพันธุ์วิทย์\" ",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "2568-11-06",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-20T03:43:39.387Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f5afeb84df8e9fee9b17cc",
+      "university_id": "010",
+      "program_id": "10100102210501A",
+      "project_id": "A9001",
+      "project_name_th": "โครงการรับนักเรียนที่มีผลการเรียนดี ",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "2568-12-22",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-20T03:43:39.556Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f5afeb84df8e9fee9b17fc",
+      "university_id": "010",
+      "program_id": "10100102210501A",
+      "project_id": "A9002",
+      "project_name_th": "โครงการคัดเลือกนักเรียนรับตรง (โควตาภูมิภาคใต้)",
+      "type": "2_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T03:43:39.736Z",
+      "score_conditions": {}
+    }
+  ]
+}

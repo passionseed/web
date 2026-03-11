@@ -1,0 +1,117 @@
+{
+  "program": [
+    {
+      "program_id": "10090105703501A",
+      "project_id": "A0001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต สาขาวิชาอุตสาหกรรมศึกษา - ไฟฟ้า (กศ.บ.)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 63.4747,
+      "max_score": 73.5624,
+      "min_score_ds": 63.3746,
+      "max_score_ds": 73.5624,
+      "receive_student_number": 25,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34781b0969b83dd6d7ab",
+      "university_id": "009",
+      "program_id": "10090105703501A",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tpat5": 30
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.200Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7ad",
+      "university_id": "009",
+      "program_id": "10090105703501A",
+      "project_id": "E0003",
+      "project_name_th": "โครงการความร่วมมือระหว่างสถาบันการอาชีวศึกษากับ คณะศึกษาศาสตร์",
+      "type": "2_2569",
+      "receive_student_number": 19,
+      "only_formal": 2,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tpat5": 30
+      },
+      "created_at": "2025-10-25T02:22:48.209Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7af",
+      "university_id": "009",
+      "program_id": "10090105703501A",
+      "project_id": "A0001",
+      "project_name_th": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 5,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 40,
+        "min_tpat5": 50,
+        "min_a_lv_61": 20,
+        "min_a_lv_64": 15
+      },
+      "created_at": "2025-10-25T02:22:48.215Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 35,
+        "tpat5": 35,
+        "a_lv_61": 10,
+        "a_lv_64": 10,
+        "a_lv_82": 10
+      }
+    }
+  ]
+}

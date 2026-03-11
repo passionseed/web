@@ -1,0 +1,198 @@
+{
+  "program": [
+    {
+      "program_id": "10050216400502B",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วท.บ.สาขาวิชาสถาปัตยกรรมเพื่อการพัฒนาอสังหาริมทรัพย์",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 41.4214,
+      "max_score": 49.9998,
+      "min_score_ds": 40.4349,
+      "max_score_ds": 49.9998,
+      "receive_student_number": 27,
+      "scores": {
+        "tgat": 30,
+        "tpat4": 20,
+        "a_lv_61": 30,
+        "a_lv_63": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37f2d2ef4c36c489abab0",
+      "university_id": "005",
+      "program_id": "10050216400502B",
+      "project_name_th": "รอบ 1 แฟ้มสะสมผลงาน Portfolio ",
+      "type": "1_2569",
+      "receive_student_number": 32,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-9",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "closed_date": "17/11/2568",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-06T08:34:53.772Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37f2d2ef4c36c489ab9f4",
+      "university_id": "005",
+      "program_id": "10050216400502B",
+      "project_id": "A6601",
+      "project_name_th": "โครงการรับนักเรียนผู้มีความสามารถดีเด่นด้านวิชาการ กลุ่ม สสวท.",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "1. ผู้สมัครต้องเป็นผู้ที่กำลังศึกษาในระดับมัธยมศึกษาปีที่ 6 สายสามัญ\t\n2. ผู้สมัครต้องมีคะแนนเฉลี่ยสะสมตั้งแต่ชั้นมัธยมศึกษาปีที่ 4-6 (ภาค 1) รวม 5 ภาคการศึกษา ไม่ต่ำกว่า 3.00 \n3. ผู้สมัครทุกสาขาวิชาต้องเป็นผู้ที่กำลังศึกษาอยู่ในชั้นมัธยมศึกษาปีที่ 6 สายสามัญ กลุ่มสาระการเรียนรู้วิชาวิทยาศาสตร์ ฟิสิกส์ เคมี ชีวะ ต้องเรียนรายวิชาพื้นฐานและรายวิชาเพิ่มเติม รวมกันไม่น้อยกว่า 22 หน่วยกิต กลุ่มสาระการเรียนรู้คณิตศาสตร์ต้องเรียนรายวิชาพื้นฐานและรายวิชาเพิ่มเติม รวมกันไม่น้อยกว่า 12 หน่วยกิต เป็นผู้ที่ได้รับการคัดเลือกจากมูลนิธิ สอวน. เพื่อเข้ารับการอบรมคัดเลือกครั้งที่ 1 โครงการจัดส่งผู้แทนประเทศไทยไปแข่งขันคณิตศาสตร์และวิทยาศาสตร์โอลิมปิกระหว่างประเทศของสถาบันส่งเสริมการสอนวิทยาศาสตร์และเทคโนโลยี (สสวท.)   ",
+      "link": "www.tuadmissions.in.th/img/2025093010185240.pdf",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "17/11/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-06T08:34:53.097Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68f7478b27b76be0eb09824f",
+      "university_id": "005",
+      "program_id": "10050216400502B",
+      "project_id": "D0049",
+      "project_name_th": "โครงการรับนักเรียนพลเมืองจิตอาสา",
+      "join_id": "4916",
+      "type": "2_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "เกณฑ์การคัดเลือก\n1. ผลคะแนนผลการทดสอบวิชา TGAT ที่มีคะแนนรวมเฉลี่ยไม่ต่ำกว่าคะแนนเฉลี่ย – ค่าเบี่ยงเบนมาตรฐาน (  x̅- SD)\n2. ผลการทดสอบกลุ่มวิชา A-Level ของวิชาใดวิชาหนึ่งในจำนวน 16 วิชา ไม่ต่ำกว่า 30 คะแนน\n(มหาวิทยาลัยเลือกเพียง 1 วิชาที่มีคะแนนสูงสุด) จากกลุ่มวิชาดังต่อไปนี้  (1) คณิตศาสตร์ประยุกต์ 1 (พื้นฐาน+เพิ่มเติม)  (2) คณิตศาสตร์ประยุกต์ 2 (พื้นฐาน)  (3) วิทยาศาสตร์ประยุกต์ (4) ฟิสิกส์ (5) เคมี (6) ชีววิทยา (7) สังคมศึกษา\t(8) ภาษาไทย  (9) ภาษาอังกฤษ (10) ภาษาฝรั่งเศส        \n(11) ภาษาเยอรมัน (12) ภาษาญี่ปุ่น (13) ภาษาเกาหลี (14) ภาษาจีน (15) ภาษาบาลี (16) ภาษาสเปน",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:51.671Z"
+    },
+    {
+      "_id": "68f7478b27b76be0eb0981df",
+      "university_id": "005",
+      "program_id": "10050216400502B",
+      "project_id": "B0061",
+      "project_name_th": "โครงการรับนักเรียนจากโรงเรียนสาธิตแห่งมหาวิทยาลัยธรรมศาสตร์",
+      "join_id": "6102",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "1. ผู้สมัครต้องเป็นผู้ที่กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 จากโรงเรียนสาธิตแห่งมหาวิทยาลัยธรรมศาสตร์ 2. ผู้สมัครต้องมีผลการเรียนคะแนนเฉลี่ยสะสม (GPAX) ในชั้นมัธยมศึกษาปีที่ 4 ถึง มัธยมศึกษาปีที่ 6 (ภาค 1) รวม 5 ภาคการศึกษา ไม่ต่ำกว่า 3.00",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2025-10-21T08:42:51.301Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 60,
+        "tpat4": 40
+      }
+    },
+    {
+      "_id": "68f7478c27b76be0eb09835e",
+      "university_id": "005",
+      "program_id": "10050216400502B",
+      "project_id": "A0062",
+      "project_name_th": "โครงการนักศึกษาผู้มีความสามารถดีเด่นทางการกีฬา ",
+      "join_id": "6210",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "(1) เป็นผู้ที่กำลังศึกษาอยู่ในชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า ต้องมีคะแนนเฉลี่ยสะสม GPAX ตั้งแต่ชั้นมัธยมศึกษาปีที่ 4 - 6 (ภาค 1) รวม 5 ภาคการศึกษา ไม่ต่ำกว่า 2.00 หรือ \n(2) เป็นผู้ที่สำเร็จการศึกษาชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า ต้องมีคะแนนเฉลี่ยสะสม GPAX ตั้งแต่ชั้นมัธยมศึกษาปีที่ 4 - 6 รวม 6 ภาคการศึกษา ไม่ต่ำกว่า 2.00 หรือ \n(3) ผู้สมัครที่สำเร็จการศึกษาจากสถาบันต่างประเทศในระดับเทียบเท่าชั้นมัธยมศึกษาตอนปลาย ให้เทียบวุฒิการศึกษา ตามประกาศมหาวิทยาลัยธรรมศาสตร์ เรื่อง แนวทางการเทียบวุฒิการศึกษาเท่ากับชั้นมัธยมศึกษาตอนปลายของมหาวิทยาลัยธรรมศาสตร์ พ.ศ. 2564\n",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:52.516Z"
+    },
+    {
+      "_id": "68f7478c27b76be0eb0982f7",
+      "university_id": "005",
+      "program_id": "10050216400502B",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:52.217Z"
+    },
+    {
+      "_id": "68f7478e27b76be0eb09860a",
+      "university_id": "005",
+      "program_id": "10050216400502B",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T08:42:54.557Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat4": 20,
+        "a_lv_61": 30,
+        "a_lv_63": 20
+      }
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "program": [
+    {
+      "program_id": "41300100702705A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศึกษาศาสตรบัณฑิต (ศษ.บ.)(สังคมศึกษา)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "สังคมศึกษา",
+      "project_name_th": "0",
+      "min_score": 53.25,
+      "max_score": 83.75,
+      "min_score_ds": 53.25,
+      "max_score_ds": 79.5,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e6840a14cc736fe853340e",
+      "university_id": "130",
+      "program_id": "41300100702705A",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ศึกษาศาสตรบัณฑิต (ศษ.บ.)(สังคมศึกษา)",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษาและ กศน.",
+      "interview_location": "",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://admission.hu.ac.th/tcas/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-08T15:32:26.424Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68e6840a14cc736fe8533410",
+      "university_id": "130",
+      "program_id": "41300100702705A",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ศึกษาศาสตรบัณฑิต (ศษ.บ.)(สังคมศึกษา)",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษาและ กศน.",
+      "interview_location": "",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://admission.hu.ac.th/tcas/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-08T15:32:26.429Z"
+    },
+    {
+      "_id": "68e6840a14cc736fe8533412",
+      "university_id": "130",
+      "program_id": "41300100702705A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ศึกษาศาสตรบัณฑิต (ศษ.บ.)(สังคมศึกษา)",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษาและ กศน.",
+      "interview_location": "",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://admission.hu.ac.th/tcas/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-08T15:32:26.434Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68fa40ca87870d31bd16f3fa",
+      "university_id": "193",
+      "program_id": "31930407400502A",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สถาปัตยกรรมศาสตรบัณฑิต (สถ.บ.) สาขาวิชาการโยธาและพัฒนาอสังหาริมทรัพย์ (หลักสูตรพหุวิทยาการ)",
+      "condition": "สำเร็จการศึกษา ม.6 ทุกสาขาวิชา\n",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-23T14:50:50.915Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fa40ca87870d31bd16f3fc",
+      "university_id": "193",
+      "program_id": "31930407400502A",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สถาปัตยกรรมศาสตรบัณฑิต (สถ.บ.) สาขาวิชาการโยธาและพัฒนาอสังหาริมทรัพย์ (หลักสูตรพหุวิทยาการ)",
+      "condition": "สำเร็จการศึกษา ม.6 ทุกสาขาวิชา\n",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-23T14:50:50.920Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fa40ca87870d31bd16f3fe",
+      "university_id": "193",
+      "program_id": "31930407400502A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สถาปัตยกรรมศาสตรบัณฑิต (สถ.บ.) สาขาวิชาการโยธาและพัฒนาอสังหาริมทรัพย์ (หลักสูตรพหุวิทยาการ)",
+      "condition": "สำเร็จการศึกษา ม.6 ทุกสาขาวิชา\n",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-23T14:50:50.925Z",
+      "score_conditions": {},
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

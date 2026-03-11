@@ -1,0 +1,244 @@
+{
+  "program": [
+    {
+      "program_id": "10200121701501A",
+      "project_id": "N3001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลและนวัตกรรมเพื่อการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "admission (แบบที่ 1)",
+      "min_score": 52.3332,
+      "max_score": 67.6579,
+      "min_score_ds": 51.3162,
+      "max_score_ds": 67.6579,
+      "receive_student_number": 39,
+      "scores": {
+        "gpax": 30,
+        "tgat": 60,
+        "tpat3": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37ed72ef4c36c489ab493",
+      "university_id": "020",
+      "program_id": "10200121701501A",
+      "project_id": "N1001",
+      "project_name_th": "โครงการคัดเลือกนักเรียนที่มีผลการเรียนเป็นเลิศ",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลและนวัตกรรมเพื่อการเรียนรู้",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3.5,
+      "score_conditions": {
+        "min_gpax": 3.5
+      },
+      "folio": {
+        "folio_q1": "มีผลการเรียนเฉลี่ยสะสม 5 ภาคเรียนไม่ต่ำกว่า 3.50 หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "เป็นนักเรียนกำลังศึกษาอยู่ในระดับชั้นมัธยมศึกษาปีที่ 6 ในเขตพื้นที่ 18 จังหวัดได้แก่ จังหวัดเชียงราย เชียงใหม่ แม่ฮ่องสอน ลำพูน ลำปาง พะเยา น่าน แพร่ แพงเพชร ตาก นครสวรรค์ พิจิตร พิษณุโลก เพชรบูรณ์ สุโขทัย อุตรดิตถ์ อุทัยธานี ชัยนาท หรือไม่",
+        "folio_q2_type": "A",
+        "folio_q3": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q3_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:27.869Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed72ef4c36c489ab495",
+      "university_id": "020",
+      "program_id": "10200121701501A",
+      "project_id": "N1002",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน (สำหรับโรงเรียนที่สังกัด สพม. สพฐ. เท่านั้น)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลและนวัตกรรมเพื่อการเรียนรู้",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "folio_q1": "เป็นนักเรียนกำลังศึกษาอยู่ในระดับชั้นมัธยมศึกษาปีที่ 6 ในเขตพื้นที่ 18 จังหวัดได้แก่ จังหวัดเชียงราย เชียงใหม่ แม่ฮ่องสอน ลำพูน ลำปาง พะเยา น่าน แพร่ แพงเพชร ตาก นครสวรรค์ พิจิตร พิษณุโลก เพชรบูรณ์ สุโขทัย อุตรดิตถ์ อุทัยธานี ชัยนาท หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "โรงเรียนสังกัดสำนักงานคณะกรรมการการศึกษาขั้นพื้นฐานหรือไม่",
+        "folio_q2_type": "A",
+        "folio_q3": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q3_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:27.875Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed72ef4c36c489ab497",
+      "university_id": "020",
+      "program_id": "10200121701501A",
+      "project_id": "N1003",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน (สำหรับโรงเรียนที่ไม่ได้สังกัด สพม. สพฐ.)",
+      "type": "1_2569",
+      "receive_student_number": 7,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลและนวัตกรรมเพื่อการเรียนรู้",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "folio_q1": "เป็นนักเรียนกำลังศึกษาอยู่ในระดับชั้นมัธยมศึกษาปีที่ 6 ในเขตพื้นที่ 18 จังหวัดได้แก่ จังหวัดเชียงราย เชียงใหม่ แม่ฮ่องสอน ลำพูน ลำปาง พะเยา น่าน แพร่ แพงเพชร ตาก นครสวรรค์ พิจิตร พิษณุโลก เพชรบูรณ์ สุโขทัย อุตรดิตถ์ อุทัยธานี ชัยนาท หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "โรงเรียนไม่ได้สังกัดสำนักงานคณะกรรมการการศึกษาขั้นพื้นฐานหรือไม่",
+        "folio_q2_type": "A",
+        "folio_q3": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q3_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:27.881Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed72ef4c36c489ab499",
+      "university_id": "020",
+      "program_id": "10200121701501A",
+      "project_id": "N1005",
+      "project_name_th": "โครงการผู้ที่มีความสามารถพิเศษทางด้านศิลปวัฒนธรรม (โครงการลูกพระฆเนศ)",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลและนวัตกรรมเพื่อการเรียนรู้",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "folio": {
+        "folio_q1": "ผู้สมัครต้องมีความสามารถพิเศษอย่างใดอย่างหนึ่งดังต่อไปนี้หรือไม่ ความสามารถด้านดนตรี ประเภท เครื่องสาย เครื่องตี เครื่องเป่า ดนตรีพื้นบ้าน และสามารถอ่านโน้ตดนตรีสากลได้ หรือ ความสามารถด้านขับร้อง ประเภท เพลงไทยลูกทุ่ง ลูกกรุง ลูกทุ่งหมอลำ เพลงพื้นบ้าน หรือ ความสามารถด้านการเต้น ประเภท สามารถเต้นในรูปแบบแดนเซอร์วงดนตรีลูกทุ่ง , Contemporary Dance , Modern Dance , Cover Dance ได้อย่างดีมาก",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:27.887Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68e37ed72ef4c36c489ab49b",
+      "university_id": "020",
+      "program_id": "10200121701501A",
+      "project_id": "N2001",
+      "project_name_th": "โควตา",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลและนวัตกรรมเพื่อการเรียนรู้",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-06T08:33:27.893Z"
+    },
+    {
+      "_id": "68e37ed72ef4c36c489ab49d",
+      "university_id": "020",
+      "program_id": "10200121701501A",
+      "project_id": "N3001",
+      "project_name_th": "admission (แบบที่ 1)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลและนวัตกรรมเพื่อการเรียนรู้",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-06T08:33:27.899Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 30,
+        "tgat": 60,
+        "tpat3": 10
+      }
+    }
+  ]
+}

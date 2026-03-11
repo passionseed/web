@@ -1,0 +1,190 @@
+{
+  "program": [
+    {
+      "program_id": "10060219610801A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 88.1,
+      "max_score": 94.3,
+      "min_score_ds": 87.5,
+      "max_score_ds": 94.3,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 80,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de0478834d6",
+      "university_id": "006",
+      "program_id": "10060219610801A",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "GPA กลุ่มภาษาต่างประเทศ ใช้เฉพาะภาษาอังกฤษ ไม่ต่ำกว่า 2.80 และรายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://ka.mahidol.ac.th/th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.5,
+      "min_gpa22": 2.8,
+      "score_conditions": {
+        "min_gpax": 3.5,
+        "min_gpa22": 2.8
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.489Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb087789",
+      "university_id": "006",
+      "program_id": "10060219610801A",
+      "project_id": "B2103",
+      "project_name_th": "โครงการพื้นที่  ",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต (4 ปี)",
+      "condition": "รายละเอียดเกณฑ์การรับสมัคร ที่ https://ka.mahidol.ac.th/th/tcas/ และสมัครเข้าศึกษาผ่านระบบออนไลน์ ที่ https://tcas.mahidol.ac.th/",
+      "interview_location": "มหาวิทยาลัยมหิดล วิทยาเขตกาญจนบุรี เลขที่ 199 หมู่ 9 ต.ลุ่มสุ่ม อ.ไทรโยค จ.กาญจนบุรี 71150",
+      "interview_date": "วันที่ 24 มกราคม 2569  (สัมภาษณ์รูปแบบ Online)",
+      "interview_time": "เวลา 09.00 น เป็นต้นไป",
+      "link": "รายละเอียดสัมภาษณ์ ที่ https://ka.mahidol.ac.th/th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_a_lv_61": 10,
+        "min_a_lv_82": 15
+      },
+      "created_at": "2025-10-21T03:07:14.531Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb08778b",
+      "university_id": "006",
+      "program_id": "10060219610801A",
+      "project_id": "B2104",
+      "project_name_th": "โครงการ MOU",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต (4 ปี)",
+      "condition": "รายละเอียดเกณฑ์การรับสมัคร ที่ https://ka.mahidol.ac.th/th/tcas/ และสมัครเข้าศึกษาผ่านระบบออนไลน์ ที่ https://tcas.mahidol.ac.th/",
+      "interview_location": "มหาวิทยาลัยมหิดล วิทยาเขตกาญจนบุรี เลขที่ 199 หมู่ 9 ต.ลุ่มสุ่ม อ.ไทรโยค จ.กาญจนบุรี 71150",
+      "interview_date": "วันที่ 24 มกราคม 2569  (สัมภาษณ์รูปแบบ Online)",
+      "interview_time": "เวลา 09.00 น เป็นต้นไป",
+      "link": "รายละเอียดสัมภาษณ์ ที่ https://ka.mahidol.ac.th/th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_a_lv_61": 10,
+        "min_a_lv_82": 15
+      },
+      "created_at": "2025-10-21T03:07:14.537Z"
+    },
+    {
+      "_id": "68f6f8e327b76be0eb08783d",
+      "university_id": "006",
+      "program_id": "10060219610801A",
+      "project_id": "C3013",
+      "project_name_th": "กลุ่มวิทย์คณิต",
+      "join_id": "3002",
+      "type": "3_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต (4 ปี)",
+      "condition": "รายละเอียดเกณฑ์การรับสมัคร ที่ https://ka.mahidol.ac.th/th/tcas/ และสมัครเข้าศึกษา ที่ https://www.mytcas.com/",
+      "interview_location": "มหาวิทยาลัยมหิดล วิทยาเขตกาญจนบุรี เลขที่ 199 หมู่ 9 ต.ลุ่มสุ่ม อ.ไทรโยค จ.กาญจนบุรี 71150",
+      "interview_date": "วันที่ 1 มิถุนายน 2569  (สัมภาษณ์รูปแบบ Online)",
+      "interview_time": "เวลา 09.00 น เป็นต้นไป",
+      "link": "รายละเอียดสัมภาษณ์ ที่ https://ka.mahidol.ac.th/th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_a_lv_61": 15,
+        "min_a_lv_82": 25,
+        "score_condition": 2,
+        "subject_names": "min_a_lv_61 min_a_lv_70 min_a_lv_81 min_a_lv_82",
+        "score_minimum": "120"
+      },
+      "created_at": "2025-10-21T03:07:15.074Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 80,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "_id": "68f6f8e327b76be0eb08783f",
+      "university_id": "006",
+      "program_id": "10060219610801A",
+      "project_id": "C3014",
+      "project_name_th": "กลุ่มศิลป์คำนวณ",
+      "join_id": "3002",
+      "type": "3_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต (4 ปี)",
+      "condition": "รายละเอียดเกณฑ์การรับสมัคร ที่ https://ka.mahidol.ac.th/th/tcas/ และสมัครเข้าศึกษา ที่ https://www.mytcas.com/",
+      "interview_location": "มหาวิทยาลัยมหิดล วิทยาเขตกาญจนบุรี เลขที่ 199 หมู่ 9 ต.ลุ่มสุ่ม อ.ไทรโยค จ.กาญจนบุรี 71150",
+      "interview_date": "วันที่ 1 มิถุนายน 2569  (สัมภาษณ์รูปแบบ Online)",
+      "interview_time": "เวลา 09.00 น เป็นต้นไป",
+      "link": "รายละเอียดสัมภาษณ์ ที่ https://ka.mahidol.ac.th/th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_a_lv_61": 15,
+        "min_a_lv_82": 25,
+        "score_condition": 2,
+        "subject_names": "min_a_lv_61 min_a_lv_70 min_a_lv_81 min_a_lv_82",
+        "score_minimum": "120"
+      },
+      "created_at": "2025-10-21T03:07:15.080Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 80,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

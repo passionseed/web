@@ -1,0 +1,28 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68df86c6db45cfd8716c9d3e",
+      "university_id": "024",
+      "program_id": "10240121100101A",
+      "project_id": "B0004",
+      "project_name_th": "รอบที่ 2.2 การรับนักศึกษาหลักสูตรแพทยศาสตรบัณฑิต โควตาภาคเหนือ",
+      "type": "2_2569",
+      "receive_student_number": 24,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "จัดการเรียนการสอนเป็นภาษาไทยและภาษาอังกฤษ",
+      "condition": "ต้องเป็นผู้มีสัญชาติไทย และโปรดติดตามประกาศรับสมัครของมหาวิทยาลัยฯ",
+      "max_age_date": "2026-08-03T00:00:00.000Z",
+      "link": "https://admission.mfu.ac.th/admission-home.html",
+      "grad_current": false,
+      "t_score": false,
+      "max_age": 30,
+      "created_at": "2025-10-03T08:18:14.744Z",
+      "score_conditions": {}
+    }
+  ]
+}

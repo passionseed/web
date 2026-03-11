@@ -1,0 +1,55 @@
+{
+  "program": [
+    {
+      "program_id": "40610130302307A",
+      "project_id": "0",
+      "major_id": "A",
+      "program_name_th": "วศ.บ. วิศวกรรมควบคุมอุตสาหกรรมและเครื่องมือวัด",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วศ.บ. วิศวกรรมควบคุมอุตสาหกรรมและเครื่องมือวัด",
+      "project_name_th": "0",
+      "min_score": 48.997,
+      "max_score": 48.997,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 50,
+      "scores": {
+        "gpax": 20,
+        "tgat": 50,
+        "a_lv_62": 15,
+        "a_lv_63": 15
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "694f5191d5505a44c4853cea",
+      "university_id": "061",
+      "program_id": "40610130302307A",
+      "major_id": "A",
+      "type": "3_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "วิศวกรรมควบคุมอุตสาหกรรมและเครื่องมือวัด",
+      "interview_location": "มหาวิทยาลัยเทคโนโลยีมหานคร อาคาร F 140 ถ.เชื่อมสัมพันธ์ เขตหนองจอก กรุงเทพฯ 10530",
+      "interview_date": "28 พฤษภาคม 2026",
+      "interview_time": "0900-1200น.",
+      "link": "https://mut.ac.th/eng_industrial-control-and-instrumentation-engineering/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-12-27T03:25:05.606Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 20,
+        "tgat": 50,
+        "a_lv_62": 15,
+        "a_lv_63": 15
+      }
+    }
+  ]
+}

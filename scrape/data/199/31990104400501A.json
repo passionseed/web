@@ -1,0 +1,53 @@
+{
+  "program": [
+    {
+      "program_id": "31990104400501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "สถ.บ.สถาปัตยกรรม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 42,
+      "max_score": 77.85,
+      "min_score_ds": 42,
+      "max_score_ds": 76.4,
+      "receive_student_number": 18,
+      "scores": {
+        "gpax": 60,
+        "tpat4": 40
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8916d9ec1a4bec7223d3d",
+      "university_id": "199",
+      "program_id": "31990104400501A",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาสถาปัตยกรรม สถ.บ.(หลักสูตร 5 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมศึกษาปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษา ปีที่ 6 หรือเทียบเท่า ทุกแผนการเรียน\n2. เกรดเฉลี่ย 4 ภาค (GPAX) เกรดเฉลี่ย 2.50 ขึ้นไป \n3. แฟ้มสะสมผลงาน (Portfolio) ขนาด A4 ที่แสดงพื้นฐานทางด้านศิลปะและการออกแบบ จำนวนไม่น้อยกว่า 10 ผลงาน (สามารถนำผลงานจริงมาได้ ในวันที่สอบสัมภาษณ์) (30%) \n4. การสอบวัดทักษะทางศิลปะและการออกแบบ (นำอุปกรณ์มาเอง) (40%) \n5. สัมภาษณ์ (30%)",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "24-Jan-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "1/14/2569",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T08:10:21.214Z"
+    }
+  ]
+}

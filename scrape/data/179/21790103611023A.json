@@ -1,0 +1,30 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f881759ec1a4bec72227d1",
+      "university_id": "179",
+      "program_id": "21790103611023A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาการบริหารธุรกิจ แขนงวิชาโลจิสติกส์และซัพพลายเชน (4 ปี)",
+      "condition": "",
+      "interview_location": "มหาวิทยาลัยราชภัฏเพชรบุรี 38 หมู่ 8 ต.นาวุ้ง อ.เมือง จ.เพชรบุรี 76000",
+      "interview_date": "29 พฤษภาคม 2568 (ผ่านระบบออนไลน์)",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://acad.pbru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T07:02:13.372Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,911 @@
+{
+  "program": [
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "A",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "การศึกษาปฐมวัย",
+      "project_name_th": "0",
+      "min_score": 95.75,
+      "max_score": 99,
+      "min_score_ds": 94.5,
+      "max_score_ds": 99,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "B",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "คณิตศาสตร์",
+      "project_name_th": "0",
+      "min_score": 96.75,
+      "max_score": 99.5,
+      "min_score_ds": 96.75,
+      "max_score_ds": 99.5,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "C",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "คอมพิวเตอร์",
+      "project_name_th": "0",
+      "min_score": 73.75,
+      "max_score": 89.25,
+      "min_score_ds": 62.5,
+      "max_score_ds": 88.5,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "D",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "ภาษาไทย",
+      "project_name_th": "0",
+      "min_score": 96.25,
+      "max_score": 99.25,
+      "min_score_ds": 95.75,
+      "max_score_ds": 99.25,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "E",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิทยาศาสตร์ทั่วไป",
+      "project_name_th": "0",
+      "min_score": 87.5,
+      "max_score": 97.25,
+      "min_score_ds": 76,
+      "max_score_ds": 97.25,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "F",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "ภาษาอังกฤษ",
+      "project_name_th": "0",
+      "min_score": 92.5,
+      "max_score": 99.75,
+      "min_score_ds": 92.5,
+      "max_score_ds": 99.75,
+      "receive_student_number": 5,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "G",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "การประถมศึกษา",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 0,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "H",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "เกษตรศาสตร์",
+      "project_name_th": "0",
+      "min_score": 71,
+      "max_score": 83.25,
+      "min_score_ds": 71,
+      "max_score_ds": 83.25,
+      "receive_student_number": 5,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "I",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "สังคมศึกษา",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 0,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "J",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "ชีววิทยา",
+      "project_name_th": "0",
+      "min_score": 81.25,
+      "max_score": 94,
+      "min_score_ds": 66.5,
+      "max_score_ds": 94,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "K",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "เอกฟิสิกส์",
+      "project_name_th": "0",
+      "min_score": 73.25,
+      "max_score": 73.25,
+      "min_score_ds": 73.25,
+      "max_score_ds": 73.25,
+      "receive_student_number": 5,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "10280106703701A",
+      "project_id": "0",
+      "major_id": "L",
+      "program_name_th": "ค.บ. นวัตกรรมการจัดการเรียนรู้",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "เอกพลศึกษา",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ee19cb047630f195e5f174",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "G",
+      "type": "1_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกการประถมศึกษา (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.666Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f178",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "H",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกเกษตรศาสตร์ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.680Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f170",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "F",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกภาษาอังกฤษ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.653Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f16c",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "E",
+      "type": "1_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกวิทยาศาสตร์ทั่วไป (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.641Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f168",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "D",
+      "type": "1_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกภาษาไทย (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.629Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f164",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "C",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกคอมพิวเตอร์ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.617Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f188",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "L",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกพลศึกษา (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.730Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f184",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "K",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกฟิสิกส์ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.717Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f180",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "J",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกชีววิทยา (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.705Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f17c",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "I",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกสังคมศึกษา (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.692Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f160",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "B",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกคณิตศาสตร์ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.604Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f15a",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "A",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกการศึกษาปฐมวัย (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.586Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68ee19cb047630f195e5f17a",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "H",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกเกษตรศาสตร์ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.686Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f176",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "G",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกการประถมศึกษา (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.673Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f172",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "F",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกภาษาอังกฤษ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.659Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f16e",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "E",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกวิทยาศาสตร์ทั่วไป (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.647Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f16a",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "D",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกภาษาไทย (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.635Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f166",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "C",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกคอมพิวเตอร์ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.623Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f162",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "B",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกคณิตศาสตร์ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.610Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f15c",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "A",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกการศึกษาปฐมวัย (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.592Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f18a",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "L",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกพลศึกษา (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.736Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f186",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "K",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกฟิสิกส์ (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.723Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f182",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "J",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกชีววิทยา (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.711Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f17e",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "I",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกสังคมศึกษา (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.698Z"
+    },
+    {
+      "_id": "68ee19cb047630f195e5f15e",
+      "university_id": "028",
+      "program_id": "10280106703701A",
+      "major_id": "A",
+      "type": "3_2569",
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ค.บ. นวัตกรรมการจัดการเรียนรู้ วิชาเอกการศึกษาปฐมวัย (4 ปี)",
+      "condition": "เป็นผู้ที่กำลังศึกษาอยู่ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า หรือเป็นผู้สำเร็จ การศึกษา ชั้นมัธยมศึกษาปีที่ 6 หรือ ปวช. หรือเทียบเท่า",
+      "interview_location": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_date": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "interview_time": "รายละเอียดเพิ่มเติม https//admission.ksu.ac.th",
+      "link": "https://admission.ksu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-14T09:37:15.598Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

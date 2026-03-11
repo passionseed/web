@@ -1,0 +1,101 @@
+{
+  "program": [
+    {
+      "program_id": "10230126500202A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วิทยาศาสตรบัณฑิต สาขาเกษตรศาสตร์และนวัตกรรม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "",
+      "project_name_th": "0",
+      "min_score": 29.35,
+      "max_score": 51.1105,
+      "min_score_ds": 29.35,
+      "max_score_ds": 51.1105,
+      "receive_student_number": 20,
+      "scores": {
+        "tgat": 50,
+        "cal_type": "1",
+        "cal_score_sum": 50,
+        "cal_subject_name": "tgat3|a_lv_61|a_lv_62|a_lv_63|a_lv_64|a_lv_65|a_lv_66"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e5342d74961cd19969ce1e",
+      "university_id": "023",
+      "program_id": "10230126500202A",
+      "type": "1_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "รายละเอียดเพิ่มเติม https://entry.wu.ac.th/apply/home.asp",
+      "link": "https://entry.wu.ac.th/apply/home.asp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-07T15:39:25.182Z",
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      }
+    },
+    {
+      "_id": "697c0651b1c49093383a00b9",
+      "university_id": "023",
+      "program_id": "10230126500202A",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "รายละเอียดเพิ่มเติม https://entry.wu.ac.th/apply/home.asp",
+      "link": "https://entry.wu.ac.th/apply/home_download.asp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2026-01-30T01:16:01.776Z"
+    },
+    {
+      "_id": "69803e9711f05cf615fee589",
+      "university_id": "023",
+      "program_id": "10230126500202A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "รายละเอียดเพิ่มเติม https://entry.wu.ac.th/apply/home.asp",
+      "link": "https://entry.wu.ac.th/apply/home_download.asp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2026-02-02T06:05:11.616Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_61": 20,
+        "a_lv_63": 20,
+        "a_lv_65": 20,
+        "a_lv_66": 20,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

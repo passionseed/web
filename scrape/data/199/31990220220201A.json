@@ -1,0 +1,116 @@
+{
+  "program": [
+    {
+      "program_id": "31990220220201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วท.บ.วิทยาการคอมพิวเตอร์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 48,
+      "max_score": 48,
+      "min_score_ds": 48,
+      "max_score_ds": 48,
+      "receive_student_number": 15,
+      "scores": {
+        "gpax": 20,
+        "tgat": 10,
+        "tpat3": 40,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8916d9ec1a4bec7223e17",
+      "university_id": "199",
+      "program_id": "31990220220201A",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์ วท.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย (ม.6) ทุกกลุ่มสาระการเรียนรู้ หรือเทียบเท่า หรือผู้สำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช.) สาขาวิชาเทคนิคคอมพิวเตอร์ หรือสาขาอื่นที่เกี่ยวข้อง\n2. ทุกแผนการเรียน\n3. เกรดเฉลี่ย 5 ภาคเรียน เกรดเฉลี่ย 2.00 ขึ้นไป\n4. Portfolio (70%)\n5. สอบสัมภาษณ์ (30%)",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "24-Jan-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "www.surin.rmuti.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "1/14/2569",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T08:10:21.899Z"
+    },
+    {
+      "_id": "68f8916d9ec1a4bec7223e19",
+      "university_id": "199",
+      "program_id": "31990220220201A",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์ วท.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย (ม.6) ทุกกลุ่มสาระการเรียนรู้ หรือเทียบเท่า หรือผู้สำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช.) สาขาวิชาเทคนิคคอมพิวเตอร์ หรือสาขาอื่นที่เกี่ยวข้อง\n2. ทุกแผนการเรียน\n3. เกรดเฉลี่ย 5 ภาคเรียน เกรดเฉลี่ย 2.00 ขึ้นไป\n4. Portfolio (70%)\n5. สอบสัมภาษณ์ (30%)",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "25-Apr-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "www.surin.rmuti.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-22T08:10:21.905Z"
+    },
+    {
+      "_id": "68f8916d9ec1a4bec7223e1b",
+      "university_id": "199",
+      "program_id": "31990220220201A",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์ วท.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย (ม.6) ทุกกลุ่มสาระการเรียนรู้ หรือเทียบเท่า หรือผู้สำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช.) สาขาวิชาเทคนิคคอมพิวเตอร์ หรือสาขาอื่นที่เกี่ยวข้อง\n- GPAX 20% \n- TGAT-TPAT (50%) = (TGAT = 10%) (TPAT3 = 40%)\n- วิชา A-Level (30%) = (ภาษาไทย=10%) (สังคม=10%) (ภาษาอังกฤษ=10%)",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "30-May-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "www.surin.rmuti.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-22T08:10:21.910Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 20,
+        "tgat": 10,
+        "tpat3": 40,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    }
+  ]
+}

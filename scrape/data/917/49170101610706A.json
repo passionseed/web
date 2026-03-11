@@ -1,0 +1,126 @@
+{
+  "program": [
+    {
+      "program_id": "49170101610706A",
+      "project_id": "A3333",
+      "major_id": "A",
+      "program_name_th": "บริหารธุรกิจบัณฑิต (เทคโนโลยีดิจิทัลทางธุรกิจ) 4 ปี (ภาคปกติ)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "เทคโนโลยีดิจิทัลทางธุรกิจ",
+      "project_name_th": "โครงการผลิตบัณฑิตเพื่อพัฒนาชุมชน",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 50,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ea1c9c50aec5c73c264191",
+      "university_id": "917",
+      "program_id": "49170101610706A",
+      "major_id": "A",
+      "project_id": "A1111",
+      "project_name_th": "โครงการเรียนดี มีที่เรียน วิทยาลัยนอร์ทเทิร์น",
+      "type": "1_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต \nสาขาวิชาเทคโนโลยีดิจิทัลทางธุรกิจ",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว",
+      "interview_location": "ที่อยู่วิทยาลัยนอร์ทเทิร์น 888 หมู่ 2 ตำบลหนองบัวใต้ อำเภอเมือง จังหวัดตาก 63000",
+      "interview_date": "รอบ 1 : 6-15 ธ.ค. 68\nรอบ 2 : 20-25 ม.ค. 69",
+      "interview_time": "09.00-17.00 น.",
+      "link": "https://admission.northern.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "score_condition": 2,
+        "subject_names": "min_tgat min_tpat2 min_a_lv_61",
+        "score_minimum": "2"
+      },
+      "folio": {
+        "closed_date": "28/10/2568",
+        "page_limit": "20"
+      },
+      "created_at": "2025-10-11T09:00:12.614Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "_id": "68ea1c9c50aec5c73c2641b1",
+      "university_id": "917",
+      "program_id": "49170101610706A",
+      "major_id": "A",
+      "project_id": "A2222",
+      "project_name_th": "โครงการ NTC QUOTA",
+      "type": "2_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลทางธุรกิจ",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว",
+      "interview_location": "ที่อยู่วิทยาลัยนอร์ทเทิร์น 888 หมู่ 2 ตำบลหนองบัวใต้ อำเภอเมือง จังหวัดตาก 63000",
+      "interview_date": "22-26 เม.ย. 69",
+      "interview_time": "09.00-17.00 น.",
+      "link": "https://admission.northern.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "score_condition": 2,
+        "subject_names": "min_tgat min_tpat2 min_a_lv_61",
+        "score_minimum": "2"
+      },
+      "created_at": "2025-10-11T09:00:12.753Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "_id": "68ea1c9c50aec5c73c2641d1",
+      "university_id": "917",
+      "program_id": "49170101610706A",
+      "major_id": "A",
+      "project_id": "A3333",
+      "project_name_th": "โครงการเรียนดี มีที่เรียน วิทยาลัยนอร์ทเทิร์น",
+      "type": "3_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลทางธุรกิจ",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว",
+      "interview_location": "ที่อยู่วิทยาลัยนอร์ทเทิร์น 888 หมู่ 2 ตำบลหนองบัวใต้ อำเภอเมือง จังหวัดตาก 63000",
+      "interview_date": "22-30 พ.ค. 69",
+      "interview_time": "09.00-17.00 น.",
+      "link": "https://admission.northern.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "score_condition": 2,
+        "subject_names": "min_tgat min_tpat2 min_a_lv_61",
+        "score_minimum": "2"
+      },
+      "created_at": "2025-10-11T09:00:12.866Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

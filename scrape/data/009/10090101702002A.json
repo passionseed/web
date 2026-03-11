@@ -1,0 +1,143 @@
+{
+  "program": [
+    {
+      "program_id": "10090101702002A",
+      "project_id": "A0019",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต สาขาวิชาภาษาอังกฤษ (กศ.บ.)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 73.1249,
+      "max_score": 83.4832,
+      "min_score_ds": 73.1249,
+      "max_score_ds": 83.4832,
+      "receive_student_number": 12,
+      "scores": {
+        "tgat": 30,
+        "tpat5": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 50
+      }
+    },
+    {
+      "program_id": "10090101702002A",
+      "project_id": "A0020",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต สาขาวิชาภาษาอังกฤษ (กศ.บ.)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 12,
+      "scores": {
+        "tgat": 30,
+        "tpat5": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 50
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34761b0969b83dd6d60b",
+      "university_id": "009",
+      "program_id": "10090101702002A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- เฉพาะผู้สมัครที่จบจากโรงเรียนหลักสูตรแกนกลางเท่านั้น จะต้องมีคะแนนเฉลี่ยวิชากลุ่มสาระการเรียนรู้ภาษาต่างประเทศ ไม่ต่ำกว่า 3.25\n'- ผู้สมัครจะต้องมีผลการทดสอบความสามารถทางภาษาอังกฤษ อย่างใดอย่างหนึ่ง ทั้งนี้ผลคะแนนต้องมีอายุไม่เกิน 2 ปี นับจากวันที่ทดสอบจนถึงวันสอบสัมภาษณ์ ดังนี้ TOEFL (IBT) ไม่ต่ำกว่า 55 คะแนน หรือ TOEFL (ITP) ไม่ต่ำกว่า 500 คะแนน หรือ IELTS ไม่ต่ำกว่า 5 คะแนน หรือ TOEIC ไม่ต่ำกว่า 550 คะแนน หรือ CU-TEP ไม่ต่ำกว่า 60 คะแนน หรือ TU-GET ไม่ต่ำกว่า 500 คะแนน หรือ SWU-SET ไม่ต่ำกว่า 78 คะแนน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.25,
+      "score_conditions": {
+        "min_gpax": 3.25,
+        "min_tpat5": 1
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:46.843Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34761b0969b83dd6d60d",
+      "university_id": "009",
+      "program_id": "10090101702002A",
+      "project_id": "A0018",
+      "project_name_th": "Admission",
+      "join_id": "3009",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.25,
+      "score_conditions": {
+        "min_gpax": 3.25,
+        "min_tgat": 40,
+        "min_tpat5": 40
+      },
+      "created_at": "2025-10-25T02:22:46.850Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat5": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 50
+      }
+    },
+    {
+      "_id": "68fc34761b0969b83dd6d60f",
+      "university_id": "009",
+      "program_id": "10090101702002A",
+      "project_id": "A0019",
+      "project_name_th": "Admission",
+      "join_id": "3009",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 2,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.25,
+      "score_conditions": {
+        "min_gpax": 3.25,
+        "min_tgat": 40,
+        "min_tpat5": 40
+      },
+      "created_at": "2025-10-25T02:22:46.855Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat5": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 50
+      }
+    }
+  ]
+}

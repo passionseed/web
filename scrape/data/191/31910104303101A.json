@@ -1,0 +1,127 @@
+{
+  "program": [
+    {
+      "program_id": "31910104303101A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วิศวกรรมชลประทานและการจัดการน้ำ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 45.8414,
+      "max_score": 54.7082,
+      "min_score_ds": 44.7164,
+      "max_score_ds": 54.7082,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 30,
+        "tpat3": 40,
+        "a_lv_61": 15,
+        "a_lv_64": 15
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e8aaadb848dd4679d6cb02",
+      "university_id": "191",
+      "program_id": "31910104303101A",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิศวกรรมศาสตรบัณฑิต วิศวกรรมชลประทานและการจัดการน้ำ",
+      "condition": "",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "20-ธ.ค.-68",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "folio_q1": "ใส่ Portfolio แบบย่อ (ไม่เกิน 1000 ตัวอักษร)",
+        "folio_q1_type": "B",
+        "folio_q2": "ใส่ Link ผลงานในลักษณะอื่น เช่น WebSite-Youtube-Tiktok",
+        "folio_q2_type": "B",
+        "closed_date": "8/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-10T06:41:49.868Z"
+    },
+    {
+      "_id": "68e8aaadb848dd4679d6cb04",
+      "university_id": "191",
+      "program_id": "31910104303101A",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิศวกรรมศาสตรบัณฑิต วิศวกรรมชลประทานและการจัดการน้ำ",
+      "condition": "",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "28-มี.ค.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-10T06:41:49.874Z"
+    },
+    {
+      "_id": "68e8aaadb848dd4679d6cb06",
+      "university_id": "191",
+      "program_id": "31910104303101A",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิศวกรรมศาสตรบัณฑิต วิศวกรรมชลประทานและการจัดการน้ำ",
+      "condition": "",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 30,
+        "min_tpat3": 40,
+        "min_a_lv_61": 15,
+        "min_a_lv_64": 15,
+        "score_condition": 2,
+        "subject_names": "min_tgat min_a_lv_61 min_a_lv_63 min_tpat3",
+        "score_minimum": "5"
+      },
+      "created_at": "2025-10-10T06:41:49.880Z",
+      "min_total_score": 5,
+      "scores": {
+        "tgat": 30,
+        "tpat3": 40,
+        "a_lv_61": 15,
+        "a_lv_64": 15
+      }
+    }
+  ]
+}

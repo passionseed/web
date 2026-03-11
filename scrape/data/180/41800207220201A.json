@@ -1,0 +1,52 @@
+{
+  "program": [
+    {
+      "program_id": "41800207220201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วท.บ.(นวัตกรรมเทคโนโลยีดิจิทัล)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 80,
+      "scores": {
+        "a_lv_61": 40,
+        "a_lv_63": 30,
+        "a_lv_82": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e36d5ff6124a010031453e",
+      "university_id": "180",
+      "program_id": "41800207220201A",
+      "type": "3_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขานวัตกรรมเทคโนโลยีดิจิทัล",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษาและ กศน.",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-06T07:18:55.348Z",
+      "min_total_score": 25,
+      "scores": {
+        "a_lv_61": 40,
+        "a_lv_63": 30,
+        "a_lv_82": 30
+      }
+    }
+  ]
+}

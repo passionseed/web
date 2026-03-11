@@ -1,0 +1,24 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f45d665c0d15d003d3cf1c",
+      "university_id": "010",
+      "program_id": "10100101300901A",
+      "project_id": "A9002",
+      "project_name_th": "โครงการคัดเลือกนักเรียนใน 14  จังหวัดภาคใต้ เข้าศึกษาโดยวิธีรับตรง (โควตาภูมิภาค)",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-19T03:39:18.404Z",
+      "score_conditions": {}
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "program": [
+    {
+      "program_id": "41800209900301A",
+      "project_id": "G0002",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.ศิลปศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "gpax",
+      "min_score": 72.825,
+      "max_score": 72.9332,
+      "min_score_ds": 72.825,
+      "max_score_ds": 72.9332,
+      "receive_student_number": 60,
+      "scores": {
+        "gpax": 70,
+        "tgat": 30
+      }
+    },
+    {
+      "program_id": "41800209900301A",
+      "project_id": "G0003",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.ศิลปศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "tgat alv61 alv63",
+      "min_score": 19.9304,
+      "max_score": 41.5239,
+      "min_score_ds": 19.9304,
+      "max_score_ds": 41.5239,
+      "receive_student_number": 60,
+      "scores": {
+        "tgat": 70,
+        "a_lv_61": 15,
+        "a_lv_63": 15
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e36d5ff6124a0100314548",
+      "university_id": "180",
+      "program_id": "41800209900301A",
+      "project_id": "G0002",
+      "project_name_th": "gpax",
+      "join_id": "3902",
+      "type": "3_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "",
+      "condition": "",
+      "interview_location": "",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-06T07:18:55.383Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 70,
+        "tgat": 30
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68e36d5ff6124a0100314546",
+      "university_id": "180",
+      "program_id": "41800209900301A",
+      "project_id": "G0003",
+      "project_name_th": "tgat alv61 alv63",
+      "join_id": "3902",
+      "type": "3_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต  การจัดการกีฬาและนันทนาการ (4 ปี) ทางวิชาการ จำนวนหน่วยกิตรวมตลอดหลักสูตรไม่น้อยกว่า 128 หน่วยกิต, มีการจัดการเรียนการสอนเป็นภาษาไทย, หลักสูตรมีเครือข่ายความร่วมมือจากทั้งองค์ภาครัฐและองค์กรธุรกิจภาคเอกชน หลักสูตรมีการเรียนการสอนที่เน้นการปฏิบัติและสอนโดยผู้เชี่ยวชาญเฉพาะด้านที่มีประสบการณ์, อาชีพที่สามารถประกอบได้หลังสำเร็จการศึกษา เช่น นักบริหารจัดการเกี่ยวกับการกีฬาและนันทนาการ, ผู้นำกีฬาและนันทนาการ, การเป็นผู้ประกอบการธุรกิจทางด้านการกีฬาและนันทนาการ ",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว",
+      "link": "https://www.facebook.com/SSKBU",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-06T07:18:55.377Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 70,
+        "a_lv_61": 15,
+        "a_lv_63": 15
+      },
+      "score_conditions": {}
+    }
+  ]
+}

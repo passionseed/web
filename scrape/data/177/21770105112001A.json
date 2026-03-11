@@ -1,0 +1,93 @@
+{
+  "program": [
+    {
+      "program_id": "21770105112001A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วิทยาศาสตร์การกีฬาและการออกกำลังกาย (วท.บ)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 50,
+      "max_score": 55.277,
+      "min_score_ds": 47.361,
+      "max_score_ds": 55.277,
+      "receive_student_number": 15,
+      "scores": {
+        "tgat": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f0bdb36f646a17d3c8c786",
+      "university_id": "177",
+      "program_id": "21770105112001A",
+      "type": "1_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตร์การกีฬาและการออกกำลังกาย (วท.บ)",
+      "condition": "",
+      "link": "https://eadmission.chandra.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-16T09:41:07.685Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f0bdb36f646a17d3c8c788",
+      "university_id": "177",
+      "program_id": "21770105112001A",
+      "type": "2_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตร์การกีฬาและการออกกำลังกาย (วท.บ)",
+      "condition": "",
+      "link": "https://eadmission.chandra.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-16T09:41:07.692Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f0bdb36f646a17d3c8c78a",
+      "university_id": "177",
+      "program_id": "21770105112001A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตร์การกีฬาและการออกกำลังกาย (วท.บ)",
+      "condition": "",
+      "interview_location": "ไม่สอบสัมภาษณ์",
+      "link": "https://eadmission.chandra.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "score_condition": 1,
+        "subject_names": "min_tgat",
+        "score_minimum": "1"
+      },
+      "created_at": "2025-10-16T09:41:07.699Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "program": [
+    {
+      "program_id": "10180117610604A",
+      "project_id": "C0001",
+      "major_id": "0",
+      "program_name_th": "บธ.บ.สาขาวิชาการตลาด วิชาเอกการตลาดดิจิทัล",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admissions",
+      "min_score": 83.725,
+      "max_score": 94,
+      "min_score_ds": 73.525,
+      "max_score_ds": 94,
+      "receive_student_number": 20,
+      "scores": {
+        "gpax": 20,
+        "gpa22": 30,
+        "gpa28": 50
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f874699ec1a4bec7221e1b",
+      "university_id": "018",
+      "program_id": "10180117610604A",
+      "project_id": "A0001",
+      "project_name_th": "รับตรงรอบ Portfolio",
+      "join_id": "",
+      "type": "1_2569",
+      "receive_student_number": 82,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "ตามประกาศมหาวิทยาลัย",
+      "interview_date": "ตามประกาศมหาวิทยาลัย",
+      "interview_time": "ตามประกาศมหาวิทยาลัย",
+      "link": "admission.ubu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T06:06:33.326Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f874699ec1a4bec7221e87",
+      "university_id": "018",
+      "program_id": "10180117610604A",
+      "project_id": "B0001",
+      "project_name_th": "รับตรงรอบ Quota",
+      "join_id": "",
+      "type": "2_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "ตามประกาศมหาวิทยาลัย",
+      "interview_date": "ตามประกาศมหาวิทยาลัย",
+      "interview_time": "ตามประกาศมหาวิทยาลัย",
+      "link": "admission.ubu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T06:06:33.661Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f874699ec1a4bec7221ee5",
+      "university_id": "018",
+      "program_id": "10180117610604A",
+      "project_id": "C0001",
+      "project_name_th": "Admissions",
+      "join_id": "",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "ตามประกาศมหาวิทยาลัย",
+      "interview_date": "ตามประกาศมหาวิทยาลัย",
+      "interview_time": "ตามประกาศมหาวิทยาลัย",
+      "link": "admission.ubu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "min_gpa22_23_28": 2.2,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_gpa22_23_28": 2.2
+      },
+      "created_at": "2025-10-22T06:06:33.999Z",
+      "min_total_score": null,
+      "scores": {
+        "gpax": 20,
+        "gpa22": 30,
+        "gpa28": 50
+      }
+    }
+  ]
+}

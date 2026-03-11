@@ -1,0 +1,115 @@
+{
+  "program": [
+    {
+      "program_id": "10010125400501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรสถาปัตยกรรมศาสตรบัณฑิต สาขาวิชาสถาปัตยกรรม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 63,
+      "max_score": 74.25,
+      "min_score_ds": 61.15,
+      "max_score_ds": 74.25,
+      "receive_student_number": 11,
+      "scores": {
+        "tpat4": 40,
+        "a_lv_61": 20,
+        "a_lv_64": 20,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e365a1f6124a010031333c",
+      "university_id": "001",
+      "program_id": "10010125400501A",
+      "type": "1_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "-",
+      "condition": "-",
+      "interview_location": "-",
+      "interview_date": "-",
+      "interview_time": "-",
+      "link": "https://admission.chula.ac.th/admission_c1.php",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-06T06:45:53.558Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68e365a1f6124a010031332a",
+      "university_id": "001",
+      "program_id": "10010125400501A",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "-",
+      "condition": "-",
+      "interview_location": "-",
+      "interview_date": "-",
+      "interview_time": "-",
+      "link": "https://admission.chula.ac.th/admission_c1.php",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-06T06:45:53.510Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68e365a1f6124a0100313332",
+      "university_id": "001",
+      "program_id": "10010125400501A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "-",
+      "condition": "-",
+      "interview_location": "ไม่มีการจัดสอบสัมภาษณ์",
+      "interview_date": "ไม่มีการจัดสอบสัมภาษณ์",
+      "interview_time": "ไม่มีการจัดสอบสัมภาษณ์",
+      "link": "https://admission.chula.ac.th/admission_c1.php",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tpat4": 40
+      },
+      "created_at": "2025-10-06T06:45:53.531Z",
+      "min_total_score": 0,
+      "scores": {
+        "tpat4": 40,
+        "a_lv_61": 20,
+        "a_lv_64": 20,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "program": [
+    {
+      "program_id": "40560105220201A",
+      "project_id": "E3001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต (วิทยาการคอมพิวเตอร์)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต (วิทยาการคอมพิวเตอร์)",
+      "min_score": 40,
+      "max_score": 91.25,
+      "min_score_ds": 40,
+      "max_score_ds": 91.25,
+      "receive_student_number": 60,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef5f4ec7eac1a2872a8b69",
+      "university_id": "056",
+      "program_id": "40560105220201A",
+      "project_id": "E3001",
+      "project_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต (วิทยาการคอมพิวเตอร์)",
+      "project_name_en": "B.S. (Computer Science)",
+      "type": "1_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "มีเป้าหมายในการสร้างบัณฑิตที่มีความรู้ความเชี่ยวชาญด้านคอมพิวเตอร์ เจาะลึกเทคโนโลยีคอมพิวเตอร์ การออกแบบและพัฒนาโปรแกรมเพื่อประยุกต์ใช้ในทางธุรกิจ เพื่อพร้อมเป็นนักคอมพิวเตอร์ผู้เชี่ยวชาญในองค์กรชั้นนำ",
+      "condition": "เป็นผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย สายสามัญ(ม.6) หรือสำเร็จการศึกษาหลักสูตรประกาศนียบัตรวิชาชีพ(ปวช) หรือเทียบเท่า",
+      "interview_location": "ศูนย์รับสมัครนักศึกษาใหม่ มหาวิทยาลัยหอการค้าไทย ถ.วิภาวดีรังสิต แขวงรัชดาภิเษก เขตดินแดง กรุงเทพฯ 10413",
+      "interview_date": "ตามปฏิทินระบบการสอบคัดเลือกTCAS",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://science.utcc.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-15T08:46:06.833Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      },
+      "score_conditions": {}
+    }
+  ]
+}

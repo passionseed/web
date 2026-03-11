@@ -1,0 +1,76 @@
+{
+  "program": [
+    {
+      "program_id": "41290201111701A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "พยาบาลศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 23.5931,
+      "max_score": 36.9882,
+      "min_score_ds": 23.5931,
+      "max_score_ds": 36.7416,
+      "receive_student_number": 40,
+      "scores": {
+        "tgat": 30,
+        "a_lv_61": 15,
+        "a_lv_66": 20,
+        "a_lv_82": 20,
+        "cal_type": "1",
+        "cal_score_sum": 15,
+        "cal_subject_name": "a_lv_63|a_lv_65"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f5ac5e84df8e9fee9b0b70",
+      "university_id": "129",
+      "program_id": "41290201111701A",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรระดับปริญญาตรี ระยะเวลาศึกษา 4 ปี จัดการศึกษาแบบชั้นเรียนในระบบทวิภาค โดยใน 1 ปีการศึกษาแบ่งออกเป็น 2 ภาคการศึกษาปกติ โดย 1 ภาคการศึกษาปกติมีระยะเวลาศึกษาไม่น้อยกว่า 15 สัปดาห์  นักศึกษาชั้นปีที่ 1 และนักศึกษาชั้นปีที่ 2 เรียนที่วิทยาเขตหลัก อ.มวกเหล็ก จ.สระบุรี  นักศึกษาชั้นปีที่ 3 และนักศึกษาชั้นปีที่ 4 เรียนที่วิทยาเขตกรุงเทพ เขตดุสิต กทม.",
+      "condition": "เป็นผู้มีความประพฤติดี และไม่เคยต้องโทษในคดีอาญา มีสุขภาพสมบูรณ์ทั้งร่างกายและจิตใจ ไม่ป่วยหรือเป็นโรคติดต่อร้ายแรง หรือมีความผิดปกติที่เป็นอุปสรรคต่อการศึกษา และการปฏิบัติงานในวิชาชีพ  สามารถอ่านและเขียนภาษาไทยได้ดี ",
+      "interview_location": "Online ผ่าน ZOOM Meeting",
+      "interview_date": "30 พฤษภาคม 2569",
+      "interview_time": "9.00 - 12.00 น.",
+      "link": "https://www.apiu.edu/th/academics/mission-faculty-of-nursing/",
+      "grad_current": false,
+      "t_score": false,
+      "min_age": 16,
+      "min_height_male": 150,
+      "min_height_female": 150,
+      "max_bmi_male": 30,
+      "max_bmi_female": 30,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 5,
+        "min_a_lv_61": 5,
+        "min_a_lv_66": 5,
+        "min_a_lv_82": 5,
+        "score_condition": 1,
+        "subject_names": "min_a_lv_63_pr min_a_lv_65_pr",
+        "score_minimum": "0"
+      },
+      "created_at": "2025-10-20T03:28:30.790Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 25,
+        "a_lv_61": 20,
+        "a_lv_66": 20,
+        "a_lv_82": 20,
+        "cal_type": "1",
+        "cal_score_sum": 15,
+        "cal_subject_name": "a_lv_63|a_lv_65"
+      }
+    }
+  ]
+}

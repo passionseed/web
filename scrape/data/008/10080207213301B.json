@@ -1,0 +1,108 @@
+{
+  "program": [
+    {
+      "program_id": "10080207213301B",
+      "project_id": "A0056",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาสถิติและวิทยาการวิเคราะห์ข้อมูล",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "0",
+      "project_name_th": "รูปแบบที่ 1 Alevel",
+      "min_score": 49.43,
+      "max_score": 50.45,
+      "min_score_ds": 46.225,
+      "max_score_ds": 50.45,
+      "receive_student_number": 20,
+      "scores": {
+        "gpax": 30,
+        "a_lv_61": 40,
+        "a_lv_66": 10,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "program_id": "10080207213301B",
+      "project_id": "A0057",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาสถิติและวิทยาการวิเคราะห์ข้อมูล",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "0",
+      "project_name_th": "รูปแบบที่ 2 TgatTpat",
+      "min_score": 49.6275,
+      "max_score": 59.6637,
+      "min_score_ds": 46.4302,
+      "max_score_ds": 59.6637,
+      "receive_student_number": 20,
+      "scores": {
+        "gpax": 30,
+        "tgat": 40,
+        "tpat3": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fb27e04f0f85dd43befa09",
+      "university_id": "008",
+      "program_id": "10080207213301B",
+      "project_id": "A0077",
+      "project_name_th": "หลักสูตรแกนกลาง (A-Level)",
+      "join_id": "3018",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาสถิติและวิทยาการวิเคราะห์ข้อมูล (โครงการพิเศษ)",
+      "interview_location": "รูปแบบ Online\n  *** โปรดติดตามประกาศรายละเอียดการสอบสัมภาษณ์ที่เว็บไซต์ https://admission.su.ac.th หัวข้อ ประกาศ ในวันที่ 30 พฤษภาคม 2569",
+      "interview_date": "25357",
+      "link": "https://admission.su.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_credit_gpa22": 6,
+      "min_credit_gpa23": 15,
+      "created_at": "2025-10-24T07:16:48.256Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 30,
+        "a_lv_61": 40,
+        "a_lv_66": 10,
+        "a_lv_82": 20
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fb27e04f0f85dd43befa0b",
+      "university_id": "008",
+      "program_id": "10080207213301B",
+      "project_id": "A0078",
+      "project_name_th": "หลักสูตรแกนกลาง (TGAT/TPAT)",
+      "join_id": "3018",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาสถิติและวิทยาการวิเคราะห์ข้อมูล (โครงการพิเศษ)",
+      "interview_location": "รูปแบบ Online\n  *** โปรดติดตามประกาศรายละเอียดการสอบสัมภาษณ์ที่เว็บไซต์ https://admission.su.ac.th หัวข้อ ประกาศ ในวันที่ 30 พฤษภาคม 2569",
+      "interview_date": "25357",
+      "link": "https://admission.su.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_credit_gpa22": 6,
+      "min_credit_gpa23": 15,
+      "created_at": "2025-10-24T07:16:48.261Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 30,
+        "tgat": 40,
+        "tpat3": 30
+      },
+      "score_conditions": {}
+    }
+  ]
+}

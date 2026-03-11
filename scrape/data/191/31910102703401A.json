@@ -1,0 +1,83 @@
+{
+  "program": [
+    {
+      "program_id": "31910102703401A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วิศวกรรมอุตสาหการ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 39.0582,
+      "max_score": 72.8832,
+      "min_score_ds": 33.9,
+      "max_score_ds": 72.8832,
+      "receive_student_number": 15,
+      "scores": {
+        "gpax": 30,
+        "tgat": 30,
+        "tpat5": 40
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e8aaadb848dd4679d6caac",
+      "university_id": "191",
+      "program_id": "31910102703401A",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรครุศาสตรอุตสาหกรรมบัณฑิต สาขาวิชาวิศวกรรมอุตสาหการ",
+      "condition": "นักเรียนกำลังศึกษาหรือสำเร็จการศึกษาชั้น ม.6 และต้องไม่มีความบกพร่องทางกายภาพที่เป็นอุปสรรคต่อการเรียนและการทดลองปฏิบัติในสาขาวิชาที่สมัคร",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "20-ธ.ค.-68",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "ใส่ Portfolio แบบย่อ (ไม่เกิน 1000 ตัวอักษร)",
+        "folio_q1_type": "B",
+        "folio_q2": "ใส่ Link ผลงานในลักษณะอื่น เช่น WebSite-Youtube-Tiktok",
+        "folio_q2_type": "B",
+        "closed_date": "8/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-10T06:41:49.611Z"
+    },
+    {
+      "_id": "68e8aaadb848dd4679d6caae",
+      "university_id": "191",
+      "program_id": "31910102703401A",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรครุศาสตรอุตสาหกรรมบัณฑิต สาขาวิชาวิศวกรรมอุตสาหการ",
+      "condition": "นักเรียนกำลังศึกษาหรือสำเร็จการศึกษาชั้น ม.6 และต้องไม่มีความบกพร่องทางกายภาพที่เป็นอุปสรรคต่อการเรียนและการทดลองปฏิบัติในสาขาวิชาที่สมัคร",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "28-มี.ค.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-10T06:41:49.616Z"
+    }
+  ]
+}

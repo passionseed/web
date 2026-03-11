@@ -1,0 +1,363 @@
+{
+  "program": [
+    {
+      "program_id": "10090110800101A",
+      "project_id": "A0068",
+      "major_id": "C",
+      "program_name_th": "หลักสูตรศิลปกรรมศาสตรบัณฑิต สาขาวิชาออกแบบทัศนศิลป์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกการออกแบบเครื่องประดับ",
+      "project_name_th": "Admission-สาขาวิชาออกแบบทัศนศิลป์ วิชาเอกการออกแบบเครื่องประดับ",
+      "min_score": 58.0328,
+      "max_score": 64.9331,
+      "min_score_ds": 58.0328,
+      "max_score_ds": 64.9331,
+      "receive_student_number": 10,
+      "scores": {
+        "tgat": 30,
+        "tpat2": 60,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "program_id": "10090110800101A",
+      "project_id": "A0069",
+      "major_id": "D",
+      "program_name_th": "หลักสูตรศิลปกรรมศาสตรบัณฑิต สาขาวิชาออกแบบทัศนศิลป์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกการออกแบบภายใน",
+      "project_name_th": "Admission-สาขาวิชาออกแบบทัศนศิลป์ วิชาเอกการออกแบบภายใน",
+      "min_score": 67.0666,
+      "max_score": 73.3582,
+      "min_score_ds": 65.8248,
+      "max_score_ds": 73.3582,
+      "receive_student_number": 5,
+      "scores": {
+        "tgat": 30,
+        "tpat4": 60,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34781b0969b83dd6d885",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "D",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.937Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d87f",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "C",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.919Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d875",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.880Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d87b",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "B",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.905Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d881",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "C",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:48.925Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d877",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:48.887Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d87d",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "B",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-25T02:22:48.912Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d887",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "D",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-25T02:22:48.945Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d889",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "D",
+      "project_id": "A0001",
+      "project_name_th": "Admission-สาขาวิชาออกแบบทัศนศิลป์ วิชาเอกการออกแบบภายใน",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "ผู้สมัครจะต้องมีคุณลักษณะด้านสุขภาพของผู้มีสิทธิ์เข้าศึกษา ให้ผู้มีสิทธิ์สัมภาษณ์ตรวจสุขภาพจิตมาล่วงหน้า ซึ่งนำผลการตรวจจากโรงพยาบาลของรัฐ/เอกชน โดยการรับรองจากแพทย์ผู้เชี่ยวชาญ ต้องเป็นผู้มีสุขภาพจิตสมบูรณ์แข็งแรง ปราศจากโรคหรืออาการของโรค ไม่มีปัญหาทางจิตเวชอันอาจเป็นอันตรายต่อตนเอง และ/หรือผู้อื่น อันเป็นอุปสรรคต่อการศึกษา การปฏิบัติงาน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1,
+        "min_tpat4": 1
+      },
+      "created_at": "2025-10-25T02:22:48.951Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat4": 60,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d883",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "C",
+      "project_id": "A0001",
+      "project_name_th": "Admission-สาขาวิชาออกแบบทัศนศิลป์ วิชาเอกการออกแบบเครื่องประดับ",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1,
+        "min_tpat21": 1
+      },
+      "created_at": "2025-10-25T02:22:48.931Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat21": 50,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d879",
+      "university_id": "009",
+      "program_id": "10090110800101A",
+      "major_id": "A",
+      "project_id": "A0001",
+      "project_name_th": "Admission-สาขาวิชาออกแบบทัศนศิลป์ วิชาเอกการออกแบบผลิตภัณฑ์",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 5,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1,
+        "min_tpat21": 1
+      },
+      "created_at": "2025-10-25T02:22:48.893Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat21": 50,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

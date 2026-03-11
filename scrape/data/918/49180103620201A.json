@@ -1,0 +1,76 @@
+{
+  "program": [
+    {
+      "program_id": "49180103620201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาการจัดการธุรกิจการบิน",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 64.75,
+      "max_score": 94.5,
+      "min_score_ds": 64.75,
+      "max_score_ds": 94.5,
+      "receive_student_number": 50,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f076da195067d96fc90518",
+      "university_id": "918",
+      "program_id": "49180103620201A",
+      "type": "1_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรที่สร้างตัวจริงในธุรกิจการบิน ครอบคลุมการบริการบนเครื่องบิน การบริการภาคพื้น และการขนส่งสินค้าทางอากาศ พร้อม Work-based Education ฝึกงานจริงกับพันธมิตรชั้นนำ ผู้เรียนจะได้เรียนการสื่อสารและการบริการเชิงธุรกิจ พัฒนาบุคลิกภาพ และฝึกภาษาอังกฤษสำหรับวิชาชีพด้านการบิน ผ่าน Mock-up Training ห้องเรียนเสมือนจริงที่ทันสมัยที่สุดในไทย พร้อมกิจกรรมเสริม Soft Skill เช่น Table Manner มารยาทบนโต๊ะอาหารและการแต่งกายที่เหมาะสมในโอกาสต่างๆ เหมาะกับผู้สนใจสายงานพนักงานต้อนรับบนเครื่องบิน และตำแหน่งงานอื่นๆ ในอุตสาหกรรมการบิน เช่น Ground Service, Air Cargo ",
+      "condition": "เขียน SOP (Statement of purpose) บอกเรื่องราวเกี่ยวกับตัวเอง เหตุผล / ทัศนคติต่อสาขาวิชาที่เลือกสมัคร และผลงานการเข้าร่วมกิจกรรมด้านคุณธรรม จริยธรรม  และการประพฤติตนเป็นประโยชน์แก่สังคม (ความยาวไม่เกิน 2 หน้ากระดาษ ขนาดตัวอักษร 16 ไม่จำกัดตัวอักษร) สมัครและแนบ Portfolio ผ่านทาง: https://bit.ly/3tmSir9  รายละเอียดหลักสูตรอื่นๆ ของสถาบัน: https://www.pim.ac.th/faculty/bachelor",
+      "interview_location": "สถาบันการจัดการปัญญาภิวัฒน์ สำนักแนะแนวและรับสมัคร ชั้น L อาคาร CPALL Academy โทร. 02-855-0360",
+      "link": "https://bit.ly/3tmSir9 ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-16T04:38:50.629Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68f076da195067d96fc9051a",
+      "university_id": "918",
+      "program_id": "49180103620201A",
+      "type": "3_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรที่สร้างตัวจริงในธุรกิจการบิน ครอบคลุมการบริการบนเครื่องบิน การบริการภาคพื้น และการขนส่งสินค้าทางอากาศ พร้อม Work-based Education ฝึกงานจริงกับพันธมิตรชั้นนำ ผู้เรียนจะได้เรียนการสื่อสารและการบริการเชิงธุรกิจ พัฒนาบุคลิกภาพ และฝึกภาษาอังกฤษสำหรับวิชาชีพด้านการบิน ผ่าน Mock-up Training ห้องเรียนเสมือนจริงที่ทันสมัยที่สุดในไทย พร้อมกิจกรรมเสริม Soft Skill เช่น Table Manner มารยาทบนโต๊ะอาหารและการแต่งกายที่เหมาะสมในโอกาสต่างๆ เหมาะกับผู้สนใจสายงานพนักงานต้อนรับบนเครื่องบิน และตำแหน่งงานอื่นๆ ในอุตสาหกรรมการบิน เช่น Ground Service, Air Cargo ",
+      "interview_location": "สถาบันการจัดการปัญญาภิวัฒน์ สำนักแนะแนวและรับสมัคร ชั้น L อาคาร CPALL Academy โทร. 02-855-0360",
+      "link": "https://bit.ly/3tmSir9 ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-16T04:38:50.638Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

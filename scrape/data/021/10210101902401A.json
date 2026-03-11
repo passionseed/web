@@ -1,0 +1,235 @@
+{
+  "program": [
+    {
+      "program_id": "10210101902401A",
+      "project_id": "M3001",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ. ภาษาฝรั่งเศส",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "min_score": 38.194,
+      "max_score": 56.666,
+      "min_score_ds": 31.25,
+      "max_score_ds": 56.666,
+      "receive_student_number": 15,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "program_id": "10210101902401A",
+      "project_id": "M3002",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ. ภาษาฝรั่งเศส",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 2",
+      "min_score": 60.25,
+      "max_score": 96,
+      "min_score_ds": 60.25,
+      "max_score_ds": 96,
+      "receive_student_number": 45,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7412627b76be0eb0953bb",
+      "university_id": "021",
+      "program_id": "10210101902401A",
+      "project_id": "M1002",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "ศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.075Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb095527",
+      "university_id": "021",
+      "program_id": "10210101902401A",
+      "project_id": "M1009",
+      "project_name_th": "โควตารับตรง Portfolio",
+      "type": "1_2569",
+      "receive_student_number": 22,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "ศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.129Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb0955d3",
+      "university_id": "021",
+      "program_id": "10210101902401A",
+      "project_id": "M1006",
+      "project_name_th": "โควตาโรงเรียนสาธิตมหาวิทยาลัยมหาสารคาม (ฝ่ายมัธยม)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "ศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.622Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb095a76",
+      "university_id": "021",
+      "program_id": "10210101902401A",
+      "project_id": "M1001",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "ศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.807Z"
+    },
+    {
+      "_id": "68f7412827b76be0eb095769",
+      "university_id": "021",
+      "program_id": "10210101902401A",
+      "project_id": "M2002",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 2",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "ศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:36.728Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "68f7412827b76be0eb0956b3",
+      "university_id": "021",
+      "program_id": "10210101902401A",
+      "project_id": "M2001",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 1",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "ศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:36.228Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "68f7412927b76be0eb095816",
+      "university_id": "021",
+      "program_id": "10210101902401A",
+      "project_id": "M3001",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "ศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1,
+        "min_a_lv_83": 1
+      },
+      "created_at": "2025-10-21T08:15:37.209Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 80,
+        "a_lv_83": 20
+      }
+    }
+  ]
+}

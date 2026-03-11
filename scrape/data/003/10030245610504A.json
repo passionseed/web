@@ -1,0 +1,269 @@
+{
+  "program": [
+    {
+      "program_id": "10030245610504A",
+      "project_id": "H3000",
+      "major_id": "0",
+      "program_name_th": "บัญชีบัณฑิต บัญชีบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต วิทย์",
+      "min_score": 30.9125,
+      "max_score": 43.05,
+      "min_score_ds": 33.8375,
+      "max_score_ds": 43.05,
+      "receive_student_number": 48,
+      "scores": {
+        "a_lv_61": 30,
+        "a_lv_70": 25,
+        "a_lv_81": 20,
+        "a_lv_82": 25
+      }
+    },
+    {
+      "program_id": "10030245610504A",
+      "project_id": "M3000",
+      "major_id": "0",
+      "program_name_th": "บัญชีบัณฑิต บัญชีบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต ศิลป์",
+      "min_score": 31.675,
+      "max_score": 43.5625,
+      "min_score_ds": 32.125,
+      "max_score_ds": 43.5625,
+      "receive_student_number": 48,
+      "scores": {
+        "a_lv_62": 30,
+        "a_lv_70": 25,
+        "a_lv_81": 20,
+        "a_lv_82": 25
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e5e0e6d30bd63a17e26a6b",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "I2000",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต  โครงการรับนักเรียนที่เป็นผู้มีคุณธรรม จริยธรรม และบำเพ็ญประโยชน์ (โครงการเด็กดีมีที่เรียน) ",
+      "type": "1_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "  ",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-08T03:56:22.980Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68e5e0e7d30bd63a17e26bc5",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "H0000",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต การรับนักเรียนคนพิการ โครงการรับนักเรียนผู้พิการ รอบ 1.2",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "ประเภทความพิการ&nbsp;เป็นบุคคลผู้พิการที่ไม่เป็นอุปสรรคต่อการฟัง อ่าน เขียน หรือเป็นผู้มีความพิการด้านการเคลื่อนไหว และสามารถช่วยเหลือตนเองได้ ยกเว้นผู้พิการที่ต้องใช้ Wheelchair เนื่องจากอาคารเรียนไม่มีช่องเดินของ Wheelchairเงื่อนไขในการรับ1. มีผลการเรียนเฉลี่ยสะสม 4 ภาคการศึกษา ไม่ต่ำกว่า 2.50&nbsp;2. มี Portfolio  ",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-08T03:56:23.733Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68e5e0e7d30bd63a17e26b57",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "G7000",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต  โครงการรับตรงในเขตพื้นที่ภาคตะวันออกเฉียงเหนือ ",
+      "type": "1_2569",
+      "receive_student_number": 45,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "ต้องมีผลการเรียนเฉลี่ยในระดับชั้นมัธยมศึกษาตอนปลายหรือเทียบเท่า (GPAX) &nbsp;4 หรือ 6 ภาคการศึกษาต้องไม่ต่ำกว่า 2.50 และคำนวณคะแนนตามผลการเรียนเฉลี่ยกลุ่มสาระการเรียนรู้ที่สาขาวิชากำหนด  ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-08T03:56:23.501Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68e5e0e6d30bd63a17e26937",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "G5000",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต  โครงการผู้มีศักยภาพสูง ",
+      "type": "1_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "พิจารณาจากแฟ้มสะสมผลงาน (Portfolio) และ&nbsp;คลิป VDO ความยาวไม่เกิน 2 นาที หรือเรียงความขนาด ไม่เกิน 1 หน้ากระดาษ A4  ",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-08T03:56:22.298Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "69a31f2bb73f3fa97a608c49",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "I4509",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต  โครงการผู้มีศักยภาพสูง รอบ 1.2",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "  ",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2026-02-28T17:00:27.851Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "69a31f2bb73f3fa97a608c4b",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "I4510",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต  โครงการรับตรงในเขตพื้นที่ภาคตะวันออกเฉียงเหนือ รอบ 1.2",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "  ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2026-02-28T17:00:27.859Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "690b65daffb3c340d25d112b",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "G0000",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต  โควตาภาคตะวันออกเฉียงเหนือ ",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "  * มีการกำหนดเกณฑ์คะแนนรวมขั้นต่ำ 30 คะแนน",
+      "grad_current": true,
+      "t_score": false,
+      "created_at": "2025-11-05T14:57:30.851Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "690b61d4ffb3c340d25d07ab",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "M4502",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต วิทย์",
+      "join_id": "13494",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "  * มีการกำหนดเกณฑ์คะแนนรวมขั้นต่ำ 30 คะแนน",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-11-05T14:40:20.276Z",
+      "score_conditions": {},
+      "min_total_score": 30,
+      "scores": {
+        "a_lv_61": 30,
+        "a_lv_70": 25,
+        "a_lv_81": 20,
+        "a_lv_82": 25
+      }
+    },
+    {
+      "_id": "690b61d4ffb3c340d25d07c7",
+      "university_id": "003",
+      "program_id": "10030245610504A",
+      "project_id": "M4501",
+      "project_name_th": "คณะสหวิทยาการ บช.บ. บัญชีบัณฑิต ศิลป์",
+      "join_id": "13494",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "  * มีการกำหนดเกณฑ์คะแนนรวมขั้นต่ำ 30 คะแนน",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-11-05T14:40:20.389Z",
+      "score_conditions": {},
+      "min_total_score": 30,
+      "scores": {
+        "a_lv_62": 30,
+        "a_lv_70": 25,
+        "a_lv_81": 20,
+        "a_lv_82": 25
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "program": [
+    {
+      "program_id": "10200117902401A",
+      "project_id": "N3001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "admission (แบบที่ 1)",
+      "min_score": 56.5164,
+      "max_score": 68.7604,
+      "min_score_ds": 54.5216,
+      "max_score_ds": 68.7604,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 20,
+        "tgat": 80
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37ed62ef4c36c489ab27b",
+      "university_id": "020",
+      "program_id": "10200117902401A",
+      "project_id": "N1007",
+      "project_name_th": "โครงการผู้ที่มีความสามารถพิเศษทางด้านภาษา",
+      "type": "1_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "folio": {
+        "folio_q1": "มีผลคะแนนทดสอบความรู้ภาษาฝรั่งเศส ระดับ A1 หรือสูงกว่านั้นหรือได้รับรางวัลระดับชาติที่เกี่ยวข้องกับภาษาฝรั่งเศส หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:26.284Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68e37ed62ef4c36c489ab27d",
+      "university_id": "020",
+      "program_id": "10200117902401A",
+      "project_id": "N2001",
+      "project_name_th": "โควตา",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "created_at": "2025-10-06T08:33:26.289Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68e37ed62ef4c36c489ab27f",
+      "university_id": "020",
+      "program_id": "10200117902401A",
+      "project_id": "N3001",
+      "project_name_th": "admission (แบบที่ 1)",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาภาษาฝรั่งเศส",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-06T08:33:26.295Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 20,
+        "tgat": 80
+      },
+      "score_conditions": {}
+    }
+  ]
+}

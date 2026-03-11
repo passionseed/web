@@ -1,0 +1,139 @@
+{
+  "program": [
+    {
+      "program_id": "10060112303501E",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมอุตสาหการและการผลิต (หลักสูตรนานาชาติ)",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 44.666,
+      "max_score": 54.666,
+      "min_score_ds": 38.666,
+      "max_score_ds": 54,
+      "receive_student_number": 15,
+      "scores": {
+        "tpat3": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de0478834b8",
+      "university_id": "006",
+      "program_id": "10060112303501E",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "GPA กลุ่มภาษาต่างประเทศ ใช้เฉพาะภาษาอังกฤษ ไม่ต่ำกว่า 3.00 และรายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th\nผู้สมัครต้องมีหนังสือรับรองหรือผลคะแนนความรู้ภาษาอังกฤษตามมาตรฐานขั้นต่ำ อย่างใดอย่างหนึ่ง ตามเกณฑ์การรับสมัครที่มหาวิทยาลัยประกาศรับสมัคร หากไม่เป็นไปตามที่กำหนดถือเป็นโมฆะ\nหมายเหตุ ผลคะแนนการสอบภาษาอังกฤษ ต้องมีอายุไม่เกิน 2 ปี นับตั้งแต่วันสอบผ่านจนถึงวันที่สอบสัมภาษณ์\nรายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://www.eg.mahidol.ac.th/egmu/education/admissions/bachelor-programs.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_gpa22": 3,
+      "min_gpa23": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_gpa22": 3,
+        "min_gpa23": 3,
+        "min_gpa28": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.382Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb087737",
+      "university_id": "006",
+      "program_id": "10060112303501E",
+      "join_id": "",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "GPA กลุ่มภาษาต่างประเทศ ใช้เฉพาะภาษาอังกฤษ ไม่ต่ำกว่า 3.00 และรายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th\n ผู้สมัครมีหนังสือรับรองหรือผลคะแนนความรู้ภาษาอังกฤษตามมาตรฐานขั้นต่ำ อย่างใดอย่างหนึ่ง จะได้รับการพิจารณาเป็นพิเศษตามเกณฑ์การรับสมัครที่มหาวิทยาลัยประกาศรับสมัคร หากไม่เป็นไปตามที่กำหนดถือเป็นโมฆะ\n  หมายเหตุ ผลคะแนนการสอบภาษาอังกฤษ ต้องมีอายุไม่เกิน 2 ปี นับตั้งแต่วันสอบผ่านจนถึงวันที่สอบสัมภาษณ์\n รายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th",
+      "interview_location": "คณะวิศวกรรมศาสตร์ มหาวิทยาลัยมหิดล ศาลายา",
+      "interview_date": "25-เม.ย.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://www.eg.mahidol.ac.th/egmu/education/admissions/bachelor-programs.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_gpa22": 3,
+      "min_gpa23": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_gpa22": 3,
+        "min_gpa23": 3,
+        "min_gpa28": 3,
+        "min_tpat3": 30,
+        "min_toefl_itp": 500,
+        "min_ielts": 5,
+        "min_toeic": 600,
+        "min_sat": 1000
+      },
+      "created_at": "2025-10-21T03:07:14.286Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb08780f",
+      "university_id": "006",
+      "program_id": "10060112303501E",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "GPA กลุ่มภาษาต่างประเทศ ใช้เฉพาะภาษาอังกฤษ ไม่ต่ำกว่า 3.00 และรายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th\n ผู้สมัครมีหนังสือรับรองหรือผลคะแนนความรู้ภาษาอังกฤษตามมาตรฐานขั้นต่ำ อย่างใดอย่างหนึ่ง จะได้รับการพิจารณาเป็นพิเศษตามเกณฑ์การรับสมัครที่มหาวิทยาลัยประกาศรับสมัคร หากไม่เป็นไปตามที่กำหนดถือเป็นโมฆะ\n  หมายเหตุ ผลคะแนนการสอบภาษาอังกฤษ ต้องมีอายุไม่เกิน 2 ปี นับตั้งแต่วันสอบผ่านจนถึงวันที่สอบสัมภาษณ์\n รายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th",
+      "interview_location": "คณะวิศวกรรมศาสตร์ มหาวิทยาลัยมหิดล ศาลายา",
+      "interview_date": "1-มิ.ย.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://www.eg.mahidol.ac.th/egmu/education/admissions/bachelor-programs.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_gpa22": 3,
+      "min_gpa23": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_gpa22": 3,
+        "min_gpa23": 3,
+        "min_gpa28": 3,
+        "min_tpat3": 20,
+        "min_toefl_ibt": 64,
+        "min_toefl_itp": 500,
+        "min_ielts": 5,
+        "min_toeic": 600,
+        "min_sat": 1000,
+        "min_ged_score": 660,
+        "score_condition": 1,
+        "subject_names": "min_toefl_ibt min_toefl_itp min_ielts min_toeic min_sat min_ged_score",
+        "score_minimum": "64 500 5 600 1000 660"
+      },
+      "created_at": "2025-10-21T03:07:14.933Z",
+      "min_total_score": 0,
+      "scores": {
+        "tpat3": 100
+      }
+    }
+  ]
+}

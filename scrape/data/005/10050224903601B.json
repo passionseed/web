@@ -1,0 +1,133 @@
+{
+  "program": [
+    {
+      "program_id": "10050224903601B",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.สาขาวิชาสหวิทยาการ (โครงการพิเศษ) (ศึกษาที่ มธ.ศูนย์รังสิต)",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 63.55,
+      "max_score": 72.05,
+      "min_score_ds": 63.5,
+      "max_score_ds": 72.05,
+      "receive_student_number": 55,
+      "scores": {
+        "a_lv_70": 40,
+        "a_lv_81": 30,
+        "a_lv_82": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37f2d2ef4c36c489abaca",
+      "university_id": "005",
+      "program_id": "10050224903601B",
+      "project_name_th": "รอบ 1 แฟ้มสะสมผลงาน Portfolio ",
+      "type": "1_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-9",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "17/11/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-06T08:34:53.868Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 80,
+        "interview": 20
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7478b27b76be0eb098267",
+      "university_id": "005",
+      "program_id": "10050224903601B",
+      "project_id": "D0049",
+      "project_name_th": "โครงการรับนักเรียนพลเมืองจิตอาสา",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "เกณฑ์การคัดเลือก\n1. ผลคะแนนผลการทดสอบวิชา TGAT ที่มีคะแนนรวมเฉลี่ยไม่ต่ำกว่าคะแนนเฉลี่ย – ค่าเบี่ยงเบนมาตรฐาน (  x̅- SD)\n2. ผลการทดสอบกลุ่มวิชา A-Level ของวิชาใดวิชาหนึ่งในจำนวน 16 วิชา ไม่ต่ำกว่า 30 คะแนน\n(มหาวิทยาลัยเลือกเพียง 1 วิชาที่มีคะแนนสูงสุด) จากกลุ่มวิชาดังต่อไปนี้  (1) คณิตศาสตร์ประยุกต์ 1 (พื้นฐาน+เพิ่มเติม)  (2) คณิตศาสตร์ประยุกต์ 2 (พื้นฐาน)  (3) วิทยาศาสตร์ประยุกต์ (4) ฟิสิกส์ (5) เคมี (6) ชีววิทยา (7) สังคมศึกษา\t(8) ภาษาไทย  (9) ภาษาอังกฤษ (10) ภาษาฝรั่งเศส        \n(11) ภาษาเยอรมัน (12) ภาษาญี่ปุ่น (13) ภาษาเกาหลี (14) ภาษาจีน (15) ภาษาบาลี (16) ภาษาสเปน\nคุณสมบัติเฉพาะของคณะ\n-  หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาสหวิทยาการ (หลักสูตรปรับปรุง พ.ศ. 2567)\n(หลักสูตรพหุวิทยาการ) โครงการพิเศษ (ศึกษาที่ มธ.ศูนย์รังสิต) เลือก 1 วิชาเอก (เลือกปี 2 เทอม 2)\n- วิชาเอกนวัตกรรมและความเป็นผู้ประกอบการในอนุภูมิภาคลุ่มน้ำโขง\n- วิชาเอกการจัดการการท่องเที่ยว\n- วิชาเอกการจัดการทรัพยากรทางสังคมและวัฒนธรรม\n- มีผลคะแนนทดสอบ A-Level โดยใช้ 3 วิชาดังนี้ เกณฑ์คะแนน 100 คะแนน\n- รหัส 70 วิชาสังคมศึกษา\t\tค่าน้ำหนัก 40 %\n- รหัส 81 วิชาภาษาไทย\t\t          ค่าน้ำหนัก 30 %\n- รหัส 82 วิชาภาษาอังกฤษ\t\tค่าน้ำหนัก 30 %",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:51.746Z"
+    },
+    {
+      "_id": "68f7478c27b76be0eb098303",
+      "university_id": "005",
+      "program_id": "10050224903601B",
+      "type": "2_2569",
+      "receive_student_number": 9,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:52.254Z"
+    },
+    {
+      "_id": "68f7478e27b76be0eb09863a",
+      "university_id": "005",
+      "program_id": "10050224903601B",
+      "project_id": "T3052",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบ A-Level",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.703Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_70": 40,
+        "a_lv_81": 30,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb09863c",
+      "university_id": "005",
+      "program_id": "10050224903601B",
+      "project_id": "T3053",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบ TGAT",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.708Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    }
+  ]
+}

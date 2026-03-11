@@ -1,0 +1,103 @@
+{
+  "program": [
+    {
+      "program_id": "10340103210301A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาคณิตศาสตร์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาคณิตศาสตร์",
+      "min_score": 0,
+      "max_score": 98.75,
+      "min_score_ds": 0,
+      "max_score_ds": 98.75,
+      "receive_student_number": 50,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef7b47095f32ab0fee1b57",
+      "university_id": "034",
+      "program_id": "10340103210301A",
+      "project_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาคณิตศาสตร์",
+      "project_name_en": "Bachelor of Science Program in Mathematics",
+      "type": "1_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาคณิตศาสตร์",
+      "condition": "รับสมัคร 28 ตุลาคม 2568 - 30 ธันวาคม 2568",
+      "interview_location": "สัมภาษณ์ออนไลน์",
+      "interview_date": "B115-ม.ค.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://www.facebook.com/groups/math.sci.ru",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T10:45:27.213Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68ef7b47095f32ab0fee1b59",
+      "university_id": "034",
+      "program_id": "10340103210301A",
+      "project_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาคณิตศาสตร์",
+      "project_name_en": "Bachelor of Science Program in Mathematics",
+      "type": "2_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาคณิตศาสตร์",
+      "condition": "รับสมัคร 9 กุมภาพันธ์ - 30 มีนาคม 2569",
+      "interview_location": "สัมภาษณ์ออนไลน์",
+      "interview_date": "B120-เม.ย.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://www.facebook.com/groups/math.sci.ru",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-15T10:45:27.220Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68ef7b47095f32ab0fee1b5b",
+      "university_id": "034",
+      "program_id": "10340103210301A",
+      "project_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาคณิตศาสตร์",
+      "project_name_en": "Bachelor of Science Program in Mathematics",
+      "type": "3_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาคณิตศาสตร์",
+      "condition": "รับสมัคร 6-12 พฤษภาคม 2568",
+      "interview_location": "-",
+      "interview_date": "-",
+      "interview_time": "-",
+      "link": "https://www.facebook.com/groups/math.sci.ru",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-15T10:45:27.227Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "score_conditions": {}
+    }
+  ]
+}

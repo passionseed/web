@@ -1,0 +1,133 @@
+{
+  "program": [
+    {
+      "program_id": "10210107130301A",
+      "project_id": "M3001",
+      "major_id": "0",
+      "program_name_th": "ภ.บ. การบริบาลทางเภสัชกรรม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "min_score": 54.1111,
+      "max_score": 62.5899,
+      "min_score_ds": 53.9276,
+      "max_score_ds": 62.5899,
+      "receive_student_number": 40,
+      "scores": {
+        "tgat": 20,
+        "a_lv_61": 20,
+        "a_lv_82": 20,
+        "cal_type": "1",
+        "cal_score_sum": 40,
+        "cal_subject_name": "a_lv_64 a_lv_65 a_lv_66"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7412927b76be0eb0958fe",
+      "university_id": "021",
+      "program_id": "10210107130301A",
+      "project_id": "M1004",
+      "project_name_th": "โควตาครูแนะแนว (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 11,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "เภสัชศาสตรบัณฑิต สาขาวิชาการบริบาลทางเภสัชกรรม หลักสูตรภาษาไทย (หลักสูตร 6 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3.75,
+      "min_gpa22": 3.75,
+      "min_gpa23": 3.75,
+      "score_conditions": {
+        "min_gpax": 3.75,
+        "min_gpa22": 3.75,
+        "min_gpa23": 3.75
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:37.807Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb095405",
+      "university_id": "021",
+      "program_id": "10210107130301A",
+      "project_id": "M1003",
+      "project_name_th": "โควตาครูแนะแนว (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "เภสัชศาสตรบัณฑิต สาขาวิชาการบริบาลทางเภสัชกรรม หลักสูตรภาษาไทย (หลักสูตร 6 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3.75,
+      "min_gpa22": 3.75,
+      "min_gpa23": 3.75,
+      "score_conditions": {
+        "min_gpax": 3.75,
+        "min_gpa22": 3.75,
+        "min_gpa23": 3.75
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.298Z"
+    },
+    {
+      "_id": "68f7412827b76be0eb0956f1",
+      "university_id": "021",
+      "program_id": "10210107130301A",
+      "project_id": "M2002",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 2",
+      "type": "2_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "เภสัชศาสตรบัณฑิต สาขาวิชาการบริบาลทางเภสัชกรรม หลักสูตรภาษาไทย (หลักสูตร 6 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1,
+        "min_a_lv_61": 1,
+        "min_a_lv_64": 1,
+        "min_a_lv_65": 1,
+        "min_a_lv_66": 1,
+        "min_a_lv_70": 1,
+        "min_a_lv_81": 1,
+        "min_a_lv_82": 1
+      },
+      "created_at": "2025-10-21T08:15:36.382Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 10,
+        "a_lv_61": 15,
+        "a_lv_64": 15,
+        "a_lv_65": 15,
+        "a_lv_66": 15,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    }
+  ]
+}

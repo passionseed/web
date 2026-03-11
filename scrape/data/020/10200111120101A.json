@@ -1,0 +1,37 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e37ed52ef4c36c489ab1ab",
+      "university_id": "020",
+      "program_id": "10200111120101A",
+      "project_id": "N2001",
+      "project_name_th": "โควตา",
+      "type": "2_2569",
+      "receive_student_number": 45,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรทันตแพทยศาสตรบัณฑิต",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "score_conditions": {
+        "min_a_lv_61": 30,
+        "min_a_lv_64": 30,
+        "min_a_lv_65": 30,
+        "min_a_lv_66": 30,
+        "min_a_lv_70": 30,
+        "min_a_lv_81": 30,
+        "min_a_lv_82": 30
+      },
+      "created_at": "2025-10-06T08:33:25.639Z"
+    }
+  ]
+}

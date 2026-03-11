@@ -1,0 +1,43 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f5afeb84df8e9fee9b181a",
+      "university_id": "010",
+      "program_id": "10100102212701A",
+      "project_id": "A0216",
+      "project_name_th": "โครงการส่งเสริมการผลิตครูที่มีความสามารถทางวิทยาศาสตร์และคณิตศาสตร์ (ทุนโครงการ สควค.) ",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T03:43:39.852Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f5afeb84df8e9fee9b1802",
+      "university_id": "010",
+      "program_id": "10100102212701A",
+      "project_id": "A9002",
+      "project_name_th": "โครงการคัดเลือกนักเรียนรับตรง (โควตาภูมิภาคใต้)",
+      "type": "2_2569",
+      "receive_student_number": 53,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T03:43:39.760Z",
+      "score_conditions": {}
+    }
+  ]
+}

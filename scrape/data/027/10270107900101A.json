@@ -1,0 +1,97 @@
+{
+  "program": [
+    {
+      "program_id": "10270107900101A",
+      "project_id": "A0001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรนิเทศศาสตรบัณฑิต สาขาวิชาการจัดการการสื่อสาร",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "",
+      "project_name_th": "Admission",
+      "min_score": 70.036,
+      "max_score": 77.8194,
+      "min_score_ds": 68.1694,
+      "max_score_ds": 77.8194,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 60,
+        "tgat": 20,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8ed18b58d5ed1fd8a2ecd",
+      "university_id": "027",
+      "program_id": "10270107900101A",
+      "project_id": "P0001",
+      "project_name_th": "โครงการรับตรงมหาวิทยาลัยพะเยา",
+      "type": "1_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรนิเทศศาสตรบัณฑิต สาขาวิชาการจัดการการสื่อสาร",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-22T14:41:28.044Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8ed17b58d5ed1fd8a2da9",
+      "university_id": "027",
+      "program_id": "10270107900101A",
+      "project_id": "P0002",
+      "project_name_th": "โครงการรับตรงโรงเรียนในเขตพื้นที่บริการ",
+      "type": "2_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรนิเทศศาสตรบัณฑิต สาขาวิชาการจัดการการสื่อสาร",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "created_at": "2025-10-22T14:41:27.044Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8ed17b58d5ed1fd8a2da7",
+      "university_id": "027",
+      "program_id": "10270107900101A",
+      "project_id": "A0001",
+      "project_name_th": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรนิเทศศาสตรบัณฑิต สาขาวิชาการจัดการการสื่อสาร",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T14:41:27.038Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 60,
+        "tgat": 20,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      },
+      "score_conditions": {}
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "program": [
+    {
+      "program_id": "11650110500301A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาคหกรรมศาสตร์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 44.5132,
+      "max_score": 61.1426,
+      "min_score_ds": 42.6108,
+      "max_score_ds": 61.1426,
+      "receive_student_number": 30,
+      "scores": {
+        "gpax": 25,
+        "tgat": 40,
+        "a_lv_61": 10,
+        "a_lv_63": 10,
+        "a_lv_82": 15
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e477beff75689dadef3c32",
+      "university_id": "165",
+      "program_id": "11650110500301A",
+      "type": "1_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สถานที่จัดการเรียนการสอน มหาวิทยลัยสวนดุสิต กรุงเทพมหานคร",
+      "condition": "ตรวจสอบคุณสมบัติและเกณฑ์การคัดเลือกเพิ่มเติมได้ที่เว็บไซต์ https://tcas.dusit.ac.th",
+      "interview_location": "ตรวจสอบกำหนดการและช่องทางสอบสัมภาษณ์ได้ที่ https://tcas.dusit.ac.th",
+      "interview_date": "-",
+      "interview_time": "-",
+      "link": "https://tcas.dusit.ac.th/?program=11650110500301A",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.3,
+      "score_conditions": {
+        "min_gpax": 2.3
+      },
+      "folio": {
+        "closed_date": "15/01/2569",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T02:15:26.233Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 40,
+        "interview": 60
+      }
+    },
+    {
+      "_id": "68e477beff75689dadef3c9c",
+      "university_id": "165",
+      "program_id": "11650110500301A",
+      "type": "2_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สถานที่จัดการเรียนการสอน มหาวิทยลัยสวนดุสิต กรุงเทพมหานคร",
+      "condition": "ตรวจสอบคุณสมบัติและเกณฑ์การคัดเลือกเพิ่มเติมได้ที่เว็บไซต์ https://tcas.dusit.ac.th",
+      "interview_location": "ตรวจสอบกำหนดการและช่องทางสอบสัมภาษณ์ได้ที่ https://tcas.dusit.ac.th",
+      "interview_date": "-",
+      "interview_time": "-",
+      "link": "https://tcas.dusit.ac.th/?program=11650110500301A",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.3,
+      "score_conditions": {
+        "min_gpax": 2.3
+      },
+      "created_at": "2025-10-07T02:15:26.575Z"
+    },
+    {
+      "_id": "68e477beff75689dadef3d06",
+      "university_id": "165",
+      "program_id": "11650110500301A",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สถานที่จัดการเรียนการสอน มหาวิทยลัยสวนดุสิต กรุงเทพมหานคร",
+      "condition": "ตรวจสอบคุณสมบัติและเกณฑ์การคัดเลือกเพิ่มเติมได้ที่เว็บไซต์ https://tcas.dusit.ac.th",
+      "interview_location": "ไม่มีการสอบสัมภาษณ์ ตรวจสอบรายชื่อผู้มีสิทธิ์เข้าศึกษาได้ที่ https://tcas.dusit.ac.th ในวันที่ 29 พฤษภาคม 2569",
+      "interview_date": "-",
+      "interview_time": "-",
+      "link": "https://tcas.dusit.ac.th/?program=11650110500301A",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.3,
+      "score_conditions": {
+        "min_gpax": 2.3
+      },
+      "created_at": "2025-10-07T02:15:26.891Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 25,
+        "tgat": 40,
+        "a_lv_61": 10,
+        "a_lv_63": 10,
+        "a_lv_82": 15
+      }
+    }
+  ]
+}

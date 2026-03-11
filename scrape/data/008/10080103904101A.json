@@ -1,0 +1,86 @@
+{
+  "program": [
+    {
+      "program_id": "10080103904101A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาประวัติศาสตร์ศิลปะ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 63.1499,
+      "max_score": 78.2125,
+      "min_score_ds": 62.2374,
+      "max_score_ds": 78.2125,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 10,
+        "tgat": 45,
+        "cal_type": "1",
+        "cal_score_sum": 45,
+        "cal_subject_name": "a_lv_70 a_lv_81 a_lv_82"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fb27de4f0f85dd43bef7ff",
+      "university_id": "008",
+      "program_id": "10080103904101A",
+      "project_id": "A0085",
+      "project_name_th": "โครงการเสริมสร้างศักยภาพทางวิชาการด้านวัฒนธรรมและภาษา คณะโบราณคดี",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาประวัติศาสตร์ศิลปะ",
+      "condition": "1. เป็นผู้มีความรู้ความสามารถ หรือมีความสนใจพิเศษด้านศิลปวัฒนธรรมและได้รับการรับรองจากสถาบันการศึกษาหรือหน่วยงานว่าเป็นผู้ที่มีส่วนร่วมในกิจกรรมทางศิลปวัฒนธรรม ทั้งนี้ ภาควิชาประวัติศาสตร์ศิลปะขอสงวนสิทธิ์ในการพิจารณาผลการรับรองจากสถาบันต่าง ๆ",
+      "interview_location": "คณะโบราณคดี มหาวิทยาลัยศิลปากร วังท่าพระ",
+      "interview_date": "25320",
+      "interview_time": "09.30 - 12.00 น",
+      "link": "https://admission.su.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-24T07:16:46.542Z"
+    },
+    {
+      "_id": "68fb27df4f0f85dd43bef95b",
+      "university_id": "008",
+      "program_id": "10080103904101A",
+      "type": "3_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาประวัติศาสตร์ศิลปะ",
+      "interview_location": "คณะโบราณคดี มหาวิทยาลัยศิลปากร วังท่าพระ กรุงเทพมหานคร\n  *** โปรดติดตามประกาศรายละเอียดการสอบสัมภาษณ์ที่เว็บไซต์ https://admission.su.ac.th หัวข้อ ประกาศ ในวันที่ 30 พฤษภาคม 2569",
+      "interview_date": "25356",
+      "interview_time": "09.30 - 16.30 น.",
+      "link": "https://admission.su.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-24T07:16:47.759Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 45,
+        "cal_type": "1",
+        "cal_score_sum": 45,
+        "cal_subject_name": "a_lv_70 a_lv_81 a_lv_82"
+      }
+    }
+  ]
+}

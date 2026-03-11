@@ -1,0 +1,561 @@
+{
+  "program": [
+    {
+      "program_id": "10090130900801C",
+      "project_id": "A0072",
+      "major_id": "A",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชานวัตกรรมสื่อสารสังคม",
+      "program_type_name_th": "สองภาษา/สามภาษา",
+      "major_name_th": "วิชาเอกการออกแบบสื่อปฏิสัมพันธ์และมัลติมีเดีย (หลักสูตร 2 ภาษา)",
+      "project_name_th": "Admission-สาขาวิชานวัตกรรมสื่อสารสังคม วิชาเอกการออกแบบสื่อปฏิสัมพันธ์และมัลติมีเดีย (หลักสูตร 2 ภาษา)",
+      "min_score": 75.1135,
+      "max_score": 77.994,
+      "min_score_ds": 75.1135,
+      "max_score_ds": 77.994,
+      "receive_student_number": 3,
+      "scores": {
+        "tgat": 50,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "program_id": "10090130900801C",
+      "project_id": "A0073",
+      "major_id": "B",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชานวัตกรรมสื่อสารสังคม",
+      "program_type_name_th": "สองภาษา/สามภาษา",
+      "major_name_th": "วิชาเอกการจัดการธุรกิจไซเบอร์ (หลักสูตร 2 ภาษา)",
+      "project_name_th": "Admission-สาขาวิชานวัตกรรมสื่อสารสังคม วิชาเอกการจัดการธุรกิจไซเบอร์ (หลักสูตร 2 ภาษา)",
+      "min_score": 70.161,
+      "max_score": 76.269,
+      "min_score_ds": 70.008,
+      "max_score_ds": 76.269,
+      "receive_student_number": 22,
+      "scores": {
+        "tgat": 50,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "program_id": "10090130900801C",
+      "project_id": "A0074",
+      "major_id": "C",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชานวัตกรรมสื่อสารสังคม",
+      "program_type_name_th": "สองภาษา/สามภาษา",
+      "major_name_th": "วิชาเอกนวัตกรรมคอมพิวเตอร์เพื่อการสื่อสาร (หลักสูตร 2 ภาษา)",
+      "project_name_th": "Admission-สาขาวิชานวัตกรรมสื่อสารสังคม วิชาเอกนวัตกรรมคอมพิวเตอร์เพื่อการสื่อสาร (หลักสูตร 2 ภาษา)",
+      "min_score": 67.2415,
+      "max_score": 81.0885,
+      "min_score_ds": 67.019,
+      "max_score_ds": 81.0885,
+      "receive_student_number": 30,
+      "scores": {
+        "tgat": 50,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34791b0969b83dd6d8c1",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 33,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.130Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8c3",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "A",
+      "project_id": "G0003",
+      "project_name_th": "โครงการพัฒนาบัณฑิตสู่สากล หลักสูตร 2 ภาษา",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- ผู้สมัครจะต้องมีผลการทดสอบความสามารถทางภาษาอังกฤษ อย่างใดอย่างหนึ่ง ทั้งนี้ผลคะแนนต้องมีอายุไม่เกิน 2 ปี นับจากวันที่ทดสอบจนถึงวันสอบสัมภาษณ์ ดังนี้ TOEFL (IBT) ไม่ต่ำกว่า 60 หรือ TOEFL (CBT) ไม่ต่ำกว่า 175 หรือ IELTS ไม่ต่ำกว่า 5 หรือ TOEIC ไม่ต่ำกว่า 650 หรือ SWU-SET ไม่ต่ำกว่า 78\n'- รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.138Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8cb",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "B",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 12,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.161Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8cd",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "B",
+      "project_id": "G0003",
+      "project_name_th": "โครงการพัฒนาบัณฑิตสู่สากล หลักสูตร 2 ภาษา",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- ผู้สมัครจะต้องมีผลการทดสอบความสามารถทางภาษาอังกฤษ อย่างใดอย่างหนึ่ง ทั้งนี้ผลคะแนนต้องมีอายุไม่เกิน 2 ปี นับจากวันที่ทดสอบจนถึงวันสอบสัมภาษณ์ ดังนี้ TOEFL (IBT) ไม่ต่ำกว่า 60 หรือ TOEFL (CBT) ไม่ต่ำกว่า 175 หรือ IELTS ไม่ต่ำกว่า 5 หรือ TOEIC ไม่ต่ำกว่า 650 หรือ SWU-SET ไม่ต่ำกว่า 78\n'- รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.167Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8cf",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "B",
+      "project_id": "G0002",
+      "project_name_th": "โครงการผู้พิการ",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- เป็นผู้พิการทางการเคลื่อนไหว (บกพร่องทางด้านแขน หรือ ขา หรือ มือพิการในระดับนิ้วบางนิ้ว) ที่สามารถช่วยเหลือตัวเองได้ในชีวิตประจำวัน และไม่เป็นอุปสรรคต่อการศึกษา\n'- รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "สำเนาบัตรประจำตัวคนพิการ จำนวน 1 ฉบับ พร้อมระบุข้อความ “ใช้เพื่อสมัครเข้าศึกษาที่ มศว ปีการศึกษา 2569 เท่านั้น”",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.172Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8d9",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "C",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 18,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.208Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8db",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "C",
+      "project_id": "G0003",
+      "project_name_th": "โครงการพัฒนาบัณฑิตสู่สากล หลักสูตร 2 ภาษา",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- ผู้สมัครจะต้องมีผลการทดสอบความสามารถทางภาษาอังกฤษ อย่างใดอย่างหนึ่ง ทั้งนี้ผลคะแนนต้องมีอายุไม่เกิน 2 ปี นับจากวันที่ทดสอบจนถึงวันสอบสัมภาษณ์ ดังนี้ TOEFL (IBT) ไม่ต่ำกว่า 60 หรือ TOEFL (CBT) ไม่ต่ำกว่า 175 หรือ IELTS ไม่ต่ำกว่า 5 หรือ TOEIC ไม่ต่ำกว่า 650 หรือ SWU-SET ไม่ต่ำกว่า 78\n'- รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.214Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8df",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "C",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "- สอบข้อเขียนวัดความรู้ทั่วไป เกณฑ์ขั้นต่ำ 1 คะแนน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.229Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8c5",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- สอบข้อเขียนวัดความรู้ทั่วไป เกณฑ์ขั้นต่ำ 1 คะแนน / สอบปฏิบัติ เกณฑ์ขั้นต่ำ 1 คะแนน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.144Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8c7",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "A",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "- สอบข้อเขียนวัดความรู้ทั่วไป เกณฑ์ขั้นต่ำ 1 คะแนน / สอบปฏิบัติ เกณฑ์ขั้นต่ำ 1 คะแนน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.150Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8d1",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "B",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 22,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- สอบข้อเขียนวัดความรู้ทั่วไป เกณฑ์ขั้นต่ำ 1 คะแนน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.180Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8d3",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "B",
+      "project_id": "G0008",
+      "project_name_th": "โครงการนักกีฬา",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- สอบข้อเขียนวัดความรู้ทั่วไป เกณฑ์ขั้นต่ำ 1 คะแนน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.190Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8d5",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "B",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "- สอบข้อเขียนวัดความรู้ทั่วไป เกณฑ์ขั้นต่ำ 1 คะแนน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.197Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8dd",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "C",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- สอบข้อเขียนวัดความรู้ทั่วไป เกณฑ์ขั้นต่ำ 1 คะแนน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.221Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8c9",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "A",
+      "project_id": "A0001",
+      "project_name_th": "Admission-สาขาวิชานวัตกรรมสื่อสารสังคม วิชาเอกการออกแบบสื่อปฏิสัมพันธ์และมัลติมีเดีย (หลักสูตร 2 ภาษา)",
+      "type": "3_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.155Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 50,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8d7",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "B",
+      "project_id": "A0001",
+      "project_name_th": "Admission-สาขาวิชานวัตกรรมสื่อสารสังคม วิชาเอกการจัดการธุรกิจไซเบอร์ (หลักสูตร 2 ภาษา)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.203Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 50,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d8e1",
+      "university_id": "009",
+      "program_id": "10090130900801C",
+      "major_id": "C",
+      "project_id": "A0001",
+      "project_name_th": "Admission-สาขาวิชานวัตกรรมสื่อสารสังคม วิชาเอกนวัตกรรมคอมพิวเตอร์เพื่อการสื่อสาร (หลักสูตร 2 ภาษา)",
+      "type": "3_2569",
+      "receive_student_number": 18,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-25T02:22:49.237Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 50,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    }
+  ]
+}

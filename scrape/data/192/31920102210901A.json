@@ -1,0 +1,97 @@
+{
+  "program": [
+    {
+      "program_id": "31920102210901A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ทล.บ. (เทคโนโลยีการพิมพ์ดิจิทัลและออกแบบบรรจุภัณฑ์)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 50,
+      "max_score": 91.25,
+      "min_score_ds": 50,
+      "max_score_ds": 91.25,
+      "receive_student_number": 30,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fe3f5eb722e19cb80f95d5",
+      "university_id": "192",
+      "program_id": "31920102210901A",
+      "type": "1_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "เทคโนโลยีบัณฑิต (เทคโนโลยีการพิมพ์ดิจิทัลและออกแบบบรรจุภัณฑ์)",
+      "condition": "ต้องมีใบรับรองแพทย์ ที่ผ่านการทดสอบตาไม่บอดสี โดยผู้สมัครสามารถเข้ารับการทดสอบตาบอดสีได้ตามโรงพยาบาลรัฐ หรือ โรงพยาบาลเอกชน หรือ คลินิกที่สามารถทดสอบตาบอดสีได้",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-26T15:33:50.988Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f963b",
+      "university_id": "192",
+      "program_id": "31920102210901A",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "เทคโนโลยีบัณฑิต (เทคโนโลยีการพิมพ์ดิจิทัลและออกแบบบรรจุภัณฑ์)",
+      "condition": "ต้องมีใบรับรองแพทย์ ที่ผ่านการทดสอบตาไม่บอดสี โดยผู้สมัครสามารถเข้ารับการทดสอบตาบอดสีได้ตามโรงพยาบาลรัฐ หรือ โรงพยาบาลเอกชน หรือ คลินิกที่สามารถทดสอบตาบอดสีได้",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-26T15:33:51.319Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f96a1",
+      "university_id": "192",
+      "program_id": "31920102210901A",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "เทคโนโลยีบัณฑิต (เทคโนโลยีการพิมพ์ดิจิทัลและออกแบบบรรจุภัณฑ์)",
+      "condition": "ต้องมีใบรับรองแพทย์ ที่ผ่านการทดสอบตาไม่บอดสี โดยผู้สมัครสามารถเข้ารับการทดสอบตาบอดสีได้ตามโรงพยาบาลรัฐ หรือ โรงพยาบาลเอกชน หรือ คลินิกที่สามารถทดสอบตาบอดสีได้",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-26T15:33:51.637Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

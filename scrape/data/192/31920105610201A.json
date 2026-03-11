@@ -1,0 +1,188 @@
+{
+  "program": [
+    {
+      "program_id": "31920105610201A",
+      "project_id": "0",
+      "major_id": "A",
+      "program_name_th": "บธ.บ. (การจัดการธุรกิจสมัยใหม่)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "กลุ่มวิชาการจัดการทั่วไป",
+      "project_name_th": "0",
+      "min_score": 81.5,
+      "max_score": 98.5,
+      "min_score_ds": 80.25,
+      "max_score_ds": 98.5,
+      "receive_student_number": 50,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "program_id": "31920105610201A",
+      "project_id": "0",
+      "major_id": "B",
+      "program_name_th": "บธ.บ. (การจัดการธุรกิจสมัยใหม่)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "กลุ่มวิชาการจัดการทรัพยากรมนุษย์",
+      "project_name_th": "0",
+      "min_score": 79.5,
+      "max_score": 98.25,
+      "min_score_ds": 75.5,
+      "max_score_ds": 98.25,
+      "receive_student_number": 20,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fe3f5fb722e19cb80f960b",
+      "university_id": "192",
+      "program_id": "31920105610201A",
+      "major_id": "B",
+      "type": "1_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (การจัดการธุรกิจสมัยใหม่) กลุ่มวิชาการจัดการทรัพยากรมนุษย์",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-26T15:33:51.174Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f9607",
+      "university_id": "192",
+      "program_id": "31920105610201A",
+      "major_id": "A",
+      "type": "1_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (การจัดการธุรกิจสมัยใหม่) กลุ่มวิชาการจัดการทั่วไป",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-26T15:33:51.162Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f966d",
+      "university_id": "192",
+      "program_id": "31920105610201A",
+      "major_id": "A",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (การจัดการธุรกิจสมัยใหม่) กลุ่มวิชาการจัดการทั่วไป",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-26T15:33:51.477Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f9671",
+      "university_id": "192",
+      "program_id": "31920105610201A",
+      "major_id": "B",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (การจัดการธุรกิจสมัยใหม่) กลุ่มวิชาการจัดการทรัพยากรมนุษย์",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-26T15:33:51.489Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f96d7",
+      "university_id": "192",
+      "program_id": "31920105610201A",
+      "major_id": "B",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (การจัดการธุรกิจสมัยใหม่) กลุ่มวิชาการจัดการทรัพยากรมนุษย์",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-26T15:33:51.808Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f96d3",
+      "university_id": "192",
+      "program_id": "31920105610201A",
+      "major_id": "A",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (การจัดการธุรกิจสมัยใหม่) กลุ่มวิชาการจัดการทั่วไป",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-26T15:33:51.795Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

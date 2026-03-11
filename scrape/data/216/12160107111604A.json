@@ -1,0 +1,180 @@
+{
+  "program": [
+    {
+      "program_id": "12160107111604A",
+      "project_id": "E2734",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรฉุกเฉินการแพทยบัณฑิต (หลักสูตรปรับปรุง พ.ศ.2568)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "การฉุกเฉินการแพทย์บัณฑิต",
+      "min_score": 62.7666,
+      "max_score": 73.6083,
+      "min_score_ds": 61.0381,
+      "max_score_ds": 73.6083,
+      "receive_student_number": 10,
+      "scores": {
+        "tgat": 25,
+        "tpat1": 25,
+        "a_lv_63": 25,
+        "a_lv_82": 25
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ddf5714bdfed1e96e946b8",
+      "university_id": "216",
+      "program_id": "12160107111604A",
+      "project_id": "E2743",
+      "project_name_th": "ฉุกเฉินการแพทยบัณฑิต - นักเรียน และบุคคลทั่วไป",
+      "type": "1_2569",
+      "receive_student_number": 32,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "ฉุกเฉินการแพทยบัณฑิต",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "folio_q2": "ปัจจุบันมีการพัฒนา AI เพื่อตอบรับสายฉุกเฉิน (เช่น 1669) แทนเจ้าหน้าที่จริง คุณคิดว่า AI ควรเข้ามามีบทบาทมากน้อยเพียงใดในการคัดกรองและให้คำแนะนำเบื้องต้นก่อนส่งต่อสายให้เจ้าหน้าที่?",
+        "folio_q2_type": "C",
+        "folio_q3": "หากต้องใช้กล้องติดตัว (Body Cam) ที่เชื่อมต่อ AI เพื่อวิเคราะห์เหตุฉุกเฉินแบบเรียลไทม์ แต่ข้อมูลเหล่านี้อาจถูกบันทึกและนำไปเผยแพร่ต่อ คุณคิดว่าควรมีแนวทางกำกับหรือข้อจำกัดอย่างไรเพื่อปกป้องสิทธิส่วนบุคคลของผู้ป่วย?",
+        "folio_q3_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.744Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 30,
+        "interview": 70
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946b6",
+      "university_id": "216",
+      "program_id": "12160107111604A",
+      "project_id": "E2742",
+      "project_name_th": "ฉุกเฉินการแพทยบัณฑิต - นักเรียนของโรงเรียนวชิราวุธวิทยาลัย/นักเรียนที่เป็นบุตรหรือบุตรบุญธรรมของข้าราชการ ข้าราชการบำนาญ หรือลูกจ้างสังกัดกรุงเทพมหานคร/พนักงานมหาวิทยาลัยนวมินทราธิราช /นักเรียนของโรงเรียนสังกัดองค์กรปกครองส่วนท้องถิ่น",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "ฉุกเฉินการแพทยบัณฑิต",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "folio_q2": "ปัจจุบันมีการพัฒนา AI เพื่อตอบรับสายฉุกเฉิน (เช่น 1669) แทนเจ้าหน้าที่จริง คุณคิดว่า AI ควรเข้ามามีบทบาทมากน้อยเพียงใดในการคัดกรองและให้คำแนะนำเบื้องต้นก่อนส่งต่อสายให้เจ้าหน้าที่?",
+        "folio_q2_type": "C",
+        "folio_q3": "หากต้องใช้กล้องติดตัว (Body Cam) ที่เชื่อมต่อ AI เพื่อวิเคราะห์เหตุฉุกเฉินแบบเรียลไทม์ แต่ข้อมูลเหล่านี้อาจถูกบันทึกและนำไปเผยแพร่ต่อ คุณคิดว่าควรมีแนวทางกำกับหรือข้อจำกัดอย่างไรเพื่อปกป้องสิทธิส่วนบุคคลของผู้ป่วย?",
+        "folio_q3_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.736Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 30,
+        "interview": 70
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946b4",
+      "university_id": "216",
+      "program_id": "12160107111604A",
+      "project_id": "E2741",
+      "project_name_th": "ฉุกเฉินการแพทยบัณฑิต - นักเรียนของโรงเรียนสังกัดกรุงเทพมหานคร 10 โรงเรียน",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "ฉุกเฉินการแพทยบัณฑิต",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "folio_q2": "ปัจจุบันมีการพัฒนา AI เพื่อตอบรับสายฉุกเฉิน (เช่น 1669) แทนเจ้าหน้าที่จริง คุณคิดว่า AI ควรเข้ามามีบทบาทมากน้อยเพียงใดในการคัดกรองและให้คำแนะนำเบื้องต้นก่อนส่งต่อสายให้เจ้าหน้าที่?",
+        "folio_q2_type": "C",
+        "folio_q3": "หากต้องใช้กล้องติดตัว (Body Cam) ที่เชื่อมต่อ AI เพื่อวิเคราะห์เหตุฉุกเฉินแบบเรียลไทม์ แต่ข้อมูลเหล่านี้อาจถูกบันทึกและนำไปเผยแพร่ต่อ คุณคิดว่าควรมีแนวทางกำกับหรือข้อจำกัดอย่างไรเพื่อปกป้องสิทธิส่วนบุคคลของผู้ป่วย?",
+        "folio_q3_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.730Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 30,
+        "interview": 70
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946e4",
+      "university_id": "216",
+      "program_id": "12160107111604A",
+      "project_id": "E2734",
+      "project_name_th": "ฉุกเฉินการแพทยบัณฑิต",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "ฉุกเฉินการแพทยบัณฑิต",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-02T03:45:53.876Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 25,
+        "tpat1": 25,
+        "a_lv_63": 25,
+        "a_lv_82": 25
+      }
+    }
+  ]
+}

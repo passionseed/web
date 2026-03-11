@@ -1,0 +1,248 @@
+{
+  "program": [
+    {
+      "program_id": "10210105702701A",
+      "project_id": "M3001",
+      "major_id": "0",
+      "program_name_th": "กศ.บ. การศึกษา (สังคมศึกษา)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "min_score": 58.7776,
+      "max_score": 66.044,
+      "min_score_ds": 58.0664,
+      "max_score_ds": 66.044,
+      "receive_student_number": 33,
+      "scores": {
+        "tgat": 80,
+        "tpat5": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7412727b76be0eb095629",
+      "university_id": "021",
+      "program_id": "10210105702701A",
+      "project_id": "M1018",
+      "project_name_th": "โครงการคนพันธุ์ครู (คณะศึกษาศาสตร์)",
+      "type": "1_2569",
+      "receive_student_number": 7,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาสังคมศึกษา หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_gpa24": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_gpa24": 3,
+        "min_gpa28": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.866Z"
+    },
+    {
+      "_id": "68f7412527b76be0eb095377",
+      "university_id": "021",
+      "program_id": "10210105702701A",
+      "project_id": "M1001",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาสังคมศึกษา หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_gpa24": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_gpa24": 3,
+        "min_gpa28": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:33.874Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb0955dd",
+      "university_id": "021",
+      "program_id": "10210105702701A",
+      "project_id": "M1006",
+      "project_name_th": "โควตาโรงเรียนสาธิตมหาวิทยาลัยมหาสารคาม (ฝ่ายมัธยม)",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาสังคมศึกษา หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_gpa24": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_gpa24": 3,
+        "min_gpa28": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.651Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb0953d9",
+      "university_id": "021",
+      "program_id": "10210105702701A",
+      "project_id": "M1008",
+      "project_name_th": "โควตาส่งเสริมเยาวชนดีเด่นด้านศิลปวัฒนธรรม",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาสังคมศึกษา หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.164Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb0953f1",
+      "university_id": "021",
+      "program_id": "10210105702701A",
+      "project_id": "M1002",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาสังคมศึกษา หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_gpa24": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_gpa24": 3,
+        "min_gpa28": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.241Z"
+    },
+    {
+      "_id": "68f7412827b76be0eb0956d1",
+      "university_id": "021",
+      "program_id": "10210105702701A",
+      "project_id": "M2001",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 1",
+      "type": "2_2569",
+      "receive_student_number": 21,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาสังคมศึกษา หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1,
+        "min_tgat1": 1,
+        "min_tpat5": 1
+      },
+      "created_at": "2025-10-21T08:15:36.300Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 40,
+        "tgat1": 20,
+        "tpat5": 40
+      }
+    },
+    {
+      "_id": "68f7412927b76be0eb095828",
+      "university_id": "021",
+      "program_id": "10210105702701A",
+      "project_id": "M3001",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "type": "3_2569",
+      "receive_student_number": 6,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาสังคมศึกษา หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1,
+        "min_tgat1": 1,
+        "min_tgat2": 1,
+        "min_tpat5": 1,
+        "min_a_lv_70": 1,
+        "min_a_lv_82": 1
+      },
+      "created_at": "2025-10-21T08:15:37.254Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tgat1": 20,
+        "tgat2": 10,
+        "tpat5": 20,
+        "a_lv_70": 20,
+        "a_lv_82": 10
+      }
+    }
+  ]
+}

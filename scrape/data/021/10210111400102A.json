@@ -1,0 +1,277 @@
+{
+  "program": [
+    {
+      "program_id": "10210111400102A",
+      "project_id": "M3001",
+      "major_id": "0",
+      "program_name_th": "ศป.บ. นวัตกรรมการออกแบบ และ กศ.ม. เทคโนโลยีสื่อสารการศึกษา (หลักสูตร 2 ปริญญา)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "min_score": 33.888,
+      "max_score": 51.666,
+      "min_score_ds": 33.333,
+      "max_score_ds": 46.388,
+      "receive_student_number": 5,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "program_id": "10210111400102A",
+      "project_id": "M3002",
+      "major_id": "0",
+      "program_name_th": "ศป.บ. นวัตกรรมการออกแบบ และ กศ.ม. เทคโนโลยีสื่อสารการศึกษา (หลักสูตร 2 ปริญญา)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 2",
+      "min_score": 91.5,
+      "max_score": 95.25,
+      "min_score_ds": 91.5,
+      "max_score_ds": 95.25,
+      "receive_student_number": 5,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7412927b76be0eb0958ba",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M1003",
+      "project_name_th": "โควตาครูแนะแนว (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:37.635Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb09594c",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M1004",
+      "project_name_th": "โควตาครูแนะแนว (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.006Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb0954fd",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M1009",
+      "project_name_th": "โควตารับตรง Portfolio",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.009Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb0959ea",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M1002",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.412Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb095a54",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M1001",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.712Z"
+    },
+    {
+      "_id": "68f7412827b76be0eb095745",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M2002",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 2",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:36.621Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "68f7412827b76be0eb095689",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M2001",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 1",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:36.124Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "6926af633696c04c36511d98",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M2004",
+      "project_name_th": "โครงการ MSU Wisdom",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "ภูมิสถาปัตยกรรมศาสตรบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 5 ปี)",
+      "condition": "ผู้สมัครต้องผ่านการเรียนรายวิชาหรือหลักสูตรฝึกอบรมที่อยู่ในระบบคลังหน่วยกิตของมหาวิทยาลัยมหาสารคาม เพื่อใช้ในการพิจารณาคัดเลือกตามที่สาขาวิชากำหนด ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ https://admission.msu.ac.th หรือ https://wisdom.msu.ac.th (ระบบรับสมัครสมาชิกและผู้เรียน) หรือ https://reg.msu.ac.th (ระบบลงทะเบียนเรียนในระบบคลังหน่วยกิต) หรือ ติดต่อ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4382",
+      "link": "https://admission.msu.ac.th หรือ https://wisdom.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-11-26T07:42:27.057Z"
+    },
+    {
+      "_id": "68f7412927b76be0eb0957f0",
+      "university_id": "021",
+      "program_id": "10210111400102A",
+      "project_id": "M3001",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "type": "3_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:37.109Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    }
+  ]
+}

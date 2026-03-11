@@ -1,0 +1,106 @@
+{
+  "program": [
+    {
+      "program_id": "31990101610601A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "บธ.บ.การตลาด - การบริหารการตลาด",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 94.5,
+      "max_score": 99.5,
+      "min_score_ds": 91,
+      "max_score_ds": 99.5,
+      "receive_student_number": 4,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8916c9ec1a4bec7223c7b",
+      "university_id": "199",
+      "program_id": "31990101610601A",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาการตลาด - การบริหารการตลาด บธ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า ทุกกลุ่มสาระการเรียนรู้ \n 2. สอบสัมภาษณ์ (50%)\n 3. Portfolio (50%) \n 4. มีคุณสมบัติข้อใดข้อหนึ่ง ดังต่อไปนี้ (จะพิจารณาเป็นกรณีพิเศษ) \n  4.1 เข้าร่วมการแข่งขันหรือกิจกรรมที่เกี่ยวกับประกอบธุรกิจ\n  4.2 มีประสบการณ์ในการฝึกงานหรือทำงานที่เกี่ยวกับการตลาด",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "24-Jan-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "1/14/2569",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T08:10:20.627Z"
+    },
+    {
+      "_id": "68f8916c9ec1a4bec7223c7d",
+      "university_id": "199",
+      "program_id": "31990101610601A",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาการตลาด - การบริหารการตลาด บธ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า ทุกกลุ่มสาระการเรียนรู้\n2. สอบสัมภาษณ์ (60%)  \n3. GPAX       (40%)",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "25-Apr-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-22T08:10:20.633Z"
+    },
+    {
+      "_id": "68f8916c9ec1a4bec7223c7f",
+      "university_id": "199",
+      "program_id": "31990101610601A",
+      "type": "3_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาการตลาด - การบริหารการตลาด บธ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า\n2. GPAX = 100%",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "30-May-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-22T08:10:20.645Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,265 @@
+{
+  "program": [
+    {
+      "program_id": "10050409220201A",
+      "project_id": "T3025",
+      "major_id": "0",
+      "program_name_th": "วท.บ. สาขาวิชาเทคโนโลยีและนวัตกรรมดิจิทัล (ศึกษาที่ มธ.ศูนย์ลำปาง)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบ TGAT+A-Level วิชาคณิตศาสตร์ประยุกต์ 1",
+      "min_score": 44.444,
+      "max_score": 48.9025,
+      "min_score_ds": 41.5415,
+      "max_score_ds": 48.9025,
+      "receive_student_number": 30,
+      "scores": {
+        "tgat": 50,
+        "a_lv_61": 50
+      }
+    },
+    {
+      "program_id": "10050409220201A",
+      "project_id": "T3026",
+      "major_id": "0",
+      "program_name_th": "วท.บ. สาขาวิชาเทคโนโลยีและนวัตกรรมดิจิทัล (ศึกษาที่ มธ.ศูนย์ลำปาง)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบ TGAT+A-Level วิชาคณิตศาสตร์ประยุกต์ 2",
+      "min_score": 43.958,
+      "max_score": 50.208,
+      "min_score_ds": 41.458,
+      "max_score_ds": 50.208,
+      "receive_student_number": 30,
+      "scores": {
+        "tgat": 50,
+        "a_lv_62": 50
+      }
+    },
+    {
+      "program_id": "10050409220201A",
+      "project_id": "T3027",
+      "major_id": "0",
+      "program_name_th": "วท.บ. สาขาวิชาเทคโนโลยีและนวัตกรรมดิจิทัล (ศึกษาที่ มธ.ศูนย์ลำปาง)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบคะแนน GED",
+      "min_score": 75.5,
+      "max_score": 80.875,
+      "min_score_ds": 75.5,
+      "max_score_ds": 80.875,
+      "receive_student_number": 30,
+      "scores": {
+        "ged_score": 100
+      }
+    },
+    {
+      "program_id": "10050409220201A",
+      "project_id": "T3028",
+      "major_id": "0",
+      "program_name_th": "วท.บ. สาขาวิชาเทคโนโลยีและนวัตกรรมดิจิทัล (ศึกษาที่ มธ.ศูนย์ลำปาง)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบคะแนน V-NET",
+      "min_score": 48.41,
+      "max_score": 71.5,
+      "min_score_ds": 51.88,
+      "max_score_ds": 56.75,
+      "receive_student_number": 30,
+      "scores": {
+        "vnet_51": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37f2d2ef4c36c489aba7c",
+      "university_id": "005",
+      "program_id": "10050409220201A",
+      "project_name_th": "รอบ 1 แฟ้มสะสมผลงาน Portfolio ",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-9",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "17/11/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-06T08:34:53.596Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7478b27b76be0eb0981ab",
+      "university_id": "005",
+      "program_id": "10050409220201A",
+      "project_id": "B0061",
+      "project_name_th": "โครงการรับนักเรียนจากโรงเรียนสาธิตแห่งมหาวิทยาลัยธรรมศาสตร์",
+      "join_id": "6101",
+      "type": "2_2569",
+      "receive_student_number": 16,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "1. ผู้สมัครต้องเป็นผู้ที่กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 จากโรงเรียนสาธิตแห่งมหาวิทยาลัยธรรมศาสตร์ 2. ผู้สมัครต้องมีผลการเรียนคะแนนเฉลี่ยสะสม (GPAX) ในชั้นมัธยมศึกษาปีที่ 4 ถึง มัธยมศึกษาปีที่ 6 (ภาค 1) รวม 5 ภาคการศึกษา ไม่ต่ำกว่า 3.00",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2025-10-21T08:42:51.150Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68f7478c27b76be0eb0982e3",
+      "university_id": "005",
+      "program_id": "10050409220201A",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:52.157Z"
+    },
+    {
+      "_id": "68f7478d27b76be0eb098422",
+      "university_id": "005",
+      "program_id": "10050409220201A",
+      "project_id": "D0045",
+      "project_name_th": "โครงการธรรมศาสตร์ช้างเผือกพื้นที่กรุงเทพมหานคร",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:53.083Z"
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985c0",
+      "university_id": "005",
+      "program_id": "10050409220201A",
+      "project_id": "T3025",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบ TGAT+A-Level วิชาคณิตศาสตร์ประยุกต์ 1",
+      "join_id": "3024",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "ผู้สำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช. 3 ปี)\nต้องเป็นผู้สำเร็จการศึกษาในสาขาวิชาเทคโนโลยีสารสนเทศ คอมพิวเตอร์ธุรกิจ ช่างเทคนิคคอมพิวเตอร์\nช่างโทรคมนาคม ช่างอิเล็กทรอนิกส์ เมคคาทรอนิกส์ คอมพิวเตอร์โปรแกรมเมอร์ หรือ การบัญชี\n(เกณฑ์คุณสมบัติเฉพาะอื่น ๆ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือก แต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.340Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 50,
+        "a_lv_61": 50
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985c2",
+      "university_id": "005",
+      "program_id": "10050409220201A",
+      "project_id": "T3026",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบ TGAT+A-Level วิชาคณิตศาสตร์ประยุกต์ 2",
+      "join_id": "3024",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "ผู้สำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช. 3 ปี)\nต้องเป็นผู้สำเร็จการศึกษาในสาขาวิชาเทคโนโลยีสารสนเทศ คอมพิวเตอร์ธุรกิจ ช่างเทคนิคคอมพิวเตอร์\nช่างโทรคมนาคม ช่างอิเล็กทรอนิกส์ เมคคาทรอนิกส์ คอมพิวเตอร์โปรแกรมเมอร์ หรือ การบัญชี\n(เกณฑ์คุณสมบัติเฉพาะอื่น ๆ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือก แต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.346Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 50,
+        "a_lv_62": 50
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985c4",
+      "university_id": "005",
+      "program_id": "10050409220201A",
+      "project_id": "T3027",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบคะแนน GED",
+      "join_id": "3024",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "ผู้สำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช. 3 ปี)\nต้องเป็นผู้สำเร็จการศึกษาในสาขาวิชาเทคโนโลยีสารสนเทศ คอมพิวเตอร์ธุรกิจ ช่างเทคนิคคอมพิวเตอร์\nช่างโทรคมนาคม ช่างอิเล็กทรอนิกส์ เมคคาทรอนิกส์ คอมพิวเตอร์โปรแกรมเมอร์ หรือ การบัญชี\n(เกณฑ์คุณสมบัติเฉพาะอื่น ๆ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือก แต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.351Z",
+      "min_total_score": 0,
+      "scores": {
+        "ged_score": 100
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985c6",
+      "university_id": "005",
+      "program_id": "10050409220201A",
+      "project_id": "T3028",
+      "project_name_th": "เกณฑ์คัดเลือกรูปแบบคะแนน V-NET",
+      "join_id": "3024",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "ผู้สำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช. 3 ปี)\nต้องเป็นผู้สำเร็จการศึกษาในสาขาวิชาเทคโนโลยีสารสนเทศ คอมพิวเตอร์ธุรกิจ ช่างเทคนิคคอมพิวเตอร์\nช่างโทรคมนาคม ช่างอิเล็กทรอนิกส์ เมคคาทรอนิกส์ คอมพิวเตอร์โปรแกรมเมอร์ หรือ การบัญชี\n(เกณฑ์คุณสมบัติเฉพาะอื่น ๆ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือก แต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.357Z",
+      "min_total_score": 0,
+      "scores": {
+        "vnet_51": 100
+      }
+    }
+  ]
+}

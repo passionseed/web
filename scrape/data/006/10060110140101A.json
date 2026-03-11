@@ -1,0 +1,123 @@
+{
+  "program": [
+    {
+      "program_id": "10060110140101A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรสัตวแพทยศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 68.3998,
+      "max_score": 73.9664,
+      "min_score_ds": 67.1382,
+      "max_score_ds": 73.9664,
+      "receive_student_number": 15,
+      "scores": {
+        "gpax": 10,
+        "tgat": 30,
+        "a_lv_61": 10,
+        "a_lv_65": 20,
+        "a_lv_66": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de0478834c0",
+      "university_id": "006",
+      "program_id": "10060110140101A",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตร 6 ปี",
+      "condition": "ต้องมีใบรับรองแพทย์ระบุไม่ตาบอดสี หรือความพิการอื่น ๆ ",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://vs.mahidol.ac.th/th/bachelor-degree.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.5,
+      "score_conditions": {
+        "min_gpax": 3.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.413Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb08774d",
+      "university_id": "006",
+      "program_id": "10060110140101A",
+      "project_id": "B2074",
+      "project_name_th": "โควต้าพื้นที่",
+      "type": "2_2569",
+      "receive_student_number": 8,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตร 6 ปี",
+      "condition": "ต้องมีใบรับรองแพทย์ระบุไม่ตาบอดสี หรือความพิการอื่น ๆ ",
+      "interview_location": "ห้องสมุดและศูนย์สนเทศ อาคารเรียนและปฎิบัติการรวม คณะสัตวแพทยศาสตร์",
+      "interview_date": "ยังไม่ได้กำหนด",
+      "interview_time": "9.00-12.00 ",
+      "link": "https://vs.mahidol.ac.th/th/bachelor-degree.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_a_lv_61": 30,
+        "min_a_lv_64": 30,
+        "min_a_lv_65": 30,
+        "min_a_lv_66": 30,
+        "min_a_lv_70": 30,
+        "min_a_lv_81": 30,
+        "min_a_lv_82": 30
+      },
+      "created_at": "2025-10-21T03:07:14.357Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb08774f",
+      "university_id": "006",
+      "program_id": "10060110140101A",
+      "project_id": "B2075",
+      "project_name_th": "โครงการพัฒนาสัตวแพทย์",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตร 6 ปี",
+      "condition": "ต้องมีใบรับรองแพทย์ระบุไม่ตาบอดสี หรือความพิการอื่น ๆ ",
+      "interview_location": "ห้องสมุดและศูนย์สนเทศ อาคารเรียนและปฎิบัติการรวม คณะสัตวแพทยศาสตร์",
+      "interview_date": "ยังไม่ได้กำหนด",
+      "interview_time": "9.00-12.00 ",
+      "link": "https://vs.mahidol.ac.th/th/bachelor-degree.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_a_lv_61": 30,
+        "min_a_lv_64": 30,
+        "min_a_lv_65": 30,
+        "min_a_lv_66": 30,
+        "min_a_lv_70": 30,
+        "min_a_lv_81": 30,
+        "min_a_lv_82": 30
+      },
+      "created_at": "2025-10-21T03:07:14.362Z"
+    }
+  ]
+}

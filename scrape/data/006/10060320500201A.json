@@ -1,0 +1,109 @@
+{
+  "program": [
+    {
+      "program_id": "10060320500201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรยั่งยืนเพื่อสุขภาพและการประกอบการ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 67,
+      "max_score": 83.5,
+      "min_score_ds": 67,
+      "max_score_ds": 83.5,
+      "receive_student_number": 45,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de0478834f0",
+      "university_id": "006",
+      "program_id": "10060320500201A",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "รับทุกแผนการศึกษา",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://www.facebook.com/PublicHealthMUNA และ https://na.mahidol.ac.th/academic/tcasmuna",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.25,
+      "score_conditions": {
+        "min_gpax": 2.25
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.576Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb08779f",
+      "university_id": "006",
+      "program_id": "10060320500201A",
+      "type": "2_2569",
+      "receive_student_number": 16,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "แผนวิทย์-คณิต, แผนวิทย์-เทคโนโลยี และแผนอื่นที่มีหน่วยกิตตามที่กำหนด",
+      "interview_location": "อาคารวิทยาศาสตร์เอนกประสงค์ โครงการจัดตั้งวิทยาเขตนครสวรรค์ มหาวิทยาลัยมหิดล",
+      "interview_date": "25/4/2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://www.facebook.com/PublicHealthMUNA และ https://na.mahidol.ac.th/academic/tcasmuna",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 15,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-21T03:07:14.590Z"
+    },
+    {
+      "_id": "68f6f8e327b76be0eb087849",
+      "university_id": "006",
+      "program_id": "10060320500201A",
+      "type": "3_2569",
+      "receive_student_number": 45,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "แผนวิทย์-คณิต, แผนวิทย์-เทคโนโลยี และแผนอื่นที่มีหน่วยกิตตามที่กำหนด",
+      "interview_location": "ไม่มีการสัมภาษณ์",
+      "interview_date": "-",
+      "interview_time": "-",
+      "link": " Link: https://www.facebook.com/smartfarmer.muna และ https://na.mahidol.academic/tcasmuna/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 15,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-21T03:07:15.109Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

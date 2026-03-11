@@ -1,0 +1,106 @@
+{
+  "program": [
+    {
+      "program_id": "31950205610201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "บธ.บ. นวัตกรรมการจัดการ 4 ปี",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f5be8884df8e9fee9b45cd",
+      "university_id": "195",
+      "program_id": "31950205610201A",
+      "type": "1_2569",
+      "receive_student_number": 90,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บธ.บ. นวัตกรรมการจัดการ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะบริหารธุรกิจ วิทยาเขตวังไกลกังวล",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "18/1/2569",
+        "page_limit": "ม.ค.-15"
+      },
+      "created_at": "2025-10-20T04:46:00.400Z",
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2
+    },
+    {
+      "_id": "68f5be8884df8e9fee9b466f",
+      "university_id": "195",
+      "program_id": "31950205610201A",
+      "type": "2_2569",
+      "receive_student_number": 90,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บธ.บ. นวัตกรรมการจัดการ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะบริหารธุรกิจ วิทยาเขตวังไกลกังวล",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T04:46:00.933Z",
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2
+    },
+    {
+      "_id": "68f5be8984df8e9fee9b470b",
+      "university_id": "195",
+      "program_id": "31950205610201A",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "บธ.บ. นวัตกรรมการจัดการ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะบริหารธุรกิจ วิทยาเขตวังไกลกังวล",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T04:46:01.465Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2
+    }
+  ]
+}

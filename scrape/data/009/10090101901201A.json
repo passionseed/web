@@ -1,0 +1,160 @@
+{
+  "program": [
+    {
+      "program_id": "10090101901201A",
+      "project_id": "A0002",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาสารสนเทศศึกษา",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 50.65,
+      "max_score": 65.9332,
+      "min_score_ds": 50.2944,
+      "max_score_ds": 65.9332,
+      "receive_student_number": 47,
+      "scores": {
+        "tgat": 20,
+        "a_lv_70": 20,
+        "a_lv_81": 20,
+        "a_lv_82": 20,
+        "cal_type": "1",
+        "cal_score_sum": 20,
+        "cal_subject_name": "a_lv_61|a_lv_62"
+      }
+    },
+    {
+      "program_id": "10090101901201A",
+      "project_id": "A0003",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาสารสนเทศศึกษา",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 51.5166,
+      "max_score": 55.3054,
+      "min_score_ds": 51.5166,
+      "max_score_ds": 55.3054,
+      "receive_student_number": 47,
+      "scores": {
+        "tgat": 20,
+        "a_lv_70": 20,
+        "a_lv_81": 20,
+        "a_lv_82": 20,
+        "cal_type": "1",
+        "cal_score_sum": 20,
+        "cal_subject_name": "a_lv_61|a_lv_62"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34761b0969b83dd6d59d",
+      "university_id": "009",
+      "program_id": "10090101901201A",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "- เฉพาะผู้สมัครที่จบจากโรงเรียนหลักสูตรแกนกลางเท่านั้น จะต้องมีคะแนนเฉลี่ยวิชากลุ่มสาระการเรียนรู้ภาษาไทย ไม่ต่ำกว่า 2.5 / คณิตศาสตร์ ไม่ต่ำกว่า 2.5 / วิทยาศาสตร์และเทคโนโลยี ไม่ต่ำกว่า 2.5 / สังคม ศาสนา และวัฒนธรรม ไม่ต่ำกว่า 2.5 / การงานอาชีพและเทโนโลยี ไม่ต่ำกว่า 2.5 / ภาษาต่างประเทศ ไม่ต่ำกว่า 2.5",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:46.494Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34761b0969b83dd6d59f",
+      "university_id": "009",
+      "program_id": "10090101901201A",
+      "project_id": "A0002",
+      "project_name_th": "Admission",
+      "join_id": "3001",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 1,
+        "score_condition": 1,
+        "subject_names": "min_a_lv_61 min_a_lv_62",
+        "score_minimum": "1 1"
+      },
+      "created_at": "2025-10-25T02:22:46.502Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "a_lv_70": 20,
+        "a_lv_81": 20,
+        "a_lv_82": 20,
+        "cal_type": "1",
+        "cal_score_sum": 20,
+        "cal_subject_name": "a_lv_61|a_lv_62"
+      }
+    },
+    {
+      "_id": "68fc34761b0969b83dd6d5a1",
+      "university_id": "009",
+      "program_id": "10090101901201A",
+      "project_id": "A0003",
+      "project_name_th": "Admission",
+      "join_id": "3001",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 2,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 1,
+        "score_condition": 1,
+        "subject_names": "min_a_lv_61 min_a_lv_62",
+        "score_minimum": "1 1"
+      },
+      "created_at": "2025-10-25T02:22:46.509Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "a_lv_70": 20,
+        "a_lv_81": 20,
+        "a_lv_82": 20,
+        "cal_type": "1",
+        "cal_score_sum": 20,
+        "cal_subject_name": "a_lv_61|a_lv_62"
+      }
+    }
+  ]
+}

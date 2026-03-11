@@ -108,9 +108,16 @@ async function upsertProgram(
       scraped_at: new Date().toISOString(),
     }));
 
+    // Deduplicate rows to avoid "ON CONFLICT DO UPDATE command cannot affect row a second time"
+    const uniqueRows = Array.from(
+      new Map(
+        rows.map((r) => [`${r.program_id}-${r.round_type}-${r.project_id}`, r])
+      ).values()
+    );
+
     const { error: roundErr } = await supabase
       .from("tcas_admission_rounds")
-      .upsert(rows, { onConflict: "program_id,round_type,project_id" });
+      .upsert(uniqueRows, { onConflict: "program_id,round_type,project_id" });
 
     if (roundErr) throw new Error(`rounds upsert: ${roundErr.message}`);
   }

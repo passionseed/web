@@ -1,0 +1,90 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "6937aa6f982a19c1b1af0cf2",
+      "university_id": "191",
+      "program_id": "31910105610201E",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชา Business Administration-Innovative Business Management (4 ปี)",
+      "condition": "",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th",
+      "interview_date": "20-ธ.ค.-68",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "ใส่ Portfolio แบบย่อ (ไม่เกิน 1000 ตัวอักษร)",
+        "folio_q1_type": "B",
+        "folio_q2": "ใส่ Link ผลงานในลักษณะอื่น เช่น WebSite-Youtube-Tiktok",
+        "folio_q2_type": "B",
+        "closed_date": "8/12/2025 0:00",
+        "page_limit": "10"
+      },
+      "created_at": "2025-12-09T04:49:51.561Z"
+    },
+    {
+      "_id": "6937aa6f982a19c1b1af0cf4",
+      "university_id": "191",
+      "program_id": "31910105610201E",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชา Business Administration-Innovative Business Management (4 ปี)",
+      "condition": "",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th",
+      "interview_date": "28-มี.ค.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-12-09T04:49:51.575Z"
+    },
+    {
+      "_id": "6937aa6f982a19c1b1af0cf6",
+      "university_id": "191",
+      "program_id": "31910105610201E",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชา Business Administration-Innovative Business Management (4 ปี)",
+      "condition": "",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-12-09T04:49:51.583Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

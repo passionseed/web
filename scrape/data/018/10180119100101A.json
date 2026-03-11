@@ -1,0 +1,59 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f874699ec1a4bec7221e25",
+      "university_id": "018",
+      "program_id": "10180119100101A",
+      "project_id": "A0001",
+      "project_name_th": "รับตรงรอบ Portfolio",
+      "join_id": "",
+      "type": "1_2569",
+      "receive_student_number": 21,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "ตามประกาศมหาวิทยาลัย",
+      "interview_date": "ตามประกาศมหาวิทยาลัย",
+      "interview_time": "ตามประกาศมหาวิทยาลัย",
+      "link": "admission.ubu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T06:06:33.355Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f874699ec1a4bec7221eab",
+      "university_id": "018",
+      "program_id": "10180119100101A",
+      "project_id": "B0002",
+      "project_name_th": "โครงการผลิตแพทย์เพื่อชาวชนบท",
+      "join_id": "",
+      "type": "2_2569",
+      "receive_student_number": 47,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "ตามประกาศมหาวิทยาลัย",
+      "interview_date": "ตามประกาศมหาวิทยาลัย",
+      "interview_time": "ตามประกาศมหาวิทยาลัย",
+      "link": "admission.ubu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T06:06:33.792Z",
+      "score_conditions": {}
+    }
+  ]
+}

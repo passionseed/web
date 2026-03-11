@@ -1,0 +1,71 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f0609366e2bac586ea0416",
+      "university_id": "931",
+      "program_id": "49310103610504A",
+      "project_name_th": "Portofolio",
+      "project_name_en": "Portofolio",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบัญชีบัณฑิต สาขาวิชาการบัญชี (4 ปี)",
+      "condition": "การจัดทำ Portfolio ผลงานสาขาการบัญชีควรรวบรวมผลงานที่แสดงถึงความสนใจและศักยภาพด้านบัญชี การเงิน หรือธุรกิจ เช่น ผลงานวิชาการ กิจกรรม การแข่งขัน จดหมายแสดงเจตจำนง และผลการเรียน เพื่อใช้ประกอบการพิจารณาเข้าศึกษาในรอบ Portfolio อย่างมีคุณภาพ",
+      "interview_location": "สถานที่ตั้ง. 46 วิทยาลัยเทคโนโลยีสยาม แขวง วัดท่าพระ เขต บางกอกใหญ่ จังหวัด กรุงเทพมหานคร 10600 อาคาร9 ชั้น1",
+      "interview_date": "21-24 ม.ค. 2569",
+      "interview_time": "08.00-16.00 น.",
+      "link": "https://siamtechno.ac.th/contact/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "23/1/69",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-16T03:03:47.870Z",
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2,
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 60,
+        "interview": 40
+      }
+    },
+    {
+      "_id": "68f0609466e2bac586ea0432",
+      "university_id": "931",
+      "program_id": "49310103610504A",
+      "project_name_th": "Admission",
+      "project_name_en": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบัญชีบัณฑิต สาขาวิชาการบัญชี (4 ปี)",
+      "condition": "การจัดทำ Portfolio ผลงานสาขาการบัญชีควรรวบรวมผลงานที่แสดงถึงความสนใจและศักยภาพด้านบัญชี การเงิน หรือธุรกิจ เช่น ผลงานวิชาการ กิจกรรม การแข่งขัน จดหมายแสดงเจตจำนง และผลการเรียน เพื่อใช้ประกอบการพิจารณาเข้าศึกษาในรอบ Portfolio อย่างมีคุณภาพ",
+      "interview_location": "สถานที่ตั้ง. 46 วิทยาลัยเทคโนโลยีสยาม แขวง วัดท่าพระ เขต บางกอกใหญ่ จังหวัด กรุงเทพมหานคร 10600 อาคาร9 ชั้น1",
+      "interview_time": "08.00-16.00 น.",
+      "link": "https://siamtechno.ac.th/contact/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-16T03:03:48.041Z",
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2,
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

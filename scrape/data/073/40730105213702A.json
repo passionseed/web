@@ -1,0 +1,46 @@
+{
+  "program": [
+    {
+      "program_id": "40730105213702A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต (ปัญญาประดิษฐ์)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต (ปัญญาประดิษฐ์)",
+      "min_score": 73.75,
+      "max_score": 73.75,
+      "min_score_ds": 73.75,
+      "max_score_ds": 73.75,
+      "receive_student_number": 50,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f72e2427b76be0eb09053a",
+      "university_id": "073",
+      "program_id": "40730105213702A",
+      "project_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต (ปัญญาประดิษฐ์)",
+      "type": "3_2569",
+      "receive_student_number": 100,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต (ปัญญาประดิษฐ์) 4 ปี",
+      "interview_location": "ขอให้ผู้มีสิทธิ์สัมภาษณ์ แคปหน้าจอผ่านการคัดเลือกรอบ Admission จากนั้นเพิ่มเพื่อนทาง Line Id : @huachiew ส่งรูปที่แคปหน้าจอผ่านการคัดเลือก และพิมพ์ชื่อ-นามสกุล คณะสาขาวิชา เพื่อแจ้งยืนยันเข้าศึกษาทาง Line (ไม่มีสอบสัมภาษณ์) กำหนดชำระเงินค่าลงทะเบียนเรียน ระหว่างวันที่ 20-27 พ.ค.69 เปิดเรียนวันที่ 2 มิ.ย.69 ทุกคน",
+      "link": "http://admission.hcu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T06:54:28.065Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

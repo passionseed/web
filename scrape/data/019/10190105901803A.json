@@ -1,0 +1,165 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e495f3ff75689dadef710e",
+      "university_id": "019",
+      "program_id": "10190105901803A",
+      "project_id": "G0005",
+      "project_name_th": "โครงการส่งเสริมนักเรียนที่มีคุณธรรมและจริยธรรม (เด็กดีมีที่เรียน)",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาภาษาจีน (รูปแบบที่ 2) ภาคปกติ ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.859Z"
+    },
+    {
+      "_id": "68e495f3ff75689dadef7070",
+      "university_id": "019",
+      "program_id": "10190105901803A",
+      "project_id": "G0003",
+      "project_name_th": "โครงการโควตาพิเศษโรงเรียนสาธิตพิบูลบำเพ็ญ",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาภาษาจีน (รูปแบบที่ 2) ภาคปกติ ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.375Z",
+      "min_total_score": 0,
+      "scores": {
+        "interview": 100
+      }
+    },
+    {
+      "_id": "68e495f1ff75689dadef6e61",
+      "university_id": "019",
+      "program_id": "10190105901803A",
+      "project_id": "G0000",
+      "project_name_th": "โครงการนักเรียนที่มีความสามารถพิเศษทั่วประเทศ",
+      "type": "1_2569",
+      "receive_student_number": 6,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาภาษาจีน (รูปแบบที่ 2) ภาคปกติ ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "11/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-07T04:24:17.484Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68f62bf4e3d0ba4c22577a1f",
+      "university_id": "019",
+      "program_id": "10190105901803A",
+      "project_id": "H0006",
+      "project_name_th": "โครงการรับตรงในภาคตะวันออก 12 จังหวัด  ",
+      "type": "2_2569",
+      "receive_student_number": 7,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาภาษาจีนเพื่อการสื่อสาร (รูปแบบที่ 2) ภาคปกติ ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 5,
+        "min_a_lv_87": 5
+      },
+      "created_at": "2025-10-20T12:32:52.505Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 40,
+        "a_lv_87": 50
+      }
+    },
+    {
+      "_id": "68f62bf5e3d0ba4c22577b74",
+      "university_id": "019",
+      "program_id": "10190105901803A",
+      "project_id": "J0010",
+      "project_name_th": "Admission ",
+      "type": "3_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาภาษาจีนเพื่อการสื่อสาร (รูปแบบที่ 2) ภาคปกติ ",
+      "condition": "รับผู้สำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "interview_location": "คณะมนุษยศาสตร์และสังคมศาสตร์ มหาวิทยาลัยบูรพา ชลบุรี",
+      "interview_date": "วันที่ 30 - 31 พฤษภาคม 2569 (อาจใช้ 1 วัน) ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "interview_time": "สอบสัมภาษณ์ เวลา 08.30-16.00 น. ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 5,
+        "min_a_lv_87_pr": 5
+      },
+      "created_at": "2025-10-20T12:32:53.351Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 40,
+        "a_lv_87": 50
+      }
+    }
+  ]
+}

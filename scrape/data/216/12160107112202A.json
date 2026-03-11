@@ -1,0 +1,180 @@
+{
+  "program": [
+    {
+      "program_id": "12160107112202A",
+      "project_id": "E2732",
+      "major_id": "0",
+      "program_name_th": "วิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีเครื่องมือแพทย์และห้องผ่าตัด",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "วท.บ. เทคโนโลยีเครื่องมือแพทย์ฯ ",
+      "min_score": 56.9974,
+      "max_score": 67.7776,
+      "min_score_ds": 56.9974,
+      "max_score_ds": 67.7776,
+      "receive_student_number": 20,
+      "scores": {
+        "tgat": 20,
+        "tpat3": 30,
+        "a_lv_63": 30,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ddf5714bdfed1e96e946ac",
+      "university_id": "216",
+      "program_id": "12160107112202A",
+      "project_id": "E2723",
+      "project_name_th": "วท.บ. เทคโนโลยีเครื่องมือแพทย์ฯ - นักเรียนทั่วไป และบุคคลทั่วไป",
+      "type": "1_2569",
+      "receive_student_number": 22,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีเครื่องมือแพทย์และห้องผ่าตัด",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "min_gpa22": 3,
+      "min_gpa23": 3,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_gpa22": 3,
+        "min_gpa23": 3
+      },
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.702Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946aa",
+      "university_id": "216",
+      "program_id": "12160107112202A",
+      "project_id": "E2722",
+      "project_name_th": "วท.บ. เทคโนโลยีเครื่องมือแพทย์ฯ - นักเรียนของโรงเรียนวชิราวุธวิทยาลัย/\tนักเรียนที่เป็นบุตรหรือบุตรบุญธรรมของข้าราชการ ข้าราชการบำนาญ หรือลูกจ้างสังกัดกรุงเทพมหานคร/พนักงานมหาวิทยาลัยนวมินทราธิราช /นักเรียนของโรงเรียนสังกัดองค์กรปกครองส่วนท้องถิ่น",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีเครื่องมือแพทย์และห้องผ่าตัด",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "min_gpa22": 3,
+      "min_gpa23": 3,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_gpa22": 3,
+        "min_gpa23": 3
+      },
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.695Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946a8",
+      "university_id": "216",
+      "program_id": "12160107112202A",
+      "project_id": "E2721",
+      "project_name_th": "วท.บ. เทคโนโลยีเครื่องมือแพทย์ฯ - นักเรียนของโรงเรียนสังกัดกรุงเทพมหานคร 10 โรงเรียน",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีเครื่องมือแพทย์และห้องผ่าตัด",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "min_gpa22": 3,
+      "min_gpa23": 3,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_gpa22": 3,
+        "min_gpa23": 3
+      },
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.690Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946e0",
+      "university_id": "216",
+      "program_id": "12160107112202A",
+      "project_id": "E2732",
+      "project_name_th": "วท.บ. เทคโนโลยีเครื่องมือแพทย์ฯ ",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีเครื่องมือแพทย์และห้องผ่าตัด",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-02T03:45:53.865Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tpat3": 30,
+        "a_lv_63": 30,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

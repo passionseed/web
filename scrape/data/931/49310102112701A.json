@@ -1,0 +1,79 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f0609366e2bac586ea040c",
+      "university_id": "931",
+      "program_id": "49310102112701A",
+      "project_name_th": "Portofolio",
+      "project_name_en": "Portofolio",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรสาธารณสุขศาสตรบัณฑิต สาขาวิชาสาธารณสุขศาสตร์ (4 ปี)",
+      "condition": "1. เป็นผู้ที่ยึดมั่นในการปกครองระบอบประชาธิปไตยอันมีพระมหากษัตริย์ทรงเป็นประมุข\n2.เป็นผู้มีความประพฤติเรียบร้อย ตั้งใจศึกษาเล่าเรียนอย่างเต็มความสามารถ และปฏิบัติตามระเบียบ ข้อบังคับของวิทยาลัยโดยเคร่งครัด\n3.ต้องไม่เป็นผู้ที่เคยมีประวัติการถูกลงโทษเนื่องจากกระทำผิด หรือมีส่วนร่วมในการทุจริตในการสอบคัดเลือกบุคคลเข้าเรียนในสถาบันการศึกษาระดับต่าง ๆ",
+      "interview_location": "สถานที่ตั้ง. 46 วิทยาลัยเทคโนโลยีสยาม แขวง วัดท่าพระ เขต บางกอกใหญ่ จังหวัด กรุงเทพมหานคร 10600 อาคาร9 ชั้น1",
+      "interview_date": "21-24 ม.ค. 2569",
+      "interview_time": "08.00-16.00 น.",
+      "link": "https://siamtechno.ac.th/contact/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "23/1/69",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-16T03:03:47.821Z",
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2,
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 60,
+        "interview": 40
+      }
+    },
+    {
+      "_id": "68f0609366e2bac586ea0428",
+      "university_id": "931",
+      "program_id": "49310102112701A",
+      "project_name_th": "Admission",
+      "project_name_en": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรสาธารณสุขศาสตรบัณฑิต สาขาวิชาสาธารณสุขศาสตร์ (4 ปี)",
+      "condition": "1. เป็นผู้ที่ยึดมั่นในการปกครองระบอบประชาธิปไตยอันมีพระมหากษัตริย์ทรงเป็นประมุข\n2.เป็นผู้มีความประพฤติเรียบร้อย ตั้งใจศึกษาเล่าเรียนอย่างเต็มความสามารถ และปฏิบัติตามระเบียบ ข้อบังคับของวิทยาลัยโดยเคร่งครัด\n3.ต้องไม่เป็นผู้ที่เคยมีประวัติการถูกลงโทษเนื่องจากกระทำผิด หรือมีส่วนร่วมในการทุจริตในการสอบคัดเลือกบุคคลเข้าเรียนในสถาบันการศึกษาระดับต่าง ๆ",
+      "interview_location": "สถานที่ตั้ง. 46 วิทยาลัยเทคโนโลยีสยาม แขวง วัดท่าพระ เขต บางกอกใหญ่ จังหวัด กรุงเทพมหานคร 10600 อาคาร9 ชั้น1",
+      "interview_time": "08.00-16.00 น.",
+      "link": "https://siamtechno.ac.th/contact/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-16T03:03:47.990Z",
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2,
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 15,
+        "tgat1": 5,
+        "tgat2": 5,
+        "tgat3": 5,
+        "a_lv_61": 15,
+        "a_lv_64": 15,
+        "a_lv_65": 15,
+        "a_lv_66": 15,
+        "a_lv_82": 10
+      }
+    }
+  ]
+}

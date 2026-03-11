@@ -1,0 +1,48 @@
+{
+  "program": [
+    {
+      "program_id": "40680101901801A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.ภาษาจีน",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "",
+      "min_score": 14.166,
+      "max_score": 64.444,
+      "min_score_ds": 14.166,
+      "max_score_ds": 64.444,
+      "receive_student_number": 30,
+      "scores": {
+        "tgat": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f1b8696e0a26276271dae0",
+      "university_id": "068",
+      "program_id": "40680101901801A",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "เป็นสาขาวิชาที่พัฒนาผู้เรียนให้มีทักษะการใช้ภาษาจีนฟังพูดอ่านเขียนเข้าใจวัฒนาธรรมจีน",
+      "condition": "ประพฤติตนดี",
+      "interview_location": "อาคารอาทิตย์ อุไรรัตน์ (อาคาร 1) ณ มหาวิทยาลัยรังสิต ",
+      "interview_date": "กำหนดการสัมภาษณ์ ขอให้ดูตาม Link : https://rsu.ac.th/blog/tcas69",
+      "interview_time": "08.30-16.30น.",
+      "link": "https://rsu.ac.th/blog/tcas69",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-17T03:30:49.411Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    }
+  ]
+}

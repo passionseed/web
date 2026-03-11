@@ -1,0 +1,138 @@
+{
+  "program": [
+    {
+      "program_id": "31910211110801A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "การแพทย์แผนไทยประยุกต์บัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 38.632,
+      "max_score": 47.2129,
+      "min_score_ds": 37.87,
+      "max_score_ds": 47.2129,
+      "receive_student_number": 20,
+      "scores": {
+        "gpax": 10,
+        "tgat": 20,
+        "tpat1": 20,
+        "a_lv_61": 10,
+        "a_lv_64": 10,
+        "a_lv_65": 10,
+        "a_lv_66": 10,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e8aaaeb848dd4679d6cc28",
+      "university_id": "191",
+      "program_id": "31910211110801A",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรการแพทย์แผนไทยประยุกต์บัณฑิต (4 ปี)",
+      "condition": "1. มีใบรับรองแพทย์ผลการตรวจตาบอดสี 2. มีใบรับรองแพทย์ 5 โรค ได้แก่ 1.วัณโรคในระยะแพร่เชื้อ  2. โรคเท้าช้าง \n3. โรคที่เกิดจากสารเสพติด 4. โรคพิษสุราเรื้อรัง  5. โรคอื่นๆ ที่เรื้อรังหรือร้ายแรง \nแสดงอาการอย่างชัดเจนจนเป็นอุปสรรคต่อการเรียน\n",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "20-ธ.ค.-68",
+      "interview_time": "09.00-12.00 น",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "folio_q1": "ใส่ Portfolio แบบย่อ (ไม่เกิน 1000 ตัวอักษร)",
+        "folio_q1_type": "B",
+        "folio_q2": "ใส่ Link ผลงานในลักษณะอื่น เช่น WebSite-Youtube-Tiktok",
+        "folio_q2_type": "B",
+        "closed_date": "8/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-10T06:41:50.700Z"
+    },
+    {
+      "_id": "68e8aaaeb848dd4679d6cc2a",
+      "university_id": "191",
+      "program_id": "31910211110801A",
+      "type": "2_2569",
+      "receive_student_number": 12,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรการแพทย์แผนไทยประยุกต์บัณฑิต (4 ปี)",
+      "condition": "1. มีใบรับรองแพทย์ผลการตรวจตาบอดสี 2. มีใบรับรองแพทย์ 5 โรค ได้แก่ 1.วัณโรคในระยะแพร่เชื้อ  2. โรคเท้าช้าง \n3. โรคที่เกิดจากสารเสพติด 4. โรคพิษสุราเรื้อรัง  5. โรคอื่นๆ ที่เรื้อรังหรือร้ายแรง \nแสดงอาการอย่างชัดเจนจนเป็นอุปสรรคต่อการเรียน\n",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "28-มี.ค.-69",
+      "interview_time": "09.00-12.00 น",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-10T06:41:50.705Z"
+    },
+    {
+      "_id": "68e8aaaeb848dd4679d6cc2c",
+      "university_id": "191",
+      "program_id": "31910211110801A",
+      "type": "3_2569",
+      "receive_student_number": 13,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรการแพทย์แผนไทยประยุกต์บัณฑิต (4 ปี)",
+      "condition": "มีสุขภาพร่างกายสมบูรณ์ แข็งแรง และปราศจากโรค อาการของโรค หรือมีความพิการอันเป็นอุปสรรคต่อการศึกษา และการประกอบอาชีพการแพทย์แผนไทยประยุกต์\nมีใบรับรองแพทย์ 5 โรค และใบรับรองแพทย์ภาวะตาบอดสี หมายเหตุ :\nมีใบรับรองแพทย์ 5 โรค ได้แก่ 1.วัณโรคในระยะ\nแพร่เชื้อ 2. โรคเท้าช้าง 3. โรคที่เกิดจากสารเสพติด 4. โรคพิษสุราเรื้อรัง 5. โรคอื่น ๆ ที่เรื้อรังหรือร้ายแรง แสดงอาการอย่างชัดเจนจนเป็นอุปสรรค ต่อการเรียนการศึกษาและการประกอบอาชีพการแพทย์แผนไทยประยุกต์",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tgat": 20,
+        "min_tpat1": 20,
+        "min_a_lv_61": 10,
+        "min_a_lv_64": 10,
+        "min_a_lv_65": 10,
+        "min_a_lv_66": 10,
+        "min_a_lv_82": 10,
+        "score_condition": 2,
+        "subject_names": "min_tgat1 min_tpat1 min_a_lv_61 min_a_lv_64 min_a_lv_65 min_a_lv_66 min_a_lv_82",
+        "score_minimum": "0"
+      },
+      "created_at": "2025-10-10T06:41:50.710Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 20,
+        "tpat1": 20,
+        "a_lv_61": 10,
+        "a_lv_64": 10,
+        "a_lv_65": 10,
+        "a_lv_66": 10,
+        "a_lv_82": 10
+      }
+    }
+  ]
+}

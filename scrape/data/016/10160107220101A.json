@@ -1,0 +1,395 @@
+{
+  "program": [
+    {
+      "program_id": "10160107220101A",
+      "project_id": "C0012",
+      "major_id": "0",
+      "program_name_th": "วท.บ. เทคโนโลยีสารสนเทศ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รูปแบบที่ 1",
+      "min_score": 58.1339,
+      "max_score": 64.2915,
+      "min_score_ds": 58.1339,
+      "max_score_ds": 64.2915,
+      "receive_student_number": 25,
+      "scores": {
+        "tgat1": 10,
+        "tgat2": 10,
+        "tpat3": 30,
+        "a_lv_61": 30,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "program_id": "10160107220101A",
+      "project_id": "C0013",
+      "major_id": "0",
+      "program_name_th": "วท.บ. เทคโนโลยีสารสนเทศ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รูปแบบที่ 2",
+      "min_score": 57.6248,
+      "max_score": 66.0299,
+      "min_score_ds": 57.5135,
+      "max_score_ds": 66.0299,
+      "receive_student_number": 25,
+      "scores": {
+        "tgat1": 10,
+        "tgat2": 10,
+        "tpat3": 30,
+        "a_lv_62": 30,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7520927b76be0eb09a383",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "A0024",
+      "project_name_th": "โครงการนักเรียนเรียนดีและมีความสนใจทางเทคโนโลยีสารสนเทศ",
+      "type": "1_2569",
+      "receive_student_number": 115,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:37.244Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a385",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "A0025",
+      "project_name_th": "โครงการนักเรียนที่มีความสามารถทางด้านเทคโนโลยีสารสนเทศ",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:37.249Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a387",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "A0048",
+      "project_name_th": "โครงการนักเรียนที่มีความสามารถทางด้านภาษาอังกฤษและเทคโนโลยีสารสนเทศ",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT2 และ TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:37.254Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a389",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "A0001",
+      "project_name_th": "โครงการการให้โควตานักเรียนมูลนิธิส่งเสริมโอลิมปิกวิชาการและพัฒนามาตรฐานวิทยาศาสตร์ศึกษาในพระอุปถัมภ์สมเด็จพระเจ้าพี่นางเธอ เจ้าฟ้ากัลยาณิวัฒนา กรมหลวงนราธิวาสราชนครินทร์(สอวน.)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:37.259Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a3a1",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "B0028",
+      "project_name_th": "โควตาผู้มีความรู้หรือความสามารถทางด้านเทคโนโลยีสารสนเทศ",
+      "join_id": "1134",
+      "type": "2_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ   https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T09:27:37.320Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a39b",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "B0031",
+      "project_name_th": "โควตาสถานศึกษาที่อยู่ในเขตพื้นที่กรุงเทพมหานคร จังหวัดในปริมณฑล จังหวัดในภาคตะวันออก และจังหวัดในภาคกลาง",
+      "join_id": "1134",
+      "type": "2_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ   https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T09:27:37.305Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a39d",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "B0011",
+      "project_name_th": "โควตาโรงเรียนที่ลงนามความร่วมมือกับสถาบันฯ (MOU)",
+      "join_id": "1134",
+      "type": "2_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ   https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T09:27:37.310Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a39f",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "B0012",
+      "project_name_th": "โควตาโอลิมปิกวิชาการ",
+      "join_id": "1134",
+      "type": "2_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ   https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T09:27:37.315Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a3a3",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "B0003",
+      "project_name_th": "โควตาการรับประเภทนักศึกษาพิการ",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ   https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T09:27:37.325Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a3a5",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "B0002",
+      "project_name_th": "โควตารับผู้มีความสามารถดีเด่นทางการกีฬา",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ   https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.25,
+      "score_conditions": {
+        "min_gpax": 3.25
+      },
+      "created_at": "2025-10-21T09:27:37.330Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a3a7",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "B0019",
+      "project_name_th": "โควตานักเรียนในเขตพื้นที่การศึกษาจังหวัดสุพรรณบุรี",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ   https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas และต้องมีคะแนน TGAT1,TGAT2,TPAT3",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.25,
+      "score_conditions": {
+        "min_gpax": 3.25
+      },
+      "created_at": "2025-10-21T09:27:37.336Z"
+    },
+    {
+      "_id": "68f7520927b76be0eb09a3bf",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "C0013",
+      "project_name_th": "รูปแบบที่ 2",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "รับผู้ที่กำลังศึกษาหรือสำเร็จการศึกษาชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า มีผลการเรียนเฉลี่ยไม่น้อยกว่า 2.50  และต้องมีคะแนน TGAT1, TGAT2, TPAT3,  A-level Math2 , A-Level Eng",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": true,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat1": 1,
+        "min_tgat2": 1,
+        "min_tpat3": 1,
+        "min_a_lv_62": 1,
+        "min_a_lv_82": 1
+      },
+      "created_at": "2025-10-21T09:27:37.398Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 10,
+        "tgat2": 10,
+        "tpat3": 30,
+        "a_lv_62": 30,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "_id": "68f7520927b76be0eb09a3bd",
+      "university_id": "016",
+      "program_id": "10160107220101A",
+      "project_id": "C0012",
+      "project_name_th": "รูปแบบที่ 1",
+      "type": "3_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "รับผู้ที่กำลังศึกษาหรือสำเร็จการศึกษาชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า มีผลการเรียนเฉลี่ยไม่น้อยกว่า 2.50  และต้องมีคะแนน TGAT1, TGAT2, TPAT3,  A-level Math1 , A-Level Eng",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": true,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat1": 1,
+        "min_tgat2": 1,
+        "min_tpat3": 1,
+        "min_a_lv_61": 1,
+        "min_a_lv_82": 1
+      },
+      "created_at": "2025-10-21T09:27:37.393Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 10,
+        "tgat2": 10,
+        "tpat3": 30,
+        "a_lv_61": 30,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

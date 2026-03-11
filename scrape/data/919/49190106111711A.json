@@ -1,0 +1,49 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e4bdc7d3ededb150f146c6",
+      "university_id": "919",
+      "program_id": "49190106111711A",
+      "major_id": "A",
+      "project_id": "A0011",
+      "project_name_th": "นักเรียน ม.6 ที่กำลังจะสำเร็จการศึกษาหรือสำเร็จการศึกษาแล้ว,อาชีวะ",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรพยาบาลศาสตรบัณฑิต สาขาวิชาพยาบาลศาสตร์ (4ปี)",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษา",
+      "interview_location": "ที่อยู่ คณะพยาบาลศาสตร์ อาคารดร.กมล ชูทรัพย์ ชั้นที่ 5  มหาวิทยาลัยราชพฤกษ์ เลขที่ 9 หมู่ 1 ถนนนครอินทร์ ตำบลบางขนุน อำเภอบางกรวย จังหวัดนนบุรี 11000 ",
+      "interview_date": "13-31 มกราคม 2569",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://nurse.rpu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "folio_q1": "ประสบการณ์ใดที่ทำให้คุณอยากเป็นพยาบาล",
+        "folio_q1_type": "B",
+        "folio_q2": "คุณเคยมีประสบการณ์ในการดูแลผู้อื่นที่เจ็บป่วยหรือไม่ อย่างไร",
+        "folio_q2_type": "B",
+        "folio_q3": "พยาบาลที่ดีควรประกอบด้วยอะไรบ้าง",
+        "folio_q3_type": "B",
+        "closed_date": "15/12/2568",
+        "page_limit": "8"
+      },
+      "created_at": "2025-10-07T07:14:15.164Z",
+      "min_total_score": 50,
+      "scores": {
+        "cal_type": "1",
+        "cal_score_sum": 100,
+        "cal_subject_name": "portfolio interview"
+      }
+    }
+  ]
+}

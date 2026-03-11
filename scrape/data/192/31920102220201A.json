@@ -1,0 +1,70 @@
+{
+  "program": [
+    {
+      "program_id": "31920102220201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วท.บ. (วิทยาการคอมพิวเตอร์) / วท.บ. (เทคโนโลยีสารสนเทศ)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 44.1665,
+      "max_score": 68.3465,
+      "min_score_ds": 41.3745,
+      "max_score_ds": 68.3465,
+      "receive_student_number": 60,
+      "scores": {
+        "tgat": 50,
+        "tpat3": 50
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "697b37f9042674b34509a0c9",
+      "university_id": "192",
+      "program_id": "31920102220201A",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต (วิทยาการคอมพิวเตอร์)",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2026-01-29T10:35:37.322Z"
+    },
+    {
+      "_id": "697b37f9042674b34509a0cf",
+      "university_id": "192",
+      "program_id": "31920102220201A",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต (วิทยาการคอมพิวเตอร์)",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2026-01-29T10:35:37.340Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

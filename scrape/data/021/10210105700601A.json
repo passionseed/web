@@ -1,0 +1,128 @@
+{
+  "program": [
+    {
+      "program_id": "10210105700601A",
+      "project_id": "M3001",
+      "major_id": "0",
+      "program_name_th": "กศ.บ. การศึกษาปฐมวัย",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "min_score": 61.0332,
+      "max_score": 68.4664,
+      "min_score_ds": 60.4332,
+      "max_score_ds": 68.4664,
+      "receive_student_number": 15,
+      "scores": {
+        "tgat": 30,
+        "tpat5": 20,
+        "a_lv_81": 30,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7412727b76be0eb095543",
+      "university_id": "021",
+      "program_id": "10210105700601A",
+      "project_id": "M1009",
+      "project_name_th": "โควตารับตรง Portfolio",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาการศึกษาปฐมวัย หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3.25,
+      "min_gpa21": 3.5,
+      "min_gpa24": 3.5,
+      "min_gpa28": 3.5,
+      "score_conditions": {
+        "min_gpax": 3.25,
+        "min_gpa21": 3.5,
+        "min_gpa24": 3.5,
+        "min_gpa28": 3.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.207Z"
+    },
+    {
+      "_id": "68f7412827b76be0eb0956d7",
+      "university_id": "021",
+      "program_id": "10210105700601A",
+      "project_id": "M2001",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 1",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาการศึกษาปฐมวัย หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1,
+        "min_tgat1": 1,
+        "min_tgat2": 1,
+        "min_tgat3": 1,
+        "min_tpat5": 1
+      },
+      "created_at": "2025-10-21T08:15:36.316Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tgat1": 20,
+        "tgat2": 20,
+        "tgat3": 20,
+        "tpat5": 20
+      }
+    },
+    {
+      "_id": "68f7412927b76be0eb09582e",
+      "university_id": "021",
+      "program_id": "10210105700601A",
+      "project_id": "M3001",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "การศึกษาบัณฑิต สาขาวิชาการศึกษาปฐมวัย หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1,
+        "min_tpat5": 1,
+        "min_a_lv_81": 1,
+        "min_a_lv_82": 1
+      },
+      "created_at": "2025-10-21T08:15:37.269Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat5": 20,
+        "a_lv_81": 30,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

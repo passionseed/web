@@ -1,0 +1,65 @@
+{
+  "program": [
+    {
+      "program_id": "21770103800501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศิลปะและการออกแบบ แขนงวิชาออกแบบนิเทศศิลป์ (ศป.บ)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 67,
+      "max_score": 72,
+      "min_score_ds": 0,
+      "max_score_ds": 71,
+      "receive_student_number": 5,
+      "scores": {
+        "tpat5": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f0bdb36f646a17d3c8c728",
+      "university_id": "177",
+      "program_id": "21770103800501A",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ศิลปะและการออกแบบ  (ศป.บ)",
+      "condition": "",
+      "link": "https://eadmission.chandra.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-16T09:41:07.356Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f0bdb36f646a17d3c8c72a",
+      "university_id": "177",
+      "program_id": "21770103800501A",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ศิลปะและการออกแบบ  (ศป.บ)",
+      "condition": "",
+      "link": "https://eadmission.chandra.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-16T09:41:07.363Z",
+      "score_conditions": {}
+    }
+  ]
+}

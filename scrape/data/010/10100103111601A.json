@@ -1,0 +1,91 @@
+{
+  "program": [
+    {
+      "program_id": "10100103111601A",
+      "project_id": "A9003",
+      "major_id": "0",
+      "program_name_th": "วท.บ.ปฏิบัติการฉุกเฉินการแพทย์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "โครงการคัดเลือกบุคคลเข้าศึกษาระดับปริญญาตรี รอบที่ 3 Admission ",
+      "min_score": 57.4108,
+      "max_score": 60.7608,
+      "min_score_ds": 57,
+      "max_score_ds": 60.7608,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 10,
+        "tgat": 40,
+        "a_lv_64": 25,
+        "a_lv_66": 25
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f5e461711afc43cbf0080a",
+      "university_id": "010",
+      "program_id": "10100103111601A",
+      "project_id": "A0308",
+      "project_name_th": "โครงการคัดเลือกนักเรียนที่มีสมรรถนะด้านการแพทย์ฉุกเฉิน",
+      "type": "1_2569",
+      "receive_student_number": 12,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-20T07:27:29.216Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f5e461711afc43cbf0080e",
+      "university_id": "010",
+      "program_id": "10100103111601A",
+      "project_id": "A9002",
+      "project_name_th": "โครงการคัดเลือกนักเรียนรับตรง (โควตาภูมิภาคใต้)",
+      "type": "2_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T07:27:29.229Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f5e461711afc43cbf0081e",
+      "university_id": "010",
+      "program_id": "10100103111601A",
+      "project_id": "A9003",
+      "project_name_th": "โครงการคัดเลือกบุคคลเข้าศึกษาระดับปริญญาตรี รอบที่ 3 Admission ",
+      "type": "3_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1,
+        "min_a_lv_64": 1,
+        "min_a_lv_66": 1
+      },
+      "created_at": "2025-10-20T07:27:29.281Z"
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "program": [
+    {
+      "program_id": "10160116211601A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศศ.วท.บ เทคโนโลยีและศิลปะสร้างสรรค์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 57.32,
+      "max_score": 66.9585,
+      "min_score_ds": 56.2485,
+      "max_score_ds": 62.605,
+      "receive_student_number": 20,
+      "scores": {
+        "tgat1": 50,
+        "tgat2": 50
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7520a27b76be0eb09a551",
+      "university_id": "016",
+      "program_id": "10160116211601A",
+      "project_id": "A0008",
+      "project_name_th": "แฟ้มสะสมผลงาน 1-1",
+      "join_id": "1157",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:38.435Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7520a27b76be0eb09a553",
+      "university_id": "016",
+      "program_id": "10160116211601A",
+      "project_id": "A0009",
+      "project_name_th": "แฟ้มสะสมผลงาน 1-2",
+      "join_id": "1157",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:38.440Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7520a27b76be0eb09a555",
+      "university_id": "016",
+      "program_id": "10160116211601A",
+      "project_id": "A0010",
+      "project_name_th": "แฟ้มสะสมผลงาน 1-3",
+      "join_id": "1157",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:38.445Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7520a27b76be0eb09a557",
+      "university_id": "016",
+      "program_id": "10160116211601A",
+      "project_id": "A0011",
+      "project_name_th": "แฟ้มสะสมผลงาน 1-4",
+      "join_id": "1157",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:38.450Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7520a27b76be0eb09a559",
+      "university_id": "016",
+      "program_id": "10160116211601A",
+      "project_id": "A0002",
+      "project_name_th": "โครงการส่งเสริมนักเรียนผู้มีคุณธรรม จริยธรรม และบำเพ็ญประโยชน์ (โครงการเด็กดีมีที่เรียน)",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:38.455Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7520a27b76be0eb09a55b",
+      "university_id": "016",
+      "program_id": "10160116211601A",
+      "project_id": "B0036",
+      "project_name_th": "โควตาความสามารถพิเศษทางด้านเทคโนโลยีและศิลปะสร้างสรรค์",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T09:27:38.460Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7520a27b76be0eb09a55d",
+      "university_id": "016",
+      "program_id": "10160116211601A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษาชั้นมัธยมศึกษาปีที่ 6 หรือเป็นผู้ที่กำลังศึกษาหรือสำเร็จการศึกษาในชั้นมัธยมศึกษาตอนปลาย หลักสูตรการเรียนการสอนแบบภาษาอังกฤษ (English Program) หลักสูตร MEP, IEP หรือชื่อเรียกเป็นอย่างอื่น หรือเป็นผู้ที่กำลังศึกษาหรือสำเร็จการศึกษาระดับประกาศนียบัตรวิชาชีพ (ปวช.) สาขาวิชาคอมพิวเตอร์กราฟฟิก หรือสาขาวิชาศิลปกรรม หรือสำเร็จการศึกษาหลักสูตร GED โดยมีผลสอบในแต่ละวิชาอย่างน้อย 145 คะแนนขึ้นไป หรือเป็นผู้ที่สำเร็จการศึกษาหลักสูตร BTEC International (Business and Technology-Education Council) Level 3 โดยมีผลการเรียนในหน่วยที่เกี่ยวข้องระดับ Ment (M) ในรายวิชาดังต่อไปนี้ 1. Developing Production Skills and Techniques or Studio Recording 2. Responding to Production Requirements and Purpose or Creating Musical Material through Production 3. Undertaking a Defined Creative or Administrative Role โดยผู้สมัครต้องมีคะแนน TGAT1, TGAT2",
+      "interview_location": "วิทยาลัยวิศวกรรมสังคีต",
+      "interview_date": "30 พฤษภาคม 2569",
+      "interview_time": "สามารถดูรายละเอียดการสอบสัมภาษณ์ได้ที่ Facebook : วิศวกรรมดนตรีและสื่อประสม",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": true,
+      "score_conditions": {
+        "min_tgat1": 1,
+        "min_tgat2": 1
+      },
+      "created_at": "2025-10-21T09:27:38.465Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 50,
+        "tgat2": 50
+      }
+    }
+  ]
+}

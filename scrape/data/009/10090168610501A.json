@@ -1,0 +1,181 @@
+{
+  "program": [
+    {
+      "program_id": "10090168610501A",
+      "project_id": "A0103",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรบัญชีบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 63.6,
+      "max_score": 74.0915,
+      "min_score_ds": 63.4083,
+      "max_score_ds": 74.0915,
+      "receive_student_number": 45,
+      "scores": {
+        "tgat": 30,
+        "a_lv_61": 20,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "program_id": "10090168610501A",
+      "project_id": "A0104",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรบัญชีบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 45,
+      "scores": {
+        "tgat": 30,
+        "a_lv_61": 20,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc347a1b0969b83dd6d9cb",
+      "university_id": "009",
+      "program_id": "10090168610501A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "- ผู้สมัครจะต้องมีผลการทดสอบความสามารถทางภาษาอังกฤษ อย่างใดอย่างหนึ่ง ทั้งนี้ผลคะแนนต้องมีอายุไม่เกิน 2 ปี นับจากวันที่ทดสอบจนถึงวันสอบสัมภาษณ์ ดังนี้ TOEFL (IBT) ไม่ต่ำกว่า 69 หรือ TOEFL (PBT) ไม่ต่ำกว่า 523 หรือ TOEFL (CBT) ไม่ต่ำกว่า 193 หรือ TOEFL (ITP) ไม่ต่ำกว่า 523 หรือ IELTS ไม่ต่ำกว่า 5.5",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:50.029Z"
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6d9cd",
+      "university_id": "009",
+      "program_id": "10090168610501A",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "project_name_en": "",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 1,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:50.035Z"
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6d9cf",
+      "university_id": "009",
+      "program_id": "10090168610501A",
+      "project_id": "D1009",
+      "project_name_th": "โครงการโรงเรียนในเขตพื้นที่มหาวิทยาลัยและปริมณฑล",
+      "project_name_en": "",
+      "join_id": "2001",
+      "type": "2_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.3,
+      "score_conditions": {
+        "min_gpax": 3.3,
+        "min_tgat": 1,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:50.041Z"
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6d9d1",
+      "university_id": "009",
+      "program_id": "10090168610501A",
+      "project_id": "D2009",
+      "project_name_th": "โครงการโรงเรียนในเขตพื้นที่มหาวิทยาลัยและปริมณฑล",
+      "project_name_en": "",
+      "join_id": "2001",
+      "type": "2_2569",
+      "receive_student_number": 40,
+      "only_formal": 2,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.5,
+      "score_conditions": {
+        "min_gpax": 3.5,
+        "min_tgat": 1,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:50.047Z"
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6d9d3",
+      "university_id": "009",
+      "program_id": "10090168610501A",
+      "project_id": "A0001",
+      "project_name_th": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 47,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 1,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:50.053Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "a_lv_61": 30,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

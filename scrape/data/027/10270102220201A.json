@@ -1,0 +1,93 @@
+{
+  "program": [
+    {
+      "program_id": "10270102220201A",
+      "project_id": "A0001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการคอมพิวเตอร์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "",
+      "project_name_th": "Admission",
+      "min_score": 58.3164,
+      "max_score": 65.8388,
+      "min_score_ds": 54.9888,
+      "max_score_ds": 65.8388,
+      "receive_student_number": 20,
+      "scores": {
+        "gpax": 20,
+        "tgat": 80
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8ed17b58d5ed1fd8a2ea3",
+      "university_id": "027",
+      "program_id": "10270102220201A",
+      "project_id": "P0001",
+      "project_name_th": "โครงการรับตรงมหาวิทยาลัยพะเยา",
+      "type": "1_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการคอมพิวเตอร์",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-22T14:41:27.898Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8ed16b58d5ed1fd8a2d51",
+      "university_id": "027",
+      "program_id": "10270102220201A",
+      "project_id": "P0002",
+      "project_name_th": "โครงการรับตรงโรงเรียนในเขตพื้นที่บริการ",
+      "type": "2_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการคอมพิวเตอร์",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "created_at": "2025-10-22T14:41:26.750Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8ed16b58d5ed1fd8a2d4f",
+      "university_id": "027",
+      "program_id": "10270102220201A",
+      "project_id": "A0001",
+      "project_name_th": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการคอมพิวเตอร์",
+      "link": "http://admission.up.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T14:41:26.728Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 20,
+        "tgat": 80
+      },
+      "score_conditions": {}
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "program": [
+    {
+      "program_id": "10360101901503A",
+      "project_id": "A0106",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f3513eaf9c8ecfd60c48ce",
+      "university_id": "036",
+      "program_id": "10360101901503A",
+      "project_id": "P0107",
+      "project_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม",
+      "project_name_en": "Bachelor of Arts (Philosophy, Religion, and Culture)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ชื่อสถาบันอุดมศึกษา \n  วิทยาเขต/คณะ/ภาควิชา \n  1. รหัสและชื่อหลักสูตร \n  รหัสหลักสูตร \n  ภาษาไทย \n  ภาษาอังกฤษ \n  2. ชื่อปริญญาและสาขาวิชา \n  ภาษาไทย \n  ภาษาอังกฤษ \n  มหาวิทยาลัยมหามกุฏราชวิทยาลัย \n  คณะศาสนาและปรัชญา/ภาควิชาปรัชญา \n  หมวดที่ 1 ขอมูลทั่วไป \n  : 25631864000651 \n  : ศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม \n  : Bachelor of Arts Program in Philosophy, Religion, and Culture \n  ชื่อเต็ม : ศิลปศาสตรบัณฑิต (ปรัชญา ศาสนาและวัฒนธรรม) \n  ชื่อยอ \n  : ศศ.บ. (ปรัชญา ศาสนาและวัฒนธรรม) \n  ชื่อเต็ม : Bachelor of Arts (Philosophy, Religion, and Culture) \n  ชื่อยอ \n  : B.A. (Philosophy, Religion, and Culture) \n  3. จำนวนหนวยกิตที่เรียนตลอดหลักสูตร \n  123 หนวยกิต \n  4. รูปแบบของหลักสูตร \n  4.1 รูปแบบ \n  þ หลักสูตรปริญญาตรี 4 ป (ทางวิชาการ) \n  4.2 ภาษาที่ใช \n  R หลักสูตรจัดการศึกษาเปนภาษาไทย \n  4.3 การรับนักศึกษา \n  R รับทั้งนักศึกษาไทยและนักศึกษาตางชาติที่สามารถสื่อสารภาษาไทยได \n  4.4 ความรวมมือกับหนวยงาน / สถาบันอื่น \n  R เปนหลักสูตรของสถาบันโดยเฉพาะ \n  4.5 การใหปริญญาแกผูสำเร็จการศึกษา \n  R ใหปริญญาเพียงสาขาวิชาเดียว",
+      "interview_location": "ศูนย์บริการวิชาการ มหาวิทยาลัยมหามกุฏราชวิทยาลัย 248 ถนนศาลายา-นครชัยศรี ตำบลศาลายา อำเภอพุทธมณฑล จังหวัดนครปฐม 73170 อาคาร B7.3 ชั้น 2 โทรศัพท์ 0-2444-6000 ต่อ 1102 เว็บไซต์ www.mbu.ac.th",
+      "link": "https://admission.mbu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-18T08:35:10.345Z"
+    },
+    {
+      "_id": "68f3513eaf9c8ecfd60c48d0",
+      "university_id": "036",
+      "program_id": "10360101901503A",
+      "project_id": "Q0106",
+      "project_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม",
+      "project_name_en": "Bachelor of Arts (Philosophy, Religion, and Culture)",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "1. ภาษาไทย : หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม\n  ภาษาอังกฤษ : Bachelor of Arts (Philosophy, Religion, and Culture)\n  2. ชื่อปริญญาและสาขาวิชา\n  1. ชื่อเต็ม (ภาษาไทย) : ศิลปศาสตรบัณฑิต (ปรัชญา ศาสนาและวัฒนธรรม) \n  ชื่อย่อ (ภาษาไทย) : ศศ.บ. (ปรัชญา ศาสนาและวัฒนธรรม) \n  2. ชื่อเต็ม (ภาษาอังกฤษ) : Bachelor of Arts (Philosophy, Religion, and Culture)\n  ชื่อย่อ (ภาษาอังกฤษ) : B.A. (Philosophy, Religion, and Culture) \n  3. จำนวนหน่วยกิตที่เรียนตลอดหลักสูตร 123 หน่วยกิต\n  4. รูปแบบของหลักสูตร ปริญญาตรี 4 ปี\n  5. ประเภทของหลักสูตร: หลักสูตรปริญญาตรีทางวิชาการ\n  6. ภาษาที่ใช้: หลักสูตรจัดการศึกษาเป็นภาษาไทย",
+      "interview_location": "ศูนย์บริการวิชาการ มหาวิทยาลัยมหามกุฏราชวิทยาลัย 248 ถนนศาลายา-นครชัยศรี ตำบลศาลายา อำเภอพุทธมณฑล จังหวัดนครปฐม 73170 อาคาร B7.3 ชั้น 2 โทรศัพท์ 0-2444-6000 ต่อ 1102 เว็บไซต์ www.mbu.ac.th",
+      "link": "https://admission.mbu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-18T08:35:10.351Z"
+    },
+    {
+      "_id": "68f3513eaf9c8ecfd60c48d4",
+      "university_id": "036",
+      "program_id": "10360101901503A",
+      "project_id": "A0106",
+      "project_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม",
+      "project_name_en": "Bachelor of Arts (Philosophy, Religion, and Culture)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "1. ภาษาไทย : หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม\n  ภาษาอังกฤษ : Bachelor of Arts (Philosophy, Religion, and Culture)\n  2. ชื่อปริญญาและสาขาวิชา\n  1. ชื่อเต็ม (ภาษาไทย) : ศิลปศาสตรบัณฑิต (ปรัชญา ศาสนาและวัฒนธรรม) \n  ชื่อย่อ (ภาษาไทย) : ศศ.บ. (ปรัชญา ศาสนาและวัฒนธรรม) \n  2. ชื่อเต็ม (ภาษาอังกฤษ) : Bachelor of Arts (Philosophy, Religion, and Culture)\n  ชื่อย่อ (ภาษาอังกฤษ) : B.A. (Philosophy, Religion, and Culture) \n  3. จำนวนหน่วยกิตที่เรียนตลอดหลักสูตร 123 หน่วยกิต\n  4. รูปแบบของหลักสูตร ปริญญาตรี 4 ปี\n  5. ประเภทของหลักสูตร: หลักสูตรปริญญาตรีทางวิชาการ\n  6. ภาษาที่ใช้: หลักสูตรจัดการศึกษาเป็นภาษาไทย",
+      "interview_location": "ศูนย์บริการวิชาการ มหาวิทยาลัยมหามกุฏราชวิทยาลัย 248 ถนนศาลายา-นครชัยศรี ตำบลศาลายา อำเภอพุทธมณฑล จังหวัดนครปฐม 73170 อาคาร B7.3 ชั้น 2 โทรศัพท์ 0-2444-6000 ต่อ 1102 เว็บไซต์ www.mbu.ac.th",
+      "link": "https://admission.mbu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-18T08:35:10.363Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e8aaaeb848dd4679d6cbac",
+      "university_id": "191",
+      "program_id": "31910107702502A",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศึกษาศาสตรบัณฑิต สาขาวิชาดนตรีไทย",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "20-ธ.ค.-68",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "ใส่ Portfolio แบบย่อ (ไม่เกิน 1000 ตัวอักษร)",
+        "folio_q1_type": "B",
+        "folio_q2": "ใส่ Link ผลงานในลักษณะอื่น เช่น WebSite-Youtube-Tiktok",
+        "folio_q2_type": "B",
+        "closed_date": "8/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-10T06:41:50.362Z"
+    },
+    {
+      "_id": "68e8aaaeb848dd4679d6cbae",
+      "university_id": "191",
+      "program_id": "31910107702502A",
+      "type": "2_2569",
+      "receive_student_number": 6,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศึกษาศาสตรบัณฑิต สาขาวิชาดนตรีไทย",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-10T06:41:50.367Z"
+    }
+  ]
+}

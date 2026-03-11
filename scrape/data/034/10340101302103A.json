@@ -1,0 +1,103 @@
+{
+  "program": [
+    {
+      "program_id": "10340101302103A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมโยธา  (วศ.บ. (วิศวกรรมโยธา))",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมโยธา  (วศ.บ. (วิศวกรรมโยธา))",
+      "min_score": 76.25,
+      "max_score": 99.25,
+      "min_score_ds": 58.75,
+      "max_score_ds": 99.25,
+      "receive_student_number": 65,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef7b46095f32ab0fee1adb",
+      "university_id": "034",
+      "program_id": "10340101302103A",
+      "project_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมโยธา (วศ.บ. (วิศวกรรมโยธา))",
+      "project_name_en": "Bechelor of Engineering Program in Civil Engineering (B. Eng. (Civil Engineering))",
+      "type": "1_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ศึกษาด้านการวิเคราะห์และการออกแบบสิ่งก่อสร้าง เช่น อาคาร สะพาน ถนน ระบบขนส่งและจราจร และระบบสาธารณูปโภคต่าง ๆ การทำรังวัดในงานสำรวจและแผนที่ วิศวกรรมธรณี",
+      "condition": "เป็นผู้ที่จบมัธยมปลาย หรือ เทียบเท่า เป็นผู้ที่จบหลักสูตรประกาศนียบัตรวิชาชีพ หรือ สูงกว่า",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ชั้น 2 มหาวิทยาลัยรามคำแหง หัวหมาก ถ.รามคำแหง แขวงหัวหมาก เขตบางกะปิ กทม. โทร.02-3108570",
+      "interview_date": "14 มกราคม 2569",
+      "interview_time": "9.00-15.30 น.",
+      "link": "https://services-eng.ru.ac.th/tcas",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "29/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-15T10:45:26.779Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68ef7b46095f32ab0fee1add",
+      "university_id": "034",
+      "program_id": "10340101302103A",
+      "project_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมโยธา (วศ.บ. (วิศวกรรมโยธา))",
+      "project_name_en": "Bechelor of Engineering Program in Civil Engineering (B. Eng. (Civil Engineering))",
+      "type": "2_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ศึกษาด้านการวิเคราะห์และการออกแบบสิ่งก่อสร้าง เช่น อาคาร สะพาน ถนน ระบบขนส่งและจราจร และระบบสาธารณูปโภคต่าง ๆ การทำรังวัดในงานสำรวจและแผนที่ วิศวกรรมธรณี",
+      "condition": "เป็นผู้ที่จบมัธยมปลาย หรือ เทียบเท่า เป็นผู้ที่จบหลักสูตรประกาศนียบัตรวิชาชีพ หรือ สูงกว่า",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ชั้น 2 มหาวิทยาลัยรามคำแหง หัวหมาก ถ.รามคำแหง แขวงหัวหมาก เขตบางกะปิ กทม. โทร.02-3108570",
+      "interview_date": "8 เมษายน 2569",
+      "interview_time": "9.00-15.30 น.",
+      "link": "https://services-eng.ru.ac.th/tcas",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-15T10:45:26.786Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68ef7b46095f32ab0fee1adf",
+      "university_id": "034",
+      "program_id": "10340101302103A",
+      "project_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมโยธา (วศ.บ. (วิศวกรรมโยธา))",
+      "project_name_en": "Bechelor of Engineering Program in Civil Engineering (B. Eng. (Civil Engineering))",
+      "type": "3_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ศึกษาด้านการวิเคราะห์และการออกแบบสิ่งก่อสร้าง เช่น อาคาร สะพาน ถนน ระบบขนส่งและจราจร และระบบสาธารณูปโภคต่าง ๆ การทำรังวัดในงานสำรวจและแผนที่ วิศวกรรมธรณี",
+      "condition": "เป็นผู้ที่จบมัธยมปลาย หรือ เทียบเท่า เป็นผู้ที่จบหลักสูตรประกาศนียบัตรวิชาชีพ หรือ สูงกว่า",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ชั้น 2 มหาวิทยาลัยรามคำแหง หัวหมาก ถ.รามคำแหง แขวงหัวหมาก เขตบางกะปิ กทม. โทร.02-3108570",
+      "interview_date": "244499",
+      "interview_time": "9.00-15.30 น.",
+      "link": "https://services-eng.ru.ac.th/tcas",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-15T10:45:26.793Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "score_conditions": {}
+    }
+  ]
+}

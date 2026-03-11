@@ -1,0 +1,111 @@
+{
+  "program": [
+    {
+      "program_id": "31970104300502A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วศ.บ. วิศวกรรมปัญญาประดิษฐ์และนวัตกรรมดิจิทัล",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 43.7275,
+      "max_score": 43.7275,
+      "min_score_ds": 43.7275,
+      "max_score_ds": 43.7275,
+      "receive_student_number": 1,
+      "scores": {
+        "tgat": 50,
+        "tpat3": 25,
+        "a_lv_70": 5,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f885919ec1a4bec7222b3c",
+      "university_id": "197",
+      "program_id": "31970104300502A",
+      "type": "1_2569",
+      "receive_student_number": 7,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "มัธยมศึกษาตอนปลาย (ม.6) แผนการเรียนวิทย์ คณิต และศิลป์  คํานวณ",
+      "interview_location": "ตรวจสอบจากบัตรประจำตัวผู้สมัคร",
+      "interview_date": "8 พฤศจิกายน 2568",
+      "interview_time": "08.30 น.",
+      "link": "https://admission.rmutsv.ac.th/course.php",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-22T07:19:45.947Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f885929ec1a4bec7222bb8",
+      "university_id": "197",
+      "program_id": "31970104300502A",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "มัธยมศึกษาตอนปลาย (ม.6) แผนการเรียนวิทย์ คณิต และศิลป์  คํานวณ",
+      "interview_location": "ตรวจสอบจากบัตรประจำตัวผู้สมัคร",
+      "interview_date": "8 มีนาคม 2569",
+      "interview_time": "08.30 น.",
+      "link": "https://admission.rmutsv.ac.th/course.php",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T07:19:46.647Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f885919ec1a4bec7222ada",
+      "university_id": "197",
+      "program_id": "31970104300502A",
+      "type": "3_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "มัธยมศึกษาตอนปลาย (ม.6) แผนการเรียนวิทย์ คณิต และศิลป์  คํานวณ",
+      "interview_location": "ตรวจสอบจากบัตรประจำตัวผู้สมัคร",
+      "interview_date": "30 พฤษภาคม 2569",
+      "interview_time": "08.30 น.",
+      "link": "https://admission.rmutsv.ac.th/course.php",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 50,
+        "min_tpat3": 25,
+        "min_a_lv_70": 25,
+        "min_a_lv_81": 25,
+        "min_a_lv_82": 25,
+        "score_condition": 2,
+        "subject_names": "min_tgat min_a_lv_70 min_a_lv_81 min_a_lv_82 min_tpat3",
+        "score_minimum": "150"
+      },
+      "created_at": "2025-10-22T07:19:45.622Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 50,
+        "tpat3": 25,
+        "a_lv_70": 5,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    }
+  ]
+}

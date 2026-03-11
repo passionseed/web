@@ -1,0 +1,106 @@
+{
+  "program": [
+    {
+      "program_id": "10250107610201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "การจัดการ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 67.5,
+      "max_score": 89.75,
+      "min_score_ds": 67.5,
+      "max_score_ds": 89.75,
+      "receive_student_number": 25,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e61f54d30bd63a17e28622",
+      "university_id": "025",
+      "program_id": "10250107610201A",
+      "type": "1_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาการจัดการ (4 ปี)",
+      "condition": "ผลการเรียนดี มีความประพฤติเรียบร้อย",
+      "interview_location": "99 หมู่ 8 ตำบลโคกเคียน อำเภอเมือง จังหวัดนราธิวาส 96000 คณะวิทยาการจัดการ",
+      "interview_date": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "interview_time": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "link": "https://onedrive.live.com/?redeem=aHR0cHM6Ly8xZHJ2Lm1zL2IvYy82OTViNGY0NzMzZjA4MzNkL0ViN2c2NGtsMllGR2dwc3d4eVhYQXdNQlVKb3ZneHFBT0RBalJPS1gtX1BucXc%5FZT00UXNtbGM&cid=695B4F4733F0833D&id=695B4F4733F0833D%21s89ebe0bed9254681829b30c725d70303&parId=root&o=OneUp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เคยเข้าร่วมโครงการโอลิมปิกวิชาการหรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "B",
+        "closed_date": "14/01/2569",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-08T08:22:44.430Z"
+    },
+    {
+      "_id": "68fb2eb74f0f85dd43bf0508",
+      "university_id": "025",
+      "program_id": "10250107610201A",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาการจัดการ (4 ปี)",
+      "condition": "มีภูมิลำเนาอยู่ในพื้นที่ 14 จังหวัดภาคใต้ (ตามทะเบียนบ้าน)",
+      "interview_location": "99 หมู่ 8 ตำบลโคกเคียน อำเภอเมือง จังหวัดนราธิวาส 96000 คณะวิทยาการจัดการ",
+      "interview_date": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "interview_time": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "link": "https://onedrive.live.com/?redeem=aHR0cHM6Ly8xZHJ2Lm1zL2IvYy82OTViNGY0NzMzZjA4MzNkL0VkM1I1MnlZX2l4R29Wb0h6Wkd6Uk9NQlRzUzNrOWZLOU9rNlhUX3JrQUVTZEE%5FZT1TS2pWcGU&cid=695B4F4733F0833D&id=695B4F4733F0833D%21s6ce7d1ddfe98462ca15a07cd91b344e3&parId=root&o=OneUp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-24T07:45:59.547Z"
+    },
+    {
+      "_id": "68fb2eb74f0f85dd43bf050a",
+      "university_id": "025",
+      "program_id": "10250107610201A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาการจัดการ (4 ปี)",
+      "condition": "มีภูมิลำเนาอยู่ในพื้นที่ 14 จังหวัดภาคใต้ (ตามทะเบียนบ้าน)",
+      "interview_location": "99 หมู่ 8 ตำบลโคกเคียน อำเภอเมือง จังหวัดนราธิวาส 96000 คณะวิทยาการจัดการ",
+      "interview_date": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "interview_time": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "link": "https://onedrive.live.com/?redeem=aHR0cHM6Ly8xZHJ2Lm1zL2IvYy82OTViNGY0NzMzZjA4MzNkL0VkM1I1MnlZX2l4R29Wb0h6Wkd6Uk9NQlRzUzNrOWZLOU9rNlhUX3JrQUVTZEE%5FZT1TS2pWcGU&cid=695B4F4733F0833D&id=695B4F4733F0833D%21s6ce7d1ddfe98462ca15a07cd91b344e3&parId=root&o=OneUp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-24T07:45:59.553Z"
+    }
+  ]
+}
