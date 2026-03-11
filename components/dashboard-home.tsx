@@ -181,6 +181,38 @@ export function DashboardHome({ user }: DashboardHomeProps) {
         </Card>
       </div>
 
+      {/* TCAS Explorer Section */}
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold tracking-tight">Academic Discovery</h2>
+        </div>
+        <Card className="bg-gradient-to-br from-blue-900 to-indigo-950 text-white border-none overflow-hidden relative group">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+          <CardHeader>
+            <div className="flex justify-between items-start relative z-10">
+              <div>
+                <Badge className="mb-2 bg-blue-500 hover:bg-blue-600 border-none">New</Badge>
+                <CardTitle className="text-2xl">TCAS Semantic Explorer</CardTitle>
+                <CardDescription className="text-blue-100 text-lg mt-2 max-w-2xl">
+                  Visualize over 4,000 university programs in an interactive semantic map. 
+                  Discover related fields and explore your academic future using AI-powered embeddings.
+                </CardDescription>
+              </div>
+              <Sparkles className="h-12 w-12 text-blue-400 opacity-50 group-hover:scale-110 transition-transform" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative z-10">
+            <Button asChild size="lg" className="bg-white text-blue-900 hover:bg-blue-50">
+              <Link href="/tcas/visualizer" className="flex items-center gap-2">
+                <Compass className="h-5 w-5" />
+                Open Semantic Map
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Learning Maps Section */}
       <div className="mb-12">
         <div className="flex items-center justify-between mb-6">
