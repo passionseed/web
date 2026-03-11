@@ -119,6 +119,47 @@ function LearningMapsPreview() {
   );
 }
 
+// TCAS Semantic Explorer Preview
+function TCASPreview() {
+  return (
+    <section className="container py-16 px-4 md:px-6 bg-gradient-to-b from-black/50 to-blue-900/20">
+      <div className="grid gap-10 lg:grid-cols-2 items-center">
+        <div className="space-y-4">
+          <Badge variant="outline" className="text-blue-400 border-blue-400/30">
+            New Feature
+          </Badge>
+          <h2 className="text-3xl font-bold tracking-tighter text-white sm:text-4xl">
+            TCAS Semantic Explorer
+          </h2>
+          <p className="text-xl text-gray-400">
+            Visualize over 4,000 university programs in a semantic map. 
+            Discover related fields of study and explore academic pathways 
+            using advanced AI embeddings.
+          </p>
+          <div className="flex flex-col gap-2 min-[400px]:flex-row">
+            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <Link href="/tcas/visualizer">
+                Explore the Map
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+        <div className="relative aspect-video rounded-xl border border-white/10 bg-white/5 overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 group-hover:opacity-50 transition-opacity" />
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-2">
+              <Sparkles className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+              <div className="text-sm font-medium text-gray-300">Interactive Semantic Visualization</div>
+              <div className="text-xs text-gray-500">Powered by BAAI/bge-m3 Embeddings</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
@@ -164,6 +205,7 @@ export default async function Home() {
       ) : (
         <LandingPageWrapper>
           <LearningMapsPreview />
+          <TCASPreview />
         </LandingPageWrapper>
       )}
     </>
