@@ -1,0 +1,71 @@
+{
+  "program": [
+    {
+      "program_id": "21500102700201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ค.บ. 4 ปี การประถมศึกษา",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 70.1552,
+      "max_score": 72.2552,
+      "min_score_ds": 68.0164,
+      "max_score_ds": 72.2552,
+      "receive_student_number": 5,
+      "scores": {
+        "gpax": 20,
+        "tgat": 40,
+        "tpat5": 40
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e739caa19d9cce5e302ebd",
+      "university_id": "150",
+      "program_id": "21500102700201A",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "หลักสูตรครุศาสตรบัณฑิต 4 ปี สาขาวิชาการประถมศึกษา",
+      "condition": "ม.6 หรือเทียบเท่าทุกแผนการเรียน เกรดเฉลี่ยสะสม ไม่ต่ำกว่า 3.00 ใช้คะแนน TPAT5",
+      "interview_location": "สัมภาษณ์ทางออนไลน์หรืออาคารที่กำหนด โดยจะแจ้งให้ทราบอีกครั้งทาง www.pnru.ac.th ในวันประกาศรายชื่อผู้มีสิทธิ์สอบสัมภาษณ์ในแต่ละรอบ",
+      "interview_date": "27/4/2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://pnru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-09T04:27:54.759Z"
+    },
+    {
+      "_id": "68e739cba19d9cce5e302f2b",
+      "university_id": "150",
+      "program_id": "21500102700201A",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "หลักสูตรครุศาสตรบัณฑิต 4 ปี สาขาวิชาการประถมศึกษา",
+      "condition": "ม.6 หรือเทียบเท่าทุกแผนการเรียน เกรดเฉลี่ยสะสม ไม่ต่ำกว่า 3.00 ใช้คะแนน TPAT5",
+      "interview_location": "สัมภาษณ์ทางออนไลน์หรืออาคารที่กำหนด โดยจะแจ้งให้ทราบอีกครั้งทาง www.pnru.ac.th ในวันประกาศรายชื่อผู้มีสิทธิ์สอบสัมภาษณ์ในแต่ละรอบ",
+      "interview_date": "2/6/2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://pnru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-09T04:27:55.043Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

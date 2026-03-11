@@ -1,0 +1,55 @@
+{
+  "program": [
+    {
+      "program_id": "49160101700601A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศึกษาศาสตรบัณฑิต สาขาวิชาการศึกษาปฐมวัย",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 51.25,
+      "max_score": 66.2638,
+      "min_score_ds": 59.7776,
+      "max_score_ds": 60.1388,
+      "receive_student_number": 10,
+      "scores": {
+        "priority_score": 10,
+        "gpax": 50,
+        "tgat": 40
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f88a199ec1a4bec7222eca",
+      "university_id": "916",
+      "program_id": "49160101700601A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "หลักสูตรศึกษาศาสตรบัณฑิต สาขาวิชาการศึกษาปฐมวัย",
+      "interview_location": "วิทยาลัยนครราชสีมา 290 ม.2 ต.บ้านใหม่ อ.เมือง จ.นครราชสีมา 300000 ณ หอประชุมลำตะคอง",
+      "interview_date": "วันที่ 29 พฤษภาคม 2569",
+      "interview_time": "09.00 - 16.00 น.",
+      "link": "http://www.nmc.ac.th/2018/index-home.php",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-22T07:39:05.044Z",
+      "min_total_score": 0,
+      "scores": {
+        "priority_score": 10,
+        "gpax": 50,
+        "tgat": 40
+      }
+    }
+  ]
+}

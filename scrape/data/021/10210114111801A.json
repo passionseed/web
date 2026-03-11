@@ -1,0 +1,337 @@
+{
+  "program": [
+    {
+      "program_id": "10210114111801A",
+      "project_id": "M3001",
+      "major_id": "0",
+      "program_name_th": "วท.บ. โภชนาการและการกำหนดอาหาร",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "min_score": 27.1125,
+      "max_score": 36.025,
+      "min_score_ds": 26.15,
+      "max_score_ds": 36.025,
+      "receive_student_number": 40,
+      "scores": {
+        "a_lv_61": 25,
+        "a_lv_65": 25,
+        "a_lv_66": 25,
+        "a_lv_82": 25
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7412927b76be0eb095904",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M1004",
+      "project_name_th": "โควตาครูแนะแนว (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:37.822Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb09547b",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M1007",
+      "project_name_th": "โควตาส่งเสริมเยาวชนดีเด่นด้านกีฬา",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.649Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb0954a7",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M1009",
+      "project_name_th": "โควตารับตรง Portfolio",
+      "type": "1_2569",
+      "receive_student_number": 18,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.763Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb09557d",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M1006",
+      "project_name_th": "โควตาโรงเรียนสาธิตมหาวิทยาลัยมหาสารคาม (ฝ่ายมัธยม)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.370Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb09540b",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M1003",
+      "project_name_th": "โควตาครูแนะแนว (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.316Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb095a0a",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M1001",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.498Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb0959a0",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M1002",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.226Z"
+    },
+    {
+      "_id": "68f7412827b76be0eb0956f7",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M2002",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 2",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat1": 1,
+        "min_tgat2": 1,
+        "min_tgat3": 1,
+        "min_tpat3": 1,
+        "min_a_lv_61": 1,
+        "min_a_lv_65": 1,
+        "min_a_lv_66": 1,
+        "min_a_lv_82": 1
+      },
+      "created_at": "2025-10-21T08:15:36.397Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 10,
+        "tgat2": 10,
+        "tgat3": 10,
+        "tpat3": 10,
+        "a_lv_61": 10,
+        "a_lv_65": 20,
+        "a_lv_66": 20,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68f7412727b76be0eb095633",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M2001",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 1",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat1": 1,
+        "min_tgat2": 1,
+        "min_tgat3": 1,
+        "min_tpat3": 1
+      },
+      "created_at": "2025-10-21T08:15:35.894Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 25,
+        "tgat2": 25,
+        "tgat3": 20,
+        "tpat3": 30
+      }
+    },
+    {
+      "_id": "68f7412827b76be0eb09579f",
+      "university_id": "021",
+      "program_id": "10210114111801A",
+      "project_id": "M3001",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาโภชนาการและการกำหนดอาหาร หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat1": 1,
+        "min_tgat2": 1,
+        "min_tgat3": 1,
+        "min_tpat3": 1,
+        "min_a_lv_61": 1,
+        "min_a_lv_65": 1,
+        "min_a_lv_66": 1,
+        "min_a_lv_82": 1
+      },
+      "created_at": "2025-10-21T08:15:36.883Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 10,
+        "tgat2": 10,
+        "tgat3": 10,
+        "tpat3": 10,
+        "a_lv_61": 10,
+        "a_lv_65": 20,
+        "a_lv_66": 20,
+        "a_lv_82": 10
+      }
+    }
+  ]
+}

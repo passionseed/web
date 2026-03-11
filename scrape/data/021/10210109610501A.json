@@ -1,0 +1,422 @@
+{
+  "program": [
+    {
+      "program_id": "10210109610501A",
+      "project_id": "M3001",
+      "major_id": "0",
+      "program_name_th": "บช.บ. บัญชีบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "min_score": 42.638,
+      "max_score": 75.277,
+      "min_score_ds": 34.722,
+      "max_score_ds": 75.277,
+      "receive_student_number": 200,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "program_id": "10210109610501A",
+      "project_id": "M3002",
+      "major_id": "0",
+      "program_name_th": "บช.บ. บัญชีบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 2",
+      "min_score": 86.5,
+      "max_score": 100,
+      "min_score_ds": 77.75,
+      "max_score_ds": 100,
+      "receive_student_number": 300,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7412927b76be0eb0958bc",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1003",
+      "project_name_th": "โควตาครูแนะแนว (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 7,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:37.639Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb09594e",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1004",
+      "project_name_th": "โควตาครูแนะแนว (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.012Z"
+    },
+    {
+      "_id": "68f7412527b76be0eb095371",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1008",
+      "project_name_th": "โควตาส่งเสริมเยาวชนดีเด่นด้านศิลปวัฒนธรรม",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:33.856Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb0954ff",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1009",
+      "project_name_th": "โควตารับตรง Portfolio",
+      "type": "1_2569",
+      "receive_student_number": 415,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.015Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb095491",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1007",
+      "project_name_th": "โควตาส่งเสริมเยาวชนดีเด่นด้านกีฬา",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.702Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb0955b3",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1006",
+      "project_name_th": "โควตาโรงเรียนสาธิตมหาวิทยาลัยมหาสารคาม (ฝ่ายมัธยม)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.526Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb09555b",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1010",
+      "project_name_th": "โควตารับนิสิตพิการ",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.276Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb0959ec",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1002",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 33,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.417Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb095a56",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M1001",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 70,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.725Z"
+    },
+    {
+      "_id": "68f7412827b76be0eb095747",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M2002",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 2",
+      "type": "2_2569",
+      "receive_student_number": 180,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:36.626Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "68f7412827b76be0eb09568b",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M2001",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 1",
+      "type": "2_2569",
+      "receive_student_number": 160,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:36.129Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "690832b9b4fb3cf4861bb94b",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M2004",
+      "project_name_th": "โครงการ MSU Wisdom",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครต้องผ่านการเรียนรายวิชาหรือหลักสูตรฝึกอบรมที่อยู่ในระบบคลังหน่วยกิตของมหาวิทยาลัยมหาสารคาม เพื่อใช้ในการพิจารณาคัดเลือกตามที่สาขาวิชากำหนด ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ https://admission.msu.ac.th หรือ https://wisdom.msu.ac.th (ระบบรับสมัครสมาชิกและผู้เรียน) หรือ https://reg.msu.ac.th (ระบบลงทะเบียนเรียนในระบบคลังหน่วยกิต) หรือ ติดต่อ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4383",
+      "link": "https://admission.msu.ac.th หรือ https://wisdom.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-11-03T04:42:33.707Z"
+    },
+    {
+      "_id": "68f7412927b76be0eb0957f2",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M3001",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "type": "3_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:37.114Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "68f7412927b76be0eb09587e",
+      "university_id": "021",
+      "program_id": "10210109610501A",
+      "project_id": "M3002",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 2",
+      "type": "3_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "บัญชีบัณฑิต หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:15:37.478Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "score_conditions": {}
+    }
+  ]
+}

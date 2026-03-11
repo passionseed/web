@@ -1,0 +1,100 @@
+{
+  "program": [
+    {
+      "program_id": "31930407400501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "สถาปัตยกรรมศาสตรบัณฑิต (สถ.บ.)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 77.25,
+      "max_score": 93,
+      "min_score_ds": 71.75,
+      "max_score_ds": 87,
+      "receive_student_number": 5,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fa40ca87870d31bd16f3ee",
+      "university_id": "193",
+      "program_id": "31930407400501A",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรสถาปัตยกรรมศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสถาปัตยกรรม มีวัตถุประสงค์เพื่อผลิตบัณฑิต ที่สามารถประกอบวิชาชีพที่สามารถสร้างสรรค์งานสถาปัตยกรรม และเลือกใช้เทคโนโลยีที่มีความเหมาะสมกับสิ่งแวดล้อมได้ โดยหลักสูตรมีการจัดการเรียนการสอนที่มุ่งเน้นการปฏิบัติงานจริง ควบคู่ไปกับทฤษฎีทางด้านสถาปัตยกรรม พร้อมทั้งสร้างสำนึกในจรรยาบรรณแห่งวิชาชีพ รับผิดชอบต่อหน้าที่และสังคม",
+      "condition": "สำเร็จการศึกษา ม.6 ทุกสาขาวิชา\n",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-23T14:50:50.884Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fa40ca87870d31bd16f3f0",
+      "university_id": "193",
+      "program_id": "31930407400501A",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรสถาปัตยกรรมศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสถาปัตยกรรม มีวัตถุประสงค์เพื่อผลิตบัณฑิต ที่สามารถประกอบวิชาชีพที่สามารถสร้างสรรค์งานสถาปัตยกรรม และเลือกใช้เทคโนโลยีที่มีความเหมาะสมกับสิ่งแวดล้อมได้ โดยหลักสูตรมีการจัดการเรียนการสอนที่มุ่งเน้นการปฏิบัติงานจริง ควบคู่ไปกับทฤษฎีทางด้านสถาปัตยกรรม พร้อมทั้งสร้างสำนึกในจรรยาบรรณแห่งวิชาชีพ รับผิดชอบต่อหน้าที่และสังคม",
+      "condition": "สำเร็จการศึกษา ม.6 ทุกสาขาวิชา\n",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-23T14:50:50.889Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fa40ca87870d31bd16f3f2",
+      "university_id": "193",
+      "program_id": "31930407400501A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรสถาปัตยกรรมศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสถาปัตยกรรม มีวัตถุประสงค์เพื่อผลิตบัณฑิต ที่สามารถประกอบวิชาชีพที่สามารถสร้างสรรค์งานสถาปัตยกรรม และเลือกใช้เทคโนโลยีที่มีความเหมาะสมกับสิ่งแวดล้อมได้ โดยหลักสูตรมีการจัดการเรียนการสอนที่มุ่งเน้นการปฏิบัติงานจริง ควบคู่ไปกับทฤษฎีทางด้านสถาปัตยกรรม พร้อมทั้งสร้างสำนึกในจรรยาบรรณแห่งวิชาชีพ รับผิดชอบต่อหน้าที่และสังคม",
+      "condition": "สำเร็จการศึกษา ม.6 ทุกสาขาวิชา\n",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-23T14:50:50.895Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

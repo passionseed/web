@@ -1,0 +1,53 @@
+{
+  "program": [
+    {
+      "program_id": "10050206901501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.วิชาเอกปรัชญา",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 66.4,
+      "max_score": 73.275,
+      "min_score_ds": 65.9,
+      "max_score_ds": 73.275,
+      "receive_student_number": 30,
+      "scores": {
+        "tgat2": 30,
+        "a_lv_70": 20,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7478d27b76be0eb09853a",
+      "university_id": "005",
+      "program_id": "10050206901501A",
+      "type": "3_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-21T08:42:53.945Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat2": 30,
+        "a_lv_70": 20,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "program": [
+    {
+      "program_id": "31930208702801A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศิลปศาสตรบัณฑิต (ศศ.บ) สาขาวิชาการจัดการธุรกิจและเทคโนโลยีการกีฬา",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 90.25,
+      "min_score_ds": 0,
+      "max_score_ds": 89.75,
+      "receive_student_number": 60,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fa40ca87870d31bd16f334",
+      "university_id": "193",
+      "program_id": "31930208702801A",
+      "type": "1_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "มหาวิทยาลัยเทคโนโลยีราชมงคลตะวันออก วิทยาเขตจักรพงษภูวนารถ คณะศิลปศาสตร์ หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาการจัดการธุรกิจและเทคโนโลยีการกีฬา ป.ตรี 4ปี",
+      "condition": "รับผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลายทุกสาขาวิชา",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-23T14:50:50.285Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fa40ca87870d31bd16f336",
+      "university_id": "193",
+      "program_id": "31930208702801A",
+      "type": "2_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "มหาวิทยาลัยเทคโนโลยีราชมงคลตะวันออก วิทยาเขตจักรพงษภูวนารถ คณะศิลปศาสตร์ หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาการจัดการธุรกิจและเทคโนโลยีการกีฬา ป.ตรี 4ปี",
+      "condition": "รับผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลายทุกสาขาวิชา",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-23T14:50:50.291Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fa40ca87870d31bd16f338",
+      "university_id": "193",
+      "program_id": "31930208702801A",
+      "type": "3_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "มหาวิทยาลัยเทคโนโลยีราชมงคลตะวันออก วิทยาเขตจักรพงษภูวนารถ คณะศิลปศาสตร์ หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาการจัดการธุรกิจและเทคโนโลยีการกีฬา ป.ตรี 4ปี",
+      "condition": "รับผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลายทุกสาขาวิชา",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-23T14:50:50.296Z",
+      "score_conditions": {},
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

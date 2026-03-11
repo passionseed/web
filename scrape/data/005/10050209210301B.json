@@ -1,0 +1,126 @@
+{
+  "program": [
+    {
+      "program_id": "10050209210301B",
+      "project_id": "T3018",
+      "major_id": "0",
+      "program_name_th": "วท.บ.สาขาวิชาคณิตศาสตร์ (โครงการพิเศษ)",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "0",
+      "project_name_th": "ผู้สมัครกลุ่มพื้นฐานคณิตศาสตร์ภาษาต่างประเทศ",
+      "min_score": 44.8774,
+      "max_score": 52.5,
+      "min_score_ds": 44.144,
+      "max_score_ds": 52.5,
+      "receive_student_number": 55,
+      "scores": {
+        "tgat": 40,
+        "tpat3": 60
+      }
+    },
+    {
+      "program_id": "10050209210301B",
+      "project_id": "T3019",
+      "major_id": "0",
+      "program_name_th": "วท.บ.สาขาวิชาคณิตศาสตร์ (โครงการพิเศษ)",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "0",
+      "project_name_th": "ผู้สมัครกลุ่มพื้นฐานวิทยาศาสตร์คณิตศาสตร์",
+      "min_score": 44.9884,
+      "max_score": 53.9104,
+      "min_score_ds": 44.1328,
+      "max_score_ds": 53.9104,
+      "receive_student_number": 55,
+      "scores": {
+        "tgat": 40,
+        "tpat3": 60
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37f2d2ef4c36c489aba70",
+      "university_id": "005",
+      "program_id": "10050209210301B",
+      "project_name_th": "รอบ 1 แฟ้มสะสมผลงาน Portfolio ",
+      "type": "1_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-9",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "min_credit_gpa28": 9,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "17/11/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-06T08:34:53.547Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985bc",
+      "university_id": "005",
+      "program_id": "10050209210301B",
+      "project_id": "T3019",
+      "project_name_th": "ผู้สมัครกลุ่มพื้นฐานวิทยาศาสตร์คณิตศาสตร์",
+      "join_id": "3018",
+      "type": "3_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 22,
+      "created_at": "2025-10-21T08:42:54.329Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 40,
+        "tpat3": 60
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985be",
+      "university_id": "005",
+      "program_id": "10050209210301B",
+      "project_id": "T3018",
+      "project_name_th": "ผู้สมัครกลุ่มพื้นฐานคณิตศาสตร์ภาษาต่างประเทศ",
+      "join_id": "3018",
+      "type": "3_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa28": 9,
+      "created_at": "2025-10-21T08:42:54.334Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 40,
+        "tpat3": 60
+      }
+    }
+  ]
+}

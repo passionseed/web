@@ -1,0 +1,101 @@
+{
+  "program": [
+    {
+      "program_id": "21640101700801A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ค.บ. คณิตศาสตร์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 49.1722,
+      "max_score": 53.5805,
+      "min_score_ds": 49.1722,
+      "max_score_ds": 53.5805,
+      "receive_student_number": 4,
+      "scores": {
+        "gpax": 10,
+        "tgat": 10,
+        "tpat5": 30,
+        "a_lv_61": 50
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f5fdc3711afc43cbf06a32",
+      "university_id": "164",
+      "program_id": "21640101700801A",
+      "type": "1_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาคณิตศาสตร์ 4 ปี คณะครุศาสตร์",
+      "condition": "คุณสมบัติผู้สมัคร : ม.6  และมีจำนวนหน่วยกิตในรายวิชาคณิตศาสตร์ ไม่น้อยกว่า 15 หน่วยกิต  เกณฑ์การคัดเลือก : GPAX ไม่ต่ำกว่า 2.50 เรียนวิชาคณิตศาสตร์ไม่น้อยกว่า 15 หน่วยกิต (ในวันที่ยื่นสมัคร)มีเกรดเฉลี่ยเฉพาะวิชาคณิตศาสตร์ไม่ต่ำกว่า 3.00 TPAT5 (ความถนัดด้านครุศาสตร์/ศึกษาศาสตร์) และแฟ้มสะสมผลงาน Portfolio เกี่ยวกับคณิตศาสตร์ สอบสัมภาษณ์",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://regis.skru.ac.th/skru_app/",
+      "interview_time": "0900-1200 น.",
+      "link": "http://regis.skru.ac.th/skru_app",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-20T09:15:47.756Z"
+    },
+    {
+      "_id": "68f5fdc3711afc43cbf06a34",
+      "university_id": "164",
+      "program_id": "21640101700801A",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาคณิตศาสตร์ 4 ปี คณะครุศาสตร์",
+      "condition": "คุณสมบัติผู้สมัคร :  ม.6  และมีจำนวนหน่วยกิตในรายวิชาคณิตศาสตร์ ไม่น้อยกว่า 15 หน่วยกิต เกณฑ์การคัดเลือก : GPAX ไม่ต่ำกว่า 2.50 เรียนวิชาคณิตศาสตร์ไม่น้อยกว่า 15 หน่วยกิต (ในวันที่ยื่นใบสมัคร)มีเกรดเฉลี่ยเฉพาะวิชาคณิตศาศตร์ไม่ต่ำกว่า 3.00 TPAT5 (ความถนัดด้านครุศาสตร์/ศึกษาศาสตร์) และแฟ้มสะสมผลงาน Portfolio เกี่ยวกับคณิตศาสตร์  สอบสัมภาษณ์",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://regis.skru.ac.th/skru_app/",
+      "interview_time": "0900-1200 น.",
+      "link": "http://regis.skru.ac.th/skru_app",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-20T09:15:47.763Z"
+    },
+    {
+      "_id": "68f5fdc3711afc43cbf06a36",
+      "university_id": "164",
+      "program_id": "21640101700801A",
+      "type": "3_2569",
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาคณิตศาสตร์ 4 ปี คณะครุศาสตร์",
+      "condition": "",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://regis.skru.ac.th/skru_app/",
+      "interview_time": "ไม่มีการสอบสัมภาษณ์",
+      "link": "http://regis.skru.ac.th/skru_app",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-20T09:15:47.771Z"
+    }
+  ]
+}

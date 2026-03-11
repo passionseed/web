@@ -1,0 +1,94 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f5be8884df8e9fee9b458d",
+      "university_id": "195",
+      "program_id": "31950102400401A",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ทล.บ. การออกแบบสื่อดิจิทัล-ภาพยนตร์และภาพเคลื่อนไหว 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะสถาปัตยกรรมศาสตร์และการออกแบบ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "18/1/2569",
+        "page_limit": "ม.ค.-15"
+      },
+      "created_at": "2025-10-20T04:46:00.178Z",
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2
+    },
+    {
+      "_id": "68f5be8884df8e9fee9b462f",
+      "university_id": "195",
+      "program_id": "31950102400401A",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ทล.บ. การออกแบบสื่อดิจิทัล-ภาพยนตร์และภาพเคลื่อนไหว 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะสถาปัตยกรรมศาสตร์และการออกแบบ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T04:46:00.729Z",
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2
+    },
+    {
+      "_id": "68f70b4527b76be0eb0888db",
+      "university_id": "195",
+      "program_id": "31950102400401A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ทล.บ. การออกแบบสื่อดิจิทัล-ภาพยนตร์และภาพเคลื่อนไหว 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะสถาปัตยกรรมศาสตร์และการออกแบบ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T04:25:41.443Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 30,
+        "tgat": 10,
+        "tpat2": 25,
+        "tpat3": 20,
+        "a_lv_70": 5,
+        "a_lv_81": 5,
+        "a_lv_82": 5
+      },
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "min_gpax": 2
+    }
+  ]
+}

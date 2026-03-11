@@ -1,0 +1,56 @@
+{
+  "program": [
+    {
+      "program_id": "40560110900301A",
+      "project_id": "J3001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต (การประกอบการ)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต (การประกอบการ)",
+      "min_score": 55,
+      "max_score": 83.25,
+      "min_score_ds": 73,
+      "max_score_ds": 83.25,
+      "receive_student_number": 100,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef5f4ec7eac1a2872a8b89",
+      "university_id": "056",
+      "program_id": "40560110900301A",
+      "project_id": "J3001",
+      "project_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต (การประกอบการ)",
+      "project_name_en": "B.B.A. (Entrepreneurship)",
+      "type": "1_2569",
+      "receive_student_number": 100,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สร้างและพัฒนาผู้ประกอบการที่มีศักยภาพ เน้นให้ประสบการณ์จริงตลอดหลักสูตร มีผู้เชี่ยวชาญแนะนำให้เป็นผู้มองเห็นโอกาสและช่องทางในการดำเนินธุรกิจได้เสมอ มีความคิดริเริ่ม และมุ่งมั่นที่จะประสบความสำเร็จ",
+      "condition": "เป็นผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย สายสามัญ(ม.6) หรือสำเร็จการศึกษาหลักสูตรประกาศนียบัตรวิชาชีพ(ปวช) หรือเทียบเท่า",
+      "interview_location": "ศูนย์รับสมัครนักศึกษาใหม่ มหาวิทยาลัยหอการค้าไทย ถ.วิภาวดีรังสิต แขวงรัชดาภิเษก เขตดินแดง กรุงเทพฯ 10429",
+      "interview_date": "ตามปฏิทินระบบการสอบคัดเลือกTCAS",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://ce.utcc.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-15T08:46:06.958Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      },
+      "score_conditions": {}
+    }
+  ]
+}

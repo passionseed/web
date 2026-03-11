@@ -1,0 +1,63 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "69afbc069ea8b03260d3732c",
+      "university_id": "221",
+      "program_id": "52210103100101A",
+      "major_id": "A",
+      "project_id": "C1001",
+      "project_name_th": "โครงการ Community Track",
+      "project_name_en": "Community Track",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรแพทยศาสตรบัณฑิต (6 ปี)",
+      "condition": "เป็นไปตามประกาศสถาบัน",
+      "interview_location": "เป็นไปตามประกาศสถาบัน",
+      "interview_date": "เป็นไปตามประกาศสถาบัน",
+      "interview_time": "เป็นไปตามประกาศสถาบัน",
+      "link": "https://be-admission.pi.ac.th/ewt/pbri-admission/article_attach/articlefile_2026022515150877694.pdf",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2026-03-10T06:36:54.138Z"
+    },
+    {
+      "_id": "69afbc069ea8b03260d3732e",
+      "university_id": "221",
+      "program_id": "52210103100101A",
+      "major_id": "A",
+      "project_id": "C1002",
+      "project_name_th": "โครงการ Inclusive Track",
+      "project_name_en": "Inclusive Track",
+      "type": "2_2569",
+      "receive_student_number": 7,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรแพทยศาสตรบัณฑิต (6 ปี)",
+      "condition": "เป็นไปตามประกาศสถาบัน",
+      "interview_location": "เป็นไปตามประกาศสถาบัน",
+      "interview_date": "เป็นไปตามประกาศสถาบัน",
+      "interview_time": "เป็นไปตามประกาศสถาบัน",
+      "link": "https://be-admission.pi.ac.th/ewt/pbri-admission/article_attach/articlefile_2026022515150877694.pdf",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2026-03-10T06:36:54.149Z"
+    }
+  ]
+}

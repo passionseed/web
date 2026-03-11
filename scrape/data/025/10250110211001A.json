@@ -1,0 +1,106 @@
+{
+  "program": [
+    {
+      "program_id": "10250110211001A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "นวัตกรรมและเทคโนโลยีการประกอบอาหาร",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 47.75,
+      "max_score": 85.75,
+      "min_score_ds": 47.75,
+      "max_score_ds": 85.75,
+      "receive_student_number": 25,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e61f54d30bd63a17e28638",
+      "university_id": "025",
+      "program_id": "10250110211001A",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชานวัตกรรมและเทคโนโลยีการประกอบอาหาร (4 ปี)",
+      "condition": "กำลังศึกษาชั้น ม.6 หรือเทียบเท่า มีความประพฤติเรียบร้อย",
+      "interview_location": "99 หมู่ 8 ตำบลโคกเคียน อำเภอเมือง จังหวัดนราธิวาส 96000 คณะวิทยาศาสตร์และเทคโนโลยี",
+      "interview_date": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "interview_time": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "link": "https://onedrive.live.com/?redeem=aHR0cHM6Ly8xZHJ2Lm1zL2IvYy82OTViNGY0NzMzZjA4MzNkL0VlRDJGckpkRlFOT3VvLWRtS2RsM0dBQld1S0tlMjZFT1VldjA4aDktU1JPa0E%5FZT11bHJrRVQ&cid=695B4F4733F0833D&id=695B4F4733F0833D%21sb216f6e0155d4e03ba8f9d98a765dc60&parId=root&o=OneUp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เคยเข้าร่วมโครงการโอลิมปิกวิชาการหรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "B",
+        "closed_date": "14/01/2569",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-08T08:22:44.499Z"
+    },
+    {
+      "_id": "68fb2eb74f0f85dd43bf0532",
+      "university_id": "025",
+      "program_id": "10250110211001A",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชานวัตกรรมและเทคโนโลยีการประกอบอาหาร (4 ปี)",
+      "condition": "มีภูมิลำเนาอยู่ในพื้นที่ 14 จังหวัดภาคใต้ (ตามทะเบียนบ้าน)",
+      "interview_location": "99 หมู่ 8 ตำบลโคกเคียน อำเภอเมือง จังหวัดนราธิวาส 96000 คณะวิทยาศาสตร์และเทคโนโลยี",
+      "interview_date": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "interview_time": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "link": "https://onedrive.live.com/?redeem=aHR0cHM6Ly8xZHJ2Lm1zL2IvYy82OTViNGY0NzMzZjA4MzNkL0VZdlVIck5waVNKSWlDeU85NzhFd3RvQkViQ2xJNHFUMG4wV21sY21wYUNGc3c%5FZT1rMmwxRlo&cid=695B4F4733F0833D&id=695B4F4733F0833D%21sb31ed48b89694822882c8ef7bf04c2da&parId=root&o=OneUp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-24T07:45:59.692Z"
+    },
+    {
+      "_id": "68fb2eb74f0f85dd43bf0534",
+      "university_id": "025",
+      "program_id": "10250110211001A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชานวัตกรรมและเทคโนโลยีการประกอบอาหาร (4 ปี)",
+      "condition": "มีภูมิลำเนาอยู่ในพื้นที่ 14 จังหวัดภาคใต้ (ตามทะเบียนบ้าน)",
+      "interview_location": "99 หมู่ 8 ตำบลโคกเคียน อำเภอเมือง จังหวัดนราธิวาส 96000 คณะวิทยาศาสตร์และเทคโนโลยี",
+      "interview_date": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "interview_time": "ติดตามทางเว็บไซค์ www.pnu.ac.th",
+      "link": "https://onedrive.live.com/?redeem=aHR0cHM6Ly8xZHJ2Lm1zL2IvYy82OTViNGY0NzMzZjA4MzNkL0VZdlVIck5waVNKSWlDeU85NzhFd3RvQkViQ2xJNHFUMG4wV21sY21wYUNGc3c%5FZT1rMmwxRlo&cid=695B4F4733F0833D&id=695B4F4733F0833D%21sb31ed48b89694822882c8ef7bf04c2da&parId=root&o=OneUp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-24T07:45:59.699Z"
+    }
+  ]
+}

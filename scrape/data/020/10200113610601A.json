@@ -1,0 +1,113 @@
+{
+  "program": [
+    {
+      "program_id": "10200113610601A",
+      "project_id": "N3001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชานวัตกรรมและการตลาดเชิงสร้างสรรค์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "admission (แบบที่ 1)",
+      "min_score": 58.1995,
+      "max_score": 66.5243,
+      "min_score_ds": 56.3497,
+      "max_score_ds": 66.5243,
+      "receive_student_number": 35,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37ed52ef4c36c489ab1cf",
+      "university_id": "020",
+      "program_id": "10200113610601A",
+      "project_id": "N1018",
+      "project_name_th": "โครงการ BEC Spring Board ก้าวก่อนใครเลือกที่เรียนก่อนไว",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชานวัตกรรมและการตลาดเชิงสร้างสรรค์",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "folio": {
+        "folio_q1": "มีผลงานการนำเสนอ (Presentation) โดยใช้โปรแกรม Power Point หัวข้อ \"แนะนำตนเองและความคาดหวังเมื่อเรียนจบสาขาวิชานี้\"",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.752Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab1d1",
+      "university_id": "020",
+      "program_id": "10200113610601A",
+      "project_id": "N2001",
+      "project_name_th": "โควตา",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชานวัตกรรมและการตลาดเชิงสร้างสรรค์",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "created_at": "2025-10-06T08:33:25.763Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab1d3",
+      "university_id": "020",
+      "program_id": "10200113610601A",
+      "project_id": "N3001",
+      "project_name_th": "admission (แบบที่ 1)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชานวัตกรรมและการตลาดเชิงสร้างสรรค์",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-06T08:33:25.769Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      },
+      "score_conditions": {}
+    }
+  ]
+}

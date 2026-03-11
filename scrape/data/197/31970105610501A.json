@@ -1,0 +1,30 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f885929ec1a4bec7222b5a",
+      "university_id": "197",
+      "program_id": "31970105610501A",
+      "type": "1_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "ระดับมัธยมศึกษาตอนปลาย (ม.6) ทุกแผนการเรียน",
+      "interview_location": "ตรวจสอบจากบัตรประจำตัวผู้สมัคร",
+      "interview_date": "8 พฤศจิกายน 2568",
+      "interview_time": "08.30 น.",
+      "link": "https://admission.rmutsv.ac.th/course.php",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-22T07:19:46.144Z",
+      "score_conditions": {}
+    }
+  ]
+}

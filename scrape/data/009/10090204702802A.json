@@ -1,0 +1,197 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68fc34781b0969b83dd6d789",
+      "university_id": "009",
+      "program_id": "10090204702802A",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 26,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นผู้มีบุคลิกภาพที่เหมาะสมกับการเป็นครู มีใจรักในวิชาชีพครู การสอน หรือการถ่ายทอดความรู้",
+        "folio_q1_type": "C",
+        "folio_q2": "เอกสาร/เกียรติบัตร ที่แสดงให้เห็นว่ามีส่วนในการดำเนินงาน หรือ เข้าร่วมโครงการจิตอาสา/จิตสาธารณะ/บำเพ็ญประโยชน์ หรือ มีเอกสาร/เกียรติบัตร ที่แสดงให้เห็นว่ามีความสามารถด้านภาษาต่างประเทศ, ภาษาญี่ปุ่น ความสามารถเกี่ยวกับวิชา/วิชาเอกที่สมัครและความสามารถพิเศษอื่นๆ (ถ้ามีให้แสดงมาในแฟ้มประวัติและผลงาน (Portfolio) จะได้รับการพิจารณาเป็นกรณีพิเศษ)",
+        "folio_q2_type": "C",
+        "folio_q3": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q3_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.091Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d78b",
+      "university_id": "009",
+      "program_id": "10090204702802A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นผู้มีบุคลิกภาพที่เหมาะสมกับการเป็นครู มีใจรักวิชาชีพครู การสอน หรือการถ่ายทอดความรู้",
+        "folio_q1_type": "C",
+        "folio_q2": "เอกสาร/เกียรติบัตรที่แสดงให้เห็นว่ามีความสามารถทางด้านกีฬาฟุตบอล / ฟุตซอล / บาสเกตบอล / วอลเลย์บอล, กรีฑา / ว่ายน้ำ / แบดมินตัน / เซปักตะกร้อ / เทนนิส / เทเบิลเทนนิส / จานร่อน / รักบี้ฟุตบอล / วอลเลย์บอลชายหาด / คอร์ฟบอล / ดาบสากล / ลีลาด / เปตอง / อีสปอร์ต / กอล์ฟ / หมากกระดาน / กีฬาไทย และกีฬาต่อสู้ทุกชนิดในระดับชาติและนานาชาติ",
+        "folio_q2_type": "C",
+        "folio_q3": "ใบรับรองความสามารถทางการกีฬาของผู้สมัคร (แบบ ตรี.4) และ ประวัติทางการกีฬาของผู้สมัคร (แบบ ตรี.5) (ผู้สมัครทุกคนต้องกรอก)\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q3_type": "A",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.097Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d793",
+      "university_id": "009",
+      "program_id": "10090204702802A",
+      "project_id": "D0009",
+      "project_name_th": "โครงการโรงเรียนในเขตพื้นที่มหาวิทยาลัยและปริมณฑล",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1,
+        "min_tpat5": 30
+      },
+      "created_at": "2025-10-25T02:22:48.120Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d795",
+      "university_id": "009",
+      "program_id": "10090204702802A",
+      "project_id": "D0004",
+      "project_name_th": "โครงการรับบุตรและคู่สมรสของทหาร ตำรวจตระเวนชายแดน",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1,
+        "min_tpat5": 30
+      },
+      "created_at": "2025-10-25T02:22:48.126Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d791",
+      "university_id": "009",
+      "program_id": "10090204702802A",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1,
+        "min_tpat5": 30
+      },
+      "created_at": "2025-10-25T02:22:48.115Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d78d",
+      "university_id": "009",
+      "program_id": "10090204702802A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1,
+        "min_tpat5": 30
+      },
+      "created_at": "2025-10-25T02:22:48.103Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d78f",
+      "university_id": "009",
+      "program_id": "10090204702802A",
+      "project_id": "G0008",
+      "project_name_th": "โครงการนักกีฬา",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:48.109Z"
+    }
+  ]
+}

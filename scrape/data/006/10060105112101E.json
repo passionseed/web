@@ -1,0 +1,117 @@
+{
+  "program": [
+    {
+      "program_id": "10060105112101E",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวิทยาศาสตร์ชีวการแพทย์ (หลักสูตรนานาชาติ)",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 61.84,
+      "max_score": 76.04,
+      "min_score_ds": 60.84,
+      "max_score_ds": 76.04,
+      "receive_student_number": 10,
+      "scores": {
+        "a_lv_65": 20,
+        "a_lv_66": 40,
+        "a_lv_82": 40
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de047883488",
+      "university_id": "006",
+      "program_id": "10060105112101E",
+      "type": "1_2569",
+      "receive_student_number": 35,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://sim.sc.mahidol.ac.th/prospective-students/admission-requirement/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.220Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb0876f1",
+      "university_id": "006",
+      "program_id": "10060105112101E",
+      "project_id": "B2039",
+      "project_name_th": "โครงการ MOU (โรงเรียนเครือข่าย)",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวิทยาศาสตร์ชีวการแพทย์ (4 ปี)",
+      "condition": "กำลังศึกษา/จบการศึกษาจากโรงเรียนสมาชิกเครือข่ายความร่วมมือทางวิชาการ ดูรายละเอียดได้ที่ https://sim.sc.mahidol.ac.th/collaborations/school-network/",
+      "interview_location": "คณะวิทยาศาสตร์ มหาวิทยาลัยมหิดล วิทยาเขตศาลายา",
+      "interview_date": "วันเสาร์ที่ 25 เมษายน 2569",
+      "interview_time": "เวลา 09.00-12.00 น.",
+      "link": "https://sim.sc.mahidol.ac.th/admission-timeline/ และ https://tcas.mahidol.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2025-10-21T03:07:14.083Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb0877df",
+      "university_id": "006",
+      "program_id": "10060105112101E",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวิทยาศาสตร์ชีวการแพทย์ (4 ปี)",
+      "condition": "",
+      "interview_location": "คณะวิทยาศาสตร์ มหาวิทยาลัยมหิดล วิทยาเขตศาลายา",
+      "interview_date": "วันจันทร์ที่ 1 มิถุนายน 2569",
+      "interview_time": "เวลา 09.00-12.00 น.",
+      "link": "https://sim.sc.mahidol.ac.th/admission-timeline/ และ https://tcas.mahidol.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 4,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_a_lv_65": 30,
+        "min_a_lv_66": 40,
+        "min_a_lv_82": 50,
+        "score_condition": 2,
+        "subject_names": "min_a_lv_65 min_a_lv_66 min_a_lv_82",
+        "score_minimum": "120"
+      },
+      "created_at": "2025-10-21T03:07:14.787Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_65": 20,
+        "a_lv_66": 40,
+        "a_lv_82": 40
+      }
+    }
+  ]
+}

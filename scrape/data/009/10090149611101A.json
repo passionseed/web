@@ -1,0 +1,233 @@
+{
+  "program": [
+    {
+      "program_id": "10090149611101A",
+      "project_id": "A0085",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรเศรษฐศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 55.1832,
+      "max_score": 65.7498,
+      "min_score_ds": 54.7996,
+      "max_score_ds": 65.7498,
+      "receive_student_number": 124,
+      "scores": {
+        "tgat": 60,
+        "a_lv_61": 20,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "program_id": "10090149611101A",
+      "project_id": "A0086",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรเศรษฐศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 61.7996,
+      "max_score": 61.7996,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 124,
+      "scores": {
+        "tgat": 60,
+        "a_lv_61": 20,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34791b0969b83dd6d959",
+      "university_id": "009",
+      "program_id": "10090149611101A",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 9,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "เฉพาะผู้สมัครที่จบจากโรงเรียนหลักสูตรแกนกลางเท่านั้น จะต้องมีจำนวนหน่วยกิตวิชากลุ่มสาระการเรียนรู้คณิตศาสตร์ ไม่ต่ำกว่า 10 / คะแนนเฉลี่ยวิชากลุ่มสาระการเรียนรู้คณิตศาสตร์ ไม่ต่ำกว่า 2.75",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_credit_gpa22": 10,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 1
+      },
+      "folio": {
+        "folio_q1": "เคยได้รับรางวัลในการแข่งขันด้านวิชาการในระดับชาติหรือระดับนานาชาติ อย่างน้อย 1 รางวัล",
+        "folio_q1_type": "C",
+        "folio_q2": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q2_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.653Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d95b",
+      "university_id": "009",
+      "program_id": "10090149611101A",
+      "project_id": "G0002",
+      "project_name_th": "โครงการผู้พิการ",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "- เป็นผู้พิการทางการเคลื่อนไหว (บกพร่องทางด้านแขน หรือ ขา หรือ มือพิการในระดับนิ้วบางนิ้ว) ที่สามารถช่วยเหลือตัวเองได้ในชีวิตประจำวัน และไม่เป็นอุปสรรคต่อการศึกษา\n'- เฉพาะผู้สมัครที่จบจากโรงเรียนหลักสูตรแกนกลางเท่านั้น จะต้องมีจำนวนหน่วยกิตวิชากลุ่มสาระการเรียนรู้คณิตศาสตร์ ไม่ต่ำกว่า 10 / คะแนนเฉลี่ยวิชากลุ่มสาระการเรียนรู้คณิตศาสตร์ ไม่ต่ำกว่า 2.75",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_credit_gpa22": 10,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 1
+      },
+      "folio": {
+        "folio_q1": "สำเนาบัตรประจำตัวคนพิการ จำนวน 1 ฉบับ พร้อมระบุข้อความ “ใช้เพื่อสมัครเข้าศึกษาที่ มศว ปีการศึกษา 2569 เท่านั้น”",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:49.659Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d95d",
+      "university_id": "009",
+      "program_id": "10090149611101A",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "project_name_en": "",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_credit_gpa22": 10,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 1,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:49.666Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d95f",
+      "university_id": "009",
+      "program_id": "10090149611101A",
+      "project_id": "D0004",
+      "project_name_th": "โครงการรับบุตรและคู่สมรสของทหาร ตำรวจตระเวนชายแดน",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "เฉพาะผู้สมัครที่จบจากโรงเรียนหลักสูตรแกนกลางเท่านั้น จะต้องมีจำนวนหน่วยกิตวิชากลุ่มสาระการเรียนรู้คณิตศาสตร์ ไม่ต่ำกว่า 10 / คะแนนเฉลี่ยวิชากลุ่มสาระการเรียนรู้คณิตศาสตร์ ไม่ต่ำกว่า 2.75",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "min_credit_gpa22": 10,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tgat": 1,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:49.675Z"
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d961",
+      "university_id": "009",
+      "program_id": "10090149611101A",
+      "project_id": "A0060",
+      "project_name_th": "Admission",
+      "join_id": "3030",
+      "type": "3_2569",
+      "receive_student_number": 105,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_credit_gpa22": 10,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 1,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:49.681Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 60,
+        "a_lv_61": 20,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "_id": "68fc34791b0969b83dd6d963",
+      "university_id": "009",
+      "program_id": "10090149611101A",
+      "project_id": "A0061",
+      "project_name_th": "Admission",
+      "join_id": "3030",
+      "type": "3_2569",
+      "receive_student_number": 105,
+      "only_formal": 2,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 1,
+        "min_a_lv_61": 1
+      },
+      "created_at": "2025-10-25T02:22:49.687Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 60,
+        "a_lv_61": 20,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

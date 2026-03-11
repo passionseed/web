@@ -1,0 +1,36 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68fc34781b0969b83dd6d7f3",
+      "university_id": "009",
+      "program_id": "10090107100101F",
+      "project_id": "G0009",
+      "project_name_th": "โครงการร่วมกับมหาวิทยาลัยนอตติงแฮม สหราชอาณาจักร",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.439Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "program": [
+    {
+      "program_id": "21520108111701A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรพยาบาลศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "min_score": 44.611,
+      "max_score": 47.2666,
+      "min_score_ds": 44.3194,
+      "max_score_ds": 47.2666,
+      "receive_student_number": 3,
+      "scores": {
+        "gpax": 10,
+        "tgat": 20,
+        "a_lv_61": 10,
+        "a_lv_65": 15,
+        "a_lv_66": 25,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f1bf886e0a26276271e1cb",
+      "university_id": "152",
+      "program_id": "21520108111701A",
+      "type": "1_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรพยาบาลศาสตรบัณฑิต (4 ปี)",
+      "condition": "รับผู้กำลังศึกษาอยู่ภาคเรียนสุดท้าย หรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 แผนการเรียนวิทย์-คณิต เท่านั้น",
+      "interview_location": "ไม่มีสอบสัมภาษณ์",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "interview_time": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://reg.psru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 30,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-17T04:01:12.897Z"
+    },
+    {
+      "_id": "68f1bf886e0a26276271e1cd",
+      "university_id": "152",
+      "program_id": "21520108111701A",
+      "type": "2_2569",
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรพยาบาลศาสตรบัณฑิต (4 ปี)",
+      "condition": "รับผู้กำลังศึกษาอยู่ภาคเรียนสุดท้าย หรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 แผนการเรียนวิทย์-คณิต เท่านั้น",
+      "interview_location": "ไม่มีสอบสัมภาษณ์",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "interview_time": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://reg.psru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 30,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-17T04:01:12.903Z"
+    },
+    {
+      "_id": "68f1bf886e0a26276271e1cf",
+      "university_id": "152",
+      "program_id": "21520108111701A",
+      "type": "3_2569",
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรพยาบาลศาสตรบัณฑิต (4 ปี)",
+      "condition": "รับผู้กำลังศึกษาอยู่ภาคเรียนสุดท้าย หรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 แผนการเรียนวิทย์-คณิต เท่านั้น",
+      "interview_location": "ไม่มีสอบสัมภาษณ์",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "interview_time": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://reg.psru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "min_credit_gpa22": 12,
+      "min_credit_gpa23": 30,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-17T04:01:12.908Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 20,
+        "a_lv_61": 10,
+        "a_lv_65": 15,
+        "a_lv_66": 25,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

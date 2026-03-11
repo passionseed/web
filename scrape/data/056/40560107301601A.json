@@ -1,0 +1,56 @@
+{
+  "program": [
+    {
+      "program_id": "40560107301601A",
+      "project_id": "G3011",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต (วิศวกรรมไฟฟ้าและพลังงาน)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต (วิศวกรรมไฟฟ้าและพลังงาน)",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 60,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef5f4ec7eac1a2872a8b7d",
+      "university_id": "056",
+      "program_id": "40560107301601A",
+      "project_id": "G3011",
+      "project_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต (วิศวกรรมไฟฟ้าและพลังงาน)",
+      "project_name_en": "B.Eng. (Electrical and Energy Engineering)",
+      "type": "1_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิศวกรรมไฟฟ้าและพลังงานศึกษาการ วางแผน และออกแบบระบบไฟฟ้า การพัฒนาการ ผลิตและการส่งไฟฟ้าแรงสูง การควบคุมระบบไฟฟ้า ในอาคารสถานที่ เพื่อเป็นวิศวกรไฟฟ้ามืออาชีพ",
+      "condition": "เป็นผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย สายสามัญ(ม.6) หรือสำเร็จการศึกษาหลักสูตรประกาศนียบัตรวิชาชีพ(ปวช) หรือเทียบเท่า",
+      "interview_location": "ศูนย์รับสมัครนักศึกษาใหม่ มหาวิทยาลัยหอการค้าไทย ถ.วิภาวดีรังสิต แขวงรัชดาภิเษก เขตดินแดง กรุงเทพฯ 10423",
+      "interview_date": "ตามปฏิทินระบบการสอบคัดเลือกTCAS",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://eng.utcc.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-15T08:46:06.918Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      },
+      "score_conditions": {}
+    }
+  ]
+}

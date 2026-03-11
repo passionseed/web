@@ -1,0 +1,58 @@
+{
+  "program": [
+    {
+      "program_id": "41120114112701C",
+      "project_id": "0",
+      "major_id": "A",
+      "program_name_th": "ส.บ. สาธารณสุขชุมชน",
+      "program_type_name_th": "สองภาษา/สามภาษา",
+      "major_name_th": "ภาษาไทย",
+      "project_name_th": "0",
+      "min_score": 69,
+      "max_score": 77.75,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 60,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e49c43ff75689dadef8142",
+      "university_id": "112",
+      "program_id": "41120114112701C",
+      "major_id": "A",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรสาธารณสุขศาสตรบัณฑิต สาขาวิชาสาธารณสุขชุมชน",
+      "condition": "สำเร็จการศึกษาไม่ต่ำกว่ามัธยมศึกษาตอนปลายหรือเทียบเท่า ประพฤติตนดี",
+      "link": "https://1th.me/cRhwL",
+      "grad_current": false,
+      "t_score": false,
+      "min_age": 18,
+      "score_conditions": {
+        "score_condition": 2,
+        "subject_names": "min_tgat min_tpat2",
+        "score_minimum": "100"
+      },
+      "folio": {
+        "folio_q1": "นำเสนอมุมมองวิชาชีพสาธารณสุขในแนวคิดของผู้เรียน",
+        "folio_q1_type": "A",
+        "closed_date": "30/11/2568",
+        "page_limit": "5"
+      },
+      "created_at": "2025-10-07T04:51:15.476Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

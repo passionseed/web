@@ -5,8 +5,8 @@ create extension if not exists vector;
 drop table if exists public.university_static_data cascade;
 drop table if exists public.thailand_admission_plans cascade;
 
--- 1. universities
-create table if not exists public.universities (
+-- 1. tcas_universities
+create table if not exists public.tcas_universities (
   id                 uuid primary key default gen_random_uuid(),
   university_id      text not null unique,
   university_name    text not null,
@@ -18,10 +18,10 @@ create table if not exists public.universities (
   updated_at         timestamptz not null default now()
 );
 
--- 2. programs
-create table if not exists public.programs (
+-- 2. tcas_programs
+create table if not exists public.tcas_programs (
   id               uuid primary key default gen_random_uuid(),
-  university_id    text not null references public.universities(university_id),
+  university_id    text not null references public.tcas_universities(university_id),
   program_id       text not null unique,
   campus_id        text,
   campus_name      text,
@@ -54,11 +54,11 @@ create table if not exists public.programs (
   updated_at       timestamptz not null default now()
 );
 
--- 3. admission_rounds
-create table if not exists public.admission_rounds (
+-- 3. tcas_admission_rounds
+create table if not exists public.tcas_admission_rounds (
   id                  uuid primary key default gen_random_uuid(),
-  program_id          text not null references public.programs(program_id),
-  university_id       text not null references public.universities(university_id),
+  program_id          text not null references public.tcas_programs(program_id),
+  university_id       text not null references public.tcas_universities(university_id),
   project_id          text,
   project_name        text,
   round_type          text not null,
@@ -90,42 +90,42 @@ create table if not exists public.admission_rounds (
   scraped_at          timestamptz not null default now(),
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now(),
-  constraint rounds_unique unique (program_id, round_type, project_id)
+  constraint tcas_rounds_unique unique (program_id, round_type, project_id)
 );
 
 -- Indexes
-create index idx_rounds_program     on public.admission_rounds(program_id);
-create index idx_rounds_eligibility on public.admission_rounds(round_number, min_gpax);
-create index idx_rounds_university  on public.admission_rounds(university_id, round_number);
-create index idx_programs_university on public.programs(university_id, faculty_id);
-create index idx_programs_embedding on public.programs
+create index idx_tcas_rounds_program     on public.tcas_admission_rounds(program_id);
+create index idx_tcas_rounds_eligibility on public.tcas_admission_rounds(round_number, min_gpax);
+create index idx_tcas_rounds_university  on public.tcas_admission_rounds(university_id, round_number);
+create index idx_tcas_programs_university on public.tcas_programs(university_id, faculty_id);
+create index idx_tcas_programs_embedding on public.tcas_programs
   using ivfflat (embedding vector_cosine_ops) with (lists = 20);
-create index idx_programs_search_text on public.programs
+create index idx_tcas_programs_search_text on public.tcas_programs
   using gin (to_tsvector('simple', search_text));
 
 -- Updated_at triggers
-create trigger set_updated_at before update on public.universities
+create trigger set_updated_at before update on public.tcas_universities
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.programs
+create trigger set_updated_at before update on public.tcas_programs
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.admission_rounds
+create trigger set_updated_at before update on public.tcas_admission_rounds
   for each row execute function public.handle_updated_at();
 
 -- RLS
-alter table public.universities      enable row level security;
-alter table public.programs          enable row level security;
-alter table public.admission_rounds  enable row level security;
+alter table public.tcas_universities      enable row level security;
+alter table public.tcas_programs          enable row level security;
+alter table public.tcas_admission_rounds  enable row level security;
 
-create policy "public_read" on public.universities
+create policy "public_read" on public.tcas_universities
   for select to authenticated, anon using (true);
-create policy "public_read" on public.programs
+create policy "public_read" on public.tcas_programs
   for select to authenticated, anon using (true);
-create policy "public_read" on public.admission_rounds
+create policy "public_read" on public.tcas_admission_rounds
   for select to authenticated, anon using (true);
 
-create policy "service_write" on public.universities
+create policy "service_write" on public.tcas_universities
   for all to service_role using (true) with check (true);
-create policy "service_write" on public.programs
+create policy "service_write" on public.tcas_programs
   for all to service_role using (true) with check (true);
-create policy "service_write" on public.admission_rounds
+create policy "service_write" on public.tcas_admission_rounds
   for all to service_role using (true) with check (true);

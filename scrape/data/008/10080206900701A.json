@@ -1,0 +1,69 @@
+{
+  "program": [
+    {
+      "program_id": "10080206900701A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาจิตวิทยา",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 61.4166,
+      "max_score": 70.5164,
+      "min_score_ds": 61.3332,
+      "max_score_ds": 70.5164,
+      "receive_student_number": 45,
+      "scores": {
+        "tgat1": 20,
+        "tgat2": 20,
+        "tgat3": 20,
+        "a_lv_70": 15,
+        "a_lv_81": 15,
+        "cal_type": "1",
+        "cal_score_sum": 10,
+        "cal_subject_name": "a_lv_61|a_lv_62"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fb27df4f0f85dd43bef9a3",
+      "university_id": "008",
+      "program_id": "10080206900701A",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาจิตวิทยา",
+      "condition": "1. ไม่มีร่างกายทุพพลภาพหรือความพิการอันเป็นอุปสรรคต่อการปฏิบัติงานจิตวิทยา\n  2. มีผลการตรวจสุขภาพตามรายงานการตรวจสุขภาพและเอกซเรย์ร่างกายประกอบการสอบคัดเลือกบุคคลเข้าศึกษาในมหาวิทยาลัยศิลปากร ประจำปีการศึกษา 2569 (นำมาส่งในวันสอบสัมภาษณ์)\n  หมายเหตุ : คุณสมบัติเฉพาะเป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือก แต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา",
+      "interview_location": "อาคารศึกษา 3 คณะศึกษาศาสตร์ มหาวิทยาลัยศิลปากร วิทยาเขตพระราชวังสนามจันทร์ นครปฐม\n  *** โปรดติดตามประกาศรายละเอียดการสอบสัมภาษณ์ที่เว็บไซต์ https://admission.su.ac.th หัวข้อ ประกาศ ในวันที่ 30 พฤษภาคม 2569",
+      "interview_date": "25356",
+      "interview_time": "รายงานตัวเวลา 08.30 - 09.00 น. สอบสัมภาษณ์เวลา 09.00 น. เป็นต้นไป",
+      "link": "https://admission.su.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat1": 25,
+        "min_tgat2": 25,
+        "min_tgat3": 25
+      },
+      "created_at": "2025-10-24T07:16:47.966Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat1": 20,
+        "tgat2": 20,
+        "tgat3": 20,
+        "a_lv_70": 15,
+        "a_lv_81": 15,
+        "cal_type": "1",
+        "cal_score_sum": 10,
+        "cal_subject_name": "a_lv_61|a_lv_62"
+      }
+    }
+  ]
+}

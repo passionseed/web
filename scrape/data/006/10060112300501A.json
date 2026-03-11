@@ -1,0 +1,129 @@
+{
+  "program": [
+    {
+      "program_id": "10060112300501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมคอมพิวเตอร์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 53.5,
+      "max_score": 68.9375,
+      "min_score_ds": 53.479,
+      "max_score_ds": 68.9375,
+      "receive_student_number": 26,
+      "scores": {
+        "tpat3": 25,
+        "a_lv_61": 25,
+        "a_lv_64": 25,
+        "a_lv_82": 25
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de0478834ba",
+      "university_id": "006",
+      "program_id": "10060112300501A",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "GPA กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี ใช้เฉพาะวิชาฟิสิกส์ ไม่ต่ำกว่า 3.00 , GPA กลุ่มภาษาต่างประเทศ ใช้เฉพาะภาษาอังกฤษ ไม่ต่ำกว่า 3.00 และรายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://www.eg.mahidol.ac.th/egmu/education/admissions/bachelor-programs.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_gpa22": 3,
+      "min_gpa23": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_gpa22": 3,
+        "min_gpa23": 3,
+        "min_gpa28": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.389Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb087739",
+      "university_id": "006",
+      "program_id": "10060112300501A",
+      "join_id": "",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "GPA กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี ใช้เฉพาะฟิสิกส์ ไม่ต่ำกว่า 3.00 , GPA กลุ่มภาษาต่างประเทศ ใช้เฉพาะภาษาอังกฤษ ไม่ต่ำกว่า 3.00 , ผู้สมัครต้องผ่านโครงการโอลิมปิกวิชาการ สอวน. รอบที่ 1 รายละเอียดอื่น ๆ ตาม link: tcas.mahidol.ac.th",
+      "interview_location": "คณะวิศวกรรมศาสตร์ มหาวิทยาลัยมหิดล ศาลายา",
+      "interview_date": "25-เม.ย.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://www.eg.mahidol.ac.th/egmu/education/admissions/bachelor-programs.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.75,
+      "min_gpa22": 3,
+      "min_gpa23": 3,
+      "min_gpa28": 3,
+      "score_conditions": {
+        "min_gpax": 3.75,
+        "min_gpa22": 3,
+        "min_gpa23": 3,
+        "min_gpa28": 3,
+        "min_tpat3": 30,
+        "min_a_lv_61": 30,
+        "min_a_lv_64": 30,
+        "min_a_lv_82": 30
+      },
+      "created_at": "2025-10-21T03:07:14.293Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb087811",
+      "university_id": "006",
+      "program_id": "10060112300501A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตร 4 ปี",
+      "condition": "",
+      "interview_location": "คณะวิศวกรรมศาสตร์ มหาวิทยาลัยมหิดล ศาลายา",
+      "interview_date": "1-มิ.ย.-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://www.eg.mahidol.ac.th/egmu/education/admissions/bachelor-programs.html",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2025-10-21T03:07:14.941Z",
+      "min_total_score": 0,
+      "scores": {
+        "tpat3": 30,
+        "a_lv_61": 15,
+        "a_lv_64": 15,
+        "a_lv_65": 15,
+        "a_lv_82": 25
+      }
+    }
+  ]
+}

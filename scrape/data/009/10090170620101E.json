@@ -1,0 +1,158 @@
+{
+  "program": [
+    {
+      "program_id": "10090170620101E",
+      "project_id": "A0001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาการจัดการภาคบริการและการท่องเที่ยวอย่างยั่งยืน (หลักสูตรนานาชาติ)",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 58.75,
+      "max_score": 90,
+      "min_score_ds": 57.5,
+      "max_score_ds": 90,
+      "receive_student_number": 102,
+      "scores": {
+        "a_lv_82": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc347a1b0969b83dd6da49",
+      "university_id": "009",
+      "program_id": "10090170620101E",
+      "project_id": "G0004",
+      "project_name_th": "โครงการรับนักเรียนเข้าศึกษาในหลักสูตรนานาชาติ",
+      "type": "1_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:50.444Z",
+      "min_total_score": 0,
+      "scores": {
+        "interview": 100
+      }
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6da47",
+      "university_id": "009",
+      "program_id": "10090170620101E",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "รูปแบบการจัดทำ Porfolio และช่องทางการส่ง Porfolio ดูได้ที่ระเบียบการรับสมัครของมหาวิทยาลัย",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:50.438Z",
+      "min_total_score": 0,
+      "scores": {
+        "interview": 100
+      }
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6da4b",
+      "university_id": "009",
+      "program_id": "10090170620101E",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "project_name_en": "",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-25T02:22:50.450Z"
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6da4d",
+      "university_id": "009",
+      "program_id": "10090170620101E",
+      "project_id": "D0009",
+      "project_name_th": "โครงการโรงเรียนในเขตพื้นที่มหาวิทยาลัยและปริมณฑล",
+      "project_name_en": "",
+      "type": "2_2569",
+      "receive_student_number": 8,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-25T02:22:50.460Z"
+    },
+    {
+      "_id": "68fc347a1b0969b83dd6da4f",
+      "university_id": "009",
+      "program_id": "10090170620101E",
+      "project_id": "A0001",
+      "project_name_th": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "ผู้สมัครจะต้องมีความสามารถในการสื่อสารภาษาอังกฤษได้ดี",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-25T02:22:50.466Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_82": 100
+      }
+    }
+  ]
+}

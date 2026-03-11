@@ -1,0 +1,85 @@
+{
+  "program": [
+    {
+      "program_id": "21420101302415A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วศ.บ. สาขาวิชาวิศวกรรมอุตสาหการและโลจิสติกส์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิศวกรรมอุตสาหการและโลจิสติกส์",
+      "project_name_th": "0",
+      "min_score": 79.5,
+      "max_score": 98.5,
+      "min_score_ds": 79.5,
+      "max_score_ds": 98.5,
+      "receive_student_number": 18,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "6923df7442903a29226a1492",
+      "university_id": "142",
+      "program_id": "21420101302415A",
+      "type": "1_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมอุตสาหการและโลจิสติกส์",
+      "condition": "กำลังศึกษาหรือสำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย หรือเทียบเท่า (ปวช. ปวส. ทุกแผนการเรียน)",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://eregis.cpru.ac.th/admission",
+      "interview_date": "ช่วงเดือน พฤศจิกายน 2568 - มกราคม 2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "http://eregis.cpru.ac.th/admission",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-11-24T04:30:44.881Z"
+    },
+    {
+      "_id": "6923df7542903a29226a14ca",
+      "university_id": "142",
+      "program_id": "21420101302415A",
+      "type": "2_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมอุตสาหการและโลจิสติกส์",
+      "condition": "กำลังศึกษาหรือสำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย หรือเทียบเท่า (ปวช. ปวส. ทุกแผนการเรียน)",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://eregis.cpru.ac.th/admission",
+      "interview_date": "ช่วงเดือน มีนาคม - เมษายน 2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "http://eregis.cpru.ac.th/admission",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-11-24T04:30:45.109Z"
+    },
+    {
+      "_id": "6923df7542903a29226a1500",
+      "university_id": "142",
+      "program_id": "21420101302415A",
+      "type": "3_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมอุตสาหการและโลจิสติกส์",
+      "condition": "กำลังศึกษาหรือสำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย หรือเทียบเท่า (ปวช. ปวส. ทุกแผนการเรียน)",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://eregis.cpru.ac.th/admission",
+      "interview_date": "ไม่สอบสัมภาษณ์: รายละเอียดการรายงานตัว ผ่านทางเว็บไซต์: http://eregis.cpru.ac.th/admission/",
+      "link": "http://eregis.cpru.ac.th/admission",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-11-24T04:30:45.309Z"
+    }
+  ]
+}

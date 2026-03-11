@@ -1,0 +1,104 @@
+{
+  "program": [
+    {
+      "program_id": "10030120400501A",
+      "project_id": "H3000",
+      "major_id": "0",
+      "program_name_th": "สถาปัตยกรรมศาสตรบัณฑิต สถาปัตยกรรมศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "",
+      "project_name_th": "คณะสถาปัตยกรรมศาสตร์ สถ.บ. (สถาปัตยกรรมศาสตร์) สถาปัตยกรรมศาสตรบัณฑิต ",
+      "min_score": 47.065,
+      "max_score": 50.66,
+      "min_score_ds": 46.705,
+      "max_score_ds": 50.66,
+      "receive_student_number": 5,
+      "scores": {
+        "tpat4": 20,
+        "a_lv_61": 15,
+        "a_lv_63": 15,
+        "a_lv_64": 15,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 15
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e5e0e6d30bd63a17e2690d",
+      "university_id": "003",
+      "program_id": "10030120400501A",
+      "project_id": "I0000",
+      "project_name_th": "คณะสถาปัตยกรรมศาสตร์ สถ.บ. (สถาปัตยกรรมศาสตร์) สถาปัตยกรรมศาสตรบัณฑิต การคัดเลือกนักเรียนเข้าศึกษาในหลักสูตรสถาปัตยกรรมศาสตรบัณฑิต    สาขาวิชาสถาปัตยกรรมศาสตร์   หลักสูตรปกติ คณะสถาปัตยกรรมศาสตร์  มหาวิทยาลัยขอนแก่น  ประจำปีการศึกษา  2569 รอบที่  1  แบบ  Portfolio  รอบที่ 1 การรับด้วยแฟ้มสะสมผลงาน (Portfolio) ",
+      "type": "1_2569",
+      "receive_student_number": 45,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "\n\t\n\t\n\t\tมีสัญชาติไทย\n\t\tเป็นผู้ที่กำลังศึกษาอยู่ในชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า หรือเป็นผู้ที่สำเร็จการศึกษา ในชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า มาแล้วไม่เกิน 2 ปี\n\t\tมีผลการเรียนเฉลี่ยในระดับมัธยมศึกษาตอนปลายหรือเทียบเท่า จำนวน 4 ภาคการศึกษา ไม่ต่ำกว่า 3.00\n\t\tหากเป็นผู้ที่สำเร็จการศึกษาในชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า ต้องมีผลการเรียนเฉลี่ย ไม่ต่ำกว่า 3.00\n\t\tเป็นผู้ที่มีแฟ้มสะสมผลงาน (Portfolio) ที่แสดงถึงความสามารถ ความคิดสร้างสรรค์และการแก้ปัญหาด้วยการออกแบบ (Creativity and Design Thinking) และทักษะความถนัดทางสถาปัตยกรรมศาสตร์\n\t\tไม่มีโรคติดต่อหรือเป็นโรคติดต่อร้ายแรง ซึ่งเป็นอุปสรรคต่อการศึกษา เช่น โรคตาบอดสี อันเป็นอุปสรรคต่อการศึกษา การปฏิบัติงาน และการประกอบวิชาชีพด้านสถาปัตยกรรมศาสตร์\n\t\tเป็นผู้ที่มีความประพฤติดีและรับรองต่อมหาวิทยาลัยว่าจะตั้งใจศึกษาเล่าเรียนเต็มความสามารถและยินยอมปฏิบัติตามระเบียบข้อบังคับของมหาวิทยาลัยที่มีอยู่แล้ว หรือที่จะมีต่อไปโดยเคร่งครัดทุกประการ\n\t\tมีคุณสมบัติครบถ้วนที่จะเป็นนักศึกษาในมหาวิทยาลัยขอนแก่นตามประกาศของกระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม\n\t\n\t\n\n",
+      "condition": "1. &nbsp;การพิจารณารายชื่อผู้มีสิทธิ์สอบสัมภาษณ์&nbsp; และทดสอบทักษะทางด้านสถาปัตยกรรม&nbsp;&nbsp;จะพิจารณาและให้คะแนนจากแฟ้มสะสมงาน (Portfolio)&nbsp; &nbsp; โดยมีเกณฑ์การพิจารณา ดังนี้&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.1 &nbsp;มีผลงานที่แสดงออกถึงความถนัดทางสถาปัตยกรรมศาสตร์ (Skills)&nbsp;(40%)&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.2&nbsp; มีผลงานที่แสดงถึงความคิดสร้างสรรค์และการแก้ปัญหาด้วยการออกแบบ (Creativity and&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Design Thinking)(45%)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.3&nbsp; ความสวยงามและความคิดสร้างสรรค์ของแฟ้มสะสมผลงาน&nbsp;&nbsp; (15%)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.&nbsp; การพิจารณาผู้ผ่านการคัดเลือก&nbsp; จะพิจารณาและประกาศรายชื่อผู้ผ่านการคัดเลือก จากคะแนนสอบสัมภาษณ์ และการทดสอบทักษะทางด้านสถาปัตยกรรม&nbsp; โดยมีเกณฑ์การพิจารณา ดังนี้&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.1&nbsp; ต้องผ่านการสอบสัมภาษณ์&nbsp; โดยมีเกณฑ์การพิจารณา&nbsp; ดังนี้&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&nbsp; ความรู้และทักษะพื้นฐาน&nbsp;&nbsp;(40%)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&nbsp; ทัศนคติ (Attitude)&nbsp;(20%)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&nbsp; บุคลิกภาพ (Personality)(20%)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&nbsp;&nbsp; การสื่อสาร (Communication)&nbsp;&nbsp;(20%)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.2&nbsp; ต้องผ่านการทดสอบทักษะทางด้านสถาปัตยกรรม โดยผู้มีสิทธิ์สอบสัมภาษณ์จะต้องทดสอบทักษะทางด้านสถาปัตยกรรม&nbsp; ในวันที่&nbsp; 18&nbsp; พฤศจิกายน&nbsp; 2568&nbsp; เวลา 09.00 น. &ndash; 12.00 น.&nbsp; ณ&nbsp; คณะสถาปัตยกรรมศาสตร์&nbsp; มหาวิทยาลัยขอนแก่น  ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2025-10-08T03:56:22.141Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "690b65dbffb3c340d25d1169",
+      "university_id": "003",
+      "program_id": "10030120400501A",
+      "project_id": "G0000",
+      "project_name_th": "คณะสถาปัตยกรรมศาสตร์ สถ.บ. (สถาปัตยกรรมศาสตร์) สถาปัตยกรรมศาสตรบัณฑิต การคัดเลือกบุคคลเข้าศึกษาในมหาวิทยาลัยขอนแก่น ประจำปีการศึกษา 2569 รอบที่ 2  การรับโควตาพื้นที่ภาคตะวันออกเฉียงเหนือ โควตาภาคตะวันออกเฉียงเหนือ ",
+      "type": "2_2569",
+      "receive_student_number": 45,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "  * มีการกำหนดเกณฑ์คะแนนรวมขั้นต่ำ 35 คะแนน",
+      "grad_current": true,
+      "t_score": false,
+      "created_at": "2025-11-05T14:57:31.062Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "690b61d3ffb3c340d25d070f",
+      "university_id": "003",
+      "program_id": "10030120400501A",
+      "project_id": "H3000",
+      "project_name_th": "คณะสถาปัตยกรรมศาสตร์ สถ.บ. (สถาปัตยกรรมศาสตร์) สถาปัตยกรรมศาสตรบัณฑิต ",
+      "type": "3_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "  * มีการกำหนดเกณฑ์คะแนนรวมขั้นต่ำ 35 คะแนน",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-11-05T14:40:19.651Z",
+      "score_conditions": {},
+      "min_total_score": 35,
+      "scores": {
+        "tpat4": 20,
+        "a_lv_61": 15,
+        "a_lv_63": 15,
+        "a_lv_64": 15,
+        "a_lv_70": 10,
+        "a_lv_81": 10,
+        "a_lv_82": 15
+      }
+    }
+  ]
+}

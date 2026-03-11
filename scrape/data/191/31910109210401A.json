@@ -1,0 +1,126 @@
+{
+  "program": [
+    {
+      "program_id": "31910109210401A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "เคมีประยุกต์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 63.5,
+      "max_score": 97,
+      "min_score_ds": 63.5,
+      "max_score_ds": 96,
+      "receive_student_number": 25,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e8aaaeb848dd4679d6cbec",
+      "university_id": "191",
+      "program_id": "31910109210401A",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเคมีประยุกต์ (4 ปี)",
+      "condition": "นักเรียนกำลังศึกษาหรือสำเร็จการศึกษาชั้น ม.6 ต้องไม่มีความบกพร่องทางกายภาพที่เป็นอุปสรรคต่อการเรียนและการทดลองปฏิบัติในสาขาวิชาที่สมัคร และต้องมีความสามารถในการมองเห็นโดยไม่เป็นอุปสรรคต่อการเรียนและการทดลองปฏิบัติในสาขาวิชาที่สมัคร",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "20-ธ.ค.-68",
+      "interview_time": "9.00 - 12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "min_credit_gpa22": 6,
+      "min_credit_gpa23": 6,
+      "min_gpa22": 2,
+      "min_gpa23": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_gpa22": 2,
+        "min_gpa23": 2
+      },
+      "folio": {
+        "folio_q1": "ใส่ Portfolio แบบย่อ (ไม่เกิน 1000 ตัวอักษร)",
+        "folio_q1_type": "B",
+        "folio_q2": "ใส่ Link ผลงานในลักษณะอื่น เช่น WebSite-Youtube-Tiktok",
+        "folio_q2_type": "B",
+        "closed_date": "8/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-10T06:41:50.546Z"
+    },
+    {
+      "_id": "68e8aaaeb848dd4679d6cbee",
+      "university_id": "191",
+      "program_id": "31910109210401A",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเคมีประยุกต์ (4 ปี)",
+      "condition": "นักเรียนกำลังศึกษาหรือสำเร็จการศึกษาชั้น ม.6 ต้องไม่มีความบกพร่องทางกายภาพที่เป็นอุปสรรคต่อการเรียนและการทดลองปฏิบัติในสาขาวิชาที่สมัคร และต้องมีความสามารถในการมองเห็นโดยไม่เป็นอุปสรรคต่อการเรียนและการทดลองปฏิบัติในสาขาวิชาที่สมัคร",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "interview_date": "28-มี.ค.-68",
+      "interview_time": "9.00 - 12.00 น.",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "min_credit_gpa22": 6,
+      "min_credit_gpa23": 6,
+      "min_gpa22": 2,
+      "min_gpa23": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_gpa22": 2,
+        "min_gpa23": 2
+      },
+      "created_at": "2025-10-10T06:41:50.551Z"
+    },
+    {
+      "_id": "68e8aaaeb848dd4679d6cbf0",
+      "university_id": "191",
+      "program_id": "31910109210401A",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเคมีประยุกต์ (4 ปี)",
+      "condition": "นักเรียนสำเร็จการศึกษาชั้น ม.6 ต้องไม่มีความบกพร่องทางกายภาพที่เป็นอุปสรรคต่อการเรียนและการทดลองปฏิบัติในสาขาวิชาที่สมัคร และต้องมีความสามารถในการมองเห็นโดยไม่เป็นอุปสรรคต่อการเรียนและการทดลองปฏิบัติในสาขาวิชาที่สมัคร",
+      "interview_location": "ดูรายละเอียดสถานที่สัมถาษณ์ที่ https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "link": "https://oreg.rmutt.ac.th/Apply/?page_id=18",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "min_credit_gpa22": 6,
+      "min_credit_gpa23": 6,
+      "min_gpa22": 2,
+      "min_gpa23": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_gpa22": 2,
+        "min_gpa23": 2
+      },
+      "created_at": "2025-10-10T06:41:50.556Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

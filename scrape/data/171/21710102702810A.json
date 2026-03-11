@@ -1,0 +1,137 @@
+{
+  "program": [
+    {
+      "program_id": "21710102702810A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ค.บ.พลศึกษา",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "พลศึกษา",
+      "project_name_th": "0",
+      "min_score": 71.725,
+      "max_score": 75.175,
+      "min_score_ds": 71.5125,
+      "max_score_ds": 75.175,
+      "receive_student_number": 8,
+      "scores": {
+        "gpax": 5,
+        "tpat5": 95
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7358f27b76be0eb091709",
+      "university_id": "171",
+      "program_id": "21710102702810A",
+      "type": "1_2569",
+      "receive_student_number": 27,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต (ค.บ. 4 ปี)",
+      "condition": "กำลังศึกษาอยู่ ม.6 หรือ มศ.ปลาย (กศ.น.) หรือ ปวช. GPAX 4 - 5 เทอม หรือสำเร็จการศึกษา",
+      "interview_location": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th/",
+      "interview_date": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th/",
+      "interview_time": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th",
+      "link": "https://admission.ubru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_age": 16,
+      "max_age": 60,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T07:26:07.266Z"
+    },
+    {
+      "_id": "68f7358f27b76be0eb09170b",
+      "university_id": "171",
+      "program_id": "21710102702810A",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต (ค.บ. 4 ปี)",
+      "condition": "กำลังศึกษาอยู่ ม.6 หรือ มศ.ปลาย (กศ.น.) หรือ ปวช. GPAX 4 - 5 เทอม หรือสำเร็จการศึกษา",
+      "interview_location": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th/",
+      "interview_date": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th/",
+      "interview_time": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th",
+      "link": "https://admission.ubru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_age": 16,
+      "max_age": 60,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tpat5": 20
+      },
+      "created_at": "2025-10-21T07:26:07.272Z"
+    },
+    {
+      "_id": "68f7358f27b76be0eb09170d",
+      "university_id": "171",
+      "program_id": "21710102702810A",
+      "type": "3_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต (ค.บ. 4 ปี)",
+      "condition": "กำลังศึกษาอยู่ ม.6 หรือ มศ.ปลาย (กศ.น.) หรือ ปวช. GPAX 4 - 5 เทอม หรือสำเร็จการศึกษา",
+      "interview_location": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th/",
+      "interview_date": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th/",
+      "interview_time": "ตามประกาศมหาวิทยาลัยฯ https://admission.ubru.ac.th",
+      "link": "https://admission.ubru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_age": 16,
+      "max_age": 60,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tpat5": 20
+      },
+      "created_at": "2025-10-21T07:26:07.278Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 5,
+        "gpa21": 0,
+        "gpa22": 0,
+        "gpa23": 0,
+        "gpa24": 0,
+        "gpa25": 0,
+        "gpa27": 0,
+        "gpa28": 0,
+        "tgat": 0,
+        "tgat1": 0,
+        "tgat2": 0,
+        "tgat3": 0,
+        "tpat1": 0,
+        "tpat2": 0,
+        "tpat3": 0,
+        "tpat5": 95,
+        "a_lv_61": 0,
+        "a_lv_63": 0,
+        "a_lv_65": 0,
+        "a_lv_66": 0,
+        "a_lv_70": 0,
+        "a_lv_81": 0,
+        "a_lv_82": 0
+      }
+    }
+  ]
+}

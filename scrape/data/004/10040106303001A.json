@@ -1,0 +1,120 @@
+{
+  "program": [
+    {
+      "program_id": "10040106303001A",
+      "project_id": "M3079",
+      "major_id": "0",
+      "program_name_th": "วศ.บ.วิศวกรรมเหมืองแร่และปิโตรเลียม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "การรับตรงร่วมกัน (รหัส 00430612301010-วิศวกรรมเหมืองแร่และปิโตรเลียม)",
+      "min_score": 57.288,
+      "max_score": 59.9176,
+      "min_score_ds": 57.1776,
+      "max_score_ds": 59.2332,
+      "receive_student_number": 15,
+      "scores": {
+        "tgat": 20,
+        "tpat3": 40,
+        "a_lv_61": 20,
+        "a_lv_64": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68dcd01c4843519be3977ba2",
+      "university_id": "004",
+      "program_id": "10040106303001A",
+      "project_id": "H1055",
+      "project_name_th": "โครงการพิเศษอื่นๆ โครงการรับนักเรียนผู้มีความรู้ ความสามารถทางวิศวกรรม (รหัส 00410612108011-วิศวกรรมเหมืองแร่และปิโตรเลียม)",
+      "project_name_en": "",
+      "join_id": "",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "",
+      "condition": "ตรวจสอบเกณฑ์การรับได้ที่นี่ https://admission.reg.cmu.ac.th/tcas/findfacultybyid.php?fid=698",
+      "interview_location": "ขั้นตอนที่ต้องดำเนินการหลังประกาศผลการคัดเลือก https://cmu.to/tcas1",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "ผู้สมัครต้องตรวจสอบข้อมูลฉบับเต็มที่ https://admission.reg.cmu.ac.th/tcas/findfaculty.php",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-01T06:54:20.291Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68dcd01e4843519be3977e71",
+      "university_id": "004",
+      "program_id": "10040106303001A",
+      "project_id": "J2071",
+      "project_name_th": "การรับนักเรียนโควตาภาคเหนือฯ (รหัส 00420612201015-วิศวกรรมเหมืองแร่และปิโตรเลียม)",
+      "project_name_en": "",
+      "join_id": "",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "",
+      "condition": "ตรวจสอบเกณฑ์การรับได้ที่นี่ https://admission.reg.cmu.ac.th/tcas/findfacultybyid.php?fid=700",
+      "interview_location": "ขั้นตอนที่ต้องดำเนินการหลังประกาศผลการคัดเลือก https://cmu.to/tcas2",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "ผู้สมัครต้องตรวจสอบข้อมูลฉบับเต็มที่ https://admission.reg.cmu.ac.th/tcas/findfaculty.php",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-01T06:54:22.317Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68dcd01f4843519be3978017",
+      "university_id": "004",
+      "program_id": "10040106303001A",
+      "project_id": "M3083",
+      "project_name_th": "การรับตรงร่วมกัน (รหัส 00430612301010-วิศวกรรมเหมืองแร่และปิโตรเลียม)",
+      "project_name_en": "",
+      "join_id": "",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "",
+      "condition": "ตรวจสอบเกณฑ์การรับได้ที่นี่ https://admission.reg.cmu.ac.th/tcas/findfacultybyid.php?fid=702",
+      "interview_location": "ขั้นตอนที่ต้องดำเนินการหลังประกาศผลการคัดเลือก https://cmu.to/tcas3",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "ผู้สมัครต้องตรวจสอบข้อมูลฉบับเต็มที่ https://admission.reg.cmu.ac.th/tcas/findfaculty.php",
+      "grad_current": false,
+      "t_score": true,
+      "score_conditions": {
+        "min_tpat3_tscore": 45,
+        "min_a_lv_61_tscore": 45,
+        "min_a_lv_64_tscore": 45,
+        "min_a_lv_82_tscore": 45
+      },
+      "created_at": "2025-10-01T06:54:23.500Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tpat3": 40,
+        "a_lv_61": 20,
+        "a_lv_64": 20
+      }
+    }
+  ]
+}

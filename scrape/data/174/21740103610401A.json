@@ -1,0 +1,89 @@
+{
+  "program": [
+    {
+      "program_id": "21740103610401A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาการจัดการธุรกิจและทรัพยากรมนุษย์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 52.25,
+      "max_score": 92.75,
+      "min_score_ds": 52.25,
+      "max_score_ds": 92.75,
+      "receive_student_number": 80,
+      "scores": {
+        "cal_type": "1",
+        "cal_score_sum": 100,
+        "cal_subject_name": "gpax|ged_score"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f2a4ed2ebced2b69dcf830",
+      "university_id": "174",
+      "program_id": "21740103610401A",
+      "type": "1_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "link": "http://admission.bsru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "19/1/2569",
+        "page_limit": "ไม่กำหนด"
+      },
+      "created_at": "2025-10-17T20:19:57.837Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f2a4ee2ebced2b69dcf8b6",
+      "university_id": "174",
+      "program_id": "21740103610401A",
+      "type": "2_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "link": "http://admission.bsru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-17T20:19:58.270Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f2a4ee2ebced2b69dcf93a",
+      "university_id": "174",
+      "program_id": "21740103610401A",
+      "type": "3_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ศึกษารายละเอียดเกี่ยวกับจำนวนรับ คุณสมบัติของผู้สมัคร และเกณฑ์การคัดเลือก ผ่านเว็บไซต์ http://admission.bsru.ac.th  สอบถามข้อมูลเพิ่มเติมได้ที่ โทรศัพท์ 0-2473-7000 ต่อ 1998 หรือผ่านเพจงานรับสมัครนักศึกษา สำนักส่งเสริมวิชาการและงานทะเบียน https://www.facebook.com/BsruAdmission",
+      "condition": "ไม่สอบสัมภาษณ์",
+      "interview_location": "ส่งหลักฐานการรายงานตัวเป็นนักศึกษา ได้ที่ https://aarservice.bsru.ac.th/document ตั้งแต่วันที่ 1 - 30 มิถุนายน 2569",
+      "interview_date": "ให้ผู้ผ่านการคัดเลือกและมีสิทธิ์เข้าศึกษา ศึกษารายละเอียดเกี่ยวกับการบันทึกข้อมูลรายงานตัว ผ่านเว็บไซต์  http://admission.bsru.ac.th (บันทึกข้อมูลได้ตั้งแต่วันที่ 28 พฤษภาคม 2569) ",
+      "interview_time": "ชำระค่าธรรมเนียมการศึกษา ตั้งแต่วันที่ 29 พฤษภาคม - 5 มิถุนายน 2569 ผ่านเคาน์เตอร์เซอร์วิส หรือธนาคารไทยพาณิชย์ ทุกสาขาทั่วประเทศ (ไม่ต้องเดินทางมามหาวิทยาลัย)",
+      "link": "http://admission.bsru.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-17T20:19:58.669Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "score_conditions": {}
+    }
+  ]
+}

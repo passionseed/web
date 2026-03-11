@@ -1,0 +1,100 @@
+{
+  "program": [
+    {
+      "program_id": "49180101220101A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีดิจิทัลและสารสนเทศ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 68.25,
+      "max_score": 92.75,
+      "min_score_ds": 68.25,
+      "max_score_ds": 89.25,
+      "receive_student_number": 15,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f076da195067d96fc904ea",
+      "university_id": "918",
+      "program_id": "49180101220101A",
+      "type": "1_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรดิจิทัลไอทีที่ตอบโจทย์อุตสาหกรรมดิจิทัล เรียนรู้ตั้งแต่พื้นฐานไปจนถึงการทำงานจริง ทั้งการวิเคราะห์และออกแบบระบบไอทีเพื่อพัฒนาธุรกิจ, การเขียนและพัฒนาโปรแกรม, สร้างเว็บ–แอปด้วยตัวเอง, การออกแบบสื่อกราฟิกดิจิทัล ฝึกทำโปรเจกต์จริงกับภาคธุรกิจ ครบทั้งสกิลด้านเทคนิค ความคิดสร้างสรรค์ และการบริหารจัดการ เรียนจบพร้อมทำงานในสายอาชีพที่กำลังเป็นที่ต้องการ เช่น โปรแกรมเมอร์, Developer, Data Analyst, E-Commerce&Tech Startup",
+      "condition": "เขียน SOP (Statement of purpose) บอกเรื่องราวเกี่ยวกับตัวเอง เหตุผล / ทัศนคติต่อสาขาวิชาที่เลือกสมัคร และผลงานการเข้าร่วมกิจกรรมด้านคุณธรรม จริยธรรม  และการประพฤติตนเป็นประโยชน์แก่สังคม (ความยาวไม่เกิน 2 หน้ากระดาษ ขนาดตัวอักษร 16 ไม่จำกัดตัวอักษร) สมัครและแนบ Portfolio ผ่านทาง: https://bit.ly/3tmSir9  รายละเอียดหลักสูตรอื่นๆ ของสถาบัน: https://www.pim.ac.th/faculty/bachelor",
+      "interview_location": "สถาบันการจัดการปัญญาภิวัฒน์ สำนักแนะแนวและรับสมัคร ชั้น L อาคาร CPALL Academy โทร. 02-855-0360",
+      "link": "https://bit.ly/3tmSir9 ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-16T04:38:50.442Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68f076da195067d96fc904ec",
+      "university_id": "918",
+      "program_id": "49180101220101A",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรดิจิทัลไอทีที่ตอบโจทย์อุตสาหกรรมดิจิทัล เรียนรู้ตั้งแต่พื้นฐานไปจนถึงการทำงานจริง ทั้งการวิเคราะห์และออกแบบระบบไอทีเพื่อพัฒนาธุรกิจ, การเขียนและพัฒนาโปรแกรม, สร้างเว็บ–แอปด้วยตัวเอง, การออกแบบสื่อกราฟิกดิจิทัล ฝึกทำโปรเจกต์จริงกับภาคธุรกิจ ครบทั้งสกิลด้านเทคนิค ความคิดสร้างสรรค์ และการบริหารจัดการ เรียนจบพร้อมทำงานในสายอาชีพที่กำลังเป็นที่ต้องการ เช่น โปรแกรมเมอร์, Developer, Data Analyst, E-Commerce&Tech Startup",
+      "condition": "สมัครผ่านทาง: https://bit.ly/3tmSir9 รายละเอียดหลักสูตรอื่นๆ ของสถาบัน: https://www.pim.ac.th/faculty/bachelor",
+      "interview_location": "สถาบันการจัดการปัญญาภิวัฒน์ สำนักแนะแนวและรับสมัคร ชั้น L อาคาร CPALL Academy โทร. 02-855-0360",
+      "link": "https://bit.ly/3tmSir9 ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-16T04:38:50.454Z"
+    },
+    {
+      "_id": "68f076da195067d96fc904ee",
+      "university_id": "918",
+      "program_id": "49180101220101A",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรดิจิทัลไอทีที่ตอบโจทย์อุตสาหกรรมดิจิทัล เรียนรู้ตั้งแต่พื้นฐานไปจนถึงการทำงานจริง ทั้งการวิเคราะห์และออกแบบระบบไอทีเพื่อพัฒนาธุรกิจ, การเขียนและพัฒนาโปรแกรม, สร้างเว็บ–แอปด้วยตัวเอง, การออกแบบสื่อกราฟิกดิจิทัล ฝึกทำโปรเจกต์จริงกับภาคธุรกิจ ครบทั้งสกิลด้านเทคนิค ความคิดสร้างสรรค์ และการบริหารจัดการ เรียนจบพร้อมทำงานในสายอาชีพที่กำลังเป็นที่ต้องการ เช่น โปรแกรมเมอร์, Developer, Data Analyst, E-Commerce&Tech Startup",
+      "condition": "เกรดเฉลี่ยไม่ต่ำกว่า 2.00",
+      "interview_location": "สถาบันการจัดการปัญญาภิวัฒน์ สำนักแนะแนวและรับสมัคร ชั้น L อาคาร CPALL Academy โทร. 02-855-0360",
+      "link": "https://bit.ly/3tmSir9 ",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-16T04:38:50.462Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "program": [
+    {
+      "program_id": "10080205902401A",
+      "project_id": "0",
+      "major_id": "A",
+      "program_name_th": "หลักสูตรอักษรศาสตรบัณฑิต สาขาวิชาภาษาตะวันตก",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "ภาษาฝรั่งเศส",
+      "project_name_th": "0",
+      "min_score": 56.0417,
+      "max_score": 63.9583,
+      "min_score_ds": 56.0417,
+      "max_score_ds": 63.9583,
+      "receive_student_number": 8,
+      "scores": {
+        "a_lv_83": 50,
+        "cal_type": "1",
+        "cal_score_sum": 50,
+        "cal_subject_name": "a_lv_70 a_lv_81 a_lv_82"
+      }
+    },
+    {
+      "program_id": "10080205902401A",
+      "project_id": "0",
+      "major_id": "B",
+      "program_name_th": "หลักสูตรอักษรศาสตรบัณฑิต สาขาวิชาภาษาตะวันตก",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "ภาษาเยอรมัน",
+      "project_name_th": "0",
+      "min_score": 46.0833,
+      "max_score": 58.6667,
+      "min_score_ds": 46.0833,
+      "max_score_ds": 58.6667,
+      "receive_student_number": 5,
+      "scores": {
+        "a_lv_84": 50,
+        "cal_type": "1",
+        "cal_score_sum": 50,
+        "cal_subject_name": "a_lv_70 a_lv_81 a_lv_82"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fb27dd4f0f85dd43bef6ba",
+      "university_id": "008",
+      "program_id": "10080205902401A",
+      "major_id": "B",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรอักษรศาสตรบัณฑิต สาขาวิชาภาษาตะวันตก (ภาษาเยอรมัน)",
+      "condition": "1.มีผลการเรียนเฉลี่ยสะสมวิชาภาษาเยอรมันไม่ต่ำกว่า 3.25\n  2.กรณีที่ไม่ได้ศึกษาวิชาภาษาเยอรมันในโรงเรียน จะต้องมีใบทดสอบภาษาเยอรมันระดับ A1 ขึ้นไป หรือเคยพำนักอยู่ในประเทศที่ใช้ภาษาเยอรมันประมาณ 1 ปี",
+      "interview_location": "สอบสัมภาษณ์แบบ online",
+      "interview_date": "24 ม.ค.2569",
+      "link": "https://admission.su.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "25-ธ.ค.-68",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-24T07:16:45.205Z"
+    },
+    {
+      "_id": "68fb27dd4f0f85dd43bef6b8",
+      "university_id": "008",
+      "program_id": "10080205902401A",
+      "major_id": "A",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรอักษรศาสตรบัณฑิต สาขาวิชาภาษาตะวันตก (ภาษาฝรั่งเศส)",
+      "condition": "1.มีผลการเรียนเฉลี่ยสะสมวิชาภาษาฝรั่งเศสไม่ต่ำกว่า 3.00\n  2.ผลการสอบวัดระดับภาษาฝรั่งเศส DELF A1",
+      "interview_location": "สอบสัมภาษณ์แบบ online",
+      "interview_date": "24 ม.ค.2569",
+      "link": "https://admission.su.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "25-ธ.ค.-68",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-24T07:16:45.200Z"
+    },
+    {
+      "_id": "68fb27de4f0f85dd43bef825",
+      "university_id": "008",
+      "program_id": "10080205902401A",
+      "major_id": "A",
+      "project_id": "A0083",
+      "project_name_th": "โครงการโควตา 28 จังหวัด",
+      "type": "2_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรอักษรศาสตรบัณฑิต สาขาวิชาภาษาตะวันตก (ภาษาฝรั่งเศส)",
+      "condition": "1. ผู้ที่กำลังศึกษา หรือ ผู้ที่สำเร็จการศึกษา ระดับชั้นมัธยมศึกษาตอนปลาย ชั้นปีที่ 6 หรือ เทียบเท่า ในปีการศึกษา 2568 ในโรงเรียนและวิทยาลัยต่าง ๆ ในเขตภูมิภาคตะวันตก ภาคกลางและภาคใต้ตอนบนของประเทศ 28 จังหวัด ดังนี้ กาญจนบุรี จันทบุรี ฉะเชิงเทรา ชลบุรี ชัยนาท ชุมพร ตราด นครนายก นครปฐม นนทบุรี ปทุมธานี ประจวบคีรีขันธ์ ปราจีนบุรี พระนครศรีอยุธยา เพชรบุรี ระนอง ระยอง ราชบุรี ลพบุรี สมุทรปราการ สมุทรสงคราม สมุทรสาคร สระแก้ว สระบุรี สิงห์บุรี สุพรรณบุรี อ่างทอง และอุทัยธานี",
+      "interview_location": "คณะอักษรศาสตร์ มหาวิทยาลัยศิลปากร นครปฐม",
+      "interview_date": "25320",
+      "link": "https://admission.su.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_a_lv_82": 40,
+        "min_a_lv_83": 50
+      },
+      "created_at": "2025-10-24T07:16:46.856Z"
+    },
+    {
+      "_id": "68fb27de4f0f85dd43bef827",
+      "university_id": "008",
+      "program_id": "10080205902401A",
+      "major_id": "B",
+      "project_id": "A0083",
+      "project_name_th": "โครงการโควตา 28 จังหวัด",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรอักษรศาสตรบัณฑิต สาขาวิชาภาษาตะวันตก (ภาษาเยอรมัน)",
+      "condition": "1. ผู้ที่กำลังศึกษา หรือ ผู้ที่สำเร็จการศึกษา ระดับชั้นมัธยมศึกษาตอนปลาย ชั้นปีที่ 6 หรือ เทียบเท่า ในปีการศึกษา 2568 ในโรงเรียนและวิทยาลัยต่าง ๆ ในเขตภูมิภาคตะวันตก ภาคกลางและภาคใต้ตอนบนของประเทศ 28 จังหวัด ดังนี้ กาญจนบุรี จันทบุรี ฉะเชิงเทรา ชลบุรี ชัยนาท ชุมพร ตราด นครนายก นครปฐม นนทบุรี ปทุมธานี ประจวบคีรีขันธ์ ปราจีนบุรี พระนครศรีอยุธยา เพชรบุรี ระนอง ระยอง ราชบุรี ลพบุรี สมุทรปราการ สมุทรสงคราม สมุทรสาคร สระแก้ว สระบุรี สิงห์บุรี สุพรรณบุรี อ่างทอง และอุทัยธานี",
+      "interview_location": "คณะอักษรศาสตร์ มหาวิทยาลัยศิลปากร นครปฐม",
+      "interview_date": "25320",
+      "link": "https://admission.su.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_a_lv_84": 40
+      },
+      "created_at": "2025-10-24T07:16:46.861Z"
+    },
+    {
+      "_id": "68fb27df4f0f85dd43bef973",
+      "university_id": "008",
+      "program_id": "10080205902401A",
+      "major_id": "A",
+      "type": "3_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรอักษรศาสตรบัณฑิต สาขาวิชาภาษาตะวันตก (ภาษาฝรั่งเศส)",
+      "interview_location": "ไม่มีการสอบสัมภาษณ์",
+      "link": "https://admission.su.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_a_lv_82": 40,
+        "min_a_lv_83": 50
+      },
+      "created_at": "2025-10-24T07:16:47.835Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_83": 50,
+        "cal_type": "1",
+        "cal_score_sum": 50,
+        "cal_subject_name": "a_lv_70 a_lv_81 a_lv_82"
+      }
+    },
+    {
+      "_id": "68fb27df4f0f85dd43bef975",
+      "university_id": "008",
+      "program_id": "10080205902401A",
+      "major_id": "B",
+      "type": "3_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรอักษรศาสตรบัณฑิต สาขาวิชาภาษาตะวันตก (ภาษาเยอรมัน)",
+      "interview_location": "ไม่มีการสอบสัมภาษณ์",
+      "link": "https://admission.su.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_a_lv_82": 40,
+        "min_a_lv_84": 40
+      },
+      "created_at": "2025-10-24T07:16:47.840Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_84": 50,
+        "cal_type": "1",
+        "cal_score_sum": 50,
+        "cal_subject_name": "a_lv_70 a_lv_81 a_lv_82"
+      }
+    }
+  ]
+}

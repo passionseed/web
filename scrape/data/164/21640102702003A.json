@@ -1,0 +1,83 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f5fdc3711afc43cbf06a50",
+      "university_id": "164",
+      "program_id": "21640102702003A",
+      "type": "1_2569",
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาภาษาจีน  4 ปี คณะมนุษยศาสตร์และสังคมศาสตร์",
+      "condition": "",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://regis.skru.ac.th/skru_app/",
+      "interview_time": "",
+      "link": "http://regis.skru.ac.th/skru_app",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-20T09:15:47.875Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f5fdc3711afc43cbf06a52",
+      "university_id": "164",
+      "program_id": "21640102702003A",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาภาษาจีน  4 ปี คณะมนุษยศาสตร์และสังคมศาสตร์",
+      "condition": "คุณสมบัติผู้สมัคร :  ม.6 หรือเทียบเท่า เกณฑ์การคัดเลือก : GPAX ไม่ต่ำกว่า 2.00/ TGAT/TPAT5/แฟ้มสะสมผลงาน Portfolio  สอบสัมภาษณ์",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://regis.skru.ac.th/skru_app/",
+      "interview_time": "0900-1100 น.",
+      "link": "http://regis.skru.ac.th/skru_app",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-20T09:15:47.882Z"
+    },
+    {
+      "_id": "68f5fdc3711afc43cbf06a54",
+      "university_id": "164",
+      "program_id": "21640102702003A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาภาษาจีน  4 ปี คณะมนุษยศาสตร์และสังคมศาสตร์",
+      "condition": "คุณสมบัติผู้สมัคร :  ม.6 หรือเทียบเท่า เกณฑ์การคัดเลือก : GPAX ไม่ต่ำกว่า 2.00  (40%)/ TGAT (30%)/ TPAT5 (30%) /สื่อสารด้วยภาษาจีนเบื้องต้นได้  ไม่สอบสัมภาษณ์",
+      "interview_location": "รายละเอียดจะประกาศให้ทราบอีกครั้งผ่านทางเว็บไซต์: http://regis.skru.ac.th/skru_app/",
+      "interview_time": "ไม่มีการสอบสัมภาษณ์",
+      "link": "http://regis.skru.ac.th/skru_app",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-20T09:15:47.889Z",
+      "min_total_score": null,
+      "scores": {
+        "gpax": 40,
+        "tgat": 30,
+        "tpat5": 30
+      }
+    }
+  ]
+}

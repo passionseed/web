@@ -9,53 +9,57 @@ const supabase = createClient(
 );
 
 async function getEmbeddings(texts: string[]): Promise<number[][]> {
-  const res = await fetch(`${TEI_URL}/embed`, {
+  const res = await fetch(`${TEI_URL}/v1/embeddings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputs: texts, normalize: true }),
+    body: JSON.stringify({ input: texts, model: "BAAI/bge-m3" }),
   });
   if (!res.ok) throw new Error(`TEI error: ${res.status} ${await res.text()}`);
-  return res.json();
+  const data = await res.json();
+  return data.data.map((d: any) => d.embedding);
 }
 
 async function main() {
-  // Fetch all programs without embeddings
-  const { data: programs, error } = await supabase
-    .from("tcas_programs")
-    .select("program_id, search_text")
-    .is("embedding", null);
+  while (true) {
+    // Fetch all programs without embeddings (Supabase has a 1000 row limit per request)
+    const { data: programs, error } = await supabase
+      .from("tcas_programs")
+      .select("program_id, search_text")
+      .is("embedding", null)
+      .limit(1000);
 
-  if (error) throw error;
-  if (!programs?.length) {
-    console.log("All programs already have embeddings.");
-    return;
-  }
+    if (error) throw error;
+    if (!programs?.length) {
+      console.log("All programs already have embeddings.");
+      break;
+    }
 
-  console.log(`Generating embeddings for ${programs.length} programs...`);
+    console.log(`Generating embeddings for ${programs.length} programs...`);
 
-  for (let i = 0; i < programs.length; i += BATCH_SIZE) {
-    const batch = programs.slice(i, i + BATCH_SIZE);
-    const texts = batch.map((p) => p.search_text ?? p.program_id);
+    for (let i = 0; i < programs.length; i += BATCH_SIZE) {
+      const batch = programs.slice(i, i + BATCH_SIZE);
+      const texts = batch.map((p) => p.search_text ?? p.program_id);
 
-    try {
-      const embeddings = await getEmbeddings(texts);
+      try {
+        const embeddings = await getEmbeddings(texts);
 
-      // Update each program with its embedding
-      await Promise.all(
-        batch.map((p, idx) =>
-          supabase
-            .from("tcas_programs")
-            .update({ embedding: embeddings[idx] as any })
-            .eq("program_id", p.program_id)
-        )
-      );
+        // Update each program with its embedding
+        await Promise.all(
+          batch.map((p, idx) =>
+            supabase
+              .from("tcas_programs")
+              .update({ embedding: embeddings[idx] as any })
+              .eq("program_id", p.program_id)
+          )
+        );
 
-      console.log(
-        `[${Math.min(i + BATCH_SIZE, programs.length)}/${programs.length}] embedded`
-      );
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`Batch ${i}-${i + BATCH_SIZE} failed: ${msg}`);
+        console.log(
+          `[${Math.min(i + BATCH_SIZE, programs.length)}/${programs.length}] embedded`
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Batch ${i}-${i + BATCH_SIZE} failed: ${msg}`);
+      }
     }
   }
 

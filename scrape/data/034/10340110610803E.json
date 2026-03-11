@@ -1,0 +1,122 @@
+{
+  "program": [
+    {
+      "program_id": "10340110610803E",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาธุรกิจระดับโลกและความเป็นผู้ประกอบการในยุคดิจิทัล (หลักสูตรนานาชาติ)",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาธุรกิจระดับโลกและความเป็นผู้ประกอบการในยุคดิจิทัล (หลักสูตรนานาชาติ)",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 60,
+      "scores": {
+        "gpax": 75,
+        "tgat1": 25
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef7b47095f32ab0fee1b2b",
+      "university_id": "034",
+      "program_id": "10340110610803E",
+      "project_name_th": "บธ.บ. สาขาธุรกิจระดับโลกและความเป็นผู้ประกอบการในยุคดิจิทัล (หลักสูตรนานาชาติ)",
+      "project_name_en": "B.B.A. Global Business and Digital Age Entrepreneurship (International Program)",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาธุรกิจระดับโลกและความเป็นผู้ประกอบการในยุคดิจิทัล",
+      "condition": "มีทักษะการสื่อสารภาษาอังกฤษในระดับดี มีความสนใจในการเป็นผู้ประกอบการธุรกิจ",
+      "interview_location": "ที่อยู่สถาบันการศึกษานานาชาติ มหาวิทยาลัยรามตำแหง 282 ถนนรามคำแหง แขวงหัวหมาก เขตบางกะปิ กรุงเทพมหานคร 10240 อาคารสำนักพิมพ์ ชั้น 7",
+      "interview_date": "12 ม.ค. 69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://iis.ru.ac.th/index.php?option=com_sppagebuilder&view=page&id=87",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "มีผลงาน โครงงานหรือรางวัลด้านการบริหารธุรกิจหรือไม่",
+        "folio_q1_type": "B",
+        "closed_date": "30/12/2568",
+        "page_limit": "ไม่กำหนด"
+      },
+      "created_at": "2025-10-15T10:45:27.059Z"
+    },
+    {
+      "_id": "68ef7b47095f32ab0fee1b2d",
+      "university_id": "034",
+      "program_id": "10340110610803E",
+      "project_name_th": "บธ.บ. สาขาธุรกิจระดับโลกและความเป็นผู้ประกอบการในยุคดิจิทัล (หลักสูตรนานาชาติ)",
+      "project_name_en": "B.B.A. Global Business and Digital Age Entrepreneurship (International Program)",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาธุรกิจระดับโลกและความเป็นผู้ประกอบการในยุคดิจิทัล",
+      "condition": "มีทักษะการสื่อสารภาษาอังกฤษในระดับดี มีความสนใจในการเป็นผู้ประกอบการธุรกิจ",
+      "interview_location": "ที่อยู่สถาบันการศึกษานานาชาติ มหาวิทยาลัยรามตำแหง 282 ถนนรามคำแหง แขวงหัวหมาก เขตบางกะปิ กรุงเทพมหานคร 10240 อาคารสำนักพิมพ์ ชั้น 7",
+      "interview_date": "20 เม.ย. 69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://iis.ru.ac.th/index.php?option=com_sppagebuilder&view=page&id=87",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-15T10:45:27.065Z"
+    },
+    {
+      "_id": "68ef7b47095f32ab0fee1b2f",
+      "university_id": "034",
+      "program_id": "10340110610803E",
+      "project_name_th": "บธ.บ. สาขาธุรกิจระดับโลกและความเป็นผู้ประกอบการในยุคดิจิทัล (หลักสูตรนานาชาติ)",
+      "project_name_en": "B.B.A. Global Business and Digital Age Entrepreneurship (International Program)",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาธุรกิจระดับโลกและความเป็นผู้ประกอบการในยุคดิจิทัล",
+      "condition": "มีทักษะการสื่อสารภาษาอังกฤษในระดับดี มีความสนใจในการเป็นผู้ประกอบการธุรกิจ",
+      "interview_location": "ที่อยู่สถาบันการศึกษานานาชาติ มหาวิทยาลัยรามตำแหง 282 ถนนรามคำแหง แขวงหัวหมาก เขตบางกะปิ กรุงเทพมหานคร 10240 อาคารสำนักพิมพ์ ชั้น 7",
+      "interview_date": "1 มิ.ย. 69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://iis.ru.ac.th/index.php?option=com_sppagebuilder&view=page&id=87",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat1": 30,
+        "min_tgat1_tscore": 30,
+        "score_condition": 2,
+        "subject_names": "min_tgat1",
+        "score_minimum": "30"
+      },
+      "created_at": "2025-10-15T10:45:27.073Z",
+      "min_total_score": 0,
+      "scores": {
+        "priority_score": 10,
+        "gpax": 60,
+        "tgat1": 30
+      }
+    }
+  ]
+}

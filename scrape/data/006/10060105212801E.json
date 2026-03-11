@@ -1,0 +1,125 @@
+{
+  "program": [
+    {
+      "program_id": "10060105212801E",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวัสดุศาสตร์และวิศวกรรมนาโน (หลักสูตรนานาชาติ)",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 47.335,
+      "max_score": 57.02,
+      "min_score_ds": 44.1,
+      "max_score_ds": 57.02,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 30,
+        "a_lv_61": 10,
+        "a_lv_64": 10,
+        "a_lv_65": 15,
+        "a_lv_66": 15,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de04788348c",
+      "university_id": "006",
+      "program_id": "10060105212801E",
+      "type": "1_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://sim.sc.mahidol.ac.th/prospective-students/admission-requirement/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.7,
+      "score_conditions": {
+        "min_gpax": 2.7
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.233Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb0876f5",
+      "university_id": "006",
+      "program_id": "10060105212801E",
+      "project_id": "B2041",
+      "project_name_th": "โครงการ MOU (โรงเรียนเครือข่าย)",
+      "join_id": "",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวัสดุศาสตร์และวิศวกรรมนาโน (4 ปี)",
+      "condition": "กำลังศึกษา/จบการศึกษาจากโรงเรียนสมาชิกเครือข่ายความร่วมมือทางวิชาการ ดูรายละเอียดได้ที่ https://sim.sc.mahidol.ac.th/collaborations/school-network/",
+      "interview_location": "คณะวิทยาศาสตร์ มหาวิทยาลัยมหิดล วิทยาเขตศาลายา",
+      "interview_date": "วันเสาร์ที่ 25 เมษายน 2569",
+      "interview_time": "เวลา 09.00-12.00 น.",
+      "link": "https://sim.sc.mahidol.ac.th/admission-timeline/ และ https://tcas.mahidol.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.7,
+      "score_conditions": {
+        "min_gpax": 2.7
+      },
+      "created_at": "2025-10-21T03:07:14.095Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb0877e3",
+      "university_id": "006",
+      "program_id": "10060105212801E",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาวัสดุศาสตร์และวิศวกรรมนาโน (4 ปี)",
+      "condition": "",
+      "interview_location": "คณะวิทยาศาสตร์ มหาวิทยาลัยมหิดล วิทยาเขตศาลายา",
+      "interview_date": "วันจันทร์ที่ 1 มิถุนายน 2569",
+      "interview_time": "เวลา 09.00-12.00 น.",
+      "link": "https://sim.sc.mahidol.ac.th/admission-timeline/ และ https://tcas.mahidol.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 5,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_a_lv_61": 15,
+        "min_a_lv_65": 15,
+        "min_a_lv_66": 15,
+        "min_a_lv_82": 30,
+        "score_condition": 2,
+        "subject_names": "min_a_lv_61 min_a_lv_64 min_a_lv_65 min_a_lv_66 min_a_lv_82",
+        "score_minimum": "75"
+      },
+      "created_at": "2025-10-21T03:07:14.800Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 30,
+        "a_lv_61": 10,
+        "a_lv_64": 10,
+        "a_lv_65": 15,
+        "a_lv_66": 15,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

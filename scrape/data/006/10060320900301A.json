@@ -1,0 +1,181 @@
+{
+  "program": [
+    {
+      "program_id": "10060320900301A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาการประกอบการเชิงนิเวศวัฒนธรรม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 77,
+      "max_score": 99,
+      "min_score_ds": 67.75,
+      "max_score_ds": 99,
+      "receive_student_number": 50,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de0478834ee",
+      "university_id": "006",
+      "program_id": "10060320900301A",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://www.facebook.com/PublicHealthMUNA และ https://na.mahidol.ac.th/academic/tcasmuna",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.570Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb087799",
+      "university_id": "006",
+      "program_id": "10060320900301A",
+      "project_id": "B2110",
+      "project_name_th": "โครงการผู้ปกครองเป็นนักธุรกิจหรือผู้ประกอบการ (จำนวนรับร่วม)",
+      "join_id": "2013",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "interview_location": "อาคารวิทยาศาสตร์เอนกประสงค์ โครงการจัดตั้งวิทยาเขตนครสวรรค์ มหาวิทยาลัยมหิดล",
+      "interview_date": "25/4/2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "link รายละเอียด วันเวลาสถานที่ การสอบสัมภาษณ์  ได้ที่ Link: https://www.facebook.com/ECEP.MUNA และ https://na.mahidol.ac.th/academic/tcasmuna",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-21T03:07:14.574Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb087797",
+      "university_id": "006",
+      "program_id": "10060320900301A",
+      "project_id": "B2109",
+      "project_name_th": "โครงการพื้นที่ (จำนวนรับร่วม)",
+      "join_id": "2013",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "interview_location": "อาคารวิทยาศาสตร์เอนกประสงค์ โครงการจัดตั้งวิทยาเขตนครสวรรค์ มหาวิทยาลัยมหิดล",
+      "interview_date": "25/4/2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "link รายละเอียด วันเวลาสถานที่ การสอบสัมภาษณ์  ได้ที่ Link: https://www.facebook.com/ECEP.MUNA และ https://na.mahidol.ac.th/academic/tcasmuna",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-21T03:07:14.568Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb08779b",
+      "university_id": "006",
+      "program_id": "10060320900301A",
+      "project_id": "B2111",
+      "project_name_th": "โครงการแนะแนวหรือ Open House (จำนวนรับร่วม)",
+      "join_id": "2013",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "interview_location": "อาคารวิทยาศาสตร์เอนกประสงค์ โครงการจัดตั้งวิทยาเขตนครสวรรค์ มหาวิทยาลัยมหิดล",
+      "interview_date": "25/4/2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "link รายละเอียด วันเวลาสถานที่ การสอบสัมภาษณ์  ได้ที่ Link: https://www.facebook.com/ECEP.MUNA และ https://na.mahidol.ac.th/academic/tcasmuna",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-21T03:07:14.579Z"
+    },
+    {
+      "_id": "68f6f8e227b76be0eb08779d",
+      "university_id": "006",
+      "program_id": "10060320900301A",
+      "project_id": "B2112",
+      "project_name_th": "โครงการผู้มีคะแนน GAT (จำนวนรับร่วม)",
+      "join_id": "2013",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี",
+      "interview_location": "อาคารวิทยาศาสตร์เอนกประสงค์ โครงการจัดตั้งวิทยาเขตนครสวรรค์ มหาวิทยาลัยมหิดล",
+      "interview_date": "25/4/2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "link รายละเอียด วันเวลาสถานที่ การสอบสัมภาษณ์  ได้ที่ Link: https://www.facebook.com/ECEP.MUNA และ https://na.mahidol.ac.th/academic/tcasmuna",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-21T03:07:14.585Z"
+    },
+    {
+      "_id": "68f6f8e327b76be0eb087847",
+      "university_id": "006",
+      "program_id": "10060320900301A",
+      "type": "3_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-21T03:07:15.102Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

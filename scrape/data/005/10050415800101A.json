@@ -1,0 +1,129 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e37f2d2ef4c36c489abaa4",
+      "university_id": "005",
+      "program_id": "10050415800101A",
+      "project_name_th": "รอบ 1 แฟ้มสะสมผลงาน Portfolio ",
+      "type": "1_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-9",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "17/11/2568",
+        "page_limit": "20"
+      },
+      "created_at": "2025-10-06T08:34:53.730Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f7478c27b76be0eb0982ff",
+      "university_id": "005",
+      "program_id": "10050415800101A",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-30",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:52.241Z"
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985fc",
+      "university_id": "005",
+      "program_id": "10050415800101A",
+      "project_id": "T3001",
+      "project_name_th": "รูปแบบที่ 1 A-Level",
+      "join_id": "3025",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "1 เป็นผู้ที่ไม่มีโรคติดต่อร้ายแรง หรือโรคที่จะเป็นอุปสรรคต่อการศึกษา\n2 ผู้สมัครต้องไม่มีอาการตาบอดสี ไม่มีความพิการที่จะเป็นอุปสรรคต่อการศึกษาเชิงปฏิบัติการออกแบบ โดยต้องมีใบรับรองแพทย์ว่าตาไม่บอดสี (จากโรงพยาบาลของรัฐเท่านั้น) ยื่นพร้อมช่วงการรับสมัครรอบที่ 3 (ระหว่างวันที่ 6-12 พฤษภาคม 2569) ทางหน้าเว็บไซต์คณะศิลปกรรมศาสตร์ https://fineart.tu.ac.th\n(คุณสมบัติเฉพาะ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือกแต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.517Z",
+      "min_total_score": 0,
+      "scores": {
+        "a_lv_70": 40,
+        "a_lv_81": 30,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb0985fe",
+      "university_id": "005",
+      "program_id": "10050415800101A",
+      "project_id": "T3020",
+      "project_name_th": "รูปแบบที่ 2 TPAT2+A-Level",
+      "join_id": "3025",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "1 เป็นผู้ที่ไม่มีโรคติดต่อร้ายแรง หรือโรคที่จะเป็นอุปสรรคต่อการศึกษา\n2 ผู้สมัครต้องไม่มีอาการตาบอดสี ไม่มีความพิการที่จะเป็นอุปสรรคต่อการศึกษาเชิงปฏิบัติการออกแบบ โดยต้องมีใบรับรองแพทย์ว่าตาไม่บอดสี (จากโรงพยาบาลของรัฐเท่านั้น) ยื่นพร้อมช่วงการรับสมัครรอบที่ 3 (ระหว่างวันที่ 6-12 พฤษภาคม 2569) ทางหน้าเว็บไซต์คณะศิลปกรรมศาสตร์ https://fineart.tu.ac.th\n(คุณสมบัติเฉพาะ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือกแต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.523Z",
+      "min_total_score": 0,
+      "scores": {
+        "tpat2": 60,
+        "a_lv_70": 20,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68f7478e27b76be0eb098600",
+      "university_id": "005",
+      "program_id": "10050415800101A",
+      "project_id": "T3024",
+      "project_name_th": "รูปแบบที่ 3  TPAT21",
+      "join_id": "3025",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "1 เป็นผู้ที่ไม่มีโรคติดต่อร้ายแรง หรือโรคที่จะเป็นอุปสรรคต่อการศึกษา\n2 ผู้สมัครต้องไม่มีอาการตาบอดสี ไม่มีความพิการที่จะเป็นอุปสรรคต่อการศึกษาเชิงปฏิบัติการออกแบบ โดยต้องมีใบรับรองแพทย์ว่าตาไม่บอดสี (จากโรงพยาบาลของรัฐเท่านั้น) ยื่นพร้อมช่วงการรับสมัครรอบที่ 3 (ระหว่างวันที่ 6-12 พฤษภาคม 2569) ทางหน้าเว็บไซต์คณะศิลปกรรมศาสตร์ https://fineart.tu.ac.th\n(คุณสมบัติเฉพาะ เป็นคุณสมบัติที่ไม่สามารถคัดกรองได้ด้วยระบบ ผู้สมัครต้องตรวจสอบตนเองก่อนสมัคร หากเป็นผู้ผ่านการคัดเลือกแต่มีคุณสมบัติไม่ตรงตามประกาศ จะถือว่าเป็นผู้ไม่ผ่านการคัดเลือก เนื่องจากผิดคุณสมบัติการรับเข้าศึกษา)",
+      "link": "www.tuadmissions.in.th/admissions#tab-pane-10",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:42:54.529Z",
+      "min_total_score": 0,
+      "scores": {
+        "tpat21": 100
+      }
+    }
+  ]
+}

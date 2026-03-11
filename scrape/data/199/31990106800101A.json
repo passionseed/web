@@ -1,0 +1,106 @@
+{
+  "program": [
+    {
+      "program_id": "31990106800101A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ.นวัตกรรมสร้างสรรค์และการเป็นผู้ประกอบการ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 67,
+      "max_score": 76.5,
+      "min_score_ds": 67,
+      "max_score_ds": 76.5,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8916d9ec1a4bec7223d7b",
+      "university_id": "199",
+      "program_id": "31990106800101A",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชานวัตกรรมสร้างสรรค์และการเป็นผู้ประกอบการ ศศ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1.รับผู้สำเร็จการศึกษาระดับ BTEC Level 3 สาขา Art and Design หรือสาขาที่เกี่ยวข้อง \n2. เป็นผู้ที่กำลังศึกษาชั้นมัธยมชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า ทุกกลุ่มสาระการเรียนรู้\n3. เกรดเฉลี่ยสะสม 5 ภาค เกรดเฉลี่ย 2.00 ขึ้นไป\n4. สอบสัมภาษณ์ (100%)\n5. ต้องไม่เป็นผู้มีตาบอดสี",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "24-Jan-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "1/14/2569",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T08:10:21.383Z"
+    },
+    {
+      "_id": "68f8916d9ec1a4bec7223d7d",
+      "university_id": "199",
+      "program_id": "31990106800101A",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชานวัตกรรมสร้างสรรค์และการเป็นผู้ประกอบการ ศศ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. รับผู้สำเร็จการศึกษาระดับ BTEC Level 3 สาขา Art and Design หรือสาขาที่เกี่ยวข้อง เป็นผู้ที่กำลังศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า \n2. ทุกกลุ่มสาระการเรียนรู้        \n3. portfolio (50%)                                  \n4. สัมภาษณ์ (50%)    \nส่ง Portfolio ผ่านช่องทางอีเมลล์  panchanok.p@gmail.com",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "25-Apr-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-22T08:10:21.389Z"
+    },
+    {
+      "_id": "68f8916d9ec1a4bec7223d7f",
+      "university_id": "199",
+      "program_id": "31990106800101A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชานวัตกรรมสร้างสรรค์และการเป็นผู้ประกอบการ ศศ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. รับผู้สำเร็จการศึกษาระดับ BTEC Level 3 สาขา Art and Design หรือสาขาที่เกี่ยวข้อง เป็นผู้ที่กำลังศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า\n2. ทุกกลุ่มสาระการเรียนรู้   \n3. GPAX = 100%  ",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "30-May-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-22T08:10:21.396Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

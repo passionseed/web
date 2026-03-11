@@ -1,0 +1,80 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68f7520727b76be0eb09a085",
+      "university_id": "016",
+      "program_id": "10160102800301A",
+      "project_id": "A0007",
+      "project_name_th": "แฟ้มสะสมผลงาน",
+      "type": "1_2569",
+      "receive_student_number": 70,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T09:27:35.254Z"
+    },
+    {
+      "_id": "68f7520727b76be0eb09a0a7",
+      "university_id": "016",
+      "program_id": "10160102800301A",
+      "project_id": "B0031",
+      "project_name_th": "โควตาสถานศึกษาที่อยู่ในเขตพื้นที่กรุงเทพมหานคร จังหวัดในปริมณฑล จังหวัดในภาคตะวันออก และจังหวัดในภาคกลาง",
+      "join_id": "1066",
+      "type": "2_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-21T09:27:35.341Z"
+    },
+    {
+      "_id": "68f7520727b76be0eb09a0a9",
+      "university_id": "016",
+      "program_id": "10160102800301A",
+      "project_id": "B0022",
+      "project_name_th": "โควตานักเรียนที่มีความสามารถพิเศษทางวิชาชีพ",
+      "join_id": "1066",
+      "type": "2_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-21T09:27:35.346Z"
+    }
+  ]
+}

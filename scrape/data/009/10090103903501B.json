@@ -1,0 +1,524 @@
+{
+  "program": [
+    {
+      "program_id": "10090103903501B",
+      "project_id": "A0037",
+      "major_id": "B",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาสังคมวิทยาเพื่อการพัฒนา",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "วิชาเอกการพัฒนาชุมชนเมือง (โครงการพิเศษ)",
+      "project_name_th": "Admission-สาขาวิชาสังคมวิทยาเพื่อการพัฒนา วิชาเอกการพัฒนาชุมชนเมือง (โครงการพิเศษ)",
+      "min_score": 54.2166,
+      "max_score": 60.5166,
+      "min_score_ds": 54.1162,
+      "max_score_ds": 57.4166,
+      "receive_student_number": 36,
+      "scores": {
+        "tgat": 60,
+        "a_lv_70": 20,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "program_id": "10090103903501B",
+      "project_id": "A0038",
+      "major_id": "D",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาสังคมวิทยาเพื่อการพัฒนา",
+      "program_type_name_th": "ภาษาไทย พิเศษ",
+      "major_name_th": "วิชาเอกการวิจัยสังคมวิทยาเพื่อการพัฒนา (โครงการพิเศษ)",
+      "project_name_th": "Admission-สาขาวิชาสังคมวิทยาเพื่อการพัฒนา วิชาเอกการวิจัยสังคมวิทยาเพื่อการพัฒนา (โครงการพิเศษ)",
+      "min_score": 53.9996,
+      "max_score": 61.0248,
+      "min_score_ds": 53.7916,
+      "max_score_ds": 61.0248,
+      "receive_student_number": 40,
+      "scores": {
+        "tgat": 60,
+        "a_lv_70": 20,
+        "a_lv_81": 10,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34771b0969b83dd6d6c7",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "B",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 6,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "จดหมายแนะนำตัว (Statement of Purpose: SOP) เพื่อแสดงถึงเหตุผลความสนใจ ความสามารถ และเป้าหมายในการศึกษาต่อในหลักสูตรสังคมวิทยาเพื่อการพัฒนา (วิชาเอกที่นิสิตสนใจ)",
+        "folio_q1_type": "B",
+        "folio_q2": "รายชื่อโครงการหรือกิจกรรมที่แสดงถึงทักษะ ความสามารถ และความรับผิดชอบที่มีต่อสังคม เช่น ผลงานด้านวิชาการ ผลงานด้านพัฒนาสังคม หรือผลงานด้านการเมือง ให้เชื่อมโยงกับสาขาวิชาเอกที่สมัคร โดยมีการจัดแบ่งเป็นหมวดหมู่ให้ชัดเจน เช่น ระดับนานาชาติ (ถ้ามี) ระดับประเทศ (ถ้ามี) ระดับภูมิภาค (ถ้ามี) ระดับจังหวัด (ถ้ามี) และ/หรือระดับโรงเรียน",
+        "folio_q2_type": "C",
+        "folio_q3": "หนังสือรับรองโครงการหรือกิจกรรมตามที่ระบุ จำนวน 1 ฉบับ จากอาจารย์ที่ปรึกษา หรือ อาจารย์ผู้สอน หรือ ผู้บริหารศึกษาที่นักเรียนศึกษาอยู่ พร้อมประทับตราของหน่วยงาน พร้อมให้ผู้สมัครลงนามรับรองข้อมูลที่ปรากฏในหนังสือรับรองว่าเป็นความจริง",
+        "folio_q3_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:47.440Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6c9",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "B",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "จดหมายแนะนำตัว (Statement of Purpose: SOP) เพื่อแสดงถึงเหตุผลความสนใจ ความสามารถ และเป้าหมายในการศึกษาต่อในหลักสูตรสังคมวิทยาเพื่อการพัฒนา (วิชาเอกที่นิสิตสนใจ)",
+        "folio_q1_type": "B",
+        "folio_q2": "เขียนเรียงความ หัวข้อ “การใช้ทักษะกีฬาเพื่อพัฒนามหาวิทยาลัยอย่างไร”",
+        "folio_q2_type": "C",
+        "folio_q3": "รายชื่อโครงการหรือกิจกรรมที่แสดงถึงทักษะ ความสามารถ หรือรางวัลที่ได้จากการแข่งขันด้านกีฬา โดยมีการจัดแบ่งเป็นหมวดหมู่ให้ชัดเจน เช่น ระดับนานาชาติ (ถ้ามี) ระดับประเทศ (ถ้ามี) ระดับภูมิภาค (ถ้ามี) ระดับจังหวัด (ถ้ามี) และ/หรือระดับโรงเรียน และ หนังสือรับรองโครงการหรือกิจกรรมตามที่ระบุ จำนวน 1 ฉบับ จากอาจารย์ที่ปรึกษา หรือ อาจารย์ผู้สอน หรือ ผู้บริหารศึกษาที่นักเรียนศึกษาอยู่ พร้อมประทับตราของหน่วยงาน พร้อมให้ผู้สมัครลงนามรับรองข้อมูลที่ปรากฏในหนังสือรับรองว่าเป็นความจริง",
+        "folio_q3_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:47.448Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6cb",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "B",
+      "project_id": "G0002",
+      "project_name_th": "โครงการผู้พิการ",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "เป็นผู้มีความบกพร่อง และเป็นผู้จดทะเบียนเป็นคนพิการและมีบัตรประจำตัวคนพิการ ตามข้อใดข้อหนึ่ง ดังนี้\n1. เป็นผู้พิการทางการเคลื่อนไหวหรือร่างกายที่สามารถช่วยเหลือตัวเองได้ในชีวิตประจำวันโดยไม่ใช้รถเข็น Wheelchair (วีลแชร์) และไม่เป็นอุปสรรคต่อการศึกษาหรือทำงานในสาขาวิชาชีพ\n2. เป็นผู้พิการทางการได้ยินหรือสื่อความหมาย (หูตึง) ที่ใช้เครื่องช่วยฟังจนสามารถได้ยินและสามารถสื่อสารได้",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "สำเนาบัตรประจำตัวคนพิการ จำนวน 1 ฉบับ พร้อมระบุข้อความ “ใช้เพื่อสมัครเข้าศึกษาที่ มศว ปีการศึกษา 2569 เท่านั้น”",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:47.458Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6d7",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "D",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 6,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "จดหมายแนะนำตัว (Statement of Purpose: SOP) เพื่อแสดงถึงเหตุผลความสนใจ ความสามารถ และเป้าหมายในการศึกษาต่อในหลักสูตรสังคมวิทยาเพื่อการพัฒนา (วิชาเอกที่นิสิตสนใจ)",
+        "folio_q1_type": "B",
+        "folio_q2": "รายชื่อโครงการหรือกิจกรรมที่แสดงถึงทักษะ ความสามารถ และความรับผิดชอบที่มีต่อสังคม เช่น ผลงานด้านวิชาการ ผลงานด้านพัฒนาสังคม หรือผลงานด้านการเมือง ให้เชื่อมโยงกับสาขาวิชาเอกที่สมัคร โดยมีการจัดแบ่งเป็นหมวดหมู่ให้ชัดเจน เช่น ระดับนานาชาติ (ถ้ามี) ระดับประเทศ (ถ้ามี) ระดับภูมิภาค (ถ้ามี) ระดับจังหวัด (ถ้ามี) และ/หรือระดับโรงเรียน",
+        "folio_q2_type": "C",
+        "folio_q3": "หนังสือรับรองโครงการหรือกิจกรรมตามที่ระบุ จำนวน 1 ฉบับ จากอาจารย์ที่ปรึกษา หรือ อาจารย์ผู้สอน หรือ ผู้บริหารศึกษาที่นักเรียนศึกษาอยู่ พร้อมประทับตราของหน่วยงาน พร้อมให้ผู้สมัครลงนามรับรองข้อมูลที่ปรากฏในหนังสือรับรองว่าเป็นความจริง",
+        "folio_q3_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:47.493Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6d9",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "D",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "จดหมายแนะนำตัว (Statement of Purpose: SOP) เพื่อแสดงถึงเหตุผลความสนใจ ความสามารถ และเป้าหมายในการศึกษาต่อในหลักสูตรสังคมวิทยาเพื่อการพัฒนา (วิชาเอกที่นิสิตสนใจ)",
+        "folio_q1_type": "B",
+        "folio_q2": "เขียนเรียงความ หัวข้อ “การใช้ทักษะกีฬาเพื่อพัฒนามหาวิทยาลัยอย่างไร”",
+        "folio_q2_type": "C",
+        "folio_q3": "รายชื่อโครงการหรือกิจกรรมที่แสดงถึงทักษะ ความสามารถ หรือรางวัลที่ได้จากการแข่งขันด้านกีฬา โดยมีการจัดแบ่งเป็นหมวดหมู่ให้ชัดเจน เช่น ระดับนานาชาติ (ถ้ามี) ระดับประเทศ (ถ้ามี) ระดับภูมิภาค (ถ้ามี) ระดับจังหวัด (ถ้ามี) และ/หรือระดับโรงเรียน และ หนังสือรับรองโครงการหรือกิจกรรมตามที่ระบุ จำนวน 1 ฉบับ จากอาจารย์ที่ปรึกษา หรือ อาจารย์ผู้สอน หรือ ผู้บริหารศึกษาที่นักเรียนศึกษาอยู่ พร้อมประทับตราของหน่วยงาน พร้อมให้ผู้สมัครลงนามรับรองข้อมูลที่ปรากฏในหนังสือรับรองว่าเป็นความจริง",
+        "folio_q3_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:47.499Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6db",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "D",
+      "project_id": "G0002",
+      "project_name_th": "โครงการผู้พิการ",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "เป็นผู้มีความบกพร่อง และเป็นผู้จดทะเบียนเป็นคนพิการและมีบัตรประจำตัวคนพิการ ตามข้อใดข้อหนึ่ง ดังนี้\n1. เป็นผู้พิการทางการเคลื่อนไหวหรือร่างกายที่สามารถช่วยเหลือตัวเองได้ในชีวิตประจำวันโดยไม่ใช้รถเข็น Wheelchair (วีลแชร์) และไม่เป็นอุปสรรคต่อการศึกษาหรือทำงานในสาขาวิชาชีพ\n2. เป็นผู้พิการทางการได้ยินหรือสื่อความหมาย (หูตึง) ที่ใช้เครื่องช่วยฟังจนสามารถได้ยินและสามารถสื่อสารได้",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "สำเนาบัตรประจำตัวคนพิการ จำนวน 1 ฉบับ พร้อมระบุข้อความ “ใช้เพื่อสมัครเข้าศึกษาที่ มศว ปีการศึกษา 2569 เท่านั้น”",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:47.505Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 20,
+        "interview": 80
+      }
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6cd",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "B",
+      "project_id": "G0008",
+      "project_name_th": "โครงการนักกีฬา",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:47.464Z"
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6cf",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "B",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:47.470Z"
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6d1",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "B",
+      "project_id": "D0009",
+      "project_name_th": "โครงการโรงเรียนในเขตพื้นที่มหาวิทยาลัยและปริมณฑล",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:47.475Z"
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6d3",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "B",
+      "project_id": "D0004",
+      "project_name_th": "โครงการรับบุตรและคู่สมรสของทหาร ตำรวจตระเวนชายแดน",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:47.481Z"
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6dd",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "D",
+      "project_id": "G0008",
+      "project_name_th": "โครงการนักกีฬา",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:47.512Z"
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6df",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "D",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:47.518Z"
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6e1",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "D",
+      "project_id": "D0009",
+      "project_name_th": "โครงการโรงเรียนในเขตพื้นที่มหาวิทยาลัยและปริมณฑล",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:47.524Z"
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6e3",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "D",
+      "project_id": "D0004",
+      "project_name_th": "โครงการรับบุตรและคู่สมรสของทหาร ตำรวจตระเวนชายแดน",
+      "type": "2_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:47.530Z"
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6d5",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "B",
+      "project_id": "A0001",
+      "project_name_th": "Admission-สาขาวิชาสังคมวิทยาเพื่อการพัฒนา วิชาเอกการพัฒนาชุมชนเมือง (โครงการพิเศษ)",
+      "type": "3_2569",
+      "receive_student_number": 21,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 1,
+        "score_condition": 1,
+        "subject_names": "min_a_lv_82 min_a_lv_83 min_a_lv_84 min_a_lv_85 min_a_lv_86 min_a_lv_87 min_a_lv_88 min_a_lv_89",
+        "score_minimum": "1 1 1 1 1 1 1 1"
+      },
+      "created_at": "2025-10-25T02:22:47.487Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 60,
+        "a_lv_70": 20,
+        "a_lv_81": 10,
+        "cal_type": "1",
+        "cal_score_sum": 10,
+        "cal_subject_name": "a_lv_82|a_lv_83|a_lv_84|a_lv_85|a_lv_86|a_lv_87|a_lv_88|a_lv_89"
+      }
+    },
+    {
+      "_id": "68fc34771b0969b83dd6d6e5",
+      "university_id": "009",
+      "program_id": "10090103903501B",
+      "major_id": "D",
+      "project_id": "A0001",
+      "project_name_th": "Admission-สาขาวิชาสังคมวิทยาเพื่อการพัฒนา วิชาเอกการวิจัยสังคมวิทยาเพื่อการพัฒนา (โครงการพิเศษ)",
+      "type": "3_2569",
+      "receive_student_number": 21,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 1,
+        "score_condition": 1,
+        "subject_names": "min_a_lv_82 min_a_lv_83 min_a_lv_84 min_a_lv_85 min_a_lv_86 min_a_lv_87 min_a_lv_88 min_a_lv_89",
+        "score_minimum": "1 1 1 1 1 1 1 1"
+      },
+      "created_at": "2025-10-25T02:22:47.537Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 60,
+        "a_lv_70": 20,
+        "a_lv_81": 10,
+        "cal_type": "1",
+        "cal_score_sum": 10,
+        "cal_subject_name": "a_lv_82|a_lv_83|a_lv_84|a_lv_85|a_lv_86|a_lv_87|a_lv_88|a_lv_89"
+      }
+    }
+  ]
+}

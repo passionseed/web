@@ -1,0 +1,314 @@
+{
+  "program": [
+    {
+      "program_id": "10210112220301A",
+      "project_id": "M3001",
+      "major_id": "0",
+      "program_name_th": "วท.บ. วิทยาการข้อมูลประยุกต์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "min_score": 35.972,
+      "max_score": 61.944,
+      "min_score_ds": 35.972,
+      "max_score_ds": 61.944,
+      "receive_student_number": 40,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "program_id": "10210112220301A",
+      "project_id": "M3002",
+      "major_id": "0",
+      "program_name_th": "วท.บ. วิทยาการข้อมูลประยุกต์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 2",
+      "min_score": 0,
+      "max_score": 96.25,
+      "min_score_ds": 0,
+      "max_score_ds": 96.25,
+      "receive_student_number": 40,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7412927b76be0eb09593a",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M1004",
+      "project_name_th": "โควตาครูแนะแนว (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:37.959Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb0954eb",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M1009",
+      "project_name_th": "โควตารับตรง Portfolio",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.955Z"
+    },
+    {
+      "_id": "68f7412727b76be0eb0955a3",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M1006",
+      "project_name_th": "โควตาโรงเรียนสาธิตมหาวิทยาลัยมหาสารคาม (ฝ่ายมัธยม)",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:35.481Z"
+    },
+    {
+      "_id": "68f7412627b76be0eb095441",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M1003",
+      "project_name_th": "โควตาครูแนะแนว (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:34.483Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb095a42",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M1001",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคตะวันออกเฉียงเหนือ)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.658Z"
+    },
+    {
+      "_id": "68f7412a27b76be0eb0959d8",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M1002",
+      "project_name_th": "โควตาเด็กดีมีที่เรียน (ภาคอื่น ๆ)",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-21T08:15:38.367Z"
+    },
+    {
+      "_id": "68f7412827b76be0eb095733",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M2002",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 2",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:36.567Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "68f7412827b76be0eb095677",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M2001",
+      "project_name_th": "โควตาภาคตะวันออกเฉียงเหนือ ครั้งที่ 1",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:36.080Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "68f7412927b76be0eb0957de",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M3001",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 1",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 1
+      },
+      "created_at": "2025-10-21T08:15:37.063Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 100
+      }
+    },
+    {
+      "_id": "68f7412927b76be0eb095872",
+      "university_id": "021",
+      "program_id": "10210112220301A",
+      "project_id": "M3002",
+      "project_name_th": "รอบที่ 3 Admission รูปแบบที่ 2",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาวิทยาการข้อมูลประยุกต์ หลักสูตรภาษาไทย (หลักสูตร 4 ปี)",
+      "condition": "ผู้สมัครศึกษารายละเอียดการสมัครได้ที่เว็บไซต์ http://admission.msu.ac.th หรือ กองบริการการศึกษา มหาวิทยาลัยมหาสารคาม โทรศัพท์ 0-4375-4377",
+      "link": "http://admission.msu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-21T08:15:37.441Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      },
+      "score_conditions": {}
+    }
+  ]
+}

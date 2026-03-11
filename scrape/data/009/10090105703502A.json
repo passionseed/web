@@ -1,0 +1,899 @@
+{
+  "program": [
+    {
+      "program_id": "10090105703502A",
+      "project_id": "A0054",
+      "major_id": "B",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกการศึกษาตลอดชีวิต (กศ.บ.)",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการศึกษาตลอดชีวิต (กศ.บ.)",
+      "min_score": 68.7497,
+      "max_score": 74.0996,
+      "min_score_ds": 67.7498,
+      "max_score_ds": 73.2997,
+      "receive_student_number": 17,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "program_id": "10090105703502A",
+      "project_id": "A0055",
+      "major_id": "C",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกการศึกษาปฐมวัย (กศ.บ.)",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการศึกษาปฐมวัย (กศ.บ.)",
+      "min_score": 69.0997,
+      "max_score": 76.6625,
+      "min_score_ds": 69.0997,
+      "max_score_ds": 76.6625,
+      "receive_student_number": 30,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "program_id": "10090105703502A",
+      "project_id": "A0056",
+      "major_id": "D",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกจิตวิทยาและการแนะแนว (กศ.บ.)",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกจิตวิทยาและการแนะแนว (กศ.บ.)",
+      "min_score": 72.1372,
+      "max_score": 77.5498,
+      "min_score_ds": 72.1372,
+      "max_score_ds": 77.5498,
+      "receive_student_number": 11,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "program_id": "10090105703502A",
+      "project_id": "A0057",
+      "major_id": "E",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกเทคโนโลยีการศึกษาและคอมพิวเตอร์ (กศ.บ.)",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกเทคโนโลยีการศึกษาและคอมพิวเตอร์ (กศ.บ.)",
+      "min_score": 68.6875,
+      "max_score": 73.6249,
+      "min_score_ds": 68.3125,
+      "max_score_ds": 71.475,
+      "receive_student_number": 12,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "program_id": "10090105703502A",
+      "project_id": "A0058",
+      "major_id": "F",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกการสอนภาษาไทยและการสอนภาษาอังกฤษ (กศ.บ.)",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการสอนภาษาไทยและการสอนภาษาอังกฤษ (กศ.บ.)",
+      "min_score": 75.9054,
+      "max_score": 79.7026,
+      "min_score_ds": 75.9054,
+      "max_score_ds": 79.7026,
+      "receive_student_number": 5,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_81": 20,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "program_id": "10090105703502A",
+      "project_id": "A0059",
+      "major_id": "G",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกการสอนภาษาอังกฤษและการสอนสังคมศึกษา (กศ.บ.)",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการสอนภาษาอังกฤษและการสอนสังคมศึกษา (กศ.บ.)",
+      "min_score": 70.611,
+      "max_score": 74.636,
+      "min_score_ds": 70.611,
+      "max_score_ds": 74.636,
+      "receive_student_number": 15,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_70": 20,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "program_id": "10090105703502A",
+      "project_id": "A0060",
+      "major_id": "H",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกการสอนสังคมศึกษาและการสอนภาษาไทย (กศ.บ.)",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการสอนสังคมศึกษาและการสอนภาษาไทย (กศ.บ.)",
+      "min_score": 67.5444,
+      "max_score": 72.8832,
+      "min_score_ds": 67.5444,
+      "max_score_ds": 72.8832,
+      "receive_student_number": 10,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_70": 20,
+        "a_lv_81": 20,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "program_id": "10090105703502A",
+      "project_id": "A0061",
+      "major_id": "I",
+      "program_name_th": "หลักสูตรการศึกษาบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "วิชาเอกการสอนวิทยาศาสตร์และการสอนคณิตศาสตร์ (กศ.บ.)",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการสอนวิทยาศาสตร์และการสอนคณิตศาสตร์ (กศ.บ.)",
+      "min_score": 59.6094,
+      "max_score": 64.6304,
+      "min_score_ds": 59.4694,
+      "max_score_ds": 64.6304,
+      "receive_student_number": 11,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_61": 20,
+        "a_lv_63": 20,
+        "a_lv_82": 10
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34781b0969b83dd6d7b5",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "B",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 19,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.233Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7b7",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "B",
+      "project_id": "G0002",
+      "project_name_th": "โครงการผู้พิการ",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "ผู้สมัครจะต้องเป็นบุคคลผู้มีความพิการตามกฎหมายว่าด้วยการส่งเสริมและพัฒนาคุณภาพชีวิตคนพิการ\n1. เป็นผู้พิการทางการเคลื่อนไหวที่สามารถช่วยเหลือตนเองได้ในชีวิตประจำวัน และไม่เป็นอุปสรรคต่อการศึกษา\n2. ความพิการทางการเคลื่อนไหวหรือทางร่างกาย ความพิการทางร่างกาย หมายถึง การที่บุคคลมีข้อจำกัดในการปฏิบัติกิจกรรม ในชีวิตประจำวันหรือการเข้าไปมีส่วนร่วมในกิจกรรมทางสังคม ซึ่งเป็นผลมาจากการมีความบกพร่อง หรือความผิดปกติของศรีษะ ใบหน้า ลำตัว และภาพลักษณ์ภายนอกของร่างกายที่เห็นได้อย่างชัดเจน และสามารถช่วยเหลือตัวเองได้\n3. เป็นผู้พิการทางการเคลื่อนไหว (มือสองข้างแข็งแรงสามารถเขียนหนังสือและใช้งานได้ดี) สามารถช่วยเหลือตัวเองได้อย่างไม่เป็นอุปสรรคต่อการศึกษาและการใช้ชีวิตประจำวัน",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "สำเนาบัตรประจำตัวคนพิการ จำนวน 1 ฉบับ พร้อมระบุข้อความ “ใช้เพื่อสมัครเข้าศึกษาที่ มศว ปีการศึกษา 2569 เท่านั้น”",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.240Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7bf",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "D",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "มีผลงาน กิจกรรม หรือความสามารถสะท้อนถึงคุณลักษณะ ความสนใจ ในสาขาวิชาจิตวิทยาการแนะแนว",
+        "folio_q1_type": "C",
+        "folio_q2": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q2_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.265Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7c3",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "E",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.277Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7c9",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "G",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.300Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7cf",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "I",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.321Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7d3",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "J",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.335Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7d7",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "K",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.354Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7db",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "L",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "folio": {
+        "folio_q1": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 3 ฉบับ จากบุคคลต่อไปนี้\n1) ผู้บริหารหรือผู้ที่ได้รับมอบหมายจากผู้บริหารของโรงเรียน/สถานศึกษา ที่ผู้สมัครศึกษาอยู่ จำนวน 1 ฉบับ\n2) อาจารย์ประจำชั้น/อาจารย์ผู้สอน จำนวนรวม 2 ฉบับ\nโดยทำในรูปแบบ PDF ไฟล์แนบต่อท้ายแฟ้มสะสมผลงาน (TCASFolio) เพื่ออัพโหลดที่เว็บไซต์มหาวิทยาลัย",
+        "folio_q1_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:48.366Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7b3",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "A",
+      "project_id": "E0002",
+      "project_name_th": "โครงการทุนเอราวัณ คณะศึกษาศาสตร์ - กรุงเทพมหานคร",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 30,
+        "min_tpat5": 40
+      },
+      "created_at": "2025-10-25T02:22:48.227Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7b1",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "A",
+      "project_id": "E0001",
+      "project_name_th": "โครงการเพชรในตม คณะศึกษาศาสตร์",
+      "type": "2_2569",
+      "receive_student_number": 161,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tgat": 40,
+        "min_tpat5": 40,
+        "min_a_lv_61": 3
+      },
+      "created_at": "2025-10-25T02:22:48.221Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7bb",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "C",
+      "project_id": "E0002",
+      "project_name_th": "โครงการทุนเอราวัณ คณะศึกษาศาสตร์ - กรุงเทพมหานคร",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 30,
+        "min_tpat5": 40
+      },
+      "created_at": "2025-10-25T02:22:48.251Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7c7",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "F",
+      "project_id": "E0002",
+      "project_name_th": "โครงการทุนเอราวัณ คณะศึกษาศาสตร์ - กรุงเทพมหานคร",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 30,
+        "min_tpat5": 40
+      },
+      "created_at": "2025-10-25T02:22:48.293Z"
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7b9",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "B",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการศึกษาตลอดชีวิต (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "created_at": "2025-10-25T02:22:48.246Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7bd",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "C",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการศึกษาปฐมวัย (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75,
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "created_at": "2025-10-25T02:22:48.258Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7c1",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "D",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกจิตวิทยาและการแนะแนว (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "ผู้สมัครจะมีความประพฤติดี  มีร่างกายและจิตใจสมบูรณ์ ไม่ได้รับการวินิจฉัยว่าเป็นโรคทางจิตเวช",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "created_at": "2025-10-25T02:22:48.271Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7c5",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "E",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกเทคโนโลยีการศึกษาและคอมพิวเตอร์ (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "created_at": "2025-10-25T02:22:48.283Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 45,
+        "tpat5": 45,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7cb",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "G",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการสอนภาษาอังกฤษและการสอนสังคมศึกษา (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 5,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "created_at": "2025-10-25T02:22:48.308Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_70": 20,
+        "a_lv_82": 30
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7cd",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "H",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการสอนสังคมศึกษาและการสอนภาษาไทย (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 5,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "created_at": "2025-10-25T02:22:48.314Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_70": 20,
+        "a_lv_81": 20,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7d1",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "I",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการสอนวิทยาศาสตร์และการสอนคณิตศาสตร์ (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 6,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35,
+        "min_a_lv_61": 20,
+        "min_a_lv_63": 30
+      },
+      "created_at": "2025-10-25T02:22:48.328Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_61": 20,
+        "a_lv_63": 20,
+        "a_lv_82": 10
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7d5",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "J",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการศึกษาพิเศษและการสอนคณิตศาสตร์ (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 6,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35,
+        "min_a_lv_61": 20
+      },
+      "created_at": "2025-10-25T02:22:48.348Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_61": 30,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7d9",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "K",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการศึกษาพิเศษและการสอนภาษาไทย (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 5,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35
+      },
+      "created_at": "2025-10-25T02:22:48.360Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_81": 30,
+        "a_lv_82": 20
+      }
+    },
+    {
+      "_id": "68fc34781b0969b83dd6d7dd",
+      "university_id": "009",
+      "program_id": "10090105703502A",
+      "major_id": "L",
+      "project_id": "A0001",
+      "project_name_th": "Admission-หลักสูตรการศึกษาบัณฑิต วิชาเอกการศึกษาพิเศษและการสอนวิทยาศาสตร์ (กศ.บ.)",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_priority": 6,
+      "score_conditions": {
+        "min_tgat": 35,
+        "min_tpat5": 35,
+        "min_a_lv_63": 30
+      },
+      "created_at": "2025-10-25T02:22:48.372Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 20,
+        "tpat5": 30,
+        "a_lv_63": 30,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

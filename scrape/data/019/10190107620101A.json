@@ -1,0 +1,156 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e495f3ff75689dadef7122",
+      "university_id": "019",
+      "program_id": "10190107620101A",
+      "project_id": "G0005",
+      "project_name_th": "โครงการส่งเสริมนักเรียนที่มีคุณธรรมและจริยธรรม (เด็กดีมีที่เรียน)",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาการจัดการอุตสาหกรรมท่องเที่ยวและบริการ ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.918Z"
+    },
+    {
+      "_id": "68e495f2ff75689dadef6fda",
+      "university_id": "019",
+      "program_id": "10190107620101A",
+      "project_id": "G0002",
+      "project_name_th": "โครงการรับบุคคลเข้าศึกษาตามข้อตกลงความร่วมมือ (MOU)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาการจัดการอุตสาหกรรมท่องเที่ยวและบริการ ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:18.858Z"
+    },
+    {
+      "_id": "68e495f2ff75689dadef6f34",
+      "university_id": "019",
+      "program_id": "10190107620101A",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเพชรตะวันออก",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาการจัดการอุตสาหกรรมท่องเที่ยวและบริการ ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:18.251Z"
+    },
+    {
+      "_id": "68f62bf4e3d0ba4c22577a3d",
+      "university_id": "019",
+      "program_id": "10190107620101A",
+      "project_id": "H0006",
+      "project_name_th": "โครงการรับตรงในภาคตะวันออก 12 จังหวัด  ",
+      "type": "2_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาการจัดการอุตสาหกรรมท่องเที่ยวและบริการ ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 5,
+        "min_a_lv_62": 5
+      },
+      "created_at": "2025-10-20T12:32:52.575Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 50,
+        "tpat3": 40
+      }
+    },
+    {
+      "_id": "68f62bf5e3d0ba4c22577b92",
+      "university_id": "019",
+      "program_id": "10190107620101A",
+      "project_id": "J0010",
+      "project_name_th": "Admission ",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาการจัดการอุตสาหกรรมท่องเที่ยวและบริการ ภาคปกติ",
+      "condition": "รับผู้สำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "interview_location": "คณะบริหารธุรกิจ มหาวิทยาลัยบูรพา ชลบุรี",
+      "interview_date": "วันที่ 30 - 31 พฤษภาคม 2569 (อาจใช้ 1 วัน) ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "interview_time": "สอบสัมภาษณ์ เวลา 08.30-16.00 น. ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 5,
+        "min_a_lv_62": 5
+      },
+      "created_at": "2025-10-20T12:32:53.429Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 50,
+        "a_lv_62": 40
+      }
+    }
+  ]
+}

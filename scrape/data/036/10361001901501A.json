@@ -1,0 +1,103 @@
+{
+  "program": [
+    {
+      "program_id": "10361001901501A",
+      "project_id": "A1001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญาศาสนาและวัฒนธรรม คณะศาสนาและปรัชญา",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 25,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f3513eaf9c8ecfd60c495e",
+      "university_id": "036",
+      "program_id": "10361001901501A",
+      "project_id": "P1001",
+      "project_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญาศาสนาและวัฒนธรรม คณะศาสนาและปรัชญา",
+      "type": "1_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "\"ชื่อสถาบันอุดมศึกษา มหาวิทยาลัยมหามกุฏราชวิทยาลัย\n  วิทยาเขต/คณะ/ภาควิชา คณะศาสนาและปรัชญา/ภาควิชาปรัชญา\n  หมวดที่ 1 ข้อมูลทั่วไป\n  1. รหัสและชื่อหลักสูตร\n  รหัสหลักสูตร : 25491861105489\n  ภาษาไทย : ศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม\n  ภาษาอังกฤษ : Bachelor of Arts Program in Philosophy&#44; Religions and cultures\n  2. ชื่อปริญญาและสาขาวิชา\n  ชื่อเต็ม (ภาษาไทย) : ศิลปศาสตรบัณฑิต (ปรัชญา ศาสนาและวัฒนธรรม)\n  ชื่อย่อ (ภาษาไทย) : ศศ.บ. (ปรัชญา ศาสนาและวัฒนธรรม)\n  ชื่อเต็ม (ภาษาอังกฤษ) : Bachelor of Arts (Philosophy&#44; Religions and cultures)\n  ชื่อย่อ (ภาษาอังกฤษ) : B.A. (Philosophy&#44; Religions and cultures)\n  3. วิชาเอก\n  ปรัชญา ศาสนาและวัฒนธรรม\"",
+      "interview_location": "มหาวิทยาลัยมหามกุฏราชวิทยาลัย วิทยาลัยศาสนศาสตร์ยโสธร เลขที่ 174 หมู่ 3 ถนนวารีราชเดช ตำบลทุ่งแต้ อำเภอเมือง จังหวัดยโสธร 35000",
+      "link": "https://ybc.mbu.ac.th/, facebook : มมร ยโสธร สื่อสัมพันธ์ หรือ ตามประกาศกำหนดของมหาวิทยาลัย",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-18T08:35:10.831Z"
+    },
+    {
+      "_id": "68f3513eaf9c8ecfd60c4960",
+      "university_id": "036",
+      "program_id": "10361001901501A",
+      "project_id": "Q1001",
+      "project_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญาศาสนาและวัฒนธรรม คณะศาสนาและปรัชญา",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ชื่อสถาบันอุดมศึกษา มหาวิทยาลัยมหามกุฏราชวิทยาลัย วิทยาเขต/คณะ/ภาควิชา คณะศาสนาและปรัชญา/ภาควิชาปรัชญา หมวดที่ 1 ข้อมูลทั่วไป 1. รหัสและชื่อหลักสูตร รหัสหลักสูตร : 25491861105489 ภาษาไทย : ศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม ภาษาอังกฤษ : Bachelor of Arts Program in Philosophy&#44; Religions and cultures 2. ชื่อปริญญาและสาขาวิชา ชื่อเต็ม (ภาษาไทย) : ศิลปศาสตรบัณฑิต (ปรัชญา ศาสนาและวัฒนธรรม) ชื่อย่อ (ภาษาไทย) : ศศ.บ. (ปรัชญา ศาสนาและวัฒนธรรม) ชื่อเต็ม (ภาษาอังกฤษ) : Bachelor of Arts (Philosophy&#44; Religions and cultures) ชื่อย่อ (ภาษาอังกฤษ) : B.A. (Philosophy&#44; Religions and cultures) 3. วิชาเอก ปรัชญา ศาสนาและวัฒนธรรม",
+      "interview_location": "มหาวิทยาลัยมหามกุฏราชวิทยาลัย วิทยาลัยศาสนศาสตร์ยโสธร เลขที่ 174 หมู่ 3 ถนนวารีราชเดช ตำบลทุ่งแต้ อำเภอเมือง จังหวัดยโสธร 35000",
+      "link": "https://ybc.mbu.ac.th/, facebook : มมร ยโสธร สื่อสัมพันธ์ หรือ ตามประกาศกำหนดของมหาวิทยาลัย",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-18T08:35:10.838Z"
+    },
+    {
+      "_id": "68f3513eaf9c8ecfd60c4962",
+      "university_id": "036",
+      "program_id": "10361001901501A",
+      "project_id": "A1001",
+      "project_name_th": "หลักสูตรศิลปศาสตรบัณฑิต สาขาวิชาปรัชญาศาสนาและวัฒนธรรม คณะศาสนาและปรัชญา",
+      "type": "3_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ชื่อสถาบันอุดมศึกษา มหาวิทยาลัยมหามกุฏราชวิทยาลัย วิทยาเขต/คณะ/ภาควิชา คณะศาสนาและปรัชญา/ภาควิชาปรัชญา หมวดที่ 1 ข้อมูลทั่วไป 1. รหัสและชื่อหลักสูตร รหัสหลักสูตร : 25491861105489 ภาษาไทย : ศิลปศาสตรบัณฑิต สาขาวิชาปรัชญา ศาสนาและวัฒนธรรม ภาษาอังกฤษ : Bachelor of Arts Program in Philosophy&#44; Religions and cultures 2. ชื่อปริญญาและสาขาวิชา ชื่อเต็ม (ภาษาไทย) : ศิลปศาสตรบัณฑิต (ปรัชญา ศาสนาและวัฒนธรรม) ชื่อย่อ (ภาษาไทย) : ศศ.บ. (ปรัชญา ศาสนาและวัฒนธรรม) ชื่อเต็ม (ภาษาอังกฤษ) : Bachelor of Arts (Philosophy&#44; Religions and cultures) ชื่อย่อ (ภาษาอังกฤษ) : B.A. (Philosophy&#44; Religions and cultures) 3. วิชาเอก ปรัชญา ศาสนาและวัฒนธรรม",
+      "interview_location": "มหาวิทยาลัยมหามกุฏราชวิทยาลัย วิทยาลัยศาสนศาสตร์ยโสธร เลขที่ 174 หมู่ 3 ถนนวารีราชเดช ตำบลทุ่งแต้ อำเภอเมือง จังหวัดยโสธร 35000",
+      "link": "https://ybc.mbu.ac.th/, facebook : มมร ยโสธร สื่อสัมพันธ์ หรือ ตามประกาศกำหนดของมหาวิทยาลัย",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-18T08:35:10.845Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

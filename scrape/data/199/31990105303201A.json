@@ -1,0 +1,107 @@
+{
+  "program": [
+    {
+      "program_id": "31990105303201A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วศ.บ.วิศวกรรมซ่อมบำรุงอากาศยาน",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 71.5,
+      "max_score": 88.25,
+      "min_score_ds": 66.25,
+      "max_score_ds": 88.25,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8916d9ec1a4bec7223d63",
+      "university_id": "199",
+      "program_id": "31990105303201A",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาวิศวกรรมซ่อมบำรุงอากาศยาน วศ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า\n2. กลุ่มสาระการเรียนรู้วิทยาศาสตร์และคณิตศาสตร์ มีจำนวนหน่วยกิตรวมกันไม่ต่ำกว่า 30 หน่วยกิต\n3. เกรดเฉลี่ย 5 ภาค เกรดเฉลี่ย 2.50 ขึ้นไป\n4. Portfolio (60%)\nความสามารถพิเศษ/ความโดดเด่น ด้านวิชาการ ด้านกีฬา และด้านดนตรี\n5. สอบสัมภาษณ์ (40%)\n6. ต้องไม่เป็นผู้มีตาบอดสี",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "24-Jan-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "1/14/2569",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T08:10:21.316Z"
+    },
+    {
+      "_id": "68f8916d9ec1a4bec7223d65",
+      "university_id": "199",
+      "program_id": "31990105303201A",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาวิศวกรรมซ่อมบำรุงอากาศยาน วศ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า\n2. กลุ่มสาระการเรียนรู้วิทยาศาสตร์และคณิตศาสตร์ มีจำนวนหน่วยกิตรวมกันไม่ต่ำกว่า 30 หน่วยกิต\n3. เกรดเฉลี่ย 5 ภาค เกรดเฉลี่ย 2.00 ขึ้นไป\n4. วิชา A-Level (20%) = (ภาษาอังกฤษ=5%) (คณิตศาสตร์ 1=5%) (ฟิสิกส์=5%) (เคมี=5%)\n6. TGAT วิชาความถนัดทั่วไป (20%)\n7. TPAT3 วิทยาศาสตร์เทคโนโลยีและวิศวกรรมศาสตร์ (30%)\n7. สอบสัมภาษณ์ (30%)",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "25-Apr-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-22T08:10:21.321Z"
+    },
+    {
+      "_id": "68f8916d9ec1a4bec7223d67",
+      "university_id": "199",
+      "program_id": "31990105303201A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาวิศวกรรมซ่อมบำรุงอากาศยาน วศ.บ.(หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า\n2. กลุ่มสาระการเรียนรู้วิทยาศาสตร์และคณิตศาสตร์ มีจำนวนหน่วยกิตรวมกันไม่ต่ำกว่า 30 หน่วยกิต\n3. เกรดเฉลี่ยรวม 6 ภาคการศึกษา ไม่ต่ำกว่า 2.00 ขึ้นไป\n4. ต้องไม่เป็นผู้มีตาบอดสี\n5. GPAX = 100%  ",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "30-May-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "min_credit_gpa22_23": 30,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-22T08:10:21.326Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

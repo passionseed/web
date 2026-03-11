@@ -1,0 +1,541 @@
+{
+  "program": [
+    {
+      "program_id": "10200110500401A",
+      "project_id": "N3001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "admission (แบบที่ 1)",
+      "min_score": 13.7832,
+      "max_score": 42.2315,
+      "min_score_ds": 13.7832,
+      "max_score_ds": 41.6914,
+      "receive_student_number": 60,
+      "scores": {
+        "gpax": 20,
+        "tgat": 30,
+        "a_lv_61": 15,
+        "cal_type": "1",
+        "cal_score_sum": 35,
+        "cal_subject_name": "a_lv_64 a_lv_65 a_lv_66 "
+      }
+    },
+    {
+      "program_id": "10200110500401A",
+      "project_id": "N3002",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "admission (แบบที่ 2)",
+      "min_score": 10.4166,
+      "max_score": 45.5464,
+      "min_score_ds": 10.4166,
+      "max_score_ds": 45.5464,
+      "receive_student_number": 20,
+      "scores": {
+        "gpax": 20,
+        "tgat": 30,
+        "a_lv_61": 15,
+        "a_lv_63": 35
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e37ed52ef4c36c489ab159",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1001",
+      "project_name_th": "โครงการคัดเลือกนักเรียนที่มีผลการเรียนเป็นเลิศ",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3.5,
+      "score_conditions": {
+        "min_gpax": 3.5
+      },
+      "folio": {
+        "folio_q1": "มีผลการเรียนเฉลี่ยสะสม 5 ภาคเรียนไม่ต่ำกว่า 3.50 หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "เป็นนักเรียนกำลังศึกษาอยู่ในระดับชั้นมัธยมศึกษาปีที่ 6 ในเขตพื้นที่ 18 จังหวัดได้แก่ จังหวัดเชียงราย เชียงใหม่ แม่ฮ่องสอน ลำพูน ลำปาง พะเยา น่าน แพร่ แพงเพชร ตาก นครสวรรค์ พิจิตร พิษณุโลก เพชรบูรณ์ สุโขทัย อุตรดิตถ์ อุทัยธานี ชัยนาท หรือไม่",
+        "folio_q2_type": "A",
+        "folio_q3": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q3_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.377Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab15b",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1002",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน (สำหรับโรงเรียนที่สังกัด สพม. สพฐ. เท่านั้น)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นนักเรียนกำลังศึกษาอยู่ในระดับชั้นมัธยมศึกษาปีที่ 6 ในเขตพื้นที่ 18 จังหวัดได้แก่ จังหวัดเชียงราย เชียงใหม่ แม่ฮ่องสอน ลำพูน ลำปาง พะเยา น่าน แพร่ แพงเพชร ตาก นครสวรรค์ พิจิตร พิษณุโลก เพชรบูรณ์ สุโขทัย อุตรดิตถ์ อุทัยธานี ชัยนาท หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "โรงเรียนสังกัดสำนักงานคณะกรรมการการศึกษาขั้นพื้นฐานหรือไม่",
+        "folio_q2_type": "A",
+        "folio_q3": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q3_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.383Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab15d",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1003",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน (สำหรับโรงเรียนที่ไม่ได้สังกัด สพม. สพฐ.)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นนักเรียนกำลังศึกษาอยู่ในระดับชั้นมัธยมศึกษาปีที่ 6 ในเขตพื้นที่ 18 จังหวัดได้แก่ จังหวัดเชียงราย เชียงใหม่ แม่ฮ่องสอน ลำพูน ลำปาง พะเยา น่าน แพร่ แพงเพชร ตาก นครสวรรค์ พิจิตร พิษณุโลก เพชรบูรณ์ สุโขทัย อุตรดิตถ์ อุทัยธานี ชัยนาท หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "โรงเรียนไม่ได้สังกัดสำนักงานคณะกรรมการการศึกษาขั้นพื้นฐานหรือไม่",
+        "folio_q2_type": "A",
+        "folio_q3": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q3_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.390Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab15f",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1004",
+      "project_name_th": "โครงการผู้มีความสามารถพิเศษทางด้านกีฬา",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เคยเข้าร่วมแข่งขันในระดับต่างๆเหล่านี้อย่างใดอย่างหนึ่งหรือไม่ เช่น นักกีฬาตัวแทนทีมชาติไทยทุกระดับการแข่งขัน, เป็นนักกีฬาที่เข้าร่วมการแข่งขันการแข่งขันกีฬาไทยแลนด์โอเพ่น, กีฬาระดับนานาชาติ, กีฬาแห่งชาติ, กีฬาอาชีพ, กีฬาชิงชนะเลิศแห่งประเทศไทย, กีฬาเยาวชนแห่งชาติ, รายการแข่งขันกีฬาชิงถ้วยพระราชทานฯ หรือรางวัลพระราชทานฯ, กีฬาระดับสโมสร, กีฬานักเรียนนักศึกษาแห่งประเทศไทย, กีฬานักเรียนโรงเรียนกีฬาแห่งประเทศไทย, หรือเข้าร่วมการแข่งขันกีฬาที่สมาคมกีฬาแห่งประเทศไทยเป็นผู้จัดการแข่งขันระดับประเทศไทยขึ้นไป, การแข่งขันที่จัดขึ้นโดยภาครัฐหรือเอกชน ในระดับประเทศไทยขึ้นไป และทุกรายการแข่งขันต้องมีผลงานจากการแข่งขันได้อันดับที่ 1 - 3 ในรอบมหกรรมหรือรอบชิงชนะเลิศ ภายในระยะเวลาย้อนหลัง     ไม่เกิน 3 ปี (นับหลังจากวันที่เปิดรับสมัคร) และอนุโลมกรณีผลงานการแข่งขันในระดับภูมิภาค อันดับที่ 1 - 3 ย้อนหลังไม่เกิน 3 ปี",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.396Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab161",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1013",
+      "project_name_th": "โครงการสนับสนุนการจัดตั้งห้องเรียนวิทยาศาสตร์ในโรงเรียนโดยกำกับดูแลของมหาวิทยาลัย (วมว.)",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นนักเรียนที่กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ในโครงการสนับสนุนการจัดห้องเรียนวิทยาศาสตร์ในโรงเรียนโดยกำกับดูแลของมหาวิทยาลัย (วมว.) หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.402Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab163",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1014",
+      "project_name_th": "โครงการส่งเสริมและพัฒนาองค์กรปกครองส่วนท้องถิ่น",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นบุตรของผู้ที่ทำงานเกี่ยวข้องกับองค์กรปกครองส่วนท้องถิ่นหรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.408Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab165",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1015",
+      "project_name_th": "โครงการทายาทเกษตรกร/เกษตรกรรุ่นใหม่",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นนักเรียนที่เป็นบุตรหลานของบิดา มารดา ปู่ ย่า ตา ยาย ที่สืบสายโลหิตโดยตรง หรือผู้ปกครองที่มีอาชีพเกี่ยวขัองกับการเกษตร หรือเคยเข้าร่วมกิจกรรม การแข่งขันในงานเกษตรนเรศวร หรือเคยเข้าอบรมกับคณะเกษตรศาสตร์ฯ มหาวิทยาลัยนเรศวร  หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.413Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab167",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1022",
+      "project_name_th": "โควตาพิเศษสำหรับนักเรียนโรงเรียนมัธยมสาธิตมหาวิทยาลัยนเรศวร",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 โรงเรียนมัธยมสาธิตมหาวิทยาลัยนเรศวร หรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.419Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab169",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1033",
+      "project_name_th": "โครงการยุวเกษตรกร",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นนักเรียนที่กำลังศึกษาอยู่ในชั้นมัธยมศึกษาปีที่ 6 และมีภูมิลำเนาหรืออาศัยอยู่ในภูมิลำเนา ในเขต 9 จังหวัดภาคเหนือตอนล่าง ได้แก่ จังหวัดพิษณุโลก สุโขทัย ตาก อุตรดิตถ์ เพชรบูรณ์ พิจิตร กำแพงเพชร นครสวรรค์ และอุทัยธานี  ไม่ต่ำกว่า 6 เดือนและเป็นผู้ที่เข้าร่วมกลุ่มยุวเกษตรกรของทางโรงเรียน และได้เข้าร่วมกิจกรรมต่างๆ ที่ทางหน่วยงานที่เกี่ยวข้องจัดขึ้น มีเอกสารรับรองจากอาจารย์ที่ปรึกษา หรือผู้อำนวยการสถานศึกษาหรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.425Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab16b",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N1037",
+      "project_name_th": "โครงการทหารพันธุ์ดี \"ชุมชนเบิกบาน อาหารปลอดภัย\" ในโรงเรียนต้นแบบพื้นที่ภาคเหนือ",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "folio_q1": "เป็นนักเรียนที่กำลังศึกษาในโรงเรียนที่กำหนดในระเบียบการกำหนดและได้เข้าไปศึกษาในระเบียบการก่อนหรือไม่",
+        "folio_q1_type": "A",
+        "folio_q2": "มีผลงานด้านกิจกรรมอะไรบ้าง",
+        "folio_q2_type": "C",
+        "closed_date": "20/11/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-06T08:33:25.430Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 100
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab16d",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N2001",
+      "project_name_th": "โควตา",
+      "type": "2_2569",
+      "receive_student_number": 80,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-06T08:33:25.436Z"
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab16f",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N3001",
+      "project_name_th": "admission (แบบที่ 1)",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-06T08:33:25.442Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 20,
+        "tgat": 30,
+        "a_lv_61": 15,
+        "cal_type": "1",
+        "cal_score_sum": 35,
+        "cal_subject_name": "a_lv_64 a_lv_65 a_lv_66 "
+      }
+    },
+    {
+      "_id": "68e37ed52ef4c36c489ab171",
+      "university_id": "020",
+      "program_id": "10200110500401A",
+      "project_id": "N3002",
+      "project_name_th": "admission (แบบที่ 2)",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาเกษตรแม่นยำ",
+      "condition": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_location": "มหาวิทยาลัยนเรศวร 99 หมู่ 9 ต.ท่าโพธิ์ อ.เมือง จ.พิษณุโลก 65000",
+      "interview_date": "https://www.admission.nu.ac.th/undergrad2.php",
+      "interview_time": "https://www.admission.nu.ac.th/undergrad2.php",
+      "link": "https://www.admission.nu.ac.th/undergrad2.php",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-06T08:33:25.448Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 20,
+        "tgat": 30,
+        "a_lv_62": 15,
+        "a_lv_63": 35
+      }
+    }
+  ]
+}

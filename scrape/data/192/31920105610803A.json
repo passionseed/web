@@ -1,0 +1,94 @@
+{
+  "program": [
+    {
+      "program_id": "31920105610803A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "บธ.บ. (ดิจิทัลสตาร์ตอัป)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 68.25,
+      "max_score": 97.25,
+      "min_score_ds": 65.25,
+      "max_score_ds": 92,
+      "receive_student_number": 30,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fe3f5fb722e19cb80f961f",
+      "university_id": "192",
+      "program_id": "31920105610803A",
+      "type": "1_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (ดิจิทัลสตาร์ตอัป)",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-26T15:33:51.233Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f9685",
+      "university_id": "192",
+      "program_id": "31920105610803A",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (ดิจิทัลสตาร์ตอัป)",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-26T15:33:51.551Z"
+    },
+    {
+      "_id": "68fe3f5fb722e19cb80f96eb",
+      "university_id": "192",
+      "program_id": "31920105610803A",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "บริหารธุรกิจบัณฑิต (ดิจิทัลสตาร์ตอัป)",
+      "link": "https://admission.rmutk.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "created_at": "2025-10-26T15:33:51.872Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

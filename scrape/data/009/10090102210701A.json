@@ -1,0 +1,160 @@
+{
+  "program": [
+    {
+      "program_id": "10090102210701A",
+      "project_id": "A0001",
+      "major_id": "0",
+      "program_name_th": "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิชาชีววิทยา",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admission",
+      "min_score": 53.7416,
+      "max_score": 62.3083,
+      "min_score_ds": 53.5076,
+      "max_score_ds": 62.3083,
+      "receive_student_number": 18,
+      "scores": {
+        "tgat": 30,
+        "tpat3": 70
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68fc34761b0969b83dd6d62d",
+      "university_id": "009",
+      "program_id": "10090102210701A",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเด็กดีมีที่เรียน",
+      "type": "1_2569",
+      "receive_student_number": 70,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "- เฉพาะผู้สมัครที่จบจากโรงเรียนหลักสูตรแกนกลางเท่านั้น จะต้องมีจำนวนหน่วยกิตวิชากลุ่มสาระการเรียนรู้ วิทยาศาสตร์และเทคโนโลยี ไม่ต่ำกว่า 28",
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "min_credit_gpa23": 28,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "folio_q1": "เรียงความ 250 – 300 คำ แสดงความตั้งใจที่มาเรียน ให้แสดงมาในแฟ้มประวัติและผลงาน (Portfolio)",
+        "folio_q1_type": "B",
+        "folio_q2": "หนังสือรับรองที่ผู้สมัครจัดทำแบบฟอร์มขึ้นเอง หรือ หนังสือรับรองตามแบบฟอร์มของโรงเรียน ที่รับรองว่าเป็นนักเรียนผู้มีคุณสมบัติตามประกาศของมหาวิทยาลัย: มีผลงานกระทำความดี/มีคุณธรรม/จริยธรรม/บำเพ็ญประโยชน์/อุทิศตนเพื่อส่วนรวม \n(ไม่ใช่หนังสือรับรองความประพฤติ) โดยมีชื่อ-นามสุกล และตำแหน่งของผู้รับรอง จำนวนรวม 1 ฉบับ จากอาจารย์ประจำชั้น/อาจารย์ผู้สอน",
+        "folio_q2_type": "C",
+        "closed_date": "11 ธันวาคม 2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-25T02:22:46.958Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 60,
+        "interview": 40
+      }
+    },
+    {
+      "_id": "68fc34761b0969b83dd6d62f",
+      "university_id": "009",
+      "program_id": "10090102210701A",
+      "project_id": "D0001",
+      "project_name_th": "โครงการผู้มีทักษะพิเศษ",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "min_credit_gpa23": 28,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2025-10-25T02:22:46.964Z"
+    },
+    {
+      "_id": "68fc34761b0969b83dd6d631",
+      "university_id": "009",
+      "program_id": "10090102210701A",
+      "project_id": "D0003",
+      "project_name_th": "โครงการความร่วมมือโรงเรียนสาธิต มศว และโรงเรียนในเครือข่าย",
+      "type": "2_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "min_credit_gpa23": 28,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:46.970Z"
+    },
+    {
+      "_id": "68fc34761b0969b83dd6d633",
+      "university_id": "009",
+      "program_id": "10090102210701A",
+      "project_id": "D0009",
+      "project_name_th": "โครงการโรงเรียนในเขตพื้นที่มหาวิทยาลัยและปริมณฑล",
+      "type": "2_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "min_credit_gpa23": 28,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-25T02:22:46.976Z"
+    },
+    {
+      "_id": "68fc34761b0969b83dd6d635",
+      "university_id": "009",
+      "program_id": "10090102210701A",
+      "project_id": "A0001",
+      "project_name_th": "Admission",
+      "type": "3_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.swu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "min_credit_gpa23": 28,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 1,
+        "min_tpat3": 1
+      },
+      "created_at": "2025-10-25T02:22:46.981Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "tpat3": 70
+      }
+    }
+  ]
+}

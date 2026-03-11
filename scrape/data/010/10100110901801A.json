@@ -1,0 +1,167 @@
+{
+  "program": [
+    {
+      "program_id": "10100110901801A",
+      "project_id": "A9003",
+      "major_id": "0",
+      "program_name_th": "ศศ.บ. ภาษาจีน",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "โครงการคัดเลือกบุคคลเข้าศึกษาระดับปริญญาตรี รอบที่ 3 Admission ",
+      "min_score": 59.5208,
+      "max_score": 60.9165,
+      "min_score_ds": 59.5208,
+      "max_score_ds": 60.9165,
+      "receive_student_number": 4,
+      "scores": {
+        "cal_type": "1",
+        "cal_score_sum": 100,
+        "cal_subject_name": "tgat a_lv_70 a_lv_81 a_lv_82"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f464c05c0d15d003d3d722",
+      "university_id": "010",
+      "program_id": "10100110901801A",
+      "project_id": "A9001",
+      "project_name_th": "โครงการรับนักเรียนที่มีผลการเรียนดี ",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-19T04:10:40.531Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f464c05c0d15d003d3d752",
+      "university_id": "010",
+      "program_id": "10100110901801A",
+      "project_id": "A9004",
+      "project_name_th": "โครงการส่งเสริมผู้มีคุณธรรม จริยธรรม บำเพ็ญประโยชน์ช่วยเหลือสังคม ",
+      "type": "1_2569",
+      "receive_student_number": 1,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-19T04:10:40.689Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68ff35ce96583a5c62477c1f",
+      "university_id": "010",
+      "program_id": "10100110901801A",
+      "project_id": "A1002",
+      "project_name_th": "โครงการ \"ผู้มีความสามารถด้านภาษาและสังคมจากโรงเรียนเครือข่ายความร่วมมือ เพื่อศึกษาต่อในระดับปริญญาตรี คณะศิลปศาสตร์ มหาวิทยาลัยสงขลานครินทร์\" ",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-27T09:05:18.346Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f464c05c0d15d003d3d732",
+      "university_id": "010",
+      "program_id": "10100110901801A",
+      "project_id": "A9002",
+      "project_name_th": "โครงการคัดเลือกนักเรียนรับตรง (โควตาภูมิภาคใต้) ชุดข้อสอบ B",
+      "join_id": "2103",
+      "type": "2_2569",
+      "receive_student_number": 12,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-19T04:10:40.582Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f464c05c0d15d003d3d734",
+      "university_id": "010",
+      "program_id": "10100110901801A",
+      "project_id": "B9002",
+      "project_name_th": "โครงการคัดเลือกนักเรียนรับตรง (โควตาภูมิภาคใต้) ชุดข้อสอบ C",
+      "join_id": "2103",
+      "type": "2_2569",
+      "receive_student_number": 12,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-19T04:10:40.588Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f464c05c0d15d003d3d746",
+      "university_id": "010",
+      "program_id": "10100110901801A",
+      "project_id": "A9003",
+      "project_name_th": "โครงการคัดเลือกบุคคลเข้าศึกษาระดับปริญญาตรี รอบที่ 3 Admission ",
+      "type": "3_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "condition": "1.เป็นผู้มีผลคะแนนทางด้านภาษาจีนอย่างใดอย่างหนึ่ง ดังนี้ \n1.1 มีผลการสอบ HSK ผ่านเกณฑ์ตั้งแต่ระดับ 3 ขึ้นไป (โดยผลการสอบ HSK ระดับ 3 ต้องมีคะแนนตั้งแต่ 240 คะแนน ขึ้นไป) หรือ \n1.2 มีคะแนนสอบ A-Level 87 ภาษาจีน ตั้งแต่ 45 คะแนนขึ้นไป หรือ \n1.3 มี GPA รวม 5 ภาคเรียน (ม.4-ม.6) ในรายวิชาภาษาจีนไม่น้อยกว่า 4 รายวิชา และไม่ต่ำกว่า 3.50",
+      "link": "https://admission.psu.ac.th/project/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3,
+        "min_tgat": 50,
+        "min_a_lv_70": 30,
+        "min_a_lv_81": 30,
+        "min_a_lv_82": 30
+      },
+      "created_at": "2025-10-19T04:10:40.650Z",
+      "min_total_score": 0,
+      "scores": {
+        "cal_type": "1",
+        "cal_score_sum": 100,
+        "cal_subject_name": "tgat a_lv_70 a_lv_81 a_lv_82"
+      }
+    }
+  ]
+}

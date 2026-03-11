@@ -1,0 +1,1155 @@
+{
+  "program": [
+    {
+      "program_id": "10190118610801E",
+      "project_id": "J0010",
+      "major_id": "A",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต (บธ.บ.) สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "project_name_th": "Admission ",
+      "min_score": 30.5497,
+      "max_score": 65.0997,
+      "min_score_ds": 30.5497,
+      "max_score_ds": 60.425,
+      "receive_student_number": 72,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    },
+    {
+      "program_id": "10190118610801E",
+      "project_id": "J0010",
+      "major_id": "B",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต (บธ.บ.) สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "project_name_th": "Admission ",
+      "min_score": 40.7748,
+      "max_score": 80.3747,
+      "min_score_ds": 32.0247,
+      "max_score_ds": 80.3747,
+      "receive_student_number": 72,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    },
+    {
+      "program_id": "10190118610801E",
+      "project_id": "J0010",
+      "major_id": "C",
+      "program_name_th": "หลักสูตรบริหารธุรกิจบัณฑิต (บธ.บ.) สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "project_name_th": "Admission ",
+      "min_score": 33.7,
+      "max_score": 60.4994,
+      "min_score_ds": 33.7,
+      "max_score_ds": 60.4994,
+      "receive_student_number": 72,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e495f4ff75689dadef71bc",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "G0007",
+      "project_name_th": "โครงการ สอวน.",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษา ระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.432Z"
+    },
+    {
+      "_id": "68e495f4ff75689dadef71be",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "G0007",
+      "project_name_th": "โครงการ สอวน.",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษา ระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.437Z"
+    },
+    {
+      "_id": "68e495f4ff75689dadef71c0",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "G0007",
+      "project_name_th": "โครงการ สอวน.",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษา ระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.444Z"
+    },
+    {
+      "_id": "68e495f4ff75689dadef7164",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "G0005",
+      "project_name_th": "โครงการส่งเสริมนักเรียนที่มีคุณธรรมและจริยธรรม (เด็กดีมีที่เรียน)",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.152Z"
+    },
+    {
+      "_id": "68e495f4ff75689dadef7166",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "G0005",
+      "project_name_th": "โครงการส่งเสริมนักเรียนที่มีคุณธรรมและจริยธรรม (เด็กดีมีที่เรียน)",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.158Z"
+    },
+    {
+      "_id": "68e495f4ff75689dadef7168",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "G0005",
+      "project_name_th": "โครงการส่งเสริมนักเรียนที่มีคุณธรรมและจริยธรรม (เด็กดีมีที่เรียน)",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.164Z"
+    },
+    {
+      "_id": "68e495f3ff75689dadef702e",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "G0002",
+      "project_name_th": "โครงการรับบุคคลเข้าศึกษาตามข้อตกลงความร่วมมือ (MOU)",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.152Z"
+    },
+    {
+      "_id": "68e495f3ff75689dadef7030",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "G0002",
+      "project_name_th": "โครงการรับบุคคลเข้าศึกษาตามข้อตกลงความร่วมมือ (MOU)",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.158Z"
+    },
+    {
+      "_id": "68e495f3ff75689dadef7032",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "G0002",
+      "project_name_th": "โครงการรับบุคคลเข้าศึกษาตามข้อตกลงความร่วมมือ (MOU)",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.164Z"
+    },
+    {
+      "_id": "68e495f3ff75689dadef70ca",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "G0003",
+      "project_name_th": "โครงการโควตาพิเศษโรงเรียนสาธิตพิบูลบำเพ็ญ",
+      "type": "1_2569",
+      "receive_student_number": 6,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.650Z",
+      "min_total_score": 0,
+      "scores": {
+        "interview": 100
+      }
+    },
+    {
+      "_id": "68e495f3ff75689dadef70cc",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "G0003",
+      "project_name_th": "โครงการโควตาพิเศษโรงเรียนสาธิตพิบูลบำเพ็ญ",
+      "type": "1_2569",
+      "receive_student_number": 14,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.656Z",
+      "min_total_score": 0,
+      "scores": {
+        "interview": 100
+      }
+    },
+    {
+      "_id": "68e495f3ff75689dadef70ce",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "G0003",
+      "project_name_th": "โครงการโควตาพิเศษโรงเรียนสาธิตพิบูลบำเพ็ญ",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:19.662Z",
+      "min_total_score": 0,
+      "scores": {
+        "interview": 100
+      }
+    },
+    {
+      "_id": "68e495f5ff75689dadef72f4",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "M0002",
+      "project_name_th": "โครงการ PRE BUU",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-07T04:24:21.380Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68e495f5ff75689dadef72f6",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "M0002",
+      "project_name_th": "โครงการ PRE BUU",
+      "type": "1_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-07T04:24:21.386Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68e495f5ff75689dadef72f8",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "M0002",
+      "project_name_th": "โครงการ PRE BUU",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-07T04:24:21.391Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68e495f5ff75689dadef729a",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "L0005",
+      "project_name_th": "โครงการรับตรง วิทยาลัยนานาชาติ (ครั้งที่ 1) ",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษา ระดับชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า หรือ GED",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:21.101Z"
+    },
+    {
+      "_id": "68e495f5ff75689dadef729c",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "L0005",
+      "project_name_th": "โครงการรับตรง วิทยาลัยนานาชาติ (ครั้งที่ 1) ",
+      "type": "1_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษา ระดับชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า หรือ GED",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:21.107Z"
+    },
+    {
+      "_id": "68e495f5ff75689dadef729e",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "L0005",
+      "project_name_th": "โครงการรับตรง วิทยาลัยนานาชาติ (ครั้งที่ 1) ",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษา ระดับชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า หรือ GED",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:21.112Z"
+    },
+    {
+      "_id": "68e495f4ff75689dadef725a",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "L0002",
+      "project_name_th": "โครงการ วมว.",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.907Z"
+    },
+    {
+      "_id": "68e495f4ff75689dadef725c",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "L0002",
+      "project_name_th": "โครงการ วมว.",
+      "type": "1_2569",
+      "receive_student_number": 9,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.913Z"
+    },
+    {
+      "_id": "68e495f4ff75689dadef725e",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "L0002",
+      "project_name_th": "โครงการ วมว.",
+      "type": "1_2569",
+      "receive_student_number": 6,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:20.918Z"
+    },
+    {
+      "_id": "68e495f2ff75689dadef6f90",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเพชรตะวันออก",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ไม่เป็นผู้มีตาบอดสี",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:18.559Z"
+    },
+    {
+      "_id": "68e495f2ff75689dadef6f92",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเพชรตะวันออก",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ไม่เป็นผู้มีตาบอดสี",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:18.566Z"
+    },
+    {
+      "_id": "68e495f2ff75689dadef6f94",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "G0001",
+      "project_name_th": "โครงการเพชรตะวันออก",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ไม่เป็นผู้มีตาบอดสี",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-07T04:24:18.573Z"
+    },
+    {
+      "_id": "68e495f1ff75689dadef6ee6",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "A",
+      "project_id": "G0000",
+      "project_name_th": "โครงการนักเรียนที่มีความสามารถพิเศษทั่วประเทศ",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงิน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-07T04:24:17.965Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68e495f1ff75689dadef6ee8",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "G0000",
+      "project_name_th": "โครงการนักเรียนที่มีความสามารถพิเศษทั่วประเทศ",
+      "type": "1_2569",
+      "receive_student_number": 7,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-07T04:24:17.972Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68e495f1ff75689dadef6eea",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "G0000",
+      "project_name_th": "โครงการนักเรียนที่มีความสามารถพิเศษทั่วประเทศ",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "11/12/2568",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-07T04:24:17.983Z",
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 50,
+        "interview": 50
+      }
+    },
+    {
+      "_id": "68f62bf5e3d0ba4c22577b3b",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "I0006",
+      "project_name_th": "โครงการรับตรง วิทยาลัยนานาชาติ (ครั้งที่ 2) ",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-20T12:32:53.199Z"
+    },
+    {
+      "_id": "68f62bf5e3d0ba4c22577b3d",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "I0006",
+      "project_name_th": "โครงการรับตรง วิทยาลัยนานาชาติ (ครั้งที่ 2) ",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-20T12:32:53.204Z"
+    },
+    {
+      "_id": "699d48813ebd37cda841bc54",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "D",
+      "project_id": "H0006",
+      "project_name_th": "โครงการรับตรงในภาคตะวันออก 12 จังหวัด  ",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงินและการลงทุนที่ยั่งยืน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 5
+      },
+      "created_at": "2026-02-24T06:43:13.500Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    },
+    {
+      "_id": "699d48813ebd37cda841bc56",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "D",
+      "project_id": "I0006",
+      "project_name_th": "โครงการรับตรง วิทยาลัยนานาชาติ (ครั้งที่ 2) ",
+      "type": "2_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงินและการลงทุนที่ยั่งยืน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาหรือสำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2026-02-24T06:43:13.507Z"
+    },
+    {
+      "_id": "68f62bf4e3d0ba4c22577abb",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "H0006",
+      "project_name_th": "โครงการรับตรงในภาคตะวันออก 12 จังหวัด  ",
+      "type": "2_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 5
+      },
+      "created_at": "2025-10-20T12:32:52.890Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    },
+    {
+      "_id": "68f62bf4e3d0ba4c22577abd",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "H0006",
+      "project_name_th": "โครงการรับตรงในภาคตะวันออก 12 จังหวัด  ",
+      "type": "2_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": true,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 5
+      },
+      "created_at": "2025-10-20T12:32:52.894Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    },
+    {
+      "_id": "699d48813ebd37cda841bc58",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "D",
+      "project_id": "J0010",
+      "project_name_th": "Admission ",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการเงินและการลงทุนที่ยั่งยืน (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้สำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "interview_location": "วิทยาลัยนานาชาติ มหาวิทยาลัยบูรพา ชลบุรี",
+      "interview_date": "วันที่ 30 - 31 พฤษภาคม 2569 (อาจใช้ 1 วัน) ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "interview_time": "สอบสัมภาษณ์ เวลา 08.30-16.00 น. ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 5
+      },
+      "created_at": "2026-02-24T06:43:13.513Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    },
+    {
+      "_id": "68f62bf5e3d0ba4c22577c1c",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "B",
+      "project_id": "J0010",
+      "project_name_th": "Admission ",
+      "type": "3_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการจัดการธุรกิจระหว่างประเทศ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้สำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "interview_location": "วิทยาลัยนานาชาติ มหาวิทยาลัยบูรพา ชลบุรี",
+      "interview_date": "วันที่ 30 - 31 พฤษภาคม 2569 (อาจใช้ 1 วัน) ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "interview_time": "สอบสัมภาษณ์ เวลา 08.30-16.00 น. ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 5
+      },
+      "created_at": "2025-10-20T12:32:53.756Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    },
+    {
+      "_id": "68f62bf5e3d0ba4c22577c1e",
+      "university_id": "019",
+      "program_id": "10190118610801E",
+      "major_id": "C",
+      "project_id": "J0010",
+      "project_name_th": "Admission ",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "สาขาวิชาบริหารธุรกิจ กลุ่มวิชาการตลาดดิจิทัลและสร้างสรรค์ (หลักสูตรนานาชาติ) ภาคปกติ",
+      "condition": "รับผู้สำเร็จการศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 ",
+      "interview_location": "วิทยาลัยนานาชาติ มหาวิทยาลัยบูรพา ชลบุรี",
+      "interview_date": "วันที่ 30 - 31 พฤษภาคม 2569 (อาจใช้ 1 วัน) ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "interview_time": "สอบสัมภาษณ์ เวลา 08.30-16.00 น. ติดตามหน้าเว็บไซต์ https://regservice.buu.ac.th",
+      "link": "https://regservice.buu.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2,
+        "min_tgat": 5
+      },
+      "created_at": "2025-10-20T12:32:53.761Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 10,
+        "tgat": 90
+      }
+    }
+  ]
+}

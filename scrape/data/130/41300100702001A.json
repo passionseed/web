@@ -1,0 +1,103 @@
+{
+  "program": [
+    {
+      "program_id": "41300100702001A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ศึกษาศาสตรบัณฑิต (ศษ.บ.) (ภาษาไทย)",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "ภาษาไทย",
+      "project_name_th": "0",
+      "min_score": 81.5,
+      "max_score": 95.5,
+      "min_score_ds": 79.5,
+      "max_score_ds": 95.5,
+      "receive_student_number": 10,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e6840a14cc736fe85333fc",
+      "university_id": "130",
+      "program_id": "41300100702001A",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ศึกษาศาสตรบัณฑิต (ศษ.บ.) (ภาษาไทย)",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษาและ กศน.",
+      "interview_location": "",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://admission.hu.ac.th/tcas/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-08T15:32:26.369Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      }
+    },
+    {
+      "_id": "68e6840a14cc736fe85333fe",
+      "university_id": "130",
+      "program_id": "41300100702001A",
+      "type": "2_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ศึกษาศาสตรบัณฑิต (ศษ.บ.) (ภาษาไทย)",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษาและ กศน.",
+      "interview_location": "",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://admission.hu.ac.th/tcas/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-08T15:32:26.375Z"
+    },
+    {
+      "_id": "68e6840a14cc736fe8533400",
+      "university_id": "130",
+      "program_id": "41300100702001A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "ศึกษาศาสตรบัณฑิต (ศษ.บ.) (ภาษาไทย)",
+      "condition": "นักเรียนชั้น ม.6 ที่กำลังจะสำเร็จการศึกษาเป็นที่เรียบร้อยแล้ว สายอาชีวะศึกษาและ กศน.",
+      "interview_location": "",
+      "interview_time": "09.00-16.00 น.",
+      "link": "https://admission.hu.ac.th/tcas/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-08T15:32:26.381Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

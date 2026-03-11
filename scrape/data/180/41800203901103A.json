@@ -1,0 +1,50 @@
+{
+  "program": [
+    {
+      "program_id": "41800203901103A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "นศ.บ.วิทยุ โทรทัศน์ และสื่อสตรีมมิ่ง",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 40,
+      "scores": {
+        "cal_type": "1",
+        "cal_score_sum": 100,
+        "cal_subject_name": "tgat"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68e36d5ff6124a0100314514",
+      "university_id": "180",
+      "program_id": "41800203901103A",
+      "type": "3_2569",
+      "receive_student_number": 40,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "หลักสูตรนิเทศศาสตรบัณฑิต สาขาวิชาวิทยุ โทรทัศน์ และสื่อสตรีมมิ่ง (4 ปี) ธุรกิจทางด้านวิทยุ โทรทัศน์และสื่อดิจิทัล เติบโตอย่างรวดเร็วมีการขยายช่องทางการสื่อสารในรูปแบบใหม่และหลากหลายมากขึ้น ไม่ว่าจะเป็นการสื่อสารผ่านโทรศัพท์มือถือ ดาวเทียม เคเบิ้ลทีวีและทางอินเทอร์เน็ต นักสื่อสารมืออาชีพด้านวิทยุ โทรทัศน์และสื่อดิจิทัล จึงมีบทบาทสำคัญในการขับเคลื่อนเศรษฐกิจ ในฐานะที่สื่อกลางทำให้เกิดการไหลเวียนของข้อมูล ข่าวสารในมิติต่างๆ สามารถทำงานในสาขาวิชาชีพ  วิทยุโทรทัศน์และสื่อดิจิทัล เช่น ผู้ผลิตรายการ ผู้กำกับรายการ ผู้ดำเนินรายการ พิธีกร ผู้ประกาศ ผู้สื่อข่าว ฝ่ายศิลปกรรม ฝ่ายภาพ ฝ่ายแสง ฝ่ายตัดต่อภาพ ฝ่ายสร้างสรรค์เสียง ฝ่ายสร้างสรรค์เทคนิคพิเศษ Online Creator  Youtuber เป็นต้น",
+      "condition": "ผู้ที่สำเร็จการศึกษาชั้นม.6 หรือเทียบเท่า",
+      "link": "https://kbu.ac.th/course/broadcasting-and-streaming/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-06T07:18:55.190Z",
+      "min_total_score": 0,
+      "scores": {
+        "cal_type": "1",
+        "cal_score_sum": 100,
+        "cal_subject_name": "tgat"
+      },
+      "score_conditions": {}
+    }
+  ]
+}

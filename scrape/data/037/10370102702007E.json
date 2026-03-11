@@ -1,0 +1,98 @@
+{
+  "program": [
+    {
+      "program_id": "10370102702007E",
+      "project_id": "A0039",
+      "major_id": "A",
+      "program_name_th": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาการสอนภาษาอังกฤษ (หลักสูตรนานาชาติ)",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "0",
+      "project_name_th": "นักเรียน ม.6 ที่กำลังจะสำเร็จการศึกษาหรือสำเร็จการศึกษาแล้ว,กศน.,อาชีวะ,เปรียญธรรม3ประโยค",
+      "min_score": 71.625,
+      "max_score": 96.625,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 30,
+      "scores": {
+        "gpax": 50,
+        "gpa24": 50
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f5b14c84df8e9fee9b20aa",
+      "university_id": "037",
+      "program_id": "10370102702007E",
+      "major_id": "A",
+      "project_id": "A0061",
+      "project_name_th": "โครงการเด็กเรียนดี-เด็กกิจกรรม",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาการสอนภาษาอังกฤษ (หลักสูตรนานาชาติ) (4ปี)",
+      "condition": "มีผลการเรียนดี ประพฤติตนดี",
+      "interview_location": "ที่อยู่มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย 79 หมู่ที่ 1 ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13000 ตึกอาคารเรียนรวม ชั้น 3 ห้องC300 สำนักทะเบียนและวัดผล",
+      "interview_time": "09.00-17.00 น.",
+      "link": "https://reg.mcu.ac.th/ams",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T03:49:32.901Z"
+    },
+    {
+      "_id": "68f5b14c84df8e9fee9b20ac",
+      "university_id": "037",
+      "program_id": "10370102702007E",
+      "major_id": "A",
+      "project_id": "A0062",
+      "project_name_th": "โครงการเด็กเรียนดี-เด็กกิจกรรม",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาการสอนภาษาอังกฤษ (หลักสูตรนานาชาติ) (4ปี)",
+      "condition": "มีผลการเรียนดี ประพฤติตนดี",
+      "interview_location": "ที่อยู่มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย 79 หมู่ที่ 1 ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13000 ตึกอาคารเรียนรวม ชั้น 3 ห้องC300 สำนักทะเบียนและวัดผล",
+      "interview_time": "09.00-17.00 น.",
+      "link": "https://reg.mcu.ac.th/ams",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T03:49:32.906Z"
+    },
+    {
+      "_id": "68f5b14c84df8e9fee9b20ae",
+      "university_id": "037",
+      "program_id": "10370102702007E",
+      "major_id": "A",
+      "project_id": "A0063",
+      "project_name_th": "นักเรียน ม.6 ที่กำลังจะสำเร็จการศึกษาหรือสำเร็จการศึกษาแล้ว,กศน.,อาชีวะ,เปรียญธรรม3ประโยค",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรครุศาสตรบัณฑิต สาขาวิชาการสอนภาษาอังกฤษ (หลักสูตรนานาชาติ) (4ปี)",
+      "condition": "มีผลการเรียนดี ประพฤติตนดี",
+      "interview_location": "ที่อยู่มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย 79 หมู่ที่ 1 ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13000 ตึกอาคารเรียนรวม ชั้น 3 ห้องC300 สำนักทะเบียนและวัดผล",
+      "interview_time": "09.00-17.00 น.",
+      "link": "https://reg.mcu.ac.th/ams",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T03:49:32.912Z",
+      "min_total_score": 10,
+      "scores": {
+        "gpax": 50,
+        "gpa24": 50
+      }
+    }
+  ]
+}

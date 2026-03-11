@@ -1,0 +1,103 @@
+{
+  "program": [
+    {
+      "program_id": "31940703610501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "บช.บ. การบัญชี",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 82.75,
+      "max_score": 99,
+      "min_score_ds": 82.25,
+      "max_score_ds": 99,
+      "receive_student_number": 50,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f088c9af9844ceb1f2dab7",
+      "university_id": "194",
+      "program_id": "31940703610501A",
+      "type": "1_2569",
+      "receive_student_number": 70,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี ภาคปกติ",
+      "condition": "1. สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย หรือ กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า \r\n2. นักเรียนที่มีความสามารถพิเศษ โดยพิจารณาจากแฟ้มสะสมผลงาม (Portfolio) \r\n3. สอบสัมภาษณ์ออนไลน์ผ่านวีดีโอคอนเฟอเรนซ์ (Video Conference) \r\n\r\n",
+      "interview_location": "สอบสัมภาษณ์ออนไลน์ผ่านวีดีโอคอนเฟอเรนซ์ (Video Conference)",
+      "interview_date": "31 January 2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://admission.rmutp.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-16T05:55:21.921Z",
+      "folio": {
+        "closed_date": "26 January 2569",
+        "page_limit": "10-15"
+      }
+    },
+    {
+      "_id": "68f088caaf9844ceb1f2db21",
+      "university_id": "194",
+      "program_id": "31940703610501A",
+      "type": "2_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี ภาคปกติ",
+      "condition": "1. สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย หรือ กำลังศึกษาระดับชั้นมัธยมศึกษาปีที่ 6 หรือเทียบเท่า \r\n2. นักเรียนที่มีความสามารถพิเศษ โดยพิจารณาจากแฟ้มสะสมผลงาม (Portfolio) \r\n3. สอบสัมภาษณ์ออนไลน์ผ่านวีดีโอคอนเฟอเรนซ์ (Video Conference) \r\n\r\n",
+      "interview_location": "สอบสัมภาษณ์ออนไลน์ผ่านวีดีโอคอนเฟอเรนซ์ (Video Conference)",
+      "interview_date": "25 April 2569",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://admission.rmutp.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-16T05:55:22.349Z"
+    },
+    {
+      "_id": "68f088caaf9844ceb1f2db87",
+      "university_id": "194",
+      "program_id": "31940703610501A",
+      "type": "3_2569",
+      "receive_student_number": 60,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตร 4 ปี ภาคปกติ",
+      "condition": "1. สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย หรือเทียบเท่า \r\n2. องค์ประกอบ ค่าร้อยละ \r\nGPAX 100",
+      "interview_location": "",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "https://admission.rmutp.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-16T05:55:22.744Z",
+      "score_conditions": {},
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

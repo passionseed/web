@@ -1,0 +1,79 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68fa40ca87870d31bd16f2f8",
+      "university_id": "193",
+      "program_id": "31930204220301A",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ผลิตบัณฑิตที่มีทักษะวิชาชีพด้านนวัตกรรมและธุรกิจดิจิทัล สามารถบูรณาการความรู้ด้านเทคโนโลยีดิจิทัล บริหารธุรกิจ และนิเทศศาสตร์ เพื่อสร้างนวัตกรรม ผลิตภัณฑ์ และบริการ มีความรับผิดชอบต่อสังคม มีจิตสำนึกในคุณธรรม จริยธรรม และมีจรรยาบรรณในวิชาชีพ",
+      "condition": "รับผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": ""
+      },
+      "created_at": "2025-10-23T14:50:50.113Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fa40ca87870d31bd16f2fa",
+      "university_id": "193",
+      "program_id": "31930204220301A",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ผลิตบัณฑิตที่มีทักษะวิชาชีพด้านนวัตกรรมและธุรกิจดิจิทัล สามารถบูรณาการความรู้ด้านเทคโนโลยีดิจิทัล บริหารธุรกิจ และนิเทศศาสตร์ เพื่อสร้างนวัตกรรม ผลิตภัณฑ์ และบริการ มีความรับผิดชอบต่อสังคม มีจิตสำนึกในคุณธรรม จริยธรรม และมีจรรยาบรรณในวิชาชีพ",
+      "condition": "รับผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-23T14:50:50.118Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68fa40ca87870d31bd16f2fc",
+      "university_id": "193",
+      "program_id": "31930204220301A",
+      "type": "3_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ผลิตบัณฑิตที่มีทักษะวิชาชีพด้านนวัตกรรมและธุรกิจดิจิทัล สามารถบูรณาการความรู้ด้านเทคโนโลยีดิจิทัล บริหารธุรกิจ และนิเทศศาสตร์ เพื่อสร้างนวัตกรรม ผลิตภัณฑ์ และบริการ มีความรับผิดชอบต่อสังคม มีจิตสำนึกในคุณธรรม จริยธรรม และมีจรรยาบรรณในวิชาชีพ",
+      "condition": "รับผู้สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย",
+      "interview_location": "ติดตามรายละเอียดที่   http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "interview_date": "6-12 พค.68",
+      "interview_time": "08.30-12.00 น.",
+      "link": "http://regis.rmutto.ac.th/registrar/apphome.asp",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-23T14:50:50.124Z",
+      "score_conditions": {},
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

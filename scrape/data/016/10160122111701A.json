@@ -1,0 +1,116 @@
+{
+  "program": [
+    {
+      "program_id": "10160122111701A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "พยาบาลศาสตรบัณฑิต",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 55.309,
+      "max_score": 57.666,
+      "min_score_ds": 54.525,
+      "max_score_ds": 57.666,
+      "receive_student_number": 15,
+      "scores": {
+        "tgat": 30,
+        "a_lv_61": 15,
+        "a_lv_65": 15,
+        "a_lv_66": 20,
+        "a_lv_82": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f7520a27b76be0eb09a563",
+      "university_id": "016",
+      "program_id": "10160122111701A",
+      "project_id": "B0031",
+      "project_name_th": "โควตาสถานศึกษาที่อยู่ในเขตพื้นที่กรุงเทพมหานคร จังหวัดในปริมณฑล จังหวัดในภาคตะวันออก และจังหวัดในภาคกลาง",
+      "join_id": "1158",
+      "type": "2_2569",
+      "receive_student_number": 65,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_height_male": 150,
+      "min_height_female": 150,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T09:27:38.479Z"
+    },
+    {
+      "_id": "68f7520a27b76be0eb09a565",
+      "university_id": "016",
+      "program_id": "10160122111701A",
+      "project_id": "B0011",
+      "project_name_th": "โควตาโรงเรียนที่ลงนามความร่วมมือกับสถาบันฯ (MOU)",
+      "join_id": "1158",
+      "type": "2_2569",
+      "receive_student_number": 65,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 1,
+      "condition": "คุณสมบัติผู้สมัครและเงื่อนไขการรับเป็นไปตามประกาศสถาบันฯ  https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": false,
+      "min_height_male": 150,
+      "min_height_female": 150,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2025-10-21T09:27:38.484Z"
+    },
+    {
+      "_id": "68f7520a27b76be0eb09a567",
+      "university_id": "016",
+      "program_id": "10160122111701A",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "condition": "รับผู้ที่กำลังศึกษาหรือสำเร็จการศึกษาระดับมัธยมศึกษาปีที่ 6 ทุกแผนการศึกษา หรือประกาศนียบัตรอื่นที่กระทรวงศึกษารับรอง หรือเทียบเท่า หรือเป็นผู้สำเร็จการศึกษาหลักสูตร General Educational Development (GED) และมีคะแนนเฉลี่ยสะสมไม่น้อยกว่า 2.50  โดยผู้สมัครต้องมีคะแนน TGAT และ A-level ตามที่กำหนด",
+      "interview_date": "ไม่มีสอบสัมภาษณ์",
+      "link": "https://admission.reg.kmitl.ac.th/#/undergraduate/announcement_tcas",
+      "grad_current": false,
+      "t_score": true,
+      "min_height_male": 150,
+      "min_height_female": 150,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 1,
+        "min_a_lv_61": 1,
+        "min_a_lv_65": 1,
+        "min_a_lv_66": 1,
+        "min_a_lv_82": 1
+      },
+      "created_at": "2025-10-21T09:27:38.489Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 30,
+        "a_lv_61": 15,
+        "a_lv_65": 15,
+        "a_lv_66": 20,
+        "a_lv_82": 20
+      }
+    }
+  ]
+}

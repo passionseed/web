@@ -1,0 +1,109 @@
+{
+  "program": [
+    {
+      "program_id": "31950101300501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วศ.บ.  วิศวกรรมคอมพิวเตอร์ 4 ปี",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 81.25,
+      "max_score": 98.25,
+      "min_score_ds": 79,
+      "max_score_ds": 98.25,
+      "receive_student_number": 15,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f5be8884df8e9fee9b4561",
+      "university_id": "195",
+      "program_id": "31950101300501A",
+      "type": "1_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "วศ.บ.  วิศวกรรมคอมพิวเตอร์ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "18/1/2569",
+        "page_limit": "ม.ค.-15"
+      },
+      "created_at": "2025-10-20T04:46:00.034Z",
+      "score_conditions": {
+        "min_gpax": 2.25
+      },
+      "min_gpax": 2.25
+    },
+    {
+      "_id": "68f5be8884df8e9fee9b4601",
+      "university_id": "195",
+      "program_id": "31950101300501A",
+      "type": "2_2569",
+      "receive_student_number": 30,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 2,
+      "description": "วศ.บ.  วิศวกรรมคอมพิวเตอร์ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T04:46:00.574Z",
+      "score_conditions": {
+        "min_gpax": 2.25
+      },
+      "min_gpax": 2.25
+    },
+    {
+      "_id": "68f5be8984df8e9fee9b46a1",
+      "university_id": "195",
+      "program_id": "31950101300501A",
+      "type": "3_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วศ.บ.  วิศวกรรมคอมพิวเตอร์ 4 ปี",
+      "condition": "มีคุณสมบัติตามเกณฑ์ที่มหาวิทยาลัยกำหนด",
+      "interview_location": "อาคารคณะวิศวกรรมศาสตร์ ศาลายา",
+      "interview_date": "สอบสัมภาษณ์ผ่านช่องทางคณะ/วิทยาลัย ตามวันและเวลาที่มหาวิทยาลัยกำหนด",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://tcas.rmutr.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-20T04:46:01.103Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 25,
+        "a_lv_61": 25,
+        "a_lv_64": 25,
+        "a_lv_82": 25
+      },
+      "score_conditions": {
+        "min_gpax": 2.25
+      },
+      "min_gpax": 2.25
+    }
+  ]
+}

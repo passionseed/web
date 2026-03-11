@@ -1,0 +1,58 @@
+{
+  "program": [
+    {
+      "program_id": "41290105220101E",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสารสนเทศ",
+      "program_type_name_th": "นานาชาติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 0,
+      "max_score": 0,
+      "min_score_ds": 0,
+      "max_score_ds": 0,
+      "receive_student_number": 15,
+      "scores": {
+        "tgat": 10,
+        "tgat1": 50,
+        "tpat11": 10,
+        "a_lv_61": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f5ac5e84df8e9fee9b0b7e",
+      "university_id": "129",
+      "program_id": "41290105220101E",
+      "type": "3_2569",
+      "receive_student_number": 15,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "หลักสูตรปริญญาตรี 4 ปี จัดการศึกษาแบบชั้นเรียนในระบบทวิภาค โดยแต่ละปีการศึกษาแบ่งออกเป็น 2 ภาคการศึกษาปกติ  และ 1 ภาคเรียนฤดูร้อน",
+      "condition": "หลังสอบสัมภาษณ์ นักศึกษาต้องสอบวิชาภาษาอังกฤษและคณิตศาสตร์ให้ผ่านตามเกณฑ์ของมหาวิทยาลัย จึงสามารถเข้าเรียนหลักสูตรนานาชาติได้ตามปกติ",
+      "interview_location": "Online ผ่าน ZOOM Meeting",
+      "interview_date": "30 พฤษภาคม 2569",
+      "interview_time": "9.00 - 12.00 น.",
+      "link": "https://www.apiu.edu/academics/faculty-of-information-technology/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-20T03:28:30.844Z",
+      "min_total_score": 0,
+      "scores": {
+        "tgat": 10,
+        "tgat1": 50,
+        "tpat11": 10,
+        "a_lv_61": 30
+      }
+    }
+  ]
+}

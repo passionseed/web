@@ -1,0 +1,98 @@
+{
+  "program": [
+    {
+      "program_id": "21660101700601A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ค.บ.การศึกษาปฐมวัย",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 81.2194,
+      "max_score": 83.25,
+      "min_score_ds": 81.1388,
+      "max_score_ds": 83.25,
+      "receive_student_number": 9,
+      "scores": {
+        "gpax": 50,
+        "tgat": 20,
+        "tpat5": 30
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "692fcc011cc37f7b017f78ad",
+      "university_id": "166",
+      "program_id": "21660101700601A",
+      "type": "1_2569",
+      "receive_student_number": 5,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ผู้ที่สนใจสมัครสามารถศึกษาข้อมูลรายละเอียดทั่วไปของหลักสูตรได้ที่เว็บไซต์ https://edu.ssru.ac.th/th/home หรือสอบถามข้อมูลเพิ่มเติมที่คณะครุศาสตร์ โทร. 021601062 และสมัครสอบคัดเลือกได้ที่เว็บไซต์ https://admission.ssru.ac.th/ ",
+      "condition": "ผู้ที่สนใจสมัครสามารถดูรายละเอียดเงื่อนไข จำนวนรับ คุณสมบัติการสมัครสอบคัดเลือกได้ที่เว็บไซต์ https://admission.ssru.ac.th/ หรือสอบถามข้อมูลเพิ่มเติมที่ฝ่ายรับเข้าศึกษา กองบริการการศึกษา โทร.021601380",
+      "link": "https://admission.ssru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "รายละเอียดที่เว็บไซต์รับสมัคร https://admission.ssru.ac.th/isqy04",
+        "page_limit": "15"
+      },
+      "created_at": "2025-12-03T05:34:57.053Z"
+    },
+    {
+      "_id": "68e380db2ef4c36c489abf60",
+      "university_id": "166",
+      "program_id": "21660101700601A",
+      "type": "2_2569",
+      "receive_student_number": 50,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ผู้ที่สนใจสมัครสามารถศึกษาข้อมูลรายละเอียดทั่วไปของหลักสูตรได้ที่เว็บไซต์ https://edu.ssru.ac.th/th/home หรือสอบถามข้อมูลเพิ่มเติมที่คณะครุศาสตร์ โทร. 021601062 และสมัครสอบคัดเลือกได้ที่เว็บไซต์ https://admission.ssru.ac.th/ ",
+      "condition": "ผู้ที่สนใจสมัครสามารถดูรายละเอียดเงื่อนไข จำนวนรับ คุณสมบัติการสมัครสอบคัดเลือกได้ที่เว็บไซต์ https://admission.ssru.ac.th/ หรือสอบถามข้อมูลเพิ่มเติมที่ฝ่ายรับเข้าศึกษา กองบริการการศึกษา โทร.021601380",
+      "link": "https://admission.ssru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-06T08:42:03.311Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68e380dc2ef4c36c489ac024",
+      "university_id": "166",
+      "program_id": "21660101700601A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "ผู้ที่สนใจสมัครสามารถศึกษาข้อมูลรายละเอียดทั่วไปของหลักสูตรได้ที่เว็บไซต์ https://edu.ssru.ac.th/th/home หรือสอบถามข้อมูลเพิ่มเติมที่คณะครุศาสตร์ โทร. 021601062 และสมัครสอบคัดเลือกได้ที่เว็บไซต์ https://admission.ssru.ac.th/ ",
+      "condition": "ผู้ที่สนใจสมัครสามารถดูรายละเอียดเงื่อนไข จำนวนรับ คุณสมบัติการสมัครสอบคัดเลือกได้ที่เว็บไซต์ https://admission.ssru.ac.th/ หรือสอบถามข้อมูลเพิ่มเติมที่ฝ่ายรับเข้าศึกษา กองบริการการศึกษา โทร.021601380",
+      "interview_location": "ไม่มีการสอบสัมภาษณ์ สำหรับผู้สมัครที่ผ่านเกณฑ์การคัดเลือกและมีความประสงค์จะเข้าศึกษาต่อ สามารถยืนยันสิทธิ์ในระบบ TCAS ภายในวัน 20 - 21 พฤษภาคม พ.ศ. 2569 เท่านั้น และติดตามรายละเอียดการรายงานตัวเป็นนักศึกษาใหม่ ได้ที่เว็บไซต์ https://admission.ssru.ac.th/login",
+      "interview_date": "ไม่มีการสอบสัมภาษณ์ สำหรับผู้สมัครที่ผ่านเกณฑ์การคัดเลือกและมีความประสงค์จะเข้าศึกษาต่อ สามารถยืนยันสิทธิ์ในระบบ TCAS ภายในวัน 20 - 21 พฤษภาคม พ.ศ. 2569 เท่านั้น และติดตามรายละเอียดการรายงานตัวเป็นนักศึกษาใหม่ ได้ที่เว็บไซต์ https://admission.ssru.ac.th/login",
+      "link": "https://admission.ssru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_tgat": 20,
+        "min_tpat5": 30
+      },
+      "created_at": "2025-10-06T08:42:04.064Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 50,
+        "tgat": 20,
+        "tpat5": 30
+      }
+    }
+  ]
+}

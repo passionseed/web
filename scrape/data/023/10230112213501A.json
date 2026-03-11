@@ -1,0 +1,51 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68e5342c74961cd19969cdce",
+      "university_id": "023",
+      "program_id": "10230112213501A",
+      "type": "1_2569",
+      "receive_student_number": 100,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "รายละเอียดเพิ่มเติม https://entry.wu.ac.th/apply/home.asp",
+      "link": "https://entry.wu.ac.th/apply/home.asp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3,
+      "score_conditions": {
+        "min_gpax": 3
+      },
+      "created_at": "2025-10-07T15:39:24.829Z",
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      }
+    },
+    {
+      "_id": "69ae5125a2bdf67fa6ce419a",
+      "university_id": "023",
+      "program_id": "10230112213501A",
+      "type": "2_2569",
+      "receive_student_number": 100,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "รายละเอียดเพิ่มเติม https://entry.wu.ac.th/apply/home.asp",
+      "link": "https://entry.wu.ac.th/apply/home_download.asp",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.75,
+      "score_conditions": {
+        "min_gpax": 2.75
+      },
+      "created_at": "2026-03-09T04:48:37.621Z"
+    }
+  ]
+}

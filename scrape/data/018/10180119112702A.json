@@ -1,0 +1,119 @@
+{
+  "program": [
+    {
+      "program_id": "10180119112702A",
+      "project_id": "C0001",
+      "major_id": "0",
+      "program_name_th": "ส.บ.สาขาวิชาสาธารณสุขศาสตร์",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "Admissions",
+      "min_score": 36.0825,
+      "max_score": 48.6125,
+      "min_score_ds": 34.735,
+      "max_score_ds": 48.6125,
+      "receive_student_number": 10,
+      "scores": {
+        "a_lv_61": 25,
+        "a_lv_65": 10,
+        "a_lv_66": 30,
+        "a_lv_82": 35
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f874699ec1a4bec7221e27",
+      "university_id": "018",
+      "program_id": "10180119112702A",
+      "project_id": "A0001",
+      "project_name_th": "รับตรงรอบ Portfolio",
+      "join_id": "",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "ตามประกาศมหาวิทยาลัย",
+      "interview_date": "ตามประกาศมหาวิทยาลัย",
+      "interview_time": "ตามประกาศมหาวิทยาลัย",
+      "link": "admission.ubu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "closed_date": "",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T06:06:33.361Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f874699ec1a4bec7221e91",
+      "university_id": "018",
+      "program_id": "10180119112702A",
+      "project_id": "B0001",
+      "project_name_th": "รับตรงรอบ Quota",
+      "join_id": "",
+      "type": "2_2569",
+      "receive_student_number": 25,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "ตามประกาศมหาวิทยาลัย",
+      "interview_date": "ตามประกาศมหาวิทยาลัย",
+      "interview_time": "ตามประกาศมหาวิทยาลัย",
+      "link": "admission.ubu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T06:06:33.689Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8746a9ec1a4bec7221eed",
+      "university_id": "018",
+      "program_id": "10180119112702A",
+      "project_id": "C0001",
+      "project_name_th": "Admissions",
+      "join_id": "",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "",
+      "condition": "",
+      "interview_location": "ตามประกาศมหาวิทยาลัย",
+      "interview_date": "ตามประกาศมหาวิทยาลัย",
+      "interview_time": "ตามประกาศมหาวิทยาลัย",
+      "link": "admission.ubu.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2.5,
+      "score_conditions": {
+        "min_gpax": 2.5,
+        "min_a_lv_61_pr": 15,
+        "min_a_lv_65_pr": 15,
+        "min_a_lv_66_pr": 25,
+        "min_a_lv_82_pr": 25
+      },
+      "created_at": "2025-10-22T06:06:34.028Z",
+      "min_total_score": null,
+      "scores": {
+        "a_lv_61": 25,
+        "a_lv_65": 10,
+        "a_lv_66": 30,
+        "a_lv_82": 35
+      }
+    }
+  ]
+}

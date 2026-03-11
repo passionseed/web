@@ -1,0 +1,106 @@
+{
+  "program": [
+    {
+      "program_id": "31990104400401A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "ทล.บ.การผังเมือง",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 55,
+      "max_score": 83,
+      "min_score_ds": 55,
+      "max_score_ds": 83,
+      "receive_student_number": 15,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8916d9ec1a4bec7223d45",
+      "university_id": "199",
+      "program_id": "31990104400401A",
+      "type": "1_2569",
+      "receive_student_number": 2,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาการผังเมือง ทล.บ. (หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า \n 2. เกรดเฉลี่ย 5 ภาค (GPAX) เกรดเฉลี่ย 2.00ขึ้นไป \n 3. Portfolio (50%) \n 4. สัมภาษณ์ (50%)    ",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "24-Jan-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "folio": {
+        "closed_date": "1/14/2569",
+        "page_limit": "10"
+      },
+      "created_at": "2025-10-22T08:10:21.234Z"
+    },
+    {
+      "_id": "68f8916d9ec1a4bec7223d47",
+      "university_id": "199",
+      "program_id": "31990104400401A",
+      "type": "2_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาการผังเมือง ทล.บ. (หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า \n 2. เกรดเฉลี่ย 5 ภาค (GPAX) เกรดเฉลี่ย 2.00ขึ้นไป \n 3. Portfolio (50%) \n 4. สัมภาษณ์ (50%)\nส่ง Portfolio ผ่านช่องทางอีเมล์ Grand_2727@hotmail.com",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "25-Apr-69",
+      "interview_time": "9.00 น. เป็นต้นไป",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-22T08:10:21.240Z"
+    },
+    {
+      "_id": "68f8916d9ec1a4bec7223d49",
+      "university_id": "199",
+      "program_id": "31990104400401A",
+      "type": "3_2569",
+      "receive_student_number": 10,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 2,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สาขาวิชาการผังเมือง ทล.บ. (หลักสูตร 4 ปี)",
+      "condition": "1. เป็นผู้ที่กำลังศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือสำเร็จการศึกษาชั้นมัธยมศึกษาชั้นปีที่ 6 หรือเทียบเท่า\n2. GPAX = 100%",
+      "interview_location": "ที่อยู่มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน นครราชสีมา 744 ถ.สุรนารายณ์ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000 เบอร์โทรศัพท์ 044233000 ต่อ 2733",
+      "interview_date": "30-May-69",
+      "interview_time": "09.00-12.00 น.",
+      "link": "https://oaprrmuti.gaoapr.com/admission",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 2,
+      "score_conditions": {
+        "min_gpax": 2
+      },
+      "created_at": "2025-10-22T08:10:21.245Z",
+      "min_total_score": 0,
+      "scores": {
+        "gpax": 100
+      }
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "program": [
+    {
+      "program_id": "12160107110303A",
+      "project_id": "E2733",
+      "major_id": "0",
+      "program_name_th": "วิทยาศาสตรบัณฑิต สาขาวิชาการจัดการสาธารณภัย",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "วท.บ. การจัดการสาธารณภัย",
+      "min_score": 52.777,
+      "max_score": 69.722,
+      "min_score_ds": 51.527,
+      "max_score_ds": 69.722,
+      "receive_student_number": 20,
+      "scores": {
+        "tgat": 100
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68ddf5714bdfed1e96e946ae",
+      "university_id": "216",
+      "program_id": "12160107110303A",
+      "project_id": "E2731",
+      "project_name_th": "วท.บ. การจัดการสาธารณภัย - นักเรียนของโรงเรียนสังกัดกรุงเทพมหานคร 10 โรงเรียน",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาการจัดการสาธารณภัย",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.713Z",
+      "score_conditions": {},
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 30,
+        "interview": 70
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946b2",
+      "university_id": "216",
+      "program_id": "12160107110303A",
+      "project_id": "E2733",
+      "project_name_th": "วท.บ. การจัดการสาธารณภัย - นักเรียนทั่วไป และบุคคลทั่วไป",
+      "type": "1_2569",
+      "receive_student_number": 22,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาการจัดการสาธารณภัย",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.725Z",
+      "score_conditions": {},
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 30,
+        "interview": 70
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946b0",
+      "university_id": "216",
+      "program_id": "12160107110303A",
+      "project_id": "E2732",
+      "project_name_th": "วท.บ. การจัดการสาธารณภัย - นักเรียนของโรงเรียนวชิราวุธวิทยาลัย/\tนักเรียนที่เป็นบุตรหรือบุตรบุญธรรมของข้าราชการ ข้าราชการบำนาญ หรือลูกจ้างสังกัดกรุงเทพมหานคร/พนักงานมหาวิทยาลัยนวมินทราธิราช /นักเรียนของโรงเรียนสังกัดองค์กรปกครองส่วนท้องถิ่น",
+      "type": "1_2569",
+      "receive_student_number": 4,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาการจัดการสาธารณภัย",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "folio": {
+        "folio_q1": "รูปถ่าย เอกสารรับรอง หรือหลักฐานที่แสดงถึงการเข้าร่วมกิจกรรมส่งเสริมคุณธรรมด้านจิตสาธารณะ (ถ้ามี)",
+        "folio_q1_type": "C",
+        "closed_date": "17/12/2568",
+        "page_limit": "15"
+      },
+      "created_at": "2025-10-02T03:45:53.719Z",
+      "score_conditions": {},
+      "min_total_score": 0,
+      "scores": {
+        "portfolio": 30,
+        "interview": 70
+      }
+    },
+    {
+      "_id": "68ddf5714bdfed1e96e946e2",
+      "university_id": "216",
+      "program_id": "12160107110303A",
+      "project_id": "E2733",
+      "project_name_th": "วท.บ. การจัดการสาธารณภัย",
+      "type": "3_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "วิทยาศาสตรบัณฑิต สาขาวิชาการจัดการสาธารณภัย",
+      "condition": "ติดตามข่าวสารการรับสมัครอย่างใกล้ชิด  https://www.facebook.com/regnmu?mibextid=LQQJ4d",
+      "link": "https://admission.nmu.ac.th/admission/home",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-02T03:45:53.871Z",
+      "score_conditions": {}
+    }
+  ]
+}

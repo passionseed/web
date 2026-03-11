@@ -1,0 +1,99 @@
+{
+  "program": [
+    {
+      "program_id": "21440103400501A",
+      "project_id": "0",
+      "major_id": "0",
+      "program_name_th": "วิทยาศาสตรบัณฑิต สาขาวิชาเทคโนโลยีสถาปัตยกรรม",
+      "program_type_name_th": "ภาษาไทย ปกติ",
+      "major_name_th": "0",
+      "project_name_th": "0",
+      "min_score": 24.7,
+      "max_score": 97.45,
+      "min_score_ds": 22.05,
+      "max_score_ds": 96.9,
+      "receive_student_number": 25,
+      "scores": {
+        "priority_score": 80,
+        "gpax": 20
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "_id": "68f8940a9ec1a4bec7224341",
+      "university_id": "144",
+      "program_id": "21440103400501A",
+      "type": "1_2569",
+      "receive_student_number": 20,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สามารถดูข้อมูลรายละเอียดของหลักสูตรที่ได้เว็บไซต์ https://qa.cmru.ac.th/2025/curriculum",
+      "condition": "รับทุกแผนการเรียน",
+      "interview_location": "",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "https://tcas.cmru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T08:21:30.887Z",
+      "folio": {
+        "closed_date": null,
+        "page_limit": null
+      },
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8940b9ec1a4bec72243e3",
+      "university_id": "144",
+      "program_id": "21440103400501A",
+      "type": "2_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สามารถดูข้อมูลรายละเอียดของหลักสูตรที่ได้เว็บไซต์ https://qa.cmru.ac.th/2025/curriculum",
+      "condition": "รับทุกแผนการเรียน",
+      "interview_location": "",
+      "interview_date": "",
+      "interview_time": "",
+      "link": "https://tcas.cmru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T08:21:31.374Z",
+      "score_conditions": {}
+    },
+    {
+      "_id": "68f8940b9ec1a4bec7224485",
+      "university_id": "144",
+      "program_id": "21440103400501A",
+      "type": "3_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 1,
+      "only_vocational": 1,
+      "only_non_formal": 1,
+      "only_ged": 1,
+      "description": "สามารถดูข้อมูลรายละเอียดของหลักสูตรที่ได้เว็บไซต์ https://qa.cmru.ac.th/2025/curriculum",
+      "condition": "รับทุกแผนการเรียน",
+      "interview_location": "ไม่มีการสอบสัมภาษณ์ โปรดตรวจสอบรายชื่อผู้ผ่านการคัดเลือกในวันที่ 29 พฤษภาคม 2569",
+      "interview_date": "ไม่มีการสอบสัมภาษณ์",
+      "interview_time": "ไม่มีการสอบสัมภาษณ์",
+      "link": "https://tcas.cmru.ac.th/",
+      "grad_current": false,
+      "t_score": false,
+      "created_at": "2025-10-22T08:21:31.829Z",
+      "min_total_score": 0,
+      "scores": {
+        "priority_score": 80,
+        "gpax": 20
+      },
+      "score_conditions": {}
+    }
+  ]
+}

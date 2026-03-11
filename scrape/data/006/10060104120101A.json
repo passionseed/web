@@ -1,0 +1,42 @@
+{
+  "program": [],
+  "rounds": [
+    {
+      "_id": "68ef2a0e64cc1de04788346e",
+      "university_id": "006",
+      "program_id": "10060104120101A",
+      "type": "1_2569",
+      "receive_student_number": 3,
+      "only_formal": 1,
+      "only_international": 2,
+      "only_vocational": 2,
+      "only_non_formal": 2,
+      "only_ged": 2,
+      "description": "รายละเอียดตาม websit มหาวิทยาลัย",
+      "interview_location": "มหาวิทยาลัยมหิดล ถ.พุทธมณฑลสาย 4 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170 กองบริหารการศึกษา อาคารศูนย์การเรียนรู้มหิดล MLC",
+      "interview_date": "ตามกำหนดการของมหาวิทยาลัย https://tcas.mahidol.ac.th/",
+      "link": "https://dt.mahidol.ac.th",
+      "grad_current": false,
+      "t_score": false,
+      "min_gpax": 3.5,
+      "min_gpa21": 3,
+      "min_gpa22": 3.5,
+      "min_gpa23": 3.5,
+      "min_gpa24": 3,
+      "min_gpa28": 3.5,
+      "score_conditions": {
+        "min_gpax": 3.5,
+        "min_gpa21": 3,
+        "min_gpa22": 3.5,
+        "min_gpa23": 3.5,
+        "min_gpa24": 3,
+        "min_gpa28": 3.5
+      },
+      "folio": {
+        "closed_date": "0",
+        "page_limit": "0"
+      },
+      "created_at": "2025-10-15T04:58:54.132Z"
+    }
+  ]
+}
