@@ -89,9 +89,11 @@ create table if not exists public.tcas_admission_rounds (
   condition           text,
   scraped_at          timestamptz not null default now(),
   created_at          timestamptz not null default now(),
-  updated_at          timestamptz not null default now(),
-  constraint tcas_rounds_unique unique (program_id, round_type, project_id)
+  updated_at          timestamptz not null default now()
 );
+
+-- Unique index to handle NULL project_id
+create unique index tcas_rounds_unique_idx on public.tcas_admission_rounds (program_id, round_type, (coalesce(project_id, '')));
 
 -- Indexes
 create index idx_tcas_rounds_program     on public.tcas_admission_rounds(program_id);

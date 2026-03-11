@@ -311,6 +311,9 @@ importers:
       three:
         specifier: ^0.179.1
         version: 0.179.1
+      umap-js:
+        specifier: ^1.4.0
+        version: 1.4.0
       vaul:
         specifier: ^0.9.9
         version: 0.9.9(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -4644,6 +4647,12 @@ packages:
   is-alphanumerical@2.0.1:
     resolution: {integrity: sha512-hmbYhX/9MUMF5uh7tOXyK/n0ZvWpad5caBA17GsC6vyuCqaWliRG5K1qS9inmUhEMaOBIW7/whAnSwveW/LtZw==}
 
+  is-any-array@0.1.1:
+    resolution: {integrity: sha512-qTiELO+kpTKqPgxPYbshMERlzaFu29JDnpB8s3bjg+JkxBpw29/qqSaOdKv2pCdaG92rLGeG/zG2GauX58hfoA==}
+
+  is-any-array@2.0.1:
+    resolution: {integrity: sha512-UtilS7hLRu++wb/WBAw9bNuP1Eg04Ivn1vERJck8zJthEvXCBEBpGR/33u/xLKWEQf95803oalHrVDptcAvFdQ==}
+
   is-array-buffer@3.0.5:
     resolution: {integrity: sha512-DDfANUiiG2wC1qawP66qlTugJeL5HyzMpfr8lLK+jMQirGzNod0B12cFB/9q838Ru27sBwfw78/rdoU7RERz6A==}
     engines: {node: '>= 0.4'}
@@ -5441,6 +5450,21 @@ packages:
   minipass@7.1.2:
     resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
     engines: {node: '>=16 || 14 >=14.17'}
+
+  ml-array-max@1.2.4:
+    resolution: {integrity: sha512-BlEeg80jI0tW6WaPyGxf5Sa4sqvcyY6lbSn5Vcv44lp1I2GR6AWojfUvLnGTNsIXrZ8uqWmo8VcG1WpkI2ONMQ==}
+
+  ml-array-min@1.2.3:
+    resolution: {integrity: sha512-VcZ5f3VZ1iihtrGvgfh/q0XlMobG6GQ8FsNyQXD3T+IlstDv85g8kfV0xUG1QPRO/t21aukaJowDzMTc7j5V6Q==}
+
+  ml-array-rescale@1.3.7:
+    resolution: {integrity: sha512-48NGChTouvEo9KBctDfHC3udWnQKNKEWN0ziELvY3KG25GR5cA8K8wNVzracsqSW1QEkAXjTNx+ycgAv06/1mQ==}
+
+  ml-levenberg-marquardt@2.1.1:
+    resolution: {integrity: sha512-2+HwUqew4qFFFYujYlQtmFUrxCB4iJAPqnUYro3P831wj70eJZcANwcRaIMGUVaH9NDKzfYuA4N5u67KExmaRA==}
+
+  ml-matrix@6.12.1:
+    resolution: {integrity: sha512-TJ+8eOFdp+INvzR4zAuwBQJznDUfktMtOB6g/hUcGh3rcyjxbz4Te57Pgri8Q9bhSQ7Zys4IYOGhFdnlgeB6Lw==}
 
   mlly@1.8.0:
     resolution: {integrity: sha512-l8D9ODSRWLe2KHJSifWGwBqpTZXIXTeo8mlKjY+E2HAakaTeNpqAyBZ8GSqLzHgw4XmHmC8whvpjJNMbFZN7/g==}
@@ -6781,6 +6805,9 @@ packages:
     resolution: {integrity: sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ==}
     engines: {node: '>=0.8.0'}
     hasBin: true
+
+  umap-js@1.4.0:
+    resolution: {integrity: sha512-xxpviF9wUO6Nxrx+C58SoDgea+h2PnVaRPKDelWv0HotmY6BeWeh0kAPJoumfqUkzUvowGsYfMbnsWI0b9do+A==}
 
   unbox-primitive@1.1.0:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
@@ -12279,6 +12306,10 @@ snapshots:
       is-alphabetical: 2.0.1
       is-decimal: 2.0.1
 
+  is-any-array@0.1.1: {}
+
+  is-any-array@2.0.1: {}
+
   is-array-buffer@3.0.5:
     dependencies:
       call-bind: 1.0.8
@@ -13515,6 +13546,30 @@ snapshots:
   minimist@1.2.8: {}
 
   minipass@7.1.2: {}
+
+  ml-array-max@1.2.4:
+    dependencies:
+      is-any-array: 2.0.1
+
+  ml-array-min@1.2.3:
+    dependencies:
+      is-any-array: 2.0.1
+
+  ml-array-rescale@1.3.7:
+    dependencies:
+      is-any-array: 2.0.1
+      ml-array-max: 1.2.4
+      ml-array-min: 1.2.3
+
+  ml-levenberg-marquardt@2.1.1:
+    dependencies:
+      is-any-array: 0.1.1
+      ml-matrix: 6.12.1
+
+  ml-matrix@6.12.1:
+    dependencies:
+      is-any-array: 2.0.1
+      ml-array-rescale: 1.3.7
 
   mlly@1.8.0:
     dependencies:
@@ -15015,6 +15070,10 @@ snapshots:
 
   uglify-js@3.19.3:
     optional: true
+
+  umap-js@1.4.0:
+    dependencies:
+      ml-levenberg-marquardt: 2.1.1
 
   unbox-primitive@1.1.0:
     dependencies:
