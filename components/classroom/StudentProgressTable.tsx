@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,35 @@ export function StudentProgressTable({
   const supabase = createClient();
   const [studentToRemove, setStudentToRemove] = useState<Student | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+
+  // Memoize student progress lookups to prevent O(N*M) calculations on every render
+  const { overallProgressByStudent, mapProgressLookup } = useMemo(() => {
+    const overallProgress = new Map<string, number>();
+    const progressLookup = new Map<string, Map<string, NonNullable<Student["map_progress"]>[0]>>();
+
+    students.forEach((student) => {
+      // Calculate overall progress
+      if (!student.map_progress || maps.length === 0) {
+        overallProgress.set(student.id, 0);
+      } else {
+        const totalProgress = student.map_progress.reduce(
+          (sum, progress) => sum + progress.progress_percentage,
+          0
+        );
+        overallProgress.set(student.id, Math.round(totalProgress / maps.length));
+      }
+
+      // Build map progress lookup for O(1) access
+      const studentMapProgress = new Map<string, NonNullable<Student["map_progress"]>[0]>();
+      student.map_progress?.forEach((p) => {
+        studentMapProgress.set(p.map_id, p);
+      });
+      progressLookup.set(student.id, studentMapProgress);
+    });
+
+    return { overallProgressByStudent: overallProgress, mapProgressLookup: progressLookup };
+  }, [students, maps]);
+
   const getStudentName = (student: Student) => {
     console.log("🎭 [DEBUG] Getting student name for student ID:", student.user_id);
     console.log("🔍 [DEBUG] Full student object:", JSON.stringify(student, null, 2));
@@ -138,21 +167,6 @@ export function StudentProgressTable({
       default:
         return <Badge variant="secondary">Unknown</Badge>;
     }
-  };
-
-  const getOverallProgress = (student: Student) => {
-    if (!student.map_progress || maps.length === 0) {
-      return 0;
-    }
-
-    const totalProgress = student.map_progress.reduce(
-      (sum, progress) => {
-        return sum + progress.progress_percentage;
-      },
-      0
-    );
-
-    return Math.round(totalProgress / maps.length);
   };
 
   const formatDate = (dateString: string) => {
@@ -301,20 +315,18 @@ export function StudentProgressTable({
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">
-                          {getOverallProgress(student)}%
+                          {overallProgressByStudent.get(student.id) || 0}%
                         </span>
                       </div>
                       <Progress
-                        value={getOverallProgress(student)}
+                        value={overallProgressByStudent.get(student.id) || 0}
                         className="h-2"
                       />
                     </div>
                   </TableCell>
 
                   {maps.slice(0, 3).map((map) => {
-                    const progress = student.map_progress?.find(
-                      (p) => p.map_id === map.map_id
-                    );
+                    const progress = mapProgressLookup.get(student.id)?.get(map.map_id);
                     return (
                       <TableCell key={map.map_id}>
                         {progress ? (

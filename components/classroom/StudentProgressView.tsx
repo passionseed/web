@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,34 @@ export function StudentProgressView({
   assignments,
   currentUserId,
 }: StudentProgressViewProps) {
+  // Memoize student progress lookups to prevent O(N*M) calculations on every render
+  const { overallProgressByStudent, assignmentProgressLookup } = useMemo(() => {
+    const overallProgress = new Map<string, number>();
+    const progressLookup = new Map<string, Map<string, NonNullable<Student["assignment_progress"]>[0]>>();
+
+    students.forEach((student) => {
+      // Calculate overall progress
+      if (!student.assignment_progress || assignments.length === 0) {
+        overallProgress.set(student.id, 0);
+      } else {
+        const totalProgress = student.assignment_progress.reduce(
+          (sum, progress) => sum + progress.progress_percentage,
+          0
+        );
+        overallProgress.set(student.id, Math.round(totalProgress / assignments.length));
+      }
+
+      // Build assignment progress lookup for O(1) access
+      const studentAssignmentProgress = new Map<string, NonNullable<Student["assignment_progress"]>[0]>();
+      student.assignment_progress?.forEach((p) => {
+        studentAssignmentProgress.set(p.assignment_id, p);
+      });
+      progressLookup.set(student.id, studentAssignmentProgress);
+    });
+
+    return { overallProgressByStudent: overallProgress, assignmentProgressLookup: progressLookup };
+  }, [students, assignments]);
+
   const getStudentName = (student: Student) => {
     return (
       student.user?.full_name ||
@@ -99,21 +128,6 @@ export function StudentProgressView({
     }
   };
 
-  const getOverallProgress = (student: Student) => {
-    if (!student.assignment_progress || assignments.length === 0) {
-      return 0;
-    }
-
-    const totalProgress = student.assignment_progress.reduce(
-      (sum, progress) => {
-        return sum + progress.progress_percentage;
-      },
-      0
-    );
-
-    return Math.round(totalProgress / assignments.length);
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -125,9 +139,6 @@ export function StudentProgressView({
     // TODO: Open detailed progress modal or navigate to student page
     console.log("View progress for student:", student.id);
   };
-
-  // Find the current student's data
-  const studentData = students.find(student => student.user_id === currentUserId) || null;
 
   return (
     <div className="space-y-6">
@@ -201,20 +212,18 @@ export function StudentProgressView({
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">
-                            {getOverallProgress(student)}%
+                            {overallProgressByStudent.get(student.id) || 0}%
                           </span>
                         </div>
                         <Progress
-                          value={getOverallProgress(student)}
+                          value={overallProgressByStudent.get(student.id) || 0}
                           className="h-2"
                         />
                       </div>
                     </TableCell>
 
                     {assignments.slice(0, 3).map((assignment) => {
-                      const progress = student.assignment_progress?.find(
-                        (p) => p.assignment_id === assignment.id
-                      );
+                      const progress = assignmentProgressLookup.get(student.id)?.get(assignment.id);
                       return (
                         <TableCell key={assignment.id}>
                           {progress ? (
