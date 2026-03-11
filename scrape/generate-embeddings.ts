@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 const TEI_URL = process.env.TEI_URL ?? "https://ai.passionseed.org";
 const BATCH_SIZE = 64;
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const PROD_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const PROD_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(PROD_URL, PROD_KEY);
 
 async function getEmbeddings(texts: string[]): Promise<number[][]> {
   const res = await fetch(`${TEI_URL}/v1/embeddings`, {

@@ -42,3 +42,7 @@ supabase/seed.sql
 # coverage
 coverage/*
 coverage
+
+# scrape
+/scrape/data/
+/scrape/*.json
