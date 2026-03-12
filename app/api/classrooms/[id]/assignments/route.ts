@@ -68,8 +68,10 @@ export async function GET(
 
     // Get additional data separately to avoid complex join issues
     const assignmentIds = assignments?.map((a) => a.id) || [];
-    let enrollmentCounts: any[] = [];
-    let nodeCounts: any[] = [];
+
+    // Use O(1) Map lookups instead of O(N) array finds
+    const enrollmentCounts = new Map<string, any>();
+    const nodeCounts = new Map<string, number>();
 
     if (assignmentIds.length > 0) {
       // Get enrollment counts and status
@@ -84,54 +86,39 @@ export async function GET(
         .select("assignment_id")
         .in("assignment_id", assignmentIds);
 
-      // Process enrollment data
-      enrollmentCounts = (enrollments || []).reduce((acc, enrollment) => {
-        const existingAssignment = acc.find(
-          (a) => a.assignment_id === enrollment.assignment_id
-        );
-        if (existingAssignment) {
-          existingAssignment.total_enrollments++;
-          existingAssignment[enrollment.status] =
-            (existingAssignment[enrollment.status] || 0) + 1;
+      // Process enrollment data O(N) instead of O(N*M)
+      (enrollments || []).forEach((enrollment) => {
+        const id = enrollment.assignment_id;
+        const existing = enrollmentCounts.get(id);
+
+        if (existing) {
+          existing.total_enrollments++;
+          existing[enrollment.status] = (existing[enrollment.status] || 0) + 1;
         } else {
-          acc.push({
-            assignment_id: enrollment.assignment_id,
+          enrollmentCounts.set(id, {
             total_enrollments: 1,
             [enrollment.status]: 1,
           });
         }
-        return acc;
-      }, [] as any[]);
+      });
 
-      // Process node data
-      nodeCounts = (nodes || []).reduce((acc, node) => {
-        const existingAssignment = acc.find(
-          (a) => a.assignment_id === node.assignment_id
-        );
-        if (existingAssignment) {
-          existingAssignment.node_count++;
-        } else {
-          acc.push({
-            assignment_id: node.assignment_id,
-            node_count: 1,
-          });
-        }
-        return acc;
-      }, [] as any[]);
+      // Process node data O(N) instead of O(N*M)
+      (nodes || []).forEach((node) => {
+        const id = node.assignment_id;
+        nodeCounts.set(id, (nodeCounts.get(id) || 0) + 1);
+      });
     }
 
     // Process assignments to add computed fields
     const processedAssignments =
       assignments?.map((assignment: any) => {
-        const enrollmentData =
-          enrollmentCounts.find((e) => e.assignment_id === assignment.id) || {};
-        const nodeData =
-          nodeCounts.find((n) => n.assignment_id === assignment.id) || {};
+        const enrollmentData = enrollmentCounts.get(assignment.id) || {};
+        const nodeCount = nodeCounts.get(assignment.id) || 0;
 
         return {
           ...assignment,
           _count: {
-            assignment_nodes: nodeData.node_count || 0,
+            assignment_nodes: nodeCount,
             assignment_enrollments: enrollmentData.total_enrollments || 0,
           },
           progress_stats: {
