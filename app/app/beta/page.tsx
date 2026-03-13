@@ -271,6 +271,171 @@ export default function BetaInfoPage() {
 
                     </div>
                 </div>
+
+                {/* New Feature Section: หาสายที่เหมาะ */}
+                <div className="relative mt-32 mb-16">
+                    <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+                        {/* Text Content */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -40 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.8 }}
+                            className="w-full lg:w-1/2 space-y-8"
+                        >
+                            <h3 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-relaxed py-2">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-pink-500 py-2 inline-block">
+                                    หาสายที่เหมาะกับเรามากสุด
+                                </span>
+                            </h3>
+                            <ul className="space-y-6">
+                                {[
+                                    "ลองเรียนก่อน LOCK มหาลัย",
+                                    "ออกแบบโดยรุ่นพี่ของคณะนั้นๆ",
+                                    "ลงมือทำ ตามหาความ Passion"
+                                ].map((item, idx) => (
+                                    <motion.li
+                                        key={idx}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                        className="flex items-center gap-4 text-xl sm:text-2xl text-slate-300 font-medium"
+                                    >
+                                        <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-pink-500/20 border border-orange-500/30 text-orange-400">
+                                            <CheckCircle2 className="w-6 h-6" />
+                                        </div>
+                                        <span>{item}</span>
+                                    </motion.li>
+                                ))}
+                            </ul>
+                        </motion.div>
+
+                        {/* Images Content */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 40 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.8 }}
+                            className="w-full lg:w-1/2 relative flex justify-center items-center h-[500px] sm:h-[600px] mt-10 lg:mt-0"
+                        >
+                            <div className="absolute inset-0 bg-pink-500/10 blur-[120px] rounded-full"></div>
+
+                            {/* Left Phone (Back) */}
+                            <motion.div
+                                animate={{ y: [0, -10, 0] }}
+                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                className="absolute left-[-5%] sm:left-[-10%] z-10 w-[55%] sm:w-[50%] drop-shadow-[0_0_30px_rgba(236,72,153,0.3)]"
+                            >
+                                <Image
+                                    src="/CBT/UI1_1.png"
+                                    alt="UI Preview 1"
+                                    width={600}
+                                    height={1200}
+                                    className="w-full h-auto object-contain"
+                                />
+                            </motion.div>
+
+                            {/* Right Phone (Front) */}
+                            <motion.div
+                                animate={{ y: [0, 10, 0] }}
+                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                                className="absolute right-0 sm:right-[5%] top-1/4 z-20 w-[70%] sm:w-[65%] drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]"
+                            >
+                                <Image
+                                    src="/CBT/UI1_2.png"
+                                    alt="UI Preview 2"
+                                    width={500}
+                                    height={1000}
+                                    className="w-full h-auto object-contain"
+                                />
+                            </motion.div>
+                        </motion.div>
+                    </div>
+                </div>
+
+                {/* Second Feature Section: วางแผนเส้นทางที่ใช่ */}
+                <div className="relative mt-32 mb-32">
+                    <div className="flex flex-col lg:flex-row-reverse items-center justify-between gap-12">
+                        {/* Text Content */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 40 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.8 }}
+                            className="w-full lg:w-1/2 space-y-8"
+                        >
+                            <h3 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-relaxed py-2">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 py-2 inline-block">
+                                    วางแผนเส้นทางที่ใช่
+                                </span>
+                            </h3>
+                            <ul className="space-y-6">
+                                {[
+                                    "รวมโอกาสเก็บPortและฝึกงาน",
+                                    "เปรียบเทียบมหาลัยและคณะ",
+                                    "หางานที่ชอบและโลกต้องการ",
+                                    "เจาะลึกข้อมูลทุกอาชีพและมหาลัย"
+                                ].map((item, idx) => (
+                                    <motion.li
+                                        key={idx}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                        className="flex items-center gap-4 text-xl sm:text-2xl text-slate-300 font-medium"
+                                    >
+                                        <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 text-cyan-400">
+                                            <CheckCircle2 className="w-6 h-6" />
+                                        </div>
+                                        <span>{item}</span>
+                                    </motion.li>
+                                ))}
+                            </ul>
+                        </motion.div>
+
+                        {/* Images Content */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -40 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.8 }}
+                            className="w-full lg:w-1/2 relative flex justify-center items-center h-[500px] sm:h-[600px] mt-10 lg:mt-0"
+                        >
+                            <div className="absolute inset-0 bg-blue-500/10 blur-[120px] rounded-full"></div>
+
+                            {/* Left Phone (Back) */}
+                            <motion.div
+                                animate={{ y: [0, -10, 0] }}
+                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                                className="absolute left-[-5%] sm:left-[-10%] z-10 w-[55%] sm:w-[50%] drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+                            >
+                                <Image
+                                    src="/CBT/UI2_1.png"
+                                    alt="UI Preview 3"
+                                    width={600}
+                                    height={1200}
+                                    className="w-full h-auto object-contain"
+                                />
+                            </motion.div>
+
+                            {/* Right Phone (Front) */}
+                            <motion.div
+                                animate={{ y: [0, 10, 0] }}
+                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
+                                className="absolute right-0 sm:right-[5%] top-1/4 z-20 w-[70%] sm:w-[65%] drop-shadow-[0_0_30px_rgba(6,182,212,0.3)]"
+                            >
+                                <Image
+                                    src="/CBT/UI2_2.png"
+                                    alt="UI Preview 4"
+                                    width={500}
+                                    height={1000}
+                                    className="w-full h-auto object-contain"
+                                />
+                            </motion.div>
+                        </motion.div>
+                    </div>
+                </div>
             </div>
 
             {/* Global CSS animation */}
