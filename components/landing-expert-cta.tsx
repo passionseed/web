@@ -8,8 +8,8 @@ import { useLanguage } from "@/lib/i18n/language-context";
 
 const content = {
   en: {
-    badge: "For Professionals",
-    title: "Help a teenager explore your career.",
+    eyebrow: "For Professionals",
+    title: "Share your career with the next generation.",
     subtitle:
       "Answer a 10-minute AI interview about your daily work. We turn it into a 5-day career exploration that students can try on the app.",
     cta: "Start the Interview",
@@ -31,8 +31,8 @@ const content = {
       "Choose whether to offer free or paid mentoring sessions. Parents can book directly through the app.",
   },
   th: {
-    badge: "สำหรับผู้เชี่ยวชาญ",
-    title: "ช่วยวัยรุ่นสำรวจอาชีพของคุณ",
+    eyebrow: "สำหรับผู้เชี่ยวชาญ",
+    title: "แบ่งปันอาชีพของคุณให้คนรุ่นต่อไป",
     subtitle:
       "ตอบสัมภาษณ์ AI 10 นาทีเกี่ยวกับงานประจำวันของคุณ เราจะเปลี่ยนมันเป็นการสำรวจอาชีพ 5 วัน ที่นักเรียนสามารถลองทำได้บนแอป",
     cta: "เริ่มสัมภาษณ์",
@@ -60,41 +60,46 @@ export function LandingExpertCta() {
   const t = content[language];
 
   return (
-    <section className="py-24 bg-gradient-to-b from-black to-purple-950/30 relative overflow-hidden">
+    <section className="py-32 bg-gradient-to-b from-[#0d0d0d] to-[#0a0a0a] relative overflow-hidden border-t border-white/[0.03]">
+      {/* Ambient background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-purple-950/15 rounded-full blur-[120px]" />
+      </div>
+
       <div className="container px-4 md:px-6 relative z-10 max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
           viewport={{ once: true }}
           className="text-center"
         >
-          <span className="inline-flex items-center rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1.5 text-sm font-medium text-purple-400 mb-8">
-            {t.badge}
+          <span className="inline-flex items-center rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1.5 text-xs font-medium text-purple-400 tracking-widest uppercase mb-8">
+            {t.eyebrow}
           </span>
 
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-[1.05]">
             {t.title}
           </h2>
 
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
             {t.subtitle}
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
             {t.details.map((detail, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="flex flex-col items-center gap-3 p-4"
+                className="flex flex-col items-center gap-4 p-6 rounded-xl bg-white/[0.02] border border-white/[0.05]"
               >
                 <div className="p-3 rounded-full bg-purple-500/10 border border-purple-500/20">
                   <detail.icon className="h-5 w-5 text-purple-400" />
                 </div>
-                <span className="text-sm text-gray-300 text-center">
+                <span className="text-sm text-gray-300 text-center font-medium">
                   {detail.text}
                 </span>
               </motion.div>
@@ -104,15 +109,15 @@ export function LandingExpertCta() {
           <Button
             asChild
             size="lg"
-            className="bg-purple-600 hover:bg-purple-500 text-white text-lg h-14 px-10 rounded-full transition-all duration-300 hover:scale-105"
+            className="group relative bg-white text-black hover:bg-gray-100 text-base sm:text-lg h-12 sm:h-14 px-8 sm:px-10 rounded-full font-semibold transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_50px_rgba(255,255,255,0.1)] font-sans"
           >
-            <Link href="/expert-interview" className="flex items-center gap-2">
+            <Link href="/expert-interview" className="flex items-center gap-2 font-sans">
               {t.cta}
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
 
-          <p className="text-sm text-gray-500 mt-6 max-w-md mx-auto">
+          <p className="text-sm text-gray-500 mt-8 max-w-md mx-auto font-medium">
             {t.mentorNote}
           </p>
         </motion.div>

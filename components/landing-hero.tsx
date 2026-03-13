@@ -1,55 +1,28 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { ArrowRight, Compass, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { HeroBackground } from "@/components/hero-background";
+import { HeroVisualization } from "@/components/hero-visualization";
 
 const content = {
   en: {
-    problemBadge: "The problem no one talks about",
-    headline: "Most students choose their career",
-    headlineHighlight: "based on guesswork.",
-    problemText:
-      "What their parents do. What sounds impressive. What they stumbled across online. There's no structured way to actually explore — and the cost of getting it wrong is years of the wrong degree, the wrong job, and real money wasted.",
-    solutionIntro: "PassionSeed helps students aged 14–18",
-    solutionHighlight: "discover careers by doing — not browsing.",
-    solutionText:
-      "Complete real-world quests tied to different careers. Our system learns what you're passionate about, where you excel, and what the market actually needs.",
-    ctaExplore: "Start Exploring",
-    ctaExpert: "I'm a Professional — Help Build a Path",
-    ctaLogin: "Sign in",
-    stat1: "5-day",
-    stat1Label: "career explorations",
-    stat2: "Ikigai",
-    stat2Label: "framework based",
-    stat3: "Free",
-    stat3Label: "for students",
+    eyebrow: "Career exploration, reimagined",
+    headline: "Try a career before you choose one.",
+    subheadline: "5-day real-world challenges designed by working professionals. Free for students.",
+    cta: "Start exploring",
   },
   th: {
-    problemBadge: "ปัญหาที่ไม่มีใครพูดถึง",
-    headline: "นักเรียนส่วนใหญ่เลือกอาชีพ",
-    headlineHighlight: "ด้วยการเดาสุ่ม",
-    problemText:
-      "ทำตามอาชีพพ่อแม่ เลือกตามที่ฟังดูดี หรือเจอมาโดยบังเอิญบนอินเทอร์เน็ต ไม่มีทางสำรวจอย่างเป็นระบบ — แล้วต้นทุนของการเลือกผิดคืออะไร? หลายปีกับสาขาที่ไม่ใช่ งานที่ไม่ชอบ และเงินที่เสียไป",
-    solutionIntro: "PassionSeed ช่วยนักเรียนอายุ 14–18 ปี",
-    solutionHighlight: "ค้นพบอาชีพด้วยการลงมือทำ ไม่ใช่แค่อ่าน",
-    solutionText:
-      "ทำภารกิจจริงที่เชื่อมกับอาชีพต่างๆ ระบบจะเรียนรู้ว่าคุณหลงใหลอะไร เก่งด้านไหน และตลาดต้องการอะไร",
-    ctaExplore: "เริ่มสำรวจเลย",
-    ctaExpert: "เป็นผู้เชี่ยวชาญ — ช่วยสร้างเส้นทางอาชีพ",
-    ctaLogin: "เข้าสู่ระบบ",
-    stat1: "5 วัน",
-    stat1Label: "สำรวจอาชีพ",
-    stat2: "Ikigai",
-    stat2Label: "กรอบแนวคิดชีวิต",
-    stat3: "ฟรี",
-    stat3Label: "สำหรับนักเรียน",
+    eyebrow: "การสำรวจอาชีพในรูปแบบใหม่",
+    headline: "ลองทำงานจริง ก่อนเลือกอนาคต",
+    subheadline: "ภารกิจ 5 วัน ออกแบบโดยผู้เชี่ยวชาญจากสายงานจริง ฟรีสำหรับนักเรียน",
+    cta: "เริ่มสำรวจ",
   },
 };
 
@@ -88,148 +61,115 @@ export function LandingHero() {
   const t = content[language];
 
   return (
-    <section className="relative w-full min-h-[95vh] flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
-      {/* Background */}
+    <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden">
+      {/* Animated background with sunrise gradient */}
+      <HeroBackground />
+
+      {/* Living Education Galaxy - data-driven visualization */}
       <div className="absolute inset-0 w-full h-full">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/15 rounded-full blur-[128px]" />
+        <HeroVisualization />
       </div>
 
-      <div className="container relative z-10 px-4 md:px-6 py-16">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          {/* Problem Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-4 py-1.5 text-sm font-medium text-red-400 mb-8"
-          >
-            {t.problemBadge}
-          </motion.div>
+      <div className="relative z-10 px-6 w-full max-w-5xl mx-auto flex flex-col items-center text-center">
+        {/* Eyebrow */}
+        <motion.span
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="text-sm font-medium text-orange-300 tracking-wide uppercase mb-6"
+        >
+          {t.eyebrow}
+        </motion.span>
 
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-tight"
-          >
-            {t.headline}{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500">
-              {t.headlineHighlight}
-            </span>
-          </motion.h1>
+        {/* Headline */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+          className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.05] tracking-tight max-w-4xl drop-shadow-[0_2px_30px_rgba(255,107,74,0.3)]"
+        >
+          {t.headline.split('\n')[0]}
+        </motion.h1>
 
-          {/* Problem Text */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mt-6 leading-relaxed"
-          >
-            {t.problemText}
-          </motion.p>
+        {/* Subheadline */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-8 text-lg sm:text-xl md:text-2xl text-amber-100/80 max-w-2xl font-medium leading-relaxed"
+        >
+          {t.subheadline}
+        </motion.p>
 
-          {/* Divider */}
-          <motion.div
-            initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="w-24 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent my-10"
-          />
-
-          {/* Solution */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-            className="text-xl md:text-2xl text-white font-medium"
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-12 w-full sm:w-auto"
+        >
+          <Button
+            size="lg"
+            onClick={handleGuestAccess}
+            disabled={isLoading}
+            className="group relative bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 text-base sm:text-lg h-12 sm:h-14 px-8 sm:px-10 rounded-full font-semibold transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_60px_rgba(251,191,36,0.4)] w-full sm:w-auto overflow-hidden"
           >
-            {t.solutionIntro}{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
-              {t.solutionHighlight}
-            </span>
-          </motion.p>
+            {/* Subtle shine effect */}
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent group-hover:translate-x-full transition-transform duration-1000 ease-out" />
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="text-gray-400 max-w-2xl mx-auto mt-4 leading-relaxed"
-          >
-            {t.solutionText}
-          </motion.p>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="flex flex-col sm:flex-row gap-4 mt-10 w-full sm:w-auto items-center"
-          >
-            <Button
-              size="lg"
-              onClick={handleGuestAccess}
-              disabled={isLoading}
-              className="bg-white text-black hover:bg-gray-200 text-lg h-14 px-8 rounded-full transition-all duration-300 hover:scale-105 min-w-[220px]"
-            >
+            <span className="relative flex items-center justify-center gap-2">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
-                  <Compass className="h-5 w-5 mr-2" />
-                  {t.ctaExplore}
+                  {t.cta}
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
                 </>
               )}
-            </Button>
+            </span>
+          </Button>
+        </motion.div>
 
-            <Link
-              href="/login"
-              className="text-gray-400 hover:text-white underline underline-offset-4 text-sm transition-colors"
-            >
-              {t.ctaLogin}
-            </Link>
-          </motion.div>
-
-          {/* Expert CTA */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-6"
-          >
-            <Link
-              href="/expert-interview"
-              className="inline-flex items-center text-sm text-purple-400 hover:text-purple-300 transition-colors group"
-            >
-              {t.ctaExpert}
-              <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="grid grid-cols-3 gap-8 mt-16 pt-10 border-t border-white/10 w-full max-w-lg"
-          >
-            {[
-              { value: t.stat1, label: t.stat1Label },
-              { value: t.stat2, label: t.stat2Label },
-              { value: t.stat3, label: t.stat3Label },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-2xl font-bold text-white">{stat.value}</div>
-                <div className="text-xs text-gray-500 mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </motion.div>
-        </div>
+        {/* Social proof / trust indicator - Thai universities */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-16 flex flex-col items-center gap-3"
+        >
+          <p className="text-xs sm:text-sm text-amber-200/50 font-medium">
+            {language === "th" ? "นักเรียนจากมหาวิทยาลัยชั้นนำ" : "Students from top universities"}
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 opacity-60">
+            <span className="text-xs sm:text-sm font-semibold text-amber-100/80">จุฬาฯ</span>
+            <span className="text-xs sm:text-sm font-semibold text-amber-100/80">มหิดล</span>
+            <span className="text-xs sm:text-sm font-semibold text-amber-100/80">ธรรมศาสตร์</span>
+            <span className="text-xs sm:text-sm font-semibold text-amber-100/80">เกษตรศาสตร์</span>
+            <span className="hidden sm:inline text-xs sm:text-sm font-semibold text-amber-100/80">เชียงใหม่</span>
+            <span className="hidden sm:inline text-xs sm:text-sm font-semibold text-amber-100/80">ขอนแก่น</span>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+      {/* Scroll indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 1, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+      >
+        <motion.div
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="w-5 h-8 rounded-full border-2 border-amber-400/40 flex items-start justify-center p-1.5"
+        >
+          <motion.div
+            animate={{ y: [0, 12, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="w-1 h-2 bg-amber-400/60 rounded-full"
+          />
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
