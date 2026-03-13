@@ -19,7 +19,6 @@ export default async function Home() {
     false;
 
   // Check if logged-in user has completed their profile
-  console.log("HOME PAGE USER OBJECT:", JSON.stringify(user, null, 2));
   if (user && !isAnonymous) {
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
