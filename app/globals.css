@@ -4,6 +4,110 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hero Path Animations */
+@keyframes path-draw {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes path-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-20px);
+    opacity: 0.2;
+  }
+}
+
+@keyframes pulse-destination {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer-warm {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+  }
+}
+
+@keyframes gradient-shift-sunrise {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-path-draw {
+  animation: path-draw 2s ease-out forwards;
+}
+
+.animate-path-glow {
+  animation: path-glow 3s ease-in-out infinite;
+}
+
+.animate-float-up {
+  animation: float-up 6s ease-in-out infinite;
+}
+
+.animate-pulse-destination {
+  animation: pulse-destination 4s ease-in-out infinite;
+}
+
+.animate-shimmer-warm {
+  animation: shimmer-warm 3s ease-in-out infinite;
+}
+
+.animate-gradient-sunrise {
+  background-size: 200% 200%;
+  animation: gradient-shift-sunrise 10s ease infinite;
+}
+
+/* Sunrise glow utilities */
+.sunrise-glow {
+  box-shadow:
+    0 0 60px rgba(255, 107, 74, 0.3),
+    0 0 120px rgba(251, 191, 36, 0.2),
+    0 0 180px rgba(251, 113, 133, 0.1);
+}
+
+.sunrise-text-glow {
+  text-shadow:
+    0 0 20px rgba(255, 107, 74, 0.4),
+    0 0 40px rgba(251, 191, 36, 0.2);
+}
+
 .perspective-1000 {
   perspective: 1000px;
 }
@@ -106,6 +210,11 @@
   pre,
   a {
     @apply font-mono;
+  }
+
+  /* Set dark theme as default */
+  html {
+    @apply dark;
   }
 }
 
