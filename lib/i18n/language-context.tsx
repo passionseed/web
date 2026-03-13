@@ -35,6 +35,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       const savedLang = localStorage.getItem("app-language") as Language;
       if (savedLang && (savedLang === "en" || savedLang === "th")) {
         setLanguage(savedLang);
+      } else {
+        // 1b. Auto-detect from browser locale
+        const browserLang = navigator.language?.toLowerCase() || "";
+        if (browserLang.startsWith("th")) {
+          setLanguage("th");
+        }
       }
 
       // 2. Try Supabase user_settings table (truth)

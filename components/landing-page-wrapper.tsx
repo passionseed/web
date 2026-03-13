@@ -1,23 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LandingHero } from "@/components/landing-hero";
 import { LandingFeatures } from "@/components/landing-features";
+import { LandingExpertCta } from "@/components/landing-expert-cta";
 import { LandingParents } from "@/components/landing-parents";
-import { WorkshopCategories } from "@/components/workshop-categories";
-import { CommunitySection } from "@/components/community-section";
-import { HackathonPromo } from "@/components/hackathon-promo";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 interface LandingPageWrapperProps {
   children?: React.ReactNode;
 }
 
 export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
-  const [lang, setLang] = useState<"en" | "th">("th");
+  const { language, setLanguage } = useLanguage();
 
   const toggleLang = () => {
-    setLang((prev) => (prev === "en" ? "th" : "en"));
+    setLanguage(language === "en" ? "th" : "en");
   };
 
   return (
@@ -30,18 +28,16 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
           onClick={toggleLang}
           className="bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 transition-all duration-300"
         >
-          {lang === "en" ? "🇹🇭 TH" : "🇬🇧 EN"}
+          {language === "en" ? "🇹🇭 TH" : "🇬🇧 EN"}
         </Button>
       </div>
 
       <main className="flex flex-col">
-        <HackathonPromo />
-        <LandingHero lang={lang} />
-        <LandingFeatures lang={lang} />
+        <LandingHero />
+        <LandingFeatures />
+        <LandingExpertCta />
         {children}
-        <LandingParents lang={lang} />
-        <WorkshopCategories />
-        <CommunitySection />
+        <LandingParents />
       </main>
     </div>
   );
