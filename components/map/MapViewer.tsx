@@ -485,10 +485,16 @@ export function MapViewer({
     checkTeamMapAndRole();
   }, [currentUser, map.id]);
 
+  // Pre-calculate node lookup map for O(1) access
+  const nodeMap = useMemo(() => {
+    const mapObj = new Map<string, MapNode>();
+    map.map_nodes.forEach((node) => mapObj.set(node.id, node));
+    return mapObj;
+  }, [map.map_nodes]);
+
   // Check if node is unlocked based on prerequisites
   const isNodeUnlocked = (nodeId: string): boolean => {
-    // Find the node data
-    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+    const nodeData = nodeMap.get(nodeId);
 
     // Text nodes are always "unlocked" (visible) since they're just annotations
     if ((nodeData as any)?.node_type === "text") {
@@ -519,7 +525,7 @@ export function MapViewer({
 
   // Get submission requirement for a node (single or all team members)
   const getSubmissionRequirement = (nodeId: string): "single" | "all" => {
-    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+    const nodeData = nodeMap.get(nodeId);
     return nodeData?.metadata?.submission_requirement || "single";
   };
 
