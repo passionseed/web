@@ -1,63 +1,51 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useMemo } from "react";
 
-interface AuroraWave {
-  id: number;
-  path: string;
-  color: string;
-  opacity: number;
-  delay: number;
-  duration: number;
-}
+const glowOrbs = [
+  {
+    id: 1,
+    className:
+      "left-[-12%] top-[10%] h-[26rem] w-[26rem] bg-orange-400/18",
+    x: [0, 20, 0],
+    y: [0, -10, 0],
+    scale: [1, 1.08, 1],
+    duration: 18,
+  },
+  {
+    id: 2,
+    className:
+      "right-[-10%] top-[18%] h-[24rem] w-[24rem] bg-fuchsia-500/14",
+    x: [0, -18, 0],
+    y: [0, 16, 0],
+    scale: [1, 1.04, 1],
+    duration: 22,
+  },
+  {
+    id: 3,
+    className:
+      "left-1/2 top-[58%] h-[30rem] w-[30rem] -translate-x-1/2 bg-amber-300/12",
+    x: [0, 0, 0],
+    y: [0, -18, 0],
+    scale: [1, 1.06, 1],
+    duration: 20,
+  },
+];
+
+const particles = Array.from({ length: 14 }, (_, index) => ({
+  id: index,
+  left: `${8 + ((index * 7) % 84)}%`,
+  top: `${10 + ((index * 11) % 70)}%`,
+  size: 2 + (index % 3),
+  duration: 8 + (index % 5) * 2,
+  delay: (index % 4) * 0.6,
+}));
 
 export function HeroBackground() {
-  // Generate aurora wave paths
-  const auroraWaves = useMemo<AuroraWave[]>(() => {
-    return [
-      {
-        id: 1,
-        path: "M 0 60 Q 25 40 50 55 T 100 50 L 100 100 L 0 100 Z",
-        color: "#ff6b4a",
-        opacity: 0.15,
-        delay: 0,
-        duration: 20,
-      },
-      {
-        id: 2,
-        path: "M 0 70 Q 30 50 60 65 T 100 55 L 100 100 L 0 100 Z",
-        color: "#fbbf24",
-        opacity: 0.1,
-        delay: 2,
-        duration: 25,
-      },
-      {
-        id: 3,
-        path: "M 0 50 Q 40 35 70 50 T 100 45 L 100 100 L 0 100 Z",
-        color: "#fb7185",
-        opacity: 0.12,
-        delay: 4,
-        duration: 22,
-      },
-    ];
-  }, []);
-
-  // Floating particles for depth
-  const depthParticles = useMemo(() => {
-    return Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: 1 + Math.random() * 2,
-      duration: 10 + Math.random() * 20,
-      delay: Math.random() * 5,
-    }));
-  }, []);
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Base gradient - deep purple to warm sunrise */}
+      {/* Base gradient */}
       <div
         className="absolute inset-0"
         style={{
@@ -75,47 +63,23 @@ export function HeroBackground() {
         }}
       />
 
-      {/* Aurora mesh layer */}
-      <svg
-        className="absolute inset-0 w-full h-full opacity-60"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-      >
-        <defs>
-          <linearGradient id="aurora1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff6b4a" stopOpacity="0.3" />
-            <stop offset="50%" stopColor="#fbbf24" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#fb7185" stopOpacity="0.1" />
-          </linearGradient>
-          <linearGradient id="aurora2" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.2" />
-            <stop offset="50%" stopColor="#a78bfa" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.1" />
-          </linearGradient>
-        </defs>
-
-        {auroraWaves.map((wave) => (
-          <motion.path
-            key={wave.id}
-            d={wave.path}
-            fill={wave.color === "#ff6b4a" ? "url(#aurora1)" : "url(#aurora2)"}
-            opacity={wave.opacity}
-            animate={{
-              d: [
-                wave.path,
-                wave.path.replace(/Q.*?T/, `Q ${30 + wave.id * 5} ${45 - wave.id * 5} T`),
-                wave.path,
-              ],
-            }}
-            transition={{
-              duration: wave.duration,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: wave.delay,
-            }}
-          />
-        ))}
-      </svg>
+      {/* Soft glow orbs */}
+      {glowOrbs.map((orb) => (
+        <motion.div
+          key={orb.id}
+          className={`absolute rounded-full blur-3xl ${orb.className}`}
+          animate={{
+            x: orb.x,
+            y: orb.y,
+            scale: orb.scale,
+          }}
+          transition={{
+            duration: orb.duration,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
 
       {/* Radial glow emanating from bottom center */}
       <div
@@ -177,13 +141,13 @@ export function HeroBackground() {
       />
 
       {/* Depth particles */}
-      {depthParticles.map((particle) => (
+      {particles.map((particle) => (
         <motion.div
           key={particle.id}
           className="absolute rounded-full"
           style={{
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
+            left: particle.left,
+            top: particle.top,
             width: `${particle.size}px`,
             height: `${particle.size}px`,
             background: `radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%)`,
@@ -201,11 +165,13 @@ export function HeroBackground() {
         />
       ))}
 
-      {/* Noise texture overlay */}
+      {/* Grain substitute without SVG */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.06]"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
         }}
       />
     </div>
