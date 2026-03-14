@@ -293,6 +293,25 @@ export async function GET(
     const nodesMap = new Map(allNodes.map(n => [n.id, n]));
     const mapsMap = new Map((maps || []).map(m => [m.id, m]));
 
+    // O(N) Maps for group members lookup to optimize O(N*M) filtering below
+    const membersByGroupId = new Map<string, any[]>();
+    const membersByUserAndAssessment = new Map<string, any[]>();
+
+    allGroupMembers.forEach(member => {
+      // Group ID lookup
+      if (!membersByGroupId.has(member.group_id)) {
+        membersByGroupId.set(member.group_id, []);
+      }
+      membersByGroupId.get(member.group_id)!.push(member);
+
+      // User + Assessment lookup
+      const userAssessmentKey = `${member.user_id}_${member.assessment_id}`;
+      if (!membersByUserAndAssessment.has(userAssessmentKey)) {
+        membersByUserAndAssessment.set(userAssessmentKey, []);
+      }
+      membersByUserAndAssessment.get(userAssessmentKey)!.push(member);
+    });
+
     // Step 8: Transform submissions with group expansion
     const transformedSubmissions: any[] = [];
     
@@ -337,25 +356,20 @@ export async function GET(
         
         if (submission.assessment_group_id) {
           // Case 1: Has explicit assessment_group_id
-          groupMembers = allGroupMembers.filter(member => 
-            member.group_id === submission.assessment_group_id
-          );
+          // Optimization: Replaced O(N) array filter with O(1) map lookup
+          groupMembers = membersByGroupId.get(submission.assessment_group_id) || [];
         } else {
           // Case 2: No assessment_group_id but is group submission - find by user and assessment
           // This handles the case where assessment_group_id is null but it's still a group submission
           const submitterUserId = progress?.user_id;
           if (submitterUserId) {
-            groupMembers = allGroupMembers.filter(member => 
-              member.assessment_id === submission.assessment_id && 
-              member.user_id === submitterUserId
-            );
+            const userAssessmentKey = `${submitterUserId}_${submission.assessment_id}`;
+            const initialMembers = membersByUserAndAssessment.get(userAssessmentKey) || [];
             
             // If we found the submitter's group, get all members of that group
-            if (groupMembers.length > 0) {
-              const groupId = groupMembers[0].group_id;
-              groupMembers = allGroupMembers.filter(member => 
-                member.group_id === groupId
-              );
+            if (initialMembers.length > 0) {
+              const groupId = initialMembers[0].group_id;
+              groupMembers = membersByGroupId.get(groupId) || [];
             }
           }
         }
