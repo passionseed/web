@@ -8,6 +8,8 @@ import { createClient } from "@/utils/supabase/client";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
+import { Globe } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/language-context";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,6 +18,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const { language, setLanguage } = useLanguage();
 
   // Hide navbar for profile completion pages, hackathon page, and beta page
   const hideNavbar =
@@ -39,22 +42,33 @@ export function Layout({ children }: LayoutProps) {
     getUser();
   }, []);
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      {!hideNavbar && (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container px-4 flex h-16 items-center">
-            <MainNav />
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "th" : "en");
+  };
 
-            <div className="ml-auto flex items-center space-x-4">
+  return (
+    <div className="flex min-h-screen flex-col bg-[#0d0d0d]">
+      {!hideNavbar && (
+        <header className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-[#0d0d0d]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0d0d0d]/60">
+          <div className="container px-4 flex h-16 items-center">
+            <MainNav isAuthenticated={!!user} />
+
+            <div className="ml-auto flex items-center gap-3">
+              {/* Language toggle - pill style */}
+              <button
+                onClick={toggleLanguage}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 text-gray-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12]"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span className="w-6">{language === "en" ? "TH" : "EN"}</span>
+              </button>
+
               {user ? (
                 <UserNav user={user} />
               ) : (
-                <>
-                  <Button asChild>
-                    <a href="/login">Sign In</a>
-                  </Button>
-                </>
+                <Button asChild className="bg-white text-black hover:bg-gray-100 font-semibold rounded-full px-5">
+                  <a href="/login">Sign In</a>
+                </Button>
               )}
             </div>
           </div>
