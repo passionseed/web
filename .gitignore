@@ -46,3 +46,6 @@ coverage
 # scrape
 /scrape/data/
 /scrape/*.json
+
+# local worktrees
+.worktrees/
