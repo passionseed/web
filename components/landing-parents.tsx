@@ -6,8 +6,8 @@ import { useLanguage } from "@/lib/i18n/language-context";
 
 const content = {
   en: {
-    title: "For Parents",
-    headline: "See what your child discovered about themselves.",
+    eyebrow: "For Parents",
+    title: "See what your child discovered.",
     description:
       "One wrong career choice can set a family back a generation. PassionSeed gives your child a structured, evidence-based way to explore — and gives you a clear report of what they found.",
     features: [
@@ -29,8 +29,8 @@ const content = {
     ],
   },
   th: {
-    title: "สำหรับผู้ปกครอง",
-    headline: "ดูว่าลูกของคุณค้นพบอะไรเกี่ยวกับตัวเอง",
+    eyebrow: "สำหรับผู้ปกครอง",
+    title: "ดูว่าลูกของคุณค้นพบอะไร",
     description:
       "การเลือกอาชีพผิดเพียงครั้งเดียวอาจทำให้ครอบครัวถอยหลังไปหนึ่งรุ่น PassionSeed ให้ลูกของคุณมีวิธีสำรวจอย่างเป็นระบบและมีหลักฐาน — และให้คุณได้เห็นรายงานชัดเจนว่าพวกเขาค้นพบอะไร",
     features: [
@@ -60,23 +60,28 @@ export function LandingParents() {
   return (
     <section
       id="parents"
-      className="py-24 bg-[#050505] relative overflow-hidden"
+      className="py-32 bg-[#0a0a0a] relative overflow-hidden border-t border-white/[0.03]"
     >
+      {/* Ambient background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-blue-950/10 rounded-full blur-[100px]" />
+      </div>
+
       <div className="container px-4 md:px-6 relative z-10 max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-16"
         >
-          <span className="inline-block text-sm font-medium text-blue-400 mb-4">
-            {t.title}
+          <span className="inline-block text-xs font-medium text-blue-400 tracking-widest uppercase mb-4">
+            {t.eyebrow}
           </span>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-            {t.headline}
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-[1.05]">
+            {t.title}
           </h2>
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-medium">
             {t.description}
           </p>
         </motion.div>
@@ -89,15 +94,15 @@ export function LandingParents() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="p-6 rounded-xl border border-white/10 bg-white/[0.02]"
+              className="group p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-500"
             >
-              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 w-fit mb-4">
+              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 w-fit mb-5 group-hover:scale-110 transition-transform duration-500">
                 <feature.icon className="h-6 w-6 text-blue-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-xl font-bold text-white mb-3">
                 {feature.title}
               </h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
+              <p className="text-gray-400 text-sm leading-relaxed font-medium">
                 {feature.desc}
               </p>
             </motion.div>
