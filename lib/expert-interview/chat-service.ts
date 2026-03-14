@@ -128,6 +128,8 @@ export function getInterviewQuestions(): InterviewQuestion[] {
 
 export { normalizeQuestBlueprint };
 
+const MAX_FOLLOWUPS_PER_QUESTION = 2;
+
 export async function processInterviewMessage(
   message: string,
   currentQuestionId: string | null,
@@ -159,12 +161,18 @@ export async function processInterviewMessage(
 
   const currentTopicPrompt = INTERVIEW_QUESTIONS[questionIndex].prompt;
   const nextQuestionDef = isLastQuestion ? null : INTERVIEW_QUESTIONS[questionIndex + 1];
-  
+
+  // Count how many follow-ups have already been asked for this question
+  // by counting consecutive assistant messages with the same questionId
+  const followupCount = countFollowupsForQuestion(conversationHistory, currentTopicPrompt);
+  const mustAdvance = followupCount >= MAX_FOLLOWUPS_PER_QUESTION;
+
   const evaluation = await evaluateAndRespond(
     sanitized,
     currentTopicPrompt,
     nextQuestionDef?.prompt,
-    updatedHistory
+    updatedHistory,
+    mustAdvance
   );
 
   if (evaluation.isTopicCovered) {
@@ -199,35 +207,69 @@ const decisionSchema = z.object({
   interviewerResponse: z.string().describe("What the interviewer should say next. If isTopicCovered is true, write a natural transition to the NEXT topic. If false, write a probing follow-up question to dig deeper into the CURRENT topic.")
 });
 
+function countFollowupsForQuestion(history: ChatMessage[], currentQuestionPrompt: string): number {
+  // Find where the current question was first asked (last assistant message containing the question)
+  let questionStartIdx = -1;
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].role === "assistant" && history[i].content.includes(currentQuestionPrompt.slice(0, 40))) {
+      questionStartIdx = i;
+      break;
+    }
+  }
+  if (questionStartIdx < 0) return 0;
+  // Count assistant messages after the question was introduced (those are follow-ups)
+  return history.slice(questionStartIdx + 1).filter((m) => m.role === "assistant").length;
+}
+
 async function evaluateAndRespond(
   lastAnswer: string,
   currentTopicPrompt: string,
   nextTopicPrompt: string | undefined,
-  history: ChatMessage[]
+  history: ChatMessage[],
+  mustAdvance: boolean
 ): Promise<{ isTopicCovered: boolean; interviewerResponse: string }> {
+  if (mustAdvance) {
+    return {
+      isTopicCovered: true,
+      interviewerResponse: nextTopicPrompt || "Thank you, that gives me a clear picture. That wraps up our conversation!",
+    };
+  }
+
+  // Build a summary of what the expert has shared so far on this topic
+  // by including recent conversation turns (last 6 messages for context)
+  const recentExchanges = history
+    .slice(-6)
+    .map((m) => `${m.role === "user" ? "Expert" : "Interviewer"}: ${m.content}`)
+    .join("\n");
+
   try {
     const { object } = await generateObject({
       model: getModel("gemini-2.5-flash"),
       schema: decisionSchema,
       system: [
         "You are a warm, curious interviewer helping young people understand careers.",
-        "Your job is to evaluate if the expert has provided enough depth on the current topic for a student to make a real career decision.",
-        "If their answer is too short, generic, idealized, or lacks concrete examples, choose isTopicCovered=false and ask a specific follow-up question to dig deeper.",
+        "Your job is to evaluate if the expert has provided ENOUGH CUMULATIVE information on the current topic across all their responses — not just the latest message.",
+        "Consider ALL the information they have shared so far in the conversation when judging if the topic is covered.",
+        "If the combined information across their responses gives a student a clear picture of the field, role, and specialization, choose isTopicCovered=true.",
+        "Only choose isTopicCovered=false if there is still a meaningful gap that would genuinely help a student understand this career better.",
         "Prefer follow-up questions that reveal hidden realities, boring-but-important work, difficult judgment calls, or signals of fit and misfit.",
-        "If they gave a great, detailed answer, choose isTopicCovered=true and smoothly transition to the NEXT topic.",
+        "If the topic is sufficiently covered, choose isTopicCovered=true and smoothly transition to the NEXT topic.",
         "Keep your response conversational and concise (1-2 sentences max).",
         "Do not repeat what the expert said back to them.",
       ].join(" "),
       prompt: [
-        `Current Topic we are discussing: "${currentTopicPrompt}"`,
-        `Expert's last response: "${lastAnswer}"`,
-        nextTopicPrompt ? `Next topic we need to ask about eventually: "${nextTopicPrompt}"` : `This is the final topic of the interview.`,
-        "Evaluate the response and generate what the interviewer should say next.",
+        `Current Topic: "${currentTopicPrompt}"`,
+        "",
+        "Recent conversation (evaluate the CUMULATIVE information provided, not just the last message):",
+        recentExchanges,
+        "",
+        nextTopicPrompt ? `Next topic to transition to if covered: "${nextTopicPrompt}"` : `This is the final topic of the interview.`,
+        "Has the expert collectively provided enough on this topic? Evaluate and respond.",
       ].join("\n"),
     });
     return object;
   } catch {
-    // Fallback: assume covered and move to next, or just prompt next question
+    // Fallback: assume covered and move to next
     return {
       isTopicCovered: true,
       interviewerResponse: nextTopicPrompt || "Thank you for sharing that! That concludes our interview.",
