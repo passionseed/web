@@ -74,13 +74,8 @@ export function LandingHero() {
 
       {/* Main content container */}
       <div className="relative z-10 px-6 w-full max-w-7xl mx-auto">
-        {/* Mobile: Demo paths first, then text */}
+        {/* Mobile: Text first, then demo paths */}
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-          {/* Mobile demo paths - shown first on mobile */}
-          <div className="lg:hidden w-full max-w-sm">
-            <LandingDemoPaths />
-          </div>
-
           {/* Text content */}
           <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left">
             {/* Eyebrow */}
@@ -141,6 +136,11 @@ export function LandingHero() {
                 </span>
               </Button>
             </motion.div>
+
+            {/* Mobile demo paths - shown below text on mobile */}
+            <div className="lg:hidden w-full max-w-sm mt-8">
+              <LandingDemoPaths />
+            </div>
           </div>
 
           {/* Desktop demo paths - shown on right side */}
