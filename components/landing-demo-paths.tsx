@@ -9,7 +9,6 @@ export interface DemoPath {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  accentGlow: string;
 }
 
 interface PathContent {
@@ -94,9 +93,9 @@ const pathData: Record<string, { en: PathContent; th: PathContent }> = {
 };
 
 export const demoPaths: DemoPath[] = [
-  { id: "medical-doctor", icon: Stethoscope, color: "text-emerald-400", accentGlow: "group-hover:shadow-[0_0_20px_rgba(52,211,153,0.15)]" },
-  { id: "ai-engineer", icon: Bot, color: "text-violet-400", accentGlow: "group-hover:shadow-[0_0_20px_rgba(167,139,250,0.15)]" },
-  { id: "startup-founder", icon: Rocket, color: "text-orange-400", accentGlow: "group-hover:shadow-[0_0_20px_rgba(251,146,60,0.15)]" },
+  { id: "medical-doctor", icon: Stethoscope, color: "text-emerald-400" },
+  { id: "ai-engineer", icon: Bot, color: "text-violet-400" },
+  { id: "startup-founder", icon: Rocket, color: "text-orange-400" },
 ];
 
 export function getPathContent(pathId: string, language: "en" | "th"): PathContent {
@@ -131,37 +130,33 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
   return (
     <div className="space-y-3">
       {/* Icon cards row */}
-      <div className="flex gap-3">
+      <div className="flex gap-2.5">
         {demoPaths.map((path, index) => {
           const pathContent = getPathContent(path.id, language);
           const Icon = path.icon;
-          const isExpanded = expandedPath === path.id;
 
           return (
             <motion.button
               key={path.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
+              transition={{ duration: 0.5, delay: 0.3 + index * 0.08 }}
               onClick={() => togglePath(path.id)}
               className={`
-                flex-1 p-4 rounded-[18px] group transition-all duration-300
-                backdrop-blur-[8px]
-                bg-gradient-to-b from-white/[0.07] to-white/[0.04]
-                shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_-1px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04),0_10px_20px_rgba(0,0,0,0.08)]
-                hover:shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.08),0_4px_8px_rgba(0,0,0,0.06),0_15px_30px_rgba(0,0,0,0.12)]
-                ${path.accentGlow}
+                flex-1 p-3.5 rounded-2xl group transition-all duration-300
+                bg-gradient-to-br from-white/[0.04] to-transparent
+                hover:from-white/[0.08]
               `}
             >
-              {/* Icon */}
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-10 h-10 rounded-lg bg-white/[0.08] flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                  <Icon className={`w-5 h-5 ${path.color}`} />
-                </div>
-                <span className="text-xs font-medium text-white/70 text-center leading-tight">
+              <div className="flex items-center gap-2.5">
+                <Icon className={`w-4 h-4 ${path.color}`} />
+                <span className="text-sm font-medium text-white/70 group-hover:text-white/90 transition-colors">
                   {pathContent.title}
                 </span>
               </div>
+              <p className="text-[11px] text-white/35 mt-1.5 pl-[26px]">
+                {pathContent.tagline}
+              </p>
             </motion.button>
           );
         })}
@@ -172,10 +167,10 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
         {expandedPath && (
           <motion.div
             key={expandedPath}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
             {(() => {
@@ -185,32 +180,24 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
 
               return (
                 <div className={`
-                  p-4 rounded-[18px]
-                  backdrop-blur-[8px]
-                  bg-gradient-to-b from-white/[0.07] to-white/[0.04]
-                  shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_-1px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04),0_10px_20px_rgba(0,0,0,0.08)]
+                  p-4 rounded-2xl
+                  bg-gradient-to-br from-white/[0.05] to-white/[0.01]
                 `}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-lg bg-white/[0.08] flex items-center justify-center`}>
-                      <Icon className={`w-5 h-5 ${path.color}`} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white/90 text-sm">{pathContent.title}</h4>
-                      <p className="text-xs text-white/50">{pathContent.tagline}</p>
-                    </div>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <Icon className={`w-4 h-4 ${path.color}`} />
+                    <span className="text-sm font-medium text-white/80">{pathContent.title}</span>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 pl-[22px]">
                     {pathContent.days.map((day, dayIndex) => (
-                      <motion.div
+                      <motion.p
                         key={dayIndex}
-                        initial={{ opacity: 0, x: -10 }}
+                        initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: dayIndex * 0.05 }}
-                        className="text-xs text-white/60 flex gap-2"
+                        transition={{ delay: dayIndex * 0.04 }}
+                        className="text-xs text-white/40"
                       >
-                        <span className="text-white/30">•</span>
-                        <span>{day.title}</span>
-                      </motion.div>
+                        {day.title}
+                      </motion.p>
                     ))}
                   </div>
                 </div>
@@ -224,8 +211,8 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
-        className="text-center text-sm text-white/60 pt-2 font-medium"
+        transition={{ delay: 0.6 }}
+        className="text-center text-xs text-white/30 pt-1"
       >
         {t.morePaths}
       </motion.p>
