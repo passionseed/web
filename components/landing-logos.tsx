@@ -3,18 +3,6 @@
 import { useLanguage } from "@/lib/i18n/language-context";
 import Image from "next/image";
 
-// Company logos - TBD
-const companiesLogos: { name: string; logo?: string }[] = [
-  { name: "Google" },
-  { name: "Microsoft" },
-  { name: "Meta" },
-  { name: "Stripe" },
-  { name: "Netflix" },
-  { name: "Airbnb" },
-  { name: "Spotify" },
-  { name: "Amazon" },
-];
-
 const universityLogos = [
   { name: "Chula", src: "/universities/chula-logo.png" },
   { name: "TU", src: "/universities/tu-logo.png" },
@@ -24,7 +12,6 @@ const universityLogos = [
 ];
 
 // Double the array to ensure smooth infinite scrolling for 50% translation
-const extendedCompanies = [...companiesLogos, ...companiesLogos, ...companiesLogos, ...companiesLogos];
 const extendedUniversities = [...universityLogos, ...universityLogos, ...universityLogos, ...universityLogos];
 
 export function LandingLogos() {
@@ -46,16 +33,7 @@ export function LandingLogos() {
             {language === "th" ? "ผู้เชี่ยวชาญจากบริษัทชั้นนำ" : "Experts shaping paths from"}
           </p>
 
-          <div className="relative flex overflow-hidden w-full group [mask-image:linear-gradient(to_right,transparent,black_20%,black_80%,transparent)]">
-            <div className="flex w-max animate-marquee space-x-16 sm:space-x-24 items-center">
-              {extendedCompanies.map((company, i) => (
-                <span key={`company-${i}`} className="text-lg sm:text-xl font-semibold text-gray-600 hover:text-gray-400 transition-colors duration-300">
-                  {company.name}
-                </span>
-              ))}
-            </div>
-          </div>
-          <p className="text-xs text-gray-600 mt-4">TBD</p>
+          <p className="text-sm text-gray-600 font-medium">TBD</p>
         </div>
 
         {/* Universities Section */}
