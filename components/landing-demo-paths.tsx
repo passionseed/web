@@ -1,10 +1,9 @@
 "use client";
 
-import { Stethoscope, Bot, Rocket } from "lucide-react";
-import { motion } from "framer-motion";
+import { Stethoscope, Bot, Rocket, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/language-context";
-import { DemoPathModal } from "./demo-path-modal";
 
 export interface DemoPath {
   id: string;
@@ -12,6 +11,7 @@ export interface DemoPath {
   color: string;
   bgColor: string;
   borderColor: string;
+  hoverBorderColor: string;
 }
 
 interface PathContent {
@@ -96,9 +96,9 @@ const pathData: Record<string, { en: PathContent; th: PathContent }> = {
 };
 
 export const demoPaths: DemoPath[] = [
-  { id: "medical-doctor", icon: Stethoscope, color: "text-emerald-400", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/20" },
-  { id: "ai-engineer", icon: Bot, color: "text-violet-400", bgColor: "bg-violet-500/10", borderColor: "border-violet-500/20" },
-  { id: "startup-founder", icon: Rocket, color: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" },
+  { id: "medical-doctor", icon: Stethoscope, color: "text-emerald-400", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/20", hoverBorderColor: "hover:border-emerald-500/40" },
+  { id: "ai-engineer", icon: Bot, color: "text-violet-400", bgColor: "bg-violet-500/10", borderColor: "border-violet-500/20", hoverBorderColor: "hover:border-violet-500/40" },
+  { id: "startup-founder", icon: Rocket, color: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20", hoverBorderColor: "hover:border-orange-500/40" },
 ];
 
 export function getPathContent(pathId: string, language: "en" | "th"): PathContent {
@@ -112,84 +112,115 @@ interface LandingDemoPathsProps {
 const content = {
   en: {
     morePaths: "+ more paths available",
+    tapToExpand: "Tap to expand",
   },
   th: {
     morePaths: "+ เส้นทางอื่นๆ ที่พร้อมให้ลอง",
+    tapToExpand: "แตะเพื่อดูเพิ่ม",
   },
 };
 
 export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
   const { language } = useLanguage();
   const t = content[language];
-  const [selectedPath, setSelectedPath] = useState<DemoPath | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [expandedPath, setExpandedPath] = useState<string | null>(null);
 
-  const handlePathClick = (path: DemoPath) => {
-    setSelectedPath(path);
-    setIsModalOpen(true);
-    onPathClick?.(path);
+  const togglePath = (pathId: string) => {
+    setExpandedPath(expandedPath === pathId ? null : pathId);
+    if (expandedPath !== pathId) {
+      onPathClick?.(demoPaths.find(p => p.id === pathId)!);
+    }
   };
 
   return (
-    <>
-      <div className="space-y-3">
+    <div className="space-y-3">
+      {/* Icon cards row */}
+      <div className="flex gap-3">
         {demoPaths.map((path, index) => {
           const pathContent = getPathContent(path.id, language);
           const Icon = path.icon;
+          const isExpanded = expandedPath === path.id;
 
           return (
             <motion.button
               key={path.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-              onClick={() => handlePathClick(path)}
-              className={`w-full text-left p-4 rounded-xl ${path.bgColor} border ${path.borderColor} hover:border-white/20 transition-all duration-300 group`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
+              onClick={() => togglePath(path.id)}
+              className={`flex-1 p-4 rounded-xl ${path.bgColor} border ${isExpanded ? 'border-white/30' : path.borderColor} ${!isExpanded && path.hoverBorderColor} transition-all duration-300 group`}
             >
-              <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-lg bg-white/[0.05] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}>
+              {/* Icon */}
+              <div className="flex flex-col items-center gap-2">
+                <div className={`w-10 h-10 rounded-lg bg-white/[0.05] flex items-center justify-center group-hover:scale-105 transition-transform`}>
                   <Icon className={`w-5 h-5 ${path.color}`} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-white text-sm mb-0.5">
-                    {pathContent.title}
-                  </h3>
-                  <p className="text-xs text-gray-400 mb-2">
-                    {pathContent.tagline}
-                  </p>
-                  <div className="space-y-1">
-                    {pathContent.days.slice(0, 3).map((day, dayIndex) => (
-                      <p key={dayIndex} className="text-xs text-gray-500 truncate">
-                        {day.title}
-                      </p>
-                    ))}
-                    <p className="text-xs text-gray-600">
-                      +2 more {language === "th" ? "วัน" : "days"}
-                    </p>
-                  </div>
-                </div>
+                <span className="text-xs font-medium text-white/80 text-center leading-tight">
+                  {pathContent.title}
+                </span>
               </div>
             </motion.button>
           );
         })}
-
-        {/* More paths indicator */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="text-center text-xs text-gray-500 pt-2"
-        >
-          {t.morePaths}
-        </motion.p>
       </div>
 
-      {/* Modal */}
-      <DemoPathModal
-        path={selectedPath}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
-    </>
+      {/* Expanded content - only one at a time */}
+      <AnimatePresence mode="wait">
+        {expandedPath && (
+          <motion.div
+            key={expandedPath}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            {(() => {
+              const path = demoPaths.find(p => p.id === expandedPath)!;
+              const pathContent = getPathContent(path.id, language);
+              const Icon = path.icon;
+
+              return (
+                <div className={`p-4 rounded-xl ${path.bgColor} border ${path.borderColor}`}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-10 h-10 rounded-lg bg-white/[0.05] flex items-center justify-center`}>
+                      <Icon className={`w-5 h-5 ${path.color}`} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white text-sm">{pathContent.title}</h4>
+                      <p className="text-xs text-gray-400">{pathContent.tagline}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {pathContent.days.map((day, dayIndex) => (
+                      <motion.div
+                        key={dayIndex}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: dayIndex * 0.05 }}
+                        className="text-xs text-gray-300 flex gap-2"
+                      >
+                        <span className="text-gray-500">•</span>
+                        <span>{day.title}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* More paths indicator */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+        className="text-center text-xs text-gray-500 pt-1"
+      >
+        {t.morePaths}
+      </motion.p>
+    </div>
   );
 }
