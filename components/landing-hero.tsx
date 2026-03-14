@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { HeroBackground } from "@/components/hero-background";
 import { HeroVisualization } from "@/components/hero-visualization";
+import { LandingDemoPaths } from "@/components/landing-demo-paths";
 
 const content = {
   en: {
@@ -71,72 +72,89 @@ export function LandingHero() {
         <HeroVisualization />
       </div>
 
-      <div className="relative z-10 px-6 w-full max-w-5xl mx-auto flex flex-col items-center text-center">
-        {/* Eyebrow */}
-        <motion.span
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="text-sm font-medium text-orange-300 tracking-wide uppercase mb-6"
-        >
-          {t.eyebrow}
-        </motion.span>
+      {/* Main content container */}
+      <div className="relative z-10 px-6 w-full max-w-7xl mx-auto">
+        {/* Mobile: Demo paths first, then text */}
+        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+          {/* Mobile demo paths - shown first on mobile */}
+          <div className="lg:hidden w-full max-w-sm">
+            <LandingDemoPaths />
+          </div>
 
-        {/* Headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
-          className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.05] tracking-tight max-w-4xl drop-shadow-[0_2px_30px_rgba(255,107,74,0.3)]"
-        >
-          {t.headline.split('\n')[0]}
-        </motion.h1>
+          {/* Text content */}
+          <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left">
+            {/* Eyebrow */}
+            <motion.span
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="text-sm font-medium text-orange-300 tracking-wide uppercase mb-6"
+            >
+              {t.eyebrow}
+            </motion.span>
 
-        {/* Subheadline */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-8 text-lg sm:text-xl md:text-2xl text-amber-100/80 max-w-2xl font-medium leading-relaxed"
-        >
-          {t.subheadline}
-        </motion.p>
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] tracking-tight max-w-xl drop-shadow-[0_2px_30px_rgba(255,107,74,0.3)]"
+            >
+              {t.headline.split('\n')[0]}
+            </motion.h1>
 
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-12 w-full sm:w-auto"
-        >
-          <Button
-            size="lg"
-            onClick={handleGuestAccess}
-            disabled={isLoading}
-            className="group relative bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 text-base sm:text-lg h-12 sm:h-14 px-8 sm:px-10 rounded-full font-semibold transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_60px_rgba(251,191,36,0.4)] w-full sm:w-auto overflow-hidden"
-          >
-            {/* Subtle shine effect */}
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+            {/* Subheadline */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-6 text-base sm:text-lg md:text-xl text-amber-100/80 max-w-md font-medium leading-relaxed"
+            >
+              {t.subheadline}
+            </motion.p>
 
-            <span className="relative flex items-center justify-center gap-2">
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  {t.cta}
-                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
-                </>
-              )}
-            </span>
-          </Button>
-        </motion.div>
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-8 w-full sm:w-auto"
+            >
+              <Button
+                size="lg"
+                onClick={handleGuestAccess}
+                disabled={isLoading}
+                className="group relative bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 text-base sm:text-lg h-12 sm:h-14 px-8 sm:px-10 rounded-full font-semibold transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_60px_rgba(251,191,36,0.4)] w-full sm:w-auto overflow-hidden"
+              >
+                {/* Subtle shine effect */}
+                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+
+                <span className="relative flex items-center justify-center gap-2">
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      {t.cta}
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
+                    </>
+                  )}
+                </span>
+              </Button>
+            </motion.div>
+          </div>
+
+          {/* Desktop demo paths - shown on right side */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <LandingDemoPaths />
+          </div>
+        </div>
 
         {/* Social proof / trust indicator - Thai universities */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-16 flex flex-col items-center gap-4"
+          className="mt-12 lg:mt-16 flex flex-col items-center gap-4"
         >
           <p className="text-xs sm:text-sm text-amber-200/50 font-medium">
             {language === "th" ? "นักเรียนจากมหาวิทยาลัยชั้นนำ" : "Students from top universities"}
@@ -178,12 +196,12 @@ export function LandingHero() {
         </motion.div>
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator - desktop only */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 1, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden lg:block"
       >
         <motion.div
           animate={{ y: [0, 8, 0] }}
