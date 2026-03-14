@@ -25,6 +25,7 @@ const config = {
       },
       fontFamily: {
         sans: ["var(--font-libre-franklin)", "var(--font-bai-jamjuree)"],
+        "bai-jamjuree": ["var(--font-bai-jamjuree)", "sans-serif"],
         heading: ["var(--font-libre-franklin)", "var(--font-krub)"],
         mono: ["var(--font-space-mono)"],
       },
