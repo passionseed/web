@@ -1,6 +1,6 @@
 "use client";
 
-import { Stethoscope, Bot, Rocket, ChevronDown } from "lucide-react";
+import { Stethoscope, Bot, Rocket } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -9,9 +9,7 @@ export interface DemoPath {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  bgColor: string;
-  borderColor: string;
-  hoverBorderColor: string;
+  accentGlow: string;
 }
 
 interface PathContent {
@@ -96,9 +94,9 @@ const pathData: Record<string, { en: PathContent; th: PathContent }> = {
 };
 
 export const demoPaths: DemoPath[] = [
-  { id: "medical-doctor", icon: Stethoscope, color: "text-emerald-400", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/20", hoverBorderColor: "hover:border-emerald-500/40" },
-  { id: "ai-engineer", icon: Bot, color: "text-violet-400", bgColor: "bg-violet-500/10", borderColor: "border-violet-500/20", hoverBorderColor: "hover:border-violet-500/40" },
-  { id: "startup-founder", icon: Rocket, color: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20", hoverBorderColor: "hover:border-orange-500/40" },
+  { id: "medical-doctor", icon: Stethoscope, color: "text-emerald-400", accentGlow: "group-hover:shadow-[0_0_20px_rgba(52,211,153,0.15)]" },
+  { id: "ai-engineer", icon: Bot, color: "text-violet-400", accentGlow: "group-hover:shadow-[0_0_20px_rgba(167,139,250,0.15)]" },
+  { id: "startup-founder", icon: Rocket, color: "text-orange-400", accentGlow: "group-hover:shadow-[0_0_20px_rgba(251,146,60,0.15)]" },
 ];
 
 export function getPathContent(pathId: string, language: "en" | "th"): PathContent {
@@ -112,11 +110,9 @@ interface LandingDemoPathsProps {
 const content = {
   en: {
     morePaths: "+ more paths available",
-    tapToExpand: "Tap to expand",
   },
   th: {
     morePaths: "+ เส้นทางอื่นๆ ที่พร้อมให้ลอง",
-    tapToExpand: "แตะเพื่อดูเพิ่ม",
   },
 };
 
@@ -148,14 +144,21 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
               onClick={() => togglePath(path.id)}
-              className={`flex-1 p-4 rounded-xl ${path.bgColor} border ${isExpanded ? 'border-white/30' : path.borderColor} ${!isExpanded && path.hoverBorderColor} transition-all duration-300 group`}
+              className={`
+                flex-1 p-4 rounded-[18px] group transition-all duration-300
+                backdrop-blur-[8px]
+                bg-gradient-to-b from-white/[0.07] to-white/[0.04]
+                shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_-1px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04),0_10px_20px_rgba(0,0,0,0.08)]
+                hover:shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.08),0_4px_8px_rgba(0,0,0,0.06),0_15px_30px_rgba(0,0,0,0.12)]
+                ${path.accentGlow}
+              `}
             >
               {/* Icon */}
               <div className="flex flex-col items-center gap-2">
-                <div className={`w-10 h-10 rounded-lg bg-white/[0.05] flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                <div className={`w-10 h-10 rounded-lg bg-white/[0.08] flex items-center justify-center group-hover:scale-105 transition-transform`}>
                   <Icon className={`w-5 h-5 ${path.color}`} />
                 </div>
-                <span className="text-xs font-medium text-white/80 text-center leading-tight">
+                <span className="text-xs font-medium text-white/70 text-center leading-tight">
                   {pathContent.title}
                 </span>
               </div>
@@ -181,14 +184,19 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
               const Icon = path.icon;
 
               return (
-                <div className={`p-4 rounded-xl ${path.bgColor} border ${path.borderColor}`}>
+                <div className={`
+                  p-4 rounded-[18px]
+                  backdrop-blur-[8px]
+                  bg-gradient-to-b from-white/[0.07] to-white/[0.04]
+                  shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_-1px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04),0_10px_20px_rgba(0,0,0,0.08)]
+                `}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-lg bg-white/[0.05] flex items-center justify-center`}>
+                    <div className={`w-10 h-10 rounded-lg bg-white/[0.08] flex items-center justify-center`}>
                       <Icon className={`w-5 h-5 ${path.color}`} />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white text-sm">{pathContent.title}</h4>
-                      <p className="text-xs text-gray-400">{pathContent.tagline}</p>
+                      <h4 className="font-semibold text-white/90 text-sm">{pathContent.title}</h4>
+                      <p className="text-xs text-white/50">{pathContent.tagline}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -198,9 +206,9 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: dayIndex * 0.05 }}
-                        className="text-xs text-gray-300 flex gap-2"
+                        className="text-xs text-white/60 flex gap-2"
                       >
-                        <span className="text-gray-500">•</span>
+                        <span className="text-white/30">•</span>
                         <span>{day.title}</span>
                       </motion.div>
                     ))}
