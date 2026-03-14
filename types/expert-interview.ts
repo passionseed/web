@@ -18,6 +18,37 @@ export interface InterviewProgress {
   total: number;
 }
 
+export interface ExtractedExpertIdentity {
+  specialization?: string;
+  workContext?: string;
+  credibilityMarkers?: string[];
+}
+
+export interface ExtractedCareerTruths {
+  mostImportant?: string[];
+  mundaneButRequired?: string[];
+  beginnersUnderestimate?: string[];
+  hiddenChallenges?: string[];
+  rewardingMoments?: string[];
+  noviceToExpertShifts?: string[];
+}
+
+export interface ExtractedLearningObjective {
+  day: number;
+  title: string;
+  objective: string;
+  studentDecisionQuestion: string;
+}
+
+export interface ExtractedQuestBlueprint {
+  studentGoal?: string;
+  fitSignals?: string[];
+  misfitSignals?: string[];
+  mustExperience?: string[];
+  mustUnderstand?: string[];
+  learningObjectives?: ExtractedLearningObjective[];
+}
+
 export interface ExtractedCareerData {
   field: string;
   role: string;
@@ -40,6 +71,9 @@ export interface ExtractedCareerData {
   };
   experienceLevel: string;
   yearsInField: number;
+  expertIdentity?: ExtractedExpertIdentity;
+  careerTruths?: ExtractedCareerTruths;
+  questBlueprint?: ExtractedQuestBlueprint;
 }
 
 export interface ExpertProfile {
