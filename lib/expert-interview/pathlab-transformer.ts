@@ -1,5 +1,6 @@
 import type { ExtractedCareerData } from "@/types/expert-interview";
 import type { PathLabGeneratorRequestInput } from "@/lib/ai/pathlab-generator-schema";
+import { normalizeQuestBlueprint } from "@/lib/expert-interview/quest-blueprint";
 
 export function transformExpertDataToPathLabRequest(
   expertData: ExtractedCareerData,
@@ -11,8 +12,27 @@ export function transformExpertDataToPathLabRequest(
   const totalDays = 5;
   const tone = `Conversational and encouraging. This PathLab is inspired by ${expertProfile.name}, a ${expertProfile.title} at ${expertProfile.company}. Weave in their real experiences and advice naturally.`;
   const constraints = buildConstraints(expertData);
+  const learningObjectives = buildLearningObjectives(expertData);
+  const expertContext = buildExpertContext(expertData, expertProfile);
+  const fitSignals = expertData.questBlueprint?.fitSignals || [];
+  const misfitSignals = expertData.questBlueprint?.misfitSignals || [];
+  const mustExperience = expertData.questBlueprint?.mustExperience || [];
+  const mustUnderstand = expertData.questBlueprint?.mustUnderstand || [];
 
-  return { topic, audience, difficulty, totalDays, tone, constraints };
+  return {
+    topic,
+    audience,
+    difficulty,
+    totalDays,
+    tone,
+    constraints,
+    expertContext,
+    learningObjectives,
+    fitSignals,
+    misfitSignals,
+    mustExperience,
+    mustUnderstand,
+  };
 }
 
 function buildConstraints(expertData: ExtractedCareerData): string {
@@ -48,7 +68,60 @@ function buildConstraints(expertData: ExtractedCareerData): string {
     );
   }
 
+  if (expertData.careerTruths?.mundaneButRequired?.length) {
+    parts.push(
+      `Include the mundane but necessary parts of the work: ${expertData.careerTruths.mundaneButRequired.slice(0, 2).join(", ")}.`
+    );
+  }
+
+  if (expertData.careerTruths?.mostImportant?.length) {
+    parts.push(
+      `Make students feel what matters most in the career: ${expertData.careerTruths.mostImportant.slice(0, 2).join(", ")}.`
+    );
+  }
+
+  if (expertData.questBlueprint?.fitSignals?.length) {
+    parts.push(`Help students assess fit signals such as: ${expertData.questBlueprint.fitSignals.slice(0, 3).join(", ")}.`);
+  }
+
+  if (expertData.questBlueprint?.misfitSignals?.length) {
+    parts.push(`Also surface misfit signals such as: ${expertData.questBlueprint.misfitSignals.slice(0, 3).join(", ")}.`);
+  }
+
   return parts.join(" ");
+}
+
+function buildLearningObjectives(expertData: ExtractedCareerData) {
+  return normalizeQuestBlueprint(expertData.questBlueprint).learningObjectives;
+}
+
+function buildExpertContext(
+  expertData: ExtractedCareerData,
+  expertProfile: { name: string; title: string; company: string }
+) {
+  return {
+    identity: {
+      name: expertProfile.name,
+      title: expertProfile.title,
+      company: expertProfile.company,
+      field: expertData.field,
+      role: expertData.role,
+      specialization: expertData.expertIdentity?.specialization,
+      workContext: expertData.expertIdentity?.workContext,
+      yearsInField: expertData.yearsInField,
+      experienceLevel: expertData.experienceLevel,
+      credibilityMarkers: expertData.expertIdentity?.credibilityMarkers || [],
+    },
+    careerTruths: {
+      mostImportant: expertData.careerTruths?.mostImportant || [],
+      mundaneButRequired: expertData.careerTruths?.mundaneButRequired || [],
+      beginnersUnderestimate: expertData.careerTruths?.beginnersUnderestimate || [],
+      hiddenChallenges: expertData.careerTruths?.hiddenChallenges || expertData.challenges || [],
+      rewardingMoments: expertData.careerTruths?.rewardingMoments || expertData.rewards || [],
+      noviceToExpertShifts: expertData.careerTruths?.noviceToExpertShifts || expertData.skills.hardToDevelop || [],
+      misconceptions: expertData.misconceptions || [],
+    },
+  };
 }
 
 function assessFieldDifficulty(
