@@ -14,6 +14,41 @@ export type PathLabAssessmentType =
   | "file_upload"
   | "checklist";
 
+export interface PathLabLearningObjective {
+  day: number;
+  title: string;
+  objective: string;
+  studentDecisionQuestion: string;
+}
+
+export interface PathLabExpertIdentity {
+  name: string;
+  title: string;
+  company: string;
+  field: string;
+  role: string;
+  specialization?: string;
+  workContext?: string;
+  yearsInField?: number;
+  experienceLevel?: string;
+  credibilityMarkers?: string[];
+}
+
+export interface PathLabCareerTruths {
+  mostImportant?: string[];
+  mundaneButRequired?: string[];
+  beginnersUnderestimate?: string[];
+  hiddenChallenges?: string[];
+  rewardingMoments?: string[];
+  noviceToExpertShifts?: string[];
+  misconceptions?: string[];
+}
+
+export interface PathLabExpertContext {
+  identity: PathLabExpertIdentity;
+  careerTruths: PathLabCareerTruths;
+}
+
 export interface PathLabGeneratorRequest {
   topic: string;
   audience: string;
@@ -22,6 +57,12 @@ export interface PathLabGeneratorRequest {
   tone: string;
   constraints?: string;
   categoryId?: string | null;
+  expertContext?: PathLabExpertContext;
+  learningObjectives?: PathLabLearningObjective[];
+  fitSignals?: string[];
+  misfitSignals?: string[];
+  mustExperience?: string[];
+  mustUnderstand?: string[];
 }
 
 export interface PathLabGeneratorSeedDraft {
