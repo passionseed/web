@@ -217,7 +217,7 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
-        className="text-center text-xs text-gray-500 pt-1"
+        className="text-center text-sm text-white/60 pt-2 font-medium"
       >
         {t.morePaths}
       </motion.p>
