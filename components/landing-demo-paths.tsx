@@ -13,80 +13,80 @@ export interface DemoPath {
 
 interface PathContent {
   title: string;
-  tagline: string;
-  days: { title: string; description: string }[];
+  byline: string;
+  days: { title: string }[];
 }
 
 const pathData: Record<string, { en: PathContent; th: PathContent }> = {
   "medical-doctor": {
     en: {
       title: "Medical Doctor",
-      tagline: "5 days to test if you're fit for medicine",
+      byline: "by 3 doctors",
       days: [
-        { title: "Day 1: Patient Diagnosis", description: "Analyze symptoms and create differential diagnoses for real patient cases. Learn the systematic approach doctors use to narrow down possibilities." },
-        { title: "Day 2: Treatment Planning", description: "Design treatment plans considering patient history, drug interactions, and evidence-based medicine. Balance effectiveness with patient preferences." },
-        { title: "Day 3: Medical Research", description: "Interpret clinical studies and apply research findings to patient care. Learn to distinguish quality evidence from noise." },
-        { title: "Day 4: Emergency Response", description: "Make rapid decisions under pressure in simulated emergency scenarios. Practice the composure and quick thinking medicine demands." },
-        { title: "Day 5: Patient Communication", description: "Deliver difficult news and explain complex conditions clearly. Master the human side of healthcare." },
+        { title: "Patient Diagnosis" },
+        { title: "Treatment Planning" },
+        { title: "Medical Research" },
+        { title: "Emergency Response" },
+        { title: "Patient Communication" },
       ],
     },
     th: {
       title: "แพทย์",
-      tagline: "5 วันเพื่อทดสอบว่าคุณเหมาะกับการแพทย์ไหม",
+      byline: "โดยแพทย์ 3 ท่าน",
       days: [
-        { title: "วันที่ 1: การวินิจฉัยผู้ป่วย", description: "วิเคราะห์อาการและสร้างการวินิจฉัยแยกโรคจากเคสผู้ป่วยจริง เรียนรู้แนวทางเป็นระบบที่แพทย์ใช้" },
-        { title: "วันที่ 2: วางแผนการรักษา", description: "ออกแบบแผนรักษาโดยพิจารณาประวัติผู้ป่วย ปฏิกิริยายา และการแพทย์ตามหลักฐาน" },
-        { title: "วันที่ 3: การวิจัยทางการแพทย์", description: "ตีความการศึกษาทางคลินิกและนำผลวิจัยไปใช้กับการดูแลผู้ป่วย" },
-        { title: "วันที่ 4: การตอบสนองฉุกเฉิน", description: "ตัดสินใจอย่างรวดเร็วภายใต้ความกดดันในสถานการณ์ฉุกเฉินจำลอง" },
-        { title: "วันที่ 5: การสื่อสารกับผู้ป่วย", description: "สื่อสารข่าวยากและอธิบายอาการซับซ้อนอย่างเข้าใจง่าย" },
+        { title: "การวินิจฉัยผู้ป่วย" },
+        { title: "วางแผนการรักษา" },
+        { title: "การวิจัยทางการแพทย์" },
+        { title: "การตอบสนองฉุกเฉิน" },
+        { title: "การสื่อสารกับผู้ป่วย" },
       ],
     },
   },
   "ai-engineer": {
     en: {
       title: "AI Engineer",
-      tagline: "5 days to discover if you love building AI",
+      byline: "by 3 engineers",
       days: [
-        { title: "Day 1: Data Exploration", description: "Dive into real datasets and discover patterns that machines can learn from. Understand what makes data useful for AI." },
-        { title: "Day 2: Model Training", description: "Train your first machine learning model. Watch it improve and learn to diagnose when things go wrong." },
-        { title: "Day 3: Prompt Engineering", description: "Master the art of communicating with large language models. Learn techniques that get AI to do what you want." },
-        { title: "Day 4: AI Ethics", description: "Explore bias, fairness, and the societal impact of AI. Understand the responsibility that comes with building intelligent systems." },
-        { title: "Day 5: Ship a Demo", description: "Build and deploy a working AI application end-to-end. See your creation work in the real world." },
+        { title: "Data Exploration" },
+        { title: "Model Training" },
+        { title: "Prompt Engineering" },
+        { title: "AI Ethics" },
+        { title: "Ship a Demo" },
       ],
     },
     th: {
       title: "วิศวกร AI",
-      tagline: "5 วันเพื่อค้นพบว่าคุณชอบสร้าง AI ไหม",
+      byline: "โดยวิศวกร 3 ท่าน",
       days: [
-        { title: "วันที่ 1: การสำรวจข้อมูล", description: "ดำดิ่งสู่ชุดข้อมูลจริงและค้นพบรูปแบบที่เครื่องจักรเรียนรู้ได้" },
-        { title: "วันที่ 2: การเทรนโมเดล", description: "เทรนโมเดลแมชชีนเลิร์นนิงตัวแรกของคุณ ดูมันพัฒนาและเรียนรู้การวินิจฉัยเมื่อมีปัญหา" },
-        { title: "วันที่ 3: Prompt Engineering", description: "เชี่ยวชาญศิลปะการสื่อสารกับโมเดลภาษาขนาดใหญ่ เรียนรู้เทคนิคที่ทำให้ AI ทำในสิ่งที่คุณต้องการ" },
-        { title: "วันที่ 4: จริยธรรม AI", description: "สำรวจอคติ ความเป็นธรรม และผลกระทบทางสังคมของ AI" },
-        { title: "วันที่ 5: ส่งงาน Demo", description: "สร้างและปล่อยแอปพลิเคชัน AI ที่ใช้งานได้จริงจากต้นน้ำถึงปลายน้ำ" },
+        { title: "การสำรวจข้อมูล" },
+        { title: "การเทรนโมเดล" },
+        { title: "Prompt Engineering" },
+        { title: "จริยธรรม AI" },
+        { title: "ส่งงาน Demo" },
       ],
     },
   },
   "startup-founder": {
     en: {
       title: "Startup Founder",
-      tagline: "5 days to see if you can turn ideas into reality",
+      byline: "by 3 founders",
       days: [
-        { title: "Day 1: Problem Discovery", description: "Identify real problems worth solving. Learn to spot opportunities others miss and validate that people actually care." },
-        { title: "Day 2: Solution Design", description: "Design solutions that are simple enough to build but valuable enough to matter. Balance ambition with realism." },
-        { title: "Day 3: MVP Planning", description: "Define your minimum viable product. Learn what to build first and—more importantly—what to leave out." },
-        { title: "Day 4: Pitch Crafting", description: "Tell your story in a way that inspires action. Learn to communicate vision to investors, partners, and early users." },
-        { title: "Day 5: Validate with Users", description: "Get real people to try your concept. Learn what works, what doesn't, and whether you're on the right track." },
+        { title: "Problem Discovery" },
+        { title: "Solution Design" },
+        { title: "MVP Planning" },
+        { title: "Pitch Crafting" },
+        { title: "Validate with Users" },
       ],
     },
     th: {
       title: "ผู้ก่อตั้งสตาร์ทอัพ",
-      tagline: "5 วันเพื่อดูว่าคุณสามารถเปลี่ยนไอเดียเป็นความจริงได้ไหม",
+      byline: "โดยผู้ก่อตั้ง 3 ท่าน",
       days: [
-        { title: "วันที่ 1: การค้นหาปัญหา", description: "ระบุปัญหาจริงที่คุ้มค่าจะแก้ เรียนรู้การมองเห็นโอกาสที่คนอื่นพลาด" },
-        { title: "วันที่ 2: การออกแบบโซลูชัน", description: "ออกแบบโซลูชันที่เรียบง่ายพอที่จะสร้างแต่มีค่าพอที่จะสำคัญ" },
-        { title: "วันที่ 3: วางแผน MVP", description: "กำหนดผลิตภัณฑ์ที่ทำได้ขั้นต่ำ เรียนรู้ว่าควรสร้างอะไรก่อนและสำคัญกว่าคืออะไรที่ควรปล่อยไว้" },
-        { title: "วันที่ 4: การสร้าง Pitch", description: "เล่าเรื่องราวของคุณในแบบที่สร้างแรงบันดาลใจ เรียนรู้การสื่อสารวิสัยทัศน์กับนักลงทุนและพาร์ทเนอร์" },
-        { title: "วันที่ 5: ตรวจสอบกับผู้ใช้", description: "ให้คนจริงลองคอนเซ็ปต์ของคุณ เรียนรู้ว่าอะไรได้ผล อะไรไม่ได้ผล" },
+        { title: "การค้นหาปัญหา" },
+        { title: "การออกแบบโซลูชัน" },
+        { title: "วางแผน MVP" },
+        { title: "การสร้าง Pitch" },
+        { title: "ตรวจสอบกับผู้ใช้" },
       ],
     },
   },
@@ -128,9 +128,9 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Icon cards row */}
-      <div className="flex gap-2.5">
+      <div className="flex gap-2">
         {demoPaths.map((path, index) => {
           const pathContent = getPathContent(path.id, language);
           const Icon = path.icon;
@@ -138,24 +138,24 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
           return (
             <motion.button
               key={path.id}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 + index * 0.08 }}
               onClick={() => togglePath(path.id)}
               className={`
-                flex-1 p-3.5 rounded-2xl group transition-all duration-300
-                bg-gradient-to-br from-white/[0.04] to-transparent
-                hover:from-white/[0.08]
+                flex-1 py-3 px-3 rounded-xl group transition-all duration-300
+                bg-gradient-to-br from-white/[0.03] to-transparent
+                hover:from-white/[0.06]
               `}
             >
-              <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 ${path.color}`} />
-                <span className="text-sm font-medium text-white/70 group-hover:text-white/90 transition-colors">
+              <div className="flex items-center gap-2">
+                <Icon className={`w-3.5 h-3.5 ${path.color}`} />
+                <span className="text-[13px] font-medium text-white/60 group-hover:text-white/80 transition-colors">
                   {pathContent.title}
                 </span>
               </div>
-              <p className="text-[11px] text-white/35 mt-1.5 pl-[26px]">
-                {pathContent.tagline}
+              <p className="text-[10px] text-white/25 mt-0.5 pl-[22px]">
+                {pathContent.byline}
               </p>
             </motion.button>
           );
@@ -167,10 +167,10 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
         {expandedPath && (
           <motion.div
             key={expandedPath}
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: "auto", marginTop: 12 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
             {(() => {
@@ -179,25 +179,23 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
               const Icon = path.icon;
 
               return (
-                <div className={`
-                  p-4 rounded-2xl
-                  bg-gradient-to-br from-white/[0.05] to-white/[0.01]
-                `}>
-                  <div className="flex items-center gap-2.5 mb-3">
-                    <Icon className={`w-4 h-4 ${path.color}`} />
-                    <span className="text-sm font-medium text-white/80">{pathContent.title}</span>
+                <div className="py-3 px-3 rounded-xl bg-gradient-to-br from-white/[0.04] to-transparent">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon className={`w-3.5 h-3.5 ${path.color}`} />
+                    <span className="text-[13px] font-medium text-white/70">{pathContent.title}</span>
+                    <span className="text-[10px] text-white/30">• {pathContent.byline}</span>
                   </div>
-                  <div className="space-y-1.5 pl-[22px]">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 pl-[22px]">
                     {pathContent.days.map((day, dayIndex) => (
-                      <motion.p
+                      <motion.span
                         key={dayIndex}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: dayIndex * 0.04 }}
-                        className="text-xs text-white/40"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: dayIndex * 0.03 }}
+                        className="text-[11px] text-white/35"
                       >
                         {day.title}
-                      </motion.p>
+                      </motion.span>
                     ))}
                   </div>
                 </div>
@@ -212,7 +210,7 @@ export function LandingDemoPaths({ onPathClick }: LandingDemoPathsProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="text-center text-xs text-white/30 pt-1"
+        className="text-center text-[11px] text-white/25 pt-0.5"
       >
         {t.morePaths}
       </motion.p>
