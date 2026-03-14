@@ -1,5 +1,6 @@
-import { generateText, generateObject } from "ai";
+import { generateObject } from "ai";
 import { getModel } from "@/lib/ai/modelRegistry";
+import { normalizeQuestBlueprint } from "@/lib/expert-interview/quest-blueprint";
 import { z } from "zod";
 import type { ChatMessage, ExtractedCareerData, InterviewQuestion } from "@/types/expert-interview";
 import { sanitizeExpertInput } from "./sanitizer";
@@ -10,42 +11,42 @@ const INTERVIEW_QUESTIONS: Array<{ id: string; prompt: string }> = [
   {
     id: "field_role",
     prompt:
-      "Hi! I'm here to learn about your career so I can help young people explore it. What field do you work in, and what's your current role?",
+      "Hi! I want to turn your real experience into a useful career exploration for students. What field do you work in, what is your role, and what part of the field do you specialize in?",
   },
   {
-    id: "daily_tasks",
+    id: "reality_check",
     prompt:
-      "Walk me through a typical day. What are the main things you actually do at work?",
+      "What do outsiders think your job looks like, and what actually fills most of your week? Walk me through the real work, not the polished version.",
   },
   {
-    id: "challenges",
+    id: "mundane_core",
     prompt:
-      "What are the hardest parts of your job? What challenges do you face regularly?",
+      "What part of the job is important but boring, repetitive, or easy to underestimate? What do people have to be willing to do regularly if they want to succeed here?",
   },
   {
-    id: "rewards",
+    id: "hard_part",
     prompt:
-      "What makes the hard work worth it? What do you find most rewarding about what you do?",
+      "What is the hardest part of the job, or the judgment call that separates a beginner from a real practitioner? Give me a concrete example if you can.",
   },
   {
-    id: "misconceptions",
+    id: "rewarding_work",
     prompt:
-      "What do people get wrong about your job? What surprises them when they learn what you actually do?",
+      "What makes the work worth it for you? Which moments feel meaningful enough that they balance out the hard parts?",
+  },
+  {
+    id: "fit_signals",
+    prompt:
+      "What kind of student would feel energized in this career, and what kind of student would probably feel drained fast?",
   },
   {
     id: "skills",
     prompt:
-      "What skills are essential for your work? Which ones took you the longest to develop?",
-  },
-  {
-    id: "advice",
-    prompt:
-      "If you could go back and tell your 18-year-old self something about this career path, what would you say?",
+      "What skills are essential for this work, and which ones took you the longest to develop in real life?",
   },
   {
     id: "entry_path",
     prompt:
-      "How did you get into this field? What was your path from school to where you are now?",
+      "How did you get into this field, what would you tell your 18-year-old self, and what is one honest 30-minute task a student should try before deciding whether this path is for them?",
   },
 ];
 
@@ -71,6 +72,43 @@ const extractedDataSchema = z.object({
   }),
   experienceLevel: z.string(),
   yearsInField: z.number(),
+  expertIdentity: z
+    .object({
+      specialization: z.string().optional(),
+      workContext: z.string().optional(),
+      credibilityMarkers: z.array(z.string()).default([]),
+    })
+    .optional(),
+  careerTruths: z
+    .object({
+      mostImportant: z.array(z.string()).default([]),
+      mundaneButRequired: z.array(z.string()).default([]),
+      beginnersUnderestimate: z.array(z.string()).default([]),
+      hiddenChallenges: z.array(z.string()).default([]),
+      rewardingMoments: z.array(z.string()).default([]),
+      noviceToExpertShifts: z.array(z.string()).default([]),
+    })
+    .optional(),
+  questBlueprint: z
+    .object({
+      studentGoal: z.string().optional(),
+      fitSignals: z.array(z.string()).default([]),
+      misfitSignals: z.array(z.string()).default([]),
+      mustExperience: z.array(z.string()).default([]),
+      mustUnderstand: z.array(z.string()).default([]),
+      learningObjectives: z
+        .array(
+          z.object({
+            day: z.number().int().min(1).max(5),
+            title: z.string(),
+            objective: z.string(),
+            studentDecisionQuestion: z.string(),
+          }),
+        )
+        .max(5)
+        .optional(),
+    })
+    .optional(),
 });
 
 export function getFirstQuestion(): InterviewQuestion {
@@ -80,6 +118,15 @@ export function getFirstQuestion(): InterviewQuestion {
 export function getTotalQuestions(): number {
   return TOTAL_QUESTIONS;
 }
+
+export function getInterviewQuestions(): InterviewQuestion[] {
+  return INTERVIEW_QUESTIONS.map((question) => ({
+    id: question.id,
+    text: question.prompt,
+  }));
+}
+
+export { normalizeQuestBlueprint };
 
 export async function processInterviewMessage(
   message: string,
@@ -164,8 +211,9 @@ async function evaluateAndRespond(
       schema: decisionSchema,
       system: [
         "You are a warm, curious interviewer helping young people understand careers.",
-        "Your job is to evaluate if the expert has provided enough depth on the current topic.",
-        "If their answer is too short, generic, or lacks concrete examples, choose isTopicCovered=false and ask a specific follow-up question to dig deeper.",
+        "Your job is to evaluate if the expert has provided enough depth on the current topic for a student to make a real career decision.",
+        "If their answer is too short, generic, idealized, or lacks concrete examples, choose isTopicCovered=false and ask a specific follow-up question to dig deeper.",
+        "Prefer follow-up questions that reveal hidden realities, boring-but-important work, difficult judgment calls, or signals of fit and misfit.",
         "If they gave a great, detailed answer, choose isTopicCovered=true and smoothly transition to the NEXT topic.",
         "Keep your response conversational and concise (1-2 sentences max).",
         "Do not repeat what the expert said back to them.",
@@ -196,8 +244,10 @@ async function extractCareerData(conversationHistory: ChatMessage[]): Promise<Ex
     model: getModel("gemini-2.5-flash"),
     schema: extractedDataSchema,
     prompt: [
-      "Extract structured career data from this interview transcript.",
-      "Be specific and concrete. Avoid vague generalizations.",
+      "Extract structured career data and a career exploration blueprint from this interview transcript.",
+      "Be specific, concrete, and grounded in what the expert actually said.",
+      "Avoid generic advice. Prefer hidden realities, real tradeoffs, mundane work, and fit/misfit signals.",
+      "Return exactly 5 learning objectives that help a student decide whether to keep exploring this path.",
       "If a field is not mentioned, provide a reasonable inference or leave empty arrays.",
       "",
       "Transcript:",
@@ -213,5 +263,8 @@ async function extractCareerData(conversationHistory: ChatMessage[]): Promise<Ex
       ...object.entryPath,
       alternatives: object.entryPath.alternatives,
     },
+    expertIdentity: object.expertIdentity,
+    careerTruths: object.careerTruths,
+    questBlueprint: normalizeQuestBlueprint(object.questBlueprint),
   };
 }
