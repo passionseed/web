@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,30 @@ export function StudentProgressTable({
   const supabase = createClient();
   const [studentToRemove, setStudentToRemove] = useState<Student | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+
+  // Pre-calculate derived progress data to avoid redundant O(N) calculations during render
+  const studentDataMap = useMemo(() => {
+    const dataMap = new Map();
+
+    students.forEach((student) => {
+      let overallProgress = 0;
+      const progressMap = new Map();
+
+      if (student.map_progress && maps.length > 0) {
+        let totalProgress = 0;
+        student.map_progress.forEach((progress) => {
+          totalProgress += progress.progress_percentage;
+          progressMap.set(progress.map_id, progress);
+        });
+        overallProgress = Math.round(totalProgress / maps.length);
+      }
+
+      dataMap.set(student.id, { overallProgress, progressMap });
+    });
+
+    return dataMap;
+  }, [students, maps]);
+
   const getStudentName = (student: Student) => {
     console.log("🎭 [DEBUG] Getting student name for student ID:", student.user_id);
     console.log("🔍 [DEBUG] Full student object:", JSON.stringify(student, null, 2));
@@ -141,18 +165,7 @@ export function StudentProgressTable({
   };
 
   const getOverallProgress = (student: Student) => {
-    if (!student.map_progress || maps.length === 0) {
-      return 0;
-    }
-
-    const totalProgress = student.map_progress.reduce(
-      (sum, progress) => {
-        return sum + progress.progress_percentage;
-      },
-      0
-    );
-
-    return Math.round(totalProgress / maps.length);
+    return studentDataMap.get(student.id)?.overallProgress || 0;
   };
 
   const formatDate = (dateString: string) => {
@@ -301,20 +314,18 @@ export function StudentProgressTable({
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">
-                          {getOverallProgress(student)}%
+                          {studentDataMap.get(student.id)?.overallProgress || 0}%
                         </span>
                       </div>
                       <Progress
-                        value={getOverallProgress(student)}
+                        value={studentDataMap.get(student.id)?.overallProgress || 0}
                         className="h-2"
                       />
                     </div>
                   </TableCell>
 
                   {maps.slice(0, 3).map((map) => {
-                    const progress = student.map_progress?.find(
-                      (p) => p.map_id === map.map_id
-                    );
+                    const progress = studentDataMap.get(student.id)?.progressMap.get(map.map_id);
                     return (
                       <TableCell key={map.map_id}>
                         {progress ? (

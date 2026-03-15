@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,29 @@ export function StudentProgressView({
   assignments,
   currentUserId,
 }: StudentProgressViewProps) {
+  // Pre-calculate derived progress data to avoid redundant O(N) calculations during render
+  const studentDataMap = useMemo(() => {
+    const dataMap = new Map();
+
+    students.forEach((student) => {
+      let overallProgress = 0;
+      const progressMap = new Map();
+
+      if (student.assignment_progress && assignments.length > 0) {
+        let totalProgress = 0;
+        student.assignment_progress.forEach((progress) => {
+          totalProgress += progress.progress_percentage;
+          progressMap.set(progress.assignment_id, progress);
+        });
+        overallProgress = Math.round(totalProgress / assignments.length);
+      }
+
+      dataMap.set(student.id, { overallProgress, progressMap });
+    });
+
+    return dataMap;
+  }, [students, assignments]);
+
   const getStudentName = (student: Student) => {
     return (
       student.user?.full_name ||
@@ -100,18 +124,7 @@ export function StudentProgressView({
   };
 
   const getOverallProgress = (student: Student) => {
-    if (!student.assignment_progress || assignments.length === 0) {
-      return 0;
-    }
-
-    const totalProgress = student.assignment_progress.reduce(
-      (sum, progress) => {
-        return sum + progress.progress_percentage;
-      },
-      0
-    );
-
-    return Math.round(totalProgress / assignments.length);
+    return studentDataMap.get(student.id)?.overallProgress || 0;
   };
 
   const formatDate = (dateString: string) => {
@@ -201,20 +214,18 @@ export function StudentProgressView({
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">
-                            {getOverallProgress(student)}%
+                            {studentDataMap.get(student.id)?.overallProgress || 0}%
                           </span>
                         </div>
                         <Progress
-                          value={getOverallProgress(student)}
+                          value={studentDataMap.get(student.id)?.overallProgress || 0}
                           className="h-2"
                         />
                       </div>
                     </TableCell>
 
                     {assignments.slice(0, 3).map((assignment) => {
-                      const progress = student.assignment_progress?.find(
-                        (p) => p.assignment_id === assignment.id
-                      );
+                      const progress = studentDataMap.get(student.id)?.progressMap.get(assignment.id);
                       return (
                         <TableCell key={assignment.id}>
                           {progress ? (
