@@ -33,20 +33,18 @@ export function LandingHackathonBanner({
   const t = content[language];
 
   return (
-    <div
-      className={`relative border-b border-white/[0.06] bg-gradient-to-r from-amber-950/50 via-orange-950/40 to-amber-950/50 backdrop-blur-sm ${language === "th" ? "font-bai-jamjuree" : ""}`}
-    >
+    <div className="relative border-b border-white/[0.06] bg-gradient-to-r from-amber-950/50 via-orange-950/40 to-amber-950/50 backdrop-blur-sm">
       <Link
         href="/hackathon"
-        className="group flex min-h-10 w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 py-1.5 pr-12 text-center transition-colors hover:border-amber-500/25 hover:from-amber-900/60 hover:via-orange-900/50 hover:to-amber-900/60"
+        className={`group flex min-h-10 w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 py-1.5 pr-12 text-center transition-colors hover:border-amber-500/25 hover:from-amber-900/60 hover:via-orange-900/50 hover:to-amber-900/60 ${language === "th" ? "font-bai-jamjuree" : ""}`}
         aria-label={t.aria}
       >
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-amber-400/95">
+        <span className={`text-[11px] font-semibold uppercase tracking-widest text-amber-400/95 ${language === "th" ? "font-bai-jamjuree" : ""}`}>
           {t.label}
         </span>
-        <span className="text-sm text-white/95 sm:inline">{t.line1}</span>
-        <span className="text-sm text-white/95">{t.line2}</span>
-        <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-amber-300 transition-transform group-hover:translate-x-0.5 sm:text-sm">
+        <span className={`text-sm text-white/95 sm:inline ${language === "th" ? "font-bai-jamjuree" : ""}`}>{t.line1}</span>
+        <span className={`text-sm text-white/95 ${language === "th" ? "font-bai-jamjuree" : ""}`}>{t.line2}</span>
+        <span className={`inline-flex items-center gap-0.5 text-xs font-semibold text-amber-300 transition-transform group-hover:translate-x-0.5 sm:text-sm ${language === "th" ? "font-bai-jamjuree" : ""}`}>
           {t.cta}
           <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </span>

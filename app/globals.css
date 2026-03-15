@@ -4,6 +4,670 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Expert Interview: Dusk Theme ──────────────────────────────────────── */
+
+/* Cloud drifts — large movement + opacity shift so they're actually visible */
+@keyframes dusk-cloud-a {
+  0%, 100% { transform: translate(0px,   0px) scale(1);    opacity: 0.38; }
+  50%       { transform: translate(72px, -44px) scale(1.1); opacity: 0.58; }
+}
+@keyframes dusk-cloud-b {
+  0%, 100% { transform: translate(0px,   0px) scale(1);    opacity: 0.28; }
+  50%       { transform: translate(-65px, 35px) scale(0.92); opacity: 0.50; }
+}
+@keyframes dusk-cloud-c {
+  0%, 100% { transform: translate(0px,  0px) scale(1);    opacity: 0.42; }
+  50%       { transform: translate(48px, 52px) scale(1.07); opacity: 0.62; }
+}
+
+/* Horizon warmth — sun slowly rising, expanding from thin sliver to warm dome */
+@keyframes sun-rise {
+  0%   { opacity: 0.30; transform: scaleX(0.85) scaleY(0.18) translateY(64%); }
+  15%  { opacity: 0.55; transform: scaleX(0.92) scaleY(0.38) translateY(42%); }
+  40%  { opacity: 0.68; transform: scaleX(1.00) scaleY(0.70) translateY(18%); }
+  65%  { opacity: 0.78; transform: scaleX(1.04) scaleY(0.90) translateY(6%); }
+  85%  { opacity: 0.72; transform: scaleX(1.06) scaleY(1.00) translateY(0%); }
+  100% { opacity: 0.30; transform: scaleX(0.85) scaleY(0.18) translateY(64%); }
+}
+
+/* Embers — rise from bottom, drift, fade */
+@keyframes ember-rise {
+  0%   { transform: translateY(0px)    translateX(0px);  opacity: 0;   }
+  12%  { opacity: 0.95; }
+  80%  { opacity: 0.55; }
+  100% { transform: translateY(-220px) translateX(18px); opacity: 0;   }
+}
+
+/* ── Card surface ──────────────────────────────────────────────────────── */
+.ei-card {
+  position: relative;
+  background: linear-gradient(160deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.018) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 1px rgba(139, 26, 90, 0.14),
+    0 1px 3px -1px rgba(0, 0, 0, 0.55),
+    0 4px 18px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.22);
+  /* fast snap-out */
+  transition:
+    box-shadow 180ms ease-out,
+    border-color 180ms ease-out,
+    transform 180ms ease-out;
+}
+
+/* bottom-to-top amber glow layer — bright at bottom, fades up */
+.ei-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  background: linear-gradient(
+    to top,
+    rgba(251, 146, 60, 0.38) 0%,
+    rgba(251, 146, 60, 0.14) 40%,
+    rgba(251, 146, 60, 0.03) 70%,
+    transparent 100%
+  );
+  /* inset(top …) at 100% = fully clipped from top = nothing visible */
+  clip-path: inset(100% 0 0 0 round 13px);
+  opacity: 0;
+  filter: blur(18px);
+  pointer-events: none;
+  z-index: 0;
+  /* fast exit */
+  transition:
+    clip-path 200ms ease-out,
+    opacity 200ms ease-out,
+    filter 200ms ease-out;
+}
+
+.ei-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ei-card:hover::before {
+  /* top inset shrinks to 0 = reveals from bottom upward */
+  clip-path: inset(0% 0 0 0 round 13px);
+  opacity: 1;
+  filter: blur(3px);
+  /* clip, opacity, and blur all climb slowly together */
+  transition:
+    clip-path 9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+    opacity 9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+    filter 9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+}
+
+.ei-card:hover {
+  border-color: rgba(251, 146, 60, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(251, 146, 60, 0.16),
+    0 4px 20px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 200, 100, 0.09),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.30);
+  transform: translateY(-3px);
+  /* quick burst then slow crawl */
+  transition:
+    box-shadow 8000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+    border-color 7000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+    transform 5000ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+}
+
+/* ── Dusk button keyframes ─────────────────────────────────────────────── */
+
+/* Wave-a and wave-b use prime durations (4231ms, 5711ms) so they
+   never sync — creates organic, slightly chaotic pulsing */
+@keyframes ei-btn-wave-a {
+  0%   { opacity: 0.52; filter: blur(7px); }
+  50%  { opacity: 0.78; filter: blur(3px); }
+  100% { opacity: 0.52; filter: blur(7px); }
+}
+@keyframes ei-btn-wave-b {
+  0%   { opacity: 0.24; filter: blur(12px); }
+  50%  { opacity: 0.48; filter: blur(7px); }
+  100% { opacity: 0.24; filter: blur(12px); }
+}
+@keyframes ei-btn-inner-rise-b {
+  0%   { transform: translateY(100%); opacity: 0; filter: blur(18px); }
+  5%   { opacity: 0.04; }
+  100% { transform: translateY(0%); opacity: 0.24; filter: blur(12px); }
+}
+
+@keyframes ei-btn-rise {
+  0%   { transform: translateY(0px); }
+  6%   { transform: translateY(-0.6px); }
+  20%  { transform: translateY(-1.2px); }
+  50%  { transform: translateY(-2px); }
+  100% { transform: translateY(-3px); }
+}
+
+@keyframes ei-btn-glow {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(249,115,22,0.32),
+      0 1px 2px -1px rgba(0,0,0,0.55),
+      0 3px 14px rgba(194,65,12,0.28),
+      inset 0 1px 0 rgba(255,255,255,0.20),
+      inset 0 -2px 4px rgba(0,0,0,0.24);
+    filter: brightness(1.0);
+  }
+  10% {
+    box-shadow:
+      0 0 0 1px rgba(249,115,22,0.34),
+      0 0 6px rgba(251,146,60,0.08),
+      0 3px 14px rgba(194,65,12,0.28),
+      inset 0 1px 0 rgba(255,255,255,0.21),
+      inset 0 -2px 4px rgba(0,0,0,0.24);
+    filter: brightness(1.01);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(251,146,60,0.50),
+      0 0 28px rgba(251,146,60,0.38),
+      0 0 72px rgba(251,146,60,0.16),
+      0 6px 22px rgba(0,0,0,0.38),
+      inset 0 1px 0 rgba(255,255,255,0.24),
+      inset 0 -2px 4px rgba(0,0,0,0.22);
+    filter: brightness(1.08);
+  }
+}
+
+/* ── Dusk button ───────────────────────────────────────────────────────── */
+.ei-button-dusk {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 45%, #be185d 100%);
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px rgba(249, 115, 22, 0.32),
+    0 1px 2px -1px rgba(0, 0, 0, 0.55),
+    0 3px 14px rgba(194, 65, 12, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.24);
+  /* fast snap-out */
+  transition:
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out,
+    filter 160ms ease-out;
+}
+
+/* inner heat layer A — yellow-gold, tighter blur */
+.ei-button-dusk::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(
+    to top,
+    rgba(255, 210, 100, 0.26) 0%,
+    rgba(255, 170, 50, 0.09) 45%,
+    transparent 100%
+  );
+  filter: blur(22px);
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* inner heat layer B — amber-orange, softer blur, offset timing */
+.ei-button-dusk::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(
+    to top,
+    rgba(234, 88, 12, 0.22) 0%,
+    rgba(251, 146, 60, 0.07) 40%,
+    transparent 100%
+  );
+  filter: blur(18px);
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ei-button-dusk > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ei-button-dusk:hover:not(:disabled)::before {
+  animation:
+    ei-btn-inner-rise   14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 350ms  forwards,
+    ei-btn-wave-a        4231ms ease-in-out                          14350ms infinite;
+}
+
+.ei-button-dusk:hover:not(:disabled)::after {
+  animation:
+    ei-btn-inner-rise-b 14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 900ms  forwards,
+    ei-btn-wave-b        5711ms ease-in-out                          14900ms infinite;
+}
+
+@keyframes ei-btn-inner-rise {
+  0%   { transform: translateY(100%); opacity: 0;    filter: blur(22px); }
+  4%   { opacity: 0.08; }
+  100% { transform: translateY(0%);   opacity: 0.52; filter: blur(7px); }
+}
+
+.ei-button-dusk:hover:not(:disabled) {
+  /* keyframe animations: rise and glow both start subtle and build */
+  animation:
+    ei-btn-rise 10000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards,
+    ei-btn-glow 14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards;
+}
+
+/* Mobile — fire animations when elements scroll into center view */
+@media (hover: none) {
+  .ei-card.in-view::before {
+    clip-path: inset(0% 0 0 0 round 13px);
+    opacity: 1;
+    filter: blur(3px);
+    transition:
+      clip-path 9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+      opacity   9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+      filter    9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  }
+  .ei-card.in-view {
+    border-color: rgba(251, 146, 60, 0.22);
+    box-shadow:
+      0 0 0 1px rgba(251, 146, 60, 0.16),
+      0 4px 20px rgba(0, 0, 0, 0.42),
+      inset 0 1px 0 rgba(255, 200, 100, 0.09),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.30);
+    transform: translateY(-3px);
+    transition:
+      box-shadow 8000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+      border-color 7000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+      transform 5000ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  }
+  .ei-button-dusk.in-view {
+    animation:
+      ei-btn-rise 10000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards,
+      ei-btn-glow 14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards;
+  }
+  .ei-button-dusk.in-view::before {
+    animation:
+      ei-btn-inner-rise  14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 350ms  forwards,
+      ei-btn-wave-a       4231ms ease-in-out                          14350ms infinite;
+  }
+  .ei-button-dusk.in-view::after {
+    animation:
+      ei-btn-inner-rise-b 14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 900ms  forwards,
+      ei-btn-wave-b        5711ms ease-in-out                          14900ms infinite;
+  }
+}
+
+.ei-button-dusk:active:not(:disabled),
+.ei-button-dusk:active:not(:disabled)::before,
+.ei-button-dusk:active:not(:disabled)::after {
+  animation: none;
+}
+
+.ei-button-dusk:active:not(:disabled) {
+  transform: scale(0.972) translateY(1px);
+  box-shadow:
+    0 0 0 1px rgba(251, 146, 60, 0.22),
+    0 1px 4px rgba(0, 0, 0, 0.55),
+    inset 0 2px 8px rgba(0, 0, 0, 0.38);
+  filter: brightness(0.92);
+  transition-duration: 80ms;
+}
+
+.ei-button-dusk:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Loading Animation: Orbiting Planet ───────────────────────────────── */
+@keyframes ei-orbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes ei-moon-orbit {
+  0% { transform: rotate(0deg) translateX(12px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(12px) rotate(-360deg); }
+}
+
+@keyframes ei-planet-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 
+      0 0 0 2px rgba(251, 146, 60, 0.4),
+      0 0 10px rgba(251, 146, 60, 0.3),
+      0 0 20px rgba(249, 115, 22, 0.2);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 
+      0 0 0 3px rgba(251, 146, 60, 0.6),
+      0 0 15px rgba(251, 146, 60, 0.5),
+      0 0 30px rgba(249, 115, 22, 0.3);
+  }
+}
+
+@keyframes ei-moon-glow {
+  0%, 100% { 
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.6),
+      0 0 8px rgba(255, 255, 255, 0.4);
+  }
+  50% { 
+    box-shadow: 
+      0 0 0 2px rgba(255, 255, 255, 0.9),
+      0 0 12px rgba(255, 255, 255, 0.7);
+  }
+}
+
+.ei-loading-orbit {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ei-loading-planet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+  animation: ei-planet-pulse 1.5s ease-in-out infinite;
+}
+
+.ei-loading-moon {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  animation: 
+    ei-moon-orbit 2s linear infinite,
+    ei-moon-glow 1.5s ease-in-out infinite;
+}
+
+/* ── Landing Page: Dawn Theme ──────────────────────────────────────────── */
+
+/* Dawn card — warm gold glow, same system as ei-card */
+.dawn-card {
+  position: relative;
+  border-radius: 16px;
+  /* fast snap-out */
+  transition:
+    box-shadow 180ms ease-out,
+    border-color 180ms ease-out,
+    transform 180ms ease-out;
+}
+
+.dawn-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  background: linear-gradient(
+    to top,
+    rgba(251, 191, 36, 0.30) 0%,
+    rgba(251, 191, 36, 0.10) 40%,
+    rgba(251, 191, 36, 0.02) 70%,
+    transparent 100%
+  );
+  clip-path: inset(100% 0 0 0 round 17px);
+  opacity: 0;
+  filter: blur(16px);
+  pointer-events: none;
+  z-index: 0;
+  transition:
+    clip-path 200ms ease-out,
+    opacity 200ms ease-out,
+    filter 200ms ease-out;
+}
+
+.dawn-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dawn-card:hover::before {
+  clip-path: inset(0% 0 0 0 round 17px);
+  opacity: 1;
+  filter: blur(4px);
+  transition:
+    clip-path 9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+    opacity   9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+    filter    9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+}
+
+.dawn-card:hover {
+  border-color: rgba(251, 191, 36, 0.20) !important;
+  transform: translateY(-3px);
+  transition:
+    box-shadow 8000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+    border-color 7000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+    transform 5000ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+}
+
+/* Mobile — fire when scrolled into view */
+@media (hover: none) {
+  .dawn-card.in-view::before {
+    clip-path: inset(0% 0 0 0 round 17px);
+    opacity: 1;
+    filter: blur(4px);
+    transition:
+      clip-path 9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+      opacity   9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+      filter    9000ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  }
+  .dawn-card.in-view {
+    border-color: rgba(251, 191, 36, 0.20) !important;
+    transform: translateY(-3px);
+    transition:
+      box-shadow 8000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+      border-color 7000ms cubic-bezier(0.05, 0.7, 0.35, 0.99),
+      transform 5000ms cubic-bezier(0.05, 0.7, 0.35, 0.99);
+  }
+}
+
+/* ── Dawn Button ───────────────────────────────────────────────────────── */
+/* Gold → violet: the sunrise line where first light meets the night sky */
+
+@keyframes dawn-btn-rise {
+  0%   { transform: translateY(0px); }
+  6%   { transform: translateY(-0.6px); }
+  20%  { transform: translateY(-1.2px); }
+  50%  { transform: translateY(-2px); }
+  100% { transform: translateY(-3px); }
+}
+
+@keyframes dawn-btn-glow {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(251,191,36,0.28),
+      0 1px 2px -1px rgba(0,0,0,0.45),
+      0 3px 14px rgba(180,130,0,0.22),
+      inset 0 1px 0 rgba(255,255,255,0.22),
+      inset 0 -2px 4px rgba(0,0,0,0.18);
+    filter: brightness(1.0);
+  }
+  10% {
+    box-shadow:
+      0 0 0 1px rgba(251,191,36,0.32),
+      0 0 6px rgba(251,191,36,0.10),
+      0 3px 14px rgba(180,130,0,0.22),
+      inset 0 1px 0 rgba(255,255,255,0.23),
+      inset 0 -2px 4px rgba(0,0,0,0.18);
+    filter: brightness(1.01);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(251,191,36,0.55),
+      0 0 24px rgba(251,191,36,0.35),
+      0 0 60px rgba(251,191,36,0.14),
+      0 6px 20px rgba(0,0,0,0.30),
+      inset 0 1px 0 rgba(255,255,255,0.28),
+      inset 0 -2px 4px rgba(0,0,0,0.18);
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes dawn-inner-rise {
+  0%   { transform: translateY(100%); opacity: 0;    filter: blur(22px); }
+  4%   { opacity: 0.06; }
+  100% { transform: translateY(0%);   opacity: 0.50; filter: blur(7px); }
+}
+@keyframes dawn-inner-rise-b {
+  0%   { transform: translateY(100%); opacity: 0; filter: blur(18px); }
+  5%   { opacity: 0.03; }
+  100% { transform: translateY(0%); opacity: 0.22; filter: blur(12px); }
+}
+@keyframes dawn-wave-a {
+  0%   { opacity: 0.50; filter: blur(8px); }
+  50%  { opacity: 0.75; filter: blur(4px); }
+  100% { opacity: 0.50; filter: blur(8px); }
+}
+@keyframes dawn-wave-b {
+  0%   { opacity: 0.20; filter: blur(13px); }
+  50%  { opacity: 0.42; filter: blur(8px); }
+  100% { opacity: 0.20; filter: blur(13px); }
+}
+
+.ei-button-dawn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 28%, #9333ea 72%, #7c3aed 100%);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px rgba(251,191,36,0.28),
+    0 1px 2px -1px rgba(0,0,0,0.45),
+    0 3px 14px rgba(180,130,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    inset 0 -2px 4px rgba(0,0,0,0.18);
+  transition:
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out,
+    filter 160ms ease-out;
+}
+
+/* inner heat layer A — warm gold */
+.ei-button-dawn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(
+    to top,
+    rgba(255, 236, 120, 0.28) 0%,
+    rgba(251, 191, 36, 0.10) 45%,
+    transparent 100%
+  );
+  filter: blur(22px);
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* inner heat layer B — violet shimmer */
+.ei-button-dawn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(
+    to top,
+    rgba(167, 139, 250, 0.20) 0%,
+    rgba(124, 58, 237, 0.07) 40%,
+    transparent 100%
+  );
+  filter: blur(18px);
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ei-button-dawn > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ei-button-dawn:hover:not(:disabled) {
+  animation:
+    dawn-btn-rise 10000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards,
+    dawn-btn-glow 14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards;
+}
+
+.ei-button-dawn:hover:not(:disabled)::before {
+  animation:
+    dawn-inner-rise  14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 350ms  forwards,
+    dawn-wave-a       4127ms ease-in-out                          14350ms infinite;
+}
+
+.ei-button-dawn:hover:not(:disabled)::after {
+  animation:
+    dawn-inner-rise-b 14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 900ms  forwards,
+    dawn-wave-b        5503ms ease-in-out                          14900ms infinite;
+}
+
+.ei-button-dawn:active:not(:disabled),
+.ei-button-dawn:active:not(:disabled)::before,
+.ei-button-dawn:active:not(:disabled)::after {
+  animation: none;
+}
+
+.ei-button-dawn:active:not(:disabled) {
+  transform: scale(0.972) translateY(1px);
+  box-shadow:
+    0 0 0 1px rgba(251,191,36,0.22),
+    0 1px 4px rgba(0,0,0,0.45),
+    inset 0 2px 8px rgba(0,0,0,0.30);
+  filter: brightness(0.92);
+  transition-duration: 80ms;
+}
+
+.ei-button-dawn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mobile */
+@media (hover: none) {
+  .ei-button-dawn.in-view {
+    animation:
+      dawn-btn-rise 10000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards,
+      dawn-btn-glow 14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) forwards;
+  }
+  .ei-button-dawn.in-view::before {
+    animation:
+      dawn-inner-rise  14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 350ms  forwards,
+      dawn-wave-a       4127ms ease-in-out                          14350ms infinite;
+  }
+  .ei-button-dawn.in-view::after {
+    animation:
+      dawn-inner-rise-b 14000ms cubic-bezier(0.05, 0.7, 0.35, 0.99) 900ms  forwards,
+      dawn-wave-b        5503ms ease-in-out                          14900ms infinite;
+  }
+}
+
 /* Hero Path Animations */
 @keyframes path-draw {
   0% {

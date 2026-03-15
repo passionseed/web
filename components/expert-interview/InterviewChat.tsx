@@ -25,7 +25,7 @@ export function InterviewChat({
   initialProgress,
   onComplete,
 }: InterviewChatProps) {
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const [messages, setMessages] = useState<ChatMessageType[]>([
     { role: "assistant", content: firstQuestion.text, timestamp: new Date().toISOString() },
   ]);
@@ -106,46 +106,69 @@ export function InterviewChat({
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ height: "100dvh" }}>
-      <div className="px-4 py-3 border-b border-gray-800 shrink-0">
-        <ProgressIndicator current={progress.current} total={progress.total} language={language} />
+    <div className="flex flex-col h-full">
+      {/* Nav + progress */}
+      <div className="shrink-0 border-b border-gray-800/60 bg-black/80 backdrop-blur-sm">
+        <div className="max-w-3xl mx-auto px-4">
+          {/* Nav row */}
+          <div className="flex items-center justify-between h-12">
+            <span className="text-sm font-semibold text-white tracking-tight">
+              PassionSeed <span className="text-gray-500 font-normal">· Expert Interview</span>
+            </span>
+            <button
+              onClick={() => setLanguage(language === "en" ? "th" : "en")}
+              className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 rounded-full px-3 py-1 transition-colors"
+            >
+              {language === "en" ? "🇹🇭 TH" : "🇬🇧 EN"}
+            </button>
+          </div>
+          {/* Progress */}
+          <div className="pb-3">
+            <ProgressIndicator current={progress.current} total={progress.total} language={language} />
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 min-h-0">
-        {messages.map((msg, idx) => (
-          <ChatMessage key={idx} message={msg} />
-        ))}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+        <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+          {messages.map((msg, idx) => (
+            <ChatMessage key={idx} message={msg} />
+          ))}
 
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3">
-              <div className="flex gap-1.5 items-center h-4">
-                <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:300ms]" />
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3">
+                <div className="flex gap-1.5 items-center h-4">
+                  <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {error && (
-          <p className="text-sm text-red-400 text-center">{error}</p>
-        )}
+          {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
-        <div ref={bottomRef} />
+          <div ref={bottomRef} />
+        </div>
       </div>
 
-      <div className="px-4 pt-3 border-t border-gray-800 shrink-0" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
-        <ChatInput
-          onSend={handleSend}
-          isLoading={isLoading}
-          disabled={false}
-          placeholder={language === "th" ? "พิมพ์คำตอบของคุณ..." : "Type your answer..."}
-          language={language}
-        />
-        <p className="text-xs text-gray-600 mt-1.5 text-center">
-          {t.hint}
-        </p>
+      {/* Input — gradient fade like ChatGPT */}
+      <div className="shrink-0 bg-gradient-to-t from-black from-60% to-transparent pt-6">
+        <div
+          className="max-w-3xl mx-auto px-4"
+          style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+        >
+          <ChatInput
+            onSend={handleSend}
+            isLoading={isLoading}
+            disabled={false}
+            placeholder={language === "th" ? "พิมพ์คำตอบของคุณ..." : "Type your answer..."}
+            language={language}
+          />
+          <p className="text-xs text-gray-600 mt-2 text-center">{t.hint}</p>
+        </div>
       </div>
     </div>
   );

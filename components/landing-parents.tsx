@@ -94,7 +94,7 @@ export function LandingParents() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="group p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-500"
+              className="ei-card group p-8 border border-white/[0.06] bg-white/[0.02]"
             >
               <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 w-fit mb-5 group-hover:scale-110 transition-transform duration-500">
                 <feature.icon className="h-6 w-6 text-blue-400" />

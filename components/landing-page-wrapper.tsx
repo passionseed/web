@@ -28,6 +28,18 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
     setLanguage(language === "en" ? "th" : "en");
   };
 
+  // Mobile: trigger dawn animations when elements scroll into view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) e.target.classList.add("in-view");
+      }),
+      { threshold: 0.5 }
+    );
+    document.querySelectorAll(".ei-card, .ei-button-dusk").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     const header = headerRef.current;
     if (!header) return;
