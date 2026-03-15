@@ -93,19 +93,19 @@ export function LandingExpertCta() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="ei-card flex flex-col items-center gap-4 p-6 border border-white/[0.05] bg-white/[0.02]"
+                className="ei-card flex items-center gap-4 p-6 border border-white/[0.05] bg-white/[0.02] font-[family-name:var(--font-bai-jamjuree)]"
               >
-                <div className="p-3 rounded-full bg-purple-500/10 border border-purple-500/20">
+                <div className="p-3 rounded-full bg-purple-500/10 border border-purple-500/20 shrink-0">
                   <detail.icon className="h-5 w-5 text-purple-400" />
                 </div>
-                <span className="text-sm text-gray-300 text-center font-medium">
+                <span className="text-sm text-gray-300 font-medium">
                   {detail.text}
                 </span>
               </motion.div>
             ))}
           </div>
 
-          <Link href="/expert-interview" className="ei-button-dusk" style={{ fontSize: "1.125rem", padding: "1rem 2.5rem", borderRadius: "14px" }}>
+          <Link href="/expert-interview" className="ei-button-dusk font-[family-name:var(--font-bai-jamjuree)]" style={{ fontSize: "1.125rem", padding: "1rem 2.5rem", borderRadius: "14px" }}>
             {t.cta}
             <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
           </Link>
