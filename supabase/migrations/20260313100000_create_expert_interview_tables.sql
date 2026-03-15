@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- EXPERT PROFILES TABLE
 -- ========================================
 
-CREATE TABLE public.expert_profiles (
+CREATE TABLE IF NOT EXISTS public.expert_profiles (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
 
@@ -42,17 +42,17 @@ CREATE TABLE public.expert_profiles (
     reviewed_by UUID REFERENCES auth.users(id)
 );
 
-CREATE INDEX idx_expert_profiles_status ON public.expert_profiles(status);
-CREATE INDEX idx_expert_profiles_user_id ON public.expert_profiles(user_id);
-CREATE INDEX idx_expert_profiles_session_id ON public.expert_profiles(interview_session_id);
-CREATE INDEX idx_expert_profiles_created_at ON public.expert_profiles(created_at);
-CREATE INDEX idx_expert_profiles_field_category ON public.expert_profiles(field_category);
+CREATE INDEX IF NOT EXISTS idx_expert_profiles_status ON public.expert_profiles(status);
+CREATE INDEX IF NOT EXISTS idx_expert_profiles_user_id ON public.expert_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_expert_profiles_session_id ON public.expert_profiles(interview_session_id);
+CREATE INDEX IF NOT EXISTS idx_expert_profiles_created_at ON public.expert_profiles(created_at);
+CREATE INDEX IF NOT EXISTS idx_expert_profiles_field_category ON public.expert_profiles(field_category);
 
 -- ========================================
 -- EXPERT PATHLABS TABLE
 -- ========================================
 
-CREATE TABLE public.expert_pathlabs (
+CREATE TABLE IF NOT EXISTS public.expert_pathlabs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     expert_profile_id UUID NOT NULL REFERENCES public.expert_profiles(id) ON DELETE CASCADE,
     seed_id UUID REFERENCES public.seeds(id) ON DELETE SET NULL,
@@ -64,15 +64,15 @@ CREATE TABLE public.expert_pathlabs (
     generated_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_expert_pathlabs_expert_profile ON public.expert_pathlabs(expert_profile_id);
-CREATE INDEX idx_expert_pathlabs_seed ON public.expert_pathlabs(seed_id);
-CREATE INDEX idx_expert_pathlabs_status ON public.expert_pathlabs(generation_status);
+CREATE INDEX IF NOT EXISTS idx_expert_pathlabs_expert_profile ON public.expert_pathlabs(expert_profile_id);
+CREATE INDEX IF NOT EXISTS idx_expert_pathlabs_seed ON public.expert_pathlabs(seed_id);
+CREATE INDEX IF NOT EXISTS idx_expert_pathlabs_status ON public.expert_pathlabs(generation_status);
 
 -- ========================================
 -- EXPERT INTERVIEW RATE LIMITS TABLE
 -- ========================================
 
-CREATE TABLE public.expert_interview_rate_limits (
+CREATE TABLE IF NOT EXISTS public.expert_interview_rate_limits (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     ip_hash TEXT NOT NULL,
     hour_bucket TIMESTAMPTZ NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE public.expert_interview_rate_limits (
     UNIQUE(ip_hash, hour_bucket)
 );
 
-CREATE INDEX idx_expert_rate_limits_lookup ON public.expert_interview_rate_limits(ip_hash, hour_bucket);
+CREATE INDEX IF NOT EXISTS idx_expert_rate_limits_lookup ON public.expert_interview_rate_limits(ip_hash, hour_bucket);
 
 CREATE OR REPLACE FUNCTION public.cleanup_old_rate_limits()
 RETURNS void AS $$
@@ -95,7 +95,7 @@ $$ LANGUAGE plpgsql;
 -- MENTOR SESSIONS TABLE
 -- ========================================
 
-CREATE TABLE public.mentor_sessions (
+CREATE TABLE IF NOT EXISTS public.mentor_sessions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     expert_profile_id UUID NOT NULL REFERENCES public.expert_profiles(id) ON DELETE CASCADE,
     booked_by_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -111,10 +111,29 @@ CREATE TABLE public.mentor_sessions (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_mentor_sessions_expert ON public.mentor_sessions(expert_profile_id);
-CREATE INDEX idx_mentor_sessions_booker ON public.mentor_sessions(booked_by_user_id);
-CREATE INDEX idx_mentor_sessions_status ON public.mentor_sessions(status);
-CREATE INDEX idx_mentor_sessions_scheduled ON public.mentor_sessions(scheduled_at);
+-- Add expert_profile_id if the existing mentor_sessions table doesn't have it
+DO $$ BEGIN
+  ALTER TABLE public.mentor_sessions
+    ADD COLUMN expert_profile_id UUID REFERENCES public.expert_profiles(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE INDEX IF NOT EXISTS idx_mentor_sessions_expert ON public.mentor_sessions(expert_profile_id);
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE INDEX IF NOT EXISTS idx_mentor_sessions_booker ON public.mentor_sessions(booked_by_user_id);
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE INDEX IF NOT EXISTS idx_mentor_sessions_status ON public.mentor_sessions(status);
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE INDEX IF NOT EXISTS idx_mentor_sessions_scheduled ON public.mentor_sessions(scheduled_at);
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
 
 -- ========================================
 -- RLS
@@ -126,76 +145,112 @@ ALTER TABLE public.expert_interview_rate_limits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mentor_sessions ENABLE ROW LEVEL SECURITY;
 
 -- Expert Profiles
-CREATE POLICY "public_insert_expert_profiles" ON public.expert_profiles
-    FOR INSERT WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY "public_insert_expert_profiles" ON public.expert_profiles
+      FOR INSERT WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY "public_view_approved_experts" ON public.expert_profiles
-    FOR SELECT USING (status = 'approved');
+DO $$ BEGIN
+  CREATE POLICY "public_view_approved_experts" ON public.expert_profiles
+      FOR SELECT USING (status = 'approved');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY "admins_manage_expert_profiles" ON public.expert_profiles
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.user_roles
-            WHERE user_id = auth.uid()
-            AND role IN ('admin', 'instructor')
-        )
-    );
+DO $$ BEGIN
+  CREATE POLICY "admins_manage_expert_profiles" ON public.expert_profiles
+      FOR ALL USING (
+          EXISTS (
+              SELECT 1 FROM public.user_roles
+              WHERE user_id = auth.uid()
+              AND role IN ('admin', 'instructor')
+          )
+      );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Expert PathLabs
-CREATE POLICY "public_view_expert_pathlabs" ON public.expert_pathlabs
-    FOR SELECT USING (generation_status = 'completed');
+DO $$ BEGIN
+  CREATE POLICY "public_view_expert_pathlabs" ON public.expert_pathlabs
+      FOR SELECT USING (generation_status = 'completed');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY "admins_manage_expert_pathlabs" ON public.expert_pathlabs
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.user_roles
-            WHERE user_id = auth.uid()
-            AND role IN ('admin', 'instructor')
-        )
-    );
+DO $$ BEGIN
+  CREATE POLICY "admins_manage_expert_pathlabs" ON public.expert_pathlabs
+      FOR ALL USING (
+          EXISTS (
+              SELECT 1 FROM public.user_roles
+              WHERE user_id = auth.uid()
+              AND role IN ('admin', 'instructor')
+          )
+      );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Rate Limits (service role only)
-CREATE POLICY "service_role_rate_limits" ON public.expert_interview_rate_limits
-    FOR ALL USING (auth.role() = 'service_role');
+DO $$ BEGIN
+  CREATE POLICY "service_role_rate_limits" ON public.expert_interview_rate_limits
+      FOR ALL USING (auth.role() = 'service_role');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Mentor Sessions
-CREATE POLICY "users_view_own_sessions" ON public.mentor_sessions
-    FOR SELECT USING (booked_by_user_id = auth.uid());
+-- Mentor Sessions (skipped if incompatible existing table)
+DO $$ BEGIN
+  CREATE POLICY "users_view_own_sessions" ON public.mentor_sessions
+      FOR SELECT USING (booked_by_user_id = auth.uid());
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
-CREATE POLICY "users_create_sessions" ON public.mentor_sessions
-    FOR INSERT WITH CHECK (booked_by_user_id = auth.uid());
+DO $$ BEGIN
+  CREATE POLICY "users_create_sessions" ON public.mentor_sessions
+      FOR INSERT WITH CHECK (booked_by_user_id = auth.uid());
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
-CREATE POLICY "experts_view_own_sessions" ON public.mentor_sessions
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.expert_profiles
-            WHERE id = expert_profile_id
-            AND user_id = auth.uid()
-        )
-    );
+DO $$ BEGIN
+  CREATE POLICY "experts_view_own_sessions" ON public.mentor_sessions
+      FOR SELECT USING (
+          EXISTS (
+              SELECT 1 FROM public.expert_profiles
+              WHERE id = expert_profile_id
+              AND user_id = auth.uid()
+          )
+      );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
-CREATE POLICY "admins_manage_sessions" ON public.mentor_sessions
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.user_roles
-            WHERE user_id = auth.uid()
-            AND role = 'admin'
-        )
-    );
+DO $$ BEGIN
+  CREATE POLICY "admins_manage_sessions" ON public.mentor_sessions
+      FOR ALL USING (
+          EXISTS (
+              SELECT 1 FROM public.user_roles
+              WHERE user_id = auth.uid()
+              AND role = 'admin'
+          )
+      );
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- ========================================
 -- TRIGGERS
 -- ========================================
 
-CREATE TRIGGER update_expert_profiles_updated_at
-    BEFORE UPDATE ON public.expert_profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_updated_at_column();
+DO $$ BEGIN
+  CREATE TRIGGER update_expert_profiles_updated_at
+      BEFORE UPDATE ON public.expert_profiles
+      FOR EACH ROW
+      EXECUTE FUNCTION public.update_updated_at_column();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TRIGGER update_mentor_sessions_updated_at
-    BEFORE UPDATE ON public.mentor_sessions
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_updated_at_column();
+DO $$ BEGIN
+  CREATE TRIGGER update_mentor_sessions_updated_at
+      BEFORE UPDATE ON public.mentor_sessions
+      FOR EACH ROW
+      EXECUTE FUNCTION public.update_updated_at_column();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ========================================
 -- GRANTS

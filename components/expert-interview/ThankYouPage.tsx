@@ -13,18 +13,20 @@ export function ThankYouPage() {
       title: "Thank you!",
       subtitle: "Your interview has been submitted for review. Once approved, we'll turn it into a 5-day career exploration for students.",
       nextTitle: "What happens next",
-      step1: "Our team reviews your submission (usually within 3 days)",
-      step2: "We generate a PathLab from your career insights",
-      step3: "Students explore your career through hands-on activities",
+      step1: "Check your email — we sent you a link to claim your profile and manage your data.",
+      step2: "Our team reviews your submission (usually within 3 days)",
+      step3: "We generate a PathLab from your career insights",
+      step4: "Students explore your career through hands-on activities",
       homeBtn: "Back to home"
     },
     th: {
       title: "ขอบคุณ!",
       subtitle: "การสัมภาษณ์ของคุณถูกส่งไปตรวจสอบแล้ว เมื่อได้รับการอนุมัติ เราจะเปลี่ยนเป็นภารกิจสำรวจอาชีพ 5 วันสำหรับนักเรียน",
       nextTitle: "ขั้นตอนต่อไป",
-      step1: "ทีมงานของเราตรวจสอบข้อมูลของคุณ (ปกติภายใน 3 วัน)",
-      step2: "เราสร้าง PathLab จากข้อมูลเชิงลึกในอาชีพของคุณ",
-      step3: "นักเรียนจะได้สำรวจอาชีพของคุณผ่านกิจกรรมลงมือทำจริง",
+      step1: "ตรวจสอบอีเมลของคุณ — เราส่งลิงก์ให้คุณยืนยันโปรไฟล์และจัดการข้อมูลของคุณแล้ว",
+      step2: "ทีมงานของเราตรวจสอบข้อมูลของคุณ (ปกติภายใน 3 วัน)",
+      step3: "เราสร้าง PathLab จากข้อมูลเชิงลึกในอาชีพของคุณ",
+      step4: "นักเรียนจะได้สำรวจอาชีพของคุณผ่านกิจกรรมลงมือทำจริง",
       homeBtn: "กลับสู่หน้าหลัก"
     }
   };
@@ -58,6 +60,10 @@ export function ThankYouPage() {
           <li className="flex items-start gap-2">
             <span className="text-purple-400 mt-0.5">3.</span>
             {t.step3}
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-purple-400 mt-0.5">4.</span>
+            {t.step4}
           </li>
         </ul>
       </div>

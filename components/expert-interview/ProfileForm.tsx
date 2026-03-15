@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { Upload, X, Loader2 } from "lucide-react";
 
 export interface ProfileData {
   name: string;
@@ -12,23 +14,34 @@ export interface ProfileData {
   company: string;
   fieldCategory: string;
   linkedinUrl: string;
+  email: string;
+  photoUrl: string;
+  dataConsentAgreed: boolean;
 }
 
 interface ProfileFormProps {
   onSubmit: (data: ProfileData) => void;
   isLoading?: boolean;
+  sessionId: string;
 }
 
-export function ProfileForm({ onSubmit, isLoading }: ProfileFormProps) {
+export function ProfileForm({ onSubmit, isLoading, sessionId }: ProfileFormProps) {
   const { language } = useLanguage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [data, setData] = useState<ProfileData>({
     name: "",
     title: "",
     company: "",
     fieldCategory: "",
     linkedinUrl: "",
+    email: "",
+    photoUrl: "",
+    dataConsentAgreed: false,
   });
-  const [errors, setErrors] = useState<Partial<ProfileData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ProfileData, string>>>({});
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
 
   const content = {
     en: {
@@ -44,12 +57,25 @@ export function ProfileForm({ onSubmit, isLoading }: ProfileFormProps) {
       fieldPlaceholder: "Software Engineering, Medicine, Finance...",
       linkedinLabel: "LinkedIn URL (optional)",
       linkedinPlaceholder: "https://linkedin.com/in/yourname",
+      emailLabel: "Email address *",
+      emailPlaceholder: "you@example.com",
+      photoLabel: "Profile photo (optional)",
+      photoUpload: "Tap to upload a photo",
+      photoHint: "PNG, JPG up to 5MB",
+      photoRemove: "Remove photo",
+      consentLabel: "I agree that PassionSeed may use my interview and LinkedIn information to create career exploration content for students and the next generation.",
       continue: "Continue",
       saving: "Saving...",
       reqName: "Name is required",
       reqTitle: "Job title is required",
       reqCompany: "Company is required",
       reqField: "Field is required",
+      reqEmail: "Email is required",
+      invalidEmail: "Please enter a valid email address",
+      reqConsent: "You must agree to continue",
+      photoError: "Photo upload failed. Please try again.",
+      photoSizeError: "Photo must be under 5MB",
+      photoTypeError: "Only image files are allowed",
     },
     th: {
       title: "เกี่ยวกับคุณ",
@@ -64,23 +90,41 @@ export function ProfileForm({ onSubmit, isLoading }: ProfileFormProps) {
       fieldPlaceholder: "เช่น วิศวกรรมซอฟต์แวร์, การแพทย์, การเงิน...",
       linkedinLabel: "ลิงก์ LinkedIn (ไม่บังคับ)",
       linkedinPlaceholder: "https://linkedin.com/in/yourname",
+      emailLabel: "อีเมล *",
+      emailPlaceholder: "you@example.com",
+      photoLabel: "รูปโปรไฟล์ (ไม่บังคับ)",
+      photoUpload: "แตะเพื่ออัปโหลดรูปภาพ",
+      photoHint: "PNG, JPG ขนาดสูงสุด 5MB",
+      photoRemove: "ลบรูปภาพ",
+      consentLabel: "ฉันยินยอมให้ PassionSeed ใช้การสัมภาษณ์และข้อมูล LinkedIn ของฉันเพื่อสร้างเนื้อหาการสำรวจอาชีพสำหรับนักเรียนและคนรุ่นต่อไป",
       continue: "ดำเนินการต่อ",
       saving: "กำลังบันทึก...",
       reqName: "กรุณาระบุชื่อ",
       reqTitle: "กรุณาระบุตำแหน่งงาน",
       reqCompany: "กรุณาระบุบริษัท",
       reqField: "กรุณาระบุสายงาน",
+      reqEmail: "กรุณาระบุอีเมล",
+      invalidEmail: "กรุณาระบุอีเมลที่ถูกต้อง",
+      reqConsent: "กรุณายินยอมเพื่อดำเนินการต่อ",
+      photoError: "อัปโหลดรูปภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+      photoSizeError: "รูปภาพต้องมีขนาดไม่เกิน 5MB",
+      photoTypeError: "อนุญาตเฉพาะไฟล์รูปภาพเท่านั้น",
     }
   };
 
   const t = content[language];
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const validate = (): boolean => {
-    const newErrors: Partial<ProfileData> = {};
+    const newErrors: Partial<Record<keyof ProfileData, string>> = {};
     if (!data.name.trim()) newErrors.name = t.reqName;
     if (!data.title.trim()) newErrors.title = t.reqTitle;
     if (!data.company.trim()) newErrors.company = t.reqCompany;
     if (!data.fieldCategory.trim()) newErrors.fieldCategory = t.reqField;
+    if (!data.email.trim()) newErrors.email = t.reqEmail;
+    else if (!EMAIL_REGEX.test(data.email.trim())) newErrors.email = t.invalidEmail;
+    if (!data.dataConsentAgreed) newErrors.dataConsentAgreed = t.reqConsent;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -93,6 +137,64 @@ export function ProfileForm({ onSubmit, isLoading }: ProfileFormProps) {
   const set = (field: keyof ProfileData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setData((prev) => ({ ...prev, [field]: e.target.value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const handlePhotoSelect = async (file: File) => {
+    setPhotoUploadError(null);
+
+    if (!file.type.startsWith("image/")) {
+      setPhotoUploadError(t.photoTypeError);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoUploadError(t.photoSizeError);
+      return;
+    }
+
+    // Show local preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setPhotoPreview(previewUrl);
+
+    // Upload to server
+    setIsUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sessionId", sessionId);
+
+      const res = await fetch("/api/expert-interview/upload-photo", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const { photoUrl } = await res.json();
+      setData((prev) => ({ ...prev, photoUrl }));
+    } catch {
+      setPhotoUploadError(t.photoError);
+      setPhotoPreview(null);
+      setData((prev) => ({ ...prev, photoUrl: "" }));
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handlePhotoSelect(file);
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handlePhotoSelect(file);
+  };
+
+  const removePhoto = () => {
+    setPhotoPreview(null);
+    setData((prev) => ({ ...prev, photoUrl: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -163,9 +265,91 @@ export function ProfileForm({ onSubmit, isLoading }: ProfileFormProps) {
         />
       </div>
 
+      {/* Email */}
+      <div className="space-y-1">
+        <Label htmlFor="email" className="text-gray-300">{t.emailLabel}</Label>
+        <Input
+          id="email"
+          type="email"
+          value={data.email}
+          onChange={set("email")}
+          placeholder={t.emailPlaceholder}
+          className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+        />
+        {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
+      </div>
+
+      {/* Profile photo */}
+      <div className="space-y-2">
+        <Label className="text-gray-300">{t.photoLabel}</Label>
+        {photoPreview ? (
+          <div className="relative inline-block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photoPreview}
+              alt="Profile preview"
+              className="h-24 w-24 rounded-full object-cover border-2 border-gray-700"
+            />
+            {isUploadingPhoto && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60">
+                <Loader2 className="h-5 w-5 animate-spin text-white" />
+              </div>
+            )}
+            {!isUploadingPhoto && (
+              <button
+                type="button"
+                onClick={removePhoto}
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gray-700 flex items-center justify-center hover:bg-red-600 transition-colors"
+                aria-label={t.photoRemove}
+              >
+                <X className="h-3 w-3 text-white" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div
+            onDrop={handleFileDrop}
+            onDragOver={(e) => e.preventDefault()}
+            onClick={() => fileInputRef.current?.click()}
+            className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-700 rounded-xl cursor-pointer hover:border-gray-500 transition-colors"
+          >
+            <Upload className="h-6 w-6 text-gray-500" />
+            <p className="text-sm text-gray-400">{t.photoUpload}</p>
+            <p className="text-xs text-gray-600">{t.photoHint}</p>
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileInput}
+        />
+        {photoUploadError && <p className="text-xs text-red-400">{photoUploadError}</p>}
+      </div>
+
+      {/* Data consent */}
+      <div className="space-y-2">
+        <div className="flex items-start gap-3 p-4 bg-gray-800/50 border border-gray-700 rounded-xl">
+          <Checkbox
+            id="dataConsent"
+            checked={data.dataConsentAgreed}
+            onCheckedChange={(checked) => {
+              setData((prev) => ({ ...prev, dataConsentAgreed: !!checked }));
+              if (errors.dataConsentAgreed) setErrors((prev) => ({ ...prev, dataConsentAgreed: undefined }));
+            }}
+            className="mt-0.5 border-gray-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+          />
+          <Label htmlFor="dataConsent" className="text-sm text-gray-300 cursor-pointer leading-relaxed">
+            {t.consentLabel}
+          </Label>
+        </div>
+        {errors.dataConsentAgreed && <p className="text-xs text-red-400">{errors.dataConsentAgreed}</p>}
+      </div>
+
       <Button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || isUploadingPhoto}
         className="w-full bg-purple-600 hover:bg-purple-500 text-white"
       >
         {isLoading ? t.saving : t.continue}

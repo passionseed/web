@@ -84,7 +84,7 @@ export default function ExpertInterviewPage() {
       const response = await fetch("/api/expert-interview/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ website: honeypot }),
+        body: JSON.stringify({ website: honeypot, language }),
       });
 
       if (response.status === 429) {
@@ -140,6 +140,12 @@ export default function ExpertInterviewPage() {
         }),
       });
 
+      if (response.status === 409) {
+        // Already submitted — treat as success
+        setStep("done");
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to submit");
       }
@@ -178,7 +184,7 @@ export default function ExpertInterviewPage() {
 
       <HoneypotField value={honeypot} onChange={setHoneypot} />
 
-      <div className="max-w-2xl mx-auto px-4 py-8 pt-24 sm:pt-16">
+      <div className="max-w-2xl mx-auto px-4 py-8 pt-16 sm:pt-16">
         {step === "loading" && (
           <div className="text-center py-24 space-y-6">
             <div className="space-y-2">
@@ -227,7 +233,7 @@ export default function ExpertInterviewPage() {
         )}
 
         {step === "chat" && sessionData && (
-          <div className="h-[80vh] bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+          <div className="fixed inset-0 sm:static sm:h-[80vh] sm:rounded-2xl sm:border sm:border-gray-800 bg-gray-900 overflow-hidden z-10">
             <InterviewChat
               sessionId={sessionData.sessionId}
               firstQuestion={sessionData.firstQuestion}
@@ -237,15 +243,18 @@ export default function ExpertInterviewPage() {
           </div>
         )}
 
-        {step === "profile" && (
+        {step === "profile" && sessionData && (
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8">
-            <ProfileForm onSubmit={handleProfileSubmit} />
+            <ProfileForm onSubmit={handleProfileSubmit} sessionId={sessionData.sessionId} />
           </div>
         )}
 
         {step === "mentoring" && (
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8">
+          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8 space-y-4">
             <MentoringOptIn onSubmit={handleMentoringSubmit} isLoading={isSubmitting} />
+            {errorMessage && (
+              <p className="text-sm text-red-400 text-center">{errorMessage}</p>
+            )}
           </div>
         )}
       </div>

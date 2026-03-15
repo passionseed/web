@@ -19,6 +19,9 @@ const submitSchema = z.object({
     company: z.string().min(1).max(200),
     linkedinUrl: z.string().url().optional().or(z.literal("")),
     fieldCategory: z.string().min(1).max(100),
+    email: z.string().email().max(320),
+    photoUrl: z.string().url().optional().or(z.literal("")),
+    dataConsentAgreed: z.boolean(),
   }),
   mentoring: z.object({
     preference: z.enum(["none", "free", "paid"]),
@@ -64,6 +67,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const claimToken = crypto.randomUUID();
+    const claimTokenExpiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+
     const { data, error } = await supabase
       .from("expert_profiles")
       .insert({
@@ -73,6 +79,11 @@ export async function POST(request: NextRequest) {
         company: sanitizeExpertInput(profile.company),
         field_category: sanitizeExpertInput(profile.fieldCategory),
         linkedin_url: sanitizeUrl(profile.linkedinUrl) ?? null,
+        email: profile.email.trim().toLowerCase(),
+        photo_url: sanitizeUrl(profile.photoUrl) ?? null,
+        data_consent_agreed: profile.dataConsentAgreed,
+        claim_token: claimToken,
+        claim_token_expires_at: claimTokenExpiresAt,
         interview_data: interviewData,
         interview_transcript: interviewTranscript,
         mentoring_preference: mentoring.preference,
@@ -87,6 +98,26 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("[expert-interview/submit] db error", error);
       return NextResponse.json({ error: "Failed to save submission" }, { status: 500 });
+    }
+
+    // Send magic-link email with claim token embedded in redirect URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.com";
+    const redirectTo = `${appUrl}/api/expert-interview/claim?token=${claimToken}`;
+
+    try {
+      const { error: linkError } = await supabase.auth.admin.generateLink({
+        type: "magiclink",
+        email: profile.email.trim().toLowerCase(),
+        options: { redirectTo },
+      });
+
+      if (linkError) {
+        console.error("[expert-interview/submit] magic link error", linkError);
+        // Non-fatal: profile is saved, email just won't be sent
+      }
+    } catch (emailError) {
+      console.error("[expert-interview/submit] email send failed", emailError);
+      // Non-fatal
     }
 
     return NextResponse.json({ success: true, expertProfileId: data.id });
