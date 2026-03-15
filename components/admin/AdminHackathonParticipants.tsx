@@ -194,7 +194,8 @@ export function AdminHackathonParticipants() {
           break;
         case "experience":
           const level = p.experience_level || 1;
-          if (level <= 3) key = "Beginner (1-3)";
+          if (level === 1) key = "Total Beginner (1)";
+          else if (level <= 3) key = "Less Experience (2-3)";
           else if (level <= 6) key = "Intermediate (4-6)";
           else key = "Advanced (7-10)";
           break;
