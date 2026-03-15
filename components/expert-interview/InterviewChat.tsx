@@ -72,7 +72,8 @@ export function InterviewChat({
           sessionId,
           message,
           currentQuestionId,
-          conversationHistory: updatedMessages,
+          language,
+          conversationHistory: messages, // server adds the current message itself
         }),
       });
 
@@ -105,12 +106,12 @@ export function InterviewChat({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-gray-800">
-        <ProgressIndicator current={progress.current} total={progress.total} />
+    <div className="flex flex-col h-full" style={{ height: "100dvh" }}>
+      <div className="px-4 py-3 border-b border-gray-800 shrink-0">
+        <ProgressIndicator current={progress.current} total={progress.total} language={language} />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 min-h-0">
         {messages.map((msg, idx) => (
           <ChatMessage key={idx} message={msg} />
         ))}
@@ -134,14 +135,15 @@ export function InterviewChat({
         <div ref={bottomRef} />
       </div>
 
-      <div className="px-4 py-4 border-t border-gray-800">
+      <div className="px-4 pt-3 border-t border-gray-800 shrink-0" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
         <ChatInput
           onSend={handleSend}
           isLoading={isLoading}
           disabled={false}
           placeholder={language === "th" ? "พิมพ์คำตอบของคุณ..." : "Type your answer..."}
+          language={language}
         />
-        <p className="text-xs text-gray-600 mt-2 text-center">
+        <p className="text-xs text-gray-600 mt-1.5 text-center">
           {t.hint}
         </p>
       </div>

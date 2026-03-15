@@ -7,6 +7,7 @@ const requestSchema = z.object({
   sessionId: z.string().min(1),
   message: z.string().min(1).max(3000),
   currentQuestionId: z.string().nullable().optional(),
+  language: z.enum(["en", "th"]).optional().default("en"),
   conversationHistory: z
     .array(
       z.object({
@@ -15,7 +16,7 @@ const requestSchema = z.object({
         timestamp: z.string().optional(),
       })
     )
-    .max(40)
+    .max(100)
     .default([]),
 });
 
@@ -31,12 +32,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { message, currentQuestionId, conversationHistory } = parsed.data;
+    const { message, currentQuestionId, conversationHistory, language } = parsed.data;
 
     const result = await processInterviewMessage(
       message,
       currentQuestionId ?? null,
-      conversationHistory as ChatMessage[]
+      conversationHistory as ChatMessage[],
+      language
     );
 
     return NextResponse.json(result);

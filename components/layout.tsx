@@ -25,7 +25,8 @@ export function Layout({ children }: LayoutProps) {
     pathname?.includes("finish-profile") ||
     pathname?.includes("complete-profile") ||
     pathname?.includes("hackathon") ||
-    pathname?.includes("/app/beta");
+    pathname?.includes("/app/beta") ||
+    pathname?.startsWith("/expert-interview");
 
   useEffect(() => {
     async function getUser() {

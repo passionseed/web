@@ -14,12 +14,13 @@ function getClientIp(request: NextRequest): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
+    const language = body.language === "th" ? "th" : "en";
 
     // Honeypot check
     if (body.website && body.website.trim() !== "") {
       return NextResponse.json({
         sessionId: "hp-" + crypto.randomUUID(),
-        firstQuestion: getFirstQuestion(),
+        firstQuestion: getFirstQuestion(language),
         progress: { current: 1, total: getTotalQuestions() },
       });
     }
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       sessionId,
-      firstQuestion: getFirstQuestion(),
+      firstQuestion: getFirstQuestion(language),
       progress: { current: 1, total: getTotalQuestions() },
     });
   } catch (error) {
