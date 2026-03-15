@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
@@ -10,7 +9,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { HeroBackground } from "@/components/hero-background";
-import { HeroVisualization } from "@/components/hero-visualization";
 import { LandingDemoPaths } from "@/components/landing-demo-paths";
 
 const content = {
@@ -21,7 +19,7 @@ const content = {
     cta: "Start exploring",
   },
   th: {
-    eyebrow: "การสำรวจอาชีพในรูปแบบใหม่",
+    eyebrow: "อินโท โอกาสที่คุณต้องลองค้นหา",
     headline: "ลองทำงานจริง ก่อนเลือกอนาคต",
     subheadline: "ภารกิจ 5 วัน ออกแบบโดยผู้เชี่ยวชาญจากสายงานจริง ฟรีสำหรับนักเรียน",
     cta: "เริ่มสำรวจ",
@@ -67,12 +65,7 @@ export function LandingHero() {
       {/* Animated background with sunrise gradient */}
       <HeroBackground />
 
-      {/* Living Education Galaxy - data-driven visualization */}
-      <div className="absolute inset-0 w-full h-full">
-        <HeroVisualization />
-      </div>
-
-      {/* Main content container */}
+{/* Main content container */}
       <div className="relative z-10 px-6 w-full max-w-7xl mx-auto">
         {/* Mobile: Text first, then demo paths */}
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
@@ -115,26 +108,21 @@ export function LandingHero() {
               transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
               className="mt-8 w-full sm:w-auto"
             >
-              <Button
-                size="lg"
+              <button
                 onClick={handleGuestAccess}
                 disabled={isLoading}
-                className="group relative bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400 text-base sm:text-lg h-12 sm:h-14 px-8 sm:px-10 rounded-full font-semibold transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_60px_rgba(251,191,36,0.4)] w-full sm:w-auto overflow-hidden"
+                className="ei-button-dusk w-full sm:w-auto justify-center"
+                style={{ fontSize: "1.125rem", padding: "1rem 2.5rem", borderRadius: "14px" }}
               >
-                {/* Subtle shine effect */}
-                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-
-                <span className="relative flex items-center justify-center gap-2">
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      {t.cta}
-                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
-                    </>
-                  )}
-                </span>
-              </Button>
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    {t.cta}
+                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </>
+                )}
+              </button>
             </motion.div>
 
             {/* Mobile demo paths - shown below text on mobile */}

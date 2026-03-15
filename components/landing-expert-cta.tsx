@@ -2,7 +2,6 @@
 
 import { ArrowRight, Clock, User, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/language-context";
 
@@ -94,7 +93,7 @@ export function LandingExpertCta() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="flex flex-col items-center gap-4 p-6 rounded-xl bg-white/[0.02] border border-white/[0.05]"
+                className="ei-card flex flex-col items-center gap-4 p-6 border border-white/[0.05] bg-white/[0.02]"
               >
                 <div className="p-3 rounded-full bg-purple-500/10 border border-purple-500/20">
                   <detail.icon className="h-5 w-5 text-purple-400" />
@@ -106,16 +105,10 @@ export function LandingExpertCta() {
             ))}
           </div>
 
-          <Button
-            asChild
-            size="lg"
-            className="group relative bg-white text-black hover:bg-gray-100 text-base sm:text-lg h-12 sm:h-14 px-8 sm:px-10 rounded-full font-semibold transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_50px_rgba(255,255,255,0.1)] font-sans"
-          >
-            <Link href="/expert-interview" className="flex items-center gap-2 font-sans">
-              {t.cta}
-              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </Button>
+          <Link href="/expert-interview" className="ei-button-dusk" style={{ fontSize: "1.125rem", padding: "1rem 2.5rem", borderRadius: "14px" }}>
+            {t.cta}
+            <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Link>
 
           <p className="text-sm text-gray-500 mt-8 max-w-md mx-auto font-medium">
             {t.mentorNote}

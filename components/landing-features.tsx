@@ -136,7 +136,7 @@ export function LandingFeatures() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className={`group relative p-8 md:p-10 rounded-2xl border ${step.borderColor} bg-gradient-to-br ${step.color} hover:bg-opacity-[0.06] transition-all duration-500`}
+              className={`ei-card group relative p-8 md:p-10 border ${step.borderColor} bg-gradient-to-br ${step.color}`}
             >
               <div className="flex flex-col md:flex-row items-start gap-8">
                 {/* Icon */}

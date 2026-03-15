@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## UI Design System — REQUIRED READING
+
+**Before building or modifying any UI, read [`docs/ui-design-system.md`](docs/ui-design-system.md).**
+
+Key rules (full details in the doc):
+- PassionSeed uses **Dawn** (students) and **Dusk** (experts) atmospheric themes — not generic dark/light mode
+- All glow animations must animate **clip-path + opacity + filter together** — never just one property
+- Hover-in uses **keyframe animations** (values build gradually); hover-out uses short base transitions (snap back fast)
+- Use `cubic-bezier(0.05, 0.7, 0.35, 0.99)` for tension animations
+- Infinite pulse layers use **prime-number durations** to prevent visual sync
+- Mobile touch devices: use `IntersectionObserver` + `@media (hover: none)` — never leave hover-only animations unhandled
+- Reuse `.ei-card` and `.ei-button-dusk` CSS classes from `app/globals.css` — do not redefine them inline
+
 ## Development Commands
 
 ```bash

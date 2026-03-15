@@ -32,14 +32,6 @@ const glowOrbs = [
   },
 ];
 
-const particles = Array.from({ length: 14 }, (_, index) => ({
-  id: index,
-  left: `${8 + ((index * 7) % 84)}%`,
-  top: `${10 + ((index * 11) % 70)}%`,
-  size: 2 + (index % 3),
-  duration: 8 + (index % 5) * 2,
-  delay: (index % 4) * 0.6,
-}));
 
 export function HeroBackground() {
 
@@ -80,6 +72,42 @@ export function HeroBackground() {
           }}
         />
       ))}
+
+      {/* Left cloud — purple-violet mass, opens toward center */}
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          left: 0,
+          top: "5%",
+          width: "50%",
+          height: "70%",
+          background: `radial-gradient(ellipse 90% 80% at 0% 45%,
+            rgba(160, 80, 220, 0.55) 0%,
+            rgba(120, 50, 180, 0.30) 45%,
+            transparent 80%)`,
+          filter: "blur(36px)",
+        }}
+        animate={{ x: [0, 24, 0], y: [0, -14, 0], opacity: [0.75, 1, 0.75] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Right cloud — amber-rose mass, opens toward center */}
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          right: 0,
+          top: "8%",
+          width: "50%",
+          height: "70%",
+          background: `radial-gradient(ellipse 90% 80% at 100% 45%,
+            rgba(220, 80, 60, 0.50) 0%,
+            rgba(200, 100, 40, 0.28) 45%,
+            transparent 80%)`,
+          filter: "blur(36px)",
+        }}
+        animate={{ x: [0, -24, 0], y: [0, 16, 0], opacity: [0.70, 0.95, 0.70] }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+      />
 
       {/* Radial glow emanating from bottom center */}
       <div
@@ -140,32 +168,7 @@ export function HeroBackground() {
         }}
       />
 
-      {/* Depth particles */}
-      {particles.map((particle) => (
-        <motion.div
-          key={particle.id}
-          className="absolute rounded-full"
-          style={{
-            left: particle.left,
-            top: particle.top,
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-            background: `radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%)`,
-          }}
-          animate={{
-            y: [0, -20, 0],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: particle.duration,
-            repeat: Infinity,
-            delay: particle.delay,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-
-      {/* Grain substitute without SVG */}
+{/* Grain substitute without SVG */}
       <div
         className="absolute inset-0 opacity-[0.06]"
         style={{
