@@ -56,6 +56,8 @@ interface BetaRegistration {
   platform: string;
   motivation: string;
   faculty_interest: string;
+  major_interest: string;
+  university: string;
 }
 
 interface FunnelStats {
@@ -135,7 +137,9 @@ export function AdminBetaRegistrations() {
       r.phone.toLowerCase().includes(query) ||
       r.school.toLowerCase().includes(query) ||
       r.grade.toLowerCase().includes(query) ||
-      r.platform.toLowerCase().includes(query)
+      r.platform.toLowerCase().includes(query) ||
+      r.university.toLowerCase().includes(query) ||
+      r.faculty_interest.toLowerCase().includes(query)
     );
   });
 
@@ -385,6 +389,8 @@ export function AdminBetaRegistrations() {
                   <TableHead>School</TableHead>
                   <TableHead>Grade</TableHead>
                   <TableHead>Faculty Interest</TableHead>
+                  <TableHead>Major Interest</TableHead>
+                  <TableHead>Target Uni</TableHead>
                   <TableHead>Platform</TableHead>
                   <TableHead>Registered</TableHead>
                 </TableRow>
@@ -393,7 +399,7 @@ export function AdminBetaRegistrations() {
                 {filteredRegistrations.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={9}
+                      colSpan={11}
                       className="text-center text-muted-foreground"
                     >
                       {searchQuery
@@ -424,6 +430,12 @@ export function AdminBetaRegistrations() {
                       </TableCell>
                       <TableCell className="text-sm">
                         {registration.faculty_interest || "-"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {registration.major_interest || "-"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {registration.university || "-"}
                       </TableCell>
                       <TableCell>
                         <Badge

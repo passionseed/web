@@ -10,6 +10,8 @@ interface BetaSignupData {
   platform: string;
   motivation: string;
   facultyInterest: string;
+  majorInterest?: string;
+  university?: string;
 }
 
 export async function sendBetaSignupNotification(data: BetaSignupData) {
