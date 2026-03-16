@@ -15,13 +15,15 @@ const content = {
   en: {
     eyebrow: "Career exploration, reimagined",
     headline: "Try a career before you choose one.",
-    subheadline: "5-day real-world challenges designed by working professionals. Free for students.",
+    subheadline:
+      "5-day real-world challenges designed by working professionals. Free for students.",
     cta: "Start exploring",
   },
   th: {
-    eyebrow: "อินโท โอกาสที่คุณต้องลองค้นหา",
+    eyebrow: "โอกาสที่คุณต้องลองค้นหา",
     headline: "ลองทำงานจริง ก่อนเลือกอนาคต",
-    subheadline: "ภารกิจ 5 วัน ออกแบบโดยผู้เชี่ยวชาญจากสายงานจริง ฟรีสำหรับนักเรียน",
+    subheadline:
+      "ภารกิจ 5 วัน ออกแบบโดยผู้เชี่ยวชาญจากสายงานจริง ฟรีสำหรับนักเรียน",
     cta: "เริ่มสำรวจ",
   },
 };
@@ -44,13 +46,13 @@ export function LandingHero() {
         toast.error(
           language === "th"
             ? "ระบบยังไม่พร้อมใช้งาน กรุณาลองใหม่ภายหลัง"
-            : "System is not ready. Please try again later."
+            : "System is not ready. Please try again later.",
         );
       } else {
         toast.error(
           language === "th"
             ? "ไม่สามารถเริ่มได้ กรุณาสมัครสมาชิกแทน"
-            : "Failed to start. Please try signing up instead."
+            : "Failed to start. Please try signing up instead.",
         );
       }
     } finally {
@@ -65,7 +67,7 @@ export function LandingHero() {
       {/* Animated background with sunrise gradient */}
       <HeroBackground />
 
-{/* Main content container */}
+      {/* Main content container */}
       <div className="relative z-10 px-6 w-full max-w-7xl mx-auto">
         {/* Mobile: Text first, then demo paths */}
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
@@ -85,17 +87,25 @@ export function LandingHero() {
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                duration: 0.7,
+                delay: 0.05,
+                ease: [0.22, 1, 0.36, 1],
+              }}
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] tracking-tight max-w-xl drop-shadow-[0_2px_30px_rgba(255,107,74,0.3)]"
             >
-              {t.headline.split('\n')[0]}
+              {t.headline.split("\n")[0]}
             </motion.h1>
 
             {/* Subheadline */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                duration: 0.7,
+                delay: 0.15,
+                ease: [0.22, 1, 0.36, 1],
+              }}
               className="mt-6 text-base sm:text-lg md:text-xl text-amber-100/80 max-w-md font-medium leading-relaxed"
             >
               {t.subheadline}
@@ -105,14 +115,22 @@ export function LandingHero() {
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                duration: 0.7,
+                delay: 0.25,
+                ease: [0.22, 1, 0.36, 1],
+              }}
               className="mt-8 w-full sm:w-auto"
             >
               <button
                 onClick={handleGuestAccess}
                 disabled={isLoading}
                 className="ei-button-dusk w-full sm:w-auto justify-center"
-                style={{ fontSize: "1.125rem", padding: "1rem 2.5rem", borderRadius: "14px" }}
+                style={{
+                  fontSize: "1.125rem",
+                  padding: "1rem 2.5rem",
+                  borderRadius: "14px",
+                }}
               >
                 {isLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -145,7 +163,9 @@ export function LandingHero() {
           className="mt-12 lg:mt-16 flex flex-col items-center gap-4"
         >
           <p className="text-xs sm:text-sm text-amber-200/50 font-medium">
-            {language === "th" ? "นักเรียนจากมหาวิทยาลัยชั้นนำ" : "Students from top universities"}
+            {language === "th"
+              ? "นักเรียนจากมหาวิทยาลัยชั้นนำ"
+              : "Students from top universities"}
           </p>
           <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 opacity-70">
             <div className="relative w-10 h-10 sm:w-12 sm:h-12 grayscale hover:grayscale-0 transition-all duration-300">
