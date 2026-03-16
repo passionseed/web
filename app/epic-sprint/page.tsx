@@ -75,10 +75,15 @@ async function fetchBetaRegistrations() {
       id: s.id,
       created_at: s.created_at,
       full_name: answers["Full name"] || "",
+      nickname: answers["Nickname"] || "",
       email: answers["Email address"] || "",
+      phone: answers["Phone number"] || "",
       school: answers["School"] || "",
       grade: answers["Grade"] || "",
       platform: answers["Platform"] || "",
+      motivation: answers["What interests you about testing?"] || "",
+      faculty_interest: answers["Faculty of Interest"] || "",
+      major_interest: answers["Major Interest"] || "",
     };
   });
 }
@@ -160,37 +165,6 @@ function KpiRow({
         )}
       </td>
     </tr>
-  );
-}
-
-function EmailBlock({
-  number,
-  subject,
-  timing,
-  body,
-}: {
-  number: number;
-  subject: string;
-  timing: string;
-  body: string[];
-}) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/3 overflow-hidden">
-      <div className="px-5 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between">
-        <div>
-          <span className="text-white/30 text-xs mr-2">Email {number}</span>
-          <span className="text-white font-medium text-sm">{subject}</span>
-        </div>
-        <span className="text-white/30 text-xs">{timing}</span>
-      </div>
-      <div className="px-5 py-4 space-y-3">
-        {body.map((line, i) => (
-          <p key={i} className={`text-sm ${line === "" ? "h-1" : "text-white/65"}`}>
-            {line}
-          </p>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -355,74 +329,76 @@ export default async function EpicSprintPage() {
             </p>
           </div>
 
+          {/* Note on email campaign scope */}
+          <div className="rounded-xl border border-white/10 bg-white/3 px-5 py-4 mb-6 text-white/50 text-sm">
+            <strong className="text-white/70">Scope note:</strong> The email campaign was run specifically for the beta sign-up (Hypothesis 1). The hackathon (Hypothesis 2) was driven entirely through Instagram and peer referral — no separate email campaign was sent for it.
+          </div>
+
           <div className="space-y-4">
-            <EmailBlock
-              number={1}
-              subject="You asked for it. Here it is."
-              timing="Day 1 of sprint"
-              body={[
-                "Hi [First Name],",
-                "",
-                "A few weeks ago you told us you wanted a better way to figure out what to do with your future.",
-                "",
-                "We heard you. So we built something.",
-                "",
-                "PassionSeed is a platform that helps students aged 14–18 discover their career path through real challenges — not personality quizzes, not YouTube rabbit holes. You try things. You build things. You find out what actually fits.",
-                "",
-                "We're opening early access to a small group — and you're first in line.",
-                "",
-                "→ [Claim your early access spot]",
-                "",
-                "This isn't a waitlist. It's the real thing. First come, first in.",
-                "",
-                "— The PassionSeed Team",
-              ]}
-            />
-            <EmailBlock
-              number={2}
-              subject="We're hosting a hackathon. You should be there."
-              timing="Day 4 of sprint"
-              body={[
-                "Hi [First Name],",
-                "",
-                "We're running PassionSeed's first-ever hackathon — and we want you on the starting line.",
-                "",
-                "Here's how it works: you join or form a team, take on a real-world challenge, and compete for a spot in our founding cohort. It's one day. It's free. And it might be the most useful thing you do this month.",
-                "",
-                "Why does this matter? Because figuring out what you're good at in a classroom takes years. Figuring it out while building something real takes a weekend.",
-                "",
-                "→ [Register for the hackathon]",
-                "",
-                "Spots are limited. Teams fill up fast.",
-                "",
-                "See you there,",
-                "The PassionSeed Team",
-              ]}
-            />
-            <EmailBlock
-              number={3}
-              subject="Last call (we mean it)"
-              timing="48 hours before close"
-              body={[
-                "Hi [First Name],",
-                "",
-                "The hackathon closes in 48 hours.",
-                "",
-                "300+ students have already registered. Teams are forming. If you've been sitting on this — now is the moment.",
-                "",
-                "You don't need a team already. You don't need to know exactly what you're doing. You just need to show up.",
-                "",
-                "→ [Register before spots close]",
-                "",
-                "If you're not ready for the hackathon yet, you can still join the beta waitlist and be first to try PassionSeed when we launch.",
-                "",
-                "→ [Join the beta]",
-                "",
-                "Either way — don't let this pass you by.",
-                "",
-                "— PassionSeed",
-              ]}
-            />
+            {/* Campaign 1 — actual email sent, translated from PDF */}
+            <div className="rounded-xl border border-white/10 bg-white/3 overflow-hidden">
+              <div className="px-5 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/30 text-xs">Email 1 — Sent to 208 recipients</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    20.39% open rate
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    1.94% CTR
+                  </span>
+                </div>
+              </div>
+              <div className="px-5 py-4 space-y-3 text-sm text-white/65">
+                <p className="text-white font-semibold text-base">What&apos;s up seedlings 🌱</p>
+                <p>
+                  เคยถามตัวเองไหมว่า คณะที่กำลังจะเลือก คือ{" "}
+                  <span className="text-amber-300 font-medium">&quot;ทางที่ใช่สำหรับเรา&quot;</span>{" "}
+                  จริงๆ หรือเป็นเพียงทางที่ใครหลายคนบอกว่า &quot;ดี&quot;? 🤔
+                </p>
+                <p>
+                  หลายคนเพิ่งมารู้ตัวหลังจากเข้าเรียนไปแล้วว่า สิ่งที่คิดไว้กับความจริงนั้นต่างกันมาก
+                  บางคนรู้สึกเสียดายเวลา บางคนรู้สึกว่าตัวเองหลงทาง 🥹
+                </p>
+                <p className="text-white/40 italic text-xs">
+                  ความจริงคือ การเลือกคณะตอนอายุเท่านี้ ไม่ใช่เรื่องง่ายเลย เพราะคุณกำลังตัดสินใจโดยที่ยังไม่เคย &quot;ได้ลองใช้ชีวิตในเส้นทางนั้นจริงๆ&quot;
+                </p>
+                <div className="border-l-2 border-amber-500/40 pl-4 mt-4">
+                  <p className="text-white/80 font-medium">PassionSeed App ถูกสร้างขึ้นเพื่อแก้ปัญหานี้</p>
+                  <p className="mt-1">
+                    เราอยากให้น้องๆ ได้ลอง{" "}
+                    <span className="text-amber-300">สัมผัสเส้นทางอาชีพที่สนใจ</span>{" "}
+                    ตั้งแต่ช่วงมหาลัยไปจนถึงชีวิตการทำงานจริง ก่อนที่จะตัดสินใจเลือกทางของตัวเอง
+                  </p>
+                </div>
+                <div className="mt-4 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3">
+                  <p className="text-white font-semibold">
+                    ตอนนี้เราเปิด <span className="text-amber-300">Beta Test รุ่นแรก ✈️</span>
+                  </p>
+                  <p className="text-white/60 text-sm mt-1">
+                    สำหรับ <span className="text-white font-bold">100 คนแรก</span>{" "}
+                    ที่อยากลองสำรวจเส้นทางของตัวเองให้ชัดขึ้น
+                  </p>
+                </div>
+                <p>
+                  ถ้าน้องกำลังตั้งคำถามกับอนาคตของตัวเอง นี่อาจเป็นโอกาสที่จะได้ลองค้นหาคำตอบน้าา
+                  (พิเศษสุดๆ เลยล่ะ แค่ 100 คนแรกเท่านั้น 🤩)
+                </p>
+                <div className="mt-2">
+                  <a
+                    href="https://www.passionseed.org/app/beta"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 text-sm font-medium hover:bg-amber-500/30 transition-colors"
+                  >
+                    👉 สมัคร Beta Test → passionseed.org/app/beta
+                  </a>
+                </div>
+                <p className="text-white/40 text-xs mt-4">
+                  ก่อนจะตัดสินใจ 4 ปี++ ของชีวิต ลองให้ตัวเองได้สำรวจมันจริงๆ ก่อน
+                </p>
+                <p className="text-white/50 italic text-xs">ด้วยรักและห่วงใย, จาก พี่ๆ Passionseed 🫶🔥🌱</p>
+              </div>
+            </div>
           </div>
         </section>
 
