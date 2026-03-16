@@ -1,7 +1,7 @@
 "use client";
 
 import { useScribe } from "@elevenlabs/react";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,8 @@ interface HoldToTalkProps {
   language?: string;
 }
 
+type ConnectionPhase = "idle" | "connecting" | "connected";
+
 export function HoldToTalk({ onPartial, onCommitted, disabled, language }: HoldToTalkProps) {
   // Stable callback refs — avoids stale closures inside useScribe
   const onPartialRef = useRef(onPartial);
@@ -20,9 +22,16 @@ export function HoldToTalk({ onPartial, onCommitted, disabled, language }: HoldT
   onCommittedRef.current = onCommitted;
 
   const committedRef = useRef("");
-  // Tracks whether we're mid-connect() so we can disconnect after it resolves
-  const connectingRef = useRef(false);
   const shouldDisconnectRef = useRef(false);
+  const [connectionPhase, setConnectionPhase] = useState<ConnectionPhase>("idle");
+
+  const flushCommittedText = useCallback(() => {
+    window.setTimeout(() => {
+      const text = committedRef.current.trim();
+      if (text) onCommittedRef.current(text);
+      committedRef.current = "";
+    }, 200);
+  }, []);
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
@@ -32,9 +41,33 @@ export function HoldToTalk({ onPartial, onCommitted, disabled, language }: HoldT
     onCommittedTranscript: (data) => {
       committedRef.current = data.text;
     },
+    onConnect: () => {
+      setConnectionPhase("connected");
+    },
+    onDisconnect: () => {
+      shouldDisconnectRef.current = false;
+      setConnectionPhase("idle");
+    },
+    onError: () => {
+      shouldDisconnectRef.current = false;
+      setConnectionPhase("idle");
+    },
   });
 
-  const isRecording = scribe.isConnected || connectingRef.current;
+  useEffect(() => {
+    if (connectionPhase === "connected" && shouldDisconnectRef.current) {
+      shouldDisconnectRef.current = false;
+      try {
+        scribe.disconnect();
+      } catch {
+        // Ignore — already disconnected
+      }
+      setConnectionPhase("idle");
+      flushCommittedText();
+    }
+  }, [connectionPhase, flushCommittedText, scribe]);
+
+  const isRecording = connectionPhase !== "idle";
 
   const doDisconnect = useCallback(() => {
     try {
@@ -42,18 +75,16 @@ export function HoldToTalk({ onPartial, onCommitted, disabled, language }: HoldT
     } catch {
       // Ignore — already disconnected
     }
-    setTimeout(() => {
-      const text = committedRef.current.trim();
-      if (text) onCommittedRef.current(text);
-      committedRef.current = "";
-    }, 200);
-  }, [scribe]);
+    setConnectionPhase("idle");
+    flushCommittedText();
+  }, [flushCommittedText, scribe]);
 
   const startRecording = useCallback(async () => {
-    if (connectingRef.current || scribe.isConnected || disabled) return;
+    if (connectionPhase !== "idle" || disabled) return;
     committedRef.current = "";
     shouldDisconnectRef.current = false;
-    connectingRef.current = true;
+    setConnectionPhase("connecting");
+
     try {
       const res = await fetch("/api/expert-interview/scribe-token");
       if (!res.ok) throw new Error("Token fetch failed");
@@ -63,26 +94,21 @@ export function HoldToTalk({ onPartial, onCommitted, disabled, language }: HoldT
         microphone: { echoCancellation: true, noiseSuppression: true },
       });
     } catch (err) {
+      setConnectionPhase("idle");
       console.error("[HoldToTalk] connect failed", err);
-    } finally {
-      connectingRef.current = false;
-      // User released while we were connecting — disconnect immediately
-      if (shouldDisconnectRef.current) {
-        doDisconnect();
-        shouldDisconnectRef.current = false;
-      }
     }
-  }, [scribe, disabled, doDisconnect]);
+  }, [connectionPhase, disabled, scribe]);
 
   const stopRecording = useCallback(() => {
-    if (connectingRef.current) {
-      // Still connecting — flag to disconnect once connect() resolves
+    if (connectionPhase === "connecting") {
       shouldDisconnectRef.current = true;
       return;
     }
-    if (!scribe.isConnected) return;
+
+    if (connectionPhase !== "connected") return;
+
     doDisconnect();
-  }, [scribe, doDisconnect]);
+  }, [connectionPhase, doDisconnect]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
