@@ -99,6 +99,8 @@ export async function GET() {
         platform: answers["Platform"] || "",
         motivation: answers["What interests you about testing?"] || "",
         faculty_interest: answers["Faculty of Interest"] || "",
+        major_interest: answers["Major Interest"] || "",
+        university: answers["University"] || "",
       };
     });
 

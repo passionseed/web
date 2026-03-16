@@ -75,6 +75,18 @@ const BETA_FIELDS = [
     is_required: true,
     order_index: 8,
   },
+  {
+    label: "Major Interest",
+    field_type: "text" as const,
+    is_required: false,
+    order_index: 9,
+  },
+  {
+    label: "University",
+    field_type: "text" as const,
+    is_required: false,
+    order_index: 10,
+  },
 ] as const;
 
 function sanitizeFieldValue(value: FormDataEntryValue | null): string {
@@ -203,6 +215,9 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
   const platform = sanitizeFieldValue(formData.get("platform"));
   const motivation = sanitizeFieldValue(formData.get("motivation"));
   const facultyInterest = sanitizeFieldValue(formData.get("faculty_interest"));
+  const majorInterest = sanitizeFieldValue(formData.get("major_interest"));
+  const majorInterestOther = sanitizeFieldValue(formData.get("major_interest_other"));
+  const university = sanitizeFieldValue(formData.get("university"));
 
   if (
     !fullName ||
@@ -315,6 +330,16 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
         field_id: fieldByLabel.get("Faculty of Interest")!,
         answer_text: facultyInterest,
       },
+      ...(fieldByLabel.has("Major Interest") ? [{
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("Major Interest")!,
+        answer_text: majorInterestOther || majorInterest,
+      }] : []),
+      ...(fieldByLabel.has("University") ? [{
+        submission_id: submission.id,
+        field_id: fieldByLabel.get("University")!,
+        answer_text: university,
+      }] : []),
     ];
 
     const { error: answerError } = await supabaseAdmin
@@ -339,6 +364,8 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
       platform,
       motivation,
       facultyInterest,
+      majorInterest: majorInterestOther || majorInterest,
+      university,
     }).catch(console.error);
 
     return {
