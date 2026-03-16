@@ -4,9 +4,6 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   motion,
   AnimatePresence,
-  useScroll,
-  useTransform,
-  useSpring,
 } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Rocket,
-  Sparkles,
-  Zap,
   ChevronRight,
   Upload,
   Share2,
@@ -24,15 +19,14 @@ import {
   ArrowRight,
   Copy,
   Check,
-  Flame,
-  Star,
   ArrowUpRight,
-  MousePointer2,
-  Type,
-  Smartphone,
   GraduationCap,
   Building2,
   Heart,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
@@ -43,130 +37,6 @@ import {
   trackBetaRegistrationCompleted,
 } from "@/actions/beta-funnel";
 import { BetaTicket } from "@/components/beta-ticket";
-
-// Liquid Orb for dark background
-const LiquidOrb = ({
-  color,
-  size,
-  x,
-  y,
-  duration = 20,
-  delay = 0,
-}: {
-  color: string;
-  size: string | number;
-  x: string;
-  y: string;
-  duration?: number;
-  delay?: number;
-}) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{
-        opacity: [0.4, 0.7, 0.4],
-        scale: [1, 1.15, 1],
-        x: [0, 30, -20, 0],
-        y: [0, -40, 20, 0],
-      }}
-      transition={{
-        opacity: {
-          duration: duration / 2,
-          repeat: Infinity,
-          ease: "easeInOut",
-        },
-        scale: {
-          duration: duration / 1.5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        },
-        x: {
-          duration,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay,
-        },
-        y: {
-          duration: duration * 1.2,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: delay + 2,
-        },
-      }}
-      className={`absolute rounded-full blur-[120px] pointer-events-none ${color}`}
-      style={{ width: size, height: size, left: x, top: y }}
-    />
-  );
-};
-
-// Light theme Spotlight Card
-const SpotlightCard = ({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  const divRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [opacity, setOpacity] = useState(0);
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!divRef.current) return;
-    const rect = divRef.current.getBoundingClientRect();
-    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
-  return (
-    <div
-      ref={divRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setOpacity(1)}
-      onMouseLeave={() => setOpacity(0)}
-      className={`relative overflow-hidden bg-white rounded-2xl border border-slate-100 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.05)] ${className}`}
-    >
-      <div
-        className="pointer-events-none absolute -inset-px transition duration-300 z-0"
-        style={{
-          opacity,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,82,27,0.03), transparent 40%)`,
-        }}
-      />
-      <div className="relative z-10">{children}</div>
-    </div>
-  );
-};
-
-// Custom toast notification
-const Toast = ({
-  message,
-  type,
-  onClose,
-}: {
-  message: string;
-  type: "error" | "success" | "info";
-  onClose: () => void;
-}) => {
-  const colors = {
-    error: "bg-red-50 border-red-100 text-red-600",
-    success: "bg-emerald-50 border-emerald-100 text-emerald-600",
-    info: "bg-blue-50 border-blue-100 text-blue-600",
-  };
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-      className={`fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-4 rounded-2xl border shadow-lg max-w-md w-[92vw] ${colors[type]}`}
-    >
-      <span className="flex-1 text-sm font-medium leading-snug">{message}</span>
-      <button
-        onClick={onClose}
-        className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity text-lg leading-none"
-      >
-        &times;
-      </button>
-    </motion.div>
-  );
-};
 
 export default function AppBetaPage() {
   const router = useRouter();
@@ -209,6 +79,27 @@ export default function AppBetaPage() {
     if (currentStep === "invite") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+  }, [currentStep]);
+
+  // Touch device fallback for animations
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    const elements = document.querySelectorAll('.ei-button-dawn, .ei-card');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
   }, [currentStep]);
 
   const handleRegistrationSubmit = async (
@@ -394,52 +285,116 @@ export default function AppBetaPage() {
 
   if (!mounted) return null;
 
+  const toastIcons = {
+    error: AlertCircle,
+    success: CheckCircle,
+    info: Info,
+  };
+
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#0A0A0B] text-slate-200 font-[family-name:var(--font-kodchasan)] flex items-center justify-center py-12 sm:py-24 px-4 sm:px-6">
+    <div className="dawn-theme relative min-h-screen w-full overflow-hidden bg-[#020617] text-slate-200 font-[family-name:var(--font-kodchasan)] flex items-center justify-center py-12 sm:py-24 px-4 sm:px-6">
       {/* Toast notification */}
       <AnimatePresence>
         {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
+          <div className={`ei-toast ei-toast--${toast.type} in-view`}>
+            {React.createElement(toastIcons[toast.type], { className: "w-5 h-5" })}
+            <span className="flex-1 text-sm font-medium leading-snug">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ei-toast-close"
+              aria-label="Close notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* Animated Background Orbs */}
+      {/* Dawn Theme Background Gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <LiquidOrb
-          color="bg-blue-600/30"
-          size="40vw"
-          x="-10%"
-          y="10%"
-          duration={15}
-          delay={0}
+        {/* Background gradient */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, #020617 0%, #0f172a 28%, #1e1b4b 58%, #312e81 82%, #1e3a5f 100%)'
+          }}
         />
-        <LiquidOrb
-          color="bg-purple-600/20"
-          size="50vw"
-          x="60%"
-          y="-20%"
-          duration={20}
-          delay={2}
+
+        {/* Animated cloud layers */}
+        <motion.div
+          className="absolute rounded-full blur-[100px] pointer-events-none"
+          style={{
+            width: '40vw',
+            height: '40vw',
+            left: '-10%',
+            top: '10%',
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%)',
+          }}
+          animate={{
+            opacity: [0.3, 0.5, 0.3],
+            scale: [1, 1.15, 1],
+            x: [0, 30, -20, 0],
+            y: [0, -40, 20, 0],
+          }}
+          transition={{
+            opacity: { duration: 10, repeat: Infinity, ease: "easeInOut" },
+            scale: { duration: 12, repeat: Infinity, ease: "easeInOut" },
+            x: { duration: 15, repeat: Infinity, ease: "easeInOut" },
+            y: { duration: 18, repeat: Infinity, ease: "easeInOut" },
+          }}
         />
-        <LiquidOrb
-          color="bg-pink-600/20"
-          size="45vw"
-          x="40%"
-          y="60%"
-          duration={18}
-          delay={1}
+        <motion.div
+          className="absolute rounded-full blur-[100px] pointer-events-none"
+          style={{
+            width: '50vw',
+            height: '50vw',
+            left: '60%',
+            top: '-20%',
+            background: 'radial-gradient(circle, rgba(99, 102, 241, 0.20) 0%, transparent 70%)',
+          }}
+          animate={{
+            opacity: [0.25, 0.45, 0.25],
+            scale: [1, 1.1, 1],
+            x: [0, -25, 15, 0],
+            y: [0, 30, -15, 0],
+          }}
+          transition={{
+            opacity: { duration: 12, repeat: Infinity, ease: "easeInOut" },
+            scale: { duration: 14, repeat: Infinity, ease: "easeInOut" },
+            x: { duration: 18, repeat: Infinity, ease: "easeInOut" },
+            y: { duration: 20, repeat: Infinity, ease: "easeInOut" },
+          }}
         />
-        <LiquidOrb
-          color="bg-indigo-600/20"
-          size="30vw"
-          x="-10%"
-          y="80%"
-          duration={12}
-          delay={3}
+        <motion.div
+          className="absolute rounded-full blur-[100px] pointer-events-none"
+          style={{
+            width: '45vw',
+            height: '45vw',
+            left: '40%',
+            top: '60%',
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, transparent 70%)',
+          }}
+          animate={{
+            opacity: [0.2, 0.4, 0.2],
+            scale: [1, 1.08, 1],
+            x: [0, 20, -15, 0],
+            y: [0, -25, 10, 0],
+          }}
+          transition={{
+            opacity: { duration: 11, repeat: Infinity, ease: "easeInOut" },
+            scale: { duration: 13, repeat: Infinity, ease: "easeInOut" },
+            x: { duration: 16, repeat: Infinity, ease: "easeInOut" },
+            y: { duration: 19, repeat: Infinity, ease: "easeInOut" },
+          }}
+        />
+
+        {/* Horizon glow */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-96 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, rgba(254, 217, 92, 0.12) 0%, transparent 60%)',
+            filter: 'blur(52px)',
+          }}
         />
 
         {/* Subtle grid pattern overlay */}
@@ -473,10 +428,10 @@ export default function AppBetaPage() {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
               >
-                <span className="flex h-2 w-2 rounded-full bg-[#FF521B] animate-pulse"></span>
-                <span className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
+                <span className="ei-badge ei-badge--dawn">
+                  <span className="ei-badge--dot" />
                   Beta Access
                 </span>
               </motion.div>
@@ -496,9 +451,9 @@ export default function AppBetaPage() {
 
               <div className="hidden lg:flex flex-row flex-wrap gap-3 max-w-md mt-6">
                 {[
-                  { icon: Zap, text: "Early Access" },
-                  { icon: Star, text: "Exclusive Features" },
-                  { icon: Sparkles, text: "Shape Development" },
+                  { icon: Rocket, text: "Early Access" },
+                  { icon: CheckCircle, text: "Exclusive Features" },
+                  { icon: ArrowUpRight, text: "Shape Development" },
                 ].map((item, i) => (
                   <motion.div
                     key={i}
@@ -527,7 +482,7 @@ export default function AppBetaPage() {
               }}
               className="w-full lg:w-1/2 max-w-xl mx-auto lg:mx-0 mt-8 lg:mt-0"
             >
-              <SpotlightCard>
+              <div className="ei-card bg-white/95 backdrop-blur-sm">
                 <div className="p-5 sm:p-8 md:p-10 space-y-6 sm:space-y-8">
                   <div className="space-y-1.5 sm:space-y-2">
                     <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -556,7 +511,7 @@ export default function AppBetaPage() {
                           type="text"
                           required
                           placeholder="John Doe"
-                          className="bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
+                          className="ei-input bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -572,7 +527,7 @@ export default function AppBetaPage() {
                           type="text"
                           required
                           placeholder="Johnny"
-                          className="bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
+                          className="ei-input bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
                         />
                       </div>
                     </div>
@@ -590,7 +545,7 @@ export default function AppBetaPage() {
                         type="email"
                         required
                         placeholder="john@example.com"
-                        className="bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
+                        className="ei-input bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
                       />
                     </div>
 
@@ -608,7 +563,7 @@ export default function AppBetaPage() {
                           type="tel"
                           required
                           placeholder="081-234-5678"
-                          className="bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
+                          className="ei-input bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -624,7 +579,7 @@ export default function AppBetaPage() {
                           type="text"
                           required
                           placeholder="High School Name"
-                          className="bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
+                          className="ei-input bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
                         />
                       </div>
                     </div>
@@ -641,13 +596,7 @@ export default function AppBetaPage() {
                           id="grade"
                           name="grade"
                           required
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl px-4 appearance-none focus:outline-none focus:ring-2 shadow-sm"
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                            backgroundRepeat: "no-repeat",
-                            backgroundPosition: "right 1rem center",
-                            backgroundSize: "1.25rem",
-                          }}
+                          className="ei-select bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
                         >
                           <option value="" className="text-slate-500">
                             เลือกชั้นปี / Select
@@ -668,13 +617,7 @@ export default function AppBetaPage() {
                           id="platform"
                           name="platform"
                           required
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl px-4 appearance-none focus:outline-none focus:ring-2 shadow-sm"
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                            backgroundRepeat: "no-repeat",
-                            backgroundPosition: "right 1rem center",
-                            backgroundSize: "1.25rem",
-                          }}
+                          className="ei-select bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
                         >
                           <option value="" className="text-slate-500">
                             เลือกแพลตฟอร์ม / Select
@@ -698,7 +641,7 @@ export default function AppBetaPage() {
                         type="text"
                         required
                         placeholder="e.g. Engineering, Medicine, Arts"
-                        className="bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
+                        className="ei-input bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all h-12 rounded-xl shadow-sm"
                       />
                     </div>
 
@@ -715,7 +658,7 @@ export default function AppBetaPage() {
                         required
                         rows={3}
                         placeholder="Why do you want to join the beta?"
-                        className="bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all rounded-xl resize-none py-3 shadow-sm"
+                        className="ei-input bg-slate-50 border-slate-200 text-slate-900 focus:border-[#FF521B]/50 focus:ring-[#FF521B]/20 placeholder:text-slate-400 transition-all rounded-xl resize-none py-3 shadow-sm"
                       />
                     </div>
 
@@ -728,26 +671,24 @@ export default function AppBetaPage() {
                       <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="group relative w-full h-12 md:h-14 overflow-hidden rounded-xl bg-[#FF521B] hover:bg-[#E64210] text-white border-none shadow-md transition-all active:scale-[0.98]"
+                        className="ei-button-dawn w-full h-12 md:h-14 text-base md:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <div className="relative z-10 flex items-center justify-center gap-2 font-semibold text-base w-full h-full">
-                          {isSubmitting ? (
-                            <span className="flex items-center gap-2">
-                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              กำลังส่ง...
-                            </span>
-                          ) : (
-                            <>
-                              <span>Submit Request</span>
-                              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                            </>
-                          )}
-                        </div>
+                        {isSubmitting ? (
+                          <span className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            กำลังส่ง...
+                          </span>
+                        ) : (
+                          <>
+                            <span>Submit Request</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
                       </Button>
                     </motion.div>
                   </form>
                 </div>
-              </SpotlightCard>
+              </div>
             </motion.div>
           </motion.div>
         ) : (
@@ -803,22 +744,21 @@ export default function AppBetaPage() {
                   {/* Mobile: native share */}
                   <Button
                     onClick={handleShareTicket}
-                    className="md:hidden bg-[#FF521B] hover:bg-[#E64210] text-white px-8 py-6 rounded-xl transition-all shadow-md active:scale-[0.98] font-semibold"
+                    className="ei-button-dawn md:hidden h-14 text-lg"
                   >
-                    <Share2 className="w-5 h-5 mr-2" />
+                    <Share2 className="w-5 h-5" />
                     แชร์ตั๋วให้เพื่อน
                   </Button>
                   {/* Desktop: copy invite text */}
                   <Button
                     onClick={handleCopyInvite}
-                    className="hidden md:flex items-center bg-[#FF521B] hover:bg-[#E64210] text-white px-8 py-6 rounded-xl transition-all shadow-md active:scale-[0.98] font-semibold"
+                    className="ei-button-dawn hidden md:flex h-14 text-lg"
                   >
                     {copied ? (
-                      <Check className="w-5 h-5 mr-2" />
+                      <><Check className="w-5 h-5" />คัดลอกแล้ว!</>
                     ) : (
-                      <Copy className="w-5 h-5 mr-2" />
+                      <><Copy className="w-5 h-5" />คัดลอกข้อความเชิญ</>
                     )}
-                    {copied ? "คัดลอกแล้ว!" : "คัดลอกข้อความเชิญ"}
                   </Button>
                 </div>
               </motion.div>
@@ -830,7 +770,7 @@ export default function AppBetaPage() {
                 transition={{ duration: 0.8, delay: 0.4 }}
                 className="w-full"
               >
-                <SpotlightCard>
+                <div className="ei-card bg-white/95 backdrop-blur-sm">
                   <div className="p-8 sm:p-10 space-y-8">
                     <div className="text-center space-y-2">
                       <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -908,31 +848,29 @@ export default function AppBetaPage() {
                         <Button
                           type="submit"
                           disabled={uploading || uploadComplete || !file}
-                          className="group relative w-full h-14 overflow-hidden rounded-xl bg-[#FF521B] hover:bg-[#E64210] disabled:bg-slate-200 disabled:text-slate-400 text-white border-none shadow-md transition-all active:scale-[0.98]"
+                          className="ei-button-dawn w-full h-14 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <div className="relative z-10 flex items-center justify-center gap-2 font-semibold text-lg w-full h-full">
-                            {uploading ? (
-                              <span className="flex items-center gap-2">
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                กำลังบันทึกข้อมูล...
-                              </span>
-                            ) : uploadComplete ? (
-                              <span className="flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5" />
-                                เสร็จสิ้น!
-                              </span>
-                            ) : (
-                              <>
-                                <span>ยืนยันการลงทะเบียน</span>
-                                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                              </>
-                            )}
-                          </div>
+                          {uploading ? (
+                            <span className="flex items-center gap-2">
+                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              กำลังบันทึกข้อมูล...
+                            </span>
+                          ) : uploadComplete ? (
+                            <span className="flex items-center gap-2">
+                              <CheckCircle2 className="w-5 h-5" />
+                              เสร็จสิ้น!
+                            </span>
+                          ) : (
+                            <>
+                              <span>ยืนยันการลงทะเบียน</span>
+                              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                            </>
+                          )}
                         </Button>
                       </motion.div>
                     </form>
                   </div>
-                </SpotlightCard>
+                </div>
               </motion.div>
             </div>
           </motion.div>
