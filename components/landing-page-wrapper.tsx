@@ -9,9 +9,13 @@ import { LandingFeatures } from "@/components/landing-features";
 import { LandingExpertCta } from "@/components/landing-expert-cta";
 import { LandingParents } from "@/components/landing-parents";
 import { Button } from "@/components/ui/button";
+import { UserNav } from "@/components/user-nav";
+import { MainNav } from "@/components/main-nav";
 import { Globe } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 interface LandingPageWrapperProps {
   children?: React.ReactNode;
@@ -23,10 +27,27 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
   const [headerHeight, setHeaderHeight] = useState(64);
   const headerRef = useRef<HTMLElement | null>(null);
   const bannerHeight = Math.max(0, headerHeight - 64);
+  const [user, setUser] = useState<User | null>(null);
 
   const toggleLanguage = () => {
     setLanguage(language === "en" ? "th" : "en");
   };
+
+  // Check for authenticated user
+  useEffect(() => {
+    async function getUser() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setUser(user);
+      } catch {
+        // Supabase unreachable — stay as logged-out state
+      }
+    }
+    getUser();
+  }, []);
 
   // Mobile: trigger dawn animations when elements scroll into view
   useEffect(() => {
@@ -77,23 +98,12 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
         className="fixed top-0 left-0 right-0 z-50 flex flex-col"
       >
         <nav className="border-b border-white/[0.04] bg-[#1a0a2e]/80 backdrop-blur-md">
-          <div className="container px-4 md:px-6 h-16 flex items-center justify-between max-w-7xl mx-auto">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <Image
-                src="/passionseed-logo.svg"
-                alt="Passion Seed Logo"
-                width={28}
-                height={28}
-                className="w-7 h-7 object-contain transition-transform group-hover:scale-105"
-              />
-              <span className="font-bold text-base text-white">
-                Passion Seed
-              </span>
-            </Link>
+          <div className="container px-4 h-16 flex items-center max-w-7xl mx-auto">
+            {/* Main navigation with logo and menu */}
+            <MainNav isAuthenticated={!!user} />
 
-            {/* Right side: Language + Sign In */}
-            <div className="flex items-center gap-3">
+            {/* Right side: Language + Sign In / User Nav */}
+            <div className="ml-auto flex items-center gap-3">
               {/* Language toggle */}
               <button
                 onClick={toggleLanguage}
@@ -103,13 +113,17 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
                 <span className="w-5">{language === "en" ? "TH" : "EN"}</span>
               </button>
 
-              {/* Sign In button */}
-              <Button
-                asChild
-                className="bg-white text-black hover:bg-gray-100 font-semibold rounded-full px-5 h-9 text-sm"
-              >
-                <Link href="/login">Sign In</Link>
-              </Button>
+              {/* Show UserNav if logged in, otherwise Sign In button */}
+              {user ? (
+                <UserNav user={user} />
+              ) : (
+                <Button
+                  asChild
+                  className="bg-white text-black hover:bg-gray-100 font-semibold rounded-full px-5 h-9 text-sm"
+                >
+                  <Link href="/login">Sign In</Link>
+                </Button>
+              )}
             </div>
           </div>
         </nav>
