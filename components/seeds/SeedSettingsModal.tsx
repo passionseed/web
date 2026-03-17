@@ -189,23 +189,44 @@ export function SeedSettingsModal({ seed, isOpen, onClose, onUpdate }: SeedSetti
                         </DialogHeader>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Map Section */}
-                            <div className="p-4 rounded-lg bg-neutral-800/50 border border-neutral-700 space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-base font-semibold">Seed Map</Label>
-                                    <Button
-                                        type="button"
-                                        onClick={handleEditMap}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                                    >
-                                        <MapIcon className="w-4 h-4" />
-                                        Edit Map
-                                    </Button>
+                            {/* PathLab Builder Section - Only show for PathLab seeds */}
+                            {seed.seed_type === 'pathlab' && (
+                                <div className="p-4 rounded-lg bg-green-900/20 border border-green-700/50 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-base font-semibold text-green-300">PathLab Builder</Label>
+                                        <Button
+                                            type="button"
+                                            onClick={() => router.push(`/seeds/${seed.id}/pathlab-builder`)}
+                                            className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                                        >
+                                            Build PathLab
+                                        </Button>
+                                    </div>
+                                    <p className="text-sm text-green-200/70">
+                                        Create and manage activities, content, and assessments for your PathLab journey.
+                                    </p>
                                 </div>
-                                <p className="text-sm text-neutral-400">
-                                    Customize the learning map for this seed. Changes will affect all future rooms created from this seed.
-                                </p>
-                            </div>
+                            )}
+
+                            {/* Map Section - Only show for non-PathLab seeds */}
+                            {seed.seed_type !== 'pathlab' && (
+                                <div className="p-4 rounded-lg bg-neutral-800/50 border border-neutral-700 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-base font-semibold">Seed Map</Label>
+                                        <Button
+                                            type="button"
+                                            onClick={handleEditMap}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                                        >
+                                            <MapIcon className="w-4 h-4" />
+                                            Edit Map
+                                        </Button>
+                                    </div>
+                                    <p className="text-sm text-neutral-400">
+                                        Customize the learning map for this seed. Changes will affect all future rooms created from this seed.
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Certificate Section */}
                             <CertificateSettings
