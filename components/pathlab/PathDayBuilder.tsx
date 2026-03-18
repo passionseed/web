@@ -766,7 +766,14 @@ export function PathDayBuilder({
                                   <CardContent className="p-3">
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="flex-1">
-                                        <div className="font-medium text-white">{activity.title}</div>
+                                        <div className="flex items-center gap-2">
+                                          <div className="font-medium text-white">{activity.title}</div>
+                                          {activity.is_draft && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/30 text-yellow-400 border border-yellow-700/50">
+                                              DRAFT
+                                            </span>
+                                          )}
+                                        </div>
                                         <div className="text-xs text-neutral-400 mt-1 space-x-2">
                                           <span>{activity.activity_type}</span>
                                           {activity.path_content && (
@@ -774,6 +781,9 @@ export function PathDayBuilder({
                                           )}
                                           {activity.path_assessment && (
                                             <span>• Has assessment</span>
+                                          )}
+                                          {activity.is_draft && activity.draft_reason && (
+                                            <span className="text-yellow-400">• {activity.draft_reason}</span>
                                           )}
                                         </div>
                                       </div>

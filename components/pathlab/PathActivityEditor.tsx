@@ -14,14 +14,15 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { X, Save } from "lucide-react";
+import { X, Save, AlertTriangle } from "lucide-react";
 import type {
   FullPathActivity,
   CreatePathActivityInput,
   UpdatePathActivityInput,
 } from "@/types/pathlab";
-import type { AIChatMetadata } from "@/types/pathlab-content";
+import type { AIChatMetadata, NPCChatMetadata } from "@/types/pathlab-content";
 import { PathAIChatEditor } from "./PathAIChatEditor";
+import { PathNPCChatEditor } from "./PathNPCChatEditor";
 import { toast } from "sonner";
 
 interface PathActivityEditorProps {
@@ -50,6 +51,7 @@ const ACTIVITY_FORMATS = [
   { value: "daily_reflection", label: "Daily Reflection", hasAssessment: true, needsBody: true },
   { value: "daily_prompt", label: "Respond to Daily Prompt", needsBody: true, hasAssessment: true },
   { value: "ai_chat", label: "AI Chat (with Objective)", isAIChat: true },
+  { value: "npc_chat", label: "NPC Conversation (Branching Dialogue)", isNPCChat: true },
 ];
 
 export function PathActivityEditor({
@@ -87,29 +89,55 @@ export function PathActivityEditor({
     activity?.path_content?.find(c => c.content_type === 'ai_chat')?.metadata || {}
   );
 
+  // NPC Chat state
+  const [npcChatMetadata, setNPCChatMetadata] = useState<Partial<NPCChatMetadata>>(
+    activity?.path_content?.find(c => c.content_type === 'npc_chat')?.metadata || {}
+  );
+
   // Validation
   const selectedFormat = ACTIVITY_FORMATS.find(f => f.value === format);
   const needsUrl = selectedFormat?.needsUrl;
   const needsBody = selectedFormat?.needsBody;
   const hasAssessment = selectedFormat?.hasAssessment;
   const isAIChat = selectedFormat?.isAIChat;
+  const isNPCChat = selectedFormat?.isNPCChat;
 
-  const isValid = title.trim().length > 0 &&
+  // Basic validation - just need title
+  const isValid = title.trim().length > 0;
+
+  // Check if activity is complete (has all required fields)
+  const isComplete =
+    title.trim().length > 0 &&
     (!needsUrl || contentUrl.trim().length > 0) &&
     (!needsBody || contentBody.trim().length > 0) &&
-    (!isAIChat || (aiChatMetadata.system_prompt && aiChatMetadata.objective));
+    (!isAIChat || (aiChatMetadata.system_prompt && aiChatMetadata.objective)) &&
+    (!isNPCChat || npcChatMetadata.conversation_id);
+
+  // Determine draft reason
+  const getDraftReason = (): string | null => {
+    if (isComplete) return null;
+    if (needsUrl && !contentUrl.trim()) return 'Missing content URL';
+    if (needsBody && !contentBody.trim()) return 'Missing content body';
+    if (isAIChat && !aiChatMetadata.system_prompt) return 'Missing AI chat system prompt';
+    if (isAIChat && !aiChatMetadata.objective) return 'Missing AI chat objective';
+    if (isNPCChat && !npcChatMetadata.conversation_id) return 'Missing conversation selection';
+    return 'Incomplete configuration';
+  };
 
   const handleSave = async () => {
     if (!isValid) return;
 
     setIsSaving(true);
     try {
+      const draftReason = getDraftReason();
       const activityData = {
         title,
         instructions: instructions || undefined,
         activity_type: 'learning' as const,
         estimated_minutes: estimatedMinutes ? parseInt(estimatedMinutes) : undefined,
         is_required: isRequired,
+        is_draft: !isComplete,
+        draft_reason: draftReason,
       };
 
       let activityId = activity?.id;
@@ -146,42 +174,76 @@ export function PathActivityEditor({
       }
 
       // Step 2: Save content or assessment based on format
-      if (activityId) {
-        if (hasAssessment) {
-          // Create/update assessment
-          const assessmentResponse = await fetch('/api/pathlab/assessments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              activity_id: activityId,
-              assessment_type: format,
-              points_possible: pointsPossible ? parseInt(pointsPossible) : null,
-              is_graded: isGraded,
-              metadata: {},
-            }),
-          });
-
-          if (!assessmentResponse.ok) {
-            console.error('Failed to save assessment');
+      // Only create content/assessment if activity is complete OR if editing and had content before
+      if (activityId && (isComplete || isEdit)) {
+        // If editing, delete old content/assessment first to avoid conflicts
+        if (isEdit) {
+          // Delete old content items
+          if (activity?.path_content && activity.path_content.length > 0) {
+            for (const content of activity.path_content) {
+              await fetch(`/api/pathlab/content?contentId=${content.id}`, {
+                method: 'DELETE',
+              });
+            }
           }
-        } else {
-          // Create/update content
-          const contentResponse = await fetch('/api/pathlab/content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              activity_id: activityId,
-              content_type: format,
-              content_title: null,
-              content_url: needsUrl ? contentUrl : null,
-              content_body: needsBody ? contentBody : null,
-              display_order: 0,
-              metadata: isAIChat ? aiChatMetadata : {},
-            }),
-          });
 
-          if (!contentResponse.ok) {
-            console.error('Failed to save content');
+          // Delete old assessment if exists
+          if (activity?.path_assessment) {
+            await fetch(`/api/pathlab/assessments?assessmentId=${activity.path_assessment.id}`, {
+              method: 'DELETE',
+            });
+          }
+        }
+
+        // Only create content/assessment if we have complete data
+        if (isComplete) {
+          if (hasAssessment) {
+            // Create assessment
+            const assessmentResponse = await fetch('/api/pathlab/assessments', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                activity_id: activityId,
+                assessment_type: format,
+                points_possible: pointsPossible ? parseInt(pointsPossible) : null,
+                is_graded: isGraded,
+                metadata: {},
+              }),
+            });
+
+            if (!assessmentResponse.ok) {
+              const errorData = await assessmentResponse.json();
+              console.error('Failed to save assessment:', errorData);
+              throw new Error('Failed to save assessment');
+            }
+          } else {
+            // Create content
+            let contentMetadata = {};
+            if (isAIChat) {
+              contentMetadata = aiChatMetadata;
+            } else if (isNPCChat) {
+              contentMetadata = npcChatMetadata;
+            }
+
+            const contentResponse = await fetch('/api/pathlab/content', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                activity_id: activityId,
+                content_type: format,
+                content_title: null,
+                content_url: needsUrl ? contentUrl : null,
+                content_body: needsBody ? contentBody : null,
+                display_order: 0,
+                metadata: contentMetadata,
+              }),
+            });
+
+            if (!contentResponse.ok) {
+              const errorData = await contentResponse.json();
+              console.error('Failed to save content:', errorData);
+              throw new Error('Failed to save content');
+            }
           }
         }
       }
@@ -189,7 +251,15 @@ export function PathActivityEditor({
       // Notify parent to refresh
       await onSave();
 
-      toast.success(isEdit ? 'Activity updated!' : 'Activity created!');
+      // Show appropriate success message
+      if (isComplete) {
+        toast.success(isEdit ? 'Activity updated!' : 'Activity created!');
+      } else {
+        toast.success(
+          isEdit ? 'Draft saved! Complete missing fields to publish.' : 'Activity saved as draft!',
+          { description: getDraftReason() || undefined }
+        );
+      }
 
     } catch (error: any) {
       console.error("Error saving activity:", error);
@@ -263,6 +333,16 @@ export function PathActivityEditor({
           <PathAIChatEditor
             metadata={aiChatMetadata}
             onChange={setAIChatMetadata}
+          />
+        </div>
+      )}
+
+      {/* NPC Chat Configuration */}
+      {isNPCChat && (
+        <div className="space-y-2">
+          <PathNPCChatEditor
+            metadata={npcChatMetadata}
+            onChange={setNPCChatMetadata}
           />
         </div>
       )}
@@ -367,6 +447,27 @@ export function PathActivityEditor({
         </div>
       </div>
 
+      {/* Draft Warning */}
+      {!isComplete && (
+        <div className="p-4 rounded-lg bg-yellow-950/30 border border-yellow-800/50 space-y-2">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-yellow-300">
+                Activity Incomplete (Draft Mode)
+              </p>
+              <p className="text-sm text-yellow-200/80 mt-1">
+                {getDraftReason()}
+              </p>
+              <p className="text-xs text-yellow-200/60 mt-2">
+                Students will not be able to access this activity until all required fields are completed.
+                You can save this as a draft and finish it later.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex justify-end gap-2 pt-4 border-t">
         <Button variant="outline" onClick={onCancel} disabled={isSaving}>
@@ -375,7 +476,7 @@ export function PathActivityEditor({
         </Button>
         <Button onClick={handleSave} disabled={!isValid || isSaving}>
           <Save className="w-4 h-4 mr-2" />
-          {isSaving ? "Saving..." : isEdit ? "Update Activity" : "Create Activity"}
+          {isSaving ? "Saving..." : isEdit ? (isComplete ? "Update Activity" : "Save Draft") : (isComplete ? "Create Activity" : "Save as Draft")}
         </Button>
       </div>
     </div>

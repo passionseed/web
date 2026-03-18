@@ -117,50 +117,36 @@ export function PageBuilder({
     [canAddActivity]
   );
 
-  // Handle activity creation
-  const handleActivityCreate = useCallback(
-    async (activityData: any) => {
+  // Handle activity creation refresh (PathActivityEditor handles the actual creation)
+  const handleActivityCreateRefresh = useCallback(
+    async () => {
       try {
-        // Create activity via API
-        const response = await fetch(`/api/pathlab/pages/${pageId}/activities`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            activities: [
-              {
-                path_day_id: pageId,
-                title: activityData.title,
-                instructions: activityData.instructions,
-                activity_type: activityData.activity_type || 'learning',
-                display_order: activityCount,
-                estimated_minutes: activityData.estimated_minutes,
-                is_required: activityData.is_required ?? true,
-              },
-            ],
-            content: activityData.content ? [activityData.content] : undefined,
-            assessments: activityData.assessment ? [activityData.assessment] : undefined,
-          }),
-        });
+        // Fetch all activities for this page to get the newly created one
+        const response = await fetch(`/api/pathlab/activities?dayId=${pageId}`);
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Failed to create activity');
+          throw new Error('Failed to fetch activities');
         }
 
         const result = await response.json();
-        const newActivities = result.activities || [];
+        const fetchedActivities = result.activities || [];
 
-        if (newActivities.length > 0) {
-          addActivity(newActivities[0]);
-          toast.success('Activity created');
-          setShowActivityEditor(false);
+        // Find the new activity (the one not in our current list)
+        const currentIds = new Set(page.activities.map(a => a.id));
+        const newActivity = fetchedActivities.find((a: FullPathActivity) => !currentIds.has(a.id));
+
+        if (newActivity) {
+          addActivity(newActivity);
         }
+
+        setShowActivityEditor(false);
+        setEditingActivity(undefined);
       } catch (error) {
-        console.error('[PageBuilder] Failed to create activity:', error);
-        toast.error(error instanceof Error ? error.message : 'Failed to create activity');
+        console.error('[PageBuilder] Failed to refresh activities:', error);
+        toast.error('Failed to refresh activity data');
       }
     },
-    [pageId, activityCount, addActivity]
+    [pageId, page.activities, addActivity]
   );
 
   // Handle activity edit
@@ -169,42 +155,27 @@ export function PageBuilder({
     setShowActivityEditor(true);
   }, []);
 
-  // Handle activity update
-  const handleActivityUpdate = useCallback(
-    async (activityData: any) => {
+  // Handle activity update (refresh callback for PathActivityEditor)
+  const handleActivityUpdateRefresh = useCallback(
+    async () => {
       if (!editingActivity) return;
 
       try {
-        // Update activity via API
-        const response = await fetch(`/api/pathlab/activities`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            activityId: editingActivity.id,
-            updates: {
-              title: activityData.title,
-              instructions: activityData.instructions,
-              activity_type: activityData.activity_type,
-              estimated_minutes: activityData.estimated_minutes,
-              is_required: activityData.is_required,
-            },
-          }),
-        });
+        // Fetch the updated activity with all nested data
+        const response = await fetch(`/api/pathlab/activities?activityId=${editingActivity.id}`);
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Failed to update activity');
+          throw new Error('Failed to fetch updated activity');
         }
 
         const result = await response.json();
         updateActivity(editingActivity.id, result.activity);
 
-        toast.success('Activity updated');
         setShowActivityEditor(false);
         setEditingActivity(undefined);
       } catch (error) {
-        console.error('[PageBuilder] Failed to update activity:', error);
-        toast.error(error instanceof Error ? error.message : 'Failed to update activity');
+        console.error('[PageBuilder] Failed to refresh activity:', error);
+        toast.error('Failed to refresh activity data');
       }
     },
     [editingActivity, updateActivity]
@@ -316,7 +287,7 @@ export function PageBuilder({
                 <PathActivityEditor
                   dayId={pageId}
                   activity={editingActivity}
-                  onSave={editingActivity ? handleActivityUpdate : handleActivityCreate}
+                  onSave={editingActivity ? handleActivityUpdateRefresh : handleActivityCreateRefresh}
                   onCancel={() => {
                     setShowActivityEditor(false);
                     setEditingActivity(undefined);
