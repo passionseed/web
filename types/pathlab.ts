@@ -34,8 +34,11 @@ export interface PathDay {
   title: string | null;
   context_text: string;
   reflection_prompts: string[];
-  node_ids: string[];
+  node_ids: string[];  // Legacy field - kept for backward compatibility
   created_at: string;
+  // Migration tracking fields
+  migrated_from_nodes?: boolean;
+  migration_completed_at?: string | null;
 }
 
 export interface PathEnrollment {
@@ -111,3 +114,40 @@ export interface PathReportData {
   exit_reflection: PathExitReflection | null;
   end_reflection: PathEndReflection | null;
 }
+
+// =====================================================
+// RE-EXPORT PATHLAB CONTENT TYPES
+// New content system types (separated from maps/nodes)
+// =====================================================
+export type {
+  // PathActivityType removed - use content_type or assessment_type instead
+  PathContentType,
+  PathAssessmentType,
+  PathActivityProgressStatus,
+  PathActivity,
+  PathContent,
+  PathAssessment,
+  PathQuizQuestion,
+  PathActivityProgress,
+  PathAssessmentSubmission,
+  PathDayWithActivities,
+  FullPathActivity,
+  PathActivityWithProgress,
+  CreatePathActivityInput,
+  UpdatePathActivityInput,
+  CreatePathContentInput,
+  UpdatePathContentInput,
+  CreatePathAssessmentInput,
+  UpdatePathAssessmentInput,
+  SubmitPathAssessmentInput,
+  MigrationResult,
+  MigrationStatus,
+  PathMigrationDetails,
+  PathContentMetadata,
+  PathAssessmentMetadata,
+  BuilderDay,
+  BuilderMode,
+  PathActivitiesResponse,
+  PathActivityResponse,
+  MigrationResponse,
+} from './pathlab-content';

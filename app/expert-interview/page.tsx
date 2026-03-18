@@ -148,23 +148,39 @@ export default function ExpertInterviewPage() {
   const handleProfileSubmit = (data: ProfileData) => { setProfileData(data); setStep("mentoring"); };
 
   const handleMentoringSubmit = async (mentoringData: MentoringData) => {
-    if (!sessionData || !extractedData || !profileData) return;
+    if (!sessionData || !extractedData || !profileData) {
+      console.error("[mentoring-submit] Missing required data", {
+        hasSessionData: !!sessionData,
+        hasExtractedData: !!extractedData,
+        hasProfileData: !!profileData,
+      });
+      setErrorMessage(t.errorSubmit);
+      return;
+    }
+
+    const payload = {
+      sessionId: sessionData.sessionId,
+      interviewData: extractedData,
+      interviewTranscript: transcript,
+      profile: profileData,
+      mentoring: mentoringData,
+    };
+    console.log("[mentoring-submit] Sending payload", payload);
+
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/expert-interview/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: sessionData.sessionId,
-          interviewData: extractedData,
-          interviewTranscript: transcript,
-          profile: profileData,
-          mentoring: mentoringData,
-        }),
+        body: JSON.stringify(payload),
       });
       if (response.status === 409 || response.ok) { setStep("done"); return; }
+      const errorData = await response.json();
+      console.error("[mentoring-submit] Server error", errorData);
+      console.error("[mentoring-submit] Profile data was:", profileData);
       throw new Error("Failed to submit");
-    } catch {
+    } catch (err) {
+      console.error("[mentoring-submit] Submit failed", err);
       setErrorMessage(t.errorSubmit);
     } finally {
       setIsSubmitting(false);
@@ -209,6 +225,12 @@ export default function ExpertInterviewPage() {
 
   // ── Mentoring ─────────────────────────────────────────────────────────────
   if (step === "mentoring") {
+    // Safety check: if we don't have profile data, go back to profile step
+    if (!profileData && sessionData) {
+      setStep("profile");
+      return null;
+    }
+
     return (
       <div className="min-h-screen bg-black text-white">
         <div className="max-w-2xl mx-auto px-4 py-16">
