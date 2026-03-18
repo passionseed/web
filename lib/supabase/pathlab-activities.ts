@@ -111,16 +111,18 @@ export async function createPathActivity(
   const maxDisplayOrder = existingActivities?.[0]?.display_order ?? -1;
   const nextDisplayOrder = maxDisplayOrder + 1;
 
-  const { data, error } = await supabase
+  const { data, error} = await supabase
     .from("path_activities")
     .insert({
       path_day_id: input.path_day_id,
       title: input.title,
       instructions: input.instructions || null,
-      activity_type: input.activity_type,
+      // activity_type removed - determined by content_type or assessment_type
       display_order: nextDisplayOrder, // Use auto-calculated order
       estimated_minutes: input.estimated_minutes || null,
       is_required: input.is_required ?? true,
+      is_draft: input.is_draft ?? false,
+      draft_reason: input.draft_reason || null,
     })
     .select()
     .single();

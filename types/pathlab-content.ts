@@ -8,14 +8,8 @@
 // ENUMS AND CONSTANTS
 // =====================================================
 
-export type PathActivityType =
-  | 'learning'          // Standard learning activity
-  | 'reflection'        // Self-assessment activity
-  | 'milestone'         // Major checkpoint
-  | 'checkpoint'        // Progress check
-  | 'journal_prompt'    // Writing exercise
-  | 'ai_chat'           // AI-powered chat with objective tracking
-  | 'npc_dialogue';     // Interactive NPC conversation with branching paths
+// REMOVED: PathActivityType - no longer used
+// Activities are now typed by their content_type or assessment_type
 
 export type PathContentType =
   // Inherited from nodes
@@ -59,14 +53,14 @@ export type PathActivityProgressStatus =
 
 /**
  * PathActivity - Learning activity within a PathLab day
- * Replaces node selection with direct activity creation
+ * Each activity has EITHER content OR assessment (not both)
+ * Activity type is determined by content_type or assessment_type
  */
 export interface PathActivity {
   id: string;
   path_day_id: string;
   title: string;
   instructions: string | null;
-  activity_type: PathActivityType;
   display_order: number;
   estimated_minutes: number | null;
   is_required: boolean;
@@ -76,6 +70,7 @@ export interface PathActivity {
   updated_at: string;
 
   // Relations (loaded via joins)
+  // Each activity should have EITHER path_content OR path_assessment
   path_content?: PathContent[];
   path_assessment?: PathAssessment | null;
 }
@@ -209,27 +204,31 @@ export interface PathActivityWithProgress extends PathActivity {
 
 /**
  * CreatePathActivityInput - Input for creating a new activity
+ * Note: activity_type removed - type is determined by content_type or assessment_type
  */
 export interface CreatePathActivityInput {
   path_day_id: string;
   title: string;
   instructions?: string;
-  activity_type: PathActivityType;
   display_order: number;
   estimated_minutes?: number;
   is_required?: boolean;
+  is_draft?: boolean;
+  draft_reason?: string | null;
 }
 
 /**
  * UpdatePathActivityInput - Input for updating an activity
+ * Note: activity_type removed - type is determined by content_type or assessment_type
  */
 export interface UpdatePathActivityInput {
   title?: string;
   instructions?: string;
-  activity_type?: PathActivityType;
   display_order?: number;
   estimated_minutes?: number;
   is_required?: boolean;
+  is_draft?: boolean;
+  draft_reason?: string | null;
 }
 
 /**

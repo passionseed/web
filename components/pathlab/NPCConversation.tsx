@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   NPCConversation as NPCConversationType,
   NPCConversationNodeWithChoices,
@@ -12,7 +12,7 @@ import { NPCAvatarData } from '@/types/npc-avatars';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Clock } from 'lucide-react';
 
 interface NPCConversationProps {
   conversationId: string;
@@ -38,11 +38,73 @@ export function NPCConversation({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize conversation
   useEffect(() => {
     loadConversation();
   }, [conversationId, progressId]);
+
+  // Timer effect - start countdown when node changes
+  useEffect(() => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Check if current node has a timer
+    if (currentNode && currentNode.node_type === 'question') {
+      const timerSeconds = currentNode.metadata?.timer_seconds;
+
+      if (timerSeconds && timerSeconds > 0) {
+        // Initialize timer
+        setTimeRemaining(timerSeconds);
+
+        // Start countdown
+        timerRef.current = setInterval(() => {
+          setTimeRemaining((prev) => {
+            if (prev === null || prev <= 1) {
+              // Timer expired - auto-select default choice
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+              }
+
+              // Trigger auto-select
+              handleTimerExpired();
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        setTimeRemaining(null);
+      }
+    } else {
+      setTimeRemaining(null);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [currentNode]);
+
+  const handleTimerExpired = () => {
+    if (!currentNode || !currentNode.choices || isSubmitting) return;
+
+    const defaultIndex = currentNode.metadata?.default_choice_index ?? 0;
+    const defaultChoice = currentNode.choices[defaultIndex];
+
+    if (defaultChoice) {
+      handleChoiceSelect(defaultChoice, true);
+    }
+  };
 
   const loadConversation = async () => {
     try {
@@ -77,8 +139,15 @@ export function NPCConversation({
     }
   };
 
-  const handleChoiceSelect = async (choice: NPCConversationChoice) => {
+  const handleChoiceSelect = async (choice: NPCConversationChoice, isAutoSelected = false) => {
     if (!currentNode || isSubmitting) return;
+
+    // Clear timer if manually selected
+    if (!isAutoSelected && timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      setTimeRemaining(null);
+    }
 
     try {
       setIsSubmitting(true);
@@ -197,29 +266,78 @@ export function NPCConversation({
   const renderChoices = (choices: NPCConversationChoice[]) => {
     if (!choices || choices.length === 0) return null;
 
+    const showTimer = currentNode?.metadata?.show_timer !== false && timeRemaining !== null;
+    const timerSeconds = currentNode?.metadata?.timer_seconds || 0;
+
     return (
       <div className="space-y-3 mt-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
-          Choose your response:
-        </p>
-        {choices.map((choice) => (
-          <Button
-            key={choice.id}
-            onClick={() => handleChoiceSelect(choice)}
-            disabled={isSubmitting}
-            variant="outline"
-            className="w-full justify-start text-left h-auto py-4 px-6 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
-          >
-            <div className="flex items-start gap-3">
-              {choice.choice_label && (
-                <span className="flex-shrink-0 font-bold text-purple-600 dark:text-purple-400">
-                  {choice.choice_label}:
-                </span>
-              )}
-              <span className="flex-1">{choice.choice_text}</span>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">
+            Choose your response:
+          </p>
+
+          {/* Timer Display */}
+          {showTimer && timeRemaining !== null && (
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
+              timeRemaining <= 3
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                : timeRemaining <= 5
+                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+            } transition-colors duration-300`}>
+              <Clock className={`w-4 h-4 ${timeRemaining <= 3 ? 'animate-pulse' : ''}`} />
+              <span className="font-mono font-bold text-sm">{timeRemaining}s</span>
             </div>
-          </Button>
-        ))}
+          )}
+        </div>
+
+        {/* Timer Progress Bar */}
+        {showTimer && timeRemaining !== null && timerSeconds > 0 && (
+          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-1000 ease-linear ${
+                timeRemaining <= 3
+                  ? 'bg-red-500'
+                  : timeRemaining <= 5
+                  ? 'bg-yellow-500'
+                  : 'bg-blue-500'
+              }`}
+              style={{ width: `${(timeRemaining / timerSeconds) * 100}%` }}
+            />
+          </div>
+        )}
+
+        {choices.map((choice, index) => {
+          const isDefault = index === (currentNode?.metadata?.default_choice_index ?? 0);
+
+          return (
+            <Button
+              key={choice.id}
+              onClick={() => handleChoiceSelect(choice)}
+              disabled={isSubmitting}
+              variant="outline"
+              className={`w-full justify-start text-left h-auto py-4 px-6 transition-all ${
+                showTimer && isDefault
+                  ? 'ring-2 ring-orange-400 dark:ring-orange-500 ring-offset-2'
+                  : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'
+              }`}
+            >
+              <div className="flex items-start gap-3 w-full">
+                {choice.choice_label && (
+                  <span className="flex-shrink-0 font-bold text-purple-600 dark:text-purple-400">
+                    {choice.choice_label}:
+                  </span>
+                )}
+                <span className="flex-1">{choice.choice_text}</span>
+                {showTimer && isDefault && (
+                  <span className="flex-shrink-0 text-xs text-orange-600 dark:text-orange-400 font-semibold">
+                    [DEFAULT]
+                  </span>
+                )}
+              </div>
+            </Button>
+          );
+        })}
       </div>
     );
   };

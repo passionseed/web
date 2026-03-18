@@ -215,6 +215,25 @@ export async function processInterviewMessage(
   const followupCount = countFollowupsForQuestion(conversationHistory, questionIndex);
   const mustAdvance = followupCount >= MAX_FOLLOWUPS_PER_QUESTION;
 
+  console.log(`[chat-service] Q${questionIndex + 1} followup check:`, {
+    totalUserMessages: conversationHistory.filter(m => m.role === "user").length,
+    questionIndex,
+    followupCount,
+    mustAdvance,
+    maxAllowed: MAX_FOLLOWUPS_PER_QUESTION,
+  });
+
+  // Special case: if we're on the last question and have hit the follow-up limit,
+  // force completion regardless of what the AI says
+  if (isLastQuestion && mustAdvance) {
+    const extractedData = await extractCareerData(updatedHistory);
+    return {
+      progress: { current: TOTAL_QUESTIONS, total: TOTAL_QUESTIONS },
+      isComplete: true,
+      extractedData,
+    };
+  }
+
   const evaluation = await evaluateAndRespond(
     sanitized,
     currentTopicPrompt,
@@ -259,15 +278,17 @@ const decisionSchema = z.object({
 function countFollowupsForQuestion(history: ChatMessage[], questionIndex: number): number {
   if (questionIndex < 0) return 0;
 
-  // Count total user messages in history
+  // Count total user messages so far
   const totalUserMessages = history.filter(m => m.role === "user").length;
 
-  // Expected user messages for this question index:
-  // - We should have (questionIndex + 1) user messages if no follow-ups
-  // - Any additional user messages beyond that are from follow-ups
-  // - Each follow-up adds 1 extra user message
-  const expectedUserMessages = questionIndex + 1;
-  const followupCount = Math.max(0, totalUserMessages - expectedUserMessages);
+  // Minimum messages needed to reach this question (assuming no follow-ups):
+  // Question 0: 1 user message
+  // Question 1: 2 user messages
+  // Question N: N+1 user messages
+  const minMessagesToReachQuestion = questionIndex + 1;
+
+  // Any extra messages beyond the minimum are follow-ups for this question
+  const followupCount = Math.max(0, totalUserMessages - minMessagesToReachQuestion);
 
   return followupCount;
 }
@@ -340,7 +361,7 @@ async function evaluateAndRespond(
   }
 }
 
-async function extractCareerData(conversationHistory: ChatMessage[]): Promise<ExtractedCareerData> {
+export async function extractCareerData(conversationHistory: ChatMessage[]): Promise<ExtractedCareerData> {
   const transcript = conversationHistory
     .map((m) => `${m.role === "user" ? "Expert" : "Interviewer"}: ${m.content}`)
     .join("\n\n");

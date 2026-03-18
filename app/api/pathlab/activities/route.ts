@@ -67,9 +67,9 @@ export async function POST(request: NextRequest) {
     const body: CreatePathActivityInput = await request.json();
 
     // Validate required fields
-    if (!body.path_day_id || !body.title || !body.activity_type) {
+    if (!body.path_day_id || !body.title) {
       return NextResponse.json(
-        { error: "Missing required fields: path_day_id, title, activity_type" },
+        { error: "Missing required fields: path_day_id, title" },
         { status: 400 }
       );
     }

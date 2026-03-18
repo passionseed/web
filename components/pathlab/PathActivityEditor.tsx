@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,14 +64,32 @@ export function PathActivityEditor({
 }: PathActivityEditorProps) {
   const isEdit = !!activity;
 
+  // Debug logging
+  if (activity) {
+    console.log('[PathActivityEditor] Editing activity:', {
+      id: activity.id,
+      title: activity.title,
+      path_content: activity.path_content,
+      format: activity.path_content?.map(c => c.content_type),
+    });
+  }
+
   // Form state
   const [title, setTitle] = useState(activity?.title || "");
   const [instructions, setInstructions] = useState(activity?.instructions || "");
-  const [format, setFormat] = useState(
-    activity?.path_content?.[0]?.content_type ||
-    activity?.path_assessment?.assessment_type ||
-    "text"
-  );
+  const [format, setFormat] = useState(() => {
+    // Find the actual content type - prefer specific types (ai_chat, npc_chat) over generic
+    const npcChat = activity?.path_content?.find(c => c.content_type === 'npc_chat');
+    const aiChat = activity?.path_content?.find(c => c.content_type === 'ai_chat');
+
+    return (
+      npcChat?.content_type ||
+      aiChat?.content_type ||
+      activity?.path_content?.[0]?.content_type ||
+      activity?.path_assessment?.assessment_type ||
+      "text"
+    );
+  });
   const [contentUrl, setContentUrl] = useState(activity?.path_content?.[0]?.content_url || "");
   const [contentBody, setContentBody] = useState(activity?.path_content?.[0]?.content_body || "");
   const [estimatedMinutes, setEstimatedMinutes] = useState(
@@ -93,6 +111,7 @@ export function PathActivityEditor({
   const [npcChatMetadata, setNPCChatMetadata] = useState<Partial<NPCChatMetadata>>(
     activity?.path_content?.find(c => c.content_type === 'npc_chat')?.metadata || {}
   );
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
 
   // Validation
   const selectedFormat = ACTIVITY_FORMATS.find(f => f.value === format);
@@ -102,6 +121,45 @@ export function PathActivityEditor({
   const isAIChat = selectedFormat?.isAIChat;
   const isNPCChat = selectedFormat?.isNPCChat;
 
+  // Auto-create conversation when NPC Chat is selected (for new activities only)
+  useEffect(() => {
+    if (isNPCChat && !isEdit && !npcChatMetadata.conversation_id && !isCreatingConversation) {
+      console.log('[Activity Editor] Auto-creating conversation for new NPC Chat activity');
+      setIsCreatingConversation(true);
+      fetch('/api/admin/npc-conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path_day_id: dayId,
+          title: title || 'New Conversation',
+          description: 'Branching dialogue conversation',
+        }),
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const { conversation } = await res.json();
+            console.log('[Activity Editor] Created conversation:', conversation.id);
+            setNPCChatMetadata((prev) => ({
+              ...prev,
+              conversation_id: conversation.id,
+            }));
+            toast.success('Conversation created! You can now import your JSON.');
+          } else {
+            const errorData = await res.json();
+            console.error('Failed to create conversation:', errorData);
+            toast.error('Failed to create conversation');
+          }
+        })
+        .catch((err) => {
+          console.error('Error creating conversation:', err);
+          toast.error('Error creating conversation');
+        })
+        .finally(() => {
+          setIsCreatingConversation(false);
+        });
+    }
+  }, [isNPCChat, isEdit, npcChatMetadata.conversation_id, isCreatingConversation, dayId, title]);
+
   // Basic validation - just need title
   const isValid = title.trim().length > 0;
 
@@ -110,8 +168,8 @@ export function PathActivityEditor({
     title.trim().length > 0 &&
     (!needsUrl || contentUrl.trim().length > 0) &&
     (!needsBody || contentBody.trim().length > 0) &&
-    (!isAIChat || (aiChatMetadata.system_prompt && aiChatMetadata.objective)) &&
-    (!isNPCChat || npcChatMetadata.conversation_id);
+    (!isAIChat || (aiChatMetadata.system_prompt && aiChatMetadata.objective));
+    // Note: NPC chat conversation is auto-created, so we don't check for conversation_id
 
   // Determine draft reason
   const getDraftReason = (): string | null => {
@@ -120,7 +178,6 @@ export function PathActivityEditor({
     if (needsBody && !contentBody.trim()) return 'Missing content body';
     if (isAIChat && !aiChatMetadata.system_prompt) return 'Missing AI chat system prompt';
     if (isAIChat && !aiChatMetadata.objective) return 'Missing AI chat objective';
-    if (isNPCChat && !npcChatMetadata.conversation_id) return 'Missing conversation selection';
     return 'Incomplete configuration';
   };
 
@@ -133,7 +190,7 @@ export function PathActivityEditor({
       const activityData = {
         title,
         instructions: instructions || undefined,
-        activity_type: 'learning' as const,
+        // activity_type removed - type is determined by content_type or assessment_type
         estimated_minutes: estimatedMinutes ? parseInt(estimatedMinutes) : undefined,
         is_required: isRequired,
         is_draft: !isComplete,
@@ -171,6 +228,35 @@ export function PathActivityEditor({
 
         const { activity: newActivity } = await createResponse.json();
         activityId = newActivity.id;
+      }
+
+      // Step 1.5: Auto-create NPC conversation if needed
+      if (isNPCChat && activityId && !npcChatMetadata.conversation_id) {
+        const conversationResponse = await fetch('/api/admin/npc-conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            path_day_id: dayId,
+            title: title || 'Untitled Conversation',
+            description: `Conversation for activity: ${title}`,
+          }),
+        });
+
+        if (conversationResponse.ok) {
+          const { conversation } = await conversationResponse.json();
+          // Update metadata with new conversation_id
+          const updatedMetadata = {
+            ...npcChatMetadata,
+            conversation_id: conversation.id,
+          };
+          setNPCChatMetadata(updatedMetadata);
+          // Update the local variable for immediate use
+          Object.assign(npcChatMetadata, updatedMetadata);
+        } else {
+          const errorData = await conversationResponse.json();
+          console.error('Failed to create conversation:', errorData);
+          toast.error('Failed to create conversation. Please try again.');
+        }
       }
 
       // Step 2: Save content or assessment based on format
@@ -223,6 +309,7 @@ export function PathActivityEditor({
               contentMetadata = aiChatMetadata;
             } else if (isNPCChat) {
               contentMetadata = npcChatMetadata;
+              console.log('[Activity Editor] Saving NPC Chat with metadata:', contentMetadata);
             }
 
             const contentResponse = await fetch('/api/pathlab/content', {
@@ -343,6 +430,7 @@ export function PathActivityEditor({
           <PathNPCChatEditor
             metadata={npcChatMetadata}
             onChange={setNPCChatMetadata}
+            activityTitle={title}
           />
         </div>
       )}
@@ -485,12 +573,25 @@ export function PathActivityEditor({
   if (isInline) {
     return (
       <Card className="border-2 border-primary/20">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-lg">
             {isEdit ? "Edit Activity" : "New Activity"}
           </CardTitle>
+          {/* Sticky action buttons at top */}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onCancel} disabled={isSaving} size="sm">
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={!isValid || isSaving} size="sm">
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? "Saving..." : isEdit ? (isComplete ? "Update" : "Save Draft") : (isComplete ? "Create" : "Save Draft")}
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>{editorContent}</CardContent>
+        <CardContent className="max-h-[600px] overflow-y-auto">
+          {editorContent}
+        </CardContent>
       </Card>
     );
   }

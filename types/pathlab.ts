@@ -120,7 +120,7 @@ export interface PathReportData {
 // New content system types (separated from maps/nodes)
 // =====================================================
 export type {
-  PathActivityType,
+  // PathActivityType removed - use content_type or assessment_type instead
   PathContentType,
   PathAssessmentType,
   PathActivityProgressStatus,
