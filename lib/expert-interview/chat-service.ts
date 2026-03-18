@@ -93,8 +93,6 @@ const INTERVIEW_QUESTIONS_TH: Array<{ id: string; prompt: string }> = [
   },
 ];
 
-const INTERVIEW_QUESTIONS = INTERVIEW_QUESTIONS_EN;
-
 const extractedDataSchema = z.object({
   field: z.string(),
   role: z.string(),
@@ -213,9 +211,28 @@ export async function processInterviewMessage(
   const nextQuestionDef = isLastQuestion ? null : questions[questionIndex + 1];
 
   // Count how many follow-ups have already been asked for this question
-  // by counting consecutive assistant messages with the same questionId
-  const followupCount = countFollowupsForQuestion(conversationHistory, currentTopicPrompt);
+  // by counting total user messages vs expected messages for this question
+  const followupCount = countFollowupsForQuestion(conversationHistory, questionIndex);
   const mustAdvance = followupCount >= MAX_FOLLOWUPS_PER_QUESTION;
+
+  console.log(`[chat-service] Q${questionIndex + 1} followup check:`, {
+    totalUserMessages: conversationHistory.filter(m => m.role === "user").length,
+    questionIndex,
+    followupCount,
+    mustAdvance,
+    maxAllowed: MAX_FOLLOWUPS_PER_QUESTION,
+  });
+
+  // Special case: if we're on the last question and have hit the follow-up limit,
+  // force completion regardless of what the AI says
+  if (isLastQuestion && mustAdvance) {
+    const extractedData = await extractCareerData(updatedHistory);
+    return {
+      progress: { current: TOTAL_QUESTIONS, total: TOTAL_QUESTIONS },
+      isComplete: true,
+      extractedData,
+    };
+  }
 
   const evaluation = await evaluateAndRespond(
     sanitized,
@@ -246,7 +263,7 @@ export async function processInterviewMessage(
   } else {
     // Dig deeper into the current question, don't advance the index
     return {
-      nextQuestion: { id: INTERVIEW_QUESTIONS[questionIndex].id, text: evaluation.interviewerResponse },
+      nextQuestion: { id: questions[questionIndex].id, text: evaluation.interviewerResponse },
       progress: { current: questionIndex + 1, total: TOTAL_QUESTIONS },
       isComplete: false,
     };
@@ -258,18 +275,22 @@ const decisionSchema = z.object({
   interviewerResponse: z.string().describe("What the interviewer should say next. If isTopicCovered is true, write a natural transition to the NEXT topic. If false, write a probing follow-up question to dig deeper into the CURRENT topic.")
 });
 
-function countFollowupsForQuestion(history: ChatMessage[], currentQuestionPrompt: string): number {
-  // Find where the current question was first asked (last assistant message containing the question)
-  let questionStartIdx = -1;
-  for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].role === "assistant" && history[i].content.includes(currentQuestionPrompt.slice(0, 40))) {
-      questionStartIdx = i;
-      break;
-    }
-  }
-  if (questionStartIdx < 0) return 0;
-  // Count assistant messages after the question was introduced (those are follow-ups)
-  return history.slice(questionStartIdx + 1).filter((m) => m.role === "assistant").length;
+function countFollowupsForQuestion(history: ChatMessage[], questionIndex: number): number {
+  if (questionIndex < 0) return 0;
+
+  // Count total user messages so far
+  const totalUserMessages = history.filter(m => m.role === "user").length;
+
+  // Minimum messages needed to reach this question (assuming no follow-ups):
+  // Question 0: 1 user message
+  // Question 1: 2 user messages
+  // Question N: N+1 user messages
+  const minMessagesToReachQuestion = questionIndex + 1;
+
+  // Any extra messages beyond the minimum are follow-ups for this question
+  const followupCount = Math.max(0, totalUserMessages - minMessagesToReachQuestion);
+
+  return followupCount;
 }
 
 async function evaluateAndRespond(
@@ -340,7 +361,7 @@ async function evaluateAndRespond(
   }
 }
 
-async function extractCareerData(conversationHistory: ChatMessage[]): Promise<ExtractedCareerData> {
+export async function extractCareerData(conversationHistory: ChatMessage[]): Promise<ExtractedCareerData> {
   const transcript = conversationHistory
     .map((m) => `${m.role === "user" ? "Expert" : "Interviewer"}: ${m.content}`)
     .join("\n\n");

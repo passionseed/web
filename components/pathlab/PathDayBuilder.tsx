@@ -40,6 +40,8 @@ import {
 import { cn } from "@/lib/utils";
 import { markdownToSafeHtml } from "@/lib/security/sanitize-html";
 import { toast } from "sonner";
+import { PathActivityEditor } from "./PathActivityEditor";
+import type { FullPathActivity } from "@/types/pathlab";
 
 type BuilderDay = {
   id?: string;
@@ -48,6 +50,8 @@ type BuilderDay = {
   context_text: string;
   reflection_prompts: string[];
   node_ids: string[];
+  migrated_from_nodes?: boolean;
+  activities?: FullPathActivity[];
 };
 
 type MapNodeInfo = { id: string; title: string; node_type: string | null };
@@ -58,6 +62,7 @@ interface PathDayBuilderProps {
   initialDays: BuilderDay[];
   mapNodes: MapNodeInfo[];
   mapId: string;
+  mode?: 'auto' | 'legacy' | 'activities'; // Mode selection
 }
 
 function makeDefaultDay(dayNumber: number): BuilderDay {
@@ -85,12 +90,14 @@ function SortableDayTrigger({
   dndId,
   day,
   nodeCount,
+  activityCount,
   onRemove,
   canRemove,
 }: {
   dndId: string;
   day: BuilderDay;
   nodeCount: number;
+  activityCount?: number;
   onRemove: () => void;
   canRemove: boolean;
 }) {
@@ -111,6 +118,10 @@ function SortableDayTrigger({
   const label = day.title
     ? `Day ${day.day_number}: ${day.title}`
     : `Day ${day.day_number}`;
+
+  const isMigrated = day.migrated_from_nodes;
+  const count = isMigrated ? (activityCount ?? 0) : nodeCount;
+  const itemType = isMigrated ? "activity" : "node";
 
   return (
     <div
@@ -133,18 +144,23 @@ function SortableDayTrigger({
       <AccordionTrigger className="flex-1 py-3 text-white hover:no-underline">
         <span className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold">{label}</span>
-          {nodeCount > 0 ? (
+          {count > 0 ? (
             <Badge
-              className="bg-blue-600 text-white hover:bg-blue-700"
+              className={isMigrated ? "bg-green-600 text-white hover:bg-green-700" : "bg-blue-600 text-white hover:bg-blue-700"}
             >
-              {nodeCount} node{nodeCount !== 1 ? "s" : ""} assigned
+              {count} {itemType}{count !== 1 ? (itemType === "activity" ? "ies" : "s") : ""} assigned
             </Badge>
           ) : (
             <Badge
               variant="outline"
               className="border-amber-700/50 text-amber-500/70"
             >
-              No nodes yet
+              No {itemType}s yet
+            </Badge>
+          )}
+          {isMigrated && (
+            <Badge variant="outline" className="border-green-700 text-green-400 text-xs">
+              New
             </Badge>
           )}
         </span>
@@ -249,6 +265,7 @@ export function PathDayBuilder({
   initialDays,
   mapNodes,
   mapId,
+  mode = 'auto',
 }: PathDayBuilderProps) {
   const ensuredInitial = useMemo(
     () =>
@@ -264,6 +281,30 @@ export function PathDayBuilder({
     new Set(),
   );
   const [isMounted, setIsMounted] = useState(false);
+  const [editingActivityDayNumber, setEditingActivityDayNumber] = useState<number | null>(null);
+  const [editingActivity, setEditingActivity] = useState<FullPathActivity | undefined>(undefined);
+
+  // Load activities for migrated days
+  useEffect(() => {
+    const loadActivities = async () => {
+      for (const day of days) {
+        if (day.id && day.migrated_from_nodes && !day.activities) {
+          try {
+            const response = await fetch(`/api/pathlab/activities?dayId=${day.id}`);
+            if (response.ok) {
+              const { activities } = await response.json();
+              setDays(prev => prev.map(d =>
+                d.id === day.id ? { ...d, activities } : d
+              ));
+            }
+          } catch (error) {
+            console.error('Error loading activities:', error);
+          }
+        }
+      }
+    };
+    loadActivities();
+  }, [days.map(d => d.id).join(',')]);
 
   // Prevent hydration errors from dnd-kit and Radix UI auto-generated IDs
   useEffect(() => {
@@ -375,6 +416,91 @@ export function PathDayBuilder({
     });
   }, []);
 
+  // Auto-save a day if it doesn't have an ID yet
+  const autoSaveDay = useCallback(async (dayNumber: number): Promise<string | null> => {
+    const day = days.find(d => d.day_number === dayNumber);
+    if (!day) return null;
+
+    // If day already has an ID, return it
+    if (day.id) return day.id;
+
+    // Save this specific day to get an ID
+    setSaving(true);
+    try {
+      const response = await fetch("/api/pathlab/days", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pathId,
+          totalDays: days.length,
+          days: days.map((d) => ({
+            day_number: d.day_number,
+            title: d.title,
+            context_text: d.context_text,
+            reflection_prompts: d.reflection_prompts.map(s => s.trim()).filter(Boolean),
+            node_ids: d.node_ids,
+          })),
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || "Failed to save day");
+      }
+
+      const savedDays: BuilderDay[] = (payload.days || days).map(
+        (d: any) => ({
+          id: d.id,
+          day_number: d.day_number,
+          title: d.title ?? null,
+          context_text: d.context_text,
+          reflection_prompts: d.reflection_prompts ?? [],
+          node_ids: d.node_ids ?? [],
+        }),
+      );
+
+      setDays(savedDays);
+      snapshotRef.current = JSON.stringify(savedDays);
+
+      const savedDay = savedDays.find(d => d.day_number === dayNumber);
+      return savedDay?.id || null;
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save day");
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  }, [days, pathId]);
+
+  // Activity management
+  const handleEditActivity = useCallback((dayNumber: number, activity: FullPathActivity) => {
+    setEditingActivityDayNumber(dayNumber);
+    setEditingActivity(activity);
+  }, []);
+
+  const handleDeleteActivity = useCallback(async (dayNumber: number, activityId: string) => {
+    if (!confirm('Delete this activity and all its content?')) return;
+
+    try {
+      const response = await fetch(`/api/pathlab/activities?activityId=${activityId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete activity');
+
+      setDays(prev => prev.map(d =>
+        d.day_number === dayNumber && d.activities
+          ? { ...d, activities: d.activities.filter(a => a.id !== activityId) }
+          : d
+      ));
+
+      toast.success('Activity deleted');
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      toast.error('Failed to delete activity');
+    }
+  }, []);
+
   // ─── Save ───────────────────────────────────────────────────────
 
   const handleSave = async () => {
@@ -456,7 +582,23 @@ export function PathDayBuilder({
       </Card>
 
       {/* Instructions */}
-      {mapNodes.length > 0 && (
+      {mode === 'activities' && (
+        <Card className="border-green-800/50 bg-green-950/20">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Info className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-green-200 space-y-1">
+              <p className="font-semibold">How to build your PathLab:</p>
+              <ol className="list-decimal list-inside space-y-0.5 text-green-300/90">
+                <li>Expand a day and click "Add Activity"</li>
+                <li>Choose what students will do (watch short video, take quiz, read text, etc.)</li>
+                <li>Fill in the required fields based on your choice</li>
+                <li>Click "Create Activity" - all content is saved in one step!</li>
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {mapNodes.length > 0 && mode !== 'activities' && (
         <Card className="border-blue-800/50 bg-blue-950/20">
           <CardContent className="flex items-start gap-3 p-4">
             <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
@@ -474,8 +616,8 @@ export function PathDayBuilder({
         </Card>
       )}
 
-      {/* Empty state for no map nodes */}
-      {mapNodes.length === 0 && (
+      {/* Empty state for no map nodes - only show in legacy mode */}
+      {mapNodes.length === 0 && mode !== 'activities' && (
         <Card className="border-amber-800/50 bg-amber-950/20">
           <CardContent className="flex items-center gap-3 p-4">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -529,6 +671,7 @@ export function PathDayBuilder({
                       dndId={dndId}
                       day={day}
                       nodeCount={day.node_ids.length}
+                      activityCount={day.activities?.length}
                       onRemove={() => removeDay(day.day_number)}
                       canRemove={days.length > 1}
                     />
@@ -603,43 +746,167 @@ export function PathDayBuilder({
                         />
                       </div>
 
-                      {/* Node assignment */}
-                      {mapNodes.length > 0 && (
-                        <div className="space-y-2">
+                      {/* Activities Mode (for migrated days) or Node Assignment (for legacy days) */}
+                      {(mode === 'activities' || (mode === 'auto' && day.migrated_from_nodes)) ? (
+                        <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <Label className="text-neutral-300 text-base font-semibold">
-                              Nodes for this day
+                              Activities for this day
                             </Label>
-                            <span className="text-xs text-neutral-500">
-                              {day.node_ids.length} selected
-                            </span>
+                            <Badge variant="outline" className="border-green-700 text-green-400">
+                              New System
+                            </Badge>
                           </div>
-                          <p className="text-xs text-neutral-400 -mt-1">
-                            Check the nodes you want students to complete on Day {day.day_number}
-                          </p>
-                          <div className="grid gap-2 md:grid-cols-2">
-                            {mapNodes.map((node) => {
-                              const checked = day.node_ids.includes(node.id);
-                              const allDayNums =
-                                nodeAssignmentMap.get(node.id) || [];
-                              const otherDayNumbers = allDayNums.filter(
-                                (n) => n !== day.day_number,
-                              );
 
-                              return (
-                                <NodeCheckbox
-                                  key={node.id}
-                                  node={node}
-                                  checked={checked}
-                                  otherDayNumbers={otherDayNumbers}
-                                  onToggle={() =>
-                                    toggleNodeForDay(day.day_number, node.id)
+                          {/* Activity List */}
+                          {day.activities && day.activities.length > 0 && (
+                            <div className="space-y-2">
+                              {day.activities.map((activity, activityIdx) => (
+                                <Card key={activity.id} className="border-neutral-700">
+                                  <CardContent className="p-3">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <div className="font-medium text-white">{activity.title}</div>
+                                          {activity.is_draft && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/30 text-yellow-400 border border-yellow-700/50">
+                                              DRAFT
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-xs text-neutral-400 mt-1 space-x-2">
+                                          <span>{activity.activity_type}</span>
+                                          {activity.path_content && (
+                                            <span>• {activity.path_content.length} content items</span>
+                                          )}
+                                          {activity.path_assessment && (
+                                            <span>• Has assessment</span>
+                                          )}
+                                          {activity.is_draft && activity.draft_reason && (
+                                            <span className="text-yellow-400">• {activity.draft_reason}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleEditActivity(day.day_number, activity)}
+                                        >
+                                          Edit
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleDeleteActivity(day.day_number, activity.id)}
+                                        >
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Add/Edit Activity */}
+                          {editingActivityDayNumber === day.day_number ? (
+                            day.id ? (
+                              <PathActivityEditor
+                                dayId={day.id}
+                                activity={editingActivity}
+                                onSave={async () => {
+                                  // Reload activities for this day
+                                  const activitiesResponse = await fetch(`/api/pathlab/activities?dayId=${day.id}`);
+                                  if (activitiesResponse.ok) {
+                                    const { activities } = await activitiesResponse.json();
+                                    setDays(prev => prev.map(d =>
+                                      d.day_number === day.day_number ? { ...d, activities } : d
+                                    ));
                                   }
-                                />
-                              );
-                            })}
-                          </div>
+                                  setEditingActivityDayNumber(null);
+                                  setEditingActivity(undefined);
+                                }}
+                                onCancel={() => {
+                                  setEditingActivityDayNumber(null);
+                                  setEditingActivity(undefined);
+                                }}
+                                isInline
+                                displayOrder={day.activities?.length || 0}
+                              />
+                            ) : (
+                              <Card className="border-blue-800/50 bg-blue-950/20">
+                                <CardContent className="p-4 text-center">
+                                  <p className="text-sm text-blue-200">
+                                    Saving day to enable activity editing...
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            )
+                          ) : (
+                            <Button
+                              variant="outline"
+                              onClick={async () => {
+                                setEditingActivityDayNumber(day.day_number);
+                                setEditingActivity(undefined);
+                                // Auto-save day if it doesn't have an ID
+                                if (!day.id) {
+                                  await autoSaveDay(day.day_number);
+                                }
+                              }}
+                              className="w-full border-dashed"
+                              disabled={saving}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              {saving ? "Saving day..." : "Add Activity"}
+                            </Button>
+                          )}
                         </div>
+                      ) : (
+                        /* Legacy Node Assignment */
+                        mapNodes.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-neutral-300 text-base font-semibold">
+                                Nodes for this day
+                              </Label>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-neutral-500">
+                                  {day.node_ids.length} selected
+                                </span>
+                                <Badge variant="outline" className="border-amber-700 text-amber-400">
+                                  Legacy
+                                </Badge>
+                              </div>
+                            </div>
+                            <p className="text-xs text-neutral-400 -mt-1">
+                              Check the nodes you want students to complete on Day {day.day_number}
+                            </p>
+                            <div className="grid gap-2 md:grid-cols-2">
+                              {mapNodes.map((node) => {
+                                const checked = day.node_ids.includes(node.id);
+                                const allDayNums =
+                                  nodeAssignmentMap.get(node.id) || [];
+                                const otherDayNumbers = allDayNums.filter(
+                                  (n) => n !== day.day_number,
+                                );
+
+                                return (
+                                  <NodeCheckbox
+                                    key={node.id}
+                                    node={node}
+                                    checked={checked}
+                                    otherDayNumbers={otherDayNumbers}
+                                    onToggle={() =>
+                                      toggleNodeForDay(day.day_number, node.id)
+                                    }
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )
                       )}
                     </AccordionContent>
                   </AccordionItem>
