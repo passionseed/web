@@ -32,16 +32,10 @@ export async function GET(
       );
     }
 
-    // Fetch all nodes with their choices and NPC avatars
+    // Fetch all nodes with NPC avatars
     const { data: nodes, error: nodesError } = await supabase
       .from('path_npc_conversation_nodes')
-      .select(
-        `
-        *,
-        npc_avatar:seed_npc_avatars(*),
-        choices:path_npc_conversation_choices(*)
-      `
-      )
+      .select('*, npc_avatar:seed_npc_avatars(*)')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
@@ -53,14 +47,37 @@ export async function GET(
       );
     }
 
+    // Fetch all choices separately
+    const nodeIds = (nodes || []).map((n) => n.id);
+    const { data: allChoices, error: choicesError } = await supabase
+      .from('path_npc_conversation_choices')
+      .select('*')
+      .in('from_node_id', nodeIds)
+      .order('display_order', { ascending: true });
+
+    if (choicesError) {
+      console.error('Error fetching choices:', choicesError);
+      return NextResponse.json(
+        { error: 'Failed to load conversation choices' },
+        { status: 500 }
+      );
+    }
+
+    // Group choices by node
+    const choicesByNode = new Map<string, any[]>();
+    (allChoices || []).forEach((choice) => {
+      if (!choicesByNode.has(choice.from_node_id)) {
+        choicesByNode.set(choice.from_node_id, []);
+      }
+      choicesByNode.get(choice.from_node_id)!.push(choice);
+    });
+
     // Build tree structure
     const nodesMap = new Map<string, NPCConversationNodeWithChoices>();
     (nodes || []).forEach((node) => {
       nodesMap.set(node.id, {
         ...node,
-        choices: (node.choices || []).sort(
-          (a: any, b: any) => a.display_order - b.display_order
-        ),
+        choices: choicesByNode.get(node.id) || [],
       });
     });
 

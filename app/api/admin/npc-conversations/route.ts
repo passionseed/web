@@ -30,11 +30,32 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { seed_id, title, description, estimated_minutes } = body;
+    const { seed_id, path_day_id, title, description, estimated_minutes } = body;
 
-    if (!seed_id || !title) {
+    if (!title) {
       return NextResponse.json(
-        { error: 'Missing required fields: seed_id, title' },
+        { error: 'Missing required field: title' },
+        { status: 400 }
+      );
+    }
+
+    // Get seed_id from path if not provided
+    let finalSeedId = seed_id;
+    if (!finalSeedId && path_day_id) {
+      const { data: pathDay } = await supabase
+        .from('path_days')
+        .select('path:paths(seed_id)')
+        .eq('id', path_day_id)
+        .single();
+
+      if (pathDay?.path?.seed_id) {
+        finalSeedId = pathDay.path.seed_id;
+      }
+    }
+
+    if (!finalSeedId) {
+      return NextResponse.json(
+        { error: 'Missing required field: seed_id or path_day_id' },
         { status: 400 }
       );
     }
@@ -43,7 +64,7 @@ export async function POST(request: NextRequest) {
     const { data: conversation, error: convError } = await supabase
       .from('path_npc_conversations')
       .insert({
-        seed_id,
+        seed_id: finalSeedId,
         title,
         description,
         estimated_minutes,

@@ -104,6 +104,12 @@ export interface NPCNodeMetadata {
   urgency?: 'low' | 'medium' | 'high';
   background_color?: string;
   auto_advance_delay_ms?: number;  // For statement nodes
+
+  // Timer configuration for question nodes
+  timer_seconds?: number;  // How long user has to choose (0 or undefined = no timer)
+  default_choice_index?: number;  // Which choice to auto-select when timer expires (default: 0)
+  show_timer?: boolean;  // Whether to show countdown UI (default: true if timer_seconds is set)
+
   [key: string]: any;
 }
 

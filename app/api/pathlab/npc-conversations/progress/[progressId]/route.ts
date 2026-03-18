@@ -126,31 +126,31 @@ export async function GET(
       progress = newProgress;
     }
 
-    // Fetch current node with choices and NPC avatar
+    // Fetch current node with NPC avatar
     let currentNode: NPCConversationNodeWithChoices | null = null;
     let availableChoices: NPCConversationChoice[] = [];
 
     if (progress.current_node_id) {
       const { data: nodeData } = await supabase
         .from('path_npc_conversation_nodes')
-        .select(
-          `
-          *,
-          npc_avatar:seed_npc_avatars(*),
-          choices:path_npc_conversation_choices(*)
-        `
-        )
+        .select('*, npc_avatar:seed_npc_avatars(*)')
         .eq('id', progress.current_node_id)
         .single();
 
       if (nodeData) {
+        // Fetch choices separately
+        const { data: nodeChoices } = await supabase
+          .from('path_npc_conversation_choices')
+          .select('*')
+          .eq('from_node_id', nodeData.id)
+          .order('display_order', { ascending: true });
+
+        const choices = nodeChoices || [];
         currentNode = {
           ...nodeData,
-          choices: (nodeData.choices || []).sort(
-            (a: any, b: any) => a.display_order - b.display_order
-          ),
+          choices,
         };
-        availableChoices = currentNode.choices;
+        availableChoices = choices;
       }
     }
 
