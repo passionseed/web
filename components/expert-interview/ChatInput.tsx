@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Mic, X } from "lucide-react";
 import { HoldToTalk } from "./HoldToTalk";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,7 @@ interface ChatInputProps {
 export function ChatInput({ onSend, isLoading, disabled, placeholder, language }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [liveTranscript, setLiveTranscript] = useState<string | null>(null);
+  const [voiceMode, setVoiceMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-grow textarea
@@ -25,7 +26,7 @@ export function ChatInput({ onSend, isLoading, disabled, placeholder, language }
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-  }, [value, liveTranscript]);
+  }, [value]);
 
   const handleSend = () => {
     const trimmed = value.trim();
@@ -42,52 +43,86 @@ export function ChatInput({ onSend, isLoading, disabled, placeholder, language }
     }
   };
 
-  // Partial transcript: preview in field while speaking
-  const handlePartial = (text: string) => {
-    setLiveTranscript(text);
-  };
+  const handlePartial = (text: string) => setLiveTranscript(text);
 
-  // Committed transcript: auto-send
   const handleCommitted = (text: string) => {
     setLiveTranscript(null);
-    if (text.trim()) {
-      onSend(text.trim());
-    }
+    if (text.trim()) onSend(text.trim());
   };
 
-  const displayValue = liveTranscript !== null ? liveTranscript : value;
-  const isRecordingPreview = liveTranscript !== null;
+  // ── Voice mode ────────────────────────────────────────────────────────────
+  if (voiceMode) {
+    const transcriptPlaceholder =
+      language === "th"
+        ? "กดค้างปุ่มด้านล่างเพื่อพูด"
+        : "Hold the button below to speak";
 
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Live transcription display */}
+        <div
+          className={cn(
+            "min-h-[64px] rounded-xl px-4 py-3 text-sm leading-relaxed transition-all",
+            liveTranscript
+              ? "bg-gray-800/80 border border-purple-500/40 text-purple-200 italic"
+              : "bg-gray-800/40 border border-gray-700/40 text-gray-500 flex items-center justify-center text-center"
+          )}
+        >
+          {liveTranscript || transcriptPlaceholder}
+        </div>
+
+        {/* Big hold-to-talk + back to text */}
+        <div className="flex items-stretch gap-3">
+          <button
+            type="button"
+            onClick={() => { setLiveTranscript(null); setVoiceMode(false); }}
+            className="shrink-0 w-14 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+            aria-label={language === "th" ? "กลับไปพิมพ์" : "Switch to text"}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <HoldToTalk
+            onPartial={handlePartial}
+            onCommitted={handleCommitted}
+            disabled={isLoading || disabled}
+            language={language}
+            big
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Text mode ─────────────────────────────────────────────────────────────
   return (
     <div className="flex gap-2 items-end">
-      <HoldToTalk
-        onPartial={handlePartial}
-        onCommitted={handleCommitted}
-        disabled={isLoading || disabled}
-        language={language}
-      />
-
       <textarea
         ref={textareaRef}
-        value={displayValue}
-        onChange={(e) => {
-          if (!isRecordingPreview) setValue(e.target.value);
-        }}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        readOnly={isRecordingPreview}
-        placeholder={isRecordingPreview ? "" : (placeholder || "Type your answer...")}
+        placeholder={placeholder || "Type your answer..."}
         disabled={isLoading || disabled}
         rows={1}
-        className={cn(
-          "flex-1 resize-none overflow-hidden bg-gray-800 border border-gray-700 rounded-xl text-white placeholder:text-gray-500 px-4 py-3 text-sm focus:outline-none focus:border-purple-500 transition-colors disabled:opacity-50 leading-relaxed",
-          isRecordingPreview && "text-purple-300 italic border-red-500/50 bg-gray-800/60"
-        )}
-        style={{ minHeight: "44px", maxHeight: "160px" }}
+        className="flex-1 resize-none overflow-hidden bg-gray-800 border border-gray-700 rounded-xl text-white placeholder:text-gray-500 px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors disabled:opacity-50 leading-relaxed"
+        // font-size 16px prevents iOS Safari from zooming on focus
+        style={{ minHeight: "44px", maxHeight: "160px", fontSize: "16px" }}
       />
+
+      {/* Mic toggle — switches to voice mode */}
+      <button
+        type="button"
+        onClick={() => setVoiceMode(true)}
+        disabled={isLoading || disabled}
+        className="shrink-0 h-11 w-11 rounded-xl bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors disabled:opacity-40"
+        aria-label={language === "th" ? "เปลี่ยนเป็นโหมดเสียง" : "Switch to voice mode"}
+      >
+        <Mic className="h-4 w-4 text-gray-300" />
+      </button>
 
       <Button
         onClick={handleSend}
-        disabled={!value.trim() || isLoading || disabled || isRecordingPreview}
+        disabled={!value.trim() || isLoading || disabled}
         size="icon"
         className="bg-purple-600 hover:bg-purple-500 shrink-0 h-11 w-11 rounded-xl"
       >

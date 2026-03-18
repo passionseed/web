@@ -17,7 +17,7 @@ import type {
   InterviewQuestion,
 } from "@/types/expert-interview";
 
-type Step = "loading" | "chat" | "profile" | "mentoring" | "done" | "error";
+type Step = "loading" | "language-select" | "chat" | "profile" | "mentoring" | "done" | "error";
 
 interface SessionData {
   sessionId: string;
@@ -120,14 +120,16 @@ export default function ExpertInterviewPage() {
 
   const t = content[language];
 
-  const startSession = async () => {
+  const startSession = async (lang?: "en" | "th") => {
+    const selectedLang = lang ?? language;
+    if (lang) setLanguage(lang);
     setIsStarting(true);
     setErrorMessage(null);
     try {
       const response = await fetch("/api/expert-interview/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ website: honeypot, language }),
+        body: JSON.stringify({ website: honeypot, language: selectedLang }),
       });
       if (response.status === 429) { setErrorMessage(t.errorLimit); setStep("error"); return; }
       if (!response.ok) throw new Error("Failed to start session");
@@ -186,6 +188,57 @@ export default function ExpertInterviewPage() {
       setIsSubmitting(false);
     }
   };
+
+  // ── Language selection ────────────────────────────────────────────────────
+  if (step === "language-select") {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-6"
+        style={{ background: "linear-gradient(to bottom, #06000f 0%, #1a0336 40%, #3b0764 100%)" }}
+      >
+        <div className="w-full max-w-xs space-y-8 text-center">
+          <div className="space-y-2">
+            <p className="text-white text-2xl font-bold">Choose your language</p>
+            <p className="text-white/60 text-base">เลือกภาษาที่ต้องการ</p>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => startSession("en")}
+              disabled={isStarting}
+              className="w-full py-5 rounded-2xl bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.10] hover:border-white/[0.22] transition-all text-white text-lg font-semibold flex items-center justify-center gap-3 active:scale-[0.97]"
+            >
+              <span className="text-2xl">🇬🇧</span> English
+            </button>
+            <button
+              onClick={() => startSession("th")}
+              disabled={isStarting}
+              className="w-full py-5 rounded-2xl bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.10] hover:border-white/[0.22] transition-all text-white text-lg font-semibold flex items-center justify-center gap-3 active:scale-[0.97]"
+            >
+              <span className="text-2xl">🇹🇭</span> ภาษาไทย
+            </button>
+          </div>
+
+          {isStarting && (
+            <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
+              <div className="ei-loading-orbit">
+                <div className="ei-loading-planet" />
+                <div className="ei-loading-moon" />
+              </div>
+              <span>{t.startingBtn}</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => setStep("loading")}
+            className="text-sm text-gray-600 hover:text-gray-400 transition-colors"
+          >
+            ← Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── Chat ──────────────────────────────────────────────────────────────────
   if (step === "chat" && sessionData) {
@@ -388,18 +441,8 @@ export default function ExpertInterviewPage() {
                 ))}
               </div>
 
-              <button onClick={startSession} disabled={isStarting} className="ei-button-dusk">
-                {isStarting ? (
-                  <div className="flex items-center gap-2">
-                    <div className="ei-loading-orbit">
-                      <div className="ei-loading-planet" />
-                      <div className="ei-loading-moon" />
-                    </div>
-                    <span>{t.startingBtn}</span>
-                  </div>
-                ) : (
-                  t.startBtn
-                )}
+              <button onClick={() => setStep("language-select")} disabled={isStarting} className="ei-button-dusk">
+                {t.startBtn}
               </button>
             </section>
 
@@ -446,18 +489,8 @@ export default function ExpertInterviewPage() {
             <section className="max-w-3xl mx-auto px-4 py-16 border-t border-white/[0.06] text-center space-y-4">
               <p className="font-bold text-xl text-white">{t.bottomTitle}</p>
               <p className="text-sm text-gray-300/70">{t.bottomSubtitle}</p>
-              <button onClick={startSession} disabled={isStarting} className="ei-button-dusk">
-                {isStarting ? (
-                  <div className="flex items-center gap-2">
-                    <div className="ei-loading-orbit">
-                      <div className="ei-loading-planet" />
-                      <div className="ei-loading-moon" />
-                    </div>
-                    <span>{t.startingBtn}</span>
-                  </div>
-                ) : (
-                  t.startBtn
-                )}
+              <button onClick={() => setStep("language-select")} disabled={isStarting} className="ei-button-dusk">
+                {t.startBtn}
               </button>
               <p className="text-xs text-gray-500/60 pt-2">Passion Seed · {t.footer}</p>
             </section>

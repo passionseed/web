@@ -17,20 +17,24 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { language, setLanguage } = useLanguage();
 
   // Hide navbar for profile completion pages, hackathon page, beta page, and landing page
   // Landing page has its own header in LandingPageWrapper
-  const hideNavbar =
+  // Only compute after mount to avoid hydration mismatch (pathname is null on server)
+  const hideNavbar = mounted && (
     pathname === "/" ||
     pathname?.includes("finish-profile") ||
     pathname?.includes("complete-profile") ||
     pathname?.includes("hackathon") ||
     pathname?.includes("/app/beta") ||
-    pathname?.startsWith("/expert-interview");
+    pathname?.startsWith("/expert-interview")
+  );
 
   useEffect(() => {
+    setMounted(true);
     async function getUser() {
       try {
         const supabase = createClient();
