@@ -179,9 +179,10 @@ export function NPCAvatarSettings({ seedId }: NPCAvatarSettingsProps) {
                                         {/* SVG Preview */}
                                         <div className="w-20 h-20 rounded-lg border border-neutral-600 bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
                                             {avatar.svg_data ? (
-                                                <div
-                                                    dangerouslySetInnerHTML={{ __html: avatar.svg_data }}
-                                                    className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:object-contain"
+                                                <img
+                                                    src={`data:image/svg+xml;utf8,${encodeURIComponent(avatar.svg_data)}`}
+                                                    alt={avatar.name}
+                                                    className="w-full h-full object-contain"
                                                 />
                                             ) : (
                                                 <UserCircle className="w-10 h-10 text-neutral-400" />
