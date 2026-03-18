@@ -14,7 +14,8 @@ export type PathActivityType =
   | 'milestone'         // Major checkpoint
   | 'checkpoint'        // Progress check
   | 'journal_prompt'    // Writing exercise
-  | 'ai_chat';          // AI-powered chat with objective tracking
+  | 'ai_chat'           // AI-powered chat with objective tracking
+  | 'npc_dialogue';     // Interactive NPC conversation with branching paths
 
 export type PathContentType =
   // Inherited from nodes
@@ -31,7 +32,8 @@ export type PathContentType =
   | 'reflection_card'   // Guided reflection with prompts
   | 'emotion_check'     // Emotional state tracking
   | 'progress_snapshot' // Progress visualization
-  | 'ai_chat';          // AI chat with objective tracking
+  | 'ai_chat'           // AI chat with objective tracking
+  | 'npc_chat';         // Scripted conversation with NPCs (branching dialogue)
 
 export type PathAssessmentType =
   // Inherited from nodes
@@ -68,6 +70,8 @@ export interface PathActivity {
   display_order: number;
   estimated_minutes: number | null;
   is_required: boolean;
+  is_draft: boolean;
+  draft_reason: string | null;
   created_at: string;
   updated_at: string;
 
@@ -344,6 +348,7 @@ export type PathContentMetadata =
   | EmotionCheckMetadata
   | ProgressSnapshotMetadata
   | AIChatMetadata
+  | NPCChatMetadata
   | Record<string, any>;
 
 export interface DailyPromptMetadata {
@@ -370,6 +375,12 @@ export interface AIChatMetadata {
   completion_criteria?: string;       // Optional: How to detect completion
   model?: string;                     // AI model (default: "passion-6")
   max_messages?: number;              // Optional: Message limit
+}
+
+export interface NPCChatMetadata {
+  conversation_id: string;            // ID of the NPC conversation tree
+  allow_restart?: boolean;            // Allow user to restart conversation (default: false)
+  show_history?: boolean;             // Show conversation history (default: true)
 }
 
 /**
