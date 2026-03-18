@@ -136,27 +136,21 @@ export function LandingFeatures() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className={`ei-card group relative p-8 md:p-10 border ${step.borderColor} bg-gradient-to-br ${step.color}`}
+              className={`ei-card group relative p-6 md:p-8 border ${step.borderColor} bg-gradient-to-br ${step.color}`}
             >
-              <div className="flex flex-col md:flex-row items-start gap-8">
-                {/* Icon */}
-                <div
-                  className="flex-shrink-0"
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-                    <step.icon className={`h-7 w-7 ${step.iconColor}`} />
-                  </div>
-                </div>
+              <div className="flex items-start gap-4">
+                {/* Icon - inline, no box */}
+                <step.icon className={`h-6 w-6 ${step.iconColor} flex-shrink-0 mt-1`} />
 
                 {/* Content */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-3">
-                    <span className="text-sm font-mono text-gray-600">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-xs font-mono text-gray-500">
                       {step.number}
                     </span>
-                    <h3 className="text-2xl md:text-3xl font-bold text-white">{step.title}</h3>
+                    <h3 className="text-lg md:text-xl font-bold text-white">{step.title}</h3>
                   </div>
-                  <p className="text-gray-400 leading-relaxed text-base md:text-lg">
+                  <p className="text-gray-400 leading-relaxed text-sm md:text-base">
                     {step.description}
                   </p>
                 </div>

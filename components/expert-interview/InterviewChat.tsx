@@ -35,20 +35,34 @@ export function InterviewChat({
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // On iOS Safari, the software keyboard overlays fixed elements without resizing the viewport.
+  // Track the gap between the layout viewport and the visual viewport (= keyboard height on iOS,
+  // ~0 on Android Chrome where the viewport already resizes).
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardInset(kh);
+    };
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+
   const t = {
-    en: {
-      error: "Something went wrong. Please try again.",
-      hint: "Press Enter to send, Shift+Enter for new line"
-    },
-    th: {
-      error: "เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง",
-      hint: "กด Enter เพื่อส่ง, กด Shift+Enter เพื่อขึ้นบรรทัดใหม่"
-    }
+    en: { error: "Something went wrong. Please try again." },
+    th: { error: "เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง" },
   }[language];
 
+  // Scroll to bottom on new messages or when keyboard opens (content shifts)
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, keyboardInset]);
 
   const handleSend = async (message: string) => {
     if (isLoading) return;
@@ -73,13 +87,11 @@ export function InterviewChat({
           message,
           currentQuestionId,
           language,
-          conversationHistory: messages, // server adds the current message itself
+          conversationHistory: messages,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to process message");
-      }
+      if (!response.ok) throw new Error("Failed to process message");
 
       const data = await response.json();
 
@@ -106,11 +118,10 @@ export function InterviewChat({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Nav + progress */}
       <div className="shrink-0 border-b border-gray-800/60 bg-black/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4">
-          {/* Nav row */}
           <div className="flex items-center justify-between h-12">
             <span className="text-sm font-semibold text-white tracking-tight">
               PassionSeed <span className="text-gray-500 font-normal">· Expert Interview</span>
@@ -122,14 +133,13 @@ export function InterviewChat({
               {language === "en" ? "🇹🇭 TH" : "🇬🇧 EN"}
             </button>
           </div>
-          {/* Progress */}
           <div className="pb-3">
             <ProgressIndicator current={progress.current} total={progress.total} language={language} />
           </div>
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages — scrollable */}
       <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
           {messages.map((msg, idx) => (
@@ -154,11 +164,14 @@ export function InterviewChat({
         </div>
       </div>
 
-      {/* Input — gradient fade like ChatGPT */}
-      <div className="shrink-0 bg-gradient-to-t from-black from-60% to-transparent pt-6">
+      {/* Input area — paddingBottom lifts input above keyboard on iOS Safari */}
+      <div
+        className="shrink-0 bg-gradient-to-t from-black from-60% to-transparent pt-4"
+        style={{ paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
+      >
         <div
           className="max-w-3xl mx-auto px-4"
-          style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+          style={{ paddingBottom: keyboardInset > 0 ? "8px" : "max(16px, env(safe-area-inset-bottom))" }}
         >
           <ChatInput
             onSend={handleSend}
@@ -167,7 +180,6 @@ export function InterviewChat({
             placeholder={language === "th" ? "พิมพ์คำตอบของคุณ..." : "Type your answer..."}
             language={language}
           />
-          <p className="text-xs text-gray-600 mt-2 text-center">{t.hint}</p>
         </div>
       </div>
     </div>

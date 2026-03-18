@@ -76,6 +76,12 @@ export const metadata: Metadata = {
   title: "Passion Seed",
   description: "Discover and nurture your passions",
   manifest: "/manifest.json",
+  openGraph: {
+    type: "website",
+    title: "Passion Seed",
+    description: "Discover and nurture your passions",
+    siteName: "Passion Seed",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -10,11 +10,12 @@ interface HoldToTalkProps {
   onCommitted: (text: string) => void;
   disabled?: boolean;
   language?: string;
+  big?: boolean;
 }
 
 type ConnectionPhase = "idle" | "connecting" | "connected";
 
-export function HoldToTalk({ onPartial, onCommitted, disabled, language }: HoldToTalkProps) {
+export function HoldToTalk({ onPartial, onCommitted, disabled, language, big }: HoldToTalkProps) {
   // Stable callback refs — avoids stale closures inside useScribe
   const onPartialRef = useRef(onPartial);
   const onCommittedRef = useRef(onCommitted);
@@ -124,6 +125,42 @@ export function HoldToTalk({ onPartial, onCommitted, disabled, language }: HoldT
   }, [stopRecording]);
 
   const label = language === "th" ? "กดค้างเพื่อพูด" : "Hold to talk";
+
+  if (big) {
+    return (
+      <button
+        type="button"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        disabled={disabled}
+        className={cn(
+          "flex-1 h-20 rounded-2xl flex flex-col items-center justify-center gap-1.5 select-none touch-none transition-all duration-150",
+          isRecording
+            ? "bg-red-500 ring-4 ring-red-500/40 scale-[1.02]"
+            : "bg-gray-700 hover:bg-gray-600 active:scale-[0.98]",
+          disabled && "opacity-40 pointer-events-none"
+        )}
+        aria-label={label}
+        title={label}
+      >
+        <Mic
+          className={cn(
+            "text-white transition-all",
+            isRecording ? "h-7 w-7 animate-pulse" : "h-6 w-6 text-gray-200"
+          )}
+        />
+        <span className={cn(
+          "text-xs font-medium tracking-wide",
+          isRecording ? "text-red-100" : "text-gray-300"
+        )}>
+          {isRecording
+            ? (language === "th" ? "กำลังฟัง..." : "Listening...")
+            : label}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <button
