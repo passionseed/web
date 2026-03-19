@@ -2,3 +2,7 @@
 **Vulnerability:** The codebase used a custom regex-based implementation (`lib/security/sanitize-html.ts`) for HTML sanitization, which is fragile and prone to XSS bypasses (e.g. unquoted attributes).
 **Learning:** Developers often underestimate the complexity of HTML parsing. Relying on custom regex creates a false sense of security.
 **Prevention:** Always use established, battle-tested libraries like `isomorphic-dompurify` for HTML sanitization. Ensure `jsdom` is added as a production dependency for `isomorphic-dompurify` to work correctly in SSR environments.
+## 2025-03-19 - XSS Vulnerability in SVG Render
+**Vulnerability:** User-provided SVG payload could be directly injected into the DOM via `dangerouslySetInnerHTML`, leading to Stored Cross-Site Scripting (XSS) via embedded `<script>` tags or inline `onload` event handlers.
+**Learning:** Third-party syntax highlighters (like `Prism.highlight`) provide syntax highlighting but their output is inherently untrusted. While they escape `<` and `>`, they might still generate unexpected output, making defense-in-depth sanitization necessary before using `dangerouslySetInnerHTML`.
+**Prevention:** Always encode user-provided SVG strings as a data URI (`data:image/svg+xml;charset=utf-8,...`) and render them securely using the `src` attribute of an `<img>` tag. This natively prevents execution of malicious embedded scripts by the browser. Additionally, always sanitize third-party formatting output with tools like `sanitizeHtml` allowing only safe tags/attributes like `span` and `class`.
