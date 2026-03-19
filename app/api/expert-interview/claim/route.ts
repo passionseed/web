@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (error || !profile) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.com";
+    const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.org";
     return NextResponse.redirect(`${appUrl}/expert-interview/claimed?error=invalid_token`);
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.com";
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.org";
   const redirectTo = `${appUrl}/expert-interview/claimed?profileId=${profile.id}`;
 
   // Generate a magic link for the expert to log in

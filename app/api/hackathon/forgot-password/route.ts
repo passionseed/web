@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
     const token = generateSessionToken();
     await createPasswordResetToken(participant.id, token);
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/hackathon/reset-password?token=${token}`;
+    const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.org";
+    const resetUrl = `${appUrl}/hackathon/reset-password?token=${token}`;
 
     // Send email if Resend is configured
     if (resend) {
