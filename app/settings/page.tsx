@@ -10,7 +10,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import {
   User,
@@ -22,6 +40,9 @@ import {
   Moon,
   Sun,
   Laptop,
+  Lock,
+  Loader2,
+  Key,
 } from "lucide-react";
 import { LanguagePicker } from "@/components/language-picker";
 import { useTheme } from "next-themes";
@@ -47,12 +68,29 @@ const translations = {
       },
       account: {
         title: "Account",
-        desc: "Security and data settings (Coming Soon)",
+        desc: "Change your password and manage security settings",
       },
       notifications: {
         title: "Notifications",
         desc: "Manage your alerts (Coming Soon)",
       },
+    },
+    changePassword: {
+      title: "Change Password",
+      description: "Enter your new password below.",
+      currentPassword: "Current Password",
+      newPassword: "New Password",
+      confirmPassword: "Confirm New Password",
+      currentPlaceholder: "Enter current password",
+      newPlaceholder: "Enter new password",
+      confirmPlaceholder: "Confirm new password",
+      submit: "Update Password",
+      submitting: "Updating...",
+      success: "Password updated successfully!",
+      error: "Failed to update password. Please try again.",
+      passwordMismatch: "Passwords do not match",
+      passwordTooShort: "Password must be at least 6 characters",
+      incorrectPassword: "Current password is incorrect",
     },
   },
   th: {
@@ -71,12 +109,29 @@ const translations = {
       },
       account: {
         title: "บัญชี",
-        desc: "การตั้งค่าความปลอดภัยและข้อมูล (เร็วๆ นี้)",
+        desc: "เปลี่ยนรหัสผ่านและจัดการการตั้งค่าความปลอดภัย",
       },
       notifications: {
         title: "การแจ้งเตือน",
         desc: "จัดการการแจ้งเตือนของคุณ (เร็วๆ นี้)",
       },
+    },
+    changePassword: {
+      title: "เปลี่ยนรหัสผ่าน",
+      description: "กรุณากรอกรหัสผ่านใหม่ของคุณ",
+      currentPassword: "รหัสผ่านปัจจุบัน",
+      newPassword: "รหัสผ่านใหม่",
+      confirmPassword: "ยืนยันรหัสผ่านใหม่",
+      currentPlaceholder: "กรอกรหัสผ่านปัจจุบัน",
+      newPlaceholder: "กรอกรหัสผ่านใหม่",
+      confirmPlaceholder: "ยืนยันรหัสผ่านใหม่",
+      submit: "อัปเดตรหัสผ่าน",
+      submitting: "กำลังอัปเดต...",
+      success: "อัปเดตรหัสผ่านสำเร็จ!",
+      error: "ไม่สามารถอัปเดตรหัสผ่านได้ กรุณาลองอีกครั้ง",
+      passwordMismatch: "รหัสผ่านไม่ตรงกัน",
+      passwordTooShort: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร",
+      incorrectPassword: "รหัสผ่านปัจจุบันไม่ถูกต้อง",
     },
   },
 };
@@ -88,6 +143,15 @@ export default function SettingsPage() {
   const t = translations[language] || translations["en"];
   const [mounted, setMounted] = useState(false);
   const supabase = createClient();
+
+  // Password change state
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -105,6 +169,47 @@ export default function SettingsPage() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+
+    if (newPassword.length < 6) {
+      setPasswordError(t.changePassword.passwordTooShort);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t.changePassword.passwordMismatch);
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      // Update password directly (user is already authenticated)
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        setPasswordError(t.changePassword.error);
+      } else {
+        setPasswordSuccess(true);
+        setTimeout(() => {
+          setPasswordDialogOpen(false);
+          setPasswordSuccess(false);
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+        }, 2000);
+      }
+    } catch {
+      setPasswordError(t.changePassword.error);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   const settingsSections = [
     {
       title: t.sections.profile.title,
@@ -113,7 +218,6 @@ export default function SettingsPage() {
       href: "/profile",
       color: "text-blue-500",
     },
-    // Account and Notifications are placeholders for now
   ];
 
   return (
@@ -215,22 +319,87 @@ export default function SettingsPage() {
             </Link>
           ))}
 
-          {/* Placeholder for Account */}
-          <Card className="h-full opacity-60">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xl font-medium">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-green-500" />
-                  {t.sections.account.title}
+          {/* Account - Password Change */}
+          <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+            <DialogTrigger asChild>
+              <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer border-2 hover:border-primary/20">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xl font-medium">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-green-500" />
+                      {t.sections.account.title}
+                    </div>
+                  </CardTitle>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">
+                    {t.sections.account.desc}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5" />
+                  {t.changePassword.title}
+                </DialogTitle>
+                <DialogDescription>
+                  {t.changePassword.description}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">{t.changePassword.newPassword}</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    placeholder={t.changePassword.newPlaceholder}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-base">
-                {t.sections.account.desc}
-              </CardDescription>
-            </CardContent>
-          </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">{t.changePassword.confirmPassword}</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder={t.changePassword.confirmPlaceholder}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                {passwordError && (
+                  <p className="text-sm text-red-500">{passwordError}</p>
+                )}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setPasswordDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={passwordLoading || !newPassword || !confirmPassword}
+                  >
+                    {passwordLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t.changePassword.submitting}
+                      </>
+                    ) : (
+                      t.changePassword.submit
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           {/* Placeholder for Notifications */}
           <Card className="h-full opacity-60">
@@ -250,6 +419,23 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Success Dialog */}
+      <AlertDialog open={passwordSuccess} onOpenChange={setPasswordSuccess}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.changePassword.success}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your password has been updated successfully.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setPasswordSuccess(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

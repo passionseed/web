@@ -12,6 +12,7 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { SiDiscord, SiGoogle } from "@icons-pack/react-simple-icons";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export function LoginForm() {
   const { toast } = useToast();
@@ -88,6 +89,19 @@ export function LoginForm() {
         </div>
 
         {/* Email/password login temporarily disabled */}
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-white/20" />
+          </div>
+        </div>
+
+        <Link
+          href="/forgot-password"
+          className="text-sm text-white/60 hover:text-white text-center block transition-colors"
+        >
+          Forgot your password?
+        </Link>
       </CardContent>
       <CardFooter>
         <p className="text-xs text-white/70 text-center w-full">

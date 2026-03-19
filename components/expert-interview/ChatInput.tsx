@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Send, Loader2, Mic, X } from "lucide-react";
 import { HoldToTalk } from "./HoldToTalk";
 import { cn } from "@/lib/utils";
+import type { ChatMessage } from "@/types/expert-interview";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -12,9 +13,17 @@ interface ChatInputProps {
   disabled?: boolean;
   placeholder?: string;
   language?: string;
+  messages?: ChatMessage[];
 }
 
-export function ChatInput({ onSend, isLoading, disabled, placeholder, language }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  isLoading,
+  disabled,
+  placeholder,
+  language,
+  messages = [],
+}: ChatInputProps) {
   const [value, setValue] = useState("");
   const [liveTranscript, setLiveTranscript] = useState<string | null>(null);
   const [voiceMode, setVoiceMode] = useState(false);
@@ -45,10 +54,21 @@ export function ChatInput({ onSend, isLoading, disabled, placeholder, language }
 
   const handlePartial = (text: string) => setLiveTranscript(text);
 
-  const handleCommitted = (text: string) => {
+  const handleTranscribed = (text: string) => {
     setLiveTranscript(null);
-    if (text.trim()) onSend(text.trim());
+    setVoiceMode(false);
+    if (text.trim()) {
+      setValue(text.trim());
+      // Focus textarea after a brief delay to allow mode switch
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    }
   };
+
+  // Convert messages to the format expected by HoldToTalk
+  const chatHistory = messages.map((msg) => ({
+    role: msg.role as "user" | "assistant",
+    content: msg.content,
+  }));
 
   // ── Voice mode ────────────────────────────────────────────────────────────
   if (voiceMode) {
@@ -75,7 +95,10 @@ export function ChatInput({ onSend, isLoading, disabled, placeholder, language }
         <div className="flex items-stretch gap-3">
           <button
             type="button"
-            onClick={() => { setLiveTranscript(null); setVoiceMode(false); }}
+            onClick={() => {
+              setLiveTranscript(null);
+              setVoiceMode(false);
+            }}
             className="shrink-0 w-14 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
             aria-label={language === "th" ? "กลับไปพิมพ์" : "Switch to text"}
           >
@@ -83,9 +106,10 @@ export function ChatInput({ onSend, isLoading, disabled, placeholder, language }
           </button>
           <HoldToTalk
             onPartial={handlePartial}
-            onCommitted={handleCommitted}
+            onTranscribed={handleTranscribed}
             disabled={isLoading || disabled}
             language={language}
+            chatHistory={chatHistory}
             big
           />
         </div>

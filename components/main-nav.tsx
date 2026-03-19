@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { checkClientAuth } from "@/lib/supabase/auth-client";
 import {
   Sheet,
@@ -12,8 +13,21 @@ import {
   VisuallyHidden,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Globe } from "lucide-react";
+import { Menu, Globe, X, Compass, Map, Users, BookOpen, Sprout, User, Wrench } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/language-context";
+
+const navItems = [
+  { href: "/about", label: { en: "About", th: "เกี่ยวกับ" }, icon: Compass },
+  { href: "/map", label: { en: "Maps", th: "แผนที่" }, icon: Map },
+  { href: "/classrooms", label: { en: "Classrooms", th: "ห้องเรียน" }, icon: BookOpen },
+  { href: "/teams", label: { en: "Teams", th: "ทีม" }, icon: Users },
+  { href: "/seeds", label: { en: "Seeds", th: "Seeds" }, icon: Sprout },
+  { href: "/me", label: { en: "My Journey", th: "เส้นทางของฉัน" }, icon: User },
+];
+
+// Easing curves from design system
+const EASE_TENSION = [0.05, 0.7, 0.35, 0.99];
+const EASE_SPRING = [0.34, 1.56, 0.64, 1];
 
 export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,6 +60,10 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
     setLanguage(language === "en" ? "th" : "en");
   };
 
+  const handleNavClick = () => {
+    setMenuOpen(false);
+  };
+
   return (
     <div className="relative flex items-center justify-between w-full sm:px-4 lg:px-8 min-h-16">
       {/* Logo and Hamburger */}
@@ -54,83 +72,156 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
           <SheetTrigger asChild>
             <Button
               variant="ghost"
-              className="md:hidden p-2 rounded focus:outline-none text-gray-400 hover:text-white"
+              className="md:hidden p-2 rounded-lg focus:outline-none text-white/60 hover:text-white hover:bg-white/[0.08] transition-all duration-200"
               aria-label="Toggle menu"
               suppressHydrationWarning
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-full sm:w-3/4 bg-[#0d0d0d] border-white/[0.06]">
+          <SheetContent 
+            side="left" 
+            className="w-[280px] sm:w-[320px] border-r border-white/[0.06] bg-gradient-to-b from-[#1a0a2e] via-[#2d1449] to-[#0d0d0d] p-0 [&>button]:hidden"
+          >
             <VisuallyHidden.Root>
               <SheetTitle>Menu</SheetTitle>
             </VisuallyHidden.Root>
-            <nav className="flex flex-col space-y-4 pt-10">
+            
+            {/* Menu Header with Close */}
+            <div className="flex items-center justify-between p-4 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/passionseed-logo.svg"
+                  alt="Passion Seed Logo"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6 object-contain"
+                />
+                <span className="font-bold text-sm text-white">
+                  Passion Seed
+                </span>
+              </div>
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] transition-all duration-200"
+                aria-label="Close menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Menu Content */}
+            <nav className="flex flex-col p-3 gap-1">
               {isAuthenticated && (
                 <>
-                  <Link
-                    href="/about"
-                    className="text-lg font-medium transition-colors hover:text-white py-2 px-4 rounded-md text-gray-300"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    About
-                  </Link>
-                  <Link
-                    href="/map"
-                    className="text-lg font-medium transition-colors hover:text-white py-2 px-4 rounded-md text-gray-300"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Maps
-                  </Link>
-                  <Link
-                    href="/classrooms"
-                    className="text-lg font-medium transition-colors hover:text-white py-2 px-4 rounded-md text-gray-300"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Classroom
-                  </Link>
-                  <Link
-                    href="/teams"
-                    className="text-lg font-medium transition-colors hover:text-white py-2 px-4 rounded-md text-gray-300"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Teams
-                  </Link>
-                  <a
-                    href="/seeds"
-                    className="text-lg font-medium transition-colors hover:text-white py-2 px-4 rounded-md cursor-pointer text-gray-300"
-                    onClick={handleSeedsClick}
-                  >
-                    Seeds
-                  </a>
-                  <Link
-                    href="/me"
-                    className="text-lg font-medium transition-colors hover:text-white py-2 px-4 rounded-md text-gray-300"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    My Journey
-                  </Link>
-                  {hasBuildAccess && (
-                    <Link
-                      href="/build"
-                      className="text-lg font-medium transition-colors hover:text-white py-2 px-4 rounded-md text-gray-300"
-                      onClick={() => setMenuOpen(false)}
+                  {/* Welcome text */}
+                  <div className="px-3 py-2 mb-2">
+                    <p className="text-xs text-white/40 uppercase tracking-wider font-medium">
+                      {language === 'th' ? 'การนำทาง' : 'Navigation'}
+                    </p>
+                  </div>
+                  
+                  {/* Nav items with icons */}
+                  {navItems.map((item, index) => (
+                    <motion.div
+                      key={item.href}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ 
+                        delay: index * 0.05, 
+                        duration: 0.3, 
+                        ease: EASE_TENSION 
+                      }}
                     >
-                      Build
-                    </Link>
+                      {item.href === "/seeds" ? (
+                        <a
+                          href="/seeds"
+                          onClick={(e) => {
+                            handleSeedsClick(e);
+                            handleNavClick();
+                          }}
+                          className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center group-hover:border-white/[0.12] group-hover:bg-white/[0.08] transition-all duration-200">
+                            <item.icon className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <span className="text-sm font-medium">
+                            {item.label[language]}
+                          </span>
+                        </a>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={handleNavClick}
+                          className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center group-hover:border-white/[0.12] group-hover:bg-white/[0.08] transition-all duration-200">
+                            <item.icon className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <span className="text-sm font-medium">
+                            {item.label[language]}
+                          </span>
+                        </Link>
+                      )}
+                    </motion.div>
+                  ))}
+
+                  {/* Build link for team members */}
+                  {hasBuildAccess && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ 
+                        delay: navItems.length * 0.05, 
+                        duration: 0.3, 
+                        ease: EASE_TENSION 
+                      }}
+                    >
+                      <Link
+                        href="/build"
+                        onClick={handleNavClick}
+                        className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center group-hover:border-white/[0.12] group-hover:bg-white/[0.08] transition-all duration-200">
+                          <Wrench className="w-4 h-4 text-violet-400" />
+                        </div>
+                        <span className="text-sm font-medium">
+                          {language === 'th' ? 'สร้าง' : 'Build'}
+                        </span>
+                      </Link>
+                    </motion.div>
                   )}
-                  <div className="h-px bg-white/10 my-4" />
+
+                  <div className="h-px bg-white/[0.06] my-3" />
                 </>
               )}
-              {/* Language toggle in mobile menu */}
+
+              {/* Language toggle */}
+              <div className="px-3 py-2 mb-2">
+                <p className="text-xs text-white/40 uppercase tracking-wider font-medium">
+                  {language === 'th' ? 'ภาษา' : 'Language'}
+                </p>
+              </div>
               <button
                 onClick={toggleLanguage}
-                className="flex items-center gap-2 text-lg font-medium transition-colors hover:text-white py-2 px-4 rounded-md text-gray-300"
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
               >
-                <Globe className="w-5 h-5" />
-                {language === "en" ? "ภาษาไทย" : "English"}
+                <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center group-hover:border-white/[0.12] group-hover:bg-white/[0.08] transition-all duration-200">
+                  <Globe className="w-4 h-4 text-emerald-400" />
+                </div>
+                <span className="text-sm font-medium">
+                  {language === "en" ? "ภาษาไทย" : "English"}
+                </span>
+                <span className="ml-auto text-[10px] text-white/30 px-2 py-0.5 rounded-full bg-white/[0.05]">
+                  {language.toUpperCase()}
+                </span>
               </button>
             </nav>
+
+            {/* Bottom glow effect - atmospheric */}
+            <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-500/5 via-transparent to-transparent" />
+            </div>
           </SheetContent>
         </Sheet>
         <Link href="/" className="flex items-center space-x-2 min-w-0">

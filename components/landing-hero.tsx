@@ -63,7 +63,7 @@ export function LandingHero() {
   const t = content[language];
 
   return (
-    <section className="relative w-full min-h-[calc(100vh-var(--landing-header-offset,6.5rem))] flex flex-col items-center justify-center overflow-hidden pt-8 sm:pt-12">
+    <section className="relative w-full min-h-[calc(100vh-var(--landing-header-offset,6.5rem))] flex flex-col items-center justify-center overflow-hidden pt-12 sm:pt-16">
       {/* Animated background with sunrise gradient */}
       <HeroBackground />
 
@@ -155,56 +155,9 @@ export function LandingHero() {
           </div>
         </div>
 
-        {/* Social proof / trust indicator - Thai universities */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-12 lg:mt-16 flex flex-col items-center gap-4"
-        >
-          <p className="text-xs sm:text-sm text-amber-200/50 font-medium">
-            {language === "th"
-              ? "นักเรียนจากมหาวิทยาลัยชั้นนำ"
-              : "Students from top universities"}
-          </p>
-          <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 opacity-70">
-            <div className="relative w-10 h-10 sm:w-12 sm:h-12 grayscale hover:grayscale-0 transition-all duration-300">
-              <Image
-                src="/universities/chula-logo.png"
-                alt="Chulalongkorn University"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="relative w-10 h-10 sm:w-12 sm:h-12 grayscale hover:grayscale-0 transition-all duration-300">
-              <Image
-                src="/universities/tu-logo.png"
-                alt="Thammasat University"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="relative w-10 h-10 sm:w-12 sm:h-12 grayscale hover:grayscale-0 transition-all duration-300">
-              <Image
-                src="/universities/KU-logo.jpg"
-                alt="Kasetsart University"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="relative w-10 h-10 sm:w-12 sm:h-12 grayscale hover:grayscale-0 transition-all duration-300">
-              <Image
-                src="/universities/kmutt-logo.png"
-                alt="KMUTT"
-                fill
-                className="object-contain"
-              />
-            </div>
-          </div>
-        </motion.div>
+        {/* Scroll indicator - desktop only */}
       </div>
 
-      {/* Scroll indicator - desktop only */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
