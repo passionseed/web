@@ -35,6 +35,7 @@ import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
+import { sanitizeHtml } from "@/lib/security/sanitize-html";
 
 // --- Types ---
 interface OrderCodeActivityProps {
@@ -162,20 +163,22 @@ function SortableItem({
     };
 
     const highlightedHeader = useMemo(() => {
-        return Prism.highlight(
+        const highlighted = Prism.highlight(
             item.content,
             Prism.languages.typescript || Prism.languages.javascript,
             "typescript"
         );
+        return sanitizeHtml(highlighted);
     }, [item.content]);
 
     const highlightedFooter = useMemo(() => {
         if (!item.footer) return "";
-        return Prism.highlight(
+        const highlighted = Prism.highlight(
             item.footer,
             Prism.languages.typescript || Prism.languages.javascript,
             "typescript"
         );
+        return sanitizeHtml(highlighted);
     }, [item.footer]);
 
     return (

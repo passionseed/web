@@ -206,9 +206,10 @@ export function NPCConversation({
     }
 
     return (
-      <div
-        className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg"
-        dangerouslySetInnerHTML={{ __html: avatar.svg_data }}
+      <img
+        src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(avatar.svg_data)}`}
+        alt="NPC avatar"
+        className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg object-contain bg-white"
       />
     );
   };
