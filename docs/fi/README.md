@@ -155,7 +155,7 @@ Our proprietary system that:
 | Feb 2026 | Alpha testing with 50 students | ✅ |
 | Feb 2026 | Mentor Idea Review - PASSED | ✅ |
 | Mar 2026 | Founder in SF (3 months) | 🔵 Current |
-| Mar 2026 | Build AI Quest Generator MVP | 🔵 In Progress |
+| Mar 2026 | Build Portfolio Grader + PathLab MVP | 🔵 In Progress |
 | Apr 2026 | First paying customers | ⏳ |
 | May 2026 | Pilot launch in 3 Bangkok schools | ⏳ |
 | Jun 2026 | Vietnam expansion pilot | ⏳ |
@@ -170,7 +170,7 @@ Our proprietary system that:
 - Technical co-founder - AI & Engineering
 
 ### Advisors
-- **Kirk** - https://www.linkedin.com/in/kirkjaa/
+- **Kirk Pathumanun** - EdTech & AI Transformation (duPhonics, Quest Edtech) - https://www.linkedin.com/in/kirkjaa/
 
 ### Working Group: Orange
 - Ja Rawikarn Dechdi

@@ -60,11 +60,9 @@ $500K - $1M seed round for SEA expansion
 ## Product Flow
 
 ```
-Events/Hackathons → Portfolio Building → Grading Engine → Acceptance Probability
-                                              ↓
-                           PathLab (for undecided students)
-                                              ↓
-                           Ikigai + Future Adaptability Matching
+Events/Hackathons + Portfolio Grader → Test Careers → Reflect → Find Ikigai → Plan Future
+         ↓
+   Students build portfolios, get graded, explore careers, discover themselves, plan their path
 ```
 
 ---
@@ -78,3 +76,4 @@ Events/Hackathons → Portfolio Building → Grading Engine → Acceptance Proba
 | Team formation rate | 66% | 75% |
 | Portfolio submissions | TBD | 500/month |
 | Grading accuracy | TBD | 85%+ |
+| Career tests completed | TBD | 1,000/month |

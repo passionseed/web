@@ -88,7 +88,14 @@
 ### Confirmed Advisors
 | Name | Expertise | LinkedIn | Status |
 |------|-----------|----------|--------|
-| Kirk | TBD | https://www.linkedin.com/in/kirkjaa/ | ✅ Confirmed |
+| Kirk Pathumanun | EdTech, AI Transformation, Venture Building | https://www.linkedin.com/in/kirkjaa/ | ✅ Confirmed |
+
+**Kirk's Background**:
+- Founder, duPhonics (5+ years) - EdTech
+- CEO & Co-Founder, Quest Edtech (7+ years)
+- CSO, SSL Logistics - AI Transformation, Korea/Japan expansion
+- 25 years experience in fintech & EdTech
+- Based in Bangkok, Thailand
 
 ### Target Advisors (Outreach Pending)
 | Name | Category | Company | Connector |

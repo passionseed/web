@@ -17,6 +17,7 @@ export interface ProfileData {
   email: string;
   photoUrl: string;
   dataConsentAgreed: boolean;
+  impactUpdatesOptIn: boolean;
 }
 
 interface ProfileFormProps {
@@ -37,6 +38,7 @@ export function ProfileForm({ onSubmit, isLoading, sessionId }: ProfileFormProps
     email: "",
     photoUrl: "",
     dataConsentAgreed: false,
+    impactUpdatesOptIn: false,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileData, string>>>({});
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -64,6 +66,7 @@ export function ProfileForm({ onSubmit, isLoading, sessionId }: ProfileFormProps
       photoHint: "PNG, JPG up to 5MB",
       photoRemove: "Remove photo",
       consentLabel: "I agree that PassionSeed may use my interview and LinkedIn information to create career exploration content for students and the next generation.",
+      impactLabel: "Keep me updated on how my story impacts students and the next generation.",
       continue: "Continue",
       saving: "Saving...",
       reqName: "Name is required",
@@ -97,6 +100,7 @@ export function ProfileForm({ onSubmit, isLoading, sessionId }: ProfileFormProps
       photoHint: "PNG, JPG ขนาดสูงสุด 5MB",
       photoRemove: "ลบรูปภาพ",
       consentLabel: "ฉันยินยอมให้ PassionSeed ใช้การสัมภาษณ์และข้อมูล LinkedIn ของฉันเพื่อสร้างเนื้อหาการสำรวจอาชีพสำหรับนักเรียนและคนรุ่นต่อไป",
+      impactLabel: "อยากรับข่าวสารเกี่ยวกับผลกระทบที่เรื่องของฉันมีต่อนักเรียนและคนรุ่นต่อไป",
       continue: "ดำเนินการต่อ",
       saving: "กำลังบันทึก...",
       reqName: "กรุณาระบุชื่อ",
@@ -345,6 +349,21 @@ export function ProfileForm({ onSubmit, isLoading, sessionId }: ProfileFormProps
           </Label>
         </div>
         {errors.dataConsentAgreed && <p className="text-xs text-red-400">{errors.dataConsentAgreed}</p>}
+      </div>
+
+      {/* Impact updates opt-in */}
+      <div className="flex items-start gap-3 p-4 bg-purple-900/20 border border-purple-700/40 rounded-xl">
+        <Checkbox
+          id="impactUpdates"
+          checked={data.impactUpdatesOptIn}
+          onCheckedChange={(checked) => {
+            setData((prev) => ({ ...prev, impactUpdatesOptIn: !!checked }));
+          }}
+          className="mt-0.5 border-purple-500 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+        />
+        <Label htmlFor="impactUpdates" className="text-sm text-purple-200 cursor-pointer leading-relaxed">
+          {t.impactLabel}
+        </Label>
       </div>
 
       <Button

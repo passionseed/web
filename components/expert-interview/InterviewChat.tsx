@@ -10,12 +10,14 @@ import type {
   ExtractedCareerData,
   InterviewProgress,
   InterviewQuestion,
+  InterviewType,
 } from "@/types/expert-interview";
 
 interface InterviewChatProps {
   sessionId: string;
   firstQuestion: InterviewQuestion;
   initialProgress: InterviewProgress;
+  interviewType?: InterviewType;
   onComplete: (extractedData: ExtractedCareerData, transcript: ChatMessageType[]) => void;
 }
 
@@ -23,6 +25,7 @@ export function InterviewChat({
   sessionId,
   firstQuestion,
   initialProgress,
+  interviewType = "expert",
   onComplete,
 }: InterviewChatProps) {
   const { language, setLanguage } = useLanguage();
@@ -87,6 +90,7 @@ export function InterviewChat({
           message,
           currentQuestionId,
           language,
+          interviewType,
           conversationHistory: messages,
         }),
       });

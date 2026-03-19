@@ -22,6 +22,7 @@ const submitSchema = z.object({
     email: z.string().email().max(320),
     photoUrl: z.string().url().optional().or(z.literal("")),
     dataConsentAgreed: z.boolean(),
+    impactUpdatesOptIn: z.boolean().optional().default(false),
   }),
   mentoring: z.object({
     preference: z.enum(["none", "free", "paid"]),
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
         email: profile.email.trim().toLowerCase(),
         photo_url: sanitizeUrl(profile.photoUrl) ?? null,
         data_consent_agreed: profile.dataConsentAgreed,
+        impact_updates_opt_in: profile.impactUpdatesOptIn,
         claim_token: claimToken,
         claim_token_expires_at: claimTokenExpiresAt,
         interview_data: interviewData,
