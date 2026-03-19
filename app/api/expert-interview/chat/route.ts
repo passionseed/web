@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processInterviewMessage } from "@/lib/expert-interview/chat-service";
 import { z } from "zod";
-import type { ChatMessage } from "@/types/expert-interview";
+import type { ChatMessage, InterviewType } from "@/types/expert-interview";
 
 const requestSchema = z.object({
   sessionId: z.string().min(1),
   message: z.string().min(1).max(3000),
   currentQuestionId: z.string().nullable().optional(),
   language: z.enum(["en", "th"]).optional().default("en"),
+  interviewType: z.enum(["expert", "student"]).optional().default("expert"),
   conversationHistory: z
     .array(
       z.object({
@@ -32,13 +33,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { message, currentQuestionId, conversationHistory, language } = parsed.data;
+    const { message, currentQuestionId, conversationHistory, language, interviewType } = parsed.data;
 
     const result = await processInterviewMessage(
       message,
       currentQuestionId ?? null,
       conversationHistory as ChatMessage[],
-      language
+      language,
+      interviewType as InterviewType
     );
 
     return NextResponse.json(result);

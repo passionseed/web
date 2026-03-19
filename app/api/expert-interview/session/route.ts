@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/expert-interview/rate-limiter";
 import { getFirstQuestion, getTotalQuestions } from "@/lib/expert-interview/chat-service";
+import type { InterviewType } from "@/types/expert-interview";
 import crypto from "crypto";
 
 function getClientIp(request: NextRequest): string {
@@ -16,14 +17,15 @@ export async function POST(request: NextRequest) {
     console.log("[expert-interview/session] Starting session creation");
     const body = await request.json().catch(() => ({}));
     const language = body.language === "th" ? "th" : "en";
-    console.log("[expert-interview/session] Language:", language);
+    const interviewType: InterviewType = body.type === "student" ? "student" : "expert";
+    console.log("[expert-interview/session] Language:", language, "Type:", interviewType);
 
     // Honeypot check
     if (body.website && body.website.trim() !== "") {
       console.log("[expert-interview/session] Honeypot triggered");
       return NextResponse.json({
         sessionId: "hp-" + crypto.randomUUID(),
-        firstQuestion: getFirstQuestion(language),
+        firstQuestion: getFirstQuestion(language, interviewType),
         progress: { current: 1, total: getTotalQuestions() },
       });
     }
@@ -51,8 +53,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       sessionId,
-      firstQuestion: getFirstQuestion(language),
+      firstQuestion: getFirstQuestion(language, interviewType),
       progress: { current: 1, total: getTotalQuestions() },
+      interviewType,
     });
   } catch (error) {
     console.error("[expert-interview/session] failed", error);

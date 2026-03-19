@@ -1,6 +1,7 @@
 export type MentoringPreference = "none" | "free" | "paid";
 export type ExpertStatus = "pending" | "approved" | "rejected" | "claimed";
 export type GenerationStatus = "pending" | "generating" | "completed" | "failed";
+export type InterviewType = "expert" | "student";
 
 export interface ChatMessage {
   role: "user" | "assistant";

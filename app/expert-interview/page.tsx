@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { InterviewChat } from "@/components/expert-interview/InterviewChat";
 import { ProfileForm, type ProfileData } from "@/components/expert-interview/ProfileForm";
 import { MentoringOptIn, type MentoringData } from "@/components/expert-interview/MentoringOptIn";
@@ -15,6 +16,7 @@ import type {
   ExtractedCareerData,
   InterviewProgress,
   InterviewQuestion,
+  InterviewType,
 } from "@/types/expert-interview";
 
 type Step = "loading" | "language-select" | "chat" | "profile" | "mentoring" | "done" | "error";
@@ -23,6 +25,7 @@ interface SessionData {
   sessionId: string;
   firstQuestion: InterviewQuestion;
   progress: InterviewProgress;
+  interviewType: InterviewType;
 }
 
 // Rising embers — fixed layout so they don't re-randomise on re-render
@@ -40,6 +43,9 @@ const EMBERS = [
 ] as const;
 
 export default function ExpertInterviewPage() {
+  const searchParams = useSearchParams();
+  const interviewType: InterviewType = searchParams.get("type") === "student" ? "student" : "expert";
+  
   const [step, setStep] = useState<Step>("loading");
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedCareerData | null>(null);
@@ -65,58 +71,116 @@ export default function ExpertInterviewPage() {
     return () => observer.disconnect();
   }, [step]);
 
-  const content = {
+  // Expert content (industry professionals)
+  const expertContent = {
     en: {
-      title: "Your story can change\na student's future",
-      subtitle: "You've walked a path that students are trying to find. Share it in 10 minutes — we'll turn it into a career exploration they can actually experience.",
-      stat1Title: "10 minutes",   stat1Desc: "One conversation, at your pace",
-      stat2Title: "Your credit",  stat2Desc: "Your name on every PathLab we build",
-      stat3Title: "Real students", stat3Desc: "Exploring your exact career path",
-      startBtn: "Start the interview", startingBtn: "Starting...",
-      why1Title: "Give back what you were given",
-      why1Body: "Someone opened a door for you once — a mentor, a chance conversation, a story that clicked. This is your chance to be that person for someone who hasn't found their path yet.",
-      why2Title: "Leave something that lasts",
-      why2Body: "Your interview becomes a 5-day curriculum. Your name stays on it permanently. Long after the conversation, students are still discovering your career through your story.",
-      why3Title: "10 minutes. Real impact.",
-      why3Body: "We know your time matters. That's exactly why we built this as a conversation, not a form. Answer 8 questions naturally, and we do the rest.",
+      title: "Help students discover\nif your career fits them",
+      subtitle: "Tell us what your job is really like — the boring parts, the hard parts, the moments that make it worth it. 10 minutes, 8 questions.",
+      stat1Title: "10 min",   stat1Desc: "One conversation",
+      stat2Title: "Your name",  stat2Desc: "On every quest we build",
+      stat3Title: "Real impact", stat3Desc: "Students explore your career",
+      startBtn: "Start", startingBtn: "Starting...",
+      why1Title: "Students need the real story",
+      why1Body: "Career websites show the polished version. Students need to know the unglamorous parts before committing years of their life.",
+      why2Title: "Your insights become quests",
+      why2Body: "We combine expert insights into 5-day career quests. Students do real tasks, 15 min/day, to discover if this path fits them.",
+      why3Title: "Quick and lasting",
+      why3Body: "Answer 8 questions naturally. We do the rest. Your name stays on the quest permanently.",
       howTitle: "How it works",
-      how1: "Chat with our AI interviewer",       how1Desc: "8 questions, conversational, about 10 minutes. No preparation needed.",
-      how2: "We build a PathLab from your story", how2Desc: "Our team turns your interview into a 5-day career exploration curriculum.",
-      how3: "Students discover your world",        how3Desc: "Hands-on activities, your real insights, your name on the experience.",
-      bottomTitle: "Ready to share your story?",
-      bottomSubtitle: "It takes 10 minutes. The impact lasts years.",
+      how1: "Chat with AI",       how1Desc: "8 questions, ~10 min. No prep needed.",
+      how2: "We build quests", how2Desc: "Your insights + other experts → 5-day career exploration.",
+      how3: "Students explore",        how3Desc: "Real tasks, your insights, your name.",
+      bottomTitle: "Ready to share?",
+      bottomSubtitle: "10 minutes. Help someone avoid years of wrong turns.",
       footer: "Career exploration for students",
-      errorLimit: "You've started too many interviews recently. Please try again in an hour.",
-      errorGeneric: "Failed to start the interview. Please try again.",
-      errorSubmit: "Failed to submit your interview. Please try again.",
+      errorLimit: "Too many attempts. Try again in an hour.",
+      errorGeneric: "Failed to start. Please try again.",
+      errorSubmit: "Failed to submit. Please try again.",
       tryAgain: "Try again",
     },
     th: {
-      title: "เรื่องราวของคุณ\nเปลี่ยนอนาคตนักเรียนได้",
-      subtitle: "คุณเดินบนเส้นทางที่นักเรียนกำลังค้นหา แบ่งปันในเวลา 10 นาที แล้วเราจะเปลี่ยนเป็นการสำรวจอาชีพที่พวกเขาได้ลงมือทำจริง",
-      stat1Title: "10 นาที",         stat1Desc: "สนทนาตามจังหวะของคุณ",
-      stat2Title: "เครดิตของคุณ",   stat2Desc: "ชื่อของคุณบน PathLab ทุกอัน",
-      stat3Title: "นักเรียนจริง",   stat3Desc: "สำรวจเส้นทางอาชีพของคุณโดยตรง",
-      startBtn: "เริ่มการสัมภาษณ์", startingBtn: "กำลังเริ่ม...",
-      why1Title: "ส่งต่อสิ่งที่คุณเคยได้รับ",
-      why1Body: "มีคนเปิดประตูให้คุณครั้งหนึ่ง — พี่เลี้ยง การสนทนาที่บังเอิญ หรือเรื่องราวที่โดนใจ นี่คือโอกาสของคุณ",
-      why2Title: "ทิ้งสิ่งที่ยั่งยืนไว้",
-      why2Body: "การสัมภาษณ์ของคุณกลายเป็นหลักสูตร 5 วัน ชื่อของคุณอยู่บนนั้นตลอดไป นักเรียนยังค้นพบอาชีพของคุณผ่านเรื่องราวของคุณ",
-      why3Title: "10 นาที ผลลัพธ์จริง",
-      why3Body: "เราเข้าใจว่าเวลาของคุณมีค่า นั่นคือเหตุผลที่เราสร้างสิ่งนี้เป็นการสนทนา ตอบ 8 คำถามตามธรรมชาติ แล้วเราทำส่วนที่เหลือ",
+      title: "ช่วยนักเรียนค้นหา\nว่าอาชีพของคุณใช่ของพวกเขาไหม",
+      subtitle: "เล่าให้ฟังว่างานของคุณเป็นยังไงจริงๆ — ส่วนที่น่าเบื่อ ส่วนที่ยาก ช่วงเวลาที่ทำให้รู้สึกคุ้ม 10 นาที 8 คำถาม",
+      stat1Title: "10 นาที",         stat1Desc: "สนทนาครั้งเดียว",
+      stat2Title: "ชื่อคุณ",   stat2Desc: "บนภารกิจทุกอันที่สร้าง",
+      stat3Title: "ผลกระทบจริง",   stat3Desc: "นักเรียนสำรวจอาชีพคุณ",
+      startBtn: "เริ่มเลย", startingBtn: "กำลังเริ่ม...",
+      why1Title: "นักเรียนต้องการเรื่องจริง",
+      why1Body: "เว็บไซต์แสดงแค่เวอร์ชันสวยงาม นักเรียนต้องรู้ส่วนที่ไม่สวยก่อนจะลงทุนเวลาหลายปี",
+      why2Title: "ข้อมูลคุณกลายเป็นภารกิจ",
+      why2Body: "เรารวมข้อมูลผู้เชี่ยวชาญเป็นภารกิจ 5 วัน นักเรียนลองทำงานจริง 15 นาทีต่อวัน เพื่อค้นหาว่าเส้นทางนี้ใช่ไหม",
+      why3Title: "เร็วและยั่งยืน",
+      why3Body: "ตอบ 8 คำถามตามธรรมชาติ เราทำส่วนที่เหลือ ชื่อคุณอยู่บนภารกิจตลอดไป",
       howTitle: "วิธีการทำงาน",
-      how1: "สนทนากับ AI ของเรา",                  how1Desc: "8 คำถาม แบบสนทนา ประมาณ 10 นาที ไม่ต้องเตรียมตัว",
-      how2: "เราสร้าง PathLab จากเรื่องราวของคุณ", how2Desc: "ทีมงานของเราเปลี่ยนการสัมภาษณ์เป็นหลักสูตรสำรวจอาชีพ 5 วัน",
-      how3: "นักเรียนค้นพบโลกของคุณ",              how3Desc: "กิจกรรมลงมือทำ ข้อมูลเชิงลึกจริงของคุณ ชื่อของคุณบนประสบการณ์",
-      bottomTitle: "พร้อมแบ่งปันเรื่องราวของคุณแล้วหรือยัง?",
-      bottomSubtitle: "ใช้เวลาเพียง 10 นาที ผลกระทบอยู่ได้หลายปี",
+      how1: "สนทนากับ AI",                  how1Desc: "8 คำถาม ประมาณ 10 นาที ไม่ต้องเตรียมตัว",
+      how2: "เราสร้างภารกิจ", how2Desc: "ข้อมูลคุณ + ผู้เชี่ยวชาญอื่น → ภารกิจสำรวจ 5 วัน",
+      how3: "นักเรียนสำรวจ",              how3Desc: "งานจริง ข้อมูลคุณ ชื่อคุณ",
+      bottomTitle: "พร้อมแบ่งปัน?",
+      bottomSubtitle: "10 นาที ช่วยใครสักคนไม่ต้องเดินผิดทางหลายปี",
       footer: "การสำรวจอาชีพสำหรับนักเรียน",
-      errorLimit: "คุณเริ่มการสัมภาษณ์มากเกินไปเมื่อเร็วๆ นี้ กรุณาลองใหม่ในอีกหนึ่งชั่วโมง",
-      errorGeneric: "ไม่สามารถเริ่มการสัมภาษณ์ได้ กรุณาลองใหม่อีกครั้ง",
-      errorSubmit: "ไม่สามารถส่งการสัมภาษณ์ของคุณได้ กรุณาลองใหม่อีกครั้ง",
-      tryAgain: "ลองใหม่อีกครั้ง",
+      errorLimit: "พยายามมากเกินไป ลองใหม่ในอีกหนึ่งชั่วโมง",
+      errorGeneric: "เริ่มไม่สำเร็จ กรุณาลองใหม่",
+      errorSubmit: "ส่งไม่สำเร็จ กรุณาลองใหม่",
+      tryAgain: "ลองใหม่",
     },
   };
+
+  // Student content (university students sharing program insights)
+  const studentContent = {
+    en: {
+      title: "Help high schoolers\nchoose the right program",
+      subtitle: "You know what your program is really like. Tell us in 10 minutes — the workload, the culture, what makes it different.",
+      stat1Title: "10 min",   stat1Desc: "One conversation",
+      stat2Title: "Your name",  stat2Desc: "On every guide we build",
+      stat3Title: "Real impact", stat3Desc: "Students explore your program",
+      startBtn: "Start", startingBtn: "Starting...",
+      why1Title: "Only students know the truth",
+      why1Body: "Websites show the polished version. High schoolers need to know the tough courses, the boring parts, before committing years.",
+      why2Title: "Your insights become guides",
+      why2Body: "We combine student insights into program guides that help high schoolers understand what they're signing up for.",
+      why3Title: "Quick and lasting",
+      why3Body: "Answer 8 questions naturally. We do the rest. Your name stays on the guide permanently.",
+      howTitle: "How it works",
+      how1: "Chat with AI",       how1Desc: "8 questions, ~10 min. No prep needed.",
+      how2: "We build guides", how2Desc: "Your insights + other students → program exploration guides.",
+      how3: "Students explore",        how3Desc: "Real insights, your name on the experience.",
+      bottomTitle: "Ready to share?",
+      bottomSubtitle: "10 minutes. Help someone choose wisely.",
+      footer: "Program exploration for students",
+      errorLimit: "Too many attempts. Try again in an hour.",
+      errorGeneric: "Failed to start. Please try again.",
+      errorSubmit: "Failed to submit. Please try again.",
+      tryAgain: "Try again",
+    },
+    th: {
+      title: "ช่วยน้องๆ เลือกโปรแกรม\nที่ใช่สำหรับตัวเอง",
+      subtitle: "คุณรู้ว่าโปรแกรมเป็นยังไงจริงๆ เล่าให้ฟัง 10 นาที — ภาระงาน บรรยากาศ อะไรที่ทำให้ต่างจากที่อื่น",
+      stat1Title: "10 นาที",         stat1Desc: "สนทนาครั้งเดียว",
+      stat2Title: "ชื่อคุณ",   stat2Desc: "บนคู่มือทุกอันที่สร้าง",
+      stat3Title: "ผลกระทบจริง",   stat3Desc: "นักเรียนสำรวจโปรแกรมคุณ",
+      startBtn: "เริ่มเลย", startingBtn: "กำลังเริ่ม...",
+      why1Title: "มีแค่นักศึกษารู้ความจริง",
+      why1Body: "เว็บไซต์แสดงแค่เวอร์ชันสวยงาม น้องๆ ต้องรู้วิชาที่ยาก ส่วนที่น่าเบื่อ ก่อนจะลงทุนเวลาหลายปี",
+      why2Title: "ข้อมูลคุณกลายเป็นคู่มือ",
+      why2Body: "เรารวมข้อมูลนักศึกษาเป็นคู่มือโปรแกรมที่ช่วยให้น้องๆ เข้าใจว่ากำลังจะเข้าอะไร",
+      why3Title: "เร็วและยั่งยืน",
+      why3Body: "ตอบ 8 คำถามตามธรรมชาติ เราทำส่วนที่เหลือ ชื่อคุณอยู่บนคู่มือตลอดไป",
+      howTitle: "วิธีการทำงาน",
+      how1: "สนทนากับ AI",                  how1Desc: "8 คำถาม ประมาณ 10 นาที ไม่ต้องเตรียมตัว",
+      how2: "เราสร้างคู่มือ", how2Desc: "ข้อมูลคุณ + นักศึกษาอื่น → คู่มือสำรวจโปรแกรม",
+      how3: "น้องๆ สำรวจ",              how3Desc: "ข้อมูลจริง ชื่อคุณบนประสบการณ์",
+      bottomTitle: "พร้อมแบ่งปัน?",
+      bottomSubtitle: "10 นาที ช่วยใครสักคนเลือกให้ถูกต้อง",
+      footer: "การสำรวจโปรแกรมสำหรับนักเรียน",
+      errorLimit: "พยายามมากเกินไป ลองใหม่ในอีกหนึ่งชั่วโมง",
+      errorGeneric: "เริ่มไม่สำเร็จ กรุณาลองใหม่",
+      errorSubmit: "ส่งไม่สำเร็จ กรุณาลองใหม่",
+      tryAgain: "ลองใหม่",
+    },
+  };
+
+  // Select content based on interview type
+  const content = interviewType === "student" ? studentContent : expertContent;
 
   const t = content[language];
 
@@ -129,12 +193,17 @@ export default function ExpertInterviewPage() {
       const response = await fetch("/api/expert-interview/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ website: honeypot, language: selectedLang }),
+        body: JSON.stringify({ website: honeypot, language: selectedLang, type: interviewType }),
       });
       if (response.status === 429) { setErrorMessage(t.errorLimit); setStep("error"); return; }
       if (!response.ok) throw new Error("Failed to start session");
       const data = await response.json();
-      setSessionData({ sessionId: data.sessionId, firstQuestion: data.firstQuestion, progress: data.progress });
+      setSessionData({
+        sessionId: data.sessionId,
+        firstQuestion: data.firstQuestion,
+        progress: data.progress,
+        interviewType: data.interviewType || interviewType,
+      });
       setStep("chat");
     } catch {
       setErrorMessage(t.errorGeneric);
@@ -248,6 +317,7 @@ export default function ExpertInterviewPage() {
           sessionId={sessionData.sessionId}
           firstQuestion={sessionData.firstQuestion}
           initialProgress={sessionData.progress}
+          interviewType={sessionData.interviewType}
           onComplete={handleChatComplete}
         />
       </div>

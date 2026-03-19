@@ -2,12 +2,14 @@ import { generateObject } from "ai";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { normalizeQuestBlueprint } from "@/lib/expert-interview/quest-blueprint";
 import { z } from "zod";
-import type { ChatMessage, ExtractedCareerData, InterviewQuestion } from "@/types/expert-interview";
+import type { ChatMessage, ExtractedCareerData, InterviewQuestion, InterviewType } from "@/types/expert-interview";
 import { sanitizeExpertInput } from "./sanitizer";
 
 const TOTAL_QUESTIONS = 8;
 
-const INTERVIEW_QUESTIONS_EN: Array<{ id: string; prompt: string }> = [
+// ── EXPERT QUESTIONS (industry professionals sharing career insights) ────────
+
+const EXPERT_QUESTIONS_EN: Array<{ id: string; prompt: string }> = [
   {
     id: "field_role",
     prompt:
@@ -50,7 +52,7 @@ const INTERVIEW_QUESTIONS_EN: Array<{ id: string; prompt: string }> = [
   },
 ];
 
-const INTERVIEW_QUESTIONS_TH: Array<{ id: string; prompt: string }> = [
+const EXPERT_QUESTIONS_TH: Array<{ id: string; prompt: string }> = [
   {
     id: "field_role",
     prompt:
@@ -92,6 +94,102 @@ const INTERVIEW_QUESTIONS_TH: Array<{ id: string; prompt: string }> = [
       "คุณเข้าสู่สายงานนี้ได้อย่างไร ถ้าย้อนเวลาไปบอกตัวเองตอนอายุ 18 จะบอกว่าอะไร แล้วมีงาน 30 นาทีที่ซื่อสัตย์อะไรที่นักเรียนควรลองทำก่อนตัดสินใจว่าเส้นทางนี้เหมาะกับตัวเองหรือเปล่า?",
   },
 ];
+
+// ── STUDENT QUESTIONS (university students sharing program insights) ─────────
+
+const STUDENT_QUESTIONS_EN: Array<{ id: string; prompt: string }> = [
+  {
+    id: "university_program",
+    prompt:
+      "Hi! I want to help high school students understand what it's really like to study at your specific program. What university, faculty, and program are you in, what year, and why did you choose this place specifically over others?",
+  },
+  {
+    id: "program_reality",
+    prompt:
+      "What do outsiders think this program is about, and what does a typical week actually look like? Tell me about the real workload and how classes are taught.",
+  },
+  {
+    id: "program_unique",
+    prompt:
+      "How is this program different from similar ones at other universities? If a student chooses the same field but at a different school, what would they miss out on?",
+  },
+  {
+    id: "tough_parts",
+    prompt:
+      "What's the hardest part of this program? Is there a course that makes people transfer out, or a type of work that shows who can handle it and who can't?",
+  },
+  {
+    id: "boring_essential",
+    prompt:
+      "What's important but really boring in this program? What do students have to be willing to do regularly to survive here?",
+  },
+  {
+    id: "rewarding_moments",
+    prompt:
+      "Is it worth it? Are there moments or opportunities that feel like you can only get them here?",
+  },
+  {
+    id: "fit_signals",
+    prompt:
+      "What kind of high school student would really enjoy this program, and what kind might feel like they chose the wrong place?",
+  },
+  {
+    id: "advice_18",
+    prompt:
+      "If you could go back and talk to your 18-year-old self before choosing this program, what would you say? And is there something you'd want students to try for 30 minutes before deciding if this program is right for them?",
+  },
+];
+
+const STUDENT_QUESTIONS_TH: Array<{ id: string; prompt: string }> = [
+  {
+    id: "university_program",
+    prompt:
+      "สวัสดีค่ะ! อยากให้น้องๆ มัธยมเข้าใจว่าเรียนที่นี่จริงๆ มันเป็นยังไง — เรียนมหาลัยไหน คณะอะไร สาขาอะไร ตอนนี้ปีเท่าไหร่แล้ว แล้วทำไมถึงเลือกที่นี่ ไม่ใช่ที่อื่น?",
+  },
+  {
+    id: "program_reality",
+    prompt:
+      "คนข้างนอกมักจะคิดว่าสาขานี้เรียนอะไรบ้าง แล้วความจริงในแต่ละสัปดาห์มันเป็นยังไงคะ? เล่าให้ฟังหน่อยได้มั้ยว่าภาระงานจริงๆ มันหนักแค่ไหน สอนกันยังไง",
+  },
+  {
+    id: "program_unique",
+    prompt:
+      "ที่นี่ต่างจากมหาลัยอื่นที่เปิดสาขาเดียวกันยังไงบ้างคะ? ถ้าน้องเลือกเรียนสาขานี้แต่ไปเรียนที่อื่นแทน จะพลาดอะไรไป?",
+  },
+  {
+    id: "tough_parts",
+    prompt:
+      "ส่วนที่ยากที่สุดของสาขานี้คืออะไรคะ? มีวิชาไหนมั้ยที่ทำให้คนขอย้ายสาขา หรืองานแบบไหนที่จะรู้เลยว่าใครไหวใครไม่ไหว?",
+  },
+  {
+    id: "boring_essential",
+    prompt:
+      "มีอะไรในสาขานี้ที่สำคัญมากแต่น่าเบื่อสุดๆ บ้างคะ? ถ้าอยากอยู่รอดที่นี่ต้องยอมทำอะไรเป็นประจำ?",
+  },
+  {
+    id: "rewarding_moments",
+    prompt:
+      "แล้วมันคุ้มมั้ยคะ? มีช่วงไหนหรือโอกาสอะไรที่รู้สึกว่านี่แหละคือสิ่งที่ได้แค่ที่นี่ที่เดียว?",
+  },
+  {
+    id: "fit_signals",
+    prompt:
+      "น้องมัธยมแบบไหนที่จะชอบสาขานี้มาก แล้วแบบไหนที่มาแล้วอาจจะรู้สึกว่าเลือกผิดที่คะ?",
+  },
+  {
+    id: "advice_18",
+    prompt:
+      "ถ้าย้อนเวลากลับไปหาตัวเองตอน 18 ก่อนเลือกสาขานี้ จะบอกอะไรตัวเองบ้างคะ? แล้วมีอะไรที่อยากให้น้องลองทำสัก 30 นาทีก่อนตัดสินใจว่าสาขานี้ใช่สำหรับตัวเองมั้ย?",
+  },
+];
+
+// Helper to get questions based on type and language
+function getQuestions(interviewType: InterviewType, language?: string): Array<{ id: string; prompt: string }> {
+  if (interviewType === "student") {
+    return language === "th" ? STUDENT_QUESTIONS_TH : STUDENT_QUESTIONS_EN;
+  }
+  return language === "th" ? EXPERT_QUESTIONS_TH : EXPERT_QUESTIONS_EN;
+}
 
 const extractedDataSchema = z.object({
   field: z.string(),
@@ -154,8 +252,8 @@ const extractedDataSchema = z.object({
     .optional(),
 });
 
-export function getFirstQuestion(language?: string): InterviewQuestion {
-  const questions = language === "th" ? INTERVIEW_QUESTIONS_TH : INTERVIEW_QUESTIONS_EN;
+export function getFirstQuestion(language?: string, interviewType: InterviewType = "expert"): InterviewQuestion {
+  const questions = getQuestions(interviewType, language);
   return { id: questions[0].id, text: questions[0].prompt };
 }
 
@@ -163,11 +261,11 @@ export function getTotalQuestions(): number {
   return TOTAL_QUESTIONS;
 }
 
-export function getInterviewQuestions(language?: string): InterviewQuestion[] {
-  const questions = language === "th" ? INTERVIEW_QUESTIONS_TH : INTERVIEW_QUESTIONS_EN;
-  return questions.map((question) => ({
-    id: question.id,
-    text: question.prompt,
+export function getInterviewQuestions(language?: string, interviewType: InterviewType = "expert"): InterviewQuestion[] {
+  const questions = getQuestions(interviewType, language);
+  return questions.map((q) => ({
+    id: q.id,
+    text: q.prompt,
   }));
 }
 
@@ -179,7 +277,8 @@ export async function processInterviewMessage(
   message: string,
   currentQuestionId: string | null,
   conversationHistory: ChatMessage[],
-  language?: string
+  language?: string,
+  interviewType: InterviewType = "expert"
 ): Promise<{
   nextQuestion?: InterviewQuestion;
   progress: { current: number; total: number };
@@ -188,7 +287,7 @@ export async function processInterviewMessage(
 }> {
   const sanitized = sanitizeExpertInput(message);
   const isThai = language === "th";
-  const questions = isThai ? INTERVIEW_QUESTIONS_TH : INTERVIEW_QUESTIONS_EN;
+  const questions = getQuestions(interviewType, language);
 
   const updatedHistory: ChatMessage[] = [
     ...conversationHistory,
