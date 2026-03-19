@@ -1,32 +1,8 @@
 # PassionSeed - FI Program TODO
 
-**Last Updated**: March 18, 2026
+**Last Updated**: March 18, 2026 (Sprint 8 completed)
 **Current Sprint**: 10 (Product Development)
 **Location**: San Francisco (3 months) → Bangkok
-
----
-
-## 🔴 Critical (Due Now)
-
-### Sprint 8: Legal & Equity (Overdue)
-**Due**: Mar 11, 2026
-
-| Step | Task | Status | Evidence Needed |
-|------|------|--------|-----------------|
-| 1 | Progress Checklist | ❌ Not done | 7 business ingredients ranked |
-| 2 | Second Thoughts | ❌ Not done | Email to directors or Q&A session |
-| 3 | Additional Businesses | ❌ Not done | List of other businesses/ownership |
-| 4 | Co-Founders | ❌ Not done | Co-founder list with ownership % |
-| 5 | Advisor Candidates | ❌ Not done | 9+ advisor targets (3 categories) |
-| 6 | Advisor Outreach | ❌ Not done | Forwardable message + startup blurb |
-| 7 | Capitalization Table | ❌ Not done | Cap table spreadsheet link |
-| 8 | Employment Law | ❌ Not done | Team structure paragraph |
-| 9 | First Mailing | ❌ Not done | Email copy sent to 10+ people |
-| 10 | Mentor Office Hours | ❌ Not done | Scheduled with mentor |
-| 11 | Mentor Research | ❌ Not done | Mentor background + questions |
-| 12 | Hotseat Pitch | ❌ Not done | Updated video link |
-| 13 | Value Proposition Learning | ❌ Not done | Key points learned |
-| 14 | Value Proposition Prep | ❌ Not done | 3 slides prepared |
 
 ---
 
@@ -100,10 +76,6 @@
 
 | Item | Sprint | Action Required |
 |------|--------|-----------------|
-| Cap Table | 8 | Create spreadsheet with ownership % |
-| Advisor Candidates | 8 | List 9+ targets across 3 categories |
-| Advisor Outreach | 8 | Send forwardable messages |
-| First Mailing | 8 | Send email to 10+ people |
 | Product Roadmap | 10 | Create visual roadmap |
 | Project Plan | 10 | Document milestones & timeline |
 | Development Tools | 10 | List tools + justification |
@@ -111,22 +83,43 @@
 
 ---
 
+## 👥 Advisors
+
+### Confirmed Advisors
+| Name | Expertise | LinkedIn | Status |
+|------|-----------|----------|--------|
+| Kirk | TBD | https://www.linkedin.com/in/kirkjaa/ | ✅ Confirmed |
+
+### Target Advisors (Outreach Pending)
+| Name | Category | Company | Connector |
+|------|----------|---------|-----------|
+| Pawoot Pumtang | Startup | Tarad.com | Natcha |
+| Amornthep Thaweesit | Startup | Wongnai | Chula network |
+| Thanawat Malabuppha | Startup | Priceza | FI Thailand |
+| Kavin Thongplod | Industry | EdTech Fund | Startup ecosystem |
+| Piyachart Rattanapian | Industry | Chula Faculty of Ed | Chula network |
+| Tanawat Hiranyavas | Industry | Ministry of Ed | Government |
+| Teerawat Wutti | Technology | Google | Thai tech community |
+| Thanachart R. | Technology | Thai startup | Tech network |
+| Pitchaya T. | Technology | Agoda | Tech network |
+
+---
+
 ## 🎯 This Week's Priorities
 
 ### Must Do (Mar 18-25)
-1. **Complete Sprint 8** (Legal & Equity) - Overdue
-   - Create cap table
-   - Identify 9 advisor candidates
-   - Send first mailing
-   
-2. **Start Sprint 10** (Product Development)
+1. **Complete Sprint 10** (Product Development)
    - Document product roadmap
    - Create project plan
    - Prepare for Investor Progress Review
 
-3. **Build AI Quest Generator MVP**
+2. **Build AI Quest Generator MVP**
    - Core feature for moat
    - Test with 10 students
+
+3. **Advisor Follow-up**
+   - Schedule meeting with Kirk (new advisor)
+   - LinkedIn: https://www.linkedin.com/in/kirkjaa/
 
 ---
 
@@ -141,12 +134,12 @@
 | 5. Revenue & Business Models | ✅ Complete | 100% |
 | 6. Pitch Mastery | ✅ Complete | 100% |
 | 7. Mentor Idea Review | ✅ Complete | 100% |
-| 8. Legal & Equity | 🔴 Overdue | 0% |
+| 8. Legal & Equity | ✅ Complete | 100% |
 | 9. Go-to-Market & Scale | ⚠️ Current | 0% |
 | 10. Product Development | 🔵 In Progress | 0% |
 | 11-15. Remaining | ⏳ Upcoming | 0% |
 
-**Overall Progress**: 7/15 sprints complete (47%)
+**Overall Progress**: 8/15 sprints complete (53%)
 
 ---
 

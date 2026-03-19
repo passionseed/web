@@ -444,78 +444,65 @@ export function LandingDemoPaths() {
             </div>
           </div>
 
-          {/* Days Grid - Clean icon + number */}
+          {/* Days Grid - Clean icon + number, no flicker */}
           <div className="grid grid-cols-5 gap-2">
             {pathData.days.map((day, index) => {
-              const isVisible = index < visibleDayCount;
-              // Only highlight as current if this is the latest revealed day AND not all days are shown yet
-              const isCurrentDay = index === visibleDayCount - 1 && visibleDayCount < 5 && !isReducedMotion;
+              const dayNumber = index + 1;
+              const isRevealed = dayNumber <= visibleDayCount;
+              const isCurrent = dayNumber === visibleDayCount && visibleDayCount < 5;
               const DayIcon = day.icon;
-              const isCompleted = index < visibleDayCount - 1 || visibleDayCount === 5;
               
               return (
-                <AnimatePresence key={index}>
-                  {isVisible && (
-                    <motion.button
-                      initial={isReducedMotion ? false : { opacity: 0, scale: 0.85, y: 8 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ 
-                        duration: 0.5, 
-                        delay: index * 0.1, 
-                        ease: EASE_GENTLE 
-                      }}
-                      onClick={handleDayClick}
-                      className={`
-                        relative flex flex-col items-center justify-center
-                        aspect-square rounded-xl border
-                        transition-all duration-700 ease-out
-                        ${isCurrentDay 
-                          ? `${pathData.borderColor} border bg-white/[0.06]` 
-                          : isCompleted
-                            ? 'border-white/[0.08] bg-white/[0.03]'
-                            : 'border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.05]'
-                        }
-                      `}
-                    >
-                      {/* Icon */}
-                      <DayIcon className={`
-                        w-5 h-5 sm:w-5 sm:h-5 mb-1.5
-                        ${isCurrentDay ? pathData.accent : isCompleted ? 'text-white/50' : 'text-white/40'}
-                        transition-colors duration-700
-                      `} />
-                      
-                      {/* Day Number */}
-                      <span className={`
-                        text-[11px] font-medium tabular-nums
-                        ${isCurrentDay ? 'text-white' : isCompleted ? 'text-white/60' : 'text-white/50'}
-                        transition-colors duration-700
-                      `}>
-                        {index + 1}
-                      </span>
+                <motion.button
+                  key={`${activePathId}-day-${dayNumber}`}
+                  initial={isReducedMotion ? false : { opacity: 0, scale: 0.9 }}
+                  animate={isRevealed ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+                  transition={{ 
+                    duration: 0.6, 
+                    delay: isRevealed ? index * 0.12 : 0,
+                    ease: EASE_GENTLE 
+                  }}
+                  onClick={handleDayClick}
+                  className={`
+                    relative flex flex-col items-center justify-center
+                    aspect-square rounded-xl border
+                    ${isCurrent 
+                      ? `${pathData.borderColor} bg-white/[0.05]` 
+                      : 'border-white/[0.06] bg-white/[0.02]'
+                    }
+                    ${isRevealed ? 'cursor-pointer hover:bg-white/[0.05]' : ''}
+                  `}
+                >
+                  {/* Icon - fades in color */}
+                  <DayIcon 
+                    className={`
+                      w-5 h-5 mb-1.5 transition-all duration-500
+                      ${isCurrent ? pathData.accent : 'text-white/40'}
+                    `}
+                  />
+                  
+                  {/* Day Number */}
+                  <span className={`
+                    text-[11px] font-medium tabular-nums transition-colors duration-500
+                    ${isCurrent ? 'text-white' : 'text-white/50'}
+                  `}>
+                    {dayNumber}
+                  </span>
 
-                      {/* Soft glow for current day only - not on completed days */}
-                      {isCurrentDay && !isReducedMotion && (
-                        <motion.div
-                          className="absolute inset-0 rounded-xl pointer-events-none"
-                          style={{
-                            background: pathData.accent.includes('emerald') 
-                              ? 'radial-gradient(circle at center, rgba(52, 211, 153, 0.12) 0%, transparent 70%)'
-                              : pathData.accent.includes('violet')
-                                ? 'radial-gradient(circle at center, rgba(167, 139, 250, 0.12) 0%, transparent 70%)'
-                                : 'radial-gradient(circle at center, rgba(251, 191, 36, 0.12) 0%, transparent 70%)'
-                          }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: [0.4, 0.7, 0.4] }}
-                          transition={{ 
-                            duration: 3, 
-                            repeat: Infinity, 
-                            ease: "easeInOut" 
-                          }}
-                        />
-                      )}
-                    </motion.button>
+                  {/* Subtle glow for current day */}
+                  {isCurrent && !isReducedMotion && (
+                    <div
+                      className="absolute inset-0 rounded-xl pointer-events-none animate-pulse-soft"
+                      style={{
+                        background: pathData.accent.includes('emerald') 
+                          ? 'radial-gradient(circle at center, rgba(52, 211, 153, 0.1) 0%, transparent 70%)'
+                          : pathData.accent.includes('violet')
+                            ? 'radial-gradient(circle at center, rgba(167, 139, 250, 0.1) 0%, transparent 70%)'
+                            : 'radial-gradient(circle at center, rgba(251, 191, 36, 0.1) 0%, transparent 70%)'
+                      }}
+                    />
                   )}
-                </AnimatePresence>
+                </motion.button>
               );
             })}
           </div>
