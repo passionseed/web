@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,11 +109,27 @@ export function StudentProgressView({
       (sum, progress) => {
         return sum + progress.progress_percentage;
       },
-      0
+      0,
     );
 
     return Math.round(totalProgress / assignments.length);
   };
+
+  // Memoize progress lookups for all students to prevent O(N) .find() calls and garbage collection churn on every render
+  const studentProgressMaps = useMemo(() => {
+    const mapsByStudent = new Map();
+    students.forEach((student) => {
+      if (student.assignment_progress) {
+        mapsByStudent.set(
+          student.id,
+          new Map(student.assignment_progress.map((p) => [p.assignment_id, p])),
+        );
+      } else {
+        mapsByStudent.set(student.id, new Map());
+      }
+    });
+    return mapsByStudent;
+  }, [students]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -127,7 +144,8 @@ export function StudentProgressView({
   };
 
   // Find the current student's data
-  const studentData = students.find(student => student.user_id === currentUserId) || null;
+  const studentData =
+    students.find((student) => student.user_id === currentUserId) || null;
 
   return (
     <div className="space-y-6">
@@ -174,9 +192,11 @@ export function StudentProgressView({
                 </TableRow>
               ) : (
                 students.map((student) => (
-                  <TableRow 
-                    key={student.id} 
-                    className={student.user_id === currentUserId ? "bg-muted/50" : ""}
+                  <TableRow
+                    key={student.id}
+                    className={
+                      student.user_id === currentUserId ? "bg-muted/50" : ""
+                    }
                   >
                     <TableCell>
                       <div className="flex items-center space-x-3">
@@ -190,7 +210,9 @@ export function StudentProgressView({
                           <div className="font-medium">
                             {getStudentName(student)}
                             {student.user_id === currentUserId && (
-                              <span className="ml-2 text-xs text-muted-foreground">(You)</span>
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                (You)
+                              </span>
                             )}
                           </div>
                         </div>
@@ -212,9 +234,8 @@ export function StudentProgressView({
                     </TableCell>
 
                     {assignments.slice(0, 3).map((assignment) => {
-                      const progress = student.assignment_progress?.find(
-                        (p) => p.assignment_id === assignment.id
-                      );
+                      const progressMap = studentProgressMaps.get(student.id);
+                      const progress = progressMap?.get(assignment.id);
                       return (
                         <TableCell key={assignment.id}>
                           {progress ? (
