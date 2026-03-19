@@ -20,7 +20,7 @@
 | 5. Revenue & Business Models | ✅ Completed | [05-revenue-business-models.md](05-revenue-business-models.md) |
 | 6. Pitch Mastery | ✅ Completed | [06-pitch-mastery.md](06-pitch-mastery.md) |
 | 7. Mentor Idea Review | ✅ Completed | [07-mentor-idea-review.md](07-mentor-idea-review.md) |
-| 8. Legal & Equity | ⚠️ Overdue | [08-legal-equity.md](08-legal-equity.md) |
+| 8. Legal & Equity | ✅ Completed | [08-legal-equity.md](08-legal-equity.md) |
 | 9. Go-to-Market & Scale | 🔴 Current | [09-go-to-market-scale.md](09-go-to-market-scale.md) |
 | 10. Product Development | 🔵 In Progress | [10-product-development.md](10-product-development.md) |
 | 11. Investor Progress Review | ⏳ Upcoming | [11-investor-progress-review.md](11-investor-progress-review.md) |
@@ -34,16 +34,26 @@
 ## Company Overview
 
 ### One-Sentence Pitch
-> "PassionSeed uses AI to turn expert knowledge into interactive career quests, helping SEA students test-drive their future before committing years to the wrong path."
+> "PassionSeed helps students build portfolios, know their acceptance odds, and find their path through Ikigai-based career discovery."
 
 ### Customer Problem
 > Students choose academic majors or career paths without real-world testing, increasing the risk of committing years of time and money to the wrong direction.
 
 ### Solution
-AI-powered career discovery platform with:
-- **Expert Interview AI Bot**: Converts professional surveys into interactive learning modules
-- **Career Quests**: Students "test-drive" careers through hands-on simulations
-- **Data-Driven Planning**: University admission insights and personalized roadmaps
+AI-powered career discovery platform built on **Ikigai + Future Adaptability**:
+
+1. **Events/Hackathons** - Students build real portfolios through hands-on activities
+2. **Portfolio Grading Engine** - Scores work against university/employer acceptance criteria
+3. **PathLab** - Career discovery matching Ikigai (what you love, good at, world needs, can pay) + future-proof scoring
+
+**Product Flow**:
+```
+Events/Hackathons → Portfolio Building → Grading Engine → Acceptance Probability
+                                              ↓
+                           PathLab (for undecided students)
+                                              ↓
+                           Ikigai + Future Adaptability Matching
+```
 
 ### Revenue Model
 - **B2C**: Parents pay for premium career data and planning (฿500-2,000/month)
@@ -53,18 +63,23 @@ AI-powered career discovery platform with:
 
 ## Competitive Moat
 
-### The Expert Interview AI Bot
-Our proprietary AI pipeline that:
-1. Interviews domain experts via structured surveys
-2. Converts responses into interactive learning modules
-3. Generates career "quests" students can test-drive
-4. Creates scalable content without manual curation
+### Portfolio Grading Engine
+Our proprietary system that:
+1. Analyzes student portfolios against real acceptance data
+2. Scores acceptance probability for target universities/jobs
+3. Provides actionable recommendations to improve odds
+4. Tracks progress over time
+
+### PathLab Career Discovery
+- Based on **Ikigai** framework (passion + skill + need + income)
+- **Future adaptability scoring** - how future-proof is this career?
+- Personalized recommendations based on student profile
 
 **Why It's a Moat**:
-- Proprietary AI pipeline for content generation
-- Network effects: more experts = better modules = more students
-- Data flywheel: student interactions improve AI recommendations
-- Hard to replicate without domain expertise + AI engineering
+- Proprietary acceptance data from universities/employers
+- Network effects: more portfolios = better scoring model
+- Data flywheel: student outcomes improve predictions
+- Hard to replicate without domain expertise + data access
 
 ---
 
@@ -89,6 +104,7 @@ Our proprietary AI pipeline that:
 
 | Document | Description |
 |----------|-------------|
+| [1-Minute Pitch](assets/1-minute-pitch.md) | Investor pitch with product flow |
 | [Executive Summary](assets/executive-summary.md) | 1-page company overview |
 | [Financial Model](assets/financial-model.md) | 18-month revenue projections |
 | [Mockup Documentation](assets/mockup-documentation.md) | Product screen specifications |
@@ -152,6 +168,9 @@ Our proprietary AI pipeline that:
 ### Founders
 - **Bunyasit Fang** - Product & Business (SF-based, 3 months)
 - Technical co-founder - AI & Engineering
+
+### Advisors
+- **Kirk** - https://www.linkedin.com/in/kirkjaa/
 
 ### Working Group: Orange
 - Ja Rawikarn Dechdi

@@ -179,6 +179,7 @@ export function InterviewChat({
             disabled={false}
             placeholder={language === "th" ? "พิมพ์คำตอบของคุณ..." : "Type your answer..."}
             language={language}
+            messages={messages}
           />
         </div>
       </div>

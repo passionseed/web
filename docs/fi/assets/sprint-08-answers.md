@@ -20,13 +20,13 @@
    - Complete 18-month revenue projections
    - Document all costs (AI API, team, marketing)
    - Create break-even analysis
-   - Link: https://passionseed.org/docs/fi/assets/financial-model.md
+   - Link: https://passionseed.org/docs/fi/assets/financial-model
 
 2. **Mockup** (This Week):
    - Create Figma wireframes for 5 core screens
    - Build interactive prototype in v0.dev
    - User test with 5 students
-   - Link: https://passionseed.org/docs/fi/assets/mockup-documentation.md
+   - Link: https://passionseed.org/docs/fi/assets/mockup-documentation
 
 ---
 
