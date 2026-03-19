@@ -367,8 +367,8 @@ export function LandingDemoPaths() {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Main Card */}
-      <div className="relative">
+      {/* Main Card - Fixed min-height to prevent layout shift */}
+      <div className="relative min-h-[420px] sm:min-h-[440px]">
         {/* Path Selector Tabs */}
         <div className="flex gap-2 mb-3">
           {pathConfigs.map((config, index) => {

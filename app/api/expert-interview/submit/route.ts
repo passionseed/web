@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send magic-link email with claim token embedded in redirect URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.com";
+    const appUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://passionseed.org";
     const redirectTo = `${appUrl}/api/expert-interview/claim?token=${claimToken}`;
 
     try {

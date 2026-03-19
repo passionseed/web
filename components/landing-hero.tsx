@@ -63,7 +63,7 @@ export function LandingHero() {
   const t = content[language];
 
   return (
-    <section className="relative w-full min-h-[calc(100vh-var(--landing-header-offset,6.5rem))] flex flex-col items-center justify-center overflow-hidden">
+    <section className="relative w-full min-h-[calc(100vh-var(--landing-header-offset,6.5rem))] flex flex-col items-center justify-center overflow-hidden pt-8 sm:pt-12">
       {/* Animated background with sunrise gradient */}
       <HeroBackground />
 
