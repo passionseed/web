@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,7 +51,10 @@ const ACTIVITY_FORMATS = [
   { value: "image_upload", label: "Upload an Image", hasAssessment: true, assessmentOnly: true },
   { value: "checklist", label: "Complete Checklist", hasAssessment: true, assessmentOnly: true },
   { value: "daily_reflection", label: "Daily Reflection", hasAssessment: true, needsBody: true, assessmentOnly: true },
-  { value: "daily_prompt", label: "Respond to Daily Prompt", needsBody: true, hasAssessment: true, assessmentOnly: true },
+  { value: "daily_prompt", label: "Respond to Daily Prompt", needsBody: true, canHaveAssessment: true },
+  { value: "reflection_card", label: "Reflection Card", needsBody: true, canHaveAssessment: true },
+  { value: "emotion_check", label: "Emotion Check", needsBody: true, canHaveAssessment: true },
+  { value: "progress_snapshot", label: "Progress Snapshot", needsBody: true, canHaveAssessment: true },
   { value: "ai_chat", label: "AI Chat (with Objective)", isAIChat: true },
   { value: "npc_chat", label: "NPC Conversation (Branching Dialogue)", isNPCChat: true },
 ];
@@ -73,6 +76,34 @@ export function PathActivityEditor({
   displayOrder = 0,
 }: PathActivityEditorProps) {
   const isEdit = !!activity;
+  const existingContent = activity?.path_content ?? [];
+  const sortedExistingContent = useMemo(
+    () => [...existingContent].sort((a, b) => a.display_order - b.display_order),
+    [existingContent]
+  );
+  const primaryContent = useMemo(() => {
+    const highPriorityTypeOrder = [
+      "npc_chat",
+      "ai_chat",
+      "text",
+      "daily_prompt",
+      "reflection_card",
+      "video",
+      "short_video",
+      "canva_slide",
+      "pdf",
+      "image",
+      "resource_link",
+      "order_code",
+      "emotion_check",
+      "progress_snapshot",
+    ];
+    for (const contentType of highPriorityTypeOrder) {
+      const found = sortedExistingContent.find((content) => content.content_type === contentType);
+      if (found) return found;
+    }
+    return sortedExistingContent[0];
+  }, [sortedExistingContent]);
 
   // Debug logging
   if (activity) {
@@ -87,21 +118,16 @@ export function PathActivityEditor({
   // Form state
   const [title, setTitle] = useState(activity?.title || "");
   const [instructions, setInstructions] = useState(activity?.instructions || "");
-  const [format, setFormat] = useState(() => {
-    // Find the actual content type - prefer specific types (ai_chat, npc_chat) over generic
-    const npcChat = activity?.path_content?.find(c => c.content_type === 'npc_chat');
-    const aiChat = activity?.path_content?.find(c => c.content_type === 'ai_chat');
-
+  const [format, setFormat] = useState<string>(() => {
     return (
-      npcChat?.content_type ||
-      aiChat?.content_type ||
-      activity?.path_content?.[0]?.content_type ||
+      primaryContent?.content_type ||
       activity?.path_assessment?.assessment_type ||
       "text"
     );
   });
-  const [contentUrl, setContentUrl] = useState(activity?.path_content?.[0]?.content_url || "");
-  const [contentBody, setContentBody] = useState(activity?.path_content?.[0]?.content_body || "");
+  const [primaryContentId] = useState<string | null>(primaryContent?.id || null);
+  const [contentUrl, setContentUrl] = useState(primaryContent?.content_url || "");
+  const [contentBody, setContentBody] = useState(primaryContent?.content_body || "");
   const [estimatedMinutes, setEstimatedMinutes] = useState(
     activity?.estimated_minutes?.toString() || ""
   );
@@ -115,7 +141,7 @@ export function PathActivityEditor({
   // Additional assessment for content activities
   const [hasAdditionalAssessment, setHasAdditionalAssessment] = useState(() => {
     // Check if this content activity has an assessment attached
-    const contentType = activity?.path_content?.[0]?.content_type;
+    const contentType = primaryContent?.content_type;
     const hasContent = !!contentType;
     const hasAssessmentAttached = !!activity?.path_assessment;
     return hasContent && hasAssessmentAttached;
@@ -131,12 +157,12 @@ export function PathActivityEditor({
 
   // AI Chat state
   const [aiChatMetadata, setAIChatMetadata] = useState<Partial<AIChatMetadata>>(
-    activity?.path_content?.find(c => c.content_type === 'ai_chat')?.metadata || {}
+    activity?.path_content?.find((c) => c.content_type === "ai_chat")?.metadata || {}
   );
 
   // NPC Chat state
   const [npcChatMetadata, setNPCChatMetadata] = useState<Partial<NPCChatMetadata>>(
-    activity?.path_content?.find(c => c.content_type === 'npc_chat')?.metadata || {}
+    activity?.path_content?.find((c) => c.content_type === "npc_chat")?.metadata || {}
   );
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
 
@@ -302,104 +328,161 @@ export function PathActivityEditor({
         }
       }
 
-      // Step 2: Save content or assessment based on format
-      // Only create content/assessment if activity is complete OR if editing and had content before
+      // Step 2: Sync content / assessment without destructive deletes.
       if (activityId && (isComplete || isEdit)) {
-        // If editing, delete old content/assessment first to avoid conflicts
-        if (isEdit) {
-          // Delete old content items
-          if (activity?.path_content && activity.path_content.length > 0) {
+        const existingAssessmentId = activity?.path_assessment?.id || null;
+
+        if (isAssessmentOnly) {
+          // Assessment-only activity: remove content rows.
+          if (activity?.path_content?.length) {
             for (const content of activity.path_content) {
-              await fetch(`/api/pathlab/content?contentId=${content.id}`, {
-                method: 'DELETE',
-              });
+              await fetch(`/api/pathlab/content?contentId=${content.id}`, { method: "DELETE" });
             }
           }
 
-          // Delete old assessment if exists
-          if (activity?.path_assessment) {
-            await fetch(`/api/pathlab/assessments?assessmentId=${activity.path_assessment.id}`, {
-              method: 'DELETE',
-            });
-          }
-        }
+          const assessmentPayload = {
+            assessment_type: format,
+            points_possible: pointsPossible ? parseInt(pointsPossible) : null,
+            is_graded: isGraded,
+            metadata: {
+              instructions: instructions || "",
+            },
+          };
 
-        // Only create content/assessment if we have complete data
-        if (isComplete) {
-          // Determine if this is assessment-only or content-based
-          if (isAssessmentOnly || hasAssessment) {
-            // Assessment-only activity (quiz, text_answer, etc.)
-            const assessmentResponse = await fetch('/api/pathlab/assessments', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                activity_id: activityId,
-                assessment_type: format,
-                points_possible: pointsPossible ? parseInt(pointsPossible) : null,
-                is_graded: isGraded,
-                metadata: {
-                  instructions: instructions || "", // Use main instructions field for assessment-only
-                },
-              }),
-            });
-
-            if (!assessmentResponse.ok) {
-              const errorData = await assessmentResponse.json();
-              console.error('Failed to save assessment:', errorData);
-              throw new Error('Failed to save assessment');
-            }
-          } else {
-            // Content-based activity (video, text, etc.)
-            let contentMetadata = {};
-            if (isAIChat) {
-              contentMetadata = aiChatMetadata;
-            } else if (isNPCChat) {
-              contentMetadata = npcChatMetadata;
-              console.log('[Activity Editor] Saving NPC Chat with metadata:', contentMetadata);
-            }
-
-            const contentResponse = await fetch('/api/pathlab/content', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                activity_id: activityId,
-                content_type: format,
-                content_title: null,
-                content_url: needsUrl ? contentUrl : null,
-                content_body: needsBody ? contentBody : null,
-                display_order: 0,
-                metadata: contentMetadata,
-              }),
-            });
-
-            if (!contentResponse.ok) {
-              const errorData = await contentResponse.json();
-              console.error('Failed to save content:', errorData);
-              throw new Error('Failed to save content');
-            }
-
-            // If content activity has an additional assessment, create it
-            if (hasAdditionalAssessment && assessmentType !== 'none') {
-              const assessmentResponse = await fetch('/api/pathlab/assessments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+          const assessmentResponse = existingAssessmentId
+            ? await fetch("/api/pathlab/assessments", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  assessmentId: existingAssessmentId,
+                  updates: assessmentPayload,
+                }),
+              })
+            : await fetch("/api/pathlab/assessments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   activity_id: activityId,
-                  assessment_type: assessmentType,
-                  points_possible: pointsPossible ? parseInt(pointsPossible) : null,
-                  is_graded: isGraded,
-                  metadata: {
-                    instructions: assessmentInstructions || "",
-                  },
+                  ...assessmentPayload,
                 }),
               });
 
-              if (!assessmentResponse.ok) {
-                const errorData = await assessmentResponse.json();
-                console.error('Failed to save additional assessment:', errorData);
-                throw new Error('Failed to save additional assessment');
-              }
+          if (!assessmentResponse.ok) {
+            const errorData = await assessmentResponse.json();
+            console.error("Failed to save assessment:", errorData);
+            throw new Error("Failed to save assessment");
+          }
+        } else if (isComplete) {
+          // Content-based activity (supports multiple content rows).
+          let contentMetadata = {};
+          if (isAIChat) {
+            contentMetadata = aiChatMetadata;
+          } else if (isNPCChat) {
+            contentMetadata = npcChatMetadata;
+            console.log("[Activity Editor] Saving NPC Chat with metadata:", contentMetadata);
+          }
+
+          const contentPayload = {
+            content_type: format,
+            content_title: null,
+            content_url: needsUrl ? contentUrl : null,
+            content_body: needsBody ? contentBody : null,
+            display_order: 0,
+            metadata: contentMetadata,
+          };
+
+          let persistedPrimaryId: string | null = primaryContentId;
+
+          if (primaryContentId) {
+            const updateContentResponse = await fetch("/api/pathlab/content", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contentId: primaryContentId,
+                updates: contentPayload,
+              }),
+            });
+
+            if (!updateContentResponse.ok) {
+              const errorData = await updateContentResponse.json();
+              console.error("Failed to update content:", errorData);
+              throw new Error("Failed to update content");
             }
+          } else {
+            const createContentResponse = await fetch("/api/pathlab/content", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                activity_id: activityId,
+                ...contentPayload,
+              }),
+            });
+
+            if (!createContentResponse.ok) {
+              const errorData = await createContentResponse.json();
+              console.error("Failed to create content:", errorData);
+              throw new Error("Failed to create content");
+            }
+
+            const { content: createdContent } = await createContentResponse.json();
+            persistedPrimaryId = createdContent?.id || null;
+          }
+
+          // Keep all pre-existing additional content rows and preserve order.
+          const additionalContentIds = (activity?.path_content || [])
+            .filter((content) => content.id !== primaryContentId)
+            .sort((a, b) => a.display_order - b.display_order)
+            .map((content) => content.id);
+          const reorderedIds = [persistedPrimaryId, ...additionalContentIds].filter(Boolean);
+          if (reorderedIds.length > 0) {
+            await fetch("/api/pathlab/content", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                activityId,
+                contentIds: reorderedIds,
+              }),
+            });
+          }
+
+          // Optional assessment for content-based activities.
+          if (hasAdditionalAssessment && assessmentType !== "none") {
+            const assessmentPayload = {
+              assessment_type: assessmentType,
+              points_possible: pointsPossible ? parseInt(pointsPossible) : null,
+              is_graded: isGraded,
+              metadata: {
+                instructions: assessmentInstructions || "",
+              },
+            };
+
+            const assessmentResponse = existingAssessmentId
+              ? await fetch("/api/pathlab/assessments", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    assessmentId: existingAssessmentId,
+                    updates: assessmentPayload,
+                  }),
+                })
+              : await fetch("/api/pathlab/assessments", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    activity_id: activityId,
+                    ...assessmentPayload,
+                  }),
+                });
+
+            if (!assessmentResponse.ok) {
+              const errorData = await assessmentResponse.json();
+              console.error("Failed to save additional assessment:", errorData);
+              throw new Error("Failed to save additional assessment");
+            }
+          } else if (existingAssessmentId) {
+            await fetch(`/api/pathlab/assessments?assessmentId=${existingAssessmentId}`, {
+              method: "DELETE",
+            });
           }
         }
       }
@@ -549,6 +632,9 @@ export function PathActivityEditor({
             {format === 'text' && 'Text Content (Markdown supported) *'}
             {format === 'daily_reflection' && 'Reflection Prompt *'}
             {format === 'daily_prompt' && 'Daily Prompt *'}
+            {format === 'reflection_card' && 'Reflection Card Content *'}
+            {format === 'emotion_check' && 'Emotion Check Content *'}
+            {format === 'progress_snapshot' && 'Progress Snapshot Content *'}
           </Label>
           <Textarea
             id="contentBody"

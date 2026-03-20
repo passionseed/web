@@ -67,6 +67,13 @@ interface PathDayBuilderProps {
   mode?: 'auto' | 'legacy' | 'activities'; // Mode selection
 }
 
+function getActivityTypeLabel(activity: FullPathActivity): string {
+  const primaryContent = activity.path_content?.[0];
+  if (primaryContent?.content_type) return primaryContent.content_type;
+  if (activity.path_assessment?.assessment_type) return activity.path_assessment.assessment_type;
+  return 'activity';
+}
+
 function makeDefaultDay(dayNumber: number): BuilderDay {
   return {
     day_number: dayNumber,
@@ -856,7 +863,7 @@ export function PathDayBuilder({
                                           )}
                                         </div>
                                         <div className="text-xs text-neutral-400 mt-1 space-x-2">
-                                          <span>{activity.activity_type}</span>
+                                          <span>{getActivityTypeLabel(activity)}</span>
                                           {activity.path_content && (
                                             <span>• {activity.path_content.length} content items</span>
                                           )}
