@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X, Save, AlertTriangle } from "lucide-react";
 import type {
   FullPathActivity,
@@ -23,6 +24,7 @@ import type {
 import type { AIChatMetadata, NPCChatMetadata } from "@/types/pathlab-content";
 import { PathAIChatEditor } from "./PathAIChatEditor";
 import { PathNPCChatEditor } from "./PathNPCChatEditor";
+import { VideoUpload } from "./VideoUpload";
 import { toast } from "sonner";
 
 interface PathActivityEditorProps {
@@ -112,6 +114,15 @@ export function PathActivityEditor({
     activity?.path_content?.find(c => c.content_type === 'npc_chat')?.metadata || {}
   );
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+
+  // Video upload state - determine if using URL or upload based on existing content
+  const [videoSourceType, setVideoSourceType] = useState<'url' | 'upload'>(() => {
+    // If we have an existing URL and it's from our storage, use upload mode
+    if (contentUrl && contentUrl.includes('supabase.co/storage')) {
+      return 'upload';
+    }
+    return 'url';
+  });
 
   // Validation
   const selectedFormat = ACTIVITY_FORMATS.find(f => f.value === format);
@@ -387,29 +398,67 @@ export function PathActivityEditor({
         </Select>
       </div>
 
-      {/* URL Field - for videos, slides, PDFs, images, external links */}
+      {/* URL/Upload Field - for videos, slides, PDFs, images, external links */}
       {needsUrl && (
         <div className="space-y-2">
-          <Label htmlFor="contentUrl">
-            {format === 'video' && 'Video URL (YouTube, Vimeo, etc.) *'}
-            {format === 'short_video' && 'Short Video URL (YouTube, TikTok, Instagram, etc.) *'}
-            {format === 'canva_slide' && 'Canva Slide URL *'}
-            {format === 'pdf' && 'PDF URL *'}
-            {format === 'image' && 'Image URL *'}
-            {format === 'resource_link' && 'Link URL *'}
-          </Label>
-          <Input
-            id="contentUrl"
-            type="url"
-            value={contentUrl}
-            onChange={(e) => setContentUrl(e.target.value)}
-            placeholder="https://..."
-            className="bg-background"
-          />
-          {format === 'short_video' && (
-            <p className="text-xs text-muted-foreground">
-              Best for videos under 2 minutes. Supports YouTube Shorts, TikTok, Instagram Reels, etc.
-            </p>
+          {/* Video formats get tabs for URL vs Upload */}
+          {(format === 'video' || format === 'short_video') ? (
+            <div className="space-y-3">
+              <Label>
+                {format === 'video' ? 'Video Source *' : 'Short Video Source *'}
+              </Label>
+              <Tabs value={videoSourceType} onValueChange={(v) => setVideoSourceType(v as 'url' | 'upload')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="url">YouTube/External URL</TabsTrigger>
+                  <TabsTrigger value="upload">Upload Video File</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="url" className="space-y-2 mt-3">
+                  <Label htmlFor="contentUrl">
+                    {format === 'video' ? 'Video URL (YouTube, Vimeo, etc.)' : 'Short Video URL (YouTube Shorts, TikTok, etc.)'}
+                  </Label>
+                  <Input
+                    id="contentUrl"
+                    type="url"
+                    value={contentUrl}
+                    onChange={(e) => setContentUrl(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    className="bg-background"
+                  />
+                  {format === 'short_video' && (
+                    <p className="text-xs text-muted-foreground">
+                      Best for videos under 2 minutes. Supports YouTube Shorts, TikTok, Instagram Reels, etc.
+                    </p>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="upload" className="mt-3">
+                  <VideoUpload
+                    onUploadComplete={(url) => setContentUrl(url)}
+                    initialUrl={contentUrl}
+                    maxSizeMB={format === 'short_video' ? 50 : 50} // 50MB for both (free tier limit)
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
+          ) : (
+            /* Non-video formats use simple URL input */
+            <>
+              <Label htmlFor="contentUrl">
+                {format === 'canva_slide' && 'Canva Slide URL *'}
+                {format === 'pdf' && 'PDF URL *'}
+                {format === 'image' && 'Image URL *'}
+                {format === 'resource_link' && 'Link URL *'}
+              </Label>
+              <Input
+                id="contentUrl"
+                type="url"
+                value={contentUrl}
+                onChange={(e) => setContentUrl(e.target.value)}
+                placeholder="https://..."
+                className="bg-background"
+              />
+            </>
           )}
         </div>
       )}
