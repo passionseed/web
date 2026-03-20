@@ -21,6 +21,7 @@ import type { FullPathActivity } from '@/types/pathlab';
 interface PageBuilderProps {
   pageId: string;
   pathId: string;
+  dayNumber: number;
   initialTitle: string | null;
   initialContextText: string;
   initialReflectionPrompts: string[];
@@ -30,6 +31,7 @@ interface PageBuilderProps {
 export function PageBuilder({
   pageId,
   pathId,
+  dayNumber,
   initialTitle,
   initialContextText,
   initialReflectionPrompts,
@@ -86,22 +88,14 @@ export function PageBuilder({
         })),
       });
 
-      // Save page metadata
-      const response = await fetch(`/api/pathlab/days`, {
-        method: 'POST',
+      // Save only this page metadata (never bulk-replace other days)
+      const response = await fetch(`/api/pathlab/paths/${pathId}/days/${dayNumber}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pathId,
-          totalDays: 1, // Single page
-          days: [
-            {
-              day_number: 1,
-              title: pageData.title,
-              context_text: pageData.context_text,
-              reflection_prompts: pageData.reflection_prompts,
-              node_ids: [], // Legacy field
-            },
-          ],
+          title: pageData.title,
+          context_text: pageData.context_text,
+          reflection_prompts: pageData.reflection_prompts,
         }),
       });
 

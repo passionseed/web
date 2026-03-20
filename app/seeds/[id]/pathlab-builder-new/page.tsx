@@ -167,6 +167,7 @@ export default async function PathLabBuilderNewPage({
         <PageBuilder
           pageId={firstPage.id}
           pathId={path.id}
+          dayNumber={firstPage.day_number}
           initialTitle={firstPage.title}
           initialContextText={firstPage.context_text}
           initialReflectionPrompts={firstPage.reflection_prompts || []}
