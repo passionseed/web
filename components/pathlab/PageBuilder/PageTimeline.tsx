@@ -63,17 +63,6 @@ function SortableActivityCard({
   onMoveDown?: () => void;
   disabled?: boolean;
 }) {
-  // Debug logging
-  console.log('[SortableActivityCard] Rendering:', {
-    activityId: activity.id,
-    title: activity.title,
-    index,
-    orderNumber: index + 1,
-    totalCount,
-    hasOnMoveUp: !!onMoveUp,
-    hasOnMoveDown: !!onMoveDown,
-  });
-
   const {
     attributes,
     listeners,
@@ -230,19 +219,6 @@ export function PageTimeline({
   onMoveDown,
   disabled = false,
 }: PageTimelineProps) {
-  // Debug logging
-  console.log('[PageTimeline] Rendering with activities:', {
-    count: activities.length,
-    activities: activities.map((a, idx) => ({
-      index: idx,
-      id: a.id,
-      title: a.title,
-      display_order: a.display_order,
-    })),
-    hasOnMoveUp: !!onMoveUp,
-    hasOnMoveDown: !!onMoveDown,
-  });
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -287,15 +263,8 @@ export function PageTimeline({
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={activityIds} strategy={verticalListSortingStrategy}>
-        {/* DEBUG: Visible debug info */}
-        <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded text-xs text-red-300">
-          <div>DEBUG PageTimeline:</div>
-          <div>Activities count: {activities.length}</div>
-          <div>Has onMoveUp: {onMoveUp ? 'YES' : 'NO'}</div>
-          <div>Has onMoveDown: {onMoveDown ? 'YES' : 'NO'}</div>
-        </div>
-
-        <div className="space-y-3">
+        {/* Scrollable container for activities */}
+        <div className="max-h-[calc(100vh-20rem)] overflow-y-auto pr-2 space-y-3">
           {activities.map((activity, index) => (
             <SortableActivityCard
               key={activity.id}

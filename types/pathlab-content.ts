@@ -378,6 +378,7 @@ export interface AIChatMetadata {
 
 export interface NPCChatMetadata {
   conversation_id: string;            // ID of the NPC conversation tree
+  summary?: string;                   // Brief summary of the conversation (shown to students)
   allow_restart?: boolean;            // Allow user to restart conversation (default: false)
   show_history?: boolean;             // Show conversation history (default: true)
 }
