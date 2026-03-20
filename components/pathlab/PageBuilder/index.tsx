@@ -35,6 +35,18 @@ export function PageBuilder({
   initialReflectionPrompts,
   initialActivities,
 }: PageBuilderProps) {
+  // Debug logging
+  console.log('[PageBuilder] Rendering with initial activities:', {
+    pageId,
+    count: initialActivities.length,
+    activities: initialActivities.map((a, idx) => ({
+      index: idx,
+      id: a.id,
+      title: a.title,
+      display_order: a.display_order,
+    })),
+  });
+
   const [showActivityEditor, setShowActivityEditor] = useState(false);
   const [editingActivity, setEditingActivity] = useState<FullPathActivity | undefined>(undefined);
 
@@ -52,6 +64,7 @@ export function PageBuilder({
     updateActivity,
     removeActivity,
     reorderActivities,
+    moveActivity,
   } = usePageBuilder({
     initialPage: {
       id: pageId,
@@ -206,6 +219,101 @@ export function PageBuilder({
     [removeActivity]
   );
 
+  // Handle activity reorder (save to backend)
+  const handleActivityReorder = useCallback(
+    async (newOrder: FullPathActivity[]) => {
+      // Update local state immediately for better UX
+      reorderActivities(newOrder);
+
+      // Save to backend
+      try {
+        const activityIds = newOrder.map(a => a.id);
+        const response = await fetch('/api/pathlab/activities', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dayId: pageId,
+            activityIds,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save activity order');
+        }
+      } catch (error) {
+        console.error('[PageBuilder] Failed to save reorder:', error);
+        toast.error('Failed to save activity order');
+      }
+    },
+    [pageId, reorderActivities]
+  );
+
+  // Handle move activity up
+  const handleMoveActivityUp = useCallback(
+    async (activityId: string) => {
+      moveActivity(activityId, 'up');
+
+      // Save to backend
+      try {
+        const activityIds = page.activities.map(a => a.id);
+        const currentIndex = activityIds.indexOf(activityId);
+        if (currentIndex > 0) {
+          [activityIds[currentIndex - 1], activityIds[currentIndex]] =
+            [activityIds[currentIndex], activityIds[currentIndex - 1]];
+        }
+
+        const response = await fetch('/api/pathlab/activities', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dayId: pageId,
+            activityIds,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save activity order');
+        }
+      } catch (error) {
+        console.error('[PageBuilder] Failed to save move:', error);
+      }
+    },
+    [pageId, page.activities, moveActivity]
+  );
+
+  // Handle move activity down
+  const handleMoveActivityDown = useCallback(
+    async (activityId: string) => {
+      moveActivity(activityId, 'down');
+
+      // Save to backend
+      try {
+        const activityIds = page.activities.map(a => a.id);
+        const currentIndex = activityIds.indexOf(activityId);
+        if (currentIndex < activityIds.length - 1) {
+          [activityIds[currentIndex], activityIds[currentIndex + 1]] =
+            [activityIds[currentIndex + 1], activityIds[currentIndex]];
+        }
+
+        const response = await fetch('/api/pathlab/activities', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dayId: pageId,
+            activityIds,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save activity order');
+        }
+      } catch (error) {
+        console.error('[PageBuilder] Failed to save move:', error);
+      }
+    },
+    [pageId, page.activities, moveActivity]
+  );
+
   return (
     <div className="flex h-screen flex-col">
       {/* Header */}
@@ -300,9 +408,11 @@ export function PageBuilder({
 
             <PageTimeline
               activities={page.activities}
-              onReorder={reorderActivities}
+              onReorder={handleActivityReorder}
               onEdit={handleActivityEdit}
               onDelete={handleActivityDelete}
+              onMoveUp={handleMoveActivityUp}
+              onMoveDown={handleMoveActivityDown}
               disabled={isSaving}
             />
           </div>

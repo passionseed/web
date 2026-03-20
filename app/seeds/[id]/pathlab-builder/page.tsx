@@ -5,9 +5,10 @@ import { PathDayBuilder } from "@/components/pathlab/PathDayBuilder";
 import { PageBuilder } from "@/components/pathlab/PageBuilder";
 import { GeneratedPathReview } from "@/components/pathlab/GeneratedPathReview";
 import { PATHLAB_CURRICULUM } from "../../pathlab/curriculum";
-import { ArrowLeft, Map as MapIcon } from "lucide-react";
+import { ArrowLeft, Map as MapIcon, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
+import { DebugButton } from "@/components/pathlab/DebugButton";
 
 interface PathLabBuilderPageProps {
   params: Promise<{
@@ -19,13 +20,18 @@ export default async function PathLabBuilderPage({
   params,
 }: PathLabBuilderPageProps) {
   const { id: seedId } = await params;
+  console.log('[PathLabBuilder] Page loaded with seedId:', seedId);
+
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  console.log('[PathLabBuilder] User authenticated:', user?.id);
+
   if (!user) {
+    console.log('[PathLabBuilder] No user found, redirecting to login');
     redirect(`/login?next=/seeds/${seedId}/pathlab-builder`);
   }
 
@@ -38,17 +44,30 @@ export default async function PathLabBuilderPage({
       .in("role", ["admin", "instructor"]),
   ]);
 
+  console.log('[PathLabBuilder] Seed data:', {
+    seedId,
+    seedType: seed?.seed_type,
+    createdBy: seed?.created_by,
+    title: seed?.title
+  });
+  console.log('[PathLabBuilder] User roles:', roles);
+
   if (!seed) {
+    console.log('[PathLabBuilder] Seed not found, returning 404');
     notFound();
   }
 
   if (seed.seed_type !== "pathlab") {
+    console.log('[PathLabBuilder] Seed is not a pathlab, returning 404');
     notFound();
   }
 
   const isAdminOrInstructor = !!roles?.length;
   const isCreator = seed.created_by === user.id;
+  console.log('[PathLabBuilder] Permission check:', { isAdminOrInstructor, isCreator });
+
   if (!isAdminOrInstructor && !isCreator) {
+    console.log('[PathLabBuilder] User lacks permission, returning 404');
     notFound();
   }
 
@@ -58,7 +77,10 @@ export default async function PathLabBuilderPage({
     .eq("seed_id", seed.id)
     .maybeSingle();
 
+  console.log('[PathLabBuilder] Path lookup result:', path ? `Found path ${path.id}` : 'No path found');
+
   if (!path) {
+    console.log('[PathLabBuilder] Creating new path for seed:', seed.id);
     const { data: createdPath, error: createPathError } = await supabase
       .from("paths")
       .insert({
@@ -70,8 +92,10 @@ export default async function PathLabBuilderPage({
       .single();
 
     if (createPathError || !createdPath) {
+      console.error('[PathLabBuilder] Failed to create path:', createPathError);
       throw new Error(createPathError?.message || "Failed to initialize path");
     }
+    console.log('[PathLabBuilder] Created new path:', createdPath.id);
     path = createdPath;
   }
 
@@ -82,9 +106,16 @@ export default async function PathLabBuilderPage({
     .eq("path_id", path.id)
     .order("day_number", { ascending: true });
 
+  console.log('[PathLabBuilder] Path days fetched:', {
+    count: days?.length || 0,
+    days: days?.map(d => ({ id: d.id, day_number: d.day_number, title: d.title }))
+  });
+
   // Only fetch map nodes if we have days using the legacy system
   const hasLegacyDays = days && days.length > 0 && days.some(d => d.node_ids && d.node_ids.length > 0);
   let mapNodes = [];
+
+  console.log('[PathLabBuilder] Legacy system check:', { hasLegacyDays });
 
   if (hasLegacyDays) {
     const result = await supabase
@@ -93,6 +124,7 @@ export default async function PathLabBuilderPage({
       .eq("map_id", seed.map_id)
       .order("created_at", { ascending: true });
     mapNodes = result.data || [];
+    console.log('[PathLabBuilder] Map nodes fetched:', mapNodes.length);
   }
 
   const initialDays =
@@ -104,11 +136,16 @@ export default async function PathLabBuilderPage({
         }));
 
   // Feature flag: Use new PageBuilder or legacy PathDayBuilder
+  console.log('[PathLabBuilder] Feature flag USE_NEW_PAGE_BUILDER:', FEATURE_FLAGS.USE_NEW_PAGE_BUILDER);
+
   if (FEATURE_FLAGS.USE_NEW_PAGE_BUILDER) {
+    console.log('[PathLabBuilder] Using new PageBuilder system');
+
     // Ensure we have at least one page
     let allDays = days && days.length > 0 ? days : [];
 
     if (allDays.length === 0) {
+      console.log('[PathLabBuilder] No pages exist, creating default page');
       const { data: createdPage, error: createPageError } = await supabase
         .from("path_days")
         .insert({
@@ -124,37 +161,70 @@ export default async function PathLabBuilderPage({
         .single();
 
       if (createPageError || !createdPage) {
+        console.error('[PathLabBuilder] Failed to create page:', createPageError);
         throw new Error(createPageError?.message || "Failed to create page");
       }
+      console.log('[PathLabBuilder] Created default page:', createdPage.id);
       allDays = [createdPage];
     }
 
     // Fetch activities for all pages
-    const pageIds = allDays.map((d) => d.id);
-    const { data: allActivities } = await supabase
-      .from("path_activities")
-      .select(
-        `
-        *,
-        path_content (*),
-        path_assessment:path_assessments (
-          *,
-          quiz_questions:path_quiz_questions (*)
-        )
-      `
-      )
-      .in("path_day_id", pageIds)
-      .order("display_order", { ascending: true });
+    const pageIds = allDays.map((d) => d.id).filter(Boolean);
+
+    console.log('[PathLabBuilder] Fetching activities for page IDs:', pageIds);
+
+    let allActivities: any[] = [];
+
+    // Only fetch activities if we have valid page IDs
+    if (pageIds.length > 0) {
+      try {
+        const { data, error: activitiesError } = await supabase
+          .from("path_activities")
+          .select(
+            `
+            *,
+            path_content (*),
+            path_assessment:path_assessments (
+              *,
+              quiz_questions:path_quiz_questions (*)
+            )
+          `
+          )
+          .in("path_day_id", pageIds)
+          .order("display_order", { ascending: true });
+
+        if (activitiesError) {
+          console.error('[PathLabBuilder] Failed to fetch activities:', activitiesError);
+          // Continue with empty activities array instead of crashing
+        } else {
+          allActivities = data || [];
+          console.log('[PathLabBuilder] Activities fetched:', allActivities.length);
+        }
+      } catch (error) {
+        console.error('[PathLabBuilder] Activities fetch exception:', error);
+        // Continue with empty activities array
+      }
+    } else {
+      console.log('[PathLabBuilder] No page IDs, skipping activity fetch');
+    }
 
     // Group activities by page
     const activitiesByPage = new Map();
-    allActivities?.forEach((activity) => {
-      const pageId = activity.path_day_id;
-      if (!activitiesByPage.has(pageId)) {
-        activitiesByPage.set(pageId, []);
-      }
-      activitiesByPage.get(pageId).push(activity);
-    });
+    if (allActivities && Array.isArray(allActivities)) {
+      allActivities.forEach((activity) => {
+        const pageId = activity.path_day_id;
+        if (pageId && !activitiesByPage.has(pageId)) {
+          activitiesByPage.set(pageId, []);
+        }
+        if (pageId) {
+          activitiesByPage.get(pageId).push({
+            ...activity,
+            path_content: activity.path_content || [],
+            path_assessment: activity.path_assessment?.[0] || null,
+          });
+        }
+      });
+    }
 
     // Build page data
     const initialPages = allDays.map((day) => ({
@@ -166,10 +236,22 @@ export default async function PathLabBuilderPage({
       activities: activitiesByPage.get(day.id) || [],
     }));
 
+    console.log('[PathLabBuilder] Initial pages built:', {
+      count: initialPages.length,
+      pages: initialPages.map(p => ({
+        id: p.id,
+        day_number: p.day_number,
+        title: p.title,
+        activities_count: p.activities.length
+      }))
+    });
+
     // Import MultiPageBuilder
     const { MultiPageBuilder } = await import(
       "@/components/pathlab/PageBuilder/MultiPageBuilder"
     );
+
+    console.log('[PathLabBuilder] Rendering MultiPageBuilder component');
 
     // Use new multi-page builder with navigation
     return (
@@ -196,6 +278,21 @@ export default async function PathLabBuilderPage({
               >
                 Reports
               </Link>
+              <DebugButton
+                data={{
+                  seedId,
+                  pathId: path.id,
+                  totalDays: path.total_days,
+                  pagesCount: initialPages.length,
+                  pages: initialPages.map(p => ({
+                    id: p.id,
+                    day_number: p.day_number,
+                    title: p.title,
+                    activities_count: p.activities.length
+                  })),
+                  featureFlag: FEATURE_FLAGS.USE_NEW_PAGE_BUILDER
+                }}
+              />
             </div>
           </div>
         </div>
@@ -215,6 +312,7 @@ export default async function PathLabBuilderPage({
   }
 
   // Legacy PathDayBuilder (default when feature flag is disabled)
+  console.log('[PathLabBuilder] Using legacy PathDayBuilder system');
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4 px-4 py-8">
       <div className="flex items-center justify-between gap-4">

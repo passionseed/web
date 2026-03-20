@@ -37,7 +37,35 @@ export function MultiPageBuilder({
   const [pages, setPages] = useState<PageData[]>(initialPages);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
 
+  // Debug logging
+  console.log('[MultiPageBuilder] Initializing with pages:', {
+    totalPages: initialPages.length,
+    pages: initialPages.map(p => ({
+      id: p.id,
+      day_number: p.day_number,
+      title: p.title,
+      activityCount: p.activities.length,
+      activities: p.activities.map(a => ({ id: a.id, title: a.title })),
+    })),
+  });
+
+  // Sync pages state when initialPages changes (e.g., on navigation or refresh)
+  useEffect(() => {
+    if (initialPages.length > 0) {
+      setPages(initialPages);
+    }
+  }, [initialPages]);
+
   const currentPage = pages.find((p) => p.day_number === currentDayNumber);
+
+  // Debug current page
+  console.log('[MultiPageBuilder] Current page:', {
+    currentDayNumber,
+    found: !!currentPage,
+    pageId: currentPage?.id,
+    activityCount: currentPage?.activities.length,
+    activities: currentPage?.activities.map(a => ({ id: a.id, title: a.title })),
+  });
 
   const handleDayChange = async (dayNumber: number) => {
     if (dayNumber === currentDayNumber) return;
