@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2, Edit, Clock } from 'lucide-react';
+import { GripVertical, Trash2, Edit, Clock, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,20 +28,41 @@ interface PageTimelineProps {
   onReorder: (newOrder: FullPathActivity[]) => void;
   onEdit: (activity: FullPathActivity) => void;
   onDelete: (activityId: string) => void;
+  onMoveUp?: (activityId: string) => void;
+  onMoveDown?: (activityId: string) => void;
   disabled?: boolean;
 }
 
 function SortableActivityCard({
   activity,
+  index,
+  totalCount,
   onEdit,
   onDelete,
+  onMoveUp,
+  onMoveDown,
   disabled,
 }: {
   activity: FullPathActivity;
+  index: number;
+  totalCount: number;
   onEdit: () => void;
   onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   disabled?: boolean;
 }) {
+  // Debug logging
+  console.log('[SortableActivityCard] Rendering:', {
+    activityId: activity.id,
+    title: activity.title,
+    index,
+    orderNumber: index + 1,
+    totalCount,
+    hasOnMoveUp: !!onMoveUp,
+    hasOnMoveDown: !!onMoveDown,
+  });
+
   const {
     attributes,
     listeners,
@@ -71,10 +92,45 @@ function SortableActivityCard({
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
+          {/* Order Number and Reorder Buttons */}
+          <div
+            className="flex flex-col items-center gap-1 pt-1 shrink-0"
+            data-order-controls={`activity-${index + 1}`}
+          >
+            <div
+              className="text-xs text-neutral-400 font-semibold min-w-[2rem] text-center"
+              data-order-number={index + 1}
+            >
+              #{index + 1}
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-neutral-400 hover:text-white disabled:opacity-30"
+                onClick={onMoveUp}
+                disabled={disabled || index === 0}
+                title="Move up"
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-neutral-400 hover:text-white disabled:opacity-30"
+                onClick={onMoveDown}
+                disabled={disabled || index === totalCount - 1}
+                title="Move down"
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+
           {/* Drag Handle */}
           <button
             type="button"
-            className="cursor-grab touch-none text-neutral-500 hover:text-neutral-300 active:cursor-grabbing mt-1"
+            className="cursor-grab touch-none text-neutral-400 hover:text-white active:cursor-grabbing mt-1 shrink-0"
             {...attributes}
             {...listeners}
             disabled={disabled}
@@ -159,8 +215,23 @@ export function PageTimeline({
   onReorder,
   onEdit,
   onDelete,
+  onMoveUp,
+  onMoveDown,
   disabled = false,
 }: PageTimelineProps) {
+  // Debug logging
+  console.log('[PageTimeline] Rendering with activities:', {
+    count: activities.length,
+    activities: activities.map((a, idx) => ({
+      index: idx,
+      id: a.id,
+      title: a.title,
+      display_order: a.display_order,
+    })),
+    hasOnMoveUp: !!onMoveUp,
+    hasOnMoveDown: !!onMoveDown,
+  });
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -205,13 +276,25 @@ export function PageTimeline({
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={activityIds} strategy={verticalListSortingStrategy}>
+        {/* DEBUG: Visible debug info */}
+        <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded text-xs text-red-300">
+          <div>DEBUG PageTimeline:</div>
+          <div>Activities count: {activities.length}</div>
+          <div>Has onMoveUp: {onMoveUp ? 'YES' : 'NO'}</div>
+          <div>Has onMoveDown: {onMoveDown ? 'YES' : 'NO'}</div>
+        </div>
+
         <div className="space-y-3">
-          {activities.map(activity => (
+          {activities.map((activity, index) => (
             <SortableActivityCard
               key={activity.id}
               activity={activity}
+              index={index}
+              totalCount={activities.length}
               onEdit={() => onEdit(activity)}
               onDelete={() => onDelete(activity.id)}
+              onMoveUp={onMoveUp ? () => onMoveUp(activity.id) : undefined}
+              onMoveDown={onMoveDown ? () => onMoveDown(activity.id) : undefined}
               disabled={disabled}
             />
           ))}

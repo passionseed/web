@@ -8,7 +8,7 @@
  * - Activity operations (add, edit, delete, reorder)
  */
 
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { FullPathActivity } from '@/types/pathlab';
 import { toast } from 'sonner';
 
@@ -37,6 +37,12 @@ export function usePageBuilder({
 
   // Snapshot for dirty tracking
   const snapshotRef = useRef(JSON.stringify(initialPage));
+
+  // Sync state when initialPage changes (e.g., on page navigation or data refresh)
+  useEffect(() => {
+    setPage(initialPage);
+    snapshotRef.current = JSON.stringify(initialPage);
+  }, [initialPage.id]); // Only sync when page ID changes to avoid overwriting user edits
 
   // Dirty state
   const isDirty = useMemo(() => {
