@@ -14,6 +14,8 @@ This document describes the JSON format for importing NPC conversations into Pat
 }
 ```
 
+**Note**: The conversation summary is not part of the JSON format. Add the summary through the PathLab activity editor UI in the "Conversation Summary" field.
+
 ## Nodes Array
 
 Each node represents a dialogue point in the conversation.

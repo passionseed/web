@@ -116,6 +116,7 @@ export function PathNPCChatEditor({ metadata, onChange, activityTitle }: PathNPC
     const exampleConversation = {
       "_comment": "Example NPC Conversation - Modify this template for your needs",
       "_documentation": "See docs/npc-conversation-json-format.md for full format details",
+      "_note": "Add the conversation summary in the PathLab activity editor UI (not in this JSON)",
 
       nodes: [
         {
@@ -357,6 +358,24 @@ export function PathNPCChatEditor({ metadata, onChange, activityTitle }: PathNPC
           )}
         </>
       )}
+
+      {/* Conversation Summary */}
+      <div className="space-y-2 pt-2 border-t border-purple-700/30">
+        <Label htmlFor="conversationSummary" className="text-sm text-purple-200">
+          Conversation Summary (optional)
+          <span className="text-xs text-purple-400 ml-2">
+            Brief description shown to students
+          </span>
+        </Label>
+        <Textarea
+          id="conversationSummary"
+          value={metadata.summary || ''}
+          onChange={(e) => onChange({ ...metadata, summary: e.target.value })}
+          placeholder="e.g., Explore career paths through a guided conversation with a career counselor..."
+          rows={3}
+          className="bg-background resize-none text-sm"
+        />
+      </div>
 
       {/* Options */}
       <div className="space-y-3 pt-2 border-t border-purple-700/30">
