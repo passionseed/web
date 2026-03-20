@@ -15,6 +15,7 @@ interface PageData {
   context_text: string;
   reflection_prompts: string[];
   activities: FullPathActivity[];
+  activitiesLoaded?: boolean;
 }
 
 interface MultiPageBuilderProps {
@@ -74,7 +75,7 @@ export function MultiPageBuilder({
     // Check if we already have this page loaded
     const existingPage = pages.find((p) => p.day_number === dayNumber);
 
-    if (existingPage) {
+    if (existingPage?.activitiesLoaded) {
       setCurrentDayNumber(dayNumber);
       return;
     }
@@ -92,7 +93,30 @@ export function MultiPageBuilder({
 
       const pageData = await response.json();
 
-      setPages((prev) => [...prev, pageData]);
+      setPages((prev) => {
+        const exists = prev.some((page) => page.day_number === dayNumber);
+        if (!exists) {
+          return [
+            ...prev,
+            {
+              ...pageData,
+              activities: pageData.activities || [],
+              activitiesLoaded: true,
+            },
+          ];
+        }
+
+        return prev.map((page) =>
+          page.day_number === dayNumber
+            ? {
+                ...page,
+                ...pageData,
+                activities: pageData.activities || [],
+                activitiesLoaded: true,
+              }
+            : page
+        );
+      });
       setCurrentDayNumber(dayNumber);
     } catch (error) {
       console.error('Error loading page:', error);
@@ -181,10 +205,11 @@ export function MultiPageBuilder({
           key={currentPage.id} // Force remount when switching pages
           pageId={currentPage.id}
           pathId={pathId}
+          dayNumber={currentPage.day_number}
           initialTitle={currentPage.title}
           initialContextText={currentPage.context_text}
           initialReflectionPrompts={currentPage.reflection_prompts}
-          initialActivities={currentPage.activities}
+          initialActivities={currentPage.activities || []}
         />
       </div>
     </div>
