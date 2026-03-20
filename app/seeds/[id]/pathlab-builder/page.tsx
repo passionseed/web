@@ -178,31 +178,60 @@ export default async function PathLabBuilderPage({
     // Only fetch activities if we have valid page IDs
     if (pageIds.length > 0) {
       try {
-        const { data, error: activitiesError } = await supabase
+        // First, try to fetch just the activities without nested data to avoid timeout
+        const { data: activitiesData, error: activitiesError } = await supabase
           .from("path_activities")
-          .select(
-            `
-            *,
-            path_content (*),
-            path_assessment:path_assessments (
-              *,
-              quiz_questions:path_quiz_questions (*)
-            )
-          `
-          )
+          .select("*")
           .in("path_day_id", pageIds)
           .order("display_order", { ascending: true });
 
         if (activitiesError) {
           console.error('[PathLabBuilder] Failed to fetch activities:', activitiesError);
           // Continue with empty activities array instead of crashing
+          allActivities = [];
         } else {
-          allActivities = data || [];
-          console.log('[PathLabBuilder] Activities fetched:', allActivities.length);
+          console.log('[PathLabBuilder] Base activities fetched:', activitiesData?.length || 0);
+
+          // Fetch nested data separately for each activity
+          if (activitiesData && activitiesData.length > 0) {
+            const activityIds = activitiesData.map(a => a.id);
+
+            // Fetch content
+            const { data: contentData } = await supabase
+              .from("path_content")
+              .select("*")
+              .in("activity_id", activityIds);
+
+            // Fetch assessments
+            const { data: assessmentsData } = await supabase
+              .from("path_assessments")
+              .select(`
+                *,
+                quiz_questions:path_quiz_questions (*)
+              `)
+              .in("activity_id", activityIds);
+
+            console.log('[PathLabBuilder] Nested data fetched:', {
+              content: contentData?.length || 0,
+              assessments: assessmentsData?.length || 0,
+            });
+
+            // Combine the data
+            allActivities = activitiesData.map(activity => ({
+              ...activity,
+              path_content: contentData?.filter(c => c.activity_id === activity.id) || [],
+              path_assessment: assessmentsData?.find(a => a.activity_id === activity.id) || null,
+            }));
+          } else {
+            allActivities = [];
+          }
+
+          console.log('[PathLabBuilder] Activities fully loaded:', allActivities.length);
         }
       } catch (error) {
         console.error('[PathLabBuilder] Activities fetch exception:', error);
         // Continue with empty activities array
+        allActivities = [];
       }
     } else {
       console.log('[PathLabBuilder] No page IDs, skipping activity fetch');

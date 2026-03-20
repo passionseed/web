@@ -38,22 +38,30 @@ interface PathActivityEditorProps {
 
 // Unified activity formats - what students actually DO
 const ACTIVITY_FORMATS = [
-  { value: "video", label: "Watch a Video", needsUrl: true },
-  { value: "short_video", label: "Watch a Short Video (< 2 min)", needsUrl: true },
-  { value: "canva_slide", label: "View Slides (Canva)", needsUrl: true },
-  { value: "text", label: "Read Text/Article", needsBody: true },
-  { value: "pdf", label: "Read PDF Document", needsUrl: true },
-  { value: "image", label: "View Image", needsUrl: true },
-  { value: "resource_link", label: "Visit External Link", needsUrl: true },
-  { value: "quiz", label: "Take a Quiz", hasAssessment: true },
-  { value: "text_answer", label: "Submit Text Answer", hasAssessment: true },
-  { value: "file_upload", label: "Upload a File", hasAssessment: true },
-  { value: "image_upload", label: "Upload an Image", hasAssessment: true },
-  { value: "checklist", label: "Complete Checklist", hasAssessment: true },
-  { value: "daily_reflection", label: "Daily Reflection", hasAssessment: true, needsBody: true },
-  { value: "daily_prompt", label: "Respond to Daily Prompt", needsBody: true, hasAssessment: true },
+  { value: "video", label: "Watch a Video", needsUrl: true, canHaveAssessment: true },
+  { value: "short_video", label: "Watch a Short Video (< 2 min)", needsUrl: true, canHaveAssessment: true },
+  { value: "canva_slide", label: "View Slides (Canva)", needsUrl: true, canHaveAssessment: true },
+  { value: "text", label: "Read Text/Article", needsBody: true, canHaveAssessment: true },
+  { value: "pdf", label: "Read PDF Document", needsUrl: true, canHaveAssessment: true },
+  { value: "image", label: "View Image", needsUrl: true, canHaveAssessment: true },
+  { value: "resource_link", label: "Visit External Link", needsUrl: true, canHaveAssessment: true },
+  { value: "quiz", label: "Take a Quiz", hasAssessment: true, assessmentOnly: true },
+  { value: "text_answer", label: "Submit Text Answer", hasAssessment: true, assessmentOnly: true },
+  { value: "file_upload", label: "Upload a File", hasAssessment: true, assessmentOnly: true },
+  { value: "image_upload", label: "Upload an Image", hasAssessment: true, assessmentOnly: true },
+  { value: "checklist", label: "Complete Checklist", hasAssessment: true, assessmentOnly: true },
+  { value: "daily_reflection", label: "Daily Reflection", hasAssessment: true, needsBody: true, assessmentOnly: true },
+  { value: "daily_prompt", label: "Respond to Daily Prompt", needsBody: true, hasAssessment: true, assessmentOnly: true },
   { value: "ai_chat", label: "AI Chat (with Objective)", isAIChat: true },
   { value: "npc_chat", label: "NPC Conversation (Branching Dialogue)", isNPCChat: true },
+];
+
+// Assessment types that can be added to content activities
+const ASSESSMENT_TYPES = [
+  { value: "none", label: "No Assessment" },
+  { value: "text_answer", label: "Text Answer", description: "Students submit a written response" },
+  { value: "file_upload", label: "File Upload", description: "Students upload a file (PDF, DOC, etc.)" },
+  { value: "image_upload", label: "Image Upload", description: "Students upload an image (with camera support)" },
 ];
 
 export function PathActivityEditor({
@@ -104,6 +112,23 @@ export function PathActivityEditor({
   const [isGraded, setIsGraded] = useState(activity?.path_assessment?.is_graded || false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Additional assessment for content activities
+  const [hasAdditionalAssessment, setHasAdditionalAssessment] = useState(() => {
+    // Check if this content activity has an assessment attached
+    const contentType = activity?.path_content?.[0]?.content_type;
+    const hasContent = !!contentType;
+    const hasAssessmentAttached = !!activity?.path_assessment;
+    return hasContent && hasAssessmentAttached;
+  });
+  const [assessmentType, setAssessmentType] = useState<string>(() => {
+    // If has assessment, use that type, otherwise default to 'none'
+    return activity?.path_assessment?.assessment_type || "none";
+  });
+  const [assessmentInstructions, setAssessmentInstructions] = useState<string>(() => {
+    // Load assessment instructions from metadata if exists
+    return activity?.path_assessment?.metadata?.instructions || "";
+  });
+
   // AI Chat state
   const [aiChatMetadata, setAIChatMetadata] = useState<Partial<AIChatMetadata>>(
     activity?.path_content?.find(c => c.content_type === 'ai_chat')?.metadata || {}
@@ -131,6 +156,8 @@ export function PathActivityEditor({
   const hasAssessment = selectedFormat?.hasAssessment;
   const isAIChat = selectedFormat?.isAIChat;
   const isNPCChat = selectedFormat?.isNPCChat;
+  const canHaveAssessment = selectedFormat?.canHaveAssessment;
+  const isAssessmentOnly = selectedFormat?.assessmentOnly;
 
   // Auto-create conversation when NPC Chat is selected (for new activities only)
   useEffect(() => {
@@ -179,7 +206,9 @@ export function PathActivityEditor({
     title.trim().length > 0 &&
     (!needsUrl || contentUrl.trim().length > 0) &&
     (!needsBody || contentBody.trim().length > 0) &&
-    (!isAIChat || (aiChatMetadata.system_prompt && aiChatMetadata.objective));
+    (!isAIChat || (aiChatMetadata.system_prompt && aiChatMetadata.objective)) &&
+    // Check assessment instructions if additional assessment is enabled
+    (!hasAdditionalAssessment || assessmentType === 'none' || assessmentInstructions.trim().length > 0);
     // Note: NPC chat conversation is auto-created, so we don't check for conversation_id
 
   // Determine draft reason
@@ -189,6 +218,9 @@ export function PathActivityEditor({
     if (needsBody && !contentBody.trim()) return 'Missing content body';
     if (isAIChat && !aiChatMetadata.system_prompt) return 'Missing AI chat system prompt';
     if (isAIChat && !aiChatMetadata.objective) return 'Missing AI chat objective';
+    if (hasAdditionalAssessment && assessmentType !== 'none' && !assessmentInstructions.trim()) {
+      return 'Missing assessment instructions';
+    }
     return 'Incomplete configuration';
   };
 
@@ -294,8 +326,9 @@ export function PathActivityEditor({
 
         // Only create content/assessment if we have complete data
         if (isComplete) {
-          if (hasAssessment) {
-            // Create assessment
+          // Determine if this is assessment-only or content-based
+          if (isAssessmentOnly || hasAssessment) {
+            // Assessment-only activity (quiz, text_answer, etc.)
             const assessmentResponse = await fetch('/api/pathlab/assessments', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -304,7 +337,9 @@ export function PathActivityEditor({
                 assessment_type: format,
                 points_possible: pointsPossible ? parseInt(pointsPossible) : null,
                 is_graded: isGraded,
-                metadata: {},
+                metadata: {
+                  instructions: instructions || "", // Use main instructions field for assessment-only
+                },
               }),
             });
 
@@ -314,7 +349,7 @@ export function PathActivityEditor({
               throw new Error('Failed to save assessment');
             }
           } else {
-            // Create content
+            // Content-based activity (video, text, etc.)
             let contentMetadata = {};
             if (isAIChat) {
               contentMetadata = aiChatMetadata;
@@ -341,6 +376,29 @@ export function PathActivityEditor({
               const errorData = await contentResponse.json();
               console.error('Failed to save content:', errorData);
               throw new Error('Failed to save content');
+            }
+
+            // If content activity has an additional assessment, create it
+            if (hasAdditionalAssessment && assessmentType !== 'none') {
+              const assessmentResponse = await fetch('/api/pathlab/assessments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  activity_id: activityId,
+                  assessment_type: assessmentType,
+                  points_possible: pointsPossible ? parseInt(pointsPossible) : null,
+                  is_graded: isGraded,
+                  metadata: {
+                    instructions: assessmentInstructions || "",
+                  },
+                }),
+              });
+
+              if (!assessmentResponse.ok) {
+                const errorData = await assessmentResponse.json();
+                console.error('Failed to save additional assessment:', errorData);
+                throw new Error('Failed to save additional assessment');
+              }
             }
           }
         }
@@ -520,8 +578,107 @@ export function PathActivityEditor({
         />
       </div>
 
+      {/* Optional Assessment for Content Activities */}
+      {canHaveAssessment && !isAssessmentOnly && (
+        <div className="p-4 rounded-lg bg-purple-950/20 border border-purple-800/50 space-y-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="hasAdditionalAssessment"
+              checked={hasAdditionalAssessment}
+              onCheckedChange={(checked) => {
+                setHasAdditionalAssessment(!!checked);
+                if (!checked) {
+                  setAssessmentType("none");
+                }
+              }}
+            />
+            <Label htmlFor="hasAdditionalAssessment" className="cursor-pointer text-purple-200 font-semibold">
+              Add Assessment (require student submission)
+            </Label>
+          </div>
+
+          {hasAdditionalAssessment && (
+            <div className="space-y-3 pl-6 border-l-2 border-purple-700/50">
+              <div className="space-y-2">
+                <Label htmlFor="assessmentType">Assessment Type *</Label>
+                <Select value={assessmentType} onValueChange={setAssessmentType}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASSESSMENT_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{type.label}</span>
+                          {type.description && (
+                            <span className="text-xs text-muted-foreground">{type.description}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {assessmentType !== 'none' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="assessmentInstructions">
+                      Assessment Instructions *
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (Tell students what to submit)
+                      </span>
+                    </Label>
+                    <Textarea
+                      id="assessmentInstructions"
+                      value={assessmentInstructions}
+                      onChange={(e) => setAssessmentInstructions(e.target.value)}
+                      placeholder={
+                        assessmentType === 'text_answer'
+                          ? "e.g., Write a 200-word reflection on what you learned..."
+                          : assessmentType === 'file_upload'
+                          ? "e.g., Upload your completed worksheet as a PDF..."
+                          : assessmentType === 'image_upload'
+                          ? "e.g., Take a photo of your completed sketch and upload it..."
+                          : "Describe what students should submit..."
+                      }
+                      rows={3}
+                      className="bg-background resize-none"
+                    />
+                  </div>
+
+                  {assessmentType === 'text_answer' && (
+                    <div className="p-3 rounded bg-blue-950/30 border border-blue-800/40">
+                      <p className="text-xs text-blue-200">
+                        ✍️ Students will submit a written response in a text field.
+                      </p>
+                    </div>
+                  )}
+
+                  {assessmentType === 'file_upload' && (
+                    <div className="p-3 rounded bg-blue-950/30 border border-blue-800/40">
+                      <p className="text-xs text-blue-200">
+                        📁 Students will upload a file (PDF, Word, Excel, etc.)
+                      </p>
+                    </div>
+                  )}
+
+                  {assessmentType === 'image_upload' && (
+                    <div className="p-3 rounded bg-blue-950/30 border border-blue-800/40">
+                      <p className="text-xs text-blue-200">
+                        📷 Students will upload an image. Mobile devices get a camera button to take photos directly.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Assessment Settings - show if format has assessment */}
-      {hasAssessment && (
+      {(hasAssessment || (hasAdditionalAssessment && assessmentType !== 'none')) && (
         <div className="p-4 rounded-lg bg-blue-950/20 border border-blue-800/50 space-y-3">
           <Label className="text-base font-semibold text-blue-300">Assessment Settings</Label>
 
