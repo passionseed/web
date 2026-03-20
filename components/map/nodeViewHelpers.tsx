@@ -117,8 +117,19 @@ const CustomImageComponent = memo(({ responce }: { responce?: any }) => {
 CustomImageComponent.displayName = "CustomImageComponent";
 
 // Video Embed Component - memoized to prevent re-renders
+// Handles both embedded videos (YouTube, Vimeo) and direct video files (uploaded to Supabase)
 const VideoEmbed = memo(({ contentUrl }: { contentUrl: string }) => {
   console.log("🎥 VideoEmbed rendering for URL:", contentUrl);
+
+  // Check if this is a direct video file (uploaded to storage) vs embedded video
+  const isDirectVideo = useMemo(() => {
+    return contentUrl.includes('supabase.co/storage') ||
+           contentUrl.endsWith('.mp4') ||
+           contentUrl.endsWith('.webm') ||
+           contentUrl.endsWith('.mov') ||
+           contentUrl.endsWith('.avi') ||
+           contentUrl.endsWith('.mpeg');
+  }, [contentUrl]);
 
   const embedOptions = useMemo(() => ({
     maxwidth: 800,
@@ -137,6 +148,26 @@ const VideoEmbed = memo(({ contentUrl }: { contentUrl: string }) => {
     return `video-${contentUrl.split('/').pop()?.split('?')[0] || 'embed'}`;
   }, [contentUrl]);
 
+  // For direct video files, use HTML5 video player
+  if (isDirectVideo) {
+    return (
+      <div className="w-full" key={embedKey}>
+        <video
+          controls
+          className="w-full rounded-lg shadow-lg"
+          style={{ maxWidth: "100%", backgroundColor: "#000" }}
+          preload="metadata"
+        >
+          <source src={contentUrl} type="video/mp4" />
+          <source src={contentUrl} type="video/webm" />
+          <source src={contentUrl} type="video/quicktime" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    );
+  }
+
+  // For embedded videos (YouTube, Vimeo, etc.), use react-tiny-oembed
   return (
     <div className="w-full" key={embedKey}>
       <Embed
@@ -345,6 +376,7 @@ export const renderContent = (content: NodeContent) => {
 
   switch (contentType) {
     case "video":
+    case "short_video":
       if (!contentUrl) {
         return <ErrorFallback url="#" key={contentKey} />;
       }
