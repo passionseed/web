@@ -8,9 +8,9 @@
 export const FEATURE_FLAGS = {
   /**
    * Enable the new PageBuilder UI (three-panel layout)
-   * Default: false (use legacy PathDayBuilder)
+   * Default: true (use new PageBuilder)
    */
-  USE_NEW_PAGE_BUILDER: process.env.NEXT_PUBLIC_ENABLE_NEW_PAGE_BUILDER === 'true',
+  USE_NEW_PAGE_BUILDER: process.env.NEXT_PUBLIC_ENABLE_NEW_PAGE_BUILDER !== 'false',
 
   /**
    * Enable activity templates library
