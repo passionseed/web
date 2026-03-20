@@ -196,17 +196,31 @@ export default async function EpicSprintPage() {
       {/* Header */}
       <div className="border-b border-white/10 bg-black/20">
         <div className="max-w-5xl mx-auto px-6 py-8">
-          <p className="text-white/30 text-xs uppercase tracking-widest mb-2">
-            Epic Sprint Report — March 2026
-          </p>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            PassionSeed Customer Engagement Report
-          </h1>
-          <p className="text-white/50 text-sm max-w-2xl">
-            Demonstrating that early-stage interest translates into committed action.
-            Two parallel campaigns to validate the core hypothesis: students want
-            structured, active career exploration.
-          </p>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <p className="text-white/30 text-xs uppercase tracking-widest mb-2">
+                Epic Sprint Report — March 2026
+              </p>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                PassionSeed Customer Engagement Report
+              </h1>
+              <p className="text-white/50 text-sm max-w-2xl">
+                Demonstrating that early-stage interest translates into committed action.
+                Two parallel campaigns to validate the core hypothesis: students want
+                structured, active career exploration.
+              </p>
+            </div>
+            <a
+              href="/Epic_Sprint_Report_PassionSeed.pdf"
+              download
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-sm font-medium hover:bg-emerald-500/30 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download PDF
+            </a>
+          </div>
         </div>
       </div>
 
