@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
     const pathId = body?.pathId as string | undefined;
     const totalDays = Number(body?.totalDays);
     const days = Array.isArray(body?.days) ? body.days : [];
+    const allowDestructive = body?.allowDestructive === true;
 
     if (!pathId || !Number.isFinite(totalDays) || totalDays <= 0) {
       return NextResponse.json(
@@ -128,6 +129,35 @@ export async function POST(request: NextRequest) {
     const allowed = await canManagePath(pathId, user.id);
     if (!allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Safety guard: block accidental single-page overwrite of multi-page paths.
+    // This catches the exact failure mode where a single page save calls this bulk endpoint.
+    const { data: existingPath, error: existingPathError } = await supabase
+      .from("paths")
+      .select("id, total_days")
+      .eq("id", pathId)
+      .single();
+
+    if (existingPathError || !existingPath) {
+      return NextResponse.json({ error: "Path not found" }, { status: 404 });
+    }
+
+    const incomingDayCount = days.length;
+    const looksLikeAccidentalSinglePageOverwrite =
+      existingPath.total_days > 1 &&
+      totalDays === 1 &&
+      incomingDayCount === 1 &&
+      Number(days[0]?.day_number) === 1;
+
+    if (looksLikeAccidentalSinglePageOverwrite && !allowDestructive) {
+      return NextResponse.json(
+        {
+          error:
+            "Blocked potentially destructive save: received single-page payload for a multi-page path. Use the per-day PATCH endpoint or pass allowDestructive=true only if this is intentional.",
+        },
+        { status: 409 }
+      );
     }
 
     const normalizedDays = days
