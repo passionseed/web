@@ -206,16 +206,17 @@ export function NPCConversation({
     }
 
     return (
-      <div
-        className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg"
-        dangerouslySetInnerHTML={{ __html: avatar.svg_data }}
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(avatar.svg_data)}`}
+        alt="NPC Avatar"
+        className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg object-contain"
       />
     );
   };
 
   const renderNode = (node: NPCConversationNodeWithChoices, isHistory = false) => {
     const emotion = node.metadata?.emotion || 'neutral';
-    const urgency = node.metadata?.urgency || 'medium';
 
     return (
       <Card
