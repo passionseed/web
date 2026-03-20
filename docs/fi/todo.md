@@ -1,6 +1,6 @@
 # PassionSeed - FI Program TODO
 
-**Last Updated**: March 18, 2026 (Sprint 8 completed)
+**Last Updated**: March 20, 2026 (Sprint 9 completed)
 **Current Sprint**: 10 (Product Development)
 **Location**: San Francisco (3 months) → Bangkok
 
@@ -9,7 +9,7 @@
 ## 🟡 Current Sprint (In Progress)
 
 ### Sprint 10: Product Development
-**Due**: Mar 25, 2026
+**Due**: Mar 25, 2026 (5 days remaining)
 
 | Step | Task | Hours | Status | Evidence Needed |
 |------|------|-------|--------|-----------------|
@@ -129,19 +129,23 @@
 
 ## 🎯 This Week's Priorities
 
-### Must Do (Mar 18-25)
-1. **Complete Sprint 10** (Product Development)
-   - Document product roadmap
-   - Create project plan
-   - Prepare for Investor Progress Review
+### Must Do (Mar 20-25)
+1. **Complete Sprint 10** (Product Development) - DUE MAR 25
+   - Growth goals tracking
+   - IP assessment
+   - Product roadmap
+   - Project plan
+   - Prepare for Investor Progress Review (Sprint 11)
 
-2. **Build AI Quest Generator MVP**
-   - Core feature for moat
+2. **Build Portfolio Grader + PathLab MVP**
+   - Core feature: AI portfolio grading
+   - Ikigai career matching
    - Test with 10 students
 
 3. **Advisor Follow-up**
-   - Schedule meeting with Kirk (new advisor)
+   - Schedule meeting with Kirk (confirmed advisor)
    - LinkedIn: https://www.linkedin.com/in/kirkjaa/
+   - Complete 9 advisor interviews
 
 ---
 
@@ -157,11 +161,11 @@
 | 6. Pitch Mastery | ✅ Complete | 100% |
 | 7. Mentor Idea Review | ✅ Complete | 100% |
 | 8. Legal & Equity | ✅ Complete | 100% |
-| 9. Go-to-Market & Scale | ⚠️ Current | 0% |
-| 10. Product Development | 🔵 In Progress | 0% |
+| 9. Go-to-Market & Scale | ✅ Complete | 100% |
+| 10. Product Development | 🔵 Current | 0% |
 | 11-15. Remaining | ⏳ Upcoming | 0% |
 
-**Overall Progress**: 8/15 sprints complete (53%)
+**Overall Progress**: 9/15 sprints complete (60%)
 
 ---
 

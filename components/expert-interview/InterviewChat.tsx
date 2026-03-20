@@ -41,8 +41,18 @@ export function InterviewChat({
   // On iOS Safari, the software keyboard overlays fixed elements without resizing the viewport.
   // Track the gap between the layout viewport and the visual viewport (= keyboard height on iOS,
   // ~0 on Android Chrome where the viewport already resizes).
+  // We only apply this on iOS to avoid issues on Android where viewport resizes naturally.
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const [isIOS, setIsIOS] = useState(false);
+
   useEffect(() => {
+    // Detect iOS Safari (runs only on client)
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+      (navigator.userAgent.includes('Mac') && navigator.maxTouchPoints > 1);
+    setIsIOS(iOS);
+    
+    if (!iOS) return;
+    
     const vv = window.visualViewport;
     if (!vv) return;
     const update = () => {
@@ -62,10 +72,12 @@ export function InterviewChat({
     th: { error: "เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง" },
   }[language];
 
-  // Scroll to bottom on new messages or when keyboard opens (content shifts)
+  // Scroll to bottom on new messages (but NOT on keyboard open - that causes issues on Android)
   useEffect(() => {
+    // Only scroll when messages change, not on keyboard inset change
+    // This prevents the question from scrolling off-screen when keyboard opens
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading, keyboardInset]);
+  }, [messages, isLoading]);
 
   const handleSend = async (message: string) => {
     if (isLoading) return;
@@ -171,11 +183,11 @@ export function InterviewChat({
       {/* Input area — paddingBottom lifts input above keyboard on iOS Safari */}
       <div
         className="shrink-0 bg-gradient-to-t from-black from-60% to-transparent pt-4"
-        style={{ paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
+        style={{ paddingBottom: isIOS && keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
       >
         <div
           className="max-w-3xl mx-auto px-4"
-          style={{ paddingBottom: keyboardInset > 0 ? "8px" : "max(16px, env(safe-area-inset-bottom))" }}
+          style={{ paddingBottom: isIOS && keyboardInset > 0 ? "8px" : "max(16px, env(safe-area-inset-bottom))" }}
         >
           <ChatInput
             onSend={handleSend}
