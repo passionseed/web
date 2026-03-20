@@ -11,7 +11,7 @@
 | 3 | Landing Page | ✅ Good | https://passionseed.org live |
 | 4 | Company Name | ✅ Good | PassionSeed - clear, memorable |
 | 5 | Branding/Design | ✅ Good | Dawn/Dusk themes, consistent |
-| 6 | Initial Product Progress | ✅ Good | AI Quest Generator in development |
+| 6 | Initial Product Progress | ✅ Good | Portfolio Grader + PathLab in development |
 | 7 | Initial Customer Interest | ✅ Strongest | 349 hackathon, 1,000+ Discord |
 
 **Plans to Improve Weakest (Top 2)**:
@@ -47,7 +47,7 @@ No major concerns. We are committed to building PassionSeed.
 
 ## Step 3: Additional Businesses (30 Minutes)
 
-**No additional businesses** where I hold >10% ownership.
+I hold 51% ownership in Matcha B2B distributor - onecha.org. This is a separate business from PassionSeed.
 
 I am focused 100% on PassionSeed.
 
@@ -55,17 +55,15 @@ I am focused 100% on PassionSeed.
 
 ## Step 4: Co-Founders (30 Minutes)
 
-| Name | Proposed Title | Ownership % | Status | FI Enrolled | Bio Link | Next Steps |
-|------|---------------|-------------|--------|-------------|----------|------------|
-| Bunyasit Fang | CEO/Founder | 75% | Active | Yes | linkedin.com/in/bunyasit | Full-time commitment |
-| [Co-founder] | CTO/Co-founder | 0% (from ESOP) | Active | No | TBD | Formalize equity agreement |
+| Name | Title | Ownership | Status |
+|------|-------|-----------|--------|
+| Sattakun Amornrattanasiri | CEO | 25% | Active |
+| Bunyasit Fang | CTO | 25% | Active |
+| Krittin Wichaidit | COO | 25% | Active |
 
 **ESOP Pool**: 25% reserved for future team members
 
-**Next Steps**:
-1. Draft co-founder agreement with vesting schedule
-2. Allocate equity from ESOP pool
-3. Sign founder agreement
+All 3 founders are technical/AI builders.
 
 ---
 
@@ -140,7 +138,9 @@ Ask: Advisors for scaling, AI development, and SEA expansion.
 
 | Shareholder | Shares | % Ownership | Notes |
 |-------------|--------|-------------|-------|
-| Bunyasit Fang (Founder) | 750,000 | 75% | Common stock |
+| Sattakun Amornrattanasiri (CEO) | 250,000 | 25% | Common stock |
+| Bunyasit Fang (CTO) | 250,000 | 25% | Common stock |
+| Krittin Wichaidit (COO) | 250,000 | 25% | Common stock |
 | Employee Stock Option Pool | 250,000 | 25% | Reserved for team |
 
 **Total**: 1,000,000 shares (100%)
@@ -149,7 +149,6 @@ Ask: Advisors for scaling, AI development, and SEA expansion.
 
 | Role | Equity Range | Source |
 |------|--------------|--------|
-| CTO/Co-founder | 10-15% | From ESOP |
 | Senior Engineer | 1-2% | From ESOP |
 | Marketing Lead | 0.5-1% | From ESOP |
 | Advisors (3-5) | 0.25-0.5% each | From ESOP |

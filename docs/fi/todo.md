@@ -83,7 +83,22 @@
 
 ---
 
-## 👥 Advisors
+## 👥 Team & Advisors
+
+### Co-Founders (Equal Ownership)
+| Name | Title | Ownership |
+|------|-------|-----------|
+| Sattakun Amornrattanasiri | CEO | 25% |
+| Bunyasit Fang | CTO | 25% |
+| Krittin Wichaidit | COO | 25% |
+| ESOP Pool | - | 25% |
+
+### Other Ventures
+| Company | Role | Ownership | Website |
+|---------|------|-----------|---------|
+| Matcha B2B Distributor | Founder | 51% | https://onecha.org |
+
+### Advisors
 
 ### Confirmed Advisors
 | Name | Expertise | LinkedIn | Status |

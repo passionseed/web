@@ -166,8 +166,12 @@ Our proprietary system that:
 ## Team
 
 ### Founders
-- **Bunyasit Fang** - Product & Business (SF-based, 3 months)
-- Technical co-founder - AI & Engineering
+- **Sattakun Amornrattanasiri** - CEO
+- **Bunyasit Fang** - CTO (SF-based, 3 months)
+- **Krittin Wichaidit** - COO
+
+### Other Ventures
+- **Matcha B2B Distributor** - https://onecha.org (Bunyasit: 51% ownership)
 
 ### Advisors
 - **Kirk Pathumanun** - EdTech & AI Transformation (duPhonics, Quest Edtech) - https://www.linkedin.com/in/kirkjaa/
