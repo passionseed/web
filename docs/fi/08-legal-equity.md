@@ -29,7 +29,7 @@
 | 3 | Landing Page | ✅ Good | https://passionseed.org live |
 | 4 | Company Name | ✅ Good | PassionSeed - clear, memorable |
 | 5 | Branding/Design | ✅ Good | Dawn/Dusk themes, consistent |
-| 6 | Initial Product Progress | ✅ Good | AI Quest Generator in development |
+| 6 | Initial Product Progress | ✅ Good | Portfolio Grader + PathLab in development |
 | 7 | Initial Customer Interest | ✅ Strongest | 349 hackathon, 1,000+ Discord |
 
 **Plans to Improve Weakest (Top 2)**:
@@ -59,7 +59,7 @@ No major concerns. We are committed to building PassionSeed.
 
 **Status**: ✅ Complete
 
-No additional businesses where I hold >10% ownership. I am focused 100% on PassionSeed.
+I hold 51% ownership in Matcha B2B distributor - onecha.org. This is a separate business from PassionSeed.
 
 ---
 
@@ -69,10 +69,13 @@ No additional businesses where I hold >10% ownership. I am focused 100% on Passi
 
 | Name | Title | Ownership | Status |
 |------|-------|-----------|--------|
-| Bunyasit Fang | CEO/Founder | 75% | Active |
-| [Co-founder] | CTO | 0% (from ESOP) | Active |
+| Sattakun Amornrattanasiri | CEO | 25% | Active |
+| Bunyasit Fang | CTO | 25% | Active |
+| Krittin Wichaidit | COO | 25% | Active |
 
 **ESOP Pool**: 25% reserved for future team members
+
+All 3 founders are technical/AI builders.
 
 ---
 
@@ -134,7 +137,9 @@ PassionSeed helps SEA students test-drive careers through AI-generated quests. 3
 
 | Shareholder | Shares | % |
 |-------------|--------|---|
-| Bunyasit Fang (Founder) | 750,000 | 75% |
+| Sattakun Amornrattanasiri (CEO) | 250,000 | 25% |
+| Bunyasit Fang (CTO) | 250,000 | 25% |
+| Krittin Wichaidit (COO) | 250,000 | 25% |
 | ESOP Pool | 250,000 | 25% |
 
 **Total**: 1,000,000 shares
