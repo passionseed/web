@@ -7,13 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { PathActivityType } from '@/types/pathlab';
+
+type ActivityTemplateType =
+  | 'learning'
+  | 'reflection'
+  | 'milestone'
+  | 'checkpoint'
+  | 'journal_prompt'
+  | 'ai_chat'
+  | 'npc_dialogue';
 
 interface ActivityTemplate {
   id: string;
   title: string;
   description: string | null;
-  activity_type: PathActivityType;
+  activity_type: ActivityTemplateType;
   content_template: any;
   assessment_template: any;
   estimated_minutes: number | null;
@@ -26,20 +34,24 @@ interface ActivityLibraryProps {
   disabled?: boolean;
 }
 
-const ACTIVITY_TYPE_ICONS: Record<PathActivityType, any> = {
+const ACTIVITY_TYPE_ICONS: Record<ActivityTemplateType, any> = {
   learning: FileText,
   reflection: Sparkles,
   milestone: CheckSquare,
   checkpoint: CheckSquare,
   journal_prompt: FileText,
+  ai_chat: Sparkles,
+  npc_dialogue: Sparkles,
 };
 
-const ACTIVITY_TYPE_COLORS: Record<PathActivityType, string> = {
+const ACTIVITY_TYPE_COLORS: Record<ActivityTemplateType, string> = {
   learning: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   reflection: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
   milestone: 'bg-green-500/10 text-green-400 border-green-500/20',
   checkpoint: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
   journal_prompt: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+  ai_chat: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+  npc_dialogue: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
 };
 
 export function ActivityLibrary({ onSelectTemplate, disabled = false }: ActivityLibraryProps) {
@@ -47,7 +59,7 @@ export function ActivityLibrary({ onSelectTemplate, disabled = false }: Activity
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<PathActivityType | 'all'>('all');
+  const [selectedType, setSelectedType] = useState<ActivityTemplateType | 'all'>('all');
 
   // Fetch templates
   useEffect(() => {

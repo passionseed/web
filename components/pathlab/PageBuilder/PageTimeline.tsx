@@ -33,6 +33,17 @@ interface PageTimelineProps {
   disabled?: boolean;
 }
 
+function getActivityTypeLabel(activity: FullPathActivity): string {
+  const primaryContent = activity.path_content?.[0];
+  if (primaryContent?.content_type) {
+    return primaryContent.content_type;
+  }
+  if (activity.path_assessment?.assessment_type) {
+    return activity.path_assessment.assessment_type;
+  }
+  return "activity";
+}
+
 function SortableActivityCard({
   activity,
   index,
@@ -175,7 +186,7 @@ function SortableActivityCard({
             {/* Metadata */}
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="text-xs border-neutral-700 text-neutral-400">
-                {activity.activity_type}
+                {getActivityTypeLabel(activity)}
               </Badge>
 
               {contentCount > 0 && (
