@@ -97,22 +97,39 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('[API /pathlab/activities PATCH] Request received:', {
+      hasActivityId: !!body.activityId,
+      hasDayId: !!body.dayId,
+      hasActivityIds: !!body.activityIds,
+      activityIdsCount: body.activityIds?.length,
+    });
 
     // Handle reordering
     if (body.dayId && body.activityIds) {
+      console.log('[API /pathlab/activities PATCH] Reordering activities:', {
+        dayId: body.dayId,
+        activityIds: body.activityIds,
+      });
       await reorderPathActivities(body.dayId, body.activityIds);
+      console.log('[API /pathlab/activities PATCH] Reorder successful');
       return NextResponse.json({ success: true });
     }
 
     // Handle single activity update
     if (body.activityId && body.updates) {
+      console.log('[API /pathlab/activities PATCH] Updating single activity:', {
+        activityId: body.activityId,
+        updates: body.updates,
+      });
       const activity = await updatePathActivity(
         body.activityId,
         body.updates as UpdatePathActivityInput
       );
+      console.log('[API /pathlab/activities PATCH] Update successful');
       return NextResponse.json({ activity });
     }
 
+    console.log('[API /pathlab/activities PATCH] Invalid request body');
     return NextResponse.json(
       {
         error:
@@ -121,7 +138,7 @@ export async function PATCH(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error("Error updating activity:", error);
+    console.error("[API /pathlab/activities PATCH] Error updating activity:", error);
     return NextResponse.json(
       { error: "Failed to update activity" },
       { status: 500 }

@@ -113,13 +113,30 @@ export function usePageBuilder({
 
   // Save page
   const save = useCallback(async () => {
+    console.log('========================================');
+    console.log('[usePageBuilder] SAVE FUNCTION CALLED');
+    console.log('========================================');
+    console.log('[usePageBuilder] Current page state:', {
+      id: page.id,
+      title: page.title,
+      activityCount: page.activities.length,
+      activities: page.activities.map((a, idx) => ({
+        index: idx,
+        id: a.id,
+        title: a.title,
+        display_order: a.display_order,
+      })),
+    });
+
     setIsSaving(true);
     try {
+      console.log('[usePageBuilder] Calling onSave...');
       await onSave(page);
       snapshotRef.current = JSON.stringify(page);
+      console.log('[usePageBuilder] Save completed successfully');
       toast.success('Page saved');
     } catch (error) {
-      console.error('[PageBuilder] Save failed:', error);
+      console.error('[usePageBuilder] Save failed:', error);
       toast.error('Failed to save page');
       throw error;
     } finally {

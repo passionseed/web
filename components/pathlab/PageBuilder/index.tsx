@@ -74,6 +74,18 @@ export function PageBuilder({
       activities: initialActivities,
     },
     onSave: async (pageData) => {
+      console.log('[PageBuilder onSave] Saving page data:', {
+        pageId,
+        title: pageData.title,
+        activityCount: pageData.activities.length,
+        activities: pageData.activities.map((a, idx) => ({
+          index: idx,
+          id: a.id,
+          title: a.title,
+          display_order: a.display_order,
+        })),
+      });
+
       // Save page metadata
       const response = await fetch(`/api/pathlab/days`, {
         method: 'POST',
@@ -97,17 +109,45 @@ export function PageBuilder({
         const error = await response.json();
         throw new Error(error.error || 'Failed to save page');
       }
+
+      console.log('[PageBuilder onSave] Page metadata saved, now saving activity order');
+
+      // ALSO save the activity order
+      if (pageData.activities && pageData.activities.length > 0) {
+        const activityIds = pageData.activities.map(a => a.id);
+        console.log('[PageBuilder onSave] Saving activity order:', {
+          dayId: pageId,
+          activityIds,
+        });
+
+        const orderResponse = await fetch('/api/pathlab/activities', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dayId: pageId,
+            activityIds,
+          }),
+        });
+
+        if (!orderResponse.ok) {
+          const error = await orderResponse.json();
+          console.error('[PageBuilder onSave] Failed to save activity order:', error);
+          throw new Error(error.error || 'Failed to save activity order');
+        }
+
+        console.log('[PageBuilder onSave] Activity order saved successfully');
+      }
     },
     maxActivities: 20,
   });
 
-  // Auto-save
+  // Auto-save DISABLED - manual save only
   const { manualSave } = useAutoSave({
     pageId,
     data: page,
     onSave: save,
     debounceMs: 2000,
-    enabled: true,
+    enabled: false, // DISABLED auto-save
   });
 
   // Unsaved changes warning
@@ -222,12 +262,28 @@ export function PageBuilder({
   // Handle activity reorder (save to backend)
   const handleActivityReorder = useCallback(
     async (newOrder: FullPathActivity[]) => {
+      console.log('[PageBuilder] handleActivityReorder called:', {
+        pageId,
+        newOrderCount: newOrder.length,
+        newOrder: newOrder.map((a, idx) => ({
+          index: idx,
+          id: a.id,
+          title: a.title,
+          display_order: a.display_order,
+        })),
+      });
+
       // Update local state immediately for better UX
       reorderActivities(newOrder);
 
       // Save to backend
       try {
         const activityIds = newOrder.map(a => a.id);
+        console.log('[PageBuilder] Sending reorder request to API:', {
+          dayId: pageId,
+          activityIds,
+        });
+
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -240,6 +296,10 @@ export function PageBuilder({
         if (!response.ok) {
           throw new Error('Failed to save activity order');
         }
+
+        const result = await response.json();
+        console.log('[PageBuilder] Reorder API response:', result);
+        toast.success('Activity order saved');
       } catch (error) {
         console.error('[PageBuilder] Failed to save reorder:', error);
         toast.error('Failed to save activity order');
@@ -251,6 +311,8 @@ export function PageBuilder({
   // Handle move activity up
   const handleMoveActivityUp = useCallback(
     async (activityId: string) => {
+      console.log('[PageBuilder] handleMoveActivityUp called:', { activityId, pageId });
+
       moveActivity(activityId, 'up');
 
       // Save to backend
@@ -262,6 +324,11 @@ export function PageBuilder({
             [activityIds[currentIndex], activityIds[currentIndex - 1]];
         }
 
+        console.log('[PageBuilder] Sending move up request:', {
+          dayId: pageId,
+          activityIds,
+        });
+
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -274,6 +341,9 @@ export function PageBuilder({
         if (!response.ok) {
           throw new Error('Failed to save activity order');
         }
+
+        const result = await response.json();
+        console.log('[PageBuilder] Move up API response:', result);
       } catch (error) {
         console.error('[PageBuilder] Failed to save move:', error);
       }
@@ -284,6 +354,8 @@ export function PageBuilder({
   // Handle move activity down
   const handleMoveActivityDown = useCallback(
     async (activityId: string) => {
+      console.log('[PageBuilder] handleMoveActivityDown called:', { activityId, pageId });
+
       moveActivity(activityId, 'down');
 
       // Save to backend
@@ -295,6 +367,11 @@ export function PageBuilder({
             [activityIds[currentIndex + 1], activityIds[currentIndex]];
         }
 
+        console.log('[PageBuilder] Sending move down request:', {
+          dayId: pageId,
+          activityIds,
+        });
+
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -307,6 +384,9 @@ export function PageBuilder({
         if (!response.ok) {
           throw new Error('Failed to save activity order');
         }
+
+        const result = await response.json();
+        console.log('[PageBuilder] Move down API response:', result);
       } catch (error) {
         console.error('[PageBuilder] Failed to save move:', error);
       }
@@ -334,7 +414,12 @@ export function PageBuilder({
             )}
 
             <Button
-              onClick={manualSave}
+              onClick={() => {
+                console.log('========================================');
+                console.log('[PageBuilder] SAVE BUTTON CLICKED');
+                console.log('========================================');
+                save();
+              }}
               disabled={isSaving || !isDirty}
               className={cn(
                 'transition-colors',
