@@ -24,6 +24,8 @@ import {
   Plus,
   AlertTriangle,
   Info,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -501,6 +503,55 @@ export function PathDayBuilder({
     }
   }, []);
 
+  const handleMoveActivity = useCallback(async (dayNumber: number, activityIndex: number, direction: 'up' | 'down') => {
+    const day = days.find(d => d.day_number === dayNumber);
+    if (!day || !day.activities || !day.id) return;
+
+    const activities = [...day.activities];
+    const newIndex = direction === 'up' ? activityIndex - 1 : activityIndex + 1;
+
+    // Check bounds
+    if (newIndex < 0 || newIndex >= activities.length) return;
+
+    // Swap activities
+    const temp = activities[activityIndex];
+    activities[activityIndex] = activities[newIndex];
+    activities[newIndex] = temp;
+
+    // Update local state immediately for better UX
+    setDays(prev => prev.map(d =>
+      d.day_number === dayNumber ? { ...d, activities } : d
+    ));
+
+    // Update server
+    try {
+      const activityIds = activities.map(a => a.id);
+      const response = await fetch('/api/pathlab/activities', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dayId: day.id,
+          activityIds,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to reorder activities');
+    } catch (error: any) {
+      console.error('Error reordering activities:', error);
+      toast.error('Failed to reorder activities');
+      // Revert on error by refetching
+      if (day.id) {
+        const activitiesResponse = await fetch(`/api/pathlab/activities?dayId=${day.id}`);
+        if (activitiesResponse.ok) {
+          const { activities: refreshedActivities } = await activitiesResponse.json();
+          setDays(prev => prev.map(d =>
+            d.day_number === dayNumber ? { ...d, activities: refreshedActivities } : d
+          ));
+        }
+      }
+    }
+  }, [days]);
+
   // ─── Save ───────────────────────────────────────────────────────
 
   const handleSave = async () => {
@@ -764,7 +815,37 @@ export function PathDayBuilder({
                               {day.activities.map((activity, activityIdx) => (
                                 <Card key={activity.id} className="border-neutral-700">
                                   <CardContent className="p-3">
-                                    <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-start gap-2">
+                                      {/* Order indicators and reorder buttons */}
+                                      <div className="flex flex-col items-center gap-1 pt-1">
+                                        <div className="text-xs text-neutral-500 font-medium">
+                                          #{activityIdx + 1}
+                                        </div>
+                                        <div className="flex flex-col gap-0.5">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0"
+                                            onClick={() => handleMoveActivity(day.day_number, activityIdx, 'up')}
+                                            disabled={activityIdx === 0}
+                                            title="Move up"
+                                          >
+                                            <ArrowUp className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0"
+                                            onClick={() => handleMoveActivity(day.day_number, activityIdx, 'down')}
+                                            disabled={activityIdx === day.activities!.length - 1}
+                                            title="Move down"
+                                          >
+                                            <ArrowDown className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+
+                                      {/* Activity content */}
                                       <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                           <div className="font-medium text-white">{activity.title}</div>
@@ -787,6 +868,8 @@ export function PathDayBuilder({
                                           )}
                                         </div>
                                       </div>
+
+                                      {/* Action buttons */}
                                       <div className="flex gap-1">
                                         <Button
                                           variant="ghost"
