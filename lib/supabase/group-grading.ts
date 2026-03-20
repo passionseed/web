@@ -524,52 +524,63 @@ export const getGroupWithProgress = async (
     throw new ClassroomError("FETCH_ASSIGNMENTS_FAILED", assignmentsError.message);
   }
 
+  // ⚡ Bolt: Fetch all enrollments for all members at once to avoid N+1 queries
+  let allEnrollments: any[] = [];
+  const memberIds = members?.map((m: any) => m.user_id) || [];
+
+  if (assignments && assignments.length > 0 && memberIds.length > 0) {
+    const assignmentIds = assignments.map(a => a.assignment_id);
+    const { data: enrollmentsData, error: enrollmentsError } = await supabase
+      .from("assignment_enrollments")
+      .select(`
+        user_id,
+        assignment_id,
+        status,
+        completion_percentage,
+        completed_at
+      `)
+      .in("user_id", memberIds)
+      .in("assignment_id", assignmentIds);
+
+    if (!enrollmentsError && enrollmentsData) {
+      allEnrollments = enrollmentsData;
+    }
+  }
+
   // Get progress for each member
-  const membersWithProgress = await Promise.all(
-    members?.map(async (member: any) => {
-      let progress;
-      
-      if (assignments && assignments.length > 0) {
-        // Get enrollment progress for each assignment
-        const assignmentIds = assignments.map(a => a.assignment_id);
-        const { data: enrollments, error: enrollmentsError } = await supabase
-          .from("assignment_enrollments")
-          .select(`
-            assignment_id,
-            status,
-            completion_percentage,
-            completed_at
-          `)
-          .eq("user_id", member.user_id)
-          .in("assignment_id", assignmentIds);
+  const membersWithProgress = members?.map((member: any) => {
+    let progress;
 
-        if (!enrollmentsError && enrollments) {
-          const completedAssignments = enrollments.filter(e => e.status === "completed").length;
-          const totalCompletion = enrollments.reduce((sum, e) => sum + (e.completion_percentage || 0), 0);
-          const averageCompletion = enrollments.length > 0 ? totalCompletion / enrollments.length : 0;
+    if (assignments && assignments.length > 0) {
+      // ⚡ Bolt: Filter enrollments from the batched query results
+      const memberEnrollments = allEnrollments.filter(e => e.user_id === member.user_id);
 
-          progress = {
-            completion_percentage: averageCompletion,
-            status: enrollments.some(e => e.status === "completed") ? "completed" : 
-                    enrollments.some(e => e.status === "submitted") ? "submitted" : 
-                    enrollments.some(e => e.status === "in_progress") ? "in_progress" : "assigned",
-            completed_nodes: completedAssignments,
-            total_nodes: assignments.length,
-            last_activity: enrollments.length > 0 
-              ? enrollments.reduce((latest, e) => 
-                  e.completed_at > latest ? e.completed_at : latest, "" as string)
-              : undefined
-          };
-        }
+      if (memberEnrollments) {
+        const completedAssignments = memberEnrollments.filter(e => e.status === "completed").length;
+        const totalCompletion = memberEnrollments.reduce((sum, e) => sum + (e.completion_percentage || 0), 0);
+        const averageCompletion = memberEnrollments.length > 0 ? totalCompletion / memberEnrollments.length : 0;
+
+        progress = {
+          completion_percentage: averageCompletion,
+          status: memberEnrollments.some(e => e.status === "completed") ? "completed" :
+                  memberEnrollments.some(e => e.status === "submitted") ? "submitted" :
+                  memberEnrollments.some(e => e.status === "in_progress") ? "in_progress" : "assigned",
+          completed_nodes: completedAssignments,
+          total_nodes: assignments.length,
+          last_activity: memberEnrollments.length > 0
+            ? memberEnrollments.reduce((latest, e) =>
+                (e.completed_at && e.completed_at > latest) ? e.completed_at : latest, "" as string)
+            : undefined
+        };
       }
+    }
 
-      return {
-        ...member,
-        profiles: member.profiles[0] || member.profiles, // Handle both array and object cases
-        progress
-      };
-    }) || []
-  ) as any;
+    return {
+      ...member,
+      profiles: member.profiles[0] || member.profiles, // Handle both array and object cases
+      progress
+    };
+  }) || [];
 
   // Calculate overall progress
   const allProgress = membersWithProgress
