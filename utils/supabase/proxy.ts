@@ -63,6 +63,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/expert-interview') &&
     !request.nextUrl.pathname.startsWith('/api/expert-interview') &&
     !request.nextUrl.pathname.startsWith('/epic-sprint') &&
+    !request.nextUrl.pathname.endsWith('.md') &&
     request.nextUrl.pathname !== '/'
   ) {
     // no user, potentially respond by redirecting the user to the login page
