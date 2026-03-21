@@ -15,12 +15,30 @@ export default async function Home() {
       user?.aud === "anonymous" ||
       false;
 
+    if (user && isAnonymous) {
+      const { data: anonProfile } = await supabase
+        .from("profiles")
+        .select("is_onboarded")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (anonProfile?.is_onboarded) {
+        redirect("/me");
+      }
+
+      redirect("/onboard");
+    }
+
     if (user && !isAnonymous) {
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("full_name, username, date_of_birth")
+        .select("full_name, username, date_of_birth, is_onboarded")
         .eq("id", user.id)
         .single();
+
+      if (!profileData?.is_onboarded) {
+        redirect("/onboard");
+      }
 
       if (
         profileError ||

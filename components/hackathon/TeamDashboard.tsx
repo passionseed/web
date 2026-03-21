@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, Users, Clock, RefreshCw } from "lucide-react";
+import { Copy, Check, Users, Clock, RefreshCw, Sparkles } from "lucide-react";
 import FractalGlassBackground from "@/components/hackathon/ClarityGlassBackground";
 import { PartyIcon, CrownIcon, RocketIcon, KeyIcon, FindIcon } from "@/components/hackathon/TeamIcons";
 
@@ -23,6 +23,13 @@ type Team = {
 
 type Participant = { id: string; name: string; university: string };
 
+type InterestEntry = {
+    participant_id: string;
+    name: string;
+    problem_preferences: string[];
+    team_role_preference: string;
+};
+
 type Props = {
     initialTeam: Team | null;
     participant: Participant;
@@ -40,6 +47,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
     const [copied, setCopied] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
     const [matchingPosition, setMatchingPosition] = useState<number | null>(null);
+    const [teamInterests, setTeamInterests] = useState<InterestEntry[]>([]);
     const [isMatching, setIsMatching] = useState(false);
     const router = useRouter();
 
@@ -94,6 +102,14 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         const interval = setInterval(refreshTeam, 5000);
         return () => clearInterval(interval);
     }, [team, refreshTeam]);
+
+    useEffect(() => {
+        if (!team) return;
+        fetch("/api/hackathon/team/interests")
+            .then((r) => r.json())
+            .then((data) => { if (data.interests) setTeamInterests(data.interests); })
+            .catch(() => {});
+    }, [team]);
 
     useEffect(() => {
         if (!isMatching) return;
@@ -281,6 +297,81 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                     {isOwner && (
                         <p className="text-center text-gray-400 text-sm">รอสมาชิกเข้าร่วมทีม...</p>
                     )}
+
+                    {/* Team Problem Interests Panel */}
+                    {teamInterests.length > 0 && (() => {
+                        const PROBLEM_LABELS: Record<string, { title: string; color: string }> = {
+                            P1: { title: "Last-Mile Chronic Disease", color: "#91C4E3" },
+                            P2: { title: "Traditional Medicine Data", color: "#91C4E3" },
+                            P3: { title: "Preventive Intervention", color: "#91C4E3" },
+                            P4: { title: "The Stigma Wall", color: "#A594BA" },
+                            P5: { title: "Connected But Alone", color: "#A594BA" },
+                            P6: { title: "Mental Care Last Mile", color: "#A594BA" },
+                            P7: { title: "Data Rich, Action Poor", color: "#91C4E3" },
+                            P8: { title: "Food Safety Blind Spot", color: "#91C4E3" },
+                            P9: { title: "PM2.5 vs. Children", color: "#91C4E3" },
+                        };
+                        // Count how many members picked each problem
+                        const counts: Record<string, string[]> = {};
+                        teamInterests.forEach((entry) => {
+                            (entry.problem_preferences || []).forEach((pid) => {
+                                if (!counts[pid]) counts[pid] = [];
+                                counts[pid].push(entry.name);
+                            });
+                        });
+                        const sorted = Object.entries(counts).sort((a, b) => b[1].length - a[1].length);
+                        const shared = sorted.filter(([, names]) => names.length > 1);
+
+                        return (
+                            <div className="bg-gradient-to-br from-[#0d1219]/90 to-[#121c29]/80 border border-[#4a6b82]/15 rounded-2xl p-5 shadow-[0_0_20px_rgba(74,107,130,0.1)]">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Sparkles className="w-4 h-4 text-[#91C4E3]" />
+                                    <span className="font-semibold text-[#7aa4c4] text-sm">Team Problem Interests</span>
+                                </div>
+                                {shared.length > 0 && (
+                                    <div className="mb-4 p-3 rounded-xl border border-[#91C4E3]/20" style={{ background: "rgba(145,196,227,0.05)" }}>
+                                        <p className="text-[10px] text-[#91C4E3]/60 uppercase tracking-widest mb-2">Shared by multiple members</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {shared.map(([pid, names]) => {
+                                                const info = PROBLEM_LABELS[pid];
+                                                return info ? (
+                                                    <div key={pid} className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full" style={{ background: `${info.color}15`, border: `1px solid ${info.color}35`, color: info.color }}>
+                                                        <span className="font-mono opacity-60">{pid}</span>
+                                                        <span>{info.title}</span>
+                                                        <span className="opacity-50">·{names.length}</span>
+                                                    </div>
+                                                ) : null;
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="space-y-2">
+                                    {teamInterests.map((entry) => (
+                                        <div key={entry.participant_id} className="flex items-start justify-between gap-3">
+                                            <span className="text-xs text-gray-400 w-24 flex-shrink-0 truncate">{entry.name}</span>
+                                            <div className="flex flex-wrap gap-1 flex-1">
+                                                {(entry.problem_preferences || []).map((pid) => {
+                                                    const info = PROBLEM_LABELS[pid];
+                                                    return info ? (
+                                                        <span key={pid} className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: `${info.color}15`, color: `${info.color}80` }}>
+                                                            {pid}
+                                                        </span>
+                                                    ) : null;
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-white/5">
+                                    <a href="/pre-questionnaire" className="text-[10px] text-[#7aa4c4]/50 hover:text-[#7aa4c4] transition-colors">
+                                        {teamInterests.length < team.members.length
+                                            ? `${team.members.length - teamInterests.length} member(s) haven't filled the questionnaire yet →`
+                                            : "All members have filled the questionnaire ✓"}
+                                    </a>
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* Leave Team Button */}
                     <button
