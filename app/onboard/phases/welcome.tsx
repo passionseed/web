@@ -23,12 +23,12 @@ const CONTENT = {
     greeting: (name: string) =>
       `Hey ${name}, let’s figure out what excites you.`,
     helper: "Choose how you want to move through onboarding.",
-    chatTitle: "Chat with AI",
+    chatTitle: "Talk it through",
     chatDescription: "Talk naturally and let the system read your signal.",
-    wizardTitle: "Step-by-step wizard",
+    wizardTitle: "Go step by step",
     wizardDescription: "Answer one focused question at a time.",
-    selected: "Selected",
-    choose: "Choose",
+    selected: "Selected path",
+    choose: "Tap to choose",
     continue: "Continue",
     languageToggle: "TH",
   },
@@ -40,12 +40,12 @@ const CONTENT = {
     greeting: (name: string) =>
       `สวัสดี ${name} เรามาหาสิ่งที่ทำให้คุณรู้สึกอยากไปต่อกัน`,
     helper: "เลือกวิธีที่คุณอยากเริ่มต้น",
-    chatTitle: "คุยกับ AI",
+    chatTitle: "เล่าแบบคุยกัน",
     chatDescription: "เล่าแบบธรรมชาติ แล้วให้ระบบจับสัญญาณของคุณ",
-    wizardTitle: "ตอบแบบเป็นขั้นตอน",
+    wizardTitle: "ค่อย ๆ ไปทีละขั้น",
     wizardDescription: "ค่อย ๆ ตอบทีละคำถามอย่างมีโครงสร้าง",
-    selected: "เลือกแล้ว",
-    choose: "เลือกวิธีนี้",
+    selected: "วิธีที่เลือกอยู่",
+    choose: "แตะเพื่อเลือก",
     continue: "ไปต่อ",
     languageToggle: "EN",
   },
@@ -130,22 +130,34 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                     type="button"
                     onClick={() => setMode(option.value)}
                     className={[
-                      "ei-card relative flex min-h-[148px] flex-col items-start justify-between overflow-hidden rounded-[24px] border p-5 text-left transition-colors",
+                      "ei-card relative flex min-h-[164px] flex-col items-start justify-between overflow-hidden rounded-[24px] border p-5 text-left transition-all duration-200",
                       isSelected
-                        ? "border-orange-300/40 bg-white/[0.07]"
+                        ? "translate-y-[-1px] border-orange-200/70 bg-white/[0.11] shadow-[0_18px_60px_rgba(249,115,22,0.16)]"
                         : "border-white/10 bg-white/[0.03]",
                     ].join(" ")}
+                    aria-pressed={isSelected}
                   >
                     <div
                       className={[
-                        "pointer-events-none absolute inset-0 bg-gradient-to-br opacity-80",
+                        "pointer-events-none absolute inset-0 bg-gradient-to-br transition-opacity duration-200",
                         option.accent,
+                        isSelected ? "opacity-100" : "opacity-65",
                       ].join(" ")}
                     />
-                    <div className="relative space-y-3">
-                      <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-white/12 bg-black/15 px-3 text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
-                        {option.value}
+                    <div className="absolute right-4 top-4">
+                      <span
+                        className={[
+                          "inline-flex h-8 min-w-8 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-200",
+                          isSelected
+                            ? "border-orange-200/80 bg-orange-300/18 text-orange-100"
+                            : "border-white/12 bg-black/15 text-white/35",
+                        ].join(" ")}
+                        aria-hidden="true"
+                      >
+                        {isSelected ? "✓" : ""}
                       </span>
+                    </div>
+                    <div className="relative space-y-3 pr-10">
                       <div className="space-y-1.5">
                         <h2 className="text-lg font-semibold text-white">
                           {option.title}
@@ -156,11 +168,14 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                       </div>
                     </div>
 
-                    {isSelected ? (
-                      <span className="relative mt-5 inline-flex items-center text-xs font-semibold text-white/55">
-                        {content.selected}
-                      </span>
-                    ) : null}
+                    <span
+                      className={[
+                        "relative mt-5 inline-flex items-center text-xs font-semibold",
+                        isSelected ? "text-orange-100" : "text-white/42",
+                      ].join(" ")}
+                    >
+                      {isSelected ? content.selected : content.choose}
+                    </span>
                   </button>
                 );
               })}
