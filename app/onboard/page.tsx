@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { isAnonymousUser } from "@/lib/supabase/auth";
 import { OnboardClient } from "./onboard-client";
 import type { OnboardingState } from "@/types/onboarding";
 
@@ -35,13 +36,13 @@ export default async function OnboardPage() {
     typeof user.user_metadata?.full_name === "string"
       ? user.user_metadata.full_name
       : typeof user.user_metadata?.name === "string"
-        ? user.user_metadata.name
-        : null;
+      ? user.user_metadata.name
+      : null;
 
   return (
     <OnboardClient
       userId={user.id}
-      isAnonymous={user.is_anonymous === true}
+      isAnonymous={isAnonymousUser(user)}
       oauthName={oauthName}
       initialState={state as OnboardingState | null}
     />

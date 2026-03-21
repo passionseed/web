@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
-import { createClient } from '@/utils/supabase/server';
-import { createAdminClient } from '@/utils/supabase/admin';
+import { isAnonymousUser } from "@/lib/supabase/auth";
+import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 interface CompleteBody {
   username: string;
   date_of_birth: string;
-  education_level: 'high_school' | 'university' | 'unaffiliated';
-  preferred_language: 'en' | 'th';
+  education_level: "high_school" | "university" | "unaffiliated";
+  preferred_language: "en" | "th";
   interests: string[];
   collected_data: Record<string, unknown>;
   email?: string;
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = (await request.json()) as CompleteBody;
@@ -38,40 +39,54 @@ export async function POST(request: NextRequest) {
       password,
     } = body;
 
-    if (!username || !date_of_birth || !education_level || !preferred_language) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 422 });
+    if (
+      !username ||
+      !date_of_birth ||
+      !education_level ||
+      !preferred_language
+    ) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 422 }
+      );
     }
 
     const admin = createAdminClient();
     const now = new Date().toISOString();
     const normalizedUsername = username.trim().toLowerCase();
-    const isAnonymous =
-      user.is_anonymous === true ||
-      user.app_metadata?.provider === 'anonymous' ||
-      user.aud === 'anonymous';
+    const isAnonymous = isAnonymousUser(user);
 
     if (isAnonymous) {
       if (!email || !password) {
         return NextResponse.json(
-          { error: 'Email and password required for account creation' },
-          { status: 422 },
+          { error: "Email and password required for account creation" },
+          { status: 422 }
         );
       }
 
       const normalizedEmail = email.trim().toLowerCase();
       const { data: existingEmail, error: emailLookupError } = await admin
-        .from('profiles')
-        .select('id')
-        .eq('email', normalizedEmail)
+        .from("profiles")
+        .select("id")
+        .eq("email", normalizedEmail)
         .maybeSingle();
 
       if (emailLookupError) {
-        console.error('[onboarding/complete] email lookup error', emailLookupError);
-        return NextResponse.json({ error: 'Email lookup failed' }, { status: 500 });
+        console.error(
+          "[onboarding/complete] email lookup error",
+          emailLookupError
+        );
+        return NextResponse.json(
+          { error: "Email lookup failed" },
+          { status: 500 }
+        );
       }
 
       if (existingEmail) {
-        return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
+        return NextResponse.json(
+          { error: "Email already exists" },
+          { status: 409 }
+        );
       }
 
       const { error: upgradeError } = await supabase.auth.updateUser({
@@ -80,32 +95,46 @@ export async function POST(request: NextRequest) {
       });
 
       if (upgradeError) {
-        console.error('[onboarding/complete] upgrade error', upgradeError);
-        return NextResponse.json({ error: upgradeError.message }, { status: 400 });
+        console.error("[onboarding/complete] upgrade error", upgradeError);
+        return NextResponse.json(
+          { error: upgradeError.message },
+          { status: 400 }
+        );
       }
     }
 
     const { data: existingUsername, error: usernameLookupError } = await admin
-      .from('profiles')
-      .select('id')
-      .eq('username', normalizedUsername)
-      .neq('id', user.id)
+      .from("profiles")
+      .select("id")
+      .eq("username", normalizedUsername)
+      .neq("id", user.id)
       .maybeSingle();
 
     if (usernameLookupError) {
-      console.error('[onboarding/complete] username lookup error', usernameLookupError);
-      return NextResponse.json({ error: 'Username lookup failed' }, { status: 500 });
+      console.error(
+        "[onboarding/complete] username lookup error",
+        usernameLookupError
+      );
+      return NextResponse.json(
+        { error: "Username lookup failed" },
+        { status: 500 }
+      );
     }
 
     if (existingUsername) {
-      return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
+      return NextResponse.json(
+        { error: "Username already taken" },
+        { status: 409 }
+      );
     }
 
     const resolvedEmail = user.email || email?.trim().toLowerCase() || null;
     const resolvedName =
-      typeof collected_data?.name === 'string' ? collected_data.name.trim() || null : null;
+      typeof collected_data?.name === "string"
+        ? collected_data.name.trim() || null
+        : null;
 
-    const { error: profileError } = await admin.from('profiles').upsert(
+    const { error: profileError } = await admin.from("profiles").upsert(
       {
         id: user.id,
         username: normalizedUsername,
@@ -118,12 +147,15 @@ export async function POST(request: NextRequest) {
         onboarded_at: now,
         updated_at: now,
       },
-      { onConflict: 'id' },
+      { onConflict: "id" }
     );
 
     if (profileError) {
-      console.error('[onboarding/complete] profile error', profileError);
-      return NextResponse.json({ error: 'Profile update failed' }, { status: 500 });
+      console.error("[onboarding/complete] profile error", profileError);
+      return NextResponse.json(
+        { error: "Profile update failed" },
+        { status: 500 }
+      );
     }
 
     if (Array.isArray(interests) && interests.length > 0) {
@@ -133,22 +165,33 @@ export async function POST(request: NextRequest) {
         .map((career_name) => ({
           user_id: user.id,
           career_name,
-          source: 'user_typed' as const,
+          source: "user_typed" as const,
         }));
 
       if (goals.length > 0) {
-        const { error: careerGoalsError } = await admin.from('career_goals').insert(goals);
+        const { error: careerGoalsError } = await admin
+          .from("career_goals")
+          .insert(goals);
 
         if (careerGoalsError) {
-          console.error('[onboarding/complete] career goals error', careerGoalsError);
-          return NextResponse.json({ error: 'Career goals update failed' }, { status: 500 });
+          console.error(
+            "[onboarding/complete] career goals error",
+            careerGoalsError
+          );
+          return NextResponse.json(
+            { error: "Career goals update failed" },
+            { status: 500 }
+          );
         }
       }
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error('[onboarding/complete] unexpected error', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("[onboarding/complete] unexpected error", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
