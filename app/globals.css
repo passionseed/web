@@ -177,6 +177,35 @@
     transform 180ms ease-out;
 }
 
+.ei-card--lit {
+  border-color: rgba(255, 214, 140, 0.68);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.22),
+    0 0 28px rgba(251, 191, 36, 0.16), 0 10px 34px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 248, 220, 0.22),
+    inset 0 -2px 8px rgba(120, 45, 10, 0.18);
+  transform: translateY(-1px);
+}
+
+.ei-card--lit::before,
+.ei-card--lit:hover::before {
+  clip-path: inset(0% 0 0 0 round 13px);
+  opacity: 1;
+  filter: blur(3px);
+  transition: clip-path 200ms ease-out, opacity 200ms ease-out,
+    filter 200ms ease-out;
+}
+
+.ei-card--lit:hover {
+  border-color: rgba(255, 214, 140, 0.68);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.22),
+    0 0 28px rgba(251, 191, 36, 0.16), 0 10px 34px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 248, 220, 0.22),
+    inset 0 -2px 8px rgba(120, 45, 10, 0.18);
+  transform: translateY(-1px);
+  transition: box-shadow 180ms ease-out, border-color 180ms ease-out,
+    transform 180ms ease-out;
+}
+
 /* ── Dusk button keyframes ─────────────────────────────────────────────── */
 
 /* Wave-a and wave-b use prime durations (4231ms, 5711ms) so they
