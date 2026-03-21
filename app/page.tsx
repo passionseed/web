@@ -1,4 +1,5 @@
 import { LandingPageWrapper } from "@/components/landing-page-wrapper";
+import { isAnonymousUser } from "@/lib/supabase/auth";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -7,13 +8,11 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const isAnonymous =
-      user?.is_anonymous === true ||
-      user?.app_metadata?.provider === "anonymous" ||
-      user?.aud === "anonymous" ||
-      false;
+    const isAnonymous = isAnonymousUser(user);
 
     if (user && isAnonymous) {
       const { data: anonProfile } = await supabase
