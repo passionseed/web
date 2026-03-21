@@ -52,7 +52,10 @@ export function AssessmentChatPhase({
       ...chatHistory,
       { role: "user" as const, content: text },
     ];
-    onChatHistoryChange(nextHistory);
+    onChatHistoryChange([
+      ...nextHistory,
+      { role: "assistant" as const, content: "" },
+    ]);
     setIsLoading(true);
 
     try {
@@ -70,12 +73,61 @@ export function AssessmentChatPhase({
         throw new Error("Chat error");
       }
 
-      const json = await response.json();
-      onChatHistoryChange([
-        ...nextHistory,
-        { role: "assistant", content: json.message as string },
-      ]);
-      setLocalData(json.collected_data as CollectedData);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("Missing response body");
+      }
+
+      let assistantText = "";
+      let pending = "";
+
+      const updateAssistantMessage = (content: string) => {
+        onChatHistoryChange([...nextHistory, { role: "assistant", content }]);
+      };
+
+      while (true) {
+        const { value, done } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        pending += decoder.decode(value, { stream: true });
+        const lines = pending.split("\n");
+        pending = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) {
+            continue;
+          }
+
+          const packet = JSON.parse(line) as
+            | { type: "delta"; delta: string }
+            | {
+                type: "done";
+                message: string;
+                collected_data: CollectedData;
+              }
+            | { type: "error"; error: string };
+
+          if (packet.type === "delta") {
+            assistantText += packet.delta;
+            updateAssistantMessage(assistantText);
+            continue;
+          }
+
+          if (packet.type === "done") {
+            assistantText = packet.message;
+            updateAssistantMessage(assistantText);
+            setLocalData(packet.collected_data);
+            continue;
+          }
+
+          throw new Error(packet.error);
+        }
+      }
     } catch {
       onChatHistoryChange([
         ...nextHistory,
