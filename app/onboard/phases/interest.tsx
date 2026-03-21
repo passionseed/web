@@ -52,12 +52,7 @@ const CLUSTERS: Record<string, string[]> = {
     "Photography",
     "Animation",
   ],
-  Law: [
-    "Law",
-    "International Relations",
-    "Political Science",
-    "Public Policy",
-  ],
+  Law: ["Law", "International Relations", "Political Science", "Public Policy"],
   Education: [
     "Teaching",
     "Educational Psychology",
@@ -88,8 +83,8 @@ export function InterestPhase({ data, advance, goBack }: Props) {
       prev.includes(item)
         ? prev.filter((entry) => entry !== item)
         : prev.length < 3
-          ? [...prev, item]
-          : prev,
+        ? [...prev, item]
+        : prev
     );
   };
 
@@ -108,13 +103,13 @@ export function InterestPhase({ data, advance, goBack }: Props) {
     setExpandedClusters((prev) =>
       prev.includes(cluster)
         ? prev.filter((entry) => entry !== cluster)
-        : [...prev, cluster],
+        : [...prev, cluster]
     );
   };
 
   return (
     <section className="w-full max-w-3xl px-6">
-      <div className="ei-card border-white/10 bg-white/[0.04] p-6 sm:p-8">
+      <div className="ei-card ei-card--static border-white/10 bg-white/[0.04] p-6 sm:p-8">
         <div className="mb-6 flex items-start justify-between gap-4">
           <BackButton
             label={isEn ? "Back" : "ย้อนกลับ"}
@@ -123,17 +118,17 @@ export function InterestPhase({ data, advance, goBack }: Props) {
             }}
           />
           <div className="text-center">
-          <p className="text-xs uppercase tracking-[0.24em] text-orange-200/65">
-            {isEn ? "Interests" : "ความสนใจ"}
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">
-            {isEn ? "What are you interested in?" : "คุณสนใจด้านไหน?"}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-white/60">
-            {isEn
-              ? "Pick up to 3. You do not need to be certain yet."
-              : "เลือกได้สูงสุด 3 อย่าง ยังไม่ต้องแน่ใจ 100% ก็ได้"}
-          </p>
+            <p className="text-xs uppercase tracking-[0.24em] text-orange-200/65">
+              {isEn ? "Interests" : "ความสนใจ"}
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">
+              {isEn ? "What are you interested in?" : "คุณสนใจด้านไหน?"}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              {isEn
+                ? "Pick up to 3. You do not need to be certain yet."
+                : "เลือกได้สูงสุด 3 อย่าง ยังไม่ต้องแน่ใจ 100% ก็ได้"}
+            </p>
           </div>
           <div className="w-[72px]" aria-hidden="true" />
         </div>
@@ -147,40 +142,42 @@ export function InterestPhase({ data, advance, goBack }: Props) {
                 key={cluster}
                 className="ei-card overflow-hidden border-white/10 bg-white/[0.03]"
               >
-              <button
-                type="button"
-                onClick={() => toggleCluster(cluster)}
-                className="flex w-full items-center gap-3 p-4 text-left"
-              >
-                <span className="text-2xl">{CLUSTER_ICONS[cluster]}</span>
-                <span className="flex-1 text-sm font-medium text-white/90">
-                  {cluster}
-                </span>
-                <span className="text-sm text-white/45">{isExpanded ? "−" : "+"}</span>
-              </button>
-              {isExpanded ? (
-                <div className="flex flex-wrap gap-2 border-t border-white/8 px-4 py-4">
-                  {CLUSTERS[cluster].map((item) => {
-                    const isSelected = selected.includes(item);
+                <button
+                  type="button"
+                  onClick={() => toggleCluster(cluster)}
+                  className="flex w-full items-center gap-3 p-4 text-left"
+                >
+                  <span className="text-2xl">{CLUSTER_ICONS[cluster]}</span>
+                  <span className="flex-1 text-sm font-medium text-white/90">
+                    {cluster}
+                  </span>
+                  <span className="text-sm text-white/45">
+                    {isExpanded ? "−" : "+"}
+                  </span>
+                </button>
+                {isExpanded ? (
+                  <div className="flex flex-wrap gap-2 border-t border-white/8 px-4 py-4">
+                    {CLUSTERS[cluster].map((item) => {
+                      const isSelected = selected.includes(item);
 
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => toggle(item)}
-                        className={[
-                          "rounded-full border px-3 py-2 text-sm",
-                          isSelected
-                            ? "border-orange-300/60 bg-orange-300/15 text-white"
-                            : "border-white/10 bg-white/[0.03] text-white/75",
-                        ].join(" ")}
-                      >
-                        {item}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => toggle(item)}
+                          className={[
+                            "rounded-full border px-3 py-2 text-sm",
+                            isSelected
+                              ? "border-orange-300/60 bg-orange-300/15 text-white"
+                              : "border-white/10 bg-white/[0.03] text-white/75",
+                          ].join(" ")}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
             );
           })}
@@ -196,7 +193,9 @@ export function InterestPhase({ data, advance, goBack }: Props) {
                 addCustom();
               }
             }}
-            placeholder={isEn ? "Type something else..." : "พิมพ์สิ่งที่สนใจเพิ่มเติม..."}
+            placeholder={
+              isEn ? "Type something else..." : "พิมพ์สิ่งที่สนใจเพิ่มเติม..."
+            }
             className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-orange-300/55 focus:outline-none"
           />
           <button

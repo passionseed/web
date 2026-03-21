@@ -24,6 +24,12 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastMessage = messages[messages.length - 1];
+  const showLoadingBubble =
+    isLoading &&
+    (!lastMessage ||
+      lastMessage.role !== "assistant" ||
+      lastMessage.content.trim().length === 0);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,7 +68,9 @@ export function ChatPanel({
           {messages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex ${
+                message.role === "user" ? "justify-end" : "justify-start"
+              }`}
             >
               <div
                 className={[
@@ -77,7 +85,7 @@ export function ChatPanel({
             </div>
           ))}
 
-          {isLoading ? (
+          {showLoadingBubble ? (
             <div className="flex justify-start">
               <div className="rounded-[1.35rem] border border-white/8 bg-white/8 px-4 py-3 text-sm text-white/55">
                 ...
