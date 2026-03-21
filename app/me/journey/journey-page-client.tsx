@@ -71,16 +71,16 @@ export function JourneyPageClientWrapper({
         setOnBackToOverview: setBackToOverviewCallback,
       }}
     >
-      <div className="flex h-screen flex-col bg-slate-950">
+      <div className="flex h-screen flex-col bg-[linear-gradient(to_bottom,#020617_0%,#0f172a_28%,#1e1b4b_58%,#312e81_82%,#1e3a5f_100%)]">
         {/* Header with breadcrumb and back button */}
-        <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm px-4 md:px-6 py-3 md:py-4 sticky top-0 z-20">
+        <header className="border-b border-white/10 bg-white/[0.04] backdrop-blur-sm px-4 md:px-6 py-3 md:py-4 sticky top-0 z-20">
           <div className="container mx-auto max-w-7xl flex items-center justify-between gap-4">
             {/* Back button */}
             <Link href="/me">
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2 text-slate-400 hover:text-white hover:bg-slate-800"
+                className="gap-2 text-white/60 hover:text-white hover:bg-white/10"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Back to Dashboard</span>
@@ -171,7 +171,7 @@ export function JourneyPageClientWrapper({
         </header>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-slate-950 relative">
+        <main className="flex-1 overflow-y-auto relative">
           {showDirection && directionData ? (
             <div className="container mx-auto max-w-7xl px-4 py-8">
               <DirectionResultsView

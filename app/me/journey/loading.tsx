@@ -2,9 +2,9 @@ import { Loader2 } from "lucide-react";
 
 export default function Loading() {
   return (
-    <div className="flex h-screen flex-col bg-slate-950">
+    <div className="flex h-screen flex-col bg-[linear-gradient(to_bottom,#020617_0%,#0f172a_28%,#1e1b4b_58%,#312e81_82%,#1e3a5f_100%)]">
       {/* Header skeleton */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm px-4 md:px-6 py-3 md:py-4 sticky top-0 z-20">
+      <header className="border-b border-white/10 bg-white/[0.04] backdrop-blur-sm px-4 md:px-6 py-3 md:py-4 sticky top-0 z-20">
         <div className="container mx-auto max-w-7xl flex items-center justify-between gap-4">
           {/* Back button skeleton */}
           <div className="w-24 h-9 bg-slate-800 rounded-md animate-pulse" />
