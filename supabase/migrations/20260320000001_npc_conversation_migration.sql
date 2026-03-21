@@ -194,6 +194,7 @@ BEGIN
     SET id           = EXCLUDED.id,
         content_type  = EXCLUDED.content_type,
         content_title = EXCLUDED.content_title,
-        metadata      = EXCLUDED.metadata;
+        metadata      = EXCLUDED.metadata,
+        content_body  = NULL; -- clear stale inline messages array from old format
 
 END $$;
