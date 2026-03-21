@@ -63,7 +63,7 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
 
   return (
     <section className="w-full max-w-3xl">
-      <div className="ei-card relative overflow-hidden rounded-[28px] border border-white/10 px-6 py-6 sm:px-10 sm:py-8">
+      <div className="ei-card ei-card--static relative overflow-hidden rounded-[28px] border border-white/10 px-6 py-6 sm:px-10 sm:py-8">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(251,146,60,0.16),transparent_70%)] opacity-90" />
 
         <div className="relative flex flex-col gap-6">
@@ -112,6 +112,8 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                     title: content.chatTitle,
                     description: content.chatDescription,
                     accent: "from-orange-300/24 via-pink-400/16 to-transparent",
+                    selectedSurface:
+                      "border-orange-200/70 bg-[linear-gradient(160deg,rgba(251,146,60,0.24)_0%,rgba(236,72,153,0.13)_52%,rgba(255,255,255,0.08)_100%)] shadow-[0_18px_60px_rgba(249,115,22,0.14)]",
                   },
                   {
                     value: "wizard",
@@ -119,6 +121,8 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                     description: content.wizardDescription,
                     accent:
                       "from-violet-300/18 via-fuchsia-400/12 to-transparent",
+                    selectedSurface:
+                      "border-fuchsia-200/60 bg-[linear-gradient(160deg,rgba(167,139,250,0.2)_0%,rgba(217,70,239,0.14)_48%,rgba(255,255,255,0.08)_100%)] shadow-[0_18px_60px_rgba(168,85,247,0.14)]",
                   },
                 ] as const
               ).map((option) => {
@@ -132,7 +136,7 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                     className={[
                       "ei-card relative flex min-h-[164px] flex-col items-start justify-between overflow-hidden rounded-[24px] border p-5 text-left transition-all duration-200",
                       isSelected
-                        ? "translate-y-[-1px] border-orange-200/70 bg-white/[0.11] shadow-[0_18px_60px_rgba(249,115,22,0.16)]"
+                        ? `border ${option.selectedSurface}`
                         : "border-white/10 bg-white/[0.03]",
                     ].join(" ")}
                     aria-pressed={isSelected}
@@ -144,20 +148,7 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                         isSelected ? "opacity-100" : "opacity-65",
                       ].join(" ")}
                     />
-                    <div className="absolute right-4 top-4">
-                      <span
-                        className={[
-                          "inline-flex h-8 min-w-8 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-200",
-                          isSelected
-                            ? "border-orange-200/80 bg-orange-300/18 text-orange-100"
-                            : "border-white/12 bg-black/15 text-white/35",
-                        ].join(" ")}
-                        aria-hidden="true"
-                      >
-                        {isSelected ? "✓" : ""}
-                      </span>
-                    </div>
-                    <div className="relative space-y-3 pr-10">
+                    <div className="relative space-y-3">
                       <div className="space-y-1.5">
                         <h2 className="text-lg font-semibold text-white">
                           {option.title}
@@ -171,7 +162,7 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                     <span
                       className={[
                         "relative mt-5 inline-flex items-center text-xs font-semibold",
-                        isSelected ? "text-orange-100" : "text-white/42",
+                        isSelected ? "text-white/92" : "text-white/42",
                       ].join(" ")}
                     >
                       {isSelected ? content.selected : content.choose}
