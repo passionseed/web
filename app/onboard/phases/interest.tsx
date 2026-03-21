@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 
+import { BackButton } from "../components/back-button";
 import type { CollectedData, OnboardingStep } from "@/types/onboarding";
 
 interface Props {
   data: CollectedData;
   advance: (step: OnboardingStep, updates: Partial<CollectedData>) => void;
+  goBack: () => void | Promise<void>;
 }
 
 const CLUSTERS: Record<string, string[]> = {
@@ -74,9 +76,9 @@ const CLUSTER_ICONS: Record<string, string> = {
   Education: "📚",
 };
 
-export function InterestPhase({ data, advance }: Props) {
+export function InterestPhase({ data, advance, goBack }: Props) {
   const [selected, setSelected] = useState<string[]>(data.interests ?? []);
-  const [activeCluster, setActiveCluster] = useState<string | null>(null);
+  const [expandedClusters, setExpandedClusters] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
 
   const isEn = (data.language ?? "en") === "en";
@@ -102,10 +104,25 @@ export function InterestPhase({ data, advance }: Props) {
     setCustomInput("");
   };
 
+  const toggleCluster = (cluster: string) => {
+    setExpandedClusters((prev) =>
+      prev.includes(cluster)
+        ? prev.filter((entry) => entry !== cluster)
+        : [...prev, cluster],
+    );
+  };
+
   return (
     <section className="w-full max-w-3xl px-6">
       <div className="ei-card border-white/10 bg-white/[0.04] p-6 sm:p-8">
-        <div className="mb-6 text-center">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <BackButton
+            label={isEn ? "Back" : "ย้อนกลับ"}
+            onClick={() => {
+              void goBack();
+            }}
+          />
+          <div className="text-center">
           <p className="text-xs uppercase tracking-[0.24em] text-orange-200/65">
             {isEn ? "Interests" : "ความสนใจ"}
           </p>
@@ -117,57 +134,57 @@ export function InterestPhase({ data, advance }: Props) {
               ? "Pick up to 3. You do not need to be certain yet."
               : "เลือกได้สูงสุด 3 อย่าง ยังไม่ต้องแน่ใจ 100% ก็ได้"}
           </p>
+          </div>
+          <div className="w-[72px]" aria-hidden="true" />
         </div>
 
-        {!activeCluster ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {Object.keys(CLUSTERS).map((cluster) => (
-              <button
+        <div className="grid grid-cols-1 gap-3">
+          {Object.keys(CLUSTERS).map((cluster) => {
+            const isExpanded = expandedClusters.includes(cluster);
+
+            return (
+              <div
                 key={cluster}
+                className="ei-card overflow-hidden border-white/10 bg-white/[0.03]"
+              >
+              <button
                 type="button"
-                onClick={() => setActiveCluster(cluster)}
-                className="ei-card flex items-center gap-3 border-white/10 bg-white/[0.03] p-4 text-left transition-all hover:border-orange-300/45 hover:bg-orange-400/5"
+                onClick={() => toggleCluster(cluster)}
+                className="flex w-full items-center gap-3 p-4 text-left"
               >
                 <span className="text-2xl">{CLUSTER_ICONS[cluster]}</span>
-                <span className="text-sm font-medium text-white/90">
+                <span className="flex-1 text-sm font-medium text-white/90">
                   {cluster}
                 </span>
+                <span className="text-sm text-white/45">{isExpanded ? "−" : "+"}</span>
               </button>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <button
-              type="button"
-              onClick={() => setActiveCluster(null)}
-              className="self-start text-xs font-medium text-orange-200/80 transition-colors hover:text-orange-100"
-            >
-              ← {isEn ? "Back to categories" : "กลับไปหมวดหมู่"}
-            </button>
+              {isExpanded ? (
+                <div className="flex flex-wrap gap-2 border-t border-white/8 px-4 py-4">
+                  {CLUSTERS[cluster].map((item) => {
+                    const isSelected = selected.includes(item);
 
-            <div className="flex flex-wrap gap-2">
-              {CLUSTERS[activeCluster].map((item) => {
-                const isSelected = selected.includes(item);
-
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => toggle(item)}
-                    className={[
-                      "rounded-full border px-3 py-2 text-sm transition-all",
-                      isSelected
-                        ? "border-orange-300/60 bg-orange-300/15 text-white"
-                        : "border-white/10 bg-white/[0.03] text-white/75 hover:border-white/30 hover:text-white",
-                    ].join(" ")}
-                  >
-                    {item}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => toggle(item)}
+                        className={[
+                          "rounded-full border px-3 py-2 text-sm",
+                          isSelected
+                            ? "border-orange-300/60 bg-orange-300/15 text-white"
+                            : "border-white/10 bg-white/[0.03] text-white/75",
+                        ].join(" ")}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+              </div>
+            );
+          })}
+        </div>
 
         <div className="mt-6 flex gap-2">
           <input
@@ -186,7 +203,7 @@ export function InterestPhase({ data, advance }: Props) {
             type="button"
             onClick={addCustom}
             disabled={!customInput.trim() || selected.length >= 3}
-            className="rounded-xl border border-white/10 px-4 py-3 text-sm font-medium text-white/80 transition-all hover:border-orange-300/55 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+            className="rounded-xl border border-white/10 px-4 py-3 text-sm font-medium text-white/80 disabled:cursor-not-allowed disabled:opacity-35"
           >
             +
           </button>
@@ -199,7 +216,7 @@ export function InterestPhase({ data, advance }: Props) {
                 key={item}
                 type="button"
                 onClick={() => toggle(item)}
-                className="rounded-full border border-orange-300/40 bg-orange-300/12 px-3 py-1.5 text-xs font-medium text-orange-100 transition-all hover:bg-orange-300/18"
+                className="rounded-full border border-orange-300/40 bg-orange-300/12 px-3 py-1.5 text-xs font-medium text-orange-100"
               >
                 {item} ×
               </button>

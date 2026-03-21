@@ -2,55 +2,58 @@
 
 import { useState } from "react";
 
+import { BackButton } from "../components/back-button";
+import { TcasTargetPicker } from "../components/tcas-target-picker";
 import { deriveOutputs } from "@/lib/onboarding/derive";
-import type { CollectedData, OnboardingStep } from "@/types/onboarding";
+import type {
+  CollectedData,
+  OnboardingStep,
+  TargetClarity,
+} from "@/types/onboarding";
 
 interface Props {
   data: CollectedData;
   advance: (step: OnboardingStep, updates: Partial<CollectedData>) => void;
+  goBack: () => void | Promise<void>;
 }
 
 type WizardStep =
   | "stage"
   | "target_clarity"
+  | "tcas_target"
   | "primary_blocker"
   | "confidence"
   | "career_direction"
   | "commitment_signal";
 
-const WIZARD_STEPS: WizardStep[] = [
-  "stage",
-  "target_clarity",
-  "primary_blocker",
-  "confidence",
-  "career_direction",
-  "commitment_signal",
-];
-
 const QUESTIONS: Record<WizardStep, { en: string; th: string }> = {
   stage: {
-    en: "Where are you right now?",
-    th: "ตอนนี้คุณอยู่ที่จุดไหน?",
+    en: "Which stage are you in with choosing your next study or career direction?",
+    th: "ตอนนี้คุณอยู่ช่วงไหนของการตัดสินใจเรื่องเรียนต่อหรือเส้นทางในอนาคต?",
   },
   target_clarity: {
-    en: "How clear is your target?",
-    th: "คุณชัดเจนเรื่องเป้าหมายแค่ไหน?",
+    en: "How clear is your future direction right now?",
+    th: "คุณมีเป้าหมายชัดเจนเรื่องอนาคตแค่ไหน?",
+  },
+  tcas_target: {
+    en: "Let's pin down your target",
+    th: "มาลองระบุเป้าหมายให้ชัดขึ้น",
   },
   primary_blocker: {
-    en: "What's holding you back most?",
-    th: "อะไรที่ขวางคุณมากที่สุด?",
+    en: "What feels like the biggest problem right now?",
+    th: "ตอนนี้อะไรคือปัญหาใหญ่ที่สุดสำหรับคุณ?",
   },
   confidence: {
     en: "How confident do you feel about your direction?",
-    th: "คุณมั่นใจเรื่องทิศทางของตัวเองแค่ไหน?",
+    th: "ตอนนี้คุณมั่นใจกับทิศทางที่ตัวเองกำลังคิดไว้แค่ไหน?",
   },
   career_direction: {
-    en: "How clear is your career goal?",
-    th: "เป้าหมายอาชีพของคุณชัดเจนแค่ไหน?",
+    en: "How clearly can you picture the future you want?",
+    th: "ตอนนี้ภาพอนาคตที่คุณอยากไปถึง ชัดในใจแค่ไหนแล้ว?",
   },
   commitment_signal: {
-    en: "What are you doing about it right now?",
-    th: "ตอนนี้คุณทำอะไรอยู่บ้าง?",
+    en: "How far have you already started acting on it?",
+    th: "ตอนนี้คุณเริ่มลงมือกับเรื่องนี้ไปถึงไหนแล้ว?",
   },
 };
 
@@ -89,6 +92,7 @@ const OPTIONS: Record<
       emoji: "🎯",
     },
   ],
+  tcas_target: [],
   primary_blocker: [
     {
       value: "dont_know",
@@ -143,8 +147,13 @@ const OPTIONS: Record<
   ],
   career_direction: [
     { value: "no_idea", en: "No idea", th: "ไม่รู้เลย", emoji: "🌫️" },
-    { value: "some_ideas", en: "Some ideas", th: "มีแนวคิดบ้าง", emoji: "💡" },
-    { value: "clear_goal", en: "Clear goal", th: "ชัดเจน", emoji: "⭐" },
+    { value: "some_ideas", en: "Some ideas", th: "พอมีแนวทาง", emoji: "💡" },
+    {
+      value: "clear_goal",
+      en: "Clear goal",
+      th: "ค่อนข้างชัดเจนแล้ว",
+      emoji: "⭐",
+    },
   ],
   commitment_signal: [
     {
@@ -180,21 +189,33 @@ type AssessmentFields = Required<
   >
 >;
 
-export function AssessmentWizardPhase({ data, advance }: Props) {
+export function AssessmentWizardPhase({ data, advance, goBack }: Props) {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<CollectedData>>({});
   const language = (data.language ?? "en") as "en" | "th";
   const isEnglish = language === "en";
+  const wizardSteps = buildWizardSteps(
+    answers.target_clarity ?? data.target_clarity
+  );
 
-  const currentField = WIZARD_STEPS[stepIndex];
+  const currentField = wizardSteps[stepIndex];
   const question = QUESTIONS[currentField][language];
   const options = OPTIONS[currentField];
 
   const handleSelect = (value: string) => {
     const nextAnswers = { ...answers, [currentField]: value };
+    if (currentField === "target_clarity" && value !== "specific") {
+      delete nextAnswers.target_university_id;
+      delete nextAnswers.target_university_name;
+      delete nextAnswers.target_program_id;
+      delete nextAnswers.target_program_name;
+    }
     setAnswers(nextAnswers);
 
-    if (stepIndex < WIZARD_STEPS.length - 1) {
+    const nextSteps = buildWizardSteps(
+      nextAnswers.target_clarity ?? data.target_clarity
+    );
+    if (stepIndex < nextSteps.length - 1) {
       setStepIndex((current) => current + 1);
       return;
     }
@@ -204,46 +225,94 @@ export function AssessmentWizardPhase({ data, advance }: Props) {
     void advance("influence", { ...completeAnswers, ...derived });
   };
 
+  const handleBack = () => {
+    if (stepIndex > 0) {
+      setStepIndex((current) => current - 1);
+      return;
+    }
+
+    void goBack();
+  };
+
   return (
     <div className="w-full max-w-md px-6">
       <div className="ei-card rounded-[var(--space-card-radius)] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-        <div className="mb-6 text-center">
-          <p className="text-xs uppercase tracking-[0.22em] text-white/40">
-            {stepIndex + 1} / {WIZARD_STEPS.length}
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold leading-tight text-white">
-            {question}
-          </h2>
+        <div className="mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <BackButton
+              label={isEnglish ? "Back" : "ย้อนกลับ"}
+              onClick={handleBack}
+            />
+            <div className="text-center">
+              <p className="text-xs uppercase tracking-[0.22em] text-white/40">
+                {stepIndex + 1} / {wizardSteps.length}
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold leading-tight text-white">
+                {question}
+              </h2>
+            </div>
+            <div className="w-[72px]" aria-hidden="true" />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleSelect(option.value)}
-              className="ei-card flex items-center gap-4 rounded-[var(--space-card-radius)] border border-white/10 bg-white/[0.04] p-4 text-left transition-all duration-[160ms] hover:border-orange-300/40 hover:bg-orange-300/[0.08]"
-            >
-              <span className="text-2xl" aria-hidden="true">
-                {option.emoji}
-              </span>
-              <span className="text-sm font-medium leading-6 text-white/92">
-                {isEnglish ? option.en : option.th}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {stepIndex > 0 ? (
-          <button
-            type="button"
-            onClick={() => setStepIndex((current) => current - 1)}
-            className="mt-5 w-full text-center text-xs font-medium text-white/45 transition-colors hover:text-white/70"
-          >
-            ← {isEnglish ? "Back" : "ย้อนกลับ"}
-          </button>
-        ) : null}
+        {currentField === "tcas_target" ? (
+          <TcasTargetPicker
+            data={{ ...data, ...answers }}
+            language={language}
+            onChange={(updates) => {
+              setAnswers((current) => ({ ...current, ...updates }));
+            }}
+            onContinue={() => {
+              setStepIndex((current) => current + 1);
+            }}
+            onSkip={() => {
+              setAnswers((current) => ({
+                ...current,
+                target_university_id: undefined,
+                target_university_name: undefined,
+                target_program_id: undefined,
+                target_program_name: undefined,
+              }));
+              setStepIndex((current) => current + 1);
+            }}
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSelect(option.value)}
+                className="ei-card flex items-center gap-4 rounded-[var(--space-card-radius)] border border-white/10 bg-white/[0.04] p-4 text-left"
+              >
+                <span className="text-2xl" aria-hidden="true">
+                  {option.emoji}
+                </span>
+                <span className="text-sm font-medium leading-6 text-white/92">
+                  {isEnglish ? option.en : option.th}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function buildWizardSteps(targetClarity?: TargetClarity): WizardStep[] {
+  const steps: WizardStep[] = ["stage", "target_clarity"];
+
+  if (targetClarity === "specific") {
+    steps.push("tcas_target");
+  }
+
+  steps.push(
+    "primary_blocker",
+    "confidence",
+    "career_direction",
+    "commitment_signal"
+  );
+
+  return steps;
 }

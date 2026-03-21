@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { BackButton } from "../components/back-button";
 import type {
   CollectedData,
   InfluenceSource,
@@ -11,6 +12,7 @@ import type {
 interface Props {
   data: CollectedData;
   advance: (step: OnboardingStep, updates: Partial<CollectedData>) => void;
+  goBack: () => void | Promise<void>;
 }
 
 const OPTIONS: Array<{
@@ -26,7 +28,7 @@ const OPTIONS: Array<{
   { value: "social_media", en: "Social media", th: "โซเชียลมีเดีย", emoji: "📱" },
 ];
 
-export function InfluencePhase({ data, advance }: Props) {
+export function InfluencePhase({ data, advance, goBack }: Props) {
   const [selected, setSelected] = useState<InfluenceSource[]>(
     data.influencers ?? [],
   );
@@ -44,16 +46,24 @@ export function InfluencePhase({ data, advance }: Props) {
     <div className="w-full max-w-xl px-6">
       <div className="ei-card flex flex-col gap-6 rounded-[28px] border border-white/10 bg-white/[0.04] p-6 sm:p-8">
         <div className="space-y-2 text-center">
+          <div className="mb-4 flex justify-start">
+            <BackButton
+              label={isEn ? "Back" : "ย้อนกลับ"}
+              onClick={() => {
+                void goBack();
+              }}
+            />
+          </div>
           <p className="text-xs uppercase tracking-[0.3em] text-orange-300/70">
             {isEn ? "Your Circle" : "คนรอบตัวคุณ"}
           </p>
           <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
             {isEn
               ? "Who influences how you think about your future?"
-              : "ใครมีอิทธิพลต่อความคิดเรื่องอนาคตของคุณ?"}
+              : "เอาจริง ๆ แล้ว ที่คุณเริ่มสนใจทางนี้ ได้แรงบันดาลใจมาจากใครเป็นพิเศษบ้าง?"}
           </h2>
           <p className="text-sm leading-6 text-white/60">
-            {isEn ? "Select all that apply." : "เลือกได้มากกว่าหนึ่งข้อ"}
+            {isEn ? "Select all that apply." : "เลือกได้หลายข้อ ถ้ามีหลายคนที่มีผลกับคุณ"}
           </p>
         </div>
 
@@ -69,7 +79,7 @@ export function InfluencePhase({ data, advance }: Props) {
                 className={`ei-card flex items-center gap-4 rounded-2xl border px-4 py-4 text-left transition-all ${
                   isSelected
                     ? "border-violet-400 bg-violet-400/10"
-                    : "border-white/10 bg-white/5 hover:border-white/25"
+                    : "border-white/10 bg-white/5"
                 }`}
               >
                 <span className="text-2xl">{option.emoji}</span>
