@@ -427,6 +427,35 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                 <div
                     className={`${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
                 >
+                    {/* Watch the Story — Video Section */}
+                    <section className="py-20 relative z-10 overflow-hidden">
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#91C4E3] opacity-[0.04] blur-[120px] rounded-full pointer-events-none" />
+                        <div className="container mx-auto px-4 relative z-10">
+                            <div className="max-w-5xl mx-auto text-center">
+                                <h2 className="text-4xl md:text-5xl font-bold mb-3" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
+                                    <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
+                                        Watch the Story
+                                    </span>
+                                </h2>
+                                <p className="text-gray-500 mb-12 text-base">ดูว่าเรากำลังสร้างอะไรด้วยกัน</p>
+                                <div className="flex justify-center">
+                                    <div
+                                        className="relative rounded-3xl overflow-hidden border border-[#91C4E3]/20 shadow-[0_0_80px_rgba(145,196,227,0.12)]"
+                                        style={{ width: '340px', maxWidth: '100%' }}
+                                    >
+                                        <iframe
+                                            src="https://www.instagram.com/reel/DV99mPwCV-D/embed/"
+                                            width="340"
+                                            height="605"
+                                            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                                            style={{ border: 'none', display: 'block', background: '#03050a' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     {/* Anyone Can Make an Impact Section */}
                     <section className="py-20 relative z-10 overflow-hidden">
                         {/* Ambient glow */}
@@ -674,30 +703,27 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                     </div>
 
                                     {/* Details - Hidden by default, shown on click */}
-                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 1 ? 'max-h-96' : 'max-h-0'}`}>
+                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 1 ? 'max-h-[500px]' : 'max-h-0'}`}>
                                         <div className="px-8 md:px-12 pb-8">
-                                            <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Early detection & screening</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Chronic disease prevention</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Patient journeys</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Integration of traditional practices</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Assistive health technology</span>
-                                                </li>
-                                            </ul>
+                                            <div className="space-y-4 ml-[7rem] md:ml-[10rem]">
+                                                <p className="text-[#91C4E3]/50 text-[10px] uppercase tracking-[0.2em] mb-4 font-[family-name:var(--font-mitr)]">3 specific problems to solve</p>
+                                                {[
+                                                    { num: 'P1', title: 'The Last-Mile Chronic Disease Gap', brief: 'How might we design a low-cost, community-deployable screening tool that enables rural communities to detect chronic disease risk — without requiring hospital infrastructure?' },
+                                                    { num: 'P2', title: 'The Traditional Medicine Data Desert', brief: 'How might we create a bridge that digitizes traditional medicine outcomes and makes them interoperable with modern health records — enabling integrated, evidence-based care?' },
+                                                    { num: 'P3', title: 'Preventive Intervention at Scale', brief: 'How might we build a predictive health risk platform that identifies high-risk individuals early and triggers personalized preventive action — before symptoms appear?' },
+                                                ].map((p) => (
+                                                    <div key={p.num} className="flex items-start gap-3 group/problem">
+                                                        <span className="text-xs text-[#91C4E3]/30 font-mono mt-0.5 w-6 flex-shrink-0 group-hover/problem:text-[#91C4E3]/60 transition-colors">{p.num}</span>
+                                                        <div>
+                                                            <p className="text-sm text-white/70 font-medium mb-1 group-hover/problem:text-[#91C4E3] transition-colors">{p.title}</p>
+                                                            <p className="text-xs text-gray-500 leading-relaxed">{p.brief}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#91C4E3]/60 hover:text-[#91C4E3] transition-colors mt-3 font-[family-name:var(--font-mitr)]">
+                                                    Read full brief →
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -742,30 +768,27 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                     </div>
 
                                     {/* Details - Hidden by default, shown on click */}
-                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 2 ? 'max-h-96' : 'max-h-0'}`}>
+                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 2 ? 'max-h-[500px]' : 'max-h-0'}`}>
                                         <div className="px-8 md:px-12 pb-8">
-                                            <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#A594BA] mt-1">•</span>
-                                                    <span>Stress, burnout, anxiety prevention</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#A594BA] mt-1">•</span>
-                                                    <span>Early risk detection</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#A594BA] mt-1">•</span>
-                                                    <span>Loneliness & social isolation</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#A594BA] mt-1">•</span>
-                                                    <span>Well-being in schools/workplaces</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#A594BA] mt-1">•</span>
-                                                    <span>Empathetic chatbots & LLMs</span>
-                                                </li>
-                                            </ul>
+                                            <div className="space-y-4 ml-[7rem] md:ml-[10rem]">
+                                                <p className="text-[#A594BA]/50 text-[10px] uppercase tracking-[0.2em] mb-4 font-[family-name:var(--font-mitr)]">3 specific problems to solve</p>
+                                                {[
+                                                    { num: 'P4', title: 'The Stigma Wall', brief: 'How might we design a destigmatized early mental health detection and support system that meets young people where they are — without labeling or exposing them?' },
+                                                    { num: 'P5', title: 'Connected But Alone', brief: 'How might we design an intervention that addresses root-cause social isolation — not just surface-level connection — for teenagers and young adults?' },
+                                                    { num: 'P6', title: 'Mental Healthcare in the Last Mile', brief: 'How might we build a scalable, culturally appropriate mental wellness support system for underserved communities where professional help is inaccessible?' },
+                                                ].map((p) => (
+                                                    <div key={p.num} className="flex items-start gap-3 group/problem">
+                                                        <span className="text-xs text-[#A594BA]/30 font-mono mt-0.5 w-6 flex-shrink-0 group-hover/problem:text-[#A594BA]/60 transition-colors">{p.num}</span>
+                                                        <div>
+                                                            <p className="text-sm text-white/70 font-medium mb-1 group-hover/problem:text-[#A594BA] transition-colors">{p.title}</p>
+                                                            <p className="text-xs text-gray-500 leading-relaxed">{p.brief}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#A594BA]/60 hover:text-[#A594BA] transition-colors mt-3 font-[family-name:var(--font-mitr)]">
+                                                    Read full brief →
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -810,40 +833,46 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                     </div>
 
                                     {/* Details - Hidden by default, shown on click */}
-                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 3 ? 'max-h-96' : 'max-h-0'}`}>
+                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 3 ? 'max-h-[500px]' : 'max-h-0'}`}>
                                         <div className="px-8 md:px-12 pb-8">
-                                            <ul className="space-y-2 text-gray-400 text-sm md:text-base ml-[7rem] md:ml-[10rem]">
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Population prevention</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Health equity & accessibility</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Environmental health</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Prediction & monitoring</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Community interventions</span>
-                                                </li>
-                                                <li className="flex items-start gap-2">
-                                                    <span className="text-[#91C4E3] mt-1">•</span>
-                                                    <span>Wearables & sensing</span>
-                                                </li>
-                                            </ul>
+                                            <div className="space-y-4 ml-[7rem] md:ml-[10rem]">
+                                                <p className="text-[#91C4E3]/50 text-[10px] uppercase tracking-[0.2em] mb-4 font-[family-name:var(--font-mitr)]">3 specific problems to solve</p>
+                                                {[
+                                                    { num: 'P7', title: 'Data Rich, Action Poor', brief: 'How might we turn real-time environmental health data into actionable community behavior change — at the neighborhood level, not just on a dashboard?' },
+                                                    { num: 'P8', title: 'The Food Safety Blind Spot', brief: 'How might we design a community-powered food safety monitoring and early warning system that works without requiring top-down government enforcement?' },
+                                                    { num: 'P9', title: 'PM2.5 vs. Our Children', brief: 'How might we build a predictive PM2.5 alert and response system that triggers preemptive protective actions for schools and children — before dangerous exposure occurs?' },
+                                                ].map((p) => (
+                                                    <div key={p.num} className="flex items-start gap-3 group/problem">
+                                                        <span className="text-xs text-[#91C4E3]/30 font-mono mt-0.5 w-6 flex-shrink-0 group-hover/problem:text-[#91C4E3]/60 transition-colors">{p.num}</span>
+                                                        <div>
+                                                            <p className="text-sm text-white/70 font-medium mb-1 group-hover/problem:text-[#91C4E3] transition-colors">{p.title}</p>
+                                                            <p className="text-xs text-gray-500 leading-relaxed">{p.brief}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#91C4E3]/60 hover:text-[#91C4E3] transition-colors mt-3 font-[family-name:var(--font-mitr)]">
+                                                    Read full brief →
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
 
                                     {/* Bottom border */}
                                     <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 3 ? 'via-[#91C4E3]/40' : 'via-white/5 group-hover:via-[#91C4E3]/40'}`} />
                                 </div>
+                            </div>
+                            {/* View Full Challenge Brief CTA */}
+                            <div className="text-center mt-12">
+                                <a
+                                    href="/hackathon/challenge"
+                                    className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full border border-[#91C4E3]/30 text-[#91C4E3] text-sm font-[family-name:var(--font-mitr)] hover:border-[#91C4E3]/60 hover:bg-[#91C4E3]/5 transition-all duration-300"
+                                    style={{ textShadow: '0 0 12px rgba(145,196,227,0.4)' }}
+                                >
+                                    <span>View Full Challenge Brief</span>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M3 8h10M9 4l4 4-4 4" />
+                                    </svg>
+                                </a>
                             </div>
                         </div>
                     </section>
@@ -931,7 +960,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                                     {/* Top Info */}
                                     <div className="absolute top-8 left-8 text-white/80 tracking-widest text-xs font-medium">
-                                        2025 EDITION
+                                        2026 EDITION
                                     </div>
                                     <div className="absolute top-8 right-8 flex gap-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-white/50" />

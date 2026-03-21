@@ -48,7 +48,8 @@ BEGIN
 
   UPDATE public.path_npc_conversations
   SET root_node_id = 'b1000001-0000-0000-0000-000000000001'
-  WHERE id = 'a1000001-0000-0000-0000-000000000001';
+  WHERE id = 'a1000001-0000-0000-0000-000000000001'
+    AND root_node_id IS NULL;
 
   -- ============================================================
   -- DAY 2: Requirements Review with Alex
@@ -73,7 +74,8 @@ BEGIN
 
   UPDATE public.path_npc_conversations
   SET root_node_id = 'b1000002-0000-0000-0000-000000000001'
-  WHERE id = 'a1000001-0000-0000-0000-000000000002';
+  WHERE id = 'a1000001-0000-0000-0000-000000000002'
+    AND root_node_id IS NULL;
 
   -- ============================================================
   -- DAY 3: Sprint Check-in with Alex
@@ -99,7 +101,8 @@ BEGIN
 
   UPDATE public.path_npc_conversations
   SET root_node_id = 'b1000003-0000-0000-0000-000000000001'
-  WHERE id = 'a1000001-0000-0000-0000-000000000003';
+  WHERE id = 'a1000001-0000-0000-0000-000000000003'
+    AND root_node_id IS NULL;
 
   -- ============================================================
   -- DAY 4: Final Review with Alex (branching)
@@ -139,7 +142,8 @@ BEGIN
 
   UPDATE public.path_npc_conversations
   SET root_node_id = 'b1000004-0000-0000-0000-000000000001'
-  WHERE id = 'a1000001-0000-0000-0000-000000000004';
+  WHERE id = 'a1000001-0000-0000-0000-000000000004'
+    AND root_node_id IS NULL;
 
   -- ============================================================
   -- DAY 5: Sprint Retrospective with Alex
@@ -166,35 +170,30 @@ BEGIN
 
   UPDATE public.path_npc_conversations
   SET root_node_id = 'b1000005-0000-0000-0000-000000000001'
-  WHERE id = 'a1000001-0000-0000-0000-000000000005';
+  WHERE id = 'a1000001-0000-0000-0000-000000000005'
+    AND root_node_id IS NULL;
 
   -- ============================================================
   -- REPLACE path_content rows for all 5 NPC activities
-  -- Delete old inline-format rows, insert new rows with conversation_id
-  -- Safe: no other table has FK referencing path_content.id
+  -- Uses fixed UUIDs + ON CONFLICT DO NOTHING for idempotency
   -- ============================================================
-
-  DELETE FROM public.path_content
-  WHERE content_type = 'npc_chat'
-    AND activity_id IN (
-      '9f434488-e3e8-44dd-8a24-205e8c95568c',
-      '51ee205c-bb52-4a87-a0c1-3af6c4a21ba0',
-      '439b6bea-0914-4e09-aa0d-e8ff3c15227d',
-      '3dc1dbbe-8229-43ce-9fcd-3e6a17e1935a',
-      '56504356-073f-4ee4-bd04-4193221751b5'
-    );
 
   INSERT INTO public.path_content (id, activity_id, content_type, content_title, metadata, display_order, created_at)
   VALUES
-    (gen_random_uuid(), '9f434488-e3e8-44dd-8a24-205e8c95568c', 'npc_chat', 'PM Alex Introduction',
+    ('d1000001-0000-0000-0000-000000000001', '9f434488-e3e8-44dd-8a24-205e8c95568c', 'npc_chat', 'PM Alex Introduction',
      '{"conversation_id": "a1000001-0000-0000-0000-000000000001"}'::jsonb, 1, NOW()),
-    (gen_random_uuid(), '51ee205c-bb52-4a87-a0c1-3af6c4a21ba0', 'npc_chat', 'Requirements Review with Alex',
+    ('d1000001-0000-0000-0000-000000000002', '51ee205c-bb52-4a87-a0c1-3af6c4a21ba0', 'npc_chat', 'Requirements Review with Alex',
      '{"conversation_id": "a1000001-0000-0000-0000-000000000002"}'::jsonb, 1, NOW()),
-    (gen_random_uuid(), '439b6bea-0914-4e09-aa0d-e8ff3c15227d', 'npc_chat', 'Sprint Check-in with Alex',
+    ('d1000001-0000-0000-0000-000000000003', '439b6bea-0914-4e09-aa0d-e8ff3c15227d', 'npc_chat', 'Sprint Check-in with Alex',
      '{"conversation_id": "a1000001-0000-0000-0000-000000000003"}'::jsonb, 1, NOW()),
-    (gen_random_uuid(), '3dc1dbbe-8229-43ce-9fcd-3e6a17e1935a', 'npc_chat', 'Final Review with Alex',
+    ('d1000001-0000-0000-0000-000000000004', '3dc1dbbe-8229-43ce-9fcd-3e6a17e1935a', 'npc_chat', 'Final Review with Alex',
      '{"conversation_id": "a1000001-0000-0000-0000-000000000004"}'::jsonb, 1, NOW()),
-    (gen_random_uuid(), '56504356-073f-4ee4-bd04-4193221751b5', 'npc_chat', 'Sprint Retrospective with Alex',
-     '{"conversation_id": "a1000001-0000-0000-0000-000000000005"}'::jsonb, 1, NOW());
+    ('d1000001-0000-0000-0000-000000000005', '56504356-073f-4ee4-bd04-4193221751b5', 'npc_chat', 'Sprint Retrospective with Alex',
+     '{"conversation_id": "a1000001-0000-0000-0000-000000000005"}'::jsonb, 1, NOW())
+  ON CONFLICT (activity_id, display_order) DO UPDATE
+    SET id           = EXCLUDED.id,
+        content_type  = EXCLUDED.content_type,
+        content_title = EXCLUDED.content_title,
+        metadata      = EXCLUDED.metadata;
 
 END $$;
