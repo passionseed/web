@@ -1,38 +1,38 @@
 export type OnboardingStep =
-  | 'welcome'
-  | 'interest'
-  | 'assessment'
-  | 'influence'
-  | 'results'
-  | 'account';
+  | "welcome"
+  | "interest"
+  | "assessment"
+  | "influence"
+  | "results"
+  | "account";
 
-export type OnboardingMode = 'chat' | 'wizard';
+export type OnboardingMode = "chat" | "wizard";
 
-export type Stage = 'exploring' | 'choosing' | 'applying_soon' | 'urgent';
-export type TargetClarity = 'none' | 'field_only' | 'specific';
+export type Stage = "exploring" | "choosing" | "applying_soon" | "urgent";
+export type TargetClarity = "none" | "field_only" | "specific";
 export type PrimaryBlocker =
-  | 'dont_know'
-  | 'low_profile'
-  | 'financial'
-  | 'family_pressure'
-  | 'application_process';
-export type ConfidenceLevel = 'low' | 'medium' | 'high';
-export type CareerDirection = 'no_idea' | 'some_ideas' | 'clear_goal';
-export type CommitmentSignal = 'browsing' | 'researching' | 'preparing';
+  | "dont_know"
+  | "low_profile"
+  | "financial"
+  | "family_pressure"
+  | "application_process";
+export type ConfidenceLevel = "low" | "medium" | "high";
+export type CareerDirection = "no_idea" | "some_ideas" | "clear_goal";
+export type CommitmentSignal = "browsing" | "researching" | "preparing";
 
-export type UserType = 'lost' | 'explorer' | 'planner' | 'executor';
-export type NextAction = 'educate' | 'narrow' | 'execute' | 'escalate';
-export type ConversionPriority = 'low' | 'medium' | 'high';
+export type UserType = "lost" | "explorer" | "planner" | "executor";
+export type NextAction = "educate" | "narrow" | "execute" | "escalate";
+export type ConversionPriority = "low" | "medium" | "high";
 
 export type InfluenceSource =
-  | 'self'
-  | 'parents'
-  | 'peers'
-  | 'teachers'
-  | 'social_media';
+  | "self"
+  | "parents"
+  | "peers"
+  | "teachers"
+  | "social_media";
 
 export interface CollectedData {
-  language?: 'en' | 'th';
+  language?: "en" | "th";
   name?: string;
   mode?: OnboardingMode;
   interests?: string[];
@@ -43,6 +43,10 @@ export interface CollectedData {
   career_direction?: CareerDirection;
   commitment_signal?: CommitmentSignal;
   influencers?: InfluenceSource[];
+  target_university_id?: string;
+  target_university_name?: string;
+  target_program_id?: string;
+  target_program_name?: string;
   user_type?: UserType;
   next_action?: NextAction;
   conversion_priority?: ConversionPriority;
@@ -51,7 +55,7 @@ export interface CollectedData {
 export interface OnboardingState {
   user_id: string;
   current_step: OnboardingStep;
-  chat_history: Array<{ role: 'user' | 'assistant'; content: string }>;
+  chat_history: Array<{ role: "user" | "assistant"; content: string }>;
   collected_data: CollectedData;
   updated_at: string;
 }

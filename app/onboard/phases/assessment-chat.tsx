@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react";
 
+import { BackButton } from "../components/back-button";
 import { ChatPanel } from "../components/chat-panel";
+import { TcasTargetPicker } from "../components/tcas-target-picker";
 import { isAssessmentComplete } from "@/types/onboarding";
 import type { CollectedData, OnboardingStep } from "@/types/onboarding";
 
 interface Props {
   data: CollectedData;
   advance: (step: OnboardingStep, updates: Partial<CollectedData>) => void;
+  goBack: () => void | Promise<void>;
   chatHistory: Array<{ role: "user" | "assistant"; content: string }>;
   onChatHistoryChange: (
-    history: Array<{ role: "user" | "assistant"; content: string }>,
+    history: Array<{ role: "user" | "assistant"; content: string }>
   ) => void;
 }
 
@@ -23,6 +26,7 @@ const OPENING = {
 export function AssessmentChatPhase({
   data,
   advance,
+  goBack,
   chatHistory,
   onChatHistoryChange,
 }: Props) {
@@ -30,6 +34,8 @@ export function AssessmentChatPhase({
   const [isLoading, setIsLoading] = useState(false);
   const language = (data.language || "en") as "en" | "th";
   const isEn = language === "en";
+  const shouldShowTargetPicker =
+    isAssessmentComplete(localData) && localData.target_clarity === "specific";
 
   useEffect(() => {
     setLocalData(data);
@@ -42,7 +48,10 @@ export function AssessmentChatPhase({
   }, [chatHistory.length, language, onChatHistoryChange]);
 
   const handleSend = async (text: string) => {
-    const nextHistory = [...chatHistory, { role: "user" as const, content: text }];
+    const nextHistory = [
+      ...chatHistory,
+      { role: "user" as const, content: text },
+    ];
     onChatHistoryChange(nextHistory);
     setIsLoading(true);
 
@@ -87,6 +96,14 @@ export function AssessmentChatPhase({
   return (
     <div className="flex h-[calc(100vh-9rem)] w-full max-w-3xl flex-col gap-4">
       <div className="px-1">
+        <div className="mb-4 flex justify-start">
+          <BackButton
+            label={isEn ? "Back" : "ย้อนกลับ"}
+            onClick={() => {
+              void goBack();
+            }}
+          />
+        </div>
         <p className="text-xs uppercase tracking-[0.24em] text-orange-200/50">
           {isEn ? "Assessment chat" : "บทสนทนาประเมินตัวเอง"}
         </p>
@@ -98,20 +115,44 @@ export function AssessmentChatPhase({
       </div>
 
       <div className="min-h-0 flex-1">
-        <ChatPanel
-          messages={chatHistory}
-          onSend={handleSend}
-          isLoading={isLoading}
-          placeholder={
-            isEn
-              ? "Tell me about your plans..."
-              : "เล่าให้ฟังเกี่ยวกับแผนของคุณ..."
-          }
-          contextChips={localData.interests}
-        />
+        {shouldShowTargetPicker ? (
+          <div className="ei-card h-full overflow-y-auto rounded-[var(--space-card-radius)] border border-white/10 bg-white/[0.04] p-5">
+            <TcasTargetPicker
+              data={localData}
+              language={language}
+              onChange={(updates) => {
+                setLocalData((current) => ({ ...current, ...updates }));
+              }}
+              onContinue={() => {
+                void advance("influence", localData);
+              }}
+              onSkip={() => {
+                void advance("influence", {
+                  ...localData,
+                  target_university_id: undefined,
+                  target_university_name: undefined,
+                  target_program_id: undefined,
+                  target_program_name: undefined,
+                });
+              }}
+            />
+          </div>
+        ) : (
+          <ChatPanel
+            messages={chatHistory}
+            onSend={handleSend}
+            isLoading={isLoading}
+            placeholder={
+              isEn
+                ? "Tell me about your plans..."
+                : "เล่าให้ฟังเกี่ยวกับแผนของคุณ..."
+            }
+            contextChips={localData.interests}
+          />
+        )}
       </div>
 
-      {canAdvance ? (
+      {canAdvance && !shouldShowTargetPicker ? (
         <div className="px-1">
           <button
             type="button"
