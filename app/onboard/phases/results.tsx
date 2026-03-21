@@ -107,7 +107,7 @@ export function ResultsPhase({ data, advance, goBack }: Props) {
 
   return (
     <div className="w-full max-w-xl px-6">
-      <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] px-6 py-8 shadow-[0_24px_80px_rgba(6,0,15,0.45)] sm:px-8">
+      <div className="ei-card ei-card--static relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] px-6 py-8 shadow-[0_24px_80px_rgba(6,0,15,0.45)] sm:px-8">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-0 h-48 w-48 -translate-x-1/2 rounded-full bg-orange-400/12 blur-3xl" />
           <div className="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-fuchsia-500/10 blur-3xl" />
@@ -134,7 +134,7 @@ export function ResultsPhase({ data, advance, goBack }: Props) {
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="ei-card rounded-3xl border border-orange-300/20 bg-orange-400/[0.06] p-5">
+            <div className="ei-card rounded-[24px] border border-orange-300/20 bg-orange-400/[0.06] p-5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-orange-300">
                 {isEn ? "Your Direction" : "ทิศทางของคุณ"}
               </p>
@@ -143,7 +143,7 @@ export function ResultsPhase({ data, advance, goBack }: Props) {
               </p>
             </div>
 
-            <div className="ei-card rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+            <div className="ei-card rounded-[24px] border border-white/10 bg-white/[0.04] p-5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
                 {isEn ? "Your Situation" : "สถานการณ์ของคุณ"}
               </p>
@@ -153,7 +153,7 @@ export function ResultsPhase({ data, advance, goBack }: Props) {
             </div>
 
             {circleCopy ? (
-              <div className="ei-card rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+              <div className="ei-card rounded-[24px] border border-white/10 bg-white/[0.04] p-5">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
                   {isEn ? "Your Circle" : "คนรอบข้างคุณ"}
                 </p>
@@ -162,7 +162,7 @@ export function ResultsPhase({ data, advance, goBack }: Props) {
             ) : null}
 
             {targetCopy ? (
-              <div className="ei-card rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+              <div className="ei-card rounded-[24px] border border-white/10 bg-white/[0.04] p-5">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
                   {isEn ? "Your Target" : "เป้าหมายที่เล็งไว้"}
                 </p>

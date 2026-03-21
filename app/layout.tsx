@@ -40,6 +40,7 @@ const krub = Krub({
   weight: ["200", "300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   variable: "--font-krub",
+  preload: false,
 });
 
 const baiJamjuree = Bai_Jamjuree({
@@ -52,24 +53,28 @@ const mitr = Mitr({
   weight: ["200", "300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   variable: "--font-mitr",
+  preload: false,
 });
 
 const poppins = Poppins({
   weight: ["700"],
   subsets: ["latin"],
   variable: "--font-poppins",
+  preload: false,
 });
 
 const reenieBeanie = Reenie_Beanie({
   weight: ["400"],
   subsets: ["latin"],
   variable: "--font-reenie-beanie",
+  preload: false,
 });
 
 const kodchasan = Kodchasan({
   weight: ["200", "300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   variable: "--font-kodchasan",
+  preload: false,
 });
 
 export const metadata: Metadata = {

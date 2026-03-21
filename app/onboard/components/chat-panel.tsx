@@ -47,7 +47,7 @@ export function ChatPanel({
   };
 
   return (
-    <div className="ei-card flex h-full flex-col overflow-hidden border border-white/10 bg-white/[0.04]">
+    <div className="ei-card ei-card--static flex h-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04]">
       {contextChips?.length ? (
         <div className="border-b border-white/5 px-4 py-3">
           <div className="flex flex-wrap gap-1.5">
