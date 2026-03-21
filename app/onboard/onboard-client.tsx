@@ -20,6 +20,15 @@ interface OnboardClientProps {
 }
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
+const IS_DEV = process.env.NODE_ENV !== "production";
+
+const PREVIOUS_STEP: Partial<Record<OnboardingStep, OnboardingStep>> = {
+  interest: "welcome",
+  assessment: "interest",
+  influence: "assessment",
+  results: "influence",
+  account: "results",
+};
 
 export function OnboardClient({
   userId,
@@ -63,7 +72,45 @@ export function OnboardClient({
     [data, saveState],
   );
 
-  const sharedProps = { data, advance };
+  const updateLanguage = useCallback(
+    async (language: "en" | "th") => {
+      const nextData = { ...data, language };
+      setData(nextData);
+      await saveState(step, nextData);
+    },
+    [data, saveState, step],
+  );
+
+  const goBack = useCallback(async () => {
+    const previousStep = PREVIOUS_STEP[step];
+    if (!previousStep) {
+      return;
+    }
+
+    setStep(previousStep);
+    await saveState(previousStep, data);
+  }, [data, saveState, step]);
+
+  const language = (data.language ?? "en") as "en" | "th";
+
+  const resetOnboarding = useCallback(async () => {
+    if (!IS_DEV) {
+      return;
+    }
+
+    const response = await fetch("/api/onboarding/reset", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    setStep("welcome");
+    setData({ language });
+    setChatHistory([]);
+  }, [language]);
+  const sharedProps = { data, advance, goBack };
 
   return (
     <div className="min-h-screen bg-[linear-gradient(to_bottom,#06000f_0%,#1a0336_28%,#3b0764_58%,#4a1230_82%,#2a0818_100%)] text-white">
@@ -84,13 +131,35 @@ export function OnboardClient({
               </span>
             </div>
             <ProgressDots currentStep={step} />
-            <button
-              type="button"
-              onClick={() => router.push("/me")}
-              className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/55 transition-colors hover:border-white/25 hover:text-white"
-            >
-              Exit
-            </button>
+            <div className="flex items-center gap-2">
+              {IS_DEV ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void resetOnboarding();
+                  }}
+                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/55"
+                >
+                  Reset
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  void updateLanguage(language === "en" ? "th" : "en");
+                }}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold tracking-[0.18em] text-white/70"
+              >
+                {language === "en" ? "TH" : "EN"}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/me")}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/55"
+              >
+                Exit
+              </button>
+            </div>
           </div>
         </header>
 

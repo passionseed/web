@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { BackButton } from "../components/back-button";
 import type { CollectedData, OnboardingStep } from "@/types/onboarding";
 
 interface Props {
   data: CollectedData;
   advance: (_step: OnboardingStep, _updates: Partial<CollectedData>) => void;
+  goBack: () => void | Promise<void>;
   isAnonymous: boolean;
 }
 
@@ -24,7 +26,7 @@ const EDUCATION_COPY = {
   },
 } as const;
 
-export function AccountPhase({ data, isAnonymous }: Props) {
+export function AccountPhase({ data, isAnonymous, goBack }: Props) {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [dob, setDob] = useState("");
@@ -94,6 +96,14 @@ export function AccountPhase({ data, isAnonymous }: Props) {
   return (
     <div className="w-full max-w-md px-6">
       <div className="ei-card rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_22px_80px_rgba(8,0,20,0.45)] sm:p-7">
+        <div className="mb-4">
+          <BackButton
+            label={isEn ? "Back" : "ย้อนกลับ"}
+            onClick={() => {
+              void goBack();
+            }}
+          />
+        </div>
         <div className="mb-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.26em] text-orange-300/70">
             {isEn ? "Finish Setup" : "ขั้นตอนสุดท้าย"}

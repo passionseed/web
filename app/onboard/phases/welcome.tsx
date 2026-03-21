@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 
-import type { CollectedData, OnboardingStep } from '@/types/onboarding';
+import type { CollectedData, OnboardingStep } from "@/types/onboarding";
 
 interface WelcomePhaseProps {
   data: CollectedData;
   oauthName: string | null;
   advance: (step: OnboardingStep, updates: Partial<CollectedData>) => void | Promise<void>;
+  goBack: () => void | Promise<void>;
 }
 
 const CONTENT = {
@@ -46,7 +47,7 @@ const CONTENT = {
 } as const;
 
 export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
-  const [language, setLanguage] = useState<'en' | 'th'>(data.language ?? 'en');
+  const [language] = useState<"en" | "th">(data.language ?? "en");
   const [name, setName] = useState(data.name ?? oauthName ?? '');
   const [mode, setMode] = useState<'chat' | 'wizard'>(data.mode ?? 'wizard');
 
@@ -76,13 +77,6 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setLanguage((current) => (current === 'en' ? 'th' : 'en'))}
-              className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold tracking-[0.18em] text-white/70 transition-colors hover:border-white/25 hover:text-white"
-            >
-              {content.languageToggle}
-            </button>
           </div>
 
           {!isOauthUser ? (
@@ -145,16 +139,11 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                       </div>
                     </div>
 
-                    <span
-                      className={[
-                        'relative mt-5 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold',
-                        isSelected
-                          ? 'bg-orange-300/14 text-orange-100'
-                          : 'bg-white/6 text-white/45',
-                      ].join(' ')}
-                    >
-                      {isSelected ? content.selected : content.choose}
-                    </span>
+                    {isSelected ? (
+                      <span className="relative mt-5 inline-flex items-center text-xs font-semibold text-white/55">
+                        {content.selected}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
