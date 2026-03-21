@@ -236,7 +236,7 @@ export function AssessmentWizardPhase({ data, advance, goBack }: Props) {
 
   return (
     <div className="w-full max-w-md px-6">
-      <div className="ei-card rounded-[var(--space-card-radius)] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+      <div className="ei-card ei-card--static rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
             <BackButton
@@ -283,7 +283,7 @@ export function AssessmentWizardPhase({ data, advance, goBack }: Props) {
                 key={option.value}
                 type="button"
                 onClick={() => handleSelect(option.value)}
-                className="ei-card flex items-center gap-4 rounded-[var(--space-card-radius)] border border-white/10 bg-white/[0.04] p-4 text-left"
+                className="ei-card flex items-center gap-4 rounded-[24px] border border-white/10 bg-white/[0.04] p-4 text-left"
               >
                 <span className="text-2xl" aria-hidden="true">
                   {option.emoji}

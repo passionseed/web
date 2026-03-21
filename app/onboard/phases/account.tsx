@@ -66,20 +66,20 @@ export function AccountPhase({ data, isAnonymous, goBack }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const json = (await response.json().catch(() => null)) as
-        | { error?: string }
-        | null;
+      const json = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
 
       if (!response.ok) {
         if (response.status === 409) {
           setError(
             isEn
               ? "Account already exists. Sign in instead."
-              : "มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบ",
+              : "มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบ"
           );
         } else {
           setError(
-            json?.error || (isEn ? "Something went wrong." : "เกิดข้อผิดพลาด"),
+            json?.error || (isEn ? "Something went wrong." : "เกิดข้อผิดพลาด")
           );
         }
         return;
@@ -95,7 +95,7 @@ export function AccountPhase({ data, isAnonymous, goBack }: Props) {
 
   return (
     <div className="w-full max-w-md px-6">
-      <div className="ei-card rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_22px_80px_rgba(8,0,20,0.45)] sm:p-7">
+      <div className="ei-card ei-card--static rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_22px_80px_rgba(8,0,20,0.45)] sm:p-7">
         <div className="mb-4">
           <BackButton
             label={isEn ? "Back" : "ย้อนกลับ"}
@@ -109,7 +109,9 @@ export function AccountPhase({ data, isAnonymous, goBack }: Props) {
             {isEn ? "Finish Setup" : "ขั้นตอนสุดท้าย"}
           </p>
           <h2 className="mt-3 text-xl font-semibold text-white sm:text-2xl">
-            {isEn ? "Last step — save your progress" : "ขั้นตอนสุดท้าย — บันทึกความคืบหน้า"}
+            {isEn
+              ? "Last step — save your progress"
+              : "ขั้นตอนสุดท้าย — บันทึกความคืบหน้า"}
           </h2>
           <p className="mt-2 text-sm leading-6 text-white/55">
             {isAnonymous
@@ -117,8 +119,8 @@ export function AccountPhase({ data, isAnonymous, goBack }: Props) {
                 ? "Create your account to save everything."
                 : "สร้างบัญชีเพื่อบันทึกทุกอย่าง"
               : isEn
-                ? "Complete your profile and we’ll take you straight into PassionSeed."
-                : "ตั้งค่าโปรไฟล์ให้เสร็จ แล้วเราจะพาคุณเข้าสู่ PassionSeed ทันที"}
+              ? "Complete your profile and we’ll take you straight into PassionSeed."
+              : "ตั้งค่าโปรไฟล์ให้เสร็จ แล้วเราจะพาคุณเข้าสู่ PassionSeed ทันที"}
           </p>
         </div>
 
@@ -154,7 +156,9 @@ export function AccountPhase({ data, isAnonymous, goBack }: Props) {
             placeholder={isEn ? "Username" : "ชื่อผู้ใช้"}
             value={username}
             onChange={(event) =>
-              setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
+              setUsername(
+                event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "")
+              )
             }
             className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-violet-400 focus:outline-none"
           />
@@ -172,27 +176,29 @@ export function AccountPhase({ data, isAnonymous, goBack }: Props) {
               {isEn ? "Education level" : "ระดับการศึกษา"}
             </p>
             <div className="grid grid-cols-3 gap-2">
-              {(
-                ["high_school", "university", "unaffiliated"] as const
-              ).map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => setEducation(level)}
-                  className={[
-                    "rounded-2xl border px-3 py-2 text-xs font-medium transition-all",
-                    education === level
-                      ? "border-violet-400 bg-violet-400/12 text-white"
-                      : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white",
-                  ].join(" ")}
-                >
-                  {educationCopy[level]}
-                </button>
-              ))}
+              {(["high_school", "university", "unaffiliated"] as const).map(
+                (level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setEducation(level)}
+                    className={[
+                      "rounded-2xl border px-3 py-2 text-xs font-medium transition-all",
+                      education === level
+                        ? "border-violet-400 bg-violet-400/12 text-white"
+                        : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white",
+                    ].join(" ")}
+                  >
+                    {educationCopy[level]}
+                  </button>
+                )
+              )}
             </div>
           </div>
 
-          {error ? <p className="text-center text-xs text-red-400">{error}</p> : null}
+          {error ? (
+            <p className="text-center text-xs text-red-400">{error}</p>
+          ) : null}
 
           <button
             type="submit"
@@ -204,8 +210,8 @@ export function AccountPhase({ data, isAnonymous, goBack }: Props) {
                 ? "Saving..."
                 : "กำลังบันทึก..."
               : isEn
-                ? "Go to PassionSeed →"
-                : "ไปที่ PassionSeed →"}
+              ? "Go to PassionSeed →"
+              : "ไปที่ PassionSeed →"}
           </button>
         </form>
       </div>

@@ -168,7 +168,7 @@ export function AssessmentChatPhase({
 
       <div className="min-h-0 flex-1">
         {shouldShowTargetPicker ? (
-          <div className="ei-card h-full overflow-y-auto rounded-[var(--space-card-radius)] border border-white/10 bg-white/[0.04] p-5">
+          <div className="ei-card ei-card--static h-full overflow-y-auto rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
             <TcasTargetPicker
               data={localData}
               language={language}
