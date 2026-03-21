@@ -398,7 +398,7 @@ export default function ExpertInterviewPage() {
   // ── Chat ──────────────────────────────────────────────────────────────────
   if (step === "chat" && sessionData) {
     return (
-      <div className="fixed inset-0 z-50 bg-black">
+      <div className="fixed inset-0 z-50" style={{ background: "linear-gradient(to bottom, #06000f 0%, #1a0336 28%, #3b0764 58%, #4a1230 82%, #2a0818 100%)" }}>
         <InterviewChat
           sessionId={sessionData.sessionId}
           firstQuestion={sessionData.firstQuestion}
