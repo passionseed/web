@@ -42,6 +42,7 @@ export const AVAILABLE_MODELS = {
   ],
   openai: [
     { id: 'gpt-5-mini-2025-08-07', name: 'GPT-5 Mini', speed: 'medium', cost: 'medium' },
+    { id: 'gpt-5.3-chat-latest', name: 'GPT-5.3 Chat', speed: 'fast', cost: 'high' },
     { id: 'gpt-5.2-chat-latest', name: 'GPT-5.2 Chat', speed: 'slow', cost: 'high' },
     // { id: 'codex-mini-latest', name: 'Codex Mini', speed: 'medium', cost: 'medium' },
   ],
@@ -109,6 +110,7 @@ export function getModel(modelName?: string) {
 
   // OpenAI Models (3 variants)
   if (resolvedModelName === 'gpt-5-mini-2025-08-07') return openai('gpt-5-mini-2025-08-07');
+  if (resolvedModelName === 'gpt-5.3-chat-latest') return openai('gpt-5.3-chat-latest');
   if (resolvedModelName === 'gpt-5.2-chat-latest') return openai('gpt-5.2-chat-latest');
   // if (resolvedModelName === 'codex-mini-latest') return openai('codex-mini-latest');
 
