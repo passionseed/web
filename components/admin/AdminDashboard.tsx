@@ -17,6 +17,7 @@ import { AdminDirectionFinder } from "./AdminDirectionFinder";
 import { AdminHackathonParticipants } from "./AdminHackathonParticipants";
 import { AdminHackathonAnalytics } from "./AdminHackathonAnalytics";
 import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
+import { AdminStudentOnboarding } from "./AdminStudentOnboarding";
 import {
   Users,
   Activity,
@@ -27,6 +28,7 @@ import {
   Compass,
   Trophy,
   TestTube,
+  GraduationCap,
 } from "lucide-react";
 
 export function AdminDashboard() {
@@ -66,6 +68,10 @@ export function AdminDashboard() {
           <TabsTrigger value="beta" className="flex items-center gap-2">
             <TestTube className="h-4 w-4" />
             Beta
+          </TabsTrigger>
+          <TabsTrigger value="student-onboarding" className="flex items-center gap-2">
+            <GraduationCap className="h-4 w-4" />
+            Student Onboarding
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -130,6 +136,10 @@ export function AdminDashboard() {
 
         <TabsContent value="beta" className="space-y-4">
           <AdminBetaRegistrations key={`beta-${refreshKey}`} />
+        </TabsContent>
+
+        <TabsContent value="student-onboarding" className="space-y-4">
+          <AdminStudentOnboarding key={`onboarding-${refreshKey}`} />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
