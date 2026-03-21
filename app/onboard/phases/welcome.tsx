@@ -112,8 +112,6 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                     title: content.chatTitle,
                     description: content.chatDescription,
                     accent: "from-orange-300/24 via-pink-400/16 to-transparent",
-                    selectedSurface:
-                      "border-orange-200/70 bg-[linear-gradient(160deg,rgba(251,146,60,0.24)_0%,rgba(236,72,153,0.13)_52%,rgba(255,255,255,0.08)_100%)] shadow-[0_18px_60px_rgba(249,115,22,0.14)]",
                   },
                   {
                     value: "wizard",
@@ -121,8 +119,6 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                     description: content.wizardDescription,
                     accent:
                       "from-violet-300/18 via-fuchsia-400/12 to-transparent",
-                    selectedSurface:
-                      "border-fuchsia-200/60 bg-[linear-gradient(160deg,rgba(167,139,250,0.2)_0%,rgba(217,70,239,0.14)_48%,rgba(255,255,255,0.08)_100%)] shadow-[0_18px_60px_rgba(168,85,247,0.14)]",
                   },
                 ] as const
               ).map((option) => {
@@ -136,7 +132,7 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                     className={[
                       "ei-card relative flex min-h-[164px] flex-col items-start justify-between overflow-hidden rounded-[24px] border p-5 text-left transition-all duration-200",
                       isSelected
-                        ? `border ${option.selectedSurface}`
+                        ? "ei-card--lit bg-[linear-gradient(180deg,rgba(255,245,200,0.24)_0%,rgba(252,211,77,0.20)_22%,rgba(251,191,36,0.18)_54%,rgba(249,115,22,0.16)_100%)]"
                         : "border-white/10 bg-white/[0.03]",
                     ].join(" ")}
                     aria-pressed={isSelected}
@@ -145,15 +141,25 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                       className={[
                         "pointer-events-none absolute inset-0 bg-gradient-to-br transition-opacity duration-200",
                         option.accent,
-                        isSelected ? "opacity-100" : "opacity-65",
+                        isSelected
+                          ? "opacity-100 mix-blend-screen"
+                          : "opacity-65",
                       ].join(" ")}
                     />
+                    {isSelected ? (
+                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_16%,rgba(255,250,214,0.42),transparent_34%),radial-gradient(circle_at_50%_100%,rgba(251,191,36,0.36),transparent_58%)]" />
+                    ) : null}
                     <div className="relative space-y-3">
                       <div className="space-y-1.5">
                         <h2 className="text-lg font-semibold text-white">
                           {option.title}
                         </h2>
-                        <p className="text-sm leading-6 text-white/65">
+                        <p
+                          className={[
+                            "text-sm leading-6",
+                            isSelected ? "text-white/88" : "text-white/65",
+                          ].join(" ")}
+                        >
                           {option.description}
                         </p>
                       </div>
