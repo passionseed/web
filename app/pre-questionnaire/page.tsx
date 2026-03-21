@@ -116,7 +116,7 @@ export default function PreQuestionnairePage() {
     return () => observer.disconnect();
   }, [currentStep]);
 
-  const handleStep1Submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleStep1Submit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
 
