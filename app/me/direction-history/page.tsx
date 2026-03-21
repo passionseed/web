@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function DirectionHistoryPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-12">
+    <div className="min-h-screen bg-[linear-gradient(to_bottom,#020617_0%,#0f172a_28%,#1e1b4b_58%,#312e81_82%,#1e3a5f_100%)] text-white p-6 md:p-12">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex items-center gap-4">
           <Link href="/me/journey">

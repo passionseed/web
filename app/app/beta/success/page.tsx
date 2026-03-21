@@ -121,9 +121,16 @@ export default function AppBetaSuccessPage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#030014] text-slate-200 selection:bg-orange-500/30 font-sans">
+    <div className="relative min-h-screen overflow-hidden bg-[#06000f] text-slate-200 selection:bg-orange-500/30 font-sans">
       {/* Animated Background */}
       <div className="fixed inset-0 z-0">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, #06000f 0%, #1a0336 28%, #3b0764 58%, #4a1230 82%, #2a0818 100%)",
+          }}
+        />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
         <FloatingOrb color="bg-orange-600/20" size={600} initialX="10%" initialY="20%" duration={15} delay={0} />
         <FloatingOrb color="bg-rose-600/20" size={500} initialX="80%" initialY="60%" duration={20} delay={2} />

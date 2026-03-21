@@ -49,7 +49,7 @@ export default function BetaInfoPage() {
     if (!mounted) return null;
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#0A0A0B] selection:bg-purple-500/30 text-slate-200 font-[family-name:var(--font-kodchasan)] pb-24">
+        <div className="relative min-h-screen w-full overflow-hidden selection:bg-purple-500/30 text-slate-200 font-[family-name:var(--font-kodchasan)] pb-24" style={{ background: "linear-gradient(to bottom, #06000f 0%, #1a0336 28%, #3b0764 58%, #4a1230 82%, #2a0818 100%)" }}>
             {/* Animated Background Orbs */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <FloatingOrb color="bg-orange-600/30" size="40vw" initialX="-10%" initialY="10%" duration={15} delay={0} />

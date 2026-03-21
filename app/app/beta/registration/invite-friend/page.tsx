@@ -135,9 +135,16 @@ export default function InviteFriendPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#0A0A0B] selection:bg-purple-500/30 text-slate-200 font-[family-name:var(--font-kodchasan)] py-16 px-4 sm:px-6">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#06000f] selection:bg-purple-500/30 text-slate-200 font-[family-name:var(--font-kodchasan)] py-16 px-4 sm:px-6">
       {/* Animated Background Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, #06000f 0%, #1a0336 28%, #3b0764 58%, #4a1230 82%, #2a0818 100%)",
+          }}
+        />
         <FloatingOrb
           color="bg-blue-600/30"
           size="40vw"
