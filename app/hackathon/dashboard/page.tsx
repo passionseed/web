@@ -73,7 +73,7 @@ export default function HackathonDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#03050a] text-white relative overflow-hidden flex items-center justify-center">
+    <div className="min-h-screen text-white relative overflow-hidden flex items-center justify-center" style={{ background: "linear-gradient(to bottom, #010108 0%, #010210 60%, #010D18 100%)" }}>
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#91C4E3] opacity-5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#9D81AC] opacity-5 blur-[150px] rounded-full pointer-events-none" />
 

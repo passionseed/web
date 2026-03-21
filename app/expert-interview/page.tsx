@@ -398,7 +398,7 @@ export default function ExpertInterviewPage() {
   // ── Chat ──────────────────────────────────────────────────────────────────
   if (step === "chat" && sessionData) {
     return (
-      <div className="fixed inset-0 z-50 bg-black">
+      <div className="fixed inset-0 z-50" style={{ background: "linear-gradient(to bottom, #06000f 0%, #1a0336 28%, #3b0764 58%, #4a1230 82%, #2a0818 100%)" }}>
         <InterviewChat
           sessionId={sessionData.sessionId}
           firstQuestion={sessionData.firstQuestion}
@@ -424,9 +424,15 @@ export default function ExpertInterviewPage() {
   // ── Profile ───────────────────────────────────────────────────────────────
   if (step === "profile" && sessionData) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div
+        className="min-h-screen text-white"
+        style={{
+          background:
+            "linear-gradient(to bottom, #06000f 0%, #1a0336 28%, #3b0764 58%, #4a1230 82%, #2a0818 100%)",
+        }}
+      >
         <div className="max-w-2xl mx-auto px-4 py-16">
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8">
+          <div className="ei-card rounded-[24px] border border-white/10 bg-white/[0.04] p-8">
             <ProfileForm
               onSubmit={handleProfileSubmit}
               sessionId={sessionData.sessionId}
@@ -446,9 +452,15 @@ export default function ExpertInterviewPage() {
     }
 
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div
+        className="min-h-screen text-white"
+        style={{
+          background:
+            "linear-gradient(to bottom, #06000f 0%, #1a0336 28%, #3b0764 58%, #4a1230 82%, #2a0818 100%)",
+        }}
+      >
         <div className="max-w-2xl mx-auto px-4 py-16">
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8 space-y-4">
+          <div className="ei-card rounded-[24px] border border-white/10 bg-white/[0.04] p-8 space-y-4">
             <MentoringOptIn
               onSubmit={handleMentoringSubmit}
               isLoading={isSubmitting}

@@ -70,7 +70,7 @@ export default function TaxInvoicePage() {
               variant="ghost"
               size="sm"
               onClick={() => copyToClipboard(isEnglish ? field.valueEn : field.valueTh, `${field.label}-${isEnglish ? 'en' : 'th'}`)}
-              className="text-purple-400 hover:text-purple-400 hover:bg-gray-900 ml-4"
+              className="text-purple-400 hover:text-purple-400 hover:bg-white/5 ml-4"
             >
               {copiedField === `${field.label}-${isEnglish ? 'en' : 'th'}` ? (
                 <Check className="h-4 w-4" />
@@ -79,19 +79,25 @@ export default function TaxInvoicePage() {
               )}
             </Button>
           </div>
-          <div className="border-b border-gray-800"></div>
+          <div className="border-b border-white/10"></div>
         </div>
       ))}
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div
+      className="min-h-screen text-white"
+      style={{
+        background:
+          "linear-gradient(to bottom, #06000f 0%, #1a0336 28%, #3b0764 58%, #4a1230 82%, #2a0818 100%)",
+      }}
+    >
       <div className="container mx-auto px-6 py-20">
         <TaxSection isEnglish={true} />
         
         <div className="my-20">
-          <div className="border-t border-gray-800 w-24 mx-auto"></div>
+          <div className="border-t border-white/10 w-24 mx-auto"></div>
         </div>
         
         <TaxSection isEnglish={false} />

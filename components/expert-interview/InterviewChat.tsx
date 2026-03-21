@@ -136,7 +136,7 @@ export function InterviewChat({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Nav + progress */}
-      <div className="shrink-0 border-b border-gray-800/60 bg-black/80 backdrop-blur-sm">
+      <div className="shrink-0 border-b border-white/10 bg-black/60 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4">
           <div className="flex items-center justify-between h-12">
             <span className="text-sm font-semibold text-white tracking-tight">
@@ -182,7 +182,7 @@ export function InterviewChat({
 
       {/* Input area — paddingBottom lifts input above keyboard on iOS Safari */}
       <div
-        className="shrink-0 bg-gradient-to-t from-black from-60% to-transparent pt-4"
+        className="shrink-0 bg-gradient-to-t from-[#06000f] from-60% to-transparent pt-4"
         style={{ paddingBottom: isIOS && keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
       >
         <div
