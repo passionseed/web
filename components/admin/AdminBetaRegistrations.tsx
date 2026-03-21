@@ -58,6 +58,7 @@ interface BetaRegistration {
   faculty_interest: string;
   major_interest: string;
   university: string;
+  is_completed: boolean;
 }
 
 interface FunnelStats {
@@ -87,6 +88,7 @@ export function AdminBetaRegistrations() {
   const [registrations, setRegistrations] = useState<BetaRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [completionFilter, setCompletionFilter] = useState<"all" | "completed" | "incomplete">("all");
   const [chartDataType, setChartDataType] = useState<ChartDataType>("platform");
   const [funnelStats, setFunnelStats] = useState<FunnelStats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -129,7 +131,11 @@ export function AdminBetaRegistrations() {
   }
 
   const filteredRegistrations = registrations.filter((r) => {
+    if (completionFilter === "completed" && !r.is_completed) return false;
+    if (completionFilter === "incomplete" && r.is_completed) return false;
+
     const query = searchQuery.toLowerCase();
+    if (!query) return true;
     return (
       r.full_name.toLowerCase().includes(query) ||
       r.nickname.toLowerCase().includes(query) ||
@@ -367,14 +373,31 @@ export function AdminBetaRegistrations() {
               View all registered beta testers for Passion Seed App
             </CardDescription>
           </div>
-          <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, email, school, grade, or platform..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex gap-2 mt-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, school, grade, or platform..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select
+              value={completionFilter}
+              onValueChange={(value: "all" | "completed" | "incomplete") =>
+                setCompletionFilter(value)
+              }
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All students</SelectItem>
+                <SelectItem value="completed">Completed only</SelectItem>
+                <SelectItem value="incomplete">Incomplete only</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -392,6 +415,7 @@ export function AdminBetaRegistrations() {
                   <TableHead>Major Interest</TableHead>
                   <TableHead>Target Uni</TableHead>
                   <TableHead>Platform</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Registered</TableHead>
                 </TableRow>
               </TableHeader>
@@ -399,11 +423,11 @@ export function AdminBetaRegistrations() {
                 {filteredRegistrations.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={11}
+                      colSpan={12}
                       className="text-center text-muted-foreground"
                     >
-                      {searchQuery
-                        ? "No registrations found matching your search"
+                      {searchQuery || completionFilter !== "all"
+                        ? "No registrations found matching your filter"
                         : "No registrations yet"}
                     </TableCell>
                   </TableRow>
@@ -451,6 +475,18 @@ export function AdminBetaRegistrations() {
                           }
                         >
                           {registration.platform}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            registration.is_completed
+                              ? "bg-green-500/10 text-green-500 border-green-500/20"
+                              : "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                          }
+                          variant="outline"
+                        >
+                          {registration.is_completed ? "Completed" : "Incomplete"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">

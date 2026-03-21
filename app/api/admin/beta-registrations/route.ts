@@ -73,6 +73,17 @@ export async function GET() {
       );
     }
 
+    // Fetch funnel completion status keyed by email
+    const { data: funnelRows } = await supabaseAdmin
+      .from("beta_registration_funnel")
+      .select("email, status");
+
+    const completedEmails = new Set(
+      (funnelRows || [])
+        .filter((r: { email: string; status: string }) => r.status === "completed")
+        .map((r: { email: string; status: string }) => r.email.toLowerCase())
+    );
+
     // Transform the data into a more usable format
     const registrations = (submissions || []).map((submission: any) => {
       const answers: Record<string, string> = {};
@@ -86,13 +97,15 @@ export async function GET() {
         });
       }
 
+      const email = answers["Email address"] || "";
+
       return {
         id: submission.id,
         created_at: submission.created_at,
         user_id: submission.user_id,
         full_name: answers["Full name"] || "",
         nickname: answers["Nickname"] || "",
-        email: answers["Email address"] || "",
+        email,
         phone: answers["Phone number"] || "",
         school: answers["School"] || "",
         grade: answers["Grade"] || "",
@@ -101,6 +114,7 @@ export async function GET() {
         faculty_interest: answers["Faculty of Interest"] || "",
         major_interest: answers["Major Interest"] || "",
         university: answers["University"] || "",
+        is_completed: completedEmails.has(email.toLowerCase()),
       };
     });
 
