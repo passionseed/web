@@ -2,7 +2,11 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CollectedData, OnboardingState, OnboardingStep } from "@/types/onboarding";
+import type {
+  CollectedData,
+  OnboardingState,
+  OnboardingStep,
+} from "@/types/onboarding";
 import { ProgressDots } from "./components/progress-dots";
 import { WelcomePhase } from "./phases/welcome";
 import { InterestPhase } from "./phases/interest";
@@ -38,13 +42,13 @@ export function OnboardClient({
 }: OnboardClientProps) {
   const router = useRouter();
   const [step, setStep] = useState<OnboardingStep>(
-    initialState?.current_step ?? "welcome",
+    initialState?.current_step ?? "welcome"
   );
   const [data, setData] = useState<CollectedData>(
-    initialState?.collected_data ?? {},
+    initialState?.collected_data ?? {}
   );
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>(
-    initialState?.chat_history ?? [],
+    initialState?.chat_history ?? []
   );
 
   const saveState = useCallback(
@@ -59,7 +63,7 @@ export function OnboardClient({
         }),
       });
     },
-    [userId],
+    [userId]
   );
 
   const advance = useCallback(
@@ -69,7 +73,7 @@ export function OnboardClient({
       setStep(nextStep);
       await saveState(nextStep, nextData);
     },
-    [data, saveState],
+    [data, saveState]
   );
 
   const updateLanguage = useCallback(
@@ -78,7 +82,7 @@ export function OnboardClient({
       setData(nextData);
       await saveState(step, nextData);
     },
-    [data, saveState, step],
+    [data, saveState, step]
   );
 
   const goBack = useCallback(async () => {
@@ -163,8 +167,10 @@ export function OnboardClient({
           </div>
         </header>
 
-        <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
-          {step === "welcome" && <WelcomePhase {...sharedProps} oauthName={oauthName} />}
+        <main className="relative z-10 flex flex-1 items-start justify-center px-4 py-6 sm:px-6 sm:py-8">
+          {step === "welcome" && (
+            <WelcomePhase {...sharedProps} oauthName={oauthName} />
+          )}
           {step === "interest" && <InterestPhase {...sharedProps} />}
           {step === "assessment" && data.mode === "chat" && (
             <AssessmentChatPhase
