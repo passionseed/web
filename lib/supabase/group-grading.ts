@@ -336,8 +336,9 @@ export const getGroupAllSubmissions = async (
     }
     
     // STEP 4: Filter progress records for this map's nodes
-    const mapNodeIds = mapNodes.map(n => n.id);
-    const relevantProgress = allProgress.filter(p => mapNodeIds.includes(p.node_id));
+    // ⚡ Bolt Performance Optimization: Use Set for O(1) lookups instead of Array.includes which is O(N)
+    const mapNodeIdsSet = new Set(mapNodes.map(n => n.id));
+    const relevantProgress = allProgress.filter(p => mapNodeIdsSet.has(p.node_id));
     console.log("🎯 RELEVANT PROGRESS FOR MAP:", { 
       count: relevantProgress.length,
       progressIds: relevantProgress.map(p => p.id)
