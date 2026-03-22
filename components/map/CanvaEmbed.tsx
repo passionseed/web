@@ -104,7 +104,16 @@ export const CanvaEmbed = memo(({ contentUrl }: CanvaEmbedProps) => {
   console.log("🎨 CanvaEmbed rendering for URL:", contentUrl);
 
   const isValidCanvaUrl = useMemo(() => {
-    return contentUrl.includes("canva.com/design/");
+    try {
+      const url = new URL(contentUrl);
+      return (
+        url.protocol === "https:" &&
+        (url.hostname === "canva.com" || url.hostname === "www.canva.com") &&
+        url.pathname.startsWith("/design/")
+      );
+    } catch {
+      return false;
+    }
   }, [contentUrl]);
 
   const embedUrl = useMemo(() => {
