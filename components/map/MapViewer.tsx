@@ -485,10 +485,43 @@ export function MapViewer({
     checkTeamMapAndRole();
   }, [currentUser, map.id]);
 
+  // OPTIMIZATION: Pre-calculate O(1) lookup maps to prevent O(N^2) render bottlenecks
+  const nodesById = useMemo(() => {
+    const nodeMap = new Map<string, MapNode>();
+    map.map_nodes.forEach((node) => {
+      nodeMap.set(node.id, node);
+    });
+    return nodeMap;
+  }, [map.map_nodes]);
+
+  const prerequisitesByNodeId = useMemo(() => {
+    const prereqMap = new Map<string, MapNode[]>();
+
+    // Initialize empty arrays for all nodes
+    map.map_nodes.forEach((node) => {
+      prereqMap.set(node.id, []);
+    });
+
+    // Populate prerequisites based on paths
+    map.map_nodes.forEach((node) => {
+      if (node.node_paths_source && node.node_paths_source.length > 0) {
+        node.node_paths_source.forEach((path) => {
+          if (path.destination_node_id) {
+            const prereqs = prereqMap.get(path.destination_node_id) || [];
+            prereqs.push(node);
+            prereqMap.set(path.destination_node_id, prereqs);
+          }
+        });
+      }
+    });
+
+    return prereqMap;
+  }, [map.map_nodes]);
+
   // Check if node is unlocked based on prerequisites
-  const isNodeUnlocked = (nodeId: string): boolean => {
-    // Find the node data
-    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+  const isNodeUnlocked = useCallback((nodeId: string): boolean => {
+    // Find the node data using O(1) lookup
+    const nodeData = nodesById.get(nodeId);
 
     // Text nodes are always "unlocked" (visible) since they're just annotations
     if ((nodeData as any)?.node_type === "text") {
@@ -500,12 +533,8 @@ export function MapViewer({
       return true;
     }
 
-    // Find all nodes that have paths leading to this node
-    const prerequisites = map.map_nodes.filter((node) =>
-      node.node_paths_source.some(
-        (path) => path.destination_node_id === nodeId,
-      ),
-    );
+    // Find all nodes that have paths leading to this node using O(1) lookup
+    const prerequisites = prerequisitesByNodeId.get(nodeId) || [];
 
     // If no prerequisites, node is unlocked (starting node)
     if (prerequisites.length === 0) return true;
@@ -515,16 +544,16 @@ export function MapViewer({
       const progress = progressMap[prereq.id];
       return progress?.status === "passed" || progress?.status === "submitted";
     });
-  };
+  }, [nodesById, prerequisitesByNodeId, isInstructorOrTA, progressMap]);
 
   // Get submission requirement for a node (single or all team members)
-  const getSubmissionRequirement = (nodeId: string): "single" | "all" => {
-    const nodeData = map.map_nodes.find((n) => n.id === nodeId);
+  const getSubmissionRequirement = useCallback((nodeId: string): "single" | "all" => {
+    const nodeData = nodesById.get(nodeId);
     return nodeData?.metadata?.submission_requirement || "single";
-  };
+  }, [nodesById]);
 
   // Check if node is completed based on submission requirements
-  const isNodeCompleted = (nodeId: string, progress: any): boolean => {
+  const isNodeCompleted = useCallback((nodeId: string, progress: any): boolean => {
     const requirement = getSubmissionRequirement(nodeId);
 
     if (requirement === "single") {
@@ -540,10 +569,10 @@ export function MapViewer({
       }
       return progress?.status === "passed" || progress?.status === "submitted";
     }
-  };
+  }, [getSubmissionRequirement]);
 
   // Calculate progress statistics by requirement type
-  const getProgressStats = () => {
+  const getProgressStats = useCallback(() => {
     const stats = {
       singleRequirement: { completed: 0, total: 0 },
       allRequirement: { completed: 0, total: 0 },
@@ -572,7 +601,7 @@ export function MapViewer({
     });
 
     return stats;
-  };
+  }, [map.map_nodes, getSubmissionRequirement, progressMap, isNodeCompleted]);
 
   // Custom node component with sprite-based gamified design and floating animations
   const nodeTypes = useMemo(
@@ -882,7 +911,7 @@ export function MapViewer({
         );
       },
     }),
-    [progressMap, isInstructorOrTA, isTeamMap, map.map_nodes],
+    [progressMap, isInstructorOrTA, isTeamMap, isNodeUnlocked, isNodeCompleted, getSubmissionRequirement],
   );
 
   useEffect(() => {
