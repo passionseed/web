@@ -49,9 +49,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "File size must be less than 10MB" }, { status: 400 });
         }
 
+        // Sanitize inputs to prevent path traversal
+        const safeSeedId = seedId.replace(/[^a-zA-Z0-9_-]/g, "");
+        const rawExt = file.name.split(".").pop() || "";
+        const safeExt = rawExt.replace(/[^a-zA-Z0-9]/g, "");
+
         // Generate unique filename
-        const fileExt = file.name.split(".").pop();
-        const fileName = `certificate-template-${seedId}-${Date.now()}.${fileExt}`;
+        const fileName = `certificate-template-${safeSeedId}-${Date.now()}.${safeExt}`;
         const filePath = `certificate-templates/${fileName}`;
 
         // Upload to Supabase Storage
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error("Error in certificate template upload:", error);
         return NextResponse.json(
-            { error: error.message || "Internal server error" },
+            { error: "Internal server error" },
             { status: 500 }
         );
     }
