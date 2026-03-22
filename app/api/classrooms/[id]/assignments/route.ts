@@ -68,65 +68,54 @@ export async function GET(
 
     // Get additional data separately to avoid complex join issues
     const assignmentIds = assignments?.map((a) => a.id) || [];
-    let enrollmentCounts: any[] = [];
-    let nodeCounts: any[] = [];
+    let enrollmentCounts: Record<string, any> = {};
+    let nodeCounts: Record<string, any> = {};
 
     if (assignmentIds.length > 0) {
-      // Get enrollment counts and status
-      const { data: enrollments } = await supabase
-        .from("assignment_enrollments")
-        .select("assignment_id, status")
-        .in("assignment_id", assignmentIds);
+      // ⚡ Bolt Optimization: Use Promise.all for concurrent fetching to avoid waterfalls
+      const [
+        { data: enrollments },
+        { data: nodes }
+      ] = await Promise.all([
+        supabase
+          .from("assignment_enrollments")
+          .select("assignment_id, status")
+          .in("assignment_id", assignmentIds),
+        supabase
+          .from("assignment_nodes")
+          .select("assignment_id")
+          .in("assignment_id", assignmentIds)
+      ]);
 
-      // Get node counts
-      const { data: nodes } = await supabase
-        .from("assignment_nodes")
-        .select("assignment_id")
-        .in("assignment_id", assignmentIds);
-
+      // ⚡ Bolt Optimization: Replace O(N^2) Array.find/reduce with O(N) hash map construction
       // Process enrollment data
-      enrollmentCounts = (enrollments || []).reduce((acc, enrollment) => {
-        const existingAssignment = acc.find(
-          (a) => a.assignment_id === enrollment.assignment_id
-        );
-        if (existingAssignment) {
-          existingAssignment.total_enrollments++;
-          existingAssignment[enrollment.status] =
-            (existingAssignment[enrollment.status] || 0) + 1;
-        } else {
-          acc.push({
-            assignment_id: enrollment.assignment_id,
-            total_enrollments: 1,
-            [enrollment.status]: 1,
-          });
+      enrollmentCounts = (enrollments || []).reduce((acc: Record<string, any>, enrollment) => {
+        const id = enrollment.assignment_id;
+        if (!acc[id]) {
+          acc[id] = { total_enrollments: 0, completed: 0, in_progress: 0, assigned: 0 };
         }
+        acc[id].total_enrollments++;
+        acc[id][enrollment.status] = (acc[id][enrollment.status] || 0) + 1;
         return acc;
-      }, [] as any[]);
+      }, {});
 
       // Process node data
-      nodeCounts = (nodes || []).reduce((acc, node) => {
-        const existingAssignment = acc.find(
-          (a) => a.assignment_id === node.assignment_id
-        );
-        if (existingAssignment) {
-          existingAssignment.node_count++;
-        } else {
-          acc.push({
-            assignment_id: node.assignment_id,
-            node_count: 1,
-          });
+      nodeCounts = (nodes || []).reduce((acc: Record<string, any>, node) => {
+        const id = node.assignment_id;
+        if (!acc[id]) {
+          acc[id] = { node_count: 0 };
         }
+        acc[id].node_count++;
         return acc;
-      }, [] as any[]);
+      }, {});
     }
 
     // Process assignments to add computed fields
+    // ⚡ Bolt Optimization: Replace O(N*M) Array.find with O(1) hash map lookups
     const processedAssignments =
       assignments?.map((assignment: any) => {
-        const enrollmentData =
-          enrollmentCounts.find((e) => e.assignment_id === assignment.id) || {};
-        const nodeData =
-          nodeCounts.find((n) => n.assignment_id === assignment.id) || {};
+        const enrollmentData = enrollmentCounts[assignment.id] || {};
+        const nodeData = nodeCounts[assignment.id] || {};
 
         return {
           ...assignment,
