@@ -29,6 +29,7 @@ const ALLOWED_TAGS = [
   "tr",
   "th",
   "td",
+  "span",
 ];
 
 const ALLOWED_ATTR = {
