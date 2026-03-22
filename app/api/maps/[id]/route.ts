@@ -247,8 +247,9 @@ export async function PUT(
 
     // Detect deleted nodes by comparing current nodes with updated nodes
     const currentNodeIds = (currentNodes || []).map((node: any) => node.id);
-    const updatedNodeIds = updatedMap.map_nodes.map((node) => node.id);
-    const deletedNodeIds = currentNodeIds.filter((id: string) => !updatedNodeIds.includes(id));
+    // ⚡ Bolt Performance Optimization: Use Set for O(1) lookups instead of Array.includes which is O(N)
+    const updatedNodeIdsSet = new Set(updatedMap.map_nodes.map((node) => node.id));
+    const deletedNodeIds = currentNodeIds.filter((id: string) => !updatedNodeIdsSet.has(id));
 
     if (deletedNodeIds.length > 0) {
       console.log("🗑️ Detected deleted nodes:", deletedNodeIds);
