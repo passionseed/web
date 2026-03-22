@@ -45,21 +45,37 @@ export async function GET(request: NextRequest) {
     const classroomIds = (memberships || []).map((m) => m.classroom_id);
     let classroomsMap: Record<string, any> = {};
 
+    // Get member counts for all classrooms
+    const memberCounts: Record<string, number> = {};
+    const studentCounts: Record<string, number> = {};
+    const instructorCounts: Record<string, number> = {};
+    const taCounts: Record<string, number> = {};
+
     if (classroomIds.length > 0) {
-      const { data: classroomsData, error: classroomsError } = await supabase
-        .from("classrooms")
-        .select(`
-          id,
-          name,
-          description,
-          instructor_id,
-          join_code,
-          max_students,
-          is_active,
-          created_at,
-          updated_at
-        `)
-        .in("id", classroomIds);
+      // ⚡ Bolt Optimization: Fetch classrooms and member counts concurrently to avoid waterfall
+      const [
+        { data: classroomsData, error: classroomsError },
+        { data: countData }
+      ] = await Promise.all([
+        supabase
+          .from("classrooms")
+          .select(`
+            id,
+            name,
+            description,
+            instructor_id,
+            join_code,
+            max_students,
+            is_active,
+            created_at,
+            updated_at
+          `)
+          .in("id", classroomIds),
+        supabase
+          .from("classroom_memberships")
+          .select("classroom_id, role")
+          .in("classroom_id", classroomIds)
+      ]);
 
       if (classroomsError) {
         console.error("Error fetching classrooms details:", classroomsError);
@@ -73,22 +89,6 @@ export async function GET(request: NextRequest) {
         acc[classroom.id] = classroom;
         return acc;
       }, {} as Record<string, any>);
-    }
-
-    // Get member counts for all classrooms
-    // const classroomIds is already defined above
-
-    const memberCounts: Record<string, number> = {};
-    const studentCounts: Record<string, number> = {};
-    const instructorCounts: Record<string, number> = {};
-    const taCounts: Record<string, number> = {};
-
-    if (classroomIds.length > 0) {
-      // Get total member counts
-      const { data: countData } = await supabase
-        .from("classroom_memberships")
-        .select("classroom_id, role")
-        .in("classroom_id", classroomIds);
 
       if (countData) {
         countData.forEach((row) => {
