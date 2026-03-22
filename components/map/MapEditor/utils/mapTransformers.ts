@@ -193,19 +193,20 @@ export function updateMapWithDeletedNodes(
   map: FullLearningMap,
   deleted: AppNode[]
 ): FullLearningMap {
-  const deletedIds = deleted.map((node) => node.id);
+  // ⚡ Bolt: Convert array to Set for O(1) lookups instead of O(N) array.includes() inside iterative methods
+  const deletedIds = new Set(deleted.map((node) => node.id));
 
   return {
     ...map,
     map_nodes: map.map_nodes
-      .filter((node) => !deletedIds.includes(node.id))
+      .filter((node) => !deletedIds.has(node.id))
       .map((node) => ({
         ...node,
         node_paths_source: (node.node_paths_source || []).filter(
-          (path) => !deletedIds.includes(path.destination_node_id)
+          (path) => !deletedIds.has(path.destination_node_id)
         ),
         node_paths_destination: (node.node_paths_destination || []).filter(
-          (path) => !deletedIds.includes(path.source_node_id)
+          (path) => !deletedIds.has(path.source_node_id)
         ),
       })),
   };
@@ -215,17 +216,18 @@ export function updateMapWithDeletedEdges(
   map: FullLearningMap,
   deleted: AppEdge[]
 ): FullLearningMap {
-  const deletedIds = deleted.map((edge) => edge.id);
+  // ⚡ Bolt: Convert array to Set for O(1) lookups instead of O(N) array.includes() inside iterative methods
+  const deletedIds = new Set(deleted.map((edge) => edge.id));
 
   return {
     ...map,
     map_nodes: map.map_nodes.map((node) => ({
       ...node,
       node_paths_source: (node.node_paths_source || []).filter(
-        (path) => !deletedIds.includes(path.id)
+        (path) => !deletedIds.has(path.id)
       ),
       node_paths_destination: (node.node_paths_destination || []).filter(
-        (path) => !deletedIds.includes(path.id)
+        (path) => !deletedIds.has(path.id)
       ),
     })),
   };
