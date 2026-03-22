@@ -13,6 +13,7 @@ import {
     generateVectorDetails as generateVectorDetailsLogic,
 } from "@/lib/ai/directionProfileEngine";
 import { DirectionFinderResult } from "@/types/direction-finder";
+import { createClient } from "@/utils/supabase/server";
 
 export async function conductDirectionConversation(
     history: { role: 'user' | 'assistant'; content: string }[],
@@ -20,6 +21,12 @@ export async function conductDirectionConversation(
     modelName?: string,
     language: 'en' | 'th' = 'en'
 ) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
     return conductLogic(history, answers, modelName, language);
 }
 
@@ -29,6 +36,12 @@ export async function generateDirectionProfile(
     modelName?: string,
     language: 'en' | 'th' = 'en'
 ) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
     return generateLogic(history, answers, modelName, language);
 }
 
@@ -38,6 +51,12 @@ export async function generateDirectionProfileCore(
     modelName?: string,
     language: 'en' | 'th' = 'en'
 ) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
     return generateCoreLogic(history, answers, modelName, language);
 }
 
@@ -47,6 +66,12 @@ export async function generateDirectionProfileDetails(
     modelName?: string,
     language: 'en' | 'th' = 'en'
 ) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
     return generateDetailsLogic(coreResult, answers, modelName, language);
 }
 
@@ -56,6 +81,12 @@ export async function generatePrograms(
     modelName?: string,
     language: 'en' | 'th' = 'en'
 ) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
     return generateProgramsLogic(coreResult, answers, modelName, language);
 }
 
@@ -65,6 +96,12 @@ export async function generateCommitments(
     modelName?: string,
     language: 'en' | 'th' = 'en'
 ) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
     return generateCommitmentsLogic(coreResult, answers, modelName, language);
 }
 
@@ -74,5 +111,11 @@ export async function generateVectorDetails(
     modelName?: string,
     language: 'en' | 'th' = 'en'
 ) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
     return generateVectorDetailsLogic(vector, answers, modelName, language);
 }
