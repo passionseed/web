@@ -133,6 +133,10 @@ export async function saveDirectionFinderResult(
 
 // DEV ONLY: Get all saved direction finder results (for loading previous sessions)
 export async function getDirectionFinderResults(limit = 10) {
+  if (process.env.NODE_ENV !== "development") {
+    throw new Error("Action is only available in development environment");
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -151,6 +155,10 @@ export async function getDirectionFinderResults(limit = 10) {
 
 // DEV ONLY: Get a specific direction finder result by ID
 export async function getDirectionFinderResultById(id: string) {
+  if (process.env.NODE_ENV !== "development") {
+    throw new Error("Action is only available in development environment");
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
