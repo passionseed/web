@@ -14,14 +14,11 @@ import {
     DragOverEvent,
     DragEndEvent,
     defaultDropAnimationSideEffects,
-    DropAnimation,
     MeasuringStrategy,
     useDroppable,
     CollisionDetection,
-    getFirstCollision,
 } from "@dnd-kit/core";
 import {
-    arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
@@ -31,6 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, RotateCcw, Copy } from "lucide-react";
 import Prism from "prismjs";
 import { cn } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/security/sanitize-html";
 import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-javascript";
@@ -52,13 +50,6 @@ interface CodeItem {
     type: ItemType;
     children: CodeItem[];
     collapsed?: boolean; // Optional: if we want to collapse containers
-}
-
-// Flat representation for dnd-kit lookup
-interface FlatItem {
-    id: string;
-    parentId: string | null; // null = root
-    item: CodeItem;
 }
 
 // --- Parser & Utils ---
@@ -249,7 +240,6 @@ function SortableItem({
 
 export function OrderCodeActivity({
     initialBlocks,
-    title,
 }: OrderCodeActivityProps) {
     const [items, setItems] = useState<CodeItem[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -319,48 +309,6 @@ export function OrderCodeActivity({
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
-    };
-
-    const handleDragOver = (event: DragOverEvent) => {
-        const { active, over } = event;
-        if (!over) return;
-
-        const activeId = active.id as string;
-        const overId = over.id as string;
-
-        // Find containers involved
-        const activeData = findItemPath(items, activeId);
-        const overData = findItemPath(items, overId);
-
-        if (!activeData || !overData) return;
-
-        // If over a container and NOT the container itself, dragging INTO it?
-        // Actually, dnd-kit sortable handles sorting within lists.
-        // Moving between lists (nesting) is the tricky part.
-
-        // If the over item is active's peer, normal sort.
-        // If the over item is in a DIFFERENT list (different parent), we need to move.
-
-        // NOTE: Implementing full nested sortable is complex.
-        // Simplified strategy: 
-        // We only perform the "move" operation on DragEnd to simplify state updates,
-        // unless visual feedback requires it. 
-        // BUT dnd-kit requires onDragOver for moving between containers to show validity.
-
-        // Let's rely on flattened state only if we use `dnd-kit/sortable/tree` which we don't have.
-        // We manually handle the move.
-
-        const activeParentList = activeData.parentItems;
-        const overParentList = overData.parentItems;
-
-        if (activeParentList !== overParentList) {
-            // Moving items between containers during drag is tricky without flickering.
-            // We will defer structural changes to onDragEnd for stability, 
-            // OR implement a robust recursive arrayMove.
-
-            // For now, let's just allow sorting and see if basic dnd-kit context handles the "over" detection correctly
-            // to permit the drop.
-        }
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -475,7 +423,6 @@ export function OrderCodeActivity({
 
         if (!activeInfo || !overInfo) return;
 
-        const activeItem = activeInfo.item;
         const overItem = overInfo.item;
 
         // Scenario: Moving into a container
