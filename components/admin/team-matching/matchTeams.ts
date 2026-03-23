@@ -1,7 +1,8 @@
 import type { SimUser, Team } from "./types";
 
-// Split an array into chunks of max 5, but never leave a chunk smaller than 3.
-// If the last chunk would be 1 or 2, steal from the previous chunk to make it 3.
+// Split an array into chunks of max 5, each with at least 3 members.
+// Strategy: greedily take 5, but if the remainder would be < 3, reduce
+// the current chunk so the remainder reaches 3.
 function splitIntoTeams(ids: string[]): string[][] {
   if (ids.length === 0) return [];
   if (ids.length <= 5) return [ids];
@@ -10,19 +11,21 @@ function splitIntoTeams(ids: string[]): string[][] {
   let i = 0;
   while (i < ids.length) {
     const remaining = ids.length - i;
-    // If remaining fits in one chunk, take it all
     if (remaining <= 5) {
       chunks.push(ids.slice(i));
       break;
     }
-    // If taking 5 would leave 1 or 2, take 3 now so next chunk also gets 3+
-    if (remaining === 6) {
-      chunks.push(ids.slice(i, i + 3));
-      chunks.push(ids.slice(i + 3));
-      break;
+    // How many would be left if we take 5?
+    const leftover = remaining - 5;
+    if (leftover < 3) {
+      // Take fewer so leftover reaches 3
+      const take = remaining - 3;
+      chunks.push(ids.slice(i, i + take));
+      i += take;
+    } else {
+      chunks.push(ids.slice(i, i + 5));
+      i += 5;
     }
-    chunks.push(ids.slice(i, i + 5));
-    i += 5;
   }
   return chunks;
 }
