@@ -93,7 +93,9 @@ export function StudentTeamDashboard({
 
   // Find available teams (teams user is NOT in)
   const userTeamIds = userTeams.map((t) => t.id);
-  const availableTeams = allTeams.filter((t) => !userTeamIds.includes(t.id));
+  // Optimization: Use Set for O(1) lookups instead of Array.includes which is O(N)
+  const userTeamIdsSet = new Set(userTeamIds);
+  const availableTeams = allTeams.filter((t) => !userTeamIdsSet.has(t.id));
 
   // Get teams with open spots
   const teamsWithOpenSpots = availableTeams.filter(
