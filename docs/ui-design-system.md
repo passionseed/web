@@ -1035,7 +1035,213 @@ Tab navigation component.
 
 ## Composition Patterns
 
-### Hero Section with CTA
+### Hero Section with Atmospheric Background
+
+The hero uses a multi-layered atmospheric design that creates a sunrise/sunset effect:
+
+**Layer Stack (bottom to top):**
+1. **Base gradient** - Deep purple → amber/gold (sunrise effect)
+2. **Glow orbs** - Animated blur-3xl circles with floating motion
+3. **Cloud masses** - Radial gradients opening toward center
+4. **Radial glow** - Emanating from bottom center
+5. **Top fade** - Gradient to deep space
+6. **Shimmer overlay** - Animated diagonal gradient
+7. **Grid texture** - Subtle dot pattern
+
+```tsx
+<section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden">
+  {/* Base gradient - sunrise effect */}
+  <div
+    className="absolute inset-0"
+    style={{
+      background: `linear-gradient(
+        180deg,
+        #1a0a2e 0%,
+        #2d1449 25%,
+        #4a1d6b 45%,
+        #6b2d5b 60%,
+        #8b3a4a 70%,
+        #c45c3a 85%,
+        #e87a3a 95%,
+        #fbbf24 100%
+      )`,
+    }}
+  />
+
+  {/* Animated glow orbs */}
+  <motion.div
+    className="absolute left-[-12%] top-[10%] h-[26rem] w-[26rem] bg-orange-400/18 rounded-full blur-3xl"
+    animate={{ x: [0, 20, 0], y: [0, -10, 0], scale: [1, 1.08, 1] }}
+    transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+  />
+  <motion.div
+    className="absolute right-[-10%] top-[18%] h-[24rem] w-[24rem] bg-fuchsia-500/14 rounded-full blur-3xl"
+    animate={{ x: [0, -18, 0], y: [0, 16, 0], scale: [1, 1.04, 1] }}
+    transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+  />
+
+  {/* Left cloud - purple-violet mass */}
+  <motion.div
+    className="absolute left-0 top-[5%] w-[50%] h-[70%]"
+    style={{
+      background: `radial-gradient(ellipse 90% 80% at 0% 45%,
+        rgba(160, 80, 220, 0.55) 0%,
+        rgba(120, 50, 180, 0.30) 45%,
+        transparent 80%)`,
+      filter: "blur(36px)",
+    }}
+    animate={{ x: [0, 24, 0], y: [0, -14, 0], opacity: [0.75, 1, 0.75] }}
+    transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+  />
+
+  {/* Right cloud - amber-rose mass */}
+  <motion.div
+    className="absolute right-0 top-[8%] w-[50%] h-[70%]"
+    style={{
+      background: `radial-gradient(ellipse 90% 80% at 100% 45%,
+        rgba(220, 80, 60, 0.50) 0%,
+        rgba(200, 100, 40, 0.28) 45%,
+        transparent 80%)`,
+      filter: "blur(36px)",
+    }}
+    animate={{ x: [0, -24, 0], y: [0, 16, 0], opacity: [0.70, 0.95, 0.70] }}
+    transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+  />
+
+  {/* Radial glow from bottom center */}
+  <div
+    className="absolute inset-0"
+    style={{
+      background: `radial-gradient(
+        ellipse 80% 50% at 50% 100%,
+        rgba(255, 107, 74, 0.25) 0%,
+        rgba(251, 191, 36, 0.15) 30%,
+        transparent 70%
+      )`,
+    }}
+  />
+
+  {/* Top fade to deep space */}
+  <div
+    className="absolute inset-0"
+    style={{
+      background: `linear-gradient(180deg, rgba(26, 10, 46, 0.8) 0%, transparent 40%)`,
+    }}
+  />
+
+  {/* Grid texture */}
+  <div
+    className="absolute inset-0 opacity-[0.06]"
+    style={{
+      backgroundImage: `linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)`,
+      backgroundSize: "24px 24px",
+    }}
+  />
+
+  {/* Content */}
+  <div className="relative z-10 max-w-4xl mx-auto text-center px-4">
+    {/* Eyebrow */}
+    <motion.span
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="text-sm font-medium text-orange-300 tracking-wide uppercase mb-6 inline-block"
+    >
+      Career exploration, reimagined
+    </motion.span>
+
+    {/* Headline */}
+    <motion.h1
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.05 }}
+      className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] tracking-tight drop-shadow-[0_2px_30px_rgba(255,107,74,0.3)]"
+    >
+      Try a career before you choose one.
+    </motion.h1>
+
+    {/* Subheadline */}
+    <motion.p
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.15 }}
+      className="mt-6 text-base sm:text-lg md:text-xl text-amber-100/80 max-w-md mx-auto font-medium leading-relaxed"
+    >
+      5-day real-world challenges designed by working professionals.
+    </motion.p>
+
+    {/* CTA */}
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.25 }}
+      className="mt-8"
+    >
+      <Link href="/login" className="ei-button-dusk">
+        Start exploring
+        <ArrowRight className="h-5 w-5" />
+      </Link>
+    </motion.div>
+  </div>
+</section>
+```
+
+### Feature Cards Section
+
+```tsx
+<section className="py-32 bg-[#0d0d0d] relative overflow-hidden border-t border-white/[0.03]">
+  {/* Subtle ambient glow */}
+  <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-purple-950/10 rounded-full blur-[100px]" />
+    <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-950/10 rounded-full blur-[100px]" />
+  </div>
+
+  <div className="container px-4 relative z-10 max-w-5xl mx-auto">
+    {/* Header */}
+    <div className="text-center mb-20">
+      <span className="text-xs font-medium text-purple-400 tracking-widest uppercase mb-4 inline-block">
+        How It Works
+      </span>
+      <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-[1.05]">
+        Career exploration that works.
+      </h2>
+      <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto font-medium leading-relaxed">
+        Three simple steps to discover your path.
+      </p>
+    </div>
+
+    {/* Cards */}
+    <div className="space-y-6">
+      {steps.map((step, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: index * 0.1 }}
+          viewport={{ once: true }}
+          className="ei-card group relative p-6 md:p-8 border border-orange-500/10 bg-gradient-to-br from-orange-500/20 to-orange-500/5"
+        >
+          <div className="flex items-start gap-4">
+            <step.icon className="h-6 w-6 text-orange-400 flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-xs font-mono text-gray-500">{step.number}</span>
+                <h3 className="text-lg md:text-xl font-bold text-white">{step.title}</h3>
+              </div>
+              <p className="text-gray-400 leading-relaxed text-sm md:text-base">
+                {step.description}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  </div>
+</section>
+```
+
+### Hero Section with CTA (Simple)
 
 ```tsx
 <section className="relative min-h-screen flex items-center justify-center overflow-hidden dusk-theme">
