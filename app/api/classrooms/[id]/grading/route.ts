@@ -262,7 +262,9 @@ export async function GET(
 
     // Get additional profiles for members not in submissions
     const classroomUserIds = classroomMembers.map(m => m.user_id);
-    const missingUserIds = classroomUserIds.filter(id => !submissionUserIds.includes(id));
+    // Optimization: Use Set for O(1) lookups instead of Array.includes which is O(N)
+    const submissionUserIdsSet = new Set(submissionUserIds);
+    const missingUserIds = classroomUserIds.filter(id => !submissionUserIdsSet.has(id));
     
     let additionalProfiles: any[] = [];
     if (missingUserIds.length > 0) {
