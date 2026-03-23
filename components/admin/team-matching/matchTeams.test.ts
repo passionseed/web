@@ -62,8 +62,18 @@ describe("matchTeams", () => {
     const users = ["a", "b", "c", "d", "e", "f"].map((id) => u(id, id, []));
     const teams = matchTeams(users);
     expect(teams).toHaveLength(2);
-    expect(teams[0].members).toHaveLength(3);
-    expect(teams[1].members).toHaveLength(3);
+    teams.forEach((t) => expect(t.members.length).toBeGreaterThanOrEqual(3));
+    teams.forEach((t) => expect(t.members.length).toBeLessThanOrEqual(5));
+  });
+
+  it("splits 7 users into 4+3 not 5+2", () => {
+    const users = ["a", "b", "c", "d", "e", "f", "g"].map((id) => u(id, id, []));
+    const teams = matchTeams(users);
+    expect(teams).toHaveLength(2);
+    teams.forEach((t) => expect(t.members.length).toBeGreaterThanOrEqual(3));
+    teams.forEach((t) => expect(t.members.length).toBeLessThanOrEqual(5));
+    const sizes = teams.map((t) => t.members.length).sort();
+    expect(sizes).toEqual([3, 4]);
   });
 
   it("returns empty array for empty input", () => {
