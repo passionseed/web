@@ -58,6 +58,14 @@ describe("matchTeams", () => {
     expect(teams[0].members).toHaveLength(3);
   });
 
+  it("splits 6 users into 3+3 not 5+1", () => {
+    const users = ["a", "b", "c", "d", "e", "f"].map((id) => u(id, id, []));
+    const teams = matchTeams(users);
+    expect(teams).toHaveLength(2);
+    expect(teams[0].members).toHaveLength(3);
+    expect(teams[1].members).toHaveLength(3);
+  });
+
   it("returns empty array for empty input", () => {
     expect(matchTeams([])).toEqual([]);
   });

@@ -1,5 +1,32 @@
 import type { SimUser, Team } from "./types";
 
+// Split an array into chunks of max 5, but never leave a chunk smaller than 3.
+// If the last chunk would be 1 or 2, steal from the previous chunk to make it 3.
+function splitIntoTeams(ids: string[]): string[][] {
+  if (ids.length === 0) return [];
+  if (ids.length <= 5) return [ids];
+
+  const chunks: string[][] = [];
+  let i = 0;
+  while (i < ids.length) {
+    const remaining = ids.length - i;
+    // If remaining fits in one chunk, take it all
+    if (remaining <= 5) {
+      chunks.push(ids.slice(i));
+      break;
+    }
+    // If taking 5 would leave 1 or 2, take 3 now so next chunk also gets 3+
+    if (remaining === 6) {
+      chunks.push(ids.slice(i, i + 3));
+      chunks.push(ids.slice(i + 3));
+      break;
+    }
+    chunks.push(ids.slice(i, i + 5));
+    i += 5;
+  }
+  return chunks;
+}
+
 function makeUnionFind(ids: string[]) {
   const parent: Record<string, string> = {};
   ids.forEach((id) => (parent[id] = id));
@@ -59,15 +86,7 @@ export function matchTeams(users: SimUser[]): Team[] {
       degree[id] = cluster.filter((other) => isMutual(id, other)).length;
     });
     const sorted = [...cluster].sort((a, b) => degree[b] - degree[a]);
-    let current: string[] = [];
-    sorted.forEach((id) => {
-      if (current.length === 5) {
-        groups.push(current);
-        current = [];
-      }
-      current.push(id);
-    });
-    if (current.length > 0) groups.push(current);
+    splitIntoTeams(sorted).forEach((chunk) => groups.push(chunk));
   });
 
   // Separate solo groups (no mutual picks) from team groups (2+ members)
@@ -113,10 +132,8 @@ export function matchTeams(users: SimUser[]): Team[] {
     .filter((id) => !placed.includes(id));
 
   if (remaining.length >= 3) {
-    // Form their own group(s), capped at 5
-    for (let i = 0; i < remaining.length; i += 5) {
-      teamGroups.push(remaining.slice(i, i + 5));
-    }
+    // Form their own group(s), never exceeding 5, never leaving a group of 1-2
+    splitIntoTeams(remaining).forEach((chunk) => teamGroups.push(chunk));
   } else if (remaining.length > 0) {
     // Merge into the group with most capacity
     const target = [...teamGroups].sort((a, b) => a.length - b.length)[0];
