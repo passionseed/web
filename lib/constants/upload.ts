@@ -23,9 +23,7 @@ export const ALLOWED_IMAGE_TYPES = new Set([
   "image/heif",
 ]);
 
-export const ALLOWED_DOCUMENT_TYPES = new Set([
-  "application/pdf",
-]);
+export const ALLOWED_DOCUMENT_TYPES = new Set(["application/pdf"]);
 
 export const ALLOWED_GENERAL_TYPES = new Set([
   "application/pdf",
@@ -48,6 +46,7 @@ export const ALLOWED_GENERAL_TYPES = new Set([
 
 // Dangerous file extensions to block
 export const DANGEROUS_EXTENSIONS = [
+  // Executables
   ".exe",
   ".bat",
   ".cmd",
@@ -58,6 +57,17 @@ export const DANGEROUS_EXTENSIONS = [
   ".app",
   ".deb",
   ".rpm",
+  // Scripts
+  ".php",
+  ".sh",
+  ".py",
+  ".pl",
+  ".cgi",
+  // Web Content
+  ".html",
+  ".htm",
+  ".svg",
+  ".xml",
 ];
 
 // Upload configuration
@@ -70,7 +80,7 @@ export const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks for resumable uploads
  */
 export function validateFileSize(
   fileSize: number,
-  maxSize: number
+  maxSize: number,
 ): { valid: boolean; error?: string } {
   if (fileSize === 0) {
     return { valid: false, error: "File is empty" };
@@ -89,9 +99,10 @@ export function validateFileSize(
 /**
  * Validate file name
  */
-export function validateFileName(
-  fileName: string
-): { valid: boolean; error?: string } {
+export function validateFileName(fileName: string): {
+  valid: boolean;
+  error?: string;
+} {
   if (!fileName || fileName.trim().length === 0) {
     return { valid: false, error: "File name is required" };
   }
@@ -117,7 +128,7 @@ export function validateFileName(
  */
 export function validateMimeType(
   mimeType: string,
-  allowedTypes: Set<string>
+  allowedTypes: Set<string>,
 ): { valid: boolean; error?: string } {
   if (!mimeType) {
     return { valid: false, error: "File type is required" };
@@ -141,7 +152,7 @@ export function validateFile(
   fileSize: number,
   mimeType: string,
   allowedTypes: Set<string>,
-  maxSize: number
+  maxSize: number,
 ): { valid: boolean; error?: string } {
   // Validate file name
   const nameValidation = validateFileName(fileName);
