@@ -27,9 +27,11 @@ Follows the existing admin auth pattern: checks `user_roles` for `role = 'admin'
 - Renders the user grid, "Add User" card, "Run Team Matching" button, and `TeamResultsPanel`
 
 ### `UserCard`
-- Props: `user: SimUser`, `allUsers: SimUser[]`, `onChange`, `onRename`
+- Props: `user: SimUser`, `allUsers: SimUser[]`, `onChange`, `onRename`, `onDelete`
 - Displays user name with inline click-to-edit rename
+- Shows a delete button (×) to remove the user from the simulation; disabled when only 2 users remain
 - Shows 5 `PreferenceCombobox` dropdowns
+- When a user is deleted, any preferences pointing to that user across all cards are cleared
 
 ### `PreferenceCombobox`
 - Searchable dropdown (combobox pattern)
@@ -73,11 +75,11 @@ Priority: mutual picks first, then one-sided picks to fill remaining slots.
 
 1. **Build mutual-pick set** — find all pairs (A, B) where A→B and B→A both exist.
 2. **Cluster with Union-Find** — merge mutual pairs into connected components (groups).
-3. **Split oversized groups** — if a cluster exceeds 5, split greedily while keeping mutual pairs together as much as possible.
+3. **Split oversized groups** — if a cluster exceeds 5, partition it by maximizing the count of mutual pairs kept on the same side. Concretely: sort mutual pairs by shared-pick count descending, greedily assign each pair to the current partition chunk until it reaches 5, then start a new chunk.
 4. **Score unmatched users** — for each user not yet placed, compute a compatibility score against each existing group: +1 for each group member who picked this user (one-sided), +1 for each group member this user picked.
 5. **Assign to best-fit group** — place unmatched user into the group with the highest score that still has room (≤5 members). Ties broken by smallest group first.
-6. **Handle leftovers** — users who couldn't join any existing group form their own new group.
-7. **Size constraints** — teams can be 3–5. If total users don't divide evenly, the last team may be 3 or 4.
+6. **Handle leftovers** — if 3+ users remain unplaced after step 5, they form a new group together. If 1–2 users remain, merge them into the existing group with the most available capacity (furthest from 5 members). This means the minimum team size of 3 is a soft constraint — it can be violated only for the very last users when total count makes it unavoidable.
+7. **Size constraints** — teams target 3–5 members. If total users don't divide evenly, the last team may be 3 or 4 (or fewer only in the edge case described in step 6).
 
 ---
 
