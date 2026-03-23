@@ -37,15 +37,16 @@ export async function updateSession(request: NextRequest) {
   )
 
   // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
+  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
+  // IMPORTANT: If you remove getUser() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
   let user = null
   try {
-    const { data } = await supabase.auth.getClaims()
-    user = data?.claims
+    // getUser() refreshes the session if expired, preventing "Refresh Token Not Found" errors
+    const { data } = await supabase.auth.getUser()
+    user = data.user
   } catch {
     // Supabase unreachable (e.g. Docker not running in dev).
     // Skip auth check and let the request through — pages will
@@ -63,6 +64,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/expert-interview') &&
     !request.nextUrl.pathname.startsWith('/api/expert-interview') &&
     !request.nextUrl.pathname.startsWith('/epic-sprint') &&
+    !request.nextUrl.pathname.startsWith('/about') &&
     !request.nextUrl.pathname.endsWith('.md') &&
     request.nextUrl.pathname !== '/'
   ) {
