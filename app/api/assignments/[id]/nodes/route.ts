@@ -242,7 +242,9 @@ export async function POST(
     }
 
     const existingNodeIds = existingNodes?.map((n) => n.id) || [];
-    const missingNodes = node_ids.filter((id) => !existingNodeIds.includes(id));
+    // Bolt Optimization: Pre-compute Set for O(1) lookup instead of O(N) array includes
+    const existingNodeIdsSet = new Set(existingNodeIds);
+    const missingNodes = node_ids.filter((id) => !existingNodeIdsSet.has(id));
 
     if (missingNodes.length > 0) {
       return NextResponse.json(
