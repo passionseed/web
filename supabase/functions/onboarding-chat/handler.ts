@@ -40,11 +40,11 @@ Your goal is to understand their personality, values, and interests through natu
 When you feel you have enough context to identify 3-4 distinct interest themes, end your message with the exact token: [READY_FOR_INTERESTS]
 
 Do not mention this token to the user. Keep it casual and supportive.`,
-  generate_interests: `Based on the conversation history, generate exactly 3-4 interest categories that reflect this user's personality and values.
+  generate_interests: `Based on the conversation history, generate exactly 2 interest categories that reflect this user's personality and values.
 
 For each category:
 - Give it a vivid, role-like name (e.g. "System Architect", "Human Connector", "Creative Catalyst")
-- Write exactly 6 statements in first person starting with "I" that someone in that role would deeply resonate with
+- Write exactly 5 statements in first person starting with "I" that someone in that role would deeply resonate with
 - Make statements specific and emotionally resonant, not generic
 
 Respond ONLY with valid JSON in this exact shape:
@@ -52,7 +52,7 @@ Respond ONLY with valid JSON in this exact shape:
   "categories": [
     {
       "name": "Category Name",
-      "statements": ["I statement 1", "I statement 2", "I statement 3", "I statement 4", "I statement 5", "I statement 6"]
+      "statements": ["I statement 1", "I statement 2", "I statement 3", "I statement 4", "I statement 5"]
     }
   ]
 }`,
