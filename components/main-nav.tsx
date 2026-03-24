@@ -244,17 +244,19 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
             </div>
           </SheetContent>
         </Sheet>
-        <Link href="/" className="flex items-center space-x-2 min-w-0">
-          <Image
-            src="/passionseed-logo.svg"
-            alt="Passion Seed Logo"
-            width={28}
-            height={28}
-            className="w-7 h-7 object-contain"
-          />
-          <span className="font-bold text-base text-white hidden sm:block">
-            Passion Seed
-          </span>
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center space-x-2 min-w-0">
+            <Image
+              src="/passionseed-logo.svg"
+              alt="Passion Seed Logo"
+              width={28}
+              height={28}
+              className="w-7 h-7 object-contain"
+            />
+            <span className="font-bold text-base text-white hidden sm:block">
+              Passion Seed
+            </span>
+          </Link>
           {isHackathon && (
             <>
               <div className="w-px h-6 bg-white/20 mx-2 hidden sm:block" />
@@ -269,7 +271,7 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
               </Link>
             </>
           )}
-        </Link>
+        </div>
       </div>
 
       {/* Desktop nav */}
