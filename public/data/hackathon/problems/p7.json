@@ -1,0 +1,327 @@
+{
+  "problemId": "P7",
+  "title": {
+    "en": "Data Rich, Action Poor",
+    "th": "ข้อมูลมาก การกระทำน้อย"
+  },
+  "track": "Community, Public & Environmental Health",
+  "trackNum": "03",
+  "color": "#91C4E3",
+  "hook": {
+    "en": "Real-time air quality data is already available, but communities can't translate that data into protective actions.",
+    "th": "ข้อมูลคุณภาพอากาศแบบ Real-time มีพร้อมแล้ว แต่ชุมชนไม่สามารถแปลงข้อมูลเหล่านั้นเป็นการกระทำเพื่อป้องกันตัวได้"
+  },
+  "challenge": {
+    "en": "How might we turn real-time environmental health data into actionable community behavior change — at the neighborhood level, not just on a dashboard?",
+    "th": "เราจะแปลงข้อมูลสุขภาพสิ่งแวดล้อมแบบ Real-time ให้กลายเป็นการเปลี่ยนพฤติกรรมของชุมชนที่ลงมือทำได้จริงในระดับย่าน ไม่ใช่แค่บน Dashboard ได้อย่างไร?"
+  },
+  "tags": [
+    "Environmental Data",
+    "Behavior Change",
+    "Community"
+  ],
+  "grading": {
+    "severity": {
+      "score": 9,
+      "justification": "32,300 deaths/year in Thailand from air pollution; 87% of population exposed to PM2.5 exceeding WHO guidelines; life expectancy reduced by 1.8-4 years."
+    },
+    "difficulty": {
+      "score": 7,
+      "justification": "Data exists but action gap is fundamentally an equity issue. Those most exposed (informal workers) cannot afford protective measures. Requires behavior change and infrastructure support."
+    },
+    "impact": {
+      "score": 9,
+      "justification": "Could prevent thousands of premature deaths, reduce healthcare costs, improve quality of life for millions, and create replicable model for environmental health action."
+    },
+    "urgency": {
+      "score": 8,
+      "justification": "Chiang Mai hit world's worst air quality in 2023 (AQI 223). PM2.5 season is recurring annually with worsening trends. Immediate action needed to protect vulnerable populations."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "32,300 deaths annually in Thailand attributed to air pollution",
+      "source": "Health Effects Institute",
+      "year": "2020"
+    },
+    {
+      "stat": "87% of Thailand's population exposed to PM2.5 exceeding WHO guidelines",
+      "source": "IQAir World Air Quality Report",
+      "year": "2023"
+    },
+    {
+      "stat": "Chiang Mai hit world's worst air quality in 2023 (AQI 223)",
+      "source": "IQAir",
+      "year": "2023"
+    },
+    {
+      "stat": "Life expectancy reduced by 1.8-4 years due to PM2.5 exposure in Thailand",
+      "source": "Air Quality Life Index, University of Chicago",
+      "year": "2023"
+    },
+    {
+      "stat": "52.3% of workforce in informal sector - most exposed, least able to act",
+      "source": "ILO / Thai Labor Statistics",
+      "year": "2024"
+    },
+    {
+      "stat": "Air pollution cost East Asia and Pacific 9.3% of GDP ($2.5 trillion) in 2019",
+      "source": "World Bank",
+      "year": "2019"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "Informal workers (motorcycle taxi, street vendors, construction)",
+      "size": "~20 million in Thailand (52.3% of workforce)",
+      "painPoints": [
+        "Cannot afford N95 masks or reduce work hours",
+        "Most exposed to outdoor air pollution",
+        "Generic 'stay indoors' advice is irrelevant"
+      ]
+    },
+    {
+      "group": "Children and elderly in urban areas",
+      "size": "~15 million in Bangkok Metropolitan Region",
+      "painPoints": [
+        "Developing/deteriorating lungs highly vulnerable",
+        "School closures disrupt education",
+        "Limited access to air purifiers"
+      ]
+    },
+    {
+      "group": "Rural communities in Northern Thailand",
+      "size": "~10 million in burning season-affected areas",
+      "painPoints": [
+        "Highest PM2.5 concentrations during burning season",
+        "Limited healthcare access",
+        "Economic dependence on agricultural burning"
+      ]
+    },
+    {
+      "group": "Low-income families",
+      "size": "~7 million in poverty or near-poverty",
+      "painPoints": [
+        "Cannot afford air purifiers or N95 masks",
+        "Live in areas with higher pollution",
+        "Limited healthcare access for pollution-related illnesses"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "Informal workers",
+        "needs": [
+          "Affordable protective equipment",
+          "Flexible work arrangements",
+          "Health monitoring"
+        ],
+        "painPoints": [
+          "Cannot afford protection",
+          "Cannot reduce work hours",
+          "No sick leave"
+        ]
+      },
+      {
+        "role": "Community health workers",
+        "needs": [
+          "Action protocols",
+          "Communication tools",
+          "Resources for distribution"
+        ],
+        "painPoints": [
+          "Limited guidance on action triggers",
+          "No resources for community response"
+        ]
+      },
+      {
+        "role": "Local government officials",
+        "needs": [
+          "Clear action protocols",
+          "Budget for response",
+          "Community communication channels"
+        ],
+        "painPoints": [
+          "Reactive rather than proactive",
+          "Limited resources",
+          "Unclear authority"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Pollution Control Department",
+        "needs": [
+          "Data utilization",
+          "Community engagement",
+          "Policy implementation"
+        ],
+        "painPoints": [
+          "Data-focused, not action-focused",
+          "Limited community outreach"
+        ]
+      },
+      {
+        "role": "Ministry of Public Health",
+        "needs": [
+          "Health impact reduction",
+          "Treatment capacity",
+          "Prevention programs"
+        ],
+        "painPoints": [
+          "Treatment-focused",
+          "Limited prevention infrastructure"
+        ]
+      },
+      {
+        "role": "Private sector (air purifier manufacturers, sensor companies)",
+        "needs": [
+          "Market access",
+          "Partnerships",
+          "CSR opportunities"
+        ],
+        "painPoints": [
+          "Premium pricing excludes low-income",
+          "Limited distribution in rural areas"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Data-action gap is fundamentally an equity issue",
+      "explanation": "Those most exposed (informal workers earning ~$15/day) cannot afford N95 masks or reduce work hours. Generic 'stay indoors' advice is irrelevant for outdoor workers.",
+      "systemic": true
+    },
+    {
+      "cause": "No community-level action protocols",
+      "explanation": "Data exists but no clear triggers for community-level protective actions. No standardized response protocols at neighborhood level.",
+      "systemic": true
+    },
+    {
+      "cause": "Limited resources for protective measures",
+      "explanation": "N95 masks cost ~$1-2 each; air purifiers cost $100-500. Low-income communities cannot afford these protective measures.",
+      "systemic": true
+    },
+    {
+      "cause": "Fragmented communication channels",
+      "explanation": "Air quality data available through apps and websites but not reaching communities through trusted channels. Language and literacy barriers.",
+      "systemic": true
+    },
+    {
+      "cause": "Behavior change infrastructure missing",
+      "explanation": "No systematic approach to translating data into behavior change. No incentives or support for protective behaviors.",
+      "systemic": true
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "Air4Thai App",
+      "approach": "Official government app providing hourly air quality data from monitoring stations across Thailand",
+      "strengths": [
+        "Official government data",
+        "Covers all regions",
+        "Free to use"
+      ],
+      "weaknesses": [
+        "Data-focused, not action-focused",
+        "No community-level alerts",
+        "Limited behavior change guidance"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Bangkok Air Quality Flag System (AirBKK)",
+      "approach": "Color-coded flag system at schools indicating daily air quality with app integration",
+      "strengths": [
+        "Visual communication",
+        "School-specific",
+        "Student participation"
+      ],
+      "weaknesses": [
+        "Only in Bangkok",
+        "Reactive not predictive",
+        "No automated alerts"
+      ],
+      "region": "Bangkok, Thailand"
+    },
+    {
+      "name": "SENSOR FOR ALL (Chulalongkorn University)",
+      "approach": "Low-cost PM2.5 sensor network with dashboard showing real-time data and 3-day forecasts",
+      "strengths": [
+        "Low-cost sensors",
+        "Predictive capability",
+        "Open data"
+      ],
+      "weaknesses": [
+        "Not community-action focused",
+        "Requires technical knowledge"
+      ],
+      "region": "Thailand"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "Community-level action protocol system",
+      "description": "Develop standardized action protocols triggered by air quality levels, with clear guidance for different community stakeholders (schools, workplaces, health centers)",
+      "potentialImpact": "Transforms data into coordinated community response; reduces exposure through timely action",
+      "feasibility": "High"
+    },
+    {
+      "area": "Subsidized protective equipment distribution",
+      "description": "Partner with government and private sector to distribute N95 masks and air purifiers to high-exposure, low-income communities",
+      "potentialImpact": "Addresses equity gap; enables protective behaviors for those who cannot afford them",
+      "feasibility": "Medium"
+    },
+    {
+      "area": "Informal worker protection program",
+      "description": "Develop sector-specific protection programs for motorcycle taxis, street vendors, construction workers with subsidized equipment and flexible work arrangements",
+      "potentialImpact": "Protects highest-exposure population; creates model for occupational health in informal sector",
+      "feasibility": "Medium"
+    },
+    {
+      "area": "Community air quality ambassadors",
+      "description": "Train community health workers as air quality ambassadors who translate data into action, distribute protective equipment, and support vulnerable residents",
+      "potentialImpact": "Bridges data-action gap through trusted community members; enables localized response",
+      "feasibility": "High"
+    }
+  ],
+  "resources": [
+    {
+      "title": "Air4Thai - Pollution Control Department",
+      "type": "Mobile App",
+      "url": "https://play.google.com/store/apps/details?id=com.kathistudio.air4thaimobile",
+      "description": "Official Thai government app for air quality monitoring data"
+    },
+    {
+      "title": "SENSOR FOR ALL - Chulalongkorn University",
+      "type": "Web Application",
+      "url": "https://sensorforall.eng.chula.ac.th/forecast",
+      "description": "Real-time PM2.5 monitoring and 3-day forecasting dashboard for Thailand"
+    },
+    {
+      "title": "IQAir World Air Quality Report",
+      "type": "Report",
+      "url": "https://www.iqair.com/world-air-quality-report",
+      "description": "Annual global air quality report with Thailand-specific data"
+    },
+    {
+      "title": "Health Effects Institute - State of Global Air",
+      "type": "Report",
+      "url": "https://www.stateofglobalair.org/",
+      "description": "Comprehensive data on air pollution health impacts globally and by country"
+    }
+  ],
+  "keyInsights": [
+    "The data-action gap is fundamentally an equity issue: those most exposed (informal workers earning ~$15/day) cannot afford N95 masks or reduce work hours.",
+    "Generic 'stay indoors' advice is irrelevant for motorcycle taxi drivers, street vendors, and construction workers who must work outdoors to survive.",
+    "Data exists and is freely available - the gap is in translating data into coordinated community-level action with resources for protective measures.",
+    "52.3% of Thailand's workforce is in the informal sector - any solution must address this population's unique constraints.",
+    "Community health workers could bridge the data-action gap if equipped with action protocols and resources for distribution."
+  ],
+  "tangibleEquivalent": {
+    "en": "Like having a fire alarm that rings, but gives you no water to put out the fire.",
+    "th": "เหมือนมีสัญญาณเตือนไฟไหม้ดังขึ้น แต่ไม่มีน้ำให้คุณดับไฟ"
+  }
+}

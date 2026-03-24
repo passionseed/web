@@ -1,0 +1,352 @@
+{
+  "problemId": "P6",
+  "title": {
+    "en": "Mental Healthcare in the Last Mile",
+    "th": "สุขภาพจิตในพื้นที่ห่างไกล"
+  },
+  "track": "Mental Health",
+  "trackNum": "02",
+  "color": "#A594BA",
+  "hook": {
+    "en": "Rural Thailand has only 1 psychiatrist per 200,000 people, leaving those who need help with no way to access care.",
+    "th": "พื้นที่ชนบทของไทยมีจิตแพทย์เพียง 1 คนต่อประชากร 200,000 คน ทำให้คนที่ต้องการความช่วยเหลือไม่มีทางเข้าถึงการดูแล"
+  },
+  "challenge": {
+    "en": "How might we build a scalable, culturally appropriate mental wellness support system for underserved communities — where professional help is inaccessible?",
+    "th": "เราจะสร้างระบบสนับสนุนสุขภาพจิตที่ปรับขนาดได้และเหมาะสมกับวัฒนธรรม สำหรับชุมชนที่ขาดแคลนซึ่งเข้าถึงความช่วยเหลือจากผู้เชี่ยวชาญไม่ได้อย่างไร?"
+  },
+  "tags": [
+    "Access",
+    "Rural Communities",
+    "Scalable Care"
+  ],
+  "grading": {
+    "severity": {
+      "score": 9,
+      "justification": "13.4 million affected, 15 suicides daily, youth suicide rates rising. Mental health conditions contribute significantly to DALYs lost, particularly among ages 15-29."
+    },
+    "difficulty": {
+      "score": 8,
+      "justification": "Requires systemic changes across healthcare workforce, budget allocation, geographic distribution, and cultural attitudes. Long training pipelines for specialists."
+    },
+    "impact": {
+      "score": 9,
+      "justification": "Solving this would improve quality of life for millions, reduce suicide rates, increase productivity (estimated 964 billion baht economic loss annually)."
+    },
+    "urgency": {
+      "score": 9,
+      "justification": "Suicide rates approaching 1997 financial crisis levels. Youth mental health crisis accelerating. COVID-19 exacerbated conditions. Treatment gap widening."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "1.3 psychiatrists per 100,000 people in Thailand (nearly 10x below global average of 13)",
+      "source": "Thai Health Report 2025",
+      "year": "2025"
+    },
+    {
+      "stat": "13.4 million Thais have experienced mental health problems or psychiatric disorders",
+      "source": "Thai Health Report 2025",
+      "year": "2024"
+    },
+    {
+      "stat": "89% of Thais did not access mental health services in the past 12 months",
+      "source": "Nation Thailand, Thai Health 2025 Report",
+      "year": "2025"
+    },
+    {
+      "stat": "Only 1.8% of total public health budget allocated to Department of Mental Health",
+      "source": "Thai Health Report 2025",
+      "year": "2024"
+    },
+    {
+      "stat": "7.9 suicides per 100,000 population (15 deaths per day, 85 attempts per day)",
+      "source": "Department of Mental Health, Thailand",
+      "year": "2023"
+    },
+    {
+      "stat": "18 provinces in Thailand have no child/adolescent psychiatrist; 111 of 295 are based in Bangkok",
+      "source": "Thai Health Report 2025",
+      "year": "2024"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "Rural communities in Northeastern Thailand",
+      "size": "~20 million people in Isan region",
+      "painPoints": [
+        "Highest rates of alcoholism, drug addiction, anxiety, and schizophrenia",
+        "Longest travel distances to psychiatric facilities",
+        "Limited awareness and high stigma"
+      ]
+    },
+    {
+      "group": "Youth aged 15-29",
+      "size": "~10 million in Thailand",
+      "painPoints": [
+        "Highest DALYs lost due to mental health conditions",
+        "Suicide is leading cause of death among adolescents",
+        "Post-COVID psychological impact"
+      ]
+    },
+    {
+      "group": "Elderly population (60+)",
+      "size": "~12 million and growing rapidly",
+      "painPoints": [
+        "Rising dementia cases",
+        "Social isolation and loneliness",
+        "Limited access to geriatric mental health specialists"
+      ]
+    },
+    {
+      "group": "Hill tribe and ethnic minority communities",
+      "size": "~1 million in Northern Thailand",
+      "painPoints": [
+        "Geographic isolation",
+        "Cultural and language barriers",
+        "Only 0.4 community psychiatric beds per 100,000 population"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "Individuals experiencing mental health conditions",
+        "needs": [
+          "Accessible care",
+          "Culturally appropriate support",
+          "Non-stigmatizing services"
+        ],
+        "painPoints": [
+          "Geographic barriers",
+          "Stigma",
+          "Limited services"
+        ]
+      },
+      {
+        "role": "Family caregivers",
+        "needs": [
+          "Education",
+          "Resources",
+          "Respite support"
+        ],
+        "painPoints": [
+          "Burden of care",
+          "Lack of support",
+          "Financial strain"
+        ]
+      },
+      {
+        "role": "Village Health Volunteers (VHVs)",
+        "needs": [
+          "Mental health training",
+          "Supervision",
+          "Appropriate workload"
+        ],
+        "painPoints": [
+          "Limited mental health training",
+          "Focus on physical health",
+          "Overburdened"
+        ]
+      },
+      {
+        "role": "Local temple monks",
+        "needs": [
+          "Mental health training",
+          "Referral pathways"
+        ],
+        "painPoints": [
+          "Limited clinical training",
+          "No formal integration with healthcare"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Department of Mental Health (DMH)",
+        "needs": [
+          "Workforce expansion",
+          "Budget increase",
+          "Service integration"
+        ],
+        "painPoints": [
+          "Limited budget",
+          "Workforce shortage",
+          "Geographic maldistribution"
+        ]
+      },
+      {
+        "role": "Ministry of Public Health",
+        "needs": [
+          "Policy implementation",
+          "Budget allocation"
+        ],
+        "painPoints": [
+          "Treatment-focused budget",
+          "Limited prevention focus"
+        ]
+      },
+      {
+        "role": "NGOs and mental health startups",
+        "needs": [
+          "Sustainable models",
+          "Scale",
+          "Integration with public system"
+        ],
+        "painPoints": [
+          "Urban focus",
+          "Limited rural reach"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Critical shortage of mental health professionals",
+      "explanation": "Only 1.3 psychiatrists per 100,000 people (global average: 13). Mental health workers concentrated in Bangkok and major cities. Training capacity insufficient.",
+      "systemic": true
+    },
+    {
+      "cause": "Geographic maldistribution of services",
+      "explanation": "13 regional mental health centers located in urban areas. 18 provinces have no child psychiatrist. Rural residents must travel 100+ km for specialized care.",
+      "systemic": true
+    },
+    {
+      "cause": "Inadequate funding for mental health",
+      "explanation": "Only 1.8% of public health budget allocated to mental health. Insurance schemes cover some costs but systemic underinvestment limits workforce development.",
+      "systemic": true
+    },
+    {
+      "cause": "Stigma and cultural barriers",
+      "explanation": "Mental illness often attributed to karma or spiritual imbalance. Family reputation concerns prevent help-seeking. Strong stigma in rural communities.",
+      "systemic": true
+    },
+    {
+      "cause": "Limited mental health training for primary care workers",
+      "explanation": "VHVs prioritize physical health due to biomedical policy focus. Community nurses receive limited psychiatric training. mhGAP implementation inconsistent.",
+      "systemic": true
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "Ooca (Telemedica Co., Ltd.)",
+      "approach": "Tele-mental health platform connecting users with licensed psychiatrists and psychologists via video calls",
+      "strengths": [
+        "Thailand's largest mental health service network with 130,000+ users",
+        "Over 100 mental health professionals",
+        "ISO certified"
+      ],
+      "weaknesses": [
+        "Primarily serves urban, employed populations",
+        "Requires smartphone and internet",
+        "Limited rural community engagement"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Sati App",
+      "approach": "Peer support platform focused on Psychological First Aid education with volunteer listeners",
+      "strengths": [
+        "Free and accessible",
+        "Peer support model can scale",
+        "Government partnerships"
+      ],
+      "weaknesses": [
+        "Limited professional clinical support",
+        "Not designed for severe mental illness"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Village Health Volunteers (VHVs) Program",
+      "approach": "1 million community health volunteers providing primary healthcare support",
+      "strengths": [
+        "Massive existing workforce",
+        "Deep community trust",
+        "Cost-effective"
+      ],
+      "weaknesses": [
+        "Current focus on physical health",
+        "Limited mental health training"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "WHO mhGAP",
+      "approach": "Evidence-based guidelines for non-specialist health workers to identify and manage priority mental disorders",
+      "strengths": [
+        "WHO-endorsed",
+        "Demonstrated effectiveness in LMICs",
+        "Adaptable to local contexts"
+      ],
+      "weaknesses": [
+        "Implementation inconsistent in Thailand",
+        "Requires sustained training investment"
+      ],
+      "region": "Global"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "Enhanced Village Health Volunteer mental health training",
+      "description": "Develop comprehensive, culturally-adapted mental health training curriculum for VHVs focusing on psychological first aid, basic counseling, and referral pathways",
+      "potentialImpact": "Leverage existing 1 million trusted community health workers to dramatically expand mental health first contact capacity",
+      "feasibility": "Medium-High"
+    },
+    {
+      "area": "Monk-Community Mental Health Partnership",
+      "description": "Develop structured training program for Buddhist monks in basic mental health counseling, combining traditional spiritual approaches with evidence-based interventions",
+      "potentialImpact": "Tap into 200,000+ culturally trusted monks who are present in every rural community",
+      "feasibility": "Medium"
+    },
+    {
+      "area": "Youth peer support networks in schools and universities",
+      "description": "Establish trained peer support programs in educational institutions, combined with mental health literacy education",
+      "potentialImpact": "Address crisis-level youth mental health issues; peer support proven effective in RCTs across LMICs",
+      "feasibility": "High"
+    },
+    {
+      "area": "Integrated digital-physical care pathways for rural areas",
+      "description": "Develop hybrid model combining teleconsultation with VHV-mediated in-person support",
+      "potentialImpact": "Extend specialist reach to remote areas without requiring patient travel",
+      "feasibility": "Medium"
+    }
+  ],
+  "resources": [
+    {
+      "title": "Thai Health Report 2025 - Mental Health Section",
+      "type": "Report",
+      "url": "https://www.thaihealth.or.th/wp-content/uploads/2025/11/ENG_THR-Final.pdf",
+      "description": "Comprehensive annual report on Thailand's health situation with detailed mental health statistics"
+    },
+    {
+      "title": "WHO mhGAP Intervention Guide Version 2.0",
+      "type": "Guideline/Toolkit",
+      "url": "https://www.who.int/publications/i/item/9789241549790",
+      "description": "Evidence-based guidelines for non-specialist health workers to identify and manage priority mental disorders"
+    },
+    {
+      "title": "Ooca - Thailand's Digital Mental Health Platform",
+      "type": "Platform/Service",
+      "url": "https://ooca.co/en/about-us/",
+      "description": "Thailand's largest tele-mental health service with 130,000+ users"
+    },
+    {
+      "title": "Sati App - Peer Support for Mental Health",
+      "type": "Platform/Service",
+      "url": "https://satiapp.co/",
+      "description": "Thai mental health app focused on peer support and psychological first aid education"
+    }
+  ],
+  "keyInsights": [
+    "The treatment gap is massive: 89% of Thais with mental health needs did not access services in the past year. Any solution must address accessibility barriers, not just increase specialist supply.",
+    "Village Health Volunteers represent an underutilized but powerful force: 1 million trusted community members already embedded in rural areas, but currently trained primarily for physical health.",
+    "Cultural integration is essential: With 92.5% Buddhist population, mental health solutions that incorporate Buddhist principles and partner with temple-based monks will achieve greater acceptance.",
+    "The youth crisis demands immediate attention: Ages 18-24 show highest risk levels (26.9% depression risk, 16.2% suicide risk). School and university-based interventions are critical entry points.",
+    "Geographic distribution is as important as total numbers: Having psychiatrists in Bangkok doesn't help rural residents who cannot travel. Telemedicine and task-sharing models are essential."
+  ],
+  "tangibleEquivalent": {
+    "en": "Imagine 1 doctor trying to treat a packed stadium of 200,000 people.",
+    "th": "ลองจินตนาการถึงหมอ 1 คนที่พยายามรักษาคน 200,000 คนในสเตเดียมที่อัดแน่น"
+  }
+}

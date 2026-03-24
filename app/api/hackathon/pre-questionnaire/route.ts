@@ -66,6 +66,9 @@ export async function POST(req: NextRequest) {
       ai_proficiency,
       ikigai_items,
       problem_preferences,
+      loves,
+      good_at,
+      school_level,
     } = body;
 
     if (
@@ -73,19 +76,31 @@ export async function POST(req: NextRequest) {
       !dream_faculty ||
       !confidence_level ||
       !family_support_level ||
-      !ideal_success_scenario ||
       !why_hackathon ||
       !team_role_preference ||
       !ai_proficiency ||
-      !ikigai_items ||
-      !Array.isArray(ikigai_items) ||
-      !Array.isArray(problem_preferences)
+      !Array.isArray(problem_preferences) ||
+      !Array.isArray(loves) ||
+      !Array.isArray(good_at) ||
+      !school_level
     ) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
     if (problem_preferences.length === 0 || problem_preferences.length > 3) {
       return NextResponse.json({ error: "Select 1–3 problems" }, { status: 400 });
+    }
+
+    if (loves.length === 0) {
+      return NextResponse.json({ error: "At least one 'loves' item is required" }, { status: 400 });
+    }
+
+    if (good_at.length === 0) {
+      return NextResponse.json({ error: "At least one 'good_at' item is required" }, { status: 400 });
+    }
+
+    if (school_level !== "university" && school_level !== "high_school") {
+      return NextResponse.json({ error: "school_level must be 'university' or 'high_school'" }, { status: 400 });
     }
 
     const supabase = getAdminClient();
@@ -101,6 +116,9 @@ export async function POST(req: NextRequest) {
       ai_proficiency,
       ikigai_items,
       problem_preferences,
+      loves,
+      good_at,
+      school_level,
       updated_at: new Date().toISOString(),
     };
 

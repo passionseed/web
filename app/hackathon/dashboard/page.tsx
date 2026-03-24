@@ -32,10 +32,28 @@ export default function HackathonDashboardPage() {
         .then((r) => r.json())
         .then((data) => {
           if (data.participant) {
-            setParticipant(data.participant);
-            if (contentRef.current) {
-              gsap.fromTo(contentRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
-            }
+            // Check if pre-questionnaire is completed
+            fetch("/api/hackathon/pre-questionnaire")
+              .then((r) => r.json())
+              .then((questionnaireData) => {
+                if (questionnaireData.data === null) {
+                  // Questionnaire not completed, redirect to onboarding
+                  router.replace("/hackathon/onboarding?returnTo=/hackathon/dashboard");
+                } else {
+                  // Questionnaire completed, show dashboard
+                  setParticipant(data.participant);
+                  if (contentRef.current) {
+                    gsap.fromTo(contentRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+                  }
+                }
+              })
+              .catch(() => {
+                // On error, still show dashboard (fail open)
+                setParticipant(data.participant);
+                if (contentRef.current) {
+                  gsap.fromTo(contentRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+                }
+              });
           } else if (++attempts < maxAttempts) {
             setTimeout(check, 500);
           } else {
@@ -60,9 +78,10 @@ export default function HackathonDashboardPage() {
           yPercent: 0,
           duration: 0.9,
           ease: "power3.inOut",
-          onComplete: async () => {
-            await fetch("/api/hackathon/logout", { method: "POST" });
-            router.push("/hackathon");
+          onComplete: () => {
+            fetch("/api/hackathon/logout", { method: "POST" }).then(() => {
+              router.push("/hackathon");
+            });
           },
         }
       );

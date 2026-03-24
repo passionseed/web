@@ -1,7 +1,7 @@
 -- supabase/migrations/20260322100000_create_score_events.sql
 -- Score events table for tracking user scores from reflections and journey progress
 
-CREATE TABLE public.score_events (
+CREATE TABLE IF NOT EXISTS public.score_events (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   journey_id uuid REFERENCES public.student_journeys(id) ON DELETE CASCADE,
@@ -30,18 +30,22 @@ CREATE INDEX idx_score_events_type ON public.score_events(score_type);
 -- RLS: Users can only read/write their own scores
 ALTER TABLE public.score_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own score events" ON public.score_events;
 CREATE POLICY "Users can read own score events"
   ON public.score_events FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own score events" ON public.score_events;
 CREATE POLICY "Users can insert own score events"
   ON public.score_events FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own score events" ON public.score_events;
 CREATE POLICY "Users can update own score events"
   ON public.score_events FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own score events" ON public.score_events;
 CREATE POLICY "Users can delete own score events"
   ON public.score_events FOR DELETE
   USING (auth.uid() = user_id);
