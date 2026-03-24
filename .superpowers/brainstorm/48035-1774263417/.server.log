@@ -1,0 +1,4 @@
+{"type":"server-started","port":61314,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:61314","screen_dir":"/Users/pine/Documents/pseed/.superpowers/brainstorm/48035-1774263417"}
+{"type":"screen-added","file":"/Users/pine/Documents/pseed/.superpowers/brainstorm/48035-1774263417/layout.html"}
+{"type":"screen-added","file":"/Users/pine/Documents/pseed/.superpowers/brainstorm/48035-1774263417/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}
