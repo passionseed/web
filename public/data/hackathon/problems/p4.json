@@ -1,0 +1,344 @@
+{
+  "problemId": "P4",
+  "title": {
+    "en": "The Stigma Wall",
+    "th": "กำแพงแห่งอคติ"
+  },
+  "track": "Mental Health",
+  "trackNum": "02",
+  "color": "#A594BA",
+  "hook": {
+    "en": "37% of Thai students experience burnout, but more than 85% have never sought help out of fear of social judgment.",
+    "th": "37% ของนักศึกษาไทยมีอาการ Burnout แต่มากกว่า 85% ไม่เคยขอความช่วยเหลือ เพราะกลัวการถูกตัดสินจากสังคม"
+  },
+  "challenge": {
+    "en": "How might we design a destigmatized early mental health detection and support system that meets young people where they are — without labeling or exposing them?",
+    "th": "เราจะออกแบบระบบตรวจจับปัญหาสุขภาพจิตระยะแรกและระบบสนับสนุน ที่คนหนุ่มสาวเข้าถึงได้โดยไม่ต้องกลัวการถูกตัดสินหรือถูกเปิดเผยตัวตนได้อย่างไร?"
+  },
+  "tags": [
+    "Destigmatization",
+    "Youth",
+    "Early Detection"
+  ],
+  "grading": {
+    "severity": {
+      "score": 9,
+      "justification": "37.8% of Thai adolescents at risk for depression. Suicide is 3rd leading cause of death among adolescents. 89% of those with mental health issues don't access services."
+    },
+    "difficulty": {
+      "score": 8,
+      "justification": "Cultural stigma is deeply embedded in Buddhist and collectivist values. Workforce shortage (1.3 vs 13 psychiatrists per 100,000). Changing cultural attitudes requires generational shift."
+    },
+    "impact": {
+      "score": 9,
+      "justification": "Mental health affects education outcomes, future workforce productivity, and national GDP. Early intervention could prevent suicides and lifelong consequences."
+    },
+    "urgency": {
+      "score": 9,
+      "justification": "Post-COVID mental health crisis with 57.9% of students experiencing problems. Youth suicide rates trending upward. Depression diagnoses doubled from 1.3M (2015) to 2.9M (2023)."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "37.8% of Thai adolescents categorized at risk for depression",
+      "source": "Patanavanich et al., Mae Fah Luang University study",
+      "year": "2022"
+    },
+    {
+      "stat": "31.4% of Thai university students experience depressive symptoms, 14.2% have major depressive disorder",
+      "source": "Cambridge BJPsych Open, nationwide study of 14,621 students",
+      "year": "2025"
+    },
+    {
+      "stat": "57.9% of Thai undergraduate students experienced mental health problems post-COVID-19",
+      "source": "Nature Scientific Reports, Chiang Mai University study",
+      "year": "2024"
+    },
+    {
+      "stat": "Suicide is the 3rd leading cause of death among Thai adolescents",
+      "source": "UNICEF Thailand Country Report",
+      "year": "2022"
+    },
+    {
+      "stat": "Only 28 out of 100 depression patients access treatment in Thailand",
+      "source": "Chulalongkorn University DMIND Report",
+      "year": "2023"
+    },
+    {
+      "stat": "89% of Thais did not access mental health services in the past 12 months",
+      "source": "Thai Health 2025 Report",
+      "year": "2025"
+    },
+    {
+      "stat": "Thailand has 1.3 psychiatrists per 100,000 population (vs global average of 13)",
+      "source": "WHO / Thai Health 2025 Report",
+      "year": "2025"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "University Students",
+      "size": "~2.5 million enrolled nationwide",
+      "painPoints": [
+        "Academic pressure and competitive environment",
+        "Financial stress and student loans",
+        "Social isolation post-COVID",
+        "31.4% depressive symptoms prevalence"
+      ]
+    },
+    {
+      "group": "High School Students",
+      "size": "~3.5 million nationwide",
+      "painPoints": [
+        "Intense academic competition",
+        "Parental expectations",
+        "Bullying and cyberbullying",
+        "11% suicidal ideation rate"
+      ]
+    },
+    {
+      "group": "Medical Students",
+      "size": "~15,000 enrolled",
+      "painPoints": [
+        "Highest rates of depression (30.2%) and anxiety (30.7%)",
+        "Demanding schedules",
+        "Reluctance to seek help due to professional image"
+      ]
+    },
+    {
+      "group": "LGBTQ+ Youth",
+      "size": "Estimated 5-10% of youth population",
+      "painPoints": [
+        "Highest odds of depression (adjusted OR 2.10)",
+        "Family rejection",
+        "Limited affirming support services"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "Thai Youth (15-24 years)",
+        "needs": [
+          "Anonymous support",
+          "Destigmatized access",
+          "Early detection"
+        ],
+        "painPoints": [
+          "Fear of judgment",
+          "Stigma",
+          "Limited access"
+        ]
+      },
+      {
+        "role": "School Counselors",
+        "needs": [
+          "Training",
+          "Tools",
+          "Manageable caseloads"
+        ],
+        "painPoints": [
+          "Limited capacity (often 1 per 1,000+ students)",
+          "Overburdened"
+        ]
+      },
+      {
+        "role": "Parents and Families",
+        "needs": [
+          "Education",
+          "Communication skills",
+          "Resources"
+        ],
+        "painPoints": [
+          "Cultural barriers",
+          "Lack of understanding"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Department of Mental Health, Thailand",
+        "needs": [
+          "Policy implementation",
+          "Workforce expansion"
+        ],
+        "painPoints": [
+          "Limited budget (0.30% of health expenditure)",
+          "Workforce shortage"
+        ]
+      },
+      {
+        "role": "Ministry of Education",
+        "needs": [
+          "School-based programs",
+          "Curriculum integration"
+        ],
+        "painPoints": [
+          "Academic focus priority",
+          "Limited mental health resources"
+        ]
+      },
+      {
+        "role": "Mental Health Professionals",
+        "needs": [
+          "Training capacity",
+          "Distribution to rural areas"
+        ],
+        "painPoints": [
+          "Severe shortage",
+          "Concentrated in Bangkok"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Deeply Embedded Cultural Stigma",
+      "explanation": "Mental illness often framed as consequence of karma or spiritual imbalance in Buddhist-influenced Thai society. Strong collectivist values emphasize family reputation over individual well-being.",
+      "systemic": true
+    },
+    {
+      "cause": "Insufficient Mental Health Workforce",
+      "explanation": "Only 1.3 psychiatrists per 100,000 population (vs global average of 13). Mental health receives only 0.30% of government health expenditure.",
+      "systemic": true
+    },
+    {
+      "cause": "Academic Pressure Culture",
+      "explanation": "Thai education system emphasizes rote learning and high-stakes exams. Relentless emphasis on academic success leads to physical and emotional exhaustion.",
+      "systemic": true
+    },
+    {
+      "cause": "Fear of Losing Face (Na Ta)",
+      "explanation": "Thai cultural concept of 'face' means showing vulnerability is seen as weakness. Strong social norms emphasize harmony and group cohesion.",
+      "systemic": true
+    },
+    {
+      "cause": "Low Mental Health Literacy Despite Awareness",
+      "explanation": "One-third of Thais have high mental health literacy yet stigma persists. Knowledge doesn't translate to help-seeking due to social stigma and self-stigma.",
+      "systemic": true
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "DMIND (หมอพร้อม)",
+      "approach": "AI-powered depression screening app using facial recognition, voice analysis, and text analysis. Integrated into the Mor Prom app with 1.5M+ users.",
+      "strengths": [
+        "High accessibility via LINE",
+        "Uses multimodal AI",
+        "Anonymous screening available 24/7"
+      ],
+      "weaknesses": [
+        "Requires smartphone",
+        "Limited to screening, not treatment",
+        "AI cannot replace human connection"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "1323 Mental Health Hotline",
+      "approach": "24/7 toll-free national mental health hotline operated by Department of Mental Health",
+      "strengths": [
+        "Free and accessible nationwide",
+        "24/7 availability",
+        "Professional counselors"
+      ],
+      "weaknesses": [
+        "Limited capacity",
+        "Peak wait times up to 30 minutes",
+        "No chat option"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "MU MyMind Mobile Application",
+      "approach": "Mahidol University-developed app for high school students with risk screening, mental health promotion, and referral system",
+      "strengths": [
+        "Designed specifically for Thai adolescents",
+        "Screening with alert system",
+        "Evidence-based through pilot studies"
+      ],
+      "weaknesses": [
+        "Limited deployment",
+        "Requires school adoption"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Let's Talk (mindline.sg)",
+      "approach": "Singapore government-supported anonymous peer support forum for youth 17-35",
+      "strengths": [
+        "Anonymous platform reduces stigma",
+        "Peer-to-peer support",
+        "Professional oversight available"
+      ],
+      "weaknesses": [
+        "Singapore-specific",
+        "Not adapted for Thailand"
+      ],
+      "region": "Singapore"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "Anonymous Digital Peer Support Platform for Thai Youth",
+      "description": "Create a Thailand-specific anonymous peer support forum modeled on Singapore's Let's Talk, adapted for Thai cultural context",
+      "potentialImpact": "Addresses stigma barrier by allowing anonymous help-seeking; could reach 89% currently not accessing services",
+      "feasibility": "Medium-High"
+    },
+    {
+      "area": "Gamified Mental Wellness Check-In App",
+      "description": "Develop a destigmatized mental health app disguised as a lifestyle/wellness tool with gamification and mood tracking",
+      "potentialImpact": "Removes stigma by framing as wellness, not mental illness; normalizes mental health conversations",
+      "feasibility": "High"
+    },
+    {
+      "area": "Influencer and Youth-Led Destigmatization Campaigns",
+      "description": "Partner with Thai youth influencers to share mental health stories authentically on TikTok, Instagram, and YouTube",
+      "potentialImpact": "Leverages existing social media behavior; peer voices more trusted than institutional messaging",
+      "feasibility": "High"
+    },
+    {
+      "area": "LGBTQ+ Affirming Mental Health Support Channels",
+      "description": "Create dedicated, confidential support channels for LGBTQ+ youth who face highest depression odds (2x)",
+      "potentialImpact": "Addresses highest-risk population; provides safe space for identity exploration",
+      "feasibility": "Medium"
+    }
+  ],
+  "resources": [
+    {
+      "title": "DMIND Depression Screening Application",
+      "type": "Application",
+      "url": "https://aimet.tech/th/all-projects/dmind/",
+      "description": "AI-powered depression screening tool available through Mor Prom LINE Official Account"
+    },
+    {
+      "title": "1323 Mental Health Hotline Booking System",
+      "type": "Service",
+      "url": "https://1323alltime.camri.go.th/",
+      "description": "Online appointment booking for telephone counseling with psychologists"
+    },
+    {
+      "title": "Thai Health 2025 Report - Mental Health Crisis Analysis",
+      "type": "Report",
+      "url": "https://www.nationthailand.com/blogs/health-wellness/40061319",
+      "description": "Comprehensive analysis of Thailand's mental health workforce shortage and treatment gap"
+    },
+    {
+      "title": "UNICEF Thailand Country Report: Strengthening Mental Health Systems",
+      "type": "Report",
+      "url": "https://www.unicef.org/thailand/press-releases/alarming-poor-mental-health-trend-among-children-and-adolescents-thailand-requires",
+      "description": "Joint report with Ministry of Public Health on adolescent mental health"
+    }
+  ],
+  "keyInsights": [
+    "Cultural stigma, not lack of awareness, is the primary barrier - one-third of Thais have high mental health literacy yet 89% don't access services.",
+    "Thai adolescents with depression view therapy as 'last choice' - they believe they must handle problems alone before seeking professional help.",
+    "Family reputation ('face') creates powerful deterrent to help-seeking - youth fear bringing shame to family more than personal suffering.",
+    "LGBTQ+ youth face 2x depression odds but have no culturally affirming support channels - highest risk population with least tailored services.",
+    "Peer support models show highest engagement - Singapore's Let's Talk reached 5.2% of target population through anonymous, youth-designed platform."
+  ],
+  "tangibleEquivalent": {
+    "en": "Like having a broken leg, but society tells you it's 'just in your head'.",
+    "th": "เหมือนขาหัก แต่สังคมบอกคุณว่า 'คุณแค่คิดไปเอง'"
+  }
+}

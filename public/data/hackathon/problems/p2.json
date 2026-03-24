@@ -1,0 +1,281 @@
+{
+  "problemId": "P2",
+  "title": {
+    "en": "The Traditional Medicine Data Desert",
+    "th": "ช่องว่างข้อมูลแพทย์แผนไทย"
+  },
+  "track": "Traditional & Integrative Healthcare",
+  "trackNum": "01",
+  "color": "#91C4E3",
+  "hook": {
+    "en": "Thailand has over 30,000 traditional medicine practitioners, but treatment data is rarely recorded or connected to modern health systems.",
+    "th": "ประเทศไทยมีผู้ประกอบวิชาชีพแพทย์แผนไทยกว่า 30,000 คน แต่ข้อมูลการรักษาแทบไม่ถูกบันทึกหรือเชื่อมต่อกับระบบสุขภาพสมัยใหม่"
+  },
+  "challenge": {
+    "en": "How might we create a bridge that digitizes traditional medicine treatment outcomes and makes them interoperable with modern health records — enabling integrated, evidence-based care?",
+    "th": "เราจะสร้างระบบที่แปลงข้อมูลการรักษาแพทย์แผนไทยให้เป็นดิจิทัล และเชื่อมต่อกับบันทึกสุขภาพสมัยใหม่ได้ เพื่อนำไปสู่การดูแลสุขภาพแบบบูรณาการที่มีหลักฐานรองรับได้อย่างไร?"
+  },
+  "tags": [
+    "Digital Health",
+    "Interoperability",
+    "Traditional Medicine"
+  ],
+  "grading": {
+    "severity": {
+      "score": 8,
+      "justification": "Millions of patients receive potentially uncoordinated care; herb-drug interactions remain undocumented; treatment outcomes cannot be aggregated for evidence-based practice."
+    },
+    "difficulty": {
+      "score": 8,
+      "justification": "Requires developing new terminology standards, building consensus across diverse traditional medicine systems, significant investment in rural IT infrastructure."
+    },
+    "impact": {
+      "score": 9,
+      "justification": "Successful solution would enable evidence-based integration of traditional medicine affecting 80% of world population; reduce adverse events; preserve indigenous knowledge."
+    },
+    "urgency": {
+      "score": 7,
+      "justification": "Aging populations increasing multi-modal treatment use; traditional knowledge being lost as elder practitioners pass away; WHO pushing for traditional medicine integration."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "Thailand has over 30,000 traditional medicine practitioners registered with DTAM",
+      "source": "WHO Global Report on Traditional Medicine 2025",
+      "year": "2024"
+    },
+    {
+      "stat": "Over 80% of global population uses traditional medicine, particularly in Asia, Africa, and Latin America",
+      "source": "WHO Global Report on Traditional Medicine 2025",
+      "year": "2025"
+    },
+    {
+      "stat": "Thai traditional medicine has been integrated into Universal Health Coverage since 2002",
+      "source": "HITAP Thailand",
+      "year": "2022"
+    },
+    {
+      "stat": "Only 15 OECD countries have nationally implemented electronic health record systems with adequate interoperability",
+      "source": "OECD Health Statistics",
+      "year": "2024"
+    },
+    {
+      "stat": "8 of 10 ASEAN Member States have integrated traditional medicine into public health service systems",
+      "source": "ASEAN Joint Report on Primary Health Care 2023",
+      "year": "2023"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "Rural and underserved communities",
+      "size": "Approximately 40% of Thailand's 71.6 million population",
+      "painPoints": [
+        "Heavy reliance on traditional medicine as primary healthcare",
+        "Treatment records rarely digitized",
+        "Risk of herb-drug interactions"
+      ]
+    },
+    {
+      "group": "Elderly patients with chronic conditions",
+      "size": "Over 20% of population aged 60+ by 2025",
+      "painPoints": [
+        "High utilization of both traditional and modern medicine",
+        "Fragmented health records",
+        "Increased risk of adverse drug reactions"
+      ]
+    },
+    {
+      "group": "Traditional Medicine Practitioners",
+      "size": "30,000+ registered practitioners",
+      "painPoints": [
+        "Lack of standardized digital documentation tools",
+        "No interoperability with hospital EHRs",
+        "Professional isolation from mainstream healthcare"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "Department of Thai Traditional and Alternative Medicine (DTAM)",
+        "needs": [
+          "Data collection",
+          "Service quality improvement",
+          "Integration into national health system"
+        ],
+        "painPoints": [
+          "Fragmented data systems",
+          "Limited interoperability"
+        ]
+      },
+      {
+        "role": "Traditional Medicine Practitioners",
+        "needs": [
+          "Professional recognition",
+          "Simplified documentation",
+          "Patient outcome tracking"
+        ],
+        "painPoints": [
+          "No standardized tools",
+          "Limited digital literacy"
+        ]
+      },
+      {
+        "role": "Patients using traditional medicine",
+        "needs": [
+          "Seamless care coordination",
+          "Safety",
+          "Treatment continuity"
+        ],
+        "painPoints": [
+          "Fragmented records",
+          "Risk of interactions"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Ministry of Public Health (MOPH)",
+        "needs": [
+          "Cost-effective care",
+          "Patient safety",
+          "Evidence-based policy"
+        ],
+        "painPoints": [
+          "Data gaps",
+          "Coordination challenges"
+        ]
+      },
+      {
+        "role": "National Health Security Office (NHSO)",
+        "needs": [
+          "Cost control",
+          "Treatment efficacy",
+          "Fraud prevention"
+        ],
+        "painPoints": [
+          "Limited outcome data"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Epistemological differences between traditional and modern medicine",
+      "explanation": "Traditional medicine follows holistic, person-centered approaches with different diagnostic frameworks that do not map directly to ICD codes.",
+      "systemic": true
+    },
+    {
+      "cause": "Lack of standardized terminology and coding systems",
+      "explanation": "Unlike modern medicine with standardized codes (ICD-10/11, SNOMED CT), traditional medicine lacks universally accepted diagnostic and treatment codes.",
+      "systemic": true
+    },
+    {
+      "cause": "Fragmented healthcare IT infrastructure",
+      "explanation": "Southeast Asian countries operate health systems in silos without standardized data formats; even Thailand's 1,300+ hospitals use varying IT systems.",
+      "systemic": true
+    },
+    {
+      "cause": "Insufficient investment in traditional medicine digital infrastructure",
+      "explanation": "Traditional medicine facilities often lack computers, internet connectivity, and trained IT personnel.",
+      "systemic": true
+    },
+    {
+      "cause": "Oral tradition and knowledge secrecy",
+      "explanation": "Traditional medicine knowledge has been transmitted orally across generations with practitioners often maintaining secrecy about formulations.",
+      "systemic": false
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "HDC-TTM Service",
+      "approach": "Real-time monitoring system launched 2013 by DTAM, NHSO, and MOPH ICT Center; collects service records from facilities nationwide",
+      "strengths": [
+        "Government-backed",
+        "Nationwide coverage",
+        "Integrates with MOPH Health Data Center"
+      ],
+      "weaknesses": [
+        "Focuses on service volume, not clinical outcomes",
+        "Limited interoperability with modern medicine records"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "EC Connect (Hong Kong eHealth)",
+      "approach": "Clinical management system for Chinese medicine practitioners that enables access to both Chinese and Western medicine records",
+      "strengths": [
+        "True integration of Chinese and Western medicine records",
+        "Government-supported"
+      ],
+      "weaknesses": [
+        "Specific to TCM, not Thai Traditional Medicine",
+        "Limited to Hong Kong context"
+      ],
+      "region": "Hong Kong"
+    },
+    {
+      "name": "MyPostnatalSys (Malaysia)",
+      "approach": "Electronic health record prototype for integrating Traditional Malay Medicine and Modern Medicine using HL7 FHIR standards",
+      "strengths": [
+        "Built on HL7 FHIR standards",
+        "Specifically designed for postnatal care integration"
+      ],
+      "weaknesses": [
+        "Prototype stage only",
+        "Limited to postnatal care use case"
+      ],
+      "region": "Malaysia"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "FHIR-based Traditional Medicine Data Model",
+      "description": "Develop HL7 FHIR resources and profiles specifically designed for traditional medicine diagnoses, treatments, and outcomes",
+      "potentialImpact": "Enable semantic interoperability between traditional and modern medicine systems globally",
+      "feasibility": "Medium"
+    },
+    {
+      "area": "Mobile-First Documentation for Practitioners",
+      "description": "Develop simple, voice-enabled mobile apps that allow traditional medicine practitioners to document consultations using natural language",
+      "potentialImpact": "Overcome digital literacy barriers; capture treatment data at point of care",
+      "feasibility": "High"
+    },
+    {
+      "area": "Integration of HDC-TTM with Hospital EMRs",
+      "description": "Upgrade existing HDC-TTM Service to connect with hospital electronic medical records, enabling bidirectional data exchange",
+      "potentialImpact": "Leverage existing infrastructure; enable integrated care for patients receiving both types of treatment",
+      "feasibility": "Medium-High"
+    }
+  ],
+  "resources": [
+    {
+      "title": "WHO Global Traditional Medicine Strategy 2025-2034",
+      "type": "Policy Document",
+      "url": "https://apps.who.int/gb/ebwha/pdf_files/EB156/B156_16-en.pdf",
+      "description": "Strategic framework for integrating safe and effective traditional medicine into national health systems"
+    },
+    {
+      "title": "HITAP Case Study: Real-Time Monitoring System for Thai Traditional Medicine",
+      "type": "Research Report",
+      "url": "https://www.hitap.net/en/document/final-report-lessons-learned-from-the-use-of-a-real-time-monitoring-system-for-thai-traditional-medicines-and-path-to-uhc/",
+      "description": "Detailed analysis of Thailand's HDC-TTM implementation and lessons for other countries"
+    },
+    {
+      "title": "ASEAN Joint Report on Primary Health Care 2023",
+      "type": "Regional Report",
+      "url": "https://asean.org/wp-content/uploads/2024/03/Joint-Report-on-the-Situational-Analyses-of-ASEAN_rev21-Mar.pdf",
+      "description": "Comprehensive analysis of PHC capacities including traditional medicine integration across ASEAN"
+    }
+  ],
+  "keyInsights": [
+    "Thailand is uniquely positioned for traditional medicine digitization with DTAM infrastructure, UHC integration since 2002, and HDC-TTM monitoring system - but the data remains siloed from modern medicine records.",
+    "The key barrier is not technical but semantic: traditional medicine concepts do not have standard mappings to modern medical terminologies like ICD-10/11 or SNOMED CT.",
+    "WHO's recent inclusion of Ayurveda, Siddha, and Unani codes in international health intervention coding creates a precedent for traditional medicine standardization.",
+    "Mobile-first solutions are essential given the rural distribution of traditional medicine practitioners and high smartphone penetration (76.58% in Thailand)."
+  ],
+  "tangibleEquivalent": {
+    "en": "Like burning a library of 30,000 medical books every generation.",
+    "th": "เหมือนการเผาห้องสมุดตำราแพทย์ 30,000 เล่มทิ้งในทุกๆ รุ่น"
+  }
+}
