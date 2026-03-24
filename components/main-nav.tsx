@@ -107,13 +107,15 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
                 {isHackathon && (
                   <>
                     <div className="w-px h-4 bg-white/20 mx-1" />
-                    <Image
-                      src="/hackathon/HackLogo.png"
-                      alt="Hackathon Logo"
-                      width={24}
-                      height={24}
-                      className="w-6 h-6 object-contain"
-                    />
+                    <Link href="/hackathon" className="hover:opacity-80 transition-opacity">
+                      <Image
+                        src="/hackathon/HackLogo.png"
+                        alt="Hackathon Logo"
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 object-contain"
+                      />
+                    </Link>
                   </>
                 )}
               </div>
@@ -255,14 +257,16 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
           </span>
           {isHackathon && (
             <>
-              <div className="w-px h-5 bg-white/20 mx-1 hidden sm:block" />
-              <Image
-                src="/hackathon/HackLogo.png"
-                alt="Hackathon Logo"
-                width={28}
-                height={28}
-                className="w-7 h-7 object-contain"
-              />
+              <div className="w-px h-6 bg-white/20 mx-2 hidden sm:block" />
+              <Link href="/hackathon" className="hover:opacity-80 transition-opacity">
+                <Image
+                  src="/hackathon/HackLogo.png"
+                  alt="Hackathon Logo"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 object-contain"
+                />
+              </Link>
             </>
           )}
         </Link>
