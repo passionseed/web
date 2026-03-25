@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 // Fail fast when Supabase is unreachable (e.g. Docker not running in dev)
 const fetchWithTimeout = (url: RequestInfo | URL, options?: RequestInit) => {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3000);
+  const timer = setTimeout(() => controller.abort(), 10000);
   return fetch(url, { ...options, signal: controller.signal })
     .finally(() => clearTimeout(timer));
 };
