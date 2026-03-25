@@ -83,10 +83,87 @@ export async function POST(request: NextRequest) {
       }
 
       if (existingEmail) {
-        return NextResponse.json(
-          { error: "Email already exists" },
-          { status: 409 }
-        );
+        const { data: signInData, error: signInError } =
+          await supabase.auth.signInWithPassword({
+            email: normalizedEmail,
+            password,
+          });
+
+        if (signInError || !signInData.user) {
+          return NextResponse.json(
+            { error: "Wrong password" },
+            { status: 401 }
+          );
+        }
+
+        // Continue with the existing user's ID for profile/career-goals upsert below.
+        // Re-assign user to the signed-in account so the rest of the handler uses it.
+        const existingUser = signInData.user;
+        const resolvedEmailExisting =
+          existingUser.email || normalizedEmail;
+        const resolvedNameExisting =
+          typeof collected_data?.name === "string"
+            ? collected_data.name.trim() || null
+            : null;
+
+        const { error: profileErrorExisting } = await admin
+          .from("profiles")
+          .upsert(
+            {
+              id: existingUser.id,
+              username: normalizedUsername,
+              date_of_birth,
+              education_level,
+              preferred_language,
+              email: resolvedEmailExisting,
+              full_name: resolvedNameExisting,
+              is_onboarded: true,
+              onboarded_at: now,
+              updated_at: now,
+            },
+            { onConflict: "id" }
+          );
+
+        if (profileErrorExisting) {
+          console.error(
+            "[onboarding/complete] profile error (existing user)",
+            profileErrorExisting
+          );
+          return NextResponse.json(
+            { error: "Profile update failed" },
+            { status: 500 }
+          );
+        }
+
+        if (Array.isArray(interests) && interests.length > 0) {
+          const goals = interests
+            .map((career_name) => career_name.trim())
+            .filter(Boolean)
+            .map((career_name) => ({
+              user_id: existingUser.id,
+              career_name,
+              source: "user_typed" as const,
+            }));
+
+          if (goals.length > 0) {
+            const { error: careerGoalsErrorExisting } = await admin
+              .from("career_goals")
+              .insert(goals);
+
+            if (careerGoalsErrorExisting) {
+              console.error(
+                "[onboarding/complete] career goals error (existing user)",
+                careerGoalsErrorExisting
+              );
+              return NextResponse.json(
+                { error: "Career goals update failed" },
+                { status: 500 }
+              );
+            }
+          }
+        }
+
+        return NextResponse.json({ ok: true });
       }
 
       const { error: upgradeError } = await supabase.auth.updateUser({

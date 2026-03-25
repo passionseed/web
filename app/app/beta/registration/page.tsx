@@ -309,8 +309,12 @@ export default function AppBetaPage() {
       setUploadComplete(true);
       setUploading(false);
 
+      const code = result.submissionId
+        ? result.submissionId.replace(/-/g, "").slice(-4).toUpperCase()
+        : "";
+
       setTimeout(() => {
-        router.push("/app/beta/success");
+        router.push(`/app/beta/success${code ? `?code=${code}` : ""}`);
       }, 1000);
     } catch (error) {
       console.error("Submit error:", error);

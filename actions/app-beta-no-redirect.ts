@@ -370,6 +370,7 @@ export async function registerAppBetaUserNoRedirect(formData: FormData) {
 
     return {
       success: true,
+      submissionId: submission.id,
     };
   } catch (error) {
     console.error("Registration error:", error);
