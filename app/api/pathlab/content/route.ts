@@ -35,9 +35,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ content }, { status: 201 });
   } catch (error) {
     console.error("Error creating content:", error);
-    const detail = error instanceof Error ? error.message : String(error);
+    const detail = error instanceof Error
+      ? error.message
+      : (error as any)?.message ?? JSON.stringify(error);
+    const hint = (error as any)?.hint;
+    const code = (error as any)?.code;
     return NextResponse.json(
-      { error: "Failed to create content", detail },
+      { error: "Failed to create content", detail, hint, code },
       { status: 500 }
     );
   }
