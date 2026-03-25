@@ -1,10 +1,14 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-// Fail fast when Supabase is unreachable (e.g. Docker not running in dev)
-const fetchWithTimeout = (url: RequestInfo | URL, options?: RequestInit) => {
+// In local dev, fail fast if Docker/Supabase isn't running (3s).
+// In production, use the default fetch (no artificial timeout).
+const isLocal = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('127.0.0.1') ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('localhost');
+
+const fetchWithLocalTimeout = (url: RequestInfo | URL, options?: RequestInit) => {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
+  const timer = setTimeout(() => controller.abort(), 3000);
   return fetch(url, { ...options, signal: controller.signal })
     .finally(() => clearTimeout(timer));
 };
@@ -16,7 +20,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
-      global: { fetch: fetchWithTimeout },
+      global: { fetch: isLocal ? fetchWithLocalTimeout : fetch },
       cookies: {
         getAll() {
           return cookieStore.getAll();
