@@ -71,12 +71,8 @@ export function AccountPhase({ data, isAnonymous, goBack }: Props) {
       } | null;
 
       if (!response.ok) {
-        if (response.status === 409) {
-          setError(
-            isEn
-              ? "Account already exists. Sign in instead."
-              : "มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบ"
-          );
+        if (response.status === 401) {
+          setError(isEn ? "Wrong password." : "รหัสผ่านไม่ถูกต้อง");
         } else {
           setError(
             json?.error || (isEn ? "Something went wrong." : "เกิดข้อผิดพลาด")
