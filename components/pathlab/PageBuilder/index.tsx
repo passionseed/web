@@ -338,12 +338,7 @@ export function PageBuilder({
             )}
 
             <Button
-              onClick={() => {
-                console.log('========================================');
-                console.log('[PageBuilder] SAVE BUTTON CLICKED');
-                console.log('========================================');
-                save();
-              }}
+              onClick={save}
               disabled={isSaving || !isDirty}
               className={cn(
                 'transition-colors',
