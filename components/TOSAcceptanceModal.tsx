@@ -26,9 +26,10 @@ export function TOSAcceptanceModal() {
   const checkTOSAcceptance = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) return;
-      
+
+      // Skip for unauthenticated or anonymous users
+      if (!user || user.is_anonymous) return;
+
       setUserId(user.id);
 
       const { data: profile, error } = await supabase
@@ -50,6 +51,7 @@ export function TOSAcceptanceModal() {
         setOpen(true);
       }
     } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
       console.error("Error in checkTOSAcceptance:", error);
     }
   };

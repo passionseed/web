@@ -174,56 +174,14 @@ export async function reorderPathActivities(
   dayId: string,
   activityIds: string[]
 ): Promise<void> {
-  console.log('[reorderPathActivities] Starting reorder:', {
-    dayId,
-    activityCount: activityIds.length,
-    activityIds,
-  });
-
   const supabase = await createClient();
 
-  // STEP 1: Set all activities to temporary negative values to avoid unique constraint violations
-  console.log('[reorderPathActivities] Step 1: Setting temporary negative values...');
-  for (let index = 0; index < activityIds.length; index++) {
-    const tempOrder = -(index + 1000); // Use negative numbers to avoid conflicts
+  const { error } = await supabase.rpc("reorder_path_activities", {
+    p_day_id: dayId,
+    p_activity_ids: activityIds,
+  });
 
-    const { error } = await supabase
-      .from("path_activities")
-      .update({ display_order: tempOrder })
-      .eq("id", activityIds[index])
-      .eq("path_day_id", dayId);
-
-    if (error) {
-      console.error(`[reorderPathActivities] Failed to set temp order for activity ${activityIds[index]}:`, error);
-      throw error;
-    }
-  }
-
-  console.log('[reorderPathActivities] Step 2: Setting final display_order values...');
-
-  // STEP 2: Now update to the actual desired order
-  for (let index = 0; index < activityIds.length; index++) {
-    console.log(`[reorderPathActivities] Updating activity ${index + 1}/${activityIds.length}:`, {
-      activityId: activityIds[index],
-      newDisplayOrder: index,
-    });
-
-    const { error, data } = await supabase
-      .from("path_activities")
-      .update({ display_order: index })
-      .eq("id", activityIds[index])
-      .eq("path_day_id", dayId)
-      .select();
-
-    if (error) {
-      console.error(`[reorderPathActivities] Failed to update display_order for activity ${activityIds[index]}:`, error);
-      throw error;
-    }
-
-    console.log(`[reorderPathActivities] Successfully updated activity ${activityIds[index]}:`, data);
-  }
-
-  console.log('[reorderPathActivities] Reorder completed successfully');
+  if (error) throw error;
 }
 
 // =====================================================

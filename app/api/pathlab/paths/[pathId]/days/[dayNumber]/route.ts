@@ -21,47 +21,37 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify path ownership
-    const { data: path } = await supabase
-      .from('paths')
-      .select(
-        `
-        id,
-        seed:seeds!inner (
-          id,
-          created_by
-        )
-      `
-      )
-      .eq('id', pathId)
-      .single();
+    // Fetch path ownership + roles + day all in parallel
+    const dayNumberInt = parseInt(dayNumber, 10);
+    const [{ data: path }, { data: roles }, { data: day }] = await Promise.all([
+      supabase
+        .from('paths')
+        .select('id, seed:seeds!inner(id, created_by)')
+        .eq('id', pathId)
+        .single(),
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['admin', 'instructor']),
+      supabase
+        .from('path_days')
+        .select('*')
+        .eq('path_id', pathId)
+        .eq('day_number', dayNumberInt)
+        .maybeSingle(),
+    ]);
 
     if (!path) {
       return NextResponse.json({ error: 'Path not found' }, { status: 404 });
     }
 
     const isOwner = (path.seed as any).created_by === user.id;
-
-    // Check if user is admin/instructor
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .in('role', ['admin', 'instructor']);
-
     const isAdminOrInstructor = !!roles?.length;
 
     if (!isOwner && !isAdminOrInstructor) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-    // Fetch the specific day
-    const { data: day } = await supabase
-      .from('path_days')
-      .select('*')
-      .eq('path_id', pathId)
-      .eq('day_number', parseInt(dayNumber, 10))
-      .maybeSingle();
 
     if (!day) {
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });
@@ -120,41 +110,30 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify path ownership
-    const { data: path } = await supabase
-      .from('paths')
-      .select(
-        `
-        id,
-        seed:seeds!inner (
-          id,
-          created_by
-        )
-      `
-      )
-      .eq('id', pathId)
-      .single();
+    const [{ data: path }, { data: roles }, body] = await Promise.all([
+      supabase
+        .from('paths')
+        .select('id, seed:seeds!inner(id, created_by)')
+        .eq('id', pathId)
+        .single(),
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['admin', 'instructor']),
+      request.json(),
+    ]);
 
     if (!path) {
       return NextResponse.json({ error: 'Path not found' }, { status: 404 });
     }
 
     const isOwner = (path.seed as any).created_by === user.id;
-
-    // Check if user is admin/instructor
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .in('role', ['admin', 'instructor']);
-
     const isAdminOrInstructor = !!roles?.length;
 
     if (!isOwner && !isAdminOrInstructor) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-    const body = await request.json();
     const updates = {
       title: typeof body.title === 'string' ? body.title.trim() || null : null,
       context_text:
