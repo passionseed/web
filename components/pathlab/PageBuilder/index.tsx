@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Plus, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -25,7 +25,6 @@ interface PageBuilderProps {
   initialTitle: string | null;
   initialContextText: string;
   initialReflectionPrompts: string[];
-  initialActivities: FullPathActivity[];
 }
 
 export function PageBuilder({
@@ -35,8 +34,8 @@ export function PageBuilder({
   initialTitle,
   initialContextText,
   initialReflectionPrompts,
-  initialActivities,
 }: PageBuilderProps) {
+  const [activitiesLoaded, setActivitiesLoaded] = useState(false);
   const [showActivityEditor, setShowActivityEditor] = useState(false);
   const [editingActivity, setEditingActivity] = useState<FullPathActivity | undefined>(undefined);
 
@@ -54,6 +53,7 @@ export function PageBuilder({
     updateActivity,
     removeActivity,
     reorderActivities,
+    initActivities,
     moveActivity,
   } = usePageBuilder({
     initialPage: {
@@ -61,7 +61,7 @@ export function PageBuilder({
       title: initialTitle,
       context_text: initialContextText,
       reflection_prompts: initialReflectionPrompts,
-      activities: initialActivities,
+      activities: [],
     },
     onSave: async (pageData) => {
       // Save only this page metadata (never bulk-replace other days)
@@ -114,6 +114,19 @@ export function PageBuilder({
 
   // Unsaved changes warning
   useUnsavedChanges(isDirty);
+
+  // Load activities client-side after render
+  useEffect(() => {
+    fetch(`/api/pathlab/activities?dayId=${pageId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.activities) {
+          initActivities(data.activities);
+        }
+      })
+      .catch(err => console.error('[PageBuilder] Failed to load activities:', err))
+      .finally(() => setActivitiesLoaded(true));
+  }, [pageId]);
 
   // Handle template selection from library
   const handleTemplateSelect = useCallback(
@@ -380,15 +393,22 @@ export function PageBuilder({
               </Card>
             ) : null}
 
-            <PageTimeline
-              activities={page.activities}
-              onReorder={handleActivityReorder}
-              onEdit={handleActivityEdit}
-              onDelete={handleActivityDelete}
-              onMoveUp={handleMoveActivityUp}
-              onMoveDown={handleMoveActivityDown}
-              disabled={isSaving}
-            />
+            {!activitiesLoaded ? (
+              <div className="flex items-center justify-center py-12 text-neutral-500">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading activities...
+              </div>
+            ) : (
+              <PageTimeline
+                activities={page.activities}
+                onReorder={handleActivityReorder}
+                onEdit={handleActivityEdit}
+                onDelete={handleActivityDelete}
+                onMoveUp={handleMoveActivityUp}
+                onMoveDown={handleMoveActivityDown}
+                disabled={isSaving}
+              />
+            )}
           </div>
         </div>
 
