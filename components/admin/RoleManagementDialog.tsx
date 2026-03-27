@@ -33,6 +33,7 @@ import {
   X,
   FlaskConical,
   Sprout,
+  ShieldAlert,
 } from "lucide-react";
 
 interface UserWithRoles {
@@ -131,6 +132,7 @@ export function RoleManagementDialog({
   const primaryRole = assignableRoles.length > 0 ? assignableRoles[0].role : "";
   const isBetaTester = user.user_roles.some((r) => r.role === "beta-tester");
   const isPassionSeedMember = user.user_roles.some((r) => r.role === "passion-seed-team");
+  const isAdmin = currentRoles.has("admin");
 
   const handleRoleChange = async (newRole: UserRole) => {
     if (loading || !newRole) return;
@@ -258,6 +260,44 @@ export function RoleManagementDialog({
           error instanceof Error
             ? error.message
             : "Failed to update Passion Seed Team status",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminStatusChange = async (enabled: boolean) => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/admin/users/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          role: "admin",
+          action: enabled ? "add" : "remove",
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Admin access ${enabled ? "granted" : "revoked"} successfully`,
+        });
+        onRoleUpdated();
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update admin status");
+      }
+    } catch (error) {
+      console.error("Error updating admin status:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to update admin status",
         variant: "destructive",
       });
     } finally {
@@ -502,9 +542,6 @@ export function RoleManagementDialog({
                     })}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Admins cannot assign admin roles to other users
-                </p>
               </div>
 
               {/* Role descriptions */}
@@ -560,6 +597,26 @@ export function RoleManagementDialog({
                   id="beta-access"
                   checked={isBetaTester}
                   onCheckedChange={handleBetaStatusChange}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-red-500" />
+                    <Label htmlFor="admin-access" className="font-medium">
+                      Admin Access
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Full access to the admin dashboard and all management tools
+                  </p>
+                </div>
+                <Switch
+                  id="admin-access"
+                  checked={isAdmin}
+                  onCheckedChange={handleAdminStatusChange}
                   disabled={loading}
                 />
               </div>

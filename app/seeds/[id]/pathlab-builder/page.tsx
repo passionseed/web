@@ -71,11 +71,16 @@ export default async function PathLabBuilderPage({
     notFound();
   }
 
-  let { data: path } = await supabase
+  // Single query: fetch path + days together to eliminate a round-trip
+  const { data: pathWithDays } = await supabase
     .from("paths")
-    .select("*")
+    .select(`*, path_days(*)`)
     .eq("seed_id", seed.id)
+    .order("day_number", { ascending: true, referencedTable: "path_days" })
     .maybeSingle();
+
+  let path: any = pathWithDays ? (({ path_days: _d, ...rest }) => rest)(pathWithDays) : null;
+  let days: any[] | null = pathWithDays?.path_days ?? null;
 
   console.log('[PathLabBuilder] Path lookup result:', path ? `Found path ${path.id}` : 'No path found');
 
@@ -97,18 +102,12 @@ export default async function PathLabBuilderPage({
     }
     console.log('[PathLabBuilder] Created new path:', createdPath.id);
     path = createdPath;
+    days = [];
   }
-
-  // Fetch path days
-  const { data: days } = await supabase
-    .from("path_days")
-    .select("*")
-    .eq("path_id", path.id)
-    .order("day_number", { ascending: true });
 
   console.log('[PathLabBuilder] Path days fetched:', {
     count: days?.length || 0,
-    days: days?.map(d => ({ id: d.id, day_number: d.day_number, title: d.title }))
+    days: days?.map((d: any) => ({ id: d.id, day_number: d.day_number, title: d.title }))
   });
 
   // Only fetch map nodes if we have days using the legacy system
