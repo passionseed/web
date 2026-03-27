@@ -906,14 +906,21 @@ export function PathDayBuilder({
                               <PathActivityEditor
                                 dayId={day.id}
                                 activity={editingActivity}
-                                onSave={async () => {
-                                  // Reload activities for this day
-                                  const activitiesResponse = await fetch(`/api/pathlab/activities?dayId=${day.id}`);
-                                  if (activitiesResponse.ok) {
-                                    const { activities } = await activitiesResponse.json();
-                                    setDays(prev => prev.map(d =>
-                                      d.day_number === day.day_number ? { ...d, activities } : d
-                                    ));
+                                onSave={async (activityId?: string) => {
+                                  if (activityId) {
+                                    // Fetch only the saved activity instead of all activities
+                                    const activityResponse = await fetch(`/api/pathlab/activities?activityId=${activityId}`);
+                                    if (activityResponse.ok) {
+                                      const { activity: savedActivity } = await activityResponse.json();
+                                      setDays(prev => prev.map(d => {
+                                        if (d.day_number !== day.day_number) return d;
+                                        const exists = d.activities?.some((a: any) => a.id === activityId);
+                                        const activities = exists
+                                          ? d.activities.map((a: any) => a.id === activityId ? savedActivity : a)
+                                          : [...(d.activities || []), savedActivity];
+                                        return { ...d, activities };
+                                      }));
+                                    }
                                   }
                                   setEditingActivityDayNumber(null);
                                   setEditingActivity(undefined);

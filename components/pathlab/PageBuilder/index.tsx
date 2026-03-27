@@ -132,59 +132,23 @@ export function PageBuilder({
     [canAddActivity]
   );
 
-  // Handle activity creation refresh (PathActivityEditor handles the actual creation)
-  const handleActivityCreateRefresh = useCallback(
-    async () => {
+  // Handle activity save (create or update) — PathActivityEditor passes back the activityId
+  const handleActivitySaveRefresh = useCallback(
+    async (activityId?: string) => {
       try {
-        // Fetch all activities for this page to get the newly created one
-        const response = await fetch(`/api/pathlab/activities?dayId=${pageId}`);
+        if (!activityId) throw new Error('No activity ID returned from save');
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch activities');
-        }
+        const response = await fetch(`/api/pathlab/activities?activityId=${activityId}`);
+        if (!response.ok) throw new Error('Failed to fetch activity');
 
         const result = await response.json();
-        const fetchedActivities = result.activities || [];
+        const savedActivity: FullPathActivity = result.activity;
 
-        // Find the new activity (the one not in our current list)
-        const currentIds = new Set(page.activities.map(a => a.id));
-        const newActivity = fetchedActivities.find((a: FullPathActivity) => !currentIds.has(a.id));
-
-        if (newActivity) {
-          addActivity(newActivity);
+        if (editingActivity) {
+          updateActivity(savedActivity.id, savedActivity);
+        } else {
+          addActivity(savedActivity);
         }
-
-        setShowActivityEditor(false);
-        setEditingActivity(undefined);
-      } catch (error) {
-        console.error('[PageBuilder] Failed to refresh activities:', error);
-        toast.error('Failed to refresh activity data');
-      }
-    },
-    [pageId, page.activities, addActivity]
-  );
-
-  // Handle activity edit
-  const handleActivityEdit = useCallback((activity: FullPathActivity) => {
-    setEditingActivity(activity);
-    setShowActivityEditor(true);
-  }, []);
-
-  // Handle activity update (refresh callback for PathActivityEditor)
-  const handleActivityUpdateRefresh = useCallback(
-    async () => {
-      if (!editingActivity) return;
-
-      try {
-        // Fetch the updated activity with all nested data
-        const response = await fetch(`/api/pathlab/activities?activityId=${editingActivity.id}`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch updated activity');
-        }
-
-        const result = await response.json();
-        updateActivity(editingActivity.id, result.activity);
 
         setShowActivityEditor(false);
         setEditingActivity(undefined);
@@ -193,8 +157,14 @@ export function PageBuilder({
         toast.error('Failed to refresh activity data');
       }
     },
-    [editingActivity, updateActivity]
+    [editingActivity, updateActivity, addActivity]
   );
+
+  // Handle activity edit
+  const handleActivityEdit = useCallback((activity: FullPathActivity) => {
+    setEditingActivity(activity);
+    setShowActivityEditor(true);
+  }, []);
 
   // Handle activity delete
   const handleActivityDelete = useCallback(
@@ -399,7 +369,7 @@ export function PageBuilder({
                 <PathActivityEditor
                   dayId={pageId}
                   activity={editingActivity}
-                  onSave={editingActivity ? handleActivityUpdateRefresh : handleActivityCreateRefresh}
+                  onSave={handleActivitySaveRefresh}
                   onCancel={() => {
                     setShowActivityEditor(false);
                     setEditingActivity(undefined);
