@@ -37,18 +37,6 @@ export function PageBuilder({
   initialReflectionPrompts,
   initialActivities,
 }: PageBuilderProps) {
-  // Debug logging
-  console.log('[PageBuilder] Rendering with initial activities:', {
-    pageId,
-    count: initialActivities.length,
-    activities: initialActivities.map((a, idx) => ({
-      index: idx,
-      id: a.id,
-      title: a.title,
-      display_order: a.display_order,
-    })),
-  });
-
   const [showActivityEditor, setShowActivityEditor] = useState(false);
   const [editingActivity, setEditingActivity] = useState<FullPathActivity | undefined>(undefined);
 
@@ -76,18 +64,6 @@ export function PageBuilder({
       activities: initialActivities,
     },
     onSave: async (pageData) => {
-      console.log('[PageBuilder onSave] Saving page data:', {
-        pageId,
-        title: pageData.title,
-        activityCount: pageData.activities.length,
-        activities: pageData.activities.map((a, idx) => ({
-          index: idx,
-          id: a.id,
-          title: a.title,
-          display_order: a.display_order,
-        })),
-      });
-
       // Save only this page metadata (never bulk-replace other days)
       const response = await fetch(`/api/pathlab/paths/${pathId}/days/${dayNumber}`, {
         method: 'PATCH',
@@ -104,16 +80,9 @@ export function PageBuilder({
         throw new Error(error.error || 'Failed to save page');
       }
 
-      console.log('[PageBuilder onSave] Page metadata saved, now saving activity order');
-
       // ALSO save the activity order
       if (pageData.activities && pageData.activities.length > 0) {
         const activityIds = pageData.activities.map(a => a.id);
-        console.log('[PageBuilder onSave] Saving activity order:', {
-          dayId: pageId,
-          activityIds,
-        });
-
         const orderResponse = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -129,7 +98,6 @@ export function PageBuilder({
           throw new Error(error.error || 'Failed to save activity order');
         }
 
-        console.log('[PageBuilder onSave] Activity order saved successfully');
       }
     },
     maxActivities: 20,
@@ -256,28 +224,12 @@ export function PageBuilder({
   // Handle activity reorder (save to backend)
   const handleActivityReorder = useCallback(
     async (newOrder: FullPathActivity[]) => {
-      console.log('[PageBuilder] handleActivityReorder called:', {
-        pageId,
-        newOrderCount: newOrder.length,
-        newOrder: newOrder.map((a, idx) => ({
-          index: idx,
-          id: a.id,
-          title: a.title,
-          display_order: a.display_order,
-        })),
-      });
-
       // Update local state immediately for better UX
       reorderActivities(newOrder);
 
       // Save to backend
       try {
         const activityIds = newOrder.map(a => a.id);
-        console.log('[PageBuilder] Sending reorder request to API:', {
-          dayId: pageId,
-          activityIds,
-        });
-
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -291,8 +243,6 @@ export function PageBuilder({
           throw new Error('Failed to save activity order');
         }
 
-        const result = await response.json();
-        console.log('[PageBuilder] Reorder API response:', result);
         toast.success('Activity order saved');
       } catch (error) {
         console.error('[PageBuilder] Failed to save reorder:', error);
@@ -305,8 +255,6 @@ export function PageBuilder({
   // Handle move activity up
   const handleMoveActivityUp = useCallback(
     async (activityId: string) => {
-      console.log('[PageBuilder] handleMoveActivityUp called:', { activityId, pageId });
-
       moveActivity(activityId, 'up');
 
       // Save to backend
@@ -318,11 +266,6 @@ export function PageBuilder({
             [activityIds[currentIndex], activityIds[currentIndex - 1]];
         }
 
-        console.log('[PageBuilder] Sending move up request:', {
-          dayId: pageId,
-          activityIds,
-        });
-
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -335,9 +278,6 @@ export function PageBuilder({
         if (!response.ok) {
           throw new Error('Failed to save activity order');
         }
-
-        const result = await response.json();
-        console.log('[PageBuilder] Move up API response:', result);
       } catch (error) {
         console.error('[PageBuilder] Failed to save move:', error);
       }
@@ -348,8 +288,6 @@ export function PageBuilder({
   // Handle move activity down
   const handleMoveActivityDown = useCallback(
     async (activityId: string) => {
-      console.log('[PageBuilder] handleMoveActivityDown called:', { activityId, pageId });
-
       moveActivity(activityId, 'down');
 
       // Save to backend
@@ -361,11 +299,6 @@ export function PageBuilder({
             [activityIds[currentIndex + 1], activityIds[currentIndex]];
         }
 
-        console.log('[PageBuilder] Sending move down request:', {
-          dayId: pageId,
-          activityIds,
-        });
-
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -378,9 +311,6 @@ export function PageBuilder({
         if (!response.ok) {
           throw new Error('Failed to save activity order');
         }
-
-        const result = await response.json();
-        console.log('[PageBuilder] Move down API response:', result);
       } catch (error) {
         console.error('[PageBuilder] Failed to save move:', error);
       }
