@@ -111,6 +111,15 @@ export function usePageBuilder({
     }));
   }, []);
 
+  // Initialize activities (client-side load) — updates state + snapshot so no dirty flag
+  const initActivities = useCallback((activities: FullPathActivity[]) => {
+    setPage(prev => {
+      const next = { ...prev, activities };
+      snapshotRef.current = JSON.stringify(next);
+      return next;
+    });
+  }, []);
+
   // Save page
   const save = useCallback(async () => {
     setIsSaving(true);
@@ -191,6 +200,7 @@ export function usePageBuilder({
     updateActivity,
     removeActivity,
     reorderActivities,
+    initActivities,
     getActivity,
     moveActivity,
     canMoveActivity,

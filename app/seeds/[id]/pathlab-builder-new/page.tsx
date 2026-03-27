@@ -124,23 +124,6 @@ export default async function PathLabBuilderNewPage({
     firstPage = createdPage;
   }
 
-  // Fetch activities for the page
-  const t4 = Date.now();
-  const { data: activities } = await supabase
-    .from('path_activities')
-    .select(
-      `
-      *,
-      path_content (*),
-      path_assessment:path_assessments (
-        *,
-        quiz_questions:path_quiz_questions (*)
-      )
-    `
-    )
-    .eq('path_day_id', firstPage.id)
-    .order('display_order', { ascending: true });
-  console.log(`[PathLab] fetch activities: ${Date.now() - t4}ms, count=${activities?.length ?? 0}`);
   console.log(`[PathLab] TOTAL server time: ${Date.now() - t0}ms`);
 
   return (
@@ -175,7 +158,7 @@ export default async function PathLabBuilderNewPage({
         </div>
       </div>
 
-      {/* Page Builder */}
+      {/* Page Builder — activities loaded client-side */}
       <div className="flex-1 overflow-hidden">
         <PageBuilder
           pageId={firstPage.id}
@@ -184,7 +167,6 @@ export default async function PathLabBuilderNewPage({
           initialTitle={firstPage.title}
           initialContextText={firstPage.context_text}
           initialReflectionPrompts={firstPage.reflection_prompts || []}
-          initialActivities={activities || []}
         />
       </div>
     </div>
