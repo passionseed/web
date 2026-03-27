@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export type BetaLookupField = {
   label: string;
@@ -15,13 +15,22 @@ export async function lookupBetaSubmission(code: string): Promise<BetaLookupResu
   const normalised = code.trim().toUpperCase();
   if (normalised.length !== 4) return { found: false };
 
-  const supabase = await createClient();
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
 
   const { data, error } = await supabase.rpc("get_beta_submission_by_code", {
     p_code: normalised,
   });
 
-  if (error || !data || data.length === 0) return { found: false };
+  if (error) {
+    return { found: false, debug: { error: JSON.stringify(error), code: normalised } } as BetaLookupResult & { debug?: unknown };
+  }
+
+  if (!data || data.length === 0) {
+    return { found: false, debug: { error: null, code: normalised, rowCount: 0 } } as BetaLookupResult & { debug?: unknown };
+  }
 
   return {
     found: true,
@@ -29,5 +38,6 @@ export async function lookupBetaSubmission(code: string): Promise<BetaLookupResu
       label: row.field_label,
       answer: row.answer_text,
     })),
-  };
+    debug: { error: null, code: normalised, rowCount: data.length },
+  } as BetaLookupResult & { debug?: unknown };
 }

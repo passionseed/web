@@ -405,6 +405,7 @@ export function AdminBetaRegistrations() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Code</TableHead>
                   <TableHead>Full Name</TableHead>
                   <TableHead>Nickname</TableHead>
                   <TableHead>Email</TableHead>
@@ -423,7 +424,7 @@ export function AdminBetaRegistrations() {
                 {filteredRegistrations.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={12}
+                      colSpan={13}
                       className="text-center text-muted-foreground"
                     >
                       {searchQuery || completionFilter !== "all"
@@ -434,6 +435,11 @@ export function AdminBetaRegistrations() {
                 ) : (
                   filteredRegistrations.map((registration) => (
                     <TableRow key={registration.id}>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono font-bold tracking-widest">
+                          {registration.id.replace(/-/g, "").slice(-4).toUpperCase()}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="font-medium">
                         {registration.full_name}
                       </TableCell>
