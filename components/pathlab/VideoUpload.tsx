@@ -64,7 +64,7 @@ export function VideoUpload({
     };
 
     fetchStorageUsage();
-  }, [videoUrl]); // Re-fetch when video URL changes (after upload/remove)
+  }, []); // Only fetch once on mount — storage usage doesn't need to update in real-time
 
   // Format file size for display
   const formatFileSize = (bytes: number): string => {
