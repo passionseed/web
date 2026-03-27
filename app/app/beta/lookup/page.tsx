@@ -62,6 +62,7 @@ export default function BetaLookupPage() {
     setResult(null);
     setNotFound(false);
     const res = await lookupBetaSubmission(code);
+    console.log("[beta-lookup] result:", JSON.stringify(res, null, 2));
     setLoading(false);
     if (res.found) {
       setResult({ fields: res.fields });
