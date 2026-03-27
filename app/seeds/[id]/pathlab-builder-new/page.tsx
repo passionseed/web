@@ -32,12 +32,15 @@ export default async function PathLabBuilderNewPage({
     redirect(`/login?next=/seeds/${seedId}/pathlab-builder-new`);
   }
 
-  // Fetch seed
-  const { data: seed } = await supabase
-    .from('seeds')
-    .select('*')
-    .eq('id', seedId)
-    .single();
+  // Fetch seed and roles in parallel
+  const [{ data: seed }, { data: roles }] = await Promise.all([
+    supabase.from('seeds').select('*').eq('id', seedId).single(),
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .in('role', ['admin', 'instructor']),
+  ]);
 
   if (!seed) {
     notFound();
@@ -46,13 +49,6 @@ export default async function PathLabBuilderNewPage({
   if (seed.seed_type !== 'pathlab') {
     notFound();
   }
-
-  // Check permissions
-  const { data: roles } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .in('role', ['admin', 'instructor']);
 
   const isAdminOrInstructor = !!roles?.length;
   const isCreator = seed.created_by === user.id;
@@ -80,7 +76,8 @@ export default async function PathLabBuilderNewPage({
       .single();
 
     if (createPathError || !createdPath) {
-      throw new Error(createPathError?.message || 'Failed to initialize path');
+      console.error('Failed to initialize path:', createPathError?.message);
+      notFound();
     }
     path = createdPath;
   }
@@ -109,7 +106,8 @@ export default async function PathLabBuilderNewPage({
       .single();
 
     if (createPageError || !createdPage) {
-      throw new Error(createPageError?.message || 'Failed to create page');
+      console.error('Failed to create page:', createPageError?.message);
+      notFound();
     }
     firstPage = createdPage;
   }

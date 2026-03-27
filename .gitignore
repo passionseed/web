@@ -49,3 +49,4 @@ coverage
 
 # local worktrees
 .worktrees/
+.gstack/
