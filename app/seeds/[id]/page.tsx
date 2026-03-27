@@ -300,22 +300,24 @@ export default async function SeedDetailPage({ params }: SeedDetailPageProps) {
                 </div>
                 {canEdit && isPathLab && (
                   <div className="flex flex-wrap gap-2">
-                    <Link href={`/seeds/${seed.id}/pathlab-builder`}>
-                      <Button
-                        variant="outline"
-                        className="bg-black/20 hover:bg-black/40 text-white/80 hover:text-white backdrop-blur-md border border-white/10"
-                      >
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="bg-black/20 hover:bg-black/40 text-white/80 hover:text-white backdrop-blur-md border border-white/10"
+                    >
+                      <Link href={`/seeds/${seed.id}/pathlab-builder`}>
                         Path Builder
-                      </Button>
-                    </Link>
-                    <Link href={`/seeds/${seed.id}/reports`}>
-                      <Button
-                        variant="outline"
-                        className="bg-black/20 hover:bg-black/40 text-white/80 hover:text-white backdrop-blur-md border border-white/10"
-                      >
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="bg-black/20 hover:bg-black/40 text-white/80 hover:text-white backdrop-blur-md border border-white/10"
+                    >
+                      <Link href={`/seeds/${seed.id}/reports`}>
                         Student Reports
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </div>
                 )}
               </div>
