@@ -73,7 +73,7 @@ export default function LineOAPage() {
         duration: 1.0,
         ease: "power3.inOut",
         onComplete: () => {
-          router.push("/hackathon/team");
+          router.push("/hackathon/dashboard");
         },
       }
     );
