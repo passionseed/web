@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -36,6 +36,16 @@ import {
 
 export function AdminDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [hackathonCount, setHackathonCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/hackathon/participants")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.participants) setHackathonCount(data.participants.length);
+      })
+      .catch(() => {});
+  }, [refreshKey]);
 
   const handleDataReload = () => {
     setRefreshKey((prev) => prev + 1);
@@ -67,6 +77,11 @@ export function AdminDashboard() {
           <TabsTrigger value="hackathon" className="flex items-center gap-2">
             <Trophy className="h-4 w-4" />
             Hackathon
+            {hackathonCount !== null && (
+              <span className="ml-1 rounded-full bg-primary/20 px-1.5 py-0.5 text-xs font-medium leading-none">
+                {hackathonCount}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="beta" className="flex items-center gap-2">
             <TestTube className="h-4 w-4" />
