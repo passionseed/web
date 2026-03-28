@@ -1,7 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE } from "@/lib/hackathon/auth";
-import { getSessionParticipant, getParticipantTeam } from "@/lib/hackathon/db";
+import {
+  getSessionParticipant,
+  getParticipantTeam,
+  hasCompletedHackathonOnboarding,
+} from "@/lib/hackathon/db";
 import TeamDashboard from "@/components/hackathon/TeamDashboard";
 
 export default async function TeamPage() {
@@ -12,6 +16,13 @@ export default async function TeamPage() {
 
     const participant = await getSessionParticipant(token);
     if (!participant) redirect("/hackathon/register");
+
+    const onboardingDone = await hasCompletedHackathonOnboarding(participant.id);
+    if (!onboardingDone) {
+        redirect(
+            `/hackathon/onboarding?returnTo=${encodeURIComponent("/hackathon/team")}`
+        );
+    }
 
     const team = await getParticipantTeam(participant.id);
 
