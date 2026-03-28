@@ -30,7 +30,7 @@ import { toast } from "sonner";
 interface PathActivityEditorProps {
   dayId: string;
   activity?: FullPathActivity;
-  onSave: () => Promise<void>; // Just a callback to refresh parent
+  onSave: (activityId?: string) => Promise<void>; // Pass back activityId so parent can targeted-refresh
   onCancel: () => void;
   isInline?: boolean;
   displayOrder?: number;
@@ -487,8 +487,8 @@ export function PathActivityEditor({
         }
       }
 
-      // Notify parent to refresh
-      await onSave();
+      // Notify parent to refresh, passing back activityId for targeted fetch
+      await onSave(activityId ?? undefined);
 
       // Show appropriate success message
       if (isComplete) {

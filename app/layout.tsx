@@ -47,6 +47,7 @@ const baiJamjuree = Bai_Jamjuree({
   weight: ["200", "300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   variable: "--font-bai-jamjuree",
+  preload: false,
 });
 
 const mitr = Mitr({

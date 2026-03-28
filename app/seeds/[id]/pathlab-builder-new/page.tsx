@@ -21,23 +21,30 @@ interface PathLabBuilderNewPageProps {
 export default async function PathLabBuilderNewPage({
   params,
 }: PathLabBuilderNewPageProps) {
+  const t0 = Date.now();
   const { id: seedId } = await params;
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  console.log(`[PathLab] getUser: ${Date.now() - t0}ms`);
 
   if (!user) {
     redirect(`/login?next=/seeds/${seedId}/pathlab-builder-new`);
   }
 
-  // Fetch seed
-  const { data: seed } = await supabase
-    .from('seeds')
-    .select('*')
-    .eq('id', seedId)
-    .single();
+  // Fetch seed and roles in parallel
+  const t1 = Date.now();
+  const [{ data: seed }, { data: roles }] = await Promise.all([
+    supabase.from('seeds').select('*').eq('id', seedId).single(),
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .in('role', ['admin', 'instructor']),
+  ]);
+  console.log(`[PathLab] seed+roles: ${Date.now() - t1}ms`);
 
   if (!seed) {
     notFound();
@@ -47,13 +54,6 @@ export default async function PathLabBuilderNewPage({
     notFound();
   }
 
-  // Check permissions
-  const { data: roles } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .in('role', ['admin', 'instructor']);
-
   const isAdminOrInstructor = !!roles?.length;
   const isCreator = seed.created_by === user.id;
 
@@ -62,38 +62,46 @@ export default async function PathLabBuilderNewPage({
   }
 
   // Fetch or create path
+  const t2 = Date.now();
   let { data: path } = await supabase
     .from('paths')
     .select('*')
     .eq('seed_id', seed.id)
     .maybeSingle();
+  console.log(`[PathLab] fetch path: ${Date.now() - t2}ms, found=${!!path}`);
 
   if (!path) {
+    const t2b = Date.now();
     const { data: createdPath, error: createPathError } = await supabase
       .from('paths')
       .insert({
         seed_id: seed.id,
-        total_days: 1, // Start with 1 page
+        total_days: 1,
         created_by: user.id,
       })
       .select('*')
       .single();
+    console.log(`[PathLab] create path: ${Date.now() - t2b}ms, error=${createPathError?.message}`);
 
     if (createPathError || !createdPath) {
-      throw new Error(createPathError?.message || 'Failed to initialize path');
+      console.error('Failed to initialize path:', createPathError?.message);
+      notFound();
     }
     path = createdPath;
   }
 
   // Fetch first page (or create it)
+  const t3 = Date.now();
   let { data: firstPage } = await supabase
     .from('path_days')
     .select('*')
     .eq('path_id', path.id)
     .eq('day_number', 1)
     .maybeSingle();
+  console.log(`[PathLab] fetch firstPage: ${Date.now() - t3}ms, found=${!!firstPage}`);
 
   if (!firstPage) {
+    const t3b = Date.now();
     const { data: createdPage, error: createPageError } = await supabase
       .from('path_days')
       .insert({
@@ -102,33 +110,21 @@ export default async function PathLabBuilderNewPage({
         title: null,
         context_text: '',
         reflection_prompts: [],
-        node_ids: [], // Legacy field
-        migrated_from_nodes: true, // Mark as using new system
+        node_ids: [],
+        migrated_from_nodes: true,
       })
       .select('*')
       .single();
+    console.log(`[PathLab] create firstPage: ${Date.now() - t3b}ms, error=${createPageError?.message}`);
 
     if (createPageError || !createdPage) {
-      throw new Error(createPageError?.message || 'Failed to create page');
+      console.error('Failed to create page:', createPageError?.message);
+      notFound();
     }
     firstPage = createdPage;
   }
 
-  // Fetch activities for the page
-  const { data: activities } = await supabase
-    .from('path_activities')
-    .select(
-      `
-      *,
-      path_content (*),
-      path_assessment:path_assessments (
-        *,
-        quiz_questions:path_quiz_questions (*)
-      )
-    `
-    )
-    .eq('path_day_id', firstPage.id)
-    .order('display_order', { ascending: true });
+  console.log(`[PathLab] TOTAL server time: ${Date.now() - t0}ms`);
 
   return (
     <div className="h-screen flex flex-col bg-neutral-950">
@@ -162,7 +158,7 @@ export default async function PathLabBuilderNewPage({
         </div>
       </div>
 
-      {/* Page Builder */}
+      {/* Page Builder — activities loaded client-side */}
       <div className="flex-1 overflow-hidden">
         <PageBuilder
           pageId={firstPage.id}
@@ -171,7 +167,6 @@ export default async function PathLabBuilderNewPage({
           initialTitle={firstPage.title}
           initialContextText={firstPage.context_text}
           initialReflectionPrompts={firstPage.reflection_prompts || []}
-          initialActivities={activities || []}
         />
       </div>
     </div>

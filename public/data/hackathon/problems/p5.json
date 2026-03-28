@@ -1,0 +1,337 @@
+{
+  "problemId": "P5",
+  "title": {
+    "en": "Connected But Alone",
+    "th": "เชื่อมต่อแต่โดดเดี่ยว"
+  },
+  "track": "Mental Health",
+  "trackNum": "02",
+  "color": "#A594BA",
+  "hook": {
+    "en": "Teen loneliness in Thailand has reached crisis levels despite increased social media use — because online connections don't resolve real-life social isolation.",
+    "th": "ความเหงาในวัยรุ่นไทยถึงระดับวิกฤตแม้จะใช้ Social Media มากขึ้น เพราะการเชื่อมต่อออนไลน์ไม่ได้แก้ปัญหาการแยกตัวจากสังคมในชีวิตจริง"
+  },
+  "challenge": {
+    "en": "How might we design an intervention that addresses root-cause social isolation — not just surface-level connection — for teenagers and young adults?",
+    "th": "เราจะออกแบบการแทรกแซงที่แก้ไขการโดดเดี่ยวทางสังคมในเชิงต้นเหตุ ไม่ใช่แค่การเชื่อมต่อแบบผิวเผิน สำหรับวัยรุ่นและผู้ใหญ่ตอนต้นได้อย่างไร?"
+  },
+  "tags": [
+    "Social Isolation",
+    "Teenagers",
+    "Intervention"
+  ],
+  "grading": {
+    "severity": {
+      "score": 9,
+      "justification": "17.4% at risk of self-harm, suicide is 3rd leading cause of death for teens, 37.8% at risk for depression. Loneliness mortality impact equivalent to smoking 15 cigarettes/day."
+    },
+    "difficulty": {
+      "score": 8,
+      "justification": "Requires multi-sectoral coordination (health, education, families, tech companies). Deep-rooted cultural stigma. Severe infrastructure gaps. Complex interplay of digital, social, and economic factors."
+    },
+    "impact": {
+      "score": 10,
+      "justification": "Addresses fundamental human need (social connection). Potential to reduce depression, anxiety, substance abuse, and suicide. Impact extends to academic achievement, career readiness, and lifelong mental health."
+    },
+    "urgency": {
+      "score": 10,
+      "justification": "32% increase in suicide mortality 2017-2022. 17.4% self-harm risk among teens. Post-COVID mental health crisis accelerating. Every 2 hours, one Thai person dies by suicide."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "9.8% of Thai adolescents reported loneliness in 2015 Global School-based Student Health Survey",
+      "source": "Global School-based Student Health Survey (GSHS)",
+      "year": "2015"
+    },
+    {
+      "stat": "72.2% of Thai adolescents aged 11-16 had mild (44.5%) or moderate (27.7%) depression",
+      "source": "Kasetsart Journal of Social Sciences",
+      "year": "2023"
+    },
+    {
+      "stat": "17.4% of Thai teenagers aged 18 and under are at risk of self-harm",
+      "source": "Department of Mental Health Thailand Mental Health Check-in app",
+      "year": "2024"
+    },
+    {
+      "stat": "Thailand suicide rate: 7.97 per 100,000 in 2022, up from 6.64 in 2019 (32% increase)",
+      "source": "WHO LIVE LIFE Thailand implementation report",
+      "year": "2022"
+    },
+    {
+      "stat": "11% of Thai males and 23% of females aged 13-17 considered suicide",
+      "source": "2021 Global School-based Student Health Survey (Thailand)",
+      "year": "2021"
+    },
+    {
+      "stat": "Female adolescents 3.4x more likely to feel 'always lonely' than males",
+      "source": "GSHS Southeast Asia analysis",
+      "year": "2021"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "Female adolescents (13-17 years)",
+      "size": "3.4x higher risk of chronic loneliness than males",
+      "painPoints": [
+        "Higher vulnerability to body image pressure",
+        "More likely to experience anxiety and depression",
+        "Greater exposure to cyberbullying"
+      ]
+    },
+    {
+      "group": "University students (18-24 years)",
+      "size": "31.4% experience depressive symptoms",
+      "painPoints": [
+        "Academic pressure",
+        "Financial stress",
+        "Living alone away from family support"
+      ]
+    },
+    {
+      "group": "LGBTQ+ adolescents",
+      "size": "Higher rates of loneliness and depression",
+      "painPoints": [
+        "Social stigma and family rejection",
+        "Lack of safe spaces",
+        "Higher risk of bullying"
+      ]
+    },
+    {
+      "group": "Students from low-income families",
+      "size": "Significant portion of affected youth",
+      "painPoints": [
+        "Food insecurity linked to higher loneliness",
+        "Limited access to mental health resources",
+        "Digital divide"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "Teenagers and young adults (13-25 years)",
+        "needs": [
+          "Meaningful connections",
+          "Accessible mental health support",
+          "Safe spaces"
+        ],
+        "painPoints": [
+          "Social isolation",
+          "Digital addiction",
+          "Academic pressure"
+        ]
+      },
+      {
+        "role": "Parents and families",
+        "needs": [
+          "Education on mental health",
+          "Communication skills",
+          "Resources"
+        ],
+        "painPoints": [
+          "Generational gap",
+          "Lack of understanding",
+          "Time constraints"
+        ]
+      },
+      {
+        "role": "Teachers and school counselors",
+        "needs": [
+          "Training in mental health identification",
+          "Tools for early intervention",
+          "Manageable caseloads"
+        ],
+        "painPoints": [
+          "Overburdened",
+          "Limited training",
+          "Academic focus priority"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Department of Mental Health (DMH) Thailand",
+        "needs": [
+          "Policy implementation",
+          "Workforce expansion"
+        ],
+        "painPoints": [
+          "Limited budget",
+          "Workforce shortage"
+        ]
+      },
+      {
+        "role": "Social media platforms (TikTok, Facebook, Instagram)",
+        "needs": [
+          "User safety",
+          "Platform responsibility"
+        ],
+        "painPoints": [
+          "Engagement-focused business models",
+          "Content moderation challenges"
+        ]
+      },
+      {
+        "role": "NGOs and civil society organizations",
+        "needs": [
+          "Funding",
+          "Partnerships",
+          "Scale"
+        ],
+        "painPoints": [
+          "Resource constraints",
+          "Fragmented efforts"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Social media paradox - hyperconnectivity without genuine connection",
+      "explanation": "Heavy social media users are 3x more likely to experience isolation. Thai youth spend significant time online but report feeling disconnected.",
+      "systemic": true
+    },
+    {
+      "cause": "Mental health stigma and cultural barriers",
+      "explanation": "Strong collectivist values emphasize family reputation, creating pressure to conform. Mental health struggles are seen as shameful.",
+      "systemic": true
+    },
+    {
+      "cause": "Severe shortage of mental health professionals",
+      "explanation": "Thailand has only 1.28 psychiatrists per 100,000 people versus global average of 10.15. Public hospital waits can stretch 6 months.",
+      "systemic": true
+    },
+    {
+      "cause": "Academic pressure and educational system stress",
+      "explanation": "Parents' expectations for academic achievement create intense pressure. Students face high-stakes exams and competitive environments.",
+      "systemic": true
+    },
+    {
+      "cause": "COVID-19 pandemic lasting effects",
+      "explanation": "Prolonged isolation during lockdowns, disruption of social development during critical years, transition to online learning without adequate support.",
+      "systemic": true
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "HOPE Task Force",
+      "approach": "Multi-stakeholder crisis intervention network involving DMH, Royal Thai Police, and social media influencers monitoring online suicidal expressions 24/7",
+      "strengths": [
+        "Innovative use of social media for detection",
+        "24-hour monitoring",
+        "Successfully intervened in 600+ cases"
+      ],
+      "weaknesses": [
+        "Reactive rather than preventive",
+        "Limited scale"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Kru Care Jai Program",
+      "approach": "Teacher training program to identify mental health risks and prevent bullying in schools",
+      "strengths": [
+        "Leverages teachers as frontline responders",
+        "School-based accessibility"
+      ],
+      "weaknesses": [
+        "Limited teacher capacity",
+        "Teachers already overburdened"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Mental Health Check-in App (Ooca)",
+      "approach": "Free online mental health consultations for youth 15-25 via mobile app with psychologists and therapists",
+      "strengths": [
+        "Accessible and private",
+        "Free of charge",
+        "Reduces stigma of in-person visits"
+      ],
+      "weaknesses": [
+        "Requires smartphone",
+        "Limited to Bangkok initially"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "The Connection Project",
+      "approach": "12-session school-based intervention to enhance peer relationships among marginalized adolescents",
+      "strengths": [
+        "Evidence-based RCT results",
+        "Improved peer relationships",
+        "Higher academic engagement"
+      ],
+      "weaknesses": [
+        "Developed in Western context",
+        "Not adapted for Thai cultural context"
+      ],
+      "region": "USA"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "School-based peer connection programs",
+      "description": "Design culturally-adapted peer support programs that train students to facilitate meaningful face-to-face connections",
+      "potentialImpact": "Leverages natural peer relationships, scalable, addresses root cause of disconnection",
+      "feasibility": "Medium"
+    },
+    {
+      "area": "Digital-to-physical bridge solutions",
+      "description": "Create platforms that start online but intentionally drive in-person connections - community events, hobby groups, study circles",
+      "potentialImpact": "Addresses the social media paradox directly, leverages digital comfort while solving isolation",
+      "feasibility": "Medium-High"
+    },
+    {
+      "area": "Third spaces for youth in communities",
+      "description": "Establish or revitalize youth centers, community spaces, and recreational facilities where teens can gather safely",
+      "potentialImpact": "Provides physical spaces for connection, especially important for those without safe home environments",
+      "feasibility": "Medium"
+    },
+    {
+      "area": "Teacher mental health ally training",
+      "description": "Expand Kru Care Jai with practical tools for teachers to identify lonely students and facilitate classroom connections",
+      "potentialImpact": "Teachers see students daily; early identification and intervention possible",
+      "feasibility": "Medium-High"
+    }
+  ],
+  "resources": [
+    {
+      "title": "Factors Associated with Loneliness among Adolescents in Thailand, Indonesia, Brunei Darussalam, and the Philippines",
+      "type": "Research Paper",
+      "url": "https://journals.lww.com/shbh/fulltext/2025/07000/factors_associated_with_loneliness_among.7.aspx",
+      "description": "Comprehensive study using GSHS data with prevalence rates and risk factors for loneliness in Southeast Asia"
+    },
+    {
+      "title": "Thailand's Lost Youth: Mental Health Crisis and the Price of Policy Neglect",
+      "type": "Policy Analysis",
+      "url": "https://fulcrum.sg/thailands-lost-youth-mental-health-crisis-and-the-price-of-policy-neglect/",
+      "description": "Critical analysis of Thailand's mental health infrastructure gaps and policy failures"
+    },
+    {
+      "title": "WHO LIVE LIFE Thailand Implementation",
+      "type": "Program Report",
+      "url": "https://www.who.int/thailand/news/feature-stories/detail/strengthening-suicide-prevention-in-thailand-with-live-life",
+      "description": "Details on Thailand's suicide prevention efforts including HOPE Task Force"
+    },
+    {
+      "title": "Mental Health Hotline 1323",
+      "type": "Hotline",
+      "url": "tel:1323",
+      "description": "Thai Department of Mental Health 24-hour hotline for mental health support"
+    }
+  ],
+  "keyInsights": [
+    "The social media paradox is central: Thai youth are more connected digitally than ever, yet lonelier than previous generations. Solutions must address the quality of connections, not just the quantity.",
+    "Female adolescents face 3.4x higher risk of chronic loneliness, suggesting gender-specific interventions are essential.",
+    "Mental health infrastructure is critically inadequate: 1.28 psychiatrists per 100,000 people (vs. global 10.15). Any scalable solution cannot rely primarily on professional intervention.",
+    "Peer support is underutilized in Thailand: Youth prefer talking to peers, but formal peer support programs are not widely implemented. This is a high-leverage opportunity.",
+    "The 32% increase in suicide mortality (2017-2022) signals this is a life-or-death crisis, not just a quality-of-life issue. Urgency is extreme."
+  ],
+  "tangibleEquivalent": {
+    "en": "The mortality impact is equivalent to smoking 15 cigarettes a day.",
+    "th": "ผลกระทบต่ออัตราการตายเทียบเท่ากับการสูบบุหรี่ 15 มวนต่อวัน"
+  }
+}

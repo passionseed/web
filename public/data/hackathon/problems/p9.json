@@ -1,0 +1,400 @@
+{
+  "problemId": "P9",
+  "title": {
+    "en": "PM2.5 vs. Our Children",
+    "th": "PM2.5 กับเด็กๆ ของเรา"
+  },
+  "track": "Community, Public & Environmental Health",
+  "trackNum": "03",
+  "color": "#91C4E3",
+  "hook": {
+    "en": "PM2.5 dust disproportionately affects school children, but most schools lack timely warning systems or prevention plans.",
+    "th": "ฝุ่น PM2.5 ส่งผลกระทบต่อเด็กนักเรียนอย่างไม่สมส่วน แต่โรงเรียนส่วนใหญ่ไม่มีระบบแจ้งเตือนหรือแผนป้องกันที่ทันการณ์"
+  },
+  "challenge": {
+    "en": "How might we build a predictive PM2.5 alert and response system that triggers preemptive protective actions for schools and children — before dangerous exposure occurs?",
+    "th": "เราจะสร้างระบบแจ้งเตือนและตอบสนอง PM2.5 เชิงพยากรณ์ที่กระตุ้นให้เกิดการป้องกันล่วงหน้าสำหรับโรงเรียนและเด็กก่อนที่จะเกิดการสัมผัสอันตรายได้อย่างไร?"
+  },
+  "tags": [
+    "Air Quality",
+    "Children",
+    "Predictive Alerts"
+  ],
+  "grading": {
+    "severity": {
+      "score": 9,
+      "justification": "PM2.5 causes immediate and long-term health damage to children including reduced lung function, asthma exacerbation, developmental delays. 13.6 million Thai children exposed."
+    },
+    "difficulty": {
+      "score": 7,
+      "justification": "Technical solutions exist (sensors, filtration, prediction models) but systemic causes require multi-stakeholder coordination and political will. Infrastructure investment needed."
+    },
+    "impact": {
+      "score": 9,
+      "justification": "Successful solution would protect 13.6 million children, reduce healthcare burden, prevent school closures, ensure educational continuity, and could be scaled across Southeast Asia."
+    },
+    "urgency": {
+      "score": 10,
+      "justification": "Children are being harmed daily. PM2.5 season is recurring annually with worsening trends. Critical developmental windows cannot be recovered. 352 schools closed in Bangkok in January 2025."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "13.6 million children in Thailand highly exposed to PM2.5",
+      "source": "UNICEF Thailand",
+      "year": "2025"
+    },
+    {
+      "stat": "Children in Bangkok breathed unsafe air for 265 out of 365 days (70% of year) in 2023",
+      "source": "Save the Children",
+      "year": "2024"
+    },
+    {
+      "stat": "Over 100 daily deaths among children under five in East Asia and Pacific linked to air pollution",
+      "source": "UNICEF East Asia Pacific",
+      "year": "2025"
+    },
+    {
+      "stat": "352 schools in Bangkok closed due to air pollution in January 2025",
+      "source": "Bangkok Metropolitan Administration",
+      "year": "2025"
+    },
+    {
+      "stat": "52% of children in Chiang Mai exhibited restrictive lung function patterns in 2024 study",
+      "source": "PMC Research Study",
+      "year": "2024"
+    },
+    {
+      "stat": "27.9% of high school students in Bangkok reported severe respiratory symptoms from PM2.5 exposure",
+      "source": "Journal of Neonatal Surgery Study",
+      "year": "2025"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "School children aged 5-18 in Bangkok and urban areas",
+      "size": "~2.5 million students in Bangkok Metropolitan Region",
+      "painPoints": [
+        "Daily exposure during commute and school hours",
+        "Limited access to air purifiers in public schools",
+        "School closures disrupting education"
+      ]
+    },
+    {
+      "group": "Children under 5 years old",
+      "size": "~4.3 million in Thailand",
+      "painPoints": [
+        "Developing lungs and immune systems highly vulnerable",
+        "Prenatal exposure linked to low birth weight and neurodevelopmental disorders",
+        "Cannot protect themselves"
+      ]
+    },
+    {
+      "group": "Children in Northern Thailand (Chiang Mai, Chiang Rai)",
+      "size": "~3 million in Northern region",
+      "painPoints": [
+        "Highest PM2.5 concentrations during burning season",
+        "PM2.5 frequently exceeds 150 µg/m³ during March-April",
+        "Limited healthcare access in rural areas"
+      ]
+    },
+    {
+      "group": "Students at public schools without air filtration",
+      "size": "~27,000+ public schools nationwide",
+      "painPoints": [
+        "No air purifiers or filtration systems in classrooms",
+        "Reliance on reactive measures (school closures)",
+        "Inequity compared to elite international schools"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "School-aged children (5-18 years)",
+        "needs": [
+          "Health protection",
+          "Uninterrupted education",
+          "Safe learning environments"
+        ],
+        "painPoints": [
+          "Daily exposure",
+          "School closures",
+          "Limited protection"
+        ]
+      },
+      {
+        "role": "Parents and guardians",
+        "needs": [
+          "Real-time alerts",
+          "Protective measures",
+          "School policies"
+        ],
+        "painPoints": [
+          "Lack of information",
+          "Limited resources",
+          "No coordinated response"
+        ]
+      },
+      {
+        "role": "School administrators and teachers",
+        "needs": [
+          "Clear protocols",
+          "Resources for air filtration",
+          "Communication tools"
+        ],
+        "painPoints": [
+          "No standardized protocols",
+          "Limited budget",
+          "Reactive decision-making"
+        ]
+      },
+      {
+        "role": "Ministry of Education Thailand",
+        "needs": [
+          "Student safety",
+          "Educational continuity",
+          "National guidelines"
+        ],
+        "painPoints": [
+          "No standardized policies",
+          "Limited resources",
+          "Coordination challenges"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Pollution Control Department (PCD)",
+        "needs": [
+          "Data utilization",
+          "Public awareness",
+          "Policy support"
+        ],
+        "painPoints": [
+          "Data-focused, not action-focused",
+          "Limited school integration"
+        ]
+      },
+      {
+        "role": "Bangkok Metropolitan Administration (BMA)",
+        "needs": [
+          "Citizen health",
+          "Coordinated response",
+          "Public communication"
+        ],
+        "painPoints": [
+          "Reactive rather than proactive",
+          "Limited resources"
+        ]
+      },
+      {
+        "role": "UNICEF Thailand",
+        "needs": [
+          "Child rights",
+          "Policy influence",
+          "Program implementation"
+        ],
+        "painPoints": [
+          "Advocacy capacity",
+          "Implementation resources"
+        ]
+      },
+      {
+        "role": "Private sector (air purifier manufacturers, sensor companies)",
+        "needs": [
+          "Market access",
+          "CSR opportunities",
+          "Partnerships"
+        ],
+        "painPoints": [
+          "Premium pricing excludes public schools",
+          "Limited distribution"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Vehicle emissions in urban areas",
+      "explanation": "Bangkok has severe traffic congestion with old diesel vehicles, motorcycles, and inadequate emission standards. Traffic is a primary source of PM2.5 in the capital.",
+      "systemic": true
+    },
+    {
+      "cause": "Agricultural burning (crop stubble, forests)",
+      "explanation": "Farmers burn sugarcane and rice fields between harvests, causing seasonal PM2.5 spikes. Northern Thailand experiences severe haze February-April.",
+      "systemic": true
+    },
+    {
+      "cause": "Inadequate early warning systems",
+      "explanation": "Current alert systems are reactive, not predictive. Schools often close after pollution reaches dangerous levels rather than preventing exposure.",
+      "systemic": true
+    },
+    {
+      "cause": "Insufficient air quality monitoring infrastructure",
+      "explanation": "Limited ground-based monitoring stations, especially outside urban centers. Schools lack hyperlocal sensors.",
+      "systemic": true
+    },
+    {
+      "cause": "Socioeconomic inequality",
+      "explanation": "Elite private schools have air filtration while public schools do not. Low-income families cannot afford protective measures. Creates health inequity.",
+      "systemic": true
+    },
+    {
+      "cause": "Lack of coordinated school response protocols",
+      "explanation": "No standardized, evidence-based protocols for school responses to PM2.5 levels. Decisions made inconsistently across schools.",
+      "systemic": false
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "Air4Thai App (Pollution Control Department)",
+      "approach": "Official government app providing hourly air quality data from monitoring stations across Thailand",
+      "strengths": [
+        "Official government data",
+        "Covers all regions",
+        "Free to use"
+      ],
+      "weaknesses": [
+        "Reactive not predictive",
+        "No school-specific alerts",
+        "Not optimized for schools/parents"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Bangkok Air Quality Flag System (AirBKK)",
+      "approach": "Color-coded flag system at schools indicating daily air quality with app integration",
+      "strengths": [
+        "Visual communication",
+        "School-specific",
+        "Student participation"
+      ],
+      "weaknesses": [
+        "Reactive not predictive",
+        "Only in Bangkok",
+        "No automated alerts"
+      ],
+      "region": "Bangkok, Thailand"
+    },
+    {
+      "name": "Panyarat High School Air Quality Program",
+      "approach": "School-based IQAir AirVisual monitor with color-coded flag policy and clear action protocols",
+      "strengths": [
+        "Real-time school-specific monitoring",
+        "Clear action protocols",
+        "Student engagement"
+      ],
+      "weaknesses": [
+        "Single school implementation",
+        "Requires equipment purchase",
+        "No predictive capability"
+      ],
+      "region": "Bangkok, Thailand"
+    },
+    {
+      "name": "UNICEF Laos School Air Quality Sensors",
+      "approach": "150 AI-powered air quality sensors installed in schools across Laos with real-time monitoring and teacher training",
+      "strengths": [
+        "School-specific sensors",
+        "Teacher and student training",
+        "AI-powered estimation"
+      ],
+      "weaknesses": [
+        "Limited to Laos",
+        "Requires ongoing maintenance"
+      ],
+      "region": "Laos"
+    },
+    {
+      "name": "SENSOR FOR ALL (Chulalongkorn University)",
+      "approach": "Low-cost PM2.5 sensor network with dashboard showing real-time data and 3-day forecasts using AI",
+      "strengths": [
+        "Low-cost sensors",
+        "Predictive capability (3 days)",
+        "Open data"
+      ],
+      "weaknesses": [
+        "Not school-specific",
+        "No automated alerts to schools"
+      ],
+      "region": "Thailand"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "Predictive AI-powered school alert system",
+      "description": "Develop ML model that predicts PM2.5 levels 24-72 hours in advance at school locations, automatically triggering preemptive actions before dangerous exposure occurs",
+      "potentialImpact": "Prevents exposure rather than reacting to it; enables proactive protection; reduces emergency school closures",
+      "feasibility": "High"
+    },
+    {
+      "area": "Hyperlocal school sensor network with automated alerts",
+      "description": "Deploy low-cost PM2.5 sensors at every public school with automated push notifications to parents and teachers when thresholds are approached",
+      "potentialImpact": "Provides school-specific data; enables parent-teacher coordination; supports evidence-based decision making",
+      "feasibility": "Medium-High"
+    },
+    {
+      "area": "Air quality-responsive school infrastructure",
+      "description": "Retrofit public school classrooms with filtered air systems (clean rooms) prioritized by exposure levels, with automated activation based on predicted PM2.5",
+      "potentialImpact": "Provides safe learning spaces during pollution events; prevents school closures; protects most vulnerable",
+      "feasibility": "Medium"
+    },
+    {
+      "area": "Parent-student behavior change platform",
+      "description": "Mobile app with personalized alerts, guidance on protective behaviors, N95 mask distribution network, and community features connecting parents at same school",
+      "potentialImpact": "Empowers families to protect children; creates peer support; improves health literacy",
+      "feasibility": "High"
+    },
+    {
+      "area": "Gamified student engagement program",
+      "description": "Curriculum-integrated program where students learn about air quality, monitor school data, participate in citizen science, and earn recognition for protective behaviors",
+      "potentialImpact": "Builds long-term awareness; creates youth advocates; integrates STEM education",
+      "feasibility": "High"
+    }
+  ],
+  "resources": [
+    {
+      "title": "UNICEF Thailand: Estimated 13.6 million children in Thailand highly exposed to PM2.5",
+      "type": "Press Release",
+      "url": "https://www.unicef.org/thailand/press-releases/estimated-136-million-children-thailand-highly-exposed-pm25-unicef",
+      "description": "Official UNICEF data on child exposure to PM2.5 in Thailand"
+    },
+    {
+      "title": "Save the Children: Bangkok's children exposed to toxic air seven out of ten days in 2023",
+      "type": "Report/News",
+      "url": "https://www.savethechildren.net/news/bangkoks-children-exposed-toxic-air-seven-out-ten-days-2023-save-children",
+      "description": "Analysis of Bangkok air quality data showing 265 days of unsafe air for children"
+    },
+    {
+      "title": "SENSOR FOR ALL - Chulalongkorn University",
+      "type": "Web Application",
+      "url": "https://sensorforall.eng.chula.ac.th/forecast",
+      "description": "Real-time PM2.5 monitoring and 3-day forecasting dashboard for Thailand"
+    },
+    {
+      "title": "Air4Thai App - Pollution Control Department Thailand",
+      "type": "Mobile App",
+      "url": "https://play.google.com/store/apps/details?id=com.kathistudio.air4thaimobile",
+      "description": "Official Thai government app for air quality monitoring data"
+    },
+    {
+      "title": "Schools4Earth - IQAir",
+      "type": "Program Website",
+      "url": "https://www.iqair.com/schools4earth",
+      "description": "Global initiative to install air quality monitors at schools"
+    }
+  ],
+  "keyInsights": [
+    "The problem is severe and urgent: 13.6 million Thai children are currently exposed to hazardous PM2.5 levels, with irreversible health damage occurring daily during pollution seasons.",
+    "Current solutions are reactive, not predictive: Schools close or respond after PM2.5 reaches dangerous levels, meaning children are already exposed before protective actions begin.",
+    "Significant inequality exists: Elite international schools have comprehensive air filtration systems while public schools rely on reactive closures, creating a health equity gap.",
+    "Technical capability for prediction exists: AI models can forecast PM2.5 24-72 hours ahead with good accuracy, and Chulalongkorn University already has this capability in Thailand.",
+    "Infrastructure gaps are addressable: Low-cost sensors (~$50-100) make school-level monitoring feasible; the barrier is deployment and integration, not technology.",
+    "The solution must be preventive, not reactive: The paradigm shift needed is from 'close schools when air is bad' to 'modify activities before air becomes dangerous'."
+  ],
+  "tangibleEquivalent": {
+    "en": "Like forcing 13.6 million kids to smoke cigarettes before recess.",
+    "th": "เหมือนบังคับให้เด็ก 13.6 ล้านคนสูบบุหรี่ก่อนพักเบรก"
+  }
+}

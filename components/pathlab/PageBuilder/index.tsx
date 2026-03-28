@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Plus, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -25,7 +25,6 @@ interface PageBuilderProps {
   initialTitle: string | null;
   initialContextText: string;
   initialReflectionPrompts: string[];
-  initialActivities: FullPathActivity[];
 }
 
 export function PageBuilder({
@@ -35,20 +34,8 @@ export function PageBuilder({
   initialTitle,
   initialContextText,
   initialReflectionPrompts,
-  initialActivities,
 }: PageBuilderProps) {
-  // Debug logging
-  console.log('[PageBuilder] Rendering with initial activities:', {
-    pageId,
-    count: initialActivities.length,
-    activities: initialActivities.map((a, idx) => ({
-      index: idx,
-      id: a.id,
-      title: a.title,
-      display_order: a.display_order,
-    })),
-  });
-
+  const [activitiesLoaded, setActivitiesLoaded] = useState(false);
   const [showActivityEditor, setShowActivityEditor] = useState(false);
   const [editingActivity, setEditingActivity] = useState<FullPathActivity | undefined>(undefined);
 
@@ -66,6 +53,7 @@ export function PageBuilder({
     updateActivity,
     removeActivity,
     reorderActivities,
+    initActivities,
     moveActivity,
   } = usePageBuilder({
     initialPage: {
@@ -73,21 +61,9 @@ export function PageBuilder({
       title: initialTitle,
       context_text: initialContextText,
       reflection_prompts: initialReflectionPrompts,
-      activities: initialActivities,
+      activities: [],
     },
     onSave: async (pageData) => {
-      console.log('[PageBuilder onSave] Saving page data:', {
-        pageId,
-        title: pageData.title,
-        activityCount: pageData.activities.length,
-        activities: pageData.activities.map((a, idx) => ({
-          index: idx,
-          id: a.id,
-          title: a.title,
-          display_order: a.display_order,
-        })),
-      });
-
       // Save only this page metadata (never bulk-replace other days)
       const response = await fetch(`/api/pathlab/paths/${pathId}/days/${dayNumber}`, {
         method: 'PATCH',
@@ -104,16 +80,9 @@ export function PageBuilder({
         throw new Error(error.error || 'Failed to save page');
       }
 
-      console.log('[PageBuilder onSave] Page metadata saved, now saving activity order');
-
       // ALSO save the activity order
       if (pageData.activities && pageData.activities.length > 0) {
         const activityIds = pageData.activities.map(a => a.id);
-        console.log('[PageBuilder onSave] Saving activity order:', {
-          dayId: pageId,
-          activityIds,
-        });
-
         const orderResponse = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -129,7 +98,6 @@ export function PageBuilder({
           throw new Error(error.error || 'Failed to save activity order');
         }
 
-        console.log('[PageBuilder onSave] Activity order saved successfully');
       }
     },
     maxActivities: 20,
@@ -146,6 +114,19 @@ export function PageBuilder({
 
   // Unsaved changes warning
   useUnsavedChanges(isDirty);
+
+  // Load activities client-side after render
+  useEffect(() => {
+    fetch(`/api/pathlab/activities?dayId=${pageId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.activities) {
+          initActivities(data.activities);
+        }
+      })
+      .catch(err => console.error('[PageBuilder] Failed to load activities:', err))
+      .finally(() => setActivitiesLoaded(true));
+  }, [pageId]);
 
   // Handle template selection from library
   const handleTemplateSelect = useCallback(
@@ -164,59 +145,23 @@ export function PageBuilder({
     [canAddActivity]
   );
 
-  // Handle activity creation refresh (PathActivityEditor handles the actual creation)
-  const handleActivityCreateRefresh = useCallback(
-    async () => {
+  // Handle activity save (create or update) — PathActivityEditor passes back the activityId
+  const handleActivitySaveRefresh = useCallback(
+    async (activityId?: string) => {
       try {
-        // Fetch all activities for this page to get the newly created one
-        const response = await fetch(`/api/pathlab/activities?dayId=${pageId}`);
+        if (!activityId) throw new Error('No activity ID returned from save');
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch activities');
-        }
+        const response = await fetch(`/api/pathlab/activities?activityId=${activityId}`);
+        if (!response.ok) throw new Error('Failed to fetch activity');
 
         const result = await response.json();
-        const fetchedActivities = result.activities || [];
+        const savedActivity: FullPathActivity = result.activity;
 
-        // Find the new activity (the one not in our current list)
-        const currentIds = new Set(page.activities.map(a => a.id));
-        const newActivity = fetchedActivities.find((a: FullPathActivity) => !currentIds.has(a.id));
-
-        if (newActivity) {
-          addActivity(newActivity);
+        if (editingActivity) {
+          updateActivity(savedActivity.id, savedActivity);
+        } else {
+          addActivity(savedActivity);
         }
-
-        setShowActivityEditor(false);
-        setEditingActivity(undefined);
-      } catch (error) {
-        console.error('[PageBuilder] Failed to refresh activities:', error);
-        toast.error('Failed to refresh activity data');
-      }
-    },
-    [pageId, page.activities, addActivity]
-  );
-
-  // Handle activity edit
-  const handleActivityEdit = useCallback((activity: FullPathActivity) => {
-    setEditingActivity(activity);
-    setShowActivityEditor(true);
-  }, []);
-
-  // Handle activity update (refresh callback for PathActivityEditor)
-  const handleActivityUpdateRefresh = useCallback(
-    async () => {
-      if (!editingActivity) return;
-
-      try {
-        // Fetch the updated activity with all nested data
-        const response = await fetch(`/api/pathlab/activities?activityId=${editingActivity.id}`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch updated activity');
-        }
-
-        const result = await response.json();
-        updateActivity(editingActivity.id, result.activity);
 
         setShowActivityEditor(false);
         setEditingActivity(undefined);
@@ -225,8 +170,14 @@ export function PageBuilder({
         toast.error('Failed to refresh activity data');
       }
     },
-    [editingActivity, updateActivity]
+    [editingActivity, updateActivity, addActivity]
   );
+
+  // Handle activity edit
+  const handleActivityEdit = useCallback((activity: FullPathActivity) => {
+    setEditingActivity(activity);
+    setShowActivityEditor(true);
+  }, []);
 
   // Handle activity delete
   const handleActivityDelete = useCallback(
@@ -256,28 +207,12 @@ export function PageBuilder({
   // Handle activity reorder (save to backend)
   const handleActivityReorder = useCallback(
     async (newOrder: FullPathActivity[]) => {
-      console.log('[PageBuilder] handleActivityReorder called:', {
-        pageId,
-        newOrderCount: newOrder.length,
-        newOrder: newOrder.map((a, idx) => ({
-          index: idx,
-          id: a.id,
-          title: a.title,
-          display_order: a.display_order,
-        })),
-      });
-
       // Update local state immediately for better UX
       reorderActivities(newOrder);
 
       // Save to backend
       try {
         const activityIds = newOrder.map(a => a.id);
-        console.log('[PageBuilder] Sending reorder request to API:', {
-          dayId: pageId,
-          activityIds,
-        });
-
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -291,8 +226,6 @@ export function PageBuilder({
           throw new Error('Failed to save activity order');
         }
 
-        const result = await response.json();
-        console.log('[PageBuilder] Reorder API response:', result);
         toast.success('Activity order saved');
       } catch (error) {
         console.error('[PageBuilder] Failed to save reorder:', error);
@@ -305,8 +238,6 @@ export function PageBuilder({
   // Handle move activity up
   const handleMoveActivityUp = useCallback(
     async (activityId: string) => {
-      console.log('[PageBuilder] handleMoveActivityUp called:', { activityId, pageId });
-
       moveActivity(activityId, 'up');
 
       // Save to backend
@@ -318,11 +249,6 @@ export function PageBuilder({
             [activityIds[currentIndex], activityIds[currentIndex - 1]];
         }
 
-        console.log('[PageBuilder] Sending move up request:', {
-          dayId: pageId,
-          activityIds,
-        });
-
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -335,9 +261,6 @@ export function PageBuilder({
         if (!response.ok) {
           throw new Error('Failed to save activity order');
         }
-
-        const result = await response.json();
-        console.log('[PageBuilder] Move up API response:', result);
       } catch (error) {
         console.error('[PageBuilder] Failed to save move:', error);
       }
@@ -348,8 +271,6 @@ export function PageBuilder({
   // Handle move activity down
   const handleMoveActivityDown = useCallback(
     async (activityId: string) => {
-      console.log('[PageBuilder] handleMoveActivityDown called:', { activityId, pageId });
-
       moveActivity(activityId, 'down');
 
       // Save to backend
@@ -361,11 +282,6 @@ export function PageBuilder({
             [activityIds[currentIndex + 1], activityIds[currentIndex]];
         }
 
-        console.log('[PageBuilder] Sending move down request:', {
-          dayId: pageId,
-          activityIds,
-        });
-
         const response = await fetch('/api/pathlab/activities', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -378,9 +294,6 @@ export function PageBuilder({
         if (!response.ok) {
           throw new Error('Failed to save activity order');
         }
-
-        const result = await response.json();
-        console.log('[PageBuilder] Move down API response:', result);
       } catch (error) {
         console.error('[PageBuilder] Failed to save move:', error);
       }
@@ -408,12 +321,7 @@ export function PageBuilder({
             )}
 
             <Button
-              onClick={() => {
-                console.log('========================================');
-                console.log('[PageBuilder] SAVE BUTTON CLICKED');
-                console.log('========================================');
-                save();
-              }}
+              onClick={save}
               disabled={isSaving || !isDirty}
               className={cn(
                 'transition-colors',
@@ -474,7 +382,7 @@ export function PageBuilder({
                 <PathActivityEditor
                   dayId={pageId}
                   activity={editingActivity}
-                  onSave={editingActivity ? handleActivityUpdateRefresh : handleActivityCreateRefresh}
+                  onSave={handleActivitySaveRefresh}
                   onCancel={() => {
                     setShowActivityEditor(false);
                     setEditingActivity(undefined);
@@ -485,15 +393,22 @@ export function PageBuilder({
               </Card>
             ) : null}
 
-            <PageTimeline
-              activities={page.activities}
-              onReorder={handleActivityReorder}
-              onEdit={handleActivityEdit}
-              onDelete={handleActivityDelete}
-              onMoveUp={handleMoveActivityUp}
-              onMoveDown={handleMoveActivityDown}
-              disabled={isSaving}
-            />
+            {!activitiesLoaded ? (
+              <div className="flex items-center justify-center py-12 text-neutral-500">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading activities...
+              </div>
+            ) : (
+              <PageTimeline
+                activities={page.activities}
+                onReorder={handleActivityReorder}
+                onEdit={handleActivityEdit}
+                onDelete={handleActivityDelete}
+                onMoveUp={handleMoveActivityUp}
+                onMoveDown={handleMoveActivityDown}
+                disabled={isSaving}
+              />
+            )}
           </div>
         </div>
 

@@ -128,7 +128,7 @@ export function AdminStudentOnboarding() {
     try {
       const res = await fetch("/api/admin/onboarding");
       const data = await res.json();
-      setRows(data);
+      setRows(Array.isArray(data) ? data : []);
     } catch {
       // silently fail — table will be empty
     } finally {

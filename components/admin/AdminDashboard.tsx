@@ -16,8 +16,10 @@ import { AdminJourneyPeek } from "./AdminJourneyPeek";
 import { AdminDirectionFinder } from "./AdminDirectionFinder";
 import { AdminHackathonParticipants } from "./AdminHackathonParticipants";
 import { AdminHackathonAnalytics } from "./AdminHackathonAnalytics";
+import { AdminHackathonQuestionnaire } from "./AdminHackathonQuestionnaire";
 import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
 import { AdminStudentOnboarding } from "./AdminStudentOnboarding";
+import { AdminEventTracker } from "./AdminEventTracker";
 import {
   Users,
   Activity,
@@ -29,6 +31,7 @@ import {
   Trophy,
   TestTube,
   GraduationCap,
+  Zap,
 } from "lucide-react";
 
 export function AdminDashboard() {
@@ -68,6 +71,10 @@ export function AdminDashboard() {
           <TabsTrigger value="beta" className="flex items-center gap-2">
             <TestTube className="h-4 w-4" />
             Beta
+          </TabsTrigger>
+          <TabsTrigger value="event-tracker" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Event Tracker
           </TabsTrigger>
           <TabsTrigger value="student-onboarding" className="flex items-center gap-2">
             <GraduationCap className="h-4 w-4" />
@@ -121,10 +128,14 @@ export function AdminDashboard() {
               <Tabs defaultValue="participants" className="space-y-4">
                 <TabsList>
                   <TabsTrigger value="participants">Participants</TabsTrigger>
+                  <TabsTrigger value="questionnaire">Questionnaire</TabsTrigger>
                   <TabsTrigger value="analytics">Page Analytics</TabsTrigger>
                 </TabsList>
                 <TabsContent value="participants">
                   <AdminHackathonParticipants key={`hackathon-${refreshKey}`} />
+                </TabsContent>
+                <TabsContent value="questionnaire">
+                  <AdminHackathonQuestionnaire key={`questionnaire-${refreshKey}`} />
                 </TabsContent>
                 <TabsContent value="analytics">
                   <AdminHackathonAnalytics />
@@ -136,6 +147,10 @@ export function AdminDashboard() {
 
         <TabsContent value="beta" className="space-y-4">
           <AdminBetaRegistrations key={`beta-${refreshKey}`} />
+        </TabsContent>
+
+        <TabsContent value="event-tracker" className="space-y-4">
+          <AdminEventTracker key={`event-tracker-${refreshKey}`} />
         </TabsContent>
 
         <TabsContent value="student-onboarding" className="space-y-4">

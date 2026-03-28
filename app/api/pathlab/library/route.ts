@@ -82,31 +82,9 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
-    // 6. Parse and validate templates
-    const validTemplates = (templates || []).filter(template => {
-      try {
-        // Validate JSON structure
-        if (template.content_template) {
-          JSON.parse(JSON.stringify(template.content_template));
-        }
-        if (template.assessment_template) {
-          JSON.parse(JSON.stringify(template.assessment_template));
-        }
-        return true;
-      } catch (e) {
-        // Skip corrupt templates
-        logError(e, {
-          operation: 'validate_template',
-          templateId: template.id,
-          userId: user.id,
-        });
-        return false;
-      }
-    });
-
     return NextResponse.json({
-      templates: validTemplates,
-      total: validTemplates.length,
+      templates: templates || [],
+      total: templates?.length ?? 0,
     });
   } catch (error) {
     logError(error, {

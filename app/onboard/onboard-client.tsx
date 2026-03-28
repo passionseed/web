@@ -70,10 +70,17 @@ export function OnboardClient({
     async (nextStep: OnboardingStep, updates: Partial<CollectedData>) => {
       const nextData = { ...data, ...updates };
       setData(nextData);
+
+      if (nextStep === "account" && !isAnonymous) {
+        await saveState(nextStep, nextData);
+        router.push("/me");
+        return;
+      }
+
       setStep(nextStep);
       await saveState(nextStep, nextData);
     },
-    [data, saveState]
+    [data, isAnonymous, router, saveState]
   );
 
   const updateLanguage = useCallback(
