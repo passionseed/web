@@ -75,7 +75,9 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Valid fileName is required" }, { status: 400 });
     }
 
-    if (!fileName.includes(`submissions/${user.id}/`)) {
+    // 🛡️ SECURITY: Use startsWith() instead of includes() to prevent path traversal/IDOR.
+    // An attacker could bypass includes() by naming a file like `otheruser/submissions/${user.id}/file.ext`
+    if (!fileName.startsWith(`submissions/${user.id}/`)) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
