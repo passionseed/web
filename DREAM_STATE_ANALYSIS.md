@@ -148,22 +148,55 @@ Beyond the 7 dream state features, analysis revealed 3 missing capabilities:
 
 ---
 
+## Infrastructure & AI Tickets (PS-58 to PS-66)
+
+After the initial gap analysis, additional infrastructure and AI capability tickets were created:
+
+| Ticket | Title | Priority | Category |
+|--------|-------|----------|----------|
+| PS-58 | Sprint 2: MVP Scope Definition and Prioritization | P0 | Roadmap |
+| PS-59 | Seed creator CMS for expert contributors | P1 | Content |
+| PS-60 | E2E testing infrastructure with Detox | P1 | Testing |
+| PS-61 | Dashboard for seed velocity and completion funnel | P2 | Analytics |
+| PS-62 | Error monitoring with Sentry integration | P1 | Infra |
+| PS-63 | Thai NLP pipeline for reflection sentiment and themes | P1 | AI Infra |
+| PS-64 | Seed content quality metrics and iteration framework | P2 | Analytics |
+| PS-65 | GPU model serving for PathLab generation and expert chat | P2 | AI Infra |
+| PS-66 | TCAS program data sync and freshness monitoring | P2 | Data |
+
+**Note:** These tickets extend beyond the original 12-month dream state to address:
+- Production readiness (testing, monitoring, error tracking)
+- AI infrastructure (Thai NLP, GPU serving for local models)
+- Content operations (CMS for experts, quality metrics)
+- Data freshness (TCAS program synchronization)
+
+---
+
 ## Summary
 
 | Dream State Feature | Coverage | Tickets |
 |---------------------|----------|---------|
 | 1. Personalized seed queue | ✅ Complete | PS-4, PS-15, PS-16, PS-24, PS-45 |
-| 2. AI PathLab generation | ✅ Complete | PS-9, PS-26, PS-51 |
+| 2. AI PathLab generation | ✅ Complete | PS-9, PS-26, PS-51, PS-59, PS-65 |
 | 3. Real ikigai from reflections | ✅ Complete | PS-13, PS-14, PS-25, PS-43, PS-44 |
-| 4. Reflection trends → Direction Finder | ✅ Complete | PS-6, PS-28, PS-29, PS-52 |
-| 5. Expert conversation layer | ✅ Complete | PS-10, PS-27 |
-| 6. Full localization (Thai/English) | ⚠️ Partial | PS-31, PS-39 + **PS-54 (new)** |
+| 4. Reflection trends → Direction Finder | ✅ Complete | PS-6, PS-21, PS-28, PS-29, PS-52, PS-55 |
+| 5. Expert conversation layer | ✅ Complete | PS-10, PS-27, PS-63 |
+| 6. Full localization (Thai/English) | ✅ Complete | PS-31, PS-39, PS-54 |
 | 7. Social proof + cohort comparison | ✅ Complete | PS-7, PS-22, PS-30, PS-40 |
-| 8. Seed velocity tracking | 🆕 New | **PS-55 (new)** |
-| 9. Offline-first caching | 🆕 New | **PS-56 (new)** |
-| 10. Profile reveal UI | 🆕 New | **PS-57 (new)** |
+| 8. Seed velocity tracking | ✅ Complete | PS-55, PS-61 |
+| 9. Offline-first caching | ✅ Complete | PS-56 |
+| 10. Profile reveal UI | ✅ Complete | PS-57 |
 
-**Total Active Tickets:** 54 (was 50, added 4)
+**Infrastructure Additions:**
+| Category | Tickets |
+|----------|---------|
+| Testing & QA | PS-60 (E2E), PS-36 (A/B testing) |
+| Monitoring | PS-62 (Sentry), PS-35, PS-19 (analytics) |
+| AI Infrastructure | PS-63 (Thai NLP), PS-65 (GPU serving) |
+| Content Ops | PS-59 (CMS), PS-64 (quality metrics) |
+| Data | PS-66 (TCAS sync), PS-53 (RLS policies) |
+
+**Total Active Tickets:** 50 (PS-17 through PS-66)
 
 ---
 
