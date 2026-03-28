@@ -89,6 +89,18 @@ export async function deleteSession(token: string) {
   await getClient().from("hackathon_sessions").delete().eq("token", token);
 }
 
+/** True when the participant has submitted the hackathon onboarding (pre-questionnaire). */
+export async function hasCompletedHackathonOnboarding(
+  participantId: string
+): Promise<boolean> {
+  const { data } = await getClient()
+    .from("hackathon_pre_questionnaires")
+    .select("participant_id")
+    .eq("participant_id", participantId)
+    .maybeSingle();
+  return data != null;
+}
+
 export type HackathonTeam = {
   id: string;
   name: string;
