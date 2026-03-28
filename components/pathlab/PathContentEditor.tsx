@@ -23,20 +23,14 @@ interface PathContentEditorProps {
 }
 
 const CONTENT_TYPES: Array<{ value: PathContentType; label: string }> = [
-  // Inherited from nodes
   { value: "video", label: "Video (YouTube, Vimeo, etc.)" },
   { value: "short_video", label: "Short Video (< 2 min)" },
   { value: "canva_slide", label: "Canva Slide" },
   { value: "text", label: "Text / Markdown" },
   { value: "image", label: "Image" },
   { value: "pdf", label: "PDF Document" },
-  { value: "resource_link", label: "External Link" },
-  { value: "order_code", label: "Code Ordering Activity" },
-  // PathLab-specific
-  { value: "daily_prompt", label: "Daily Prompt" },
-  { value: "reflection_card", label: "Reflection Card" },
-  { value: "emotion_check", label: "Emotion Check" },
-  { value: "progress_snapshot", label: "Progress Snapshot" },
+  { value: "ai_chat", label: "AI Chat" },
+  { value: "npc_chat", label: "NPC Conversation" },
 ];
 
 export function PathContentEditor({
@@ -151,7 +145,7 @@ export function PathContentEditor({
           />
         </div>
 
-        {["video", "short_video", "canva_slide", "image", "pdf", "resource_link"].includes(newContentType) && (
+        {["video", "short_video", "canva_slide", "image", "pdf"].includes(newContentType) && (
           <div className="space-y-2">
             <Label htmlFor="contentUrl">URL</Label>
             <Input
@@ -163,7 +157,7 @@ export function PathContentEditor({
           </div>
         )}
 
-        {["text", "order_code", "daily_prompt", "reflection_card"].includes(newContentType) && (
+        {["text"].includes(newContentType) && (
           <div className="space-y-2">
             <Label htmlFor="contentBody">Content</Label>
             <Textarea

@@ -231,6 +231,14 @@ Authentication middleware in `middleware.ts` handles:
 - Use proper error handling to avoid information leakage
 - Follow Supabase authentication best practices
 
+## PathLab Schema Rule
+
+**REQUIRED:** Whenever you add, remove, or rename a column/table/enum in any PathLab-related migration or code (`path_days`, `path_activities`, `path_content`, `path_assessments`, `path_quiz_questions`, `path_activity_progress`, `path_assessment_submissions`, `path_enrollments`, `path_reflections`, `path_npc_conversations`, `path_npc_conversation_nodes`, `path_npc_conversation_choices`, `path_ai_chat_sessions`, `path_ai_chat_messages`, `activity_templates`, `page_templates`, `seeds`, `paths`, `expert_pathlabs`, `expert_profiles`, `seed_npc_avatars`), you MUST also update:
+
+**`/Users/pine/Documents/app_ps/ps_app/.claude/skills/expert-pathlab-manager/SKILL.md`**
+
+Update the relevant table row, enum list, required fields summary, and common mistakes section to match. Do this in the same response as the code change — never defer it.
+
 ## Module Resolution Rules
 - When working with components that have both `Component.tsx` and `Component/index.tsx`:
   1. ALWAYS check which version is imported in the consuming files

@@ -3,16 +3,18 @@ export type PathLabGeneratorDifficulty = "beginner" | "intermediate" | "advanced
 export type PathLabContentType =
   | "text"
   | "video"
+  | "short_video"
+  | "canva_slide"
   | "pdf"
   | "image"
-  | "resource_link";
+  | "ai_chat"
+  | "npc_chat";
 
 export type PathLabAssessmentType =
   | "none"
   | "text_answer"
-  | "quiz"
   | "file_upload"
-  | "checklist";
+  | "image_upload";
 
 export interface PathLabLearningObjective {
   day: number;
