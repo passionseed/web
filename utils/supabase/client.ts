@@ -6,7 +6,7 @@ const isLocal = supabaseUrl?.includes("127.0.0.1") || supabaseUrl?.includes("loc
 export function createClient() {
   return createBrowserClient(
     supabaseUrl,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
         // When pointing at localhost (no Docker), disable background token

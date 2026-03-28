@@ -1,0 +1,291 @@
+{
+  "problemId": "P1",
+  "title": {
+    "en": "The Last-Mile Chronic Disease Gap",
+    "th": "ช่องว่างโรคเรื้อรังในพื้นที่ห่างไกล"
+  },
+  "track": "Traditional & Integrative Healthcare",
+  "trackNum": "01",
+  "color": "#91C4E3",
+  "hook": {
+    "en": "Over 70% of Thai elderly live in rural areas far from chronic disease screening systems, causing diseases to be detected too late.",
+    "th": "ผู้สูงอายุไทยกว่า 70% อาศัยในชนบทห่างไกลจากระบบการตรวจคัดกรองโรคเรื้อรัง ส่งผลให้โรคถูกตรวจพบในระยะที่สายเกินไป"
+  },
+  "challenge": {
+    "en": "How might we design a low-cost, community-deployable screening tool that enables rural communities to detect chronic disease risk early — without requiring hospital infrastructure?",
+    "th": "เราจะออกแบบเครื่องมือคัดกรองต้นทุนต่ำที่ชุมชนสามารถนำไปใช้เองได้ เพื่อช่วยให้คนในชนบทตรวจพบความเสี่ยงโรคเรื้อรังได้ตั้งแต่เนิ่น ๆ โดยไม่ต้องพึ่งโรงพยาบาลได้อย่างไร?"
+  },
+  "tags": [
+    "Rural Health",
+    "Screening",
+    "Low-cost Tech"
+  ],
+  "grading": {
+    "severity": {
+      "score": 9,
+      "justification": "NCDs account for 74-77% of all deaths in Thailand. With 49.2% of elderly having hypertension and 20.1% having diabetes, and only 18-46% effective treatment coverage, the health burden is severe."
+    },
+    "difficulty": {
+      "score": 8,
+      "justification": "Geographic barriers in rural Thailand are significant - 53% of elderly live in rural areas far from facilities. Systemic issues include workforce shortage, limited facility hours, fragmented care pathways."
+    },
+    "impact": {
+      "score": 9,
+      "justification": "Early detection of NCDs has enormous impact potential: preventing complications, reducing premature mortality, decreasing healthcare costs, and improving quality of life for millions."
+    },
+    "urgency": {
+      "score": 8,
+      "justification": "Thailand is rapidly aging - elderly population will reach 30% by 2038. Each year of delayed action means more undiagnosed cases progressing to complications."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "Thailand's elderly population (60+) is 20.36% of total population, approximately 12.5 million people",
+      "source": "Department of Older Persons, Thailand",
+      "year": "2024"
+    },
+    {
+      "stat": "NCDs account for 74-77% of all deaths in Thailand",
+      "source": "Ministry of Public Health Thailand / WHO",
+      "year": "2023"
+    },
+    {
+      "stat": "49.2% of Thai elderly have hypertension, 20.1% have diabetes",
+      "source": "Thailand National Health Examination Survey",
+      "year": "2020"
+    },
+    {
+      "stat": "53% of older people in Thailand live in rural areas, facing significant healthcare access barriers",
+      "source": "WHO Ageing Data Portal",
+      "year": "2015"
+    },
+    {
+      "stat": "Only 4.9% of eligible Thais used annual health checkups in 2015",
+      "source": "Frontiers in Public Health",
+      "year": "2024"
+    },
+    {
+      "stat": "Effective coverage for diabetes treatment in Thailand is only 18-46%",
+      "source": "BMJ Open",
+      "year": "2022"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "Rural Elderly (60+ years)",
+      "size": "Approximately 6.6 million",
+      "painPoints": [
+        "Physical distance from healthcare facilities",
+        "Transportation barriers and costs",
+        "Limited mobility due to age-related disabilities",
+        "Low health literacy"
+      ]
+    },
+    {
+      "group": "Working-age adults in rural areas",
+      "size": "Estimated 15-20 million",
+      "painPoints": [
+        "NCD clinic hours conflict with work schedules",
+        "Cannot afford time off for screening",
+        "Low awareness - often asymptomatic until disease progression"
+      ]
+    },
+    {
+      "group": "Village Health Volunteers",
+      "size": "Over 1 million VHVs in Thailand",
+      "painPoints": [
+        "Limited training on NCD screening",
+        "Overburdened with multiple health priorities",
+        "Inadequate diagnostic equipment at community level"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "Rural elderly population (60+)",
+        "needs": [
+          "Accessible screening",
+          "Early detection",
+          "Treatment linkage"
+        ],
+        "painPoints": [
+          "Distance from facilities",
+          "Transportation costs",
+          "Low health literacy"
+        ]
+      },
+      {
+        "role": "Village Health Volunteers (VHVs)",
+        "needs": [
+          "NCD screening training",
+          "Diagnostic equipment",
+          "Referral pathways"
+        ],
+        "painPoints": [
+          "Limited NCD training",
+          "Overburdened workload",
+          "Inadequate equipment"
+        ]
+      },
+      {
+        "role": "Sub-district Health Promoting Hospitals",
+        "needs": [
+          "Workforce",
+          "Equipment",
+          "Extended hours"
+        ],
+        "painPoints": [
+          "Physician shortage",
+          "Limited diagnostic equipment",
+          "Overcrowding"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Ministry of Public Health (MOPH)",
+        "needs": [
+          "Policy implementation",
+          "Budget allocation"
+        ],
+        "painPoints": [
+          "Resource constraints",
+          "Coordination challenges"
+        ]
+      },
+      {
+        "role": "National Health Security Office (NHSO)",
+        "needs": [
+          "Coverage expansion",
+          "Cost control"
+        ],
+        "painPoints": [
+          "Fragmented data systems",
+          "Budget pressures"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Geographic and transportation barriers",
+      "explanation": "Rural communities often located 1+ hours from healthcare facilities; limited public transportation; travel costs prohibitive for low-income elderly.",
+      "systemic": true
+    },
+    {
+      "cause": "Healthcare workforce shortage in rural areas",
+      "explanation": "Thailand has severe physician shortage in rural regions (1.2 per 1,000 population vs urban); high turnover of health workers.",
+      "systemic": true
+    },
+    {
+      "cause": "Inadequate primary healthcare infrastructure for NCDs",
+      "explanation": "NCD clinics operate limited hours (8am-4pm weekdays) excluding working population; basic diagnostic equipment unavailable at community level.",
+      "systemic": true
+    },
+    {
+      "cause": "Low health literacy and awareness",
+      "explanation": "Many rural residents don't understand NCD risks or symptoms; cultural beliefs may delay care-seeking; only 4.9% utilize free annual checkups.",
+      "systemic": true
+    },
+    {
+      "cause": "Fragmented screening-to-treatment pathway",
+      "explanation": "Large gap between screening and definitive diagnosis; high loss to follow-up after screening; no tracking system for patients who don't return.",
+      "systemic": true
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "Village Health Volunteers (VHVs) Program",
+      "approach": "1 million community volunteers trained to provide basic health services including BP monitoring and blood glucose testing",
+      "strengths": [
+        "Massive reach",
+        "Trusted community members",
+        "Low cost"
+      ],
+      "weaknesses": [
+        "Limited NCD-specific training",
+        "Inadequate diagnostic equipment",
+        "High workload"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Mobile Health Clinics",
+      "approach": "Thai Red Cross and hospital-based mobile units that travel to remote villages on rotating schedules",
+      "strengths": [
+        "Can reach most remote communities",
+        "Identified 58-75% of previously undiagnosed NCD cases"
+      ],
+      "weaknesses": [
+        "High operational costs",
+        "Inconsistent coverage",
+        "Limited follow-up capacity"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "NCD Plus Clinics",
+      "approach": "Ministry of Public Health facilities providing comprehensive NCD care at district hospital level",
+      "strengths": [
+        "Integrated care pathway",
+        "Professional medical staff"
+      ],
+      "weaknesses": [
+        "Limited hours",
+        "Located at district level - still far for many rural residents"
+      ],
+      "region": "Thailand"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "AI-Powered Risk Stratification Tools",
+      "description": "Develop simple, non-invasive screening tools using AI analysis of basic measurements to identify high-risk individuals without blood tests",
+      "potentialImpact": "Could reduce screening costs by 70-80% while identifying 80%+ of high-risk individuals",
+      "feasibility": "High"
+    },
+    {
+      "area": "Portable Multi-Parameter Point-of-Care Devices",
+      "description": "Deploy affordable, portable diagnostic devices (BP, glucose, HbA1c, lipids) at VHV/community level with simple color-coded results",
+      "potentialImpact": "Brings diagnostic capability to village level, eliminating travel barrier",
+      "feasibility": "High"
+    },
+    {
+      "area": "VHV Capacity Building and NCD Specialization",
+      "description": "Create specialized NCD-focused training for subset of VHVs with deeper knowledge, diagnostic tools, and authority to initiate basic interventions",
+      "potentialImpact": "Improves screening quality and coverage; creates career pathway for VHVs",
+      "feasibility": "Medium"
+    }
+  ],
+  "resources": [
+    {
+      "title": "Thailand National Health Examination Survey",
+      "type": "Research Survey",
+      "url": "https://hhisurvey.anamai.moph.go.th/",
+      "description": "Comprehensive national survey providing NCD prevalence, risk factors, and health status data"
+    },
+    {
+      "title": "Village Health Volunteers of Thailand - CHW Central",
+      "type": "Program Profile",
+      "url": "https://chwcentral.org/village-health-volunteers-of-thailand/",
+      "description": "Overview of Thailand's VHV program including structure, training, activities, and impact"
+    },
+    {
+      "title": "WHO Package of Essential NCD Interventions (WHO PEN)",
+      "type": "WHO Guidelines",
+      "url": "https://www.who.int/teams/noncommunicable-diseases/who-package-of-essential-ncd-interventions",
+      "description": "WHO framework for NCD prevention and management at primary care level"
+    }
+  ],
+  "keyInsights": [
+    "Thailand has one of the world's most extensive community health worker networks (1 million VHVs), but it remains underutilized for proactive NCD screening.",
+    "The gap between screening and treatment is the critical failure point - 58-75% of NCD cases are first diagnosed by mobile units, yet effective treatment coverage remains only 18-46%.",
+    "Current NCD clinic operating hours (8am-4pm weekdays) systematically exclude the working-age population who face the highest premature mortality from NCDs.",
+    "Rural Thailand's elderly population is already 20%+ and will reach 30%+ by 2038, making this an urgent demographic imperative."
+  ],
+  "tangibleEquivalent": {
+    "en": "Like leaving your grandparents' check engine light on until the car breaks down.",
+    "th": "เหมือนปล่อยให้ไฟเตือนเครื่องยนต์ของปู่ย่าตายายสว่างค้างไว้ จนกว่ารถจะพัง"
+  }
+}

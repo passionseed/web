@@ -1,0 +1,281 @@
+{
+  "problemId": "P3",
+  "title": {
+    "en": "Preventive Intervention at Scale",
+    "th": "การแทรกแซงเชิงป้องกันในวงกว้าง"
+  },
+  "track": "Traditional & Integrative Healthcare",
+  "trackNum": "01",
+  "color": "#91C4E3",
+  "hook": {
+    "en": "Only 1 in 5 Thais at high risk of NCDs receives preventive intervention before the disease develops.",
+    "th": "มีคนไทยเพียง 1 ใน 5 ที่มีความเสี่ยงสูงต่อโรค NCDs ที่ได้รับการแทรกแซงเชิงป้องกันก่อนที่โรคจะพัฒนาขึ้น"
+  },
+  "challenge": {
+    "en": "How might we build a predictive health risk platform that identifies high-risk individuals early and triggers personalized preventive action — before symptoms appear?",
+    "th": "เราจะสร้างแพลตฟอร์มประเมินความเสี่ยงด้านสุขภาพเชิงพยากรณ์ที่ระบุตัวบุคคลที่มีความเสี่ยงสูงได้แต่เนิ่น ๆ และกระตุ้นให้เกิดการป้องกันแบบเฉพาะบุคคลก่อนที่อาการจะปรากฏได้อย่างไร?"
+  },
+  "tags": [
+    "Predictive Analytics",
+    "NCDs",
+    "Behavioral Change"
+  ],
+  "grading": {
+    "severity": {
+      "score": 9,
+      "justification": "74-77% of Thai deaths are from NCDs (400,000 annually). 27% of diabetics and 48% of hypertensives are unaware of their condition."
+    },
+    "difficulty": {
+      "score": 8,
+      "justification": "Requires healthcare system transformation from treatment-focused to prevention-focused, fragmented data systems, behavioral intervention gaps."
+    },
+    "impact": {
+      "score": 9,
+      "justification": "THB 211B investment could save 310,000 lives and return THB 430B. Early intervention prevents complications and reduces healthcare costs."
+    },
+    "urgency": {
+      "score": 9,
+      "justification": "Thailand is rapidly aging; each year of delayed action means more undiagnosed cases progressing to complications."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "NCDs account for 74-77% of all deaths in Thailand (400,000 annually)",
+      "source": "Ministry of Public Health Thailand / WHO",
+      "year": "2023"
+    },
+    {
+      "stat": "27% of diabetics and 48% of hypertensives in Thailand are unaware of their condition",
+      "source": "Thailand National Health Examination Survey",
+      "year": "2020"
+    },
+    {
+      "stat": "THB 1.6 trillion annual economic cost from NCDs (9.7% of GDP)",
+      "source": "Ministry of Public Health Thailand",
+      "year": "2023"
+    },
+    {
+      "stat": "Only 4.9% of eligible Thais used annual health checkups in 2015",
+      "source": "Frontiers in Public Health",
+      "year": "2024"
+    },
+    {
+      "stat": "THB 211B investment could save 310,000 lives and return THB 430B",
+      "source": "Health Intervention and Technology Assessment Program (HITAP)",
+      "year": "2023"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "High-risk individuals (undiagnosed)",
+      "size": "Estimated 3-5 million Thais with undiagnosed pre-diabetes or pre-hypertension",
+      "painPoints": [
+        "Unaware of risk status",
+        "No preventive intervention",
+        "Progressing to disease"
+      ]
+    },
+    {
+      "group": "Working-age adults (35-59)",
+      "size": "Approximately 20 million",
+      "painPoints": [
+        "Limited time for health checkups",
+        "Low awareness of risk factors",
+        "Lifestyle-related risk factors"
+      ]
+    },
+    {
+      "group": "Rural populations",
+      "size": "Approximately 30 million",
+      "painPoints": [
+        "Limited access to screening",
+        "Lower health literacy",
+        "Geographic barriers to care"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "High-risk individuals",
+        "needs": [
+          "Risk awareness",
+          "Personalized prevention plans",
+          "Behavioral support"
+        ],
+        "painPoints": [
+          "Unaware of risk",
+          "No intervention access"
+        ]
+      },
+      {
+        "role": "Primary care providers",
+        "needs": [
+          "Risk prediction tools",
+          "Prevention protocols",
+          "Patient tracking"
+        ],
+        "painPoints": [
+          "Reactive care model",
+          "Limited prevention training"
+        ]
+      },
+      {
+        "role": "Village Health Volunteers",
+        "needs": [
+          "Screening tools",
+          "Prevention education materials",
+          "Referral pathways"
+        ],
+        "painPoints": [
+          "Limited NCD focus",
+          "Overburdened workload"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Ministry of Public Health",
+        "needs": [
+          "Population health data",
+          "Cost-effective interventions",
+          "Policy implementation"
+        ],
+        "painPoints": [
+          "Fragmented data",
+          "Treatment-focused budget"
+        ]
+      },
+      {
+        "role": "National Health Security Office",
+        "needs": [
+          "Prevention coverage",
+          "Cost savings",
+          "Outcome tracking"
+        ],
+        "painPoints": [
+          "Treatment-focused reimbursement",
+          "Limited prevention incentives"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Healthcare system designed for treatment, not prevention",
+      "explanation": "Current system incentivizes treatment over prevention; NCD clinics focus on diagnosed patients; no systematic risk stratification.",
+      "systemic": true
+    },
+    {
+      "cause": "Fragmented data systems",
+      "explanation": "Patient data scattered across facilities; no unified risk scoring; limited predictive analytics capability.",
+      "systemic": true
+    },
+    {
+      "cause": "No predictive analytics infrastructure",
+      "explanation": "Lack of AI/ML tools for risk prediction; no integration of lifestyle, genetic, and clinical data for personalized risk assessment.",
+      "systemic": true
+    },
+    {
+      "cause": "Behavioral intervention gaps",
+      "explanation": "Limited personalized behavior change programs; no continuous engagement with at-risk individuals; one-size-fits-all approaches.",
+      "systemic": true
+    },
+    {
+      "cause": "Multi-sectoral coordination failure",
+      "explanation": "Health, education, agriculture, urban planning operate in silos; no integrated approach to NCD prevention.",
+      "systemic": true
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "NCD Plus Clinics",
+      "approach": "Ministry of Public Health facilities providing comprehensive NCD care at district hospital level",
+      "strengths": [
+        "Integrated care pathway",
+        "Professional medical staff"
+      ],
+      "weaknesses": [
+        "Treatment-focused",
+        "Limited prevention services"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "Village Health Volunteers Program",
+      "approach": "1 million community volunteers providing basic health services and health promotion",
+      "strengths": [
+        "Massive reach",
+        "Community trust"
+      ],
+      "weaknesses": [
+        "Limited NCD prevention training",
+        "No risk prediction tools"
+      ],
+      "region": "Thailand"
+    },
+    {
+      "name": "30 Baht Scheme Expansion",
+      "approach": "Universal coverage expansion to include prevention services at any facility",
+      "strengths": [
+        "Removes financial barriers",
+        "Increases access"
+      ],
+      "weaknesses": [
+        "Still treatment-focused",
+        "Limited prevention infrastructure"
+      ],
+      "region": "Thailand"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "AI Predictive Risk Platform",
+      "description": "Build ML models integrating clinical, lifestyle, and environmental data to predict NCD risk and trigger personalized interventions",
+      "potentialImpact": "Identify high-risk individuals before disease develops; enable targeted prevention",
+      "feasibility": "Medium-High"
+    },
+    {
+      "area": "VHV Digital Enablement",
+      "description": "Equip VHVs with mobile tools for risk screening, health education, and follow-up tracking",
+      "potentialImpact": "Scale prevention to community level; continuous engagement with at-risk individuals",
+      "feasibility": "High"
+    },
+    {
+      "area": "Personalized Behavior Change Platform",
+      "description": "Digital platform delivering personalized lifestyle interventions based on individual risk profiles",
+      "potentialImpact": "Sustained behavior change; reduced disease progression",
+      "feasibility": "Medium-High"
+    }
+  ],
+  "resources": [
+    {
+      "title": "Thailand National Health Examination Survey",
+      "type": "Research Survey",
+      "url": "https://hhisurvey.anamai.moph.go.th/",
+      "description": "Comprehensive national survey providing NCD prevalence and risk factor data"
+    },
+    {
+      "title": "HITAP NCD Prevention Cost-Effectiveness Analysis",
+      "type": "Research Report",
+      "url": "https://www.hitap.net/",
+      "description": "Economic analysis of NCD prevention interventions in Thailand"
+    },
+    {
+      "title": "WHO Package of Essential NCD Interventions (WHO PEN)",
+      "type": "WHO Guidelines",
+      "url": "https://www.who.int/teams/noncommunicable-diseases/who-package-of-essential-ncd-interventions",
+      "description": "WHO framework for NCD prevention and management at primary care level"
+    }
+  ],
+  "keyInsights": [
+    "The economic case is compelling: THB 211B investment could save 310,000 lives and return THB 430B.",
+    "91% of NCD costs come from lost productivity, not treatment - prevention is economically essential.",
+    "Thailand has key assets: 1M+ VHVs, 9,800+ PHC centers, universal coverage, growing digital health adoption.",
+    "The gap is not infrastructure but system design: healthcare is organized for treatment, not prevention."
+  ],
+  "tangibleEquivalent": {
+    "en": "Like ignoring a leaky roof until the house floods. 400,000 lives lost yearly.",
+    "th": "เหมือนเพิกเฉยต่อหลังคารั่วจนน้ำท่วมบ้าน 400,000 ชีวิตสูญเสียทุกปี"
+  }
+}

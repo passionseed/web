@@ -49,6 +49,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop trigger if exists to make migration idempotent
+DROP TRIGGER IF EXISTS ai_chat_usage_updated_at ON public.ai_chat_usage;
+
 CREATE TRIGGER ai_chat_usage_updated_at
 BEFORE UPDATE ON public.ai_chat_usage
 FOR EACH ROW
@@ -97,11 +100,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ALTER TABLE public.ai_chat_usage ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own usage
+DROP POLICY IF EXISTS "Users can view their own AI chat usage" ON public.ai_chat_usage;
 CREATE POLICY "Users can view their own AI chat usage"
   ON public.ai_chat_usage FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Only service role can insert/update (via edge function)
+DROP POLICY IF EXISTS "Service role can manage AI chat usage" ON public.ai_chat_usage;
 CREATE POLICY "Service role can manage AI chat usage"
   ON public.ai_chat_usage FOR ALL
   USING (auth.role() = 'service_role');

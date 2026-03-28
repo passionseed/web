@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -42,6 +43,8 @@ const FloatingOrb = ({ color, size, initialX, initialY, duration, delay }: any) 
 export default function AppBetaSuccessPage() {
   const [particles, setParticles] = useState<Particle[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const searchParams = useSearchParams();
+  const code = searchParams.get("code") ?? "";
 
   // Confetti effect adapted for dark mode
   useEffect(() => {
@@ -177,72 +180,82 @@ export default function AppBetaSuccessPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
-                <CardTitle className="text-4xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 font-[family-name:var(--font-kodchasan)] tracking-tight px-4">
-                  ลงทะเบียนสำเร็จ!
+                <CardTitle className="text-4xl font-black mb-3 text-white font-[family-name:var(--font-kodchasan)] tracking-tight px-4 leading-[1.6]">
+                  ขั้นตอนสุดท้าย!
                 </CardTitle>
-                <CardDescription className="text-slate-400 text-lg font-[family-name:var(--font-kodchasan)]">
-                  ขอบคุณที่เข้าร่วมเป็นส่วนหนึ่งของ <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 font-bold italic">Passionseed</span> Beta
+                <CardDescription className="text-slate-300 text-base font-[family-name:var(--font-kodchasan)]">
+                  แอด LINE OA ของเราและส่งรหัส 4 หลักมาเพื่อยืนยันได้เลย
                 </CardDescription>
               </motion.div>
             </CardHeader>
 
             <CardContent className="space-y-8 px-8 pb-12">
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="text-base text-slate-300 font-[family-name:var(--font-kodchasan)] leading-relaxed bg-white/5 rounded-2xl p-6 border border-white/5"
-              >
-                เราจะทำการตรวจสอบใบสมัครของคุณและติดต่อกลับ พร้อมรายละเอียดการเข้าถึง Beta ภายในเร็วๆ นี้ ผ่าน Openchat
-              </motion.p>
+              {/* Unique code — top */}
+              {code && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3"
+                >
+                  <p className="text-sm text-slate-400 font-[family-name:var(--font-kodchasan)]">
+                    รหัสประจำตัวของคุณ
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    {code.split("").map((char, i) => (
+                      <span
+                        key={i}
+                        className="flex items-center justify-center w-14 h-14 rounded-xl bg-white/10 border border-white/20 text-3xl font-black text-white tracking-widest"
+                      >
+                        {char}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-sm text-orange-400 font-semibold font-[family-name:var(--font-kodchasan)]">
+                    ถ้าไม่ส่งพี่จะไม่เห็นข้อความแล้วตอบกลับไปไม่ได้นะ
+                  </p>
+                </motion.div>
+              )}
 
               {/* LINE OA Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.7 }}
-                className="pt-6 space-y-6"
+                className="space-y-6"
               >
                 <div className="text-center space-y-3">
-                  <h3 className="text-xl font-bold text-white font-[family-name:var(--font-kodchasan)]">
-                    เข้าร่วม LINE OpenChat เพื่อการแจ้งเตือนเพิ่มเติมสำหรับ Close Beta
-                  </h3>
-
                   {/* QR Code */}
-                  <div className="flex justify-center py-6">
+                  <div className="flex justify-center py-4">
                     <div className="relative group">
                       <div className="absolute inset-0 bg-[#00B900]/20 blur-xl rounded-2xl transition-all duration-500 group-hover:bg-[#00B900]/40 group-hover:blur-2xl"></div>
                       <div className="relative bg-white p-3 rounded-2xl shadow-xl border-2 border-slate-700/50 transform transition-transform duration-500 group-hover:-translate-y-2">
                         <Image
-                          src="/CBT/CBT_OpenChat.jpg"
-                          alt="LINE OpenChat QR Code"
+                          src="https://qr-official.line.me/gs/M_161irjbq_GW.png?oat_content=qr"
+                          alt="LINE OA QR Code"
                           width={192}
                           height={192}
                           className="w-48 h-48 rounded-xl object-contain object-center"
+                          unoptimized
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* LINE OA Link */}
-                  <div className="space-y-4">
-                    <p className="text-sm text-slate-500 font-[family-name:var(--font-kodchasan)]">
-                      หรือคลิกเข้าร่วมผ่านลิงก์ด้านล่าง
-                    </p>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <a
-                        href="https://line.me/ti/g2/akGYb2jf08_E2GJZjuhRwDEMBviCzJCFKLagsA?utm_source=invitation&utm_medium=link_copy&utm_campaign=default"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-3 px-6 py-3 bg-[#00B900] text-white rounded-xl shadow-[0_0_20px_rgba(0,185,0,0.3)] hover:bg-[#00A000] hover:shadow-[0_0_30px_rgba(0,185,0,0.5)] transition-all font-[family-name:var(--font-kodchasan)] font-semibold text-base border border-white/10 w-full sm:w-auto"
-                      >
-                        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.771.039 1.078l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
-                        </svg>
-                        เข้าร่วม LINE OpenChat
-                      </a>
-                    </motion.div>
-                  </div>
+                  {/* Add Friend button */}
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <a
+                      href="https://lin.ee/uFruUqa"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-3 px-6 py-3 bg-[#00B900] text-white rounded-xl shadow-[0_0_20px_rgba(0,185,0,0.3)] hover:bg-[#00A000] hover:shadow-[0_0_30px_rgba(0,185,0,0.5)] transition-all font-[family-name:var(--font-kodchasan)] font-semibold text-base border border-white/10 w-full sm:w-auto"
+                    >
+                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.628-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.771.039 1.078l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+                      </svg>
+                      เพิ่มเพื่อน LINE OA
+                    </a>
+                  </motion.div>
                 </div>
               </motion.div>
 
@@ -256,7 +269,7 @@ export default function AppBetaSuccessPage() {
                     <Button className="group relative w-full h-14 overflow-hidden rounded-xl bg-transparent border-none p-0 mt-2">
                       <div className="absolute inset-0 bg-white/10 hover:bg-white/20 transition-colors border border-white/20 rounded-xl"></div>
                       <div className="relative z-10 flex items-center justify-center gap-2 text-white font-bold text-lg w-full h-full font-[family-name:var(--font-kodchasan)]">
-                        <span>กลับหน้าหลัก</span>
+                        <span>แอด LINE และส่งรหัสแล้ว กลับหน้าหลัก</span>
                         <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                       </div>
                     </Button>

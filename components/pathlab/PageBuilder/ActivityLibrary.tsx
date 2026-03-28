@@ -61,7 +61,8 @@ export function ActivityLibrary({ onSelectTemplate, disabled = false }: Activity
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<ActivityTemplateType | 'all'>('all');
 
-  // Fetch templates
+  // Fetch templates — only refetch when type filter changes, not on search
+  // (search is filtered client-side to avoid unnecessary API calls)
   useEffect(() => {
     async function fetchTemplates() {
       try {
@@ -71,9 +72,6 @@ export function ActivityLibrary({ onSelectTemplate, disabled = false }: Activity
         const params = new URLSearchParams();
         if (selectedType !== 'all') {
           params.append('type', selectedType);
-        }
-        if (searchQuery) {
-          params.append('search', searchQuery);
         }
         params.append('sortBy', 'popular');
 
@@ -97,7 +95,7 @@ export function ActivityLibrary({ onSelectTemplate, disabled = false }: Activity
     }
 
     fetchTemplates();
-  }, [selectedType, searchQuery]);
+  }, [selectedType]);
 
   // Filter templates by search
   const filteredTemplates = useMemo(() => {

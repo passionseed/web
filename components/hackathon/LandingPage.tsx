@@ -933,82 +933,100 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                         </div>
                     </section>
 
-                    {/* Futurist Fest Section */}
-                    <section className="py-32 relative z-10 overflow-hidden flex items-center justify-center min-h-[60vh]">
-                        {/* Dramatic Lighting Background */}
-                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#91C4E3]/10 via-[#03050a]/80 to-[#03050a] pointer-events-none" />
+                    {/* Futurist Fest Section - Redesigned */}
+                    <section className="py-24 md:py-32 relative z-10 overflow-hidden">
+                        {/* Subtle ambient glow */}
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#91C4E3]/5 via-transparent to-transparent pointer-events-none" />
 
-                        {/* Animated Orbits/Rings */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-[#91C4E3]/10 rounded-full animate-[spin_60s_linear_infinite] pointer-events-none" />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-[#A594BA]/10 rounded-full animate-[spin_40s_linear_infinite_reverse] pointer-events-none" />
+                        <div className="container mx-auto px-4 relative z-20">
+                            <div className="max-w-2xl mx-auto">
+                                {/* Modern Ticket Card */}
+                                <div className="group relative">
+                                    {/* Outer glow effect */}
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-[#91C4E3]/20 via-[#A594BA]/20 to-[#91C4E3]/20 rounded-[2rem] blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
 
-                        <div className="absolute right-20 bottom-1/4 opacity-15 pointer-events-none" style={{ animation: 'floatReverse 8s infinite ease-in-out' }}>
-                            <img src="/hackathon/Creature/Clione.svg" alt="" className="w-48 h-48" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 18px rgba(145,196,227,0.5))', transform: 'rotate(30deg)' }} />
-                        </div>
+                                    {/* Main card */}
+                                    <div className="relative bg-gradient-to-br from-[#0d1219]/95 to-[#0a0f16]/95 backdrop-blur-xl rounded-[2rem] border border-[#91C4E3]/20 overflow-hidden">
+                                        {/* Top accent bar */}
+                                        <div className="h-1 bg-gradient-to-r from-[#91C4E3] via-[#A594BA] to-[#91C4E3]" />
 
-                        <div className="container mx-auto px-4 relative z-20 text-center">
-                            <div className="relative mx-auto w-full max-w-[500px] flex flex-col drop-shadow-2xl">
-                                {/* Top Ticket Section (Blue Gradient with Circles & Grain) */}
-                                <div className="relative bg-[#3b82f6] bg-gradient-to-tr from-[#2563eb] to-[#60a5fa] rounded-t-[2.5rem] p-10 md:p-14 overflow-hidden min-h-[250px] flex flex-col justify-center pb-12">
-                                    {/* Grain Effect */}
-                                    <div className="absolute inset-0 opacity-[0.15] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+                                        {/* Header Section */}
+                                        <div className="relative px-8 md:px-12 pt-10 md:pt-14 pb-8 text-center">
+                                            {/* Edition badge */}
+                                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#91C4E3]/10 border border-[#91C4E3]/30 mb-6">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#91C4E3] animate-pulse" />
+                                                <span className="text-[#91C4E3] text-xs font-medium tracking-widest uppercase">2026 Edition</span>
+                                            </div>
 
-                                    {/* Background Decorative Circles */}
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] rounded-full border-[1px] border-white/20 pointer-events-none" />
-                                    <div className="absolute top-[60%] left-[10%] w-[100px] h-[100px] rounded-full border-[1px] border-white/20 pointer-events-none" />
-                                    <div className="absolute -top-10 -right-10 w-[150px] h-[150px] rounded-full bg-white/10 blur-xl pointer-events-none" />
+                                            {/* Main Title */}
+                                            <h2 className="text-5xl md:text-7xl font-black text-white mb-3 tracking-[0.15em]" style={{
+                                                textShadow: '0 0 60px rgba(145,196,227,0.5), 0 0 120px rgba(145,196,227,0.3)'
+                                            }}>
+                                                FUTURIST
+                                            </h2>
 
-                                    {/* Top Info */}
-                                    <div className="absolute top-8 left-8 text-white/80 tracking-widest text-xs font-medium">
-                                        2026 EDITION
-                                    </div>
-                                    <div className="absolute top-8 right-8 flex gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-white/50" />
-                                        <div className="w-2.5 h-2.5 rounded-full bg-white/50" />
-                                    </div>
+                                            {/* Subtitle */}
+                                            <p className="text-[#A594BA] text-sm md:text-base font-medium tracking-[0.25em] uppercase">
+                                                The Grand Finale
+                                            </p>
 
-                                    {/* Main Event Title */}
-                                    <div className="relative z-10 flex flex-col items-center text-center mt-2">
-                                        <h2 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-[0.2em] drop-shadow-sm ml-2">
-                                            FUTURIST
-                                        </h2>
-                                        <h3 className="text-sm md:text-base text-white/90 font-medium tracking-[0.3em] uppercase ml-1">
-                                            The Grand Finale
-                                        </h3>
+                                            {/* Decorative line */}
+                                            <div className="flex items-center justify-center gap-3 mt-8">
+                                                <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#91C4E3]/50" />
+                                                <div className="w-2 h-2 rounded-full bg-[#91C4E3]/50" />
+                                                <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#91C4E3]/50" />
+                                            </div>
+                                        </div>
+
+                                        {/* Divider with cutouts */}
+                                        <div className="relative h-px bg-gradient-to-r from-transparent via-[#91C4E3]/30 to-transparent">
+                                            <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#03050a]" />
+                                            <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#03050a]" />
+                                        </div>
+
+                                        {/* Details Section */}
+                                        <div className="px-8 md:px-12 py-8 md:py-10">
+                                            {/* Pass Info Grid */}
+                                            <div className="grid grid-cols-2 gap-6 mb-8">
+                                                <div className="text-center md:text-left">
+                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] block mb-2">Pass Type</span>
+                                                    <span className="text-xl md:text-2xl font-bold text-white tracking-wide">SPECIAL INVITE</span>
+                                                </div>
+                                                <div className="text-center md:text-right">
+                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] block mb-2">Role</span>
+                                                    <span className="text-xl md:text-2xl font-bold text-[#91C4E3] tracking-wide">INNOVATOR</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Description */}
+                                            <div className="bg-[#91C4E3]/5 rounded-2xl p-6 border border-[#91C4E3]/10">
+                                                <p className="text-gray-300 text-center leading-relaxed text-sm md:text-base">
+                                                    พื้นที่ที่ผลงานไม่ได้จบลงที่การแข่งขัน
+                                                    <br className="hidden sm:block" />
+                                                    <span className="text-[#91C4E3]">นำเสนอ prototype • แลกเปลี่ยนแนวคิด • เชื่อมต่อนักวิจัย</span>
+                                                    <br className="hidden sm:block" />
+                                                    เพื่อต่อยอดสู่โลกจริง
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Bottom accent */}
+                                        <div className="h-px bg-gradient-to-r from-transparent via-[#A594BA]/30 to-transparent" />
                                     </div>
                                 </div>
 
-                                {/* Separation Line with Postaged-Stamp Edge */}
-                                <div className="relative h-px w-full bg-[#EADDCD] flex items-center justify-center">
-                                    <div className="absolute -top-[5px] inset-x-0 h-[6px] bg-[radial-gradient(circle_at_50%_0%,_transparent_2px,_#EADDCD_2.5px)] bg-[length:10px_6px] bg-repeat-x z-20"></div>
-
-                                    {/* Left Cutout */}
-                                    <div className="absolute -left-6 bottom-0 translate-y-1/2 w-8 h-16 rounded-r-full bg-[#03050a] z-30" />
-                                    {/* Right Cutout */}
-                                    <div className="absolute -right-6 bottom-0 translate-y-1/2 w-8 h-16 rounded-l-full bg-[#03050a] z-30" />
-                                </div>
-
-                                {/* Bottom Ticket Section (Cream color) */}
-                                <div className="relative bg-[#EADDCD] text-gray-900 rounded-b-[2.5rem] p-10 md:p-12 pt-14 flex flex-col gap-8 z-10">
-
-                                    {/* Details Row 1 */}
-                                    <div className="flex justify-between items-end border-b border-[#cbd5e1] pb-6 relative z-20 px-2">
-                                        <div className="flex flex-col text-left">
-                                            <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] mb-1">Pass Type</span>
-                                            <span className="text-2xl md:text-3xl font-black text-[#1e293b] uppercase tracking-tight">SPECIAL INVITE</span>
+                                {/* Additional info badges */}
+                                <div className="flex flex-wrap justify-center gap-3 mt-8">
+                                    {[
+                                        { icon: Presentation, label: 'Showcase' },
+                                        { icon: Network, label: 'Networking' },
+                                        { icon: Rocket, label: 'Incubation' }
+                                    ].map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-400 text-sm">
+                                            <item.icon className="w-4 h-4" />
+                                            <span>{item.label}</span>
                                         </div>
-                                        <div className="flex flex-col items-end text-right">
-                                            <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-[0.15em] mb-1">Roles</span>
-                                            <span className="text-xl md:text-2xl font-black text-[#1e293b] uppercase tracking-tight">INNOVATOR</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Thai Description Text */}
-                                    <div className="mt-2 text-center px-4">
-                                        <p className="text-[#475569] font-medium leading-[1.8] text-sm md:text-[15px]">
-                                            พื้นที่ที่ผลงานไม่ได้จบลงที่การแข่งขัน ทุกทีมสามารถนำเสนอ prototype<br className="hidden md:block" /> แลกเปลี่ยนแนวคิด และเชื่อมต่อกับนักวิจัย เพื่อต่อยอดในโลกจริง
-                                        </p>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>

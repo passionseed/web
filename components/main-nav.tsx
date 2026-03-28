@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkClientAuth } from "@/lib/supabase/auth-client";
 import {
@@ -26,14 +26,18 @@ const navItems = [
 ];
 
 // Easing curves from design system
-const EASE_TENSION = [0.05, 0.7, 0.35, 0.99];
-const EASE_SPRING = [0.34, 1.56, 0.64, 1];
+const EASE_TENSION: [number, number, number, number] = [0.05, 0.7, 0.35, 0.99];
+const EASE_SPRING: [number, number, number, number] = [0.34, 1.56, 0.64, 1];
 
 export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hasBuildAccess, setHasBuildAccess] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const { language, setLanguage } = useLanguage();
+
+  // Hackathon mode enabled globally for the duration of the event
+  const isHackathon = true;
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -100,6 +104,20 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
                 <span className="font-bold text-sm text-white">
                   Passion Seed
                 </span>
+                {isHackathon && (
+                  <>
+                    <div className="w-px h-4 bg-white/20 mx-1" />
+                    <Link href="/hackathon" className="hover:opacity-80 transition-opacity">
+                      <Image
+                        src="/hackathon/HackLogo.png"
+                        alt="Hackathon Logo"
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 object-contain"
+                      />
+                    </Link>
+                  </>
+                )}
               </div>
               <button
                 onClick={() => setMenuOpen(false)}
@@ -122,7 +140,9 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
                   </div>
                   
                   {/* Nav items with icons */}
-                  {navItems.map((item, index) => (
+                  {navItems
+                    .filter(item => isHackathon ? !['/classrooms', '/teams'].includes(item.href) : true)
+                    .map((item, index) => (
                     <motion.div
                       key={item.href}
                       initial={{ opacity: 0, x: -20 }}
@@ -224,18 +244,34 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
             </div>
           </SheetContent>
         </Sheet>
-        <Link href="/" className="flex items-center space-x-2 min-w-0">
-          <Image
-            src="/passionseed-logo.svg"
-            alt="Passion Seed Logo"
-            width={28}
-            height={28}
-            className="w-7 h-7 object-contain"
-          />
-          <span className="font-bold text-base text-white">
-            Passion Seed
-          </span>
-        </Link>
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center space-x-2 min-w-0">
+            <Image
+              src="/passionseed-logo.svg"
+              alt="Passion Seed Logo"
+              width={28}
+              height={28}
+              className="w-7 h-7 object-contain"
+            />
+            <span className="font-bold text-base text-white hidden sm:block">
+              Passion Seed
+            </span>
+          </Link>
+          {isHackathon && (
+            <>
+              <div className="w-px h-6 bg-white/20 mx-2 hidden sm:block" />
+              <Link href="/hackathon" className="hover:opacity-80 transition-opacity">
+                <Image
+                  src="/hackathon/HackLogo.png"
+                  alt="Hackathon Logo"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 object-contain"
+                />
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Desktop nav */}
@@ -254,18 +290,22 @@ export function MainNav({ isAuthenticated = false }: { isAuthenticated?: boolean
             >
               Maps
             </Link>
-            <Link
-              href="/classrooms"
-              className="text-sm font-medium transition-colors hover:text-white whitespace-nowrap px-3 py-2 text-gray-400"
-            >
-              Classrooms
-            </Link>
-            <Link
-              href="/teams"
-              className="text-sm font-medium transition-colors hover:text-white whitespace-nowrap px-3 py-2 text-gray-400"
-            >
-              Teams
-            </Link>
+            {!isHackathon && (
+              <>
+                <Link
+                  href="/classrooms"
+                  className="text-sm font-medium transition-colors hover:text-white whitespace-nowrap px-3 py-2 text-gray-400"
+                >
+                  Classrooms
+                </Link>
+                <Link
+                  href="/teams"
+                  className="text-sm font-medium transition-colors hover:text-white whitespace-nowrap px-3 py-2 text-gray-400"
+                >
+                  Teams
+                </Link>
+              </>
+            )}
             <a
               href="/seeds"
               className="text-sm font-medium transition-colors hover:text-white whitespace-nowrap px-3 py-2 text-gray-400 cursor-pointer"

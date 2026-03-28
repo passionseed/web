@@ -19,24 +19,28 @@ ON CONFLICT (id) DO NOTHING;
 -- =====================================================
 
 -- Allow authenticated users to upload videos
+DROP POLICY IF EXISTS "Authenticated users can upload pathlab videos" ON storage.objects;
 CREATE POLICY "Authenticated users can upload pathlab videos"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'pathlab-videos');
 
 -- Allow authenticated users to update their own videos
+DROP POLICY IF EXISTS "Users can update their own pathlab videos" ON storage.objects;
 CREATE POLICY "Users can update their own pathlab videos"
 ON storage.objects FOR UPDATE
 TO authenticated
 USING (bucket_id = 'pathlab-videos' AND auth.uid() = owner);
 
 -- Allow authenticated users to delete their own videos
+DROP POLICY IF EXISTS "Users can delete their own pathlab videos" ON storage.objects;
 CREATE POLICY "Users can delete their own pathlab videos"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (bucket_id = 'pathlab-videos' AND auth.uid() = owner);
 
 -- Allow public read access to all pathlab videos
+DROP POLICY IF EXISTS "Public can view pathlab videos" ON storage.objects;
 CREATE POLICY "Public can view pathlab videos"
 ON storage.objects FOR SELECT
 TO public

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { createClient } from "@/utils/supabase/client";
-import { Loader2, Map as MapIcon, Upload, ChevronDown, Award, Trophy } from "lucide-react";
+import { Loader2, Map as MapIcon, Upload, ChevronDown, Award, Trophy, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CategoryManagementModal } from "./CategoryManagementModal";
@@ -43,6 +43,7 @@ export function SeedSettingsModal({ seed, isOpen, onClose, onUpdate }: SeedSetti
     useEffect(() => {
         if (!isOpen) {
             setIsCertificatePreviewOpen(false);
+            setDeleteConfirm(false);
         }
     }, [isOpen]);
     const [certificatePreviewData, setCertificatePreviewData] = useState<CertificateData | null>(null);
@@ -51,6 +52,8 @@ export function SeedSettingsModal({ seed, isOpen, onClose, onUpdate }: SeedSetti
     const [isBadgePreviewOpen, setIsBadgePreviewOpen] = useState(false);
     const [isCertificateOpen, setIsCertificateOpen] = useState(false);
     const [isBadgeOpen, setIsBadgeOpen] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const router = useRouter();
     const supabase = createClient();
@@ -175,6 +178,25 @@ export function SeedSettingsModal({ seed, isOpen, onClose, onUpdate }: SeedSetti
             toast.error(error.message || "Failed to update seed settings");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        setDeleting(true);
+        try {
+            const { error } = await supabase
+                .from("seeds")
+                .delete()
+                .eq("id", seed.id);
+            if (error) throw error;
+            toast.success("Seed deleted.");
+            onClose();
+            router.push("/seeds");
+        } catch (error: any) {
+            console.error("Error deleting seed:", error);
+            toast.error(error.message || "Failed to delete seed");
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -328,6 +350,44 @@ export function SeedSettingsModal({ seed, isOpen, onClose, onUpdate }: SeedSetti
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Danger Zone */}
+                            <div className="pt-4 border-t border-red-900/40">
+                                {!deleteConfirm ? (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setDeleteConfirm(true)}
+                                        className="text-red-400 hover:text-red-300 hover:bg-red-950/40 gap-2"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete Seed
+                                    </Button>
+                                ) : (
+                                    <div className="flex items-center gap-3 rounded-lg bg-red-950/30 border border-red-800/50 px-4 py-3">
+                                        <p className="text-sm text-red-300 flex-1">
+                                            Delete <span className="font-semibold">{seed.title}</span>? This cannot be undone.
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={() => setDeleteConfirm(false)}
+                                            className="text-neutral-400 hover:bg-neutral-800 h-8 px-3 text-sm"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={handleDelete}
+                                            disabled={deleting}
+                                            className="bg-red-600 hover:bg-red-700 text-white h-8 px-3 text-sm gap-2"
+                                        >
+                                            {deleting && <Loader2 className="w-3 h-3 animate-spin" />}
+                                            Delete
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4 border-t border-neutral-800">

@@ -1,0 +1,320 @@
+{
+  "problemId": "P8",
+  "title": {
+    "en": "The Food Safety Blind Spot",
+    "th": "จุดบอดด้านความปลอดภัยอาหาร"
+  },
+  "track": "Community, Public & Environmental Health",
+  "trackNum": "03",
+  "color": "#91C4E3",
+  "hook": {
+    "en": "40% of Thai street food markets lack consistent food safety inspection, resulting in tens of thousands of food-related illnesses per year.",
+    "th": "40% ของตลาดอาหารริมทางในไทยขาดระบบตรวจสอบความปลอดภัยที่สม่ำเสมอ ส่งผลให้มีผู้ป่วยจากอาหารหลายหมื่นคนต่อปี"
+  },
+  "challenge": {
+    "en": "How might we design a community-powered food safety monitoring and early warning system that works without requiring top-down government enforcement?",
+    "th": "เราจะออกแบบระบบติดตามและเตือนภัยความปลอดภัยอาหารที่ขับเคลื่อนโดยชุมชน โดยไม่ต้องรอการบังคับใช้จากภาครัฐได้อย่างไร?"
+  },
+  "tags": [
+    "Food Safety",
+    "Community Monitoring",
+    "Public Health"
+  ],
+  "grading": {
+    "severity": {
+      "score": 8,
+      "justification": "Foodborne diseases cause significant morbidity (150M+ cases in SE Asia annually) and mortality (175,000 deaths). Thailand has one of the highest diarrhea rates in the region."
+    },
+    "difficulty": {
+      "score": 7,
+      "justification": "Multiple systemic barriers: large informal sector, limited government enforcement capacity, vendor economic constraints, infrastructure deficits. However, successful models exist."
+    },
+    "impact": {
+      "score": 8,
+      "justification": "Successful intervention would reduce hundreds of thousands of illnesses annually, prevent deaths, protect tourism reputation, and create replicable model for ASEAN."
+    },
+    "urgency": {
+      "score": 7,
+      "justification": "Foodborne disease burden remains high. Climate change and antimicrobial resistance are making the problem worse. Tourism recovery post-COVID brings increased exposure."
+    }
+  },
+  "statistics": [
+    {
+      "stat": "600 million people globally fall ill from contaminated food annually, with 420,000 deaths",
+      "source": "WHO Global Estimates of Foodborne Disease Burden",
+      "year": "2015"
+    },
+    {
+      "stat": "South-East Asia Region has 150 million foodborne illness cases and 175,000 deaths annually",
+      "source": "WHO South-East Asia Regional Report",
+      "year": "2016"
+    },
+    {
+      "stat": "Children under 5 account for 30% of all foodborne disease deaths globally",
+      "source": "WHO Global Estimates",
+      "year": "2015"
+    },
+    {
+      "stat": "Thailand reports approximately 1 million acute diarrhea cases and 120,000+ food poisoning cases annually",
+      "source": "Thai Ministry of Public Health, Bureau of Epidemiology",
+      "year": "2004"
+    },
+    {
+      "stat": "E. coli contamination found in 12.40%-15.79% of contaminated food samples in Bangkok",
+      "source": "Food Safety Regulations and Surveillance in Bangkok study",
+      "year": "2024"
+    },
+    {
+      "stat": "65% of employment in Thailand is informal (2024), with street vendors having 92%+ informality rate",
+      "source": "WIEGO Employment in Thailand Report",
+      "year": "2024"
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "Street Food Consumers (Urban Workers, Students, Tourists)",
+      "size": "Millions in Thailand rely on street food for daily meals",
+      "painPoints": [
+        "Exposure to foodborne pathogens",
+        "Limited ability to assess food safety",
+        "No recourse mechanism when food causes illness"
+      ]
+    },
+    {
+      "group": "Children Under 5 Years",
+      "size": "60 million children in SE Asia fall ill from foodborne diseases annually",
+      "painPoints": [
+        "40% of global foodborne disease burden",
+        "Immature immune systems",
+        "Long-term developmental impacts"
+      ]
+    },
+    {
+      "group": "Street Food Vendors",
+      "size": "~20,000-40,000 street vendors in Bangkok; majority informal workers",
+      "painPoints": [
+        "Lack of formal food safety training",
+        "Limited access to clean water and sanitation",
+        "Economic pressure to minimize costs"
+      ]
+    },
+    {
+      "group": "Elderly and Immunocompromised",
+      "size": "Thailand's elderly population (65+) is growing rapidly",
+      "painPoints": [
+        "Higher mortality risk from foodborne infections",
+        "Often dependent on street food due to economic constraints"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "role": "Street Food Vendors",
+        "needs": [
+          "Training",
+          "Infrastructure support",
+          "Economic viability"
+        ],
+        "painPoints": [
+          "Lack of training",
+          "Limited infrastructure",
+          "Economic pressure"
+        ]
+      },
+      {
+        "role": "Consumers",
+        "needs": [
+          "Safe food",
+          "Information access",
+          "Recourse mechanisms"
+        ],
+        "painPoints": [
+          "No information on vendor safety",
+          "No reporting mechanism",
+          "Power asymmetry"
+        ]
+      },
+      {
+        "role": "Local Government (BMA, District Offices)",
+        "needs": [
+          "Enforcement capacity",
+          "Community trust",
+          "Effective monitoring"
+        ],
+        "painPoints": [
+          "Limited inspection resources",
+          "Fragmented jurisdiction"
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "role": "Ministry of Public Health / Thai FDA",
+        "needs": [
+          "Policy implementation",
+          "Standards enforcement"
+        ],
+        "painPoints": [
+          "Outdated regulations",
+          "Limited enforcement capacity"
+        ]
+      },
+      {
+        "role": "Tourism Industry",
+        "needs": [
+          "Food safety reputation",
+          "Tourist confidence"
+        ],
+        "painPoints": [
+          "Reputation risk from foodborne illness outbreaks"
+        ]
+      },
+      {
+        "role": "NGOs and Consumer Advocacy Groups",
+        "needs": [
+          "Community engagement",
+          "Advocacy capacity"
+        ],
+        "painPoints": [
+          "Limited resources",
+          "Fragmented efforts"
+        ]
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Inadequate Enforcement Capacity",
+      "explanation": "Government inspection resources stretched thin across thousands of vendors. Limited personnel for regular inspections.",
+      "systemic": true
+    },
+    {
+      "cause": "Informal Economy Dynamics",
+      "explanation": "92%+ of street vendors work informally without registration, social protection, or formal training requirements. Creates parallel food system outside regulatory oversight.",
+      "systemic": true
+    },
+    {
+      "cause": "Knowledge and Training Gaps",
+      "explanation": "Studies show significant gaps in food safety knowledge among vendors. Many lack understanding of proper food handling, temperature control, and cross-contamination prevention.",
+      "systemic": true
+    },
+    {
+      "cause": "Infrastructure Deficits",
+      "explanation": "Street food vendors often operate without access to clean water, proper waste disposal, or adequate refrigeration.",
+      "systemic": true
+    },
+    {
+      "cause": "Consumer Power Asymmetry",
+      "explanation": "Consumers lack information and recourse mechanisms. 40% believe government provides inadequate food safety information. No systematic way to report concerns.",
+      "systemic": true
+    }
+  ],
+  "existingSolutions": [
+    {
+      "name": "Clean Food Good Taste (CFGT) Program",
+      "approach": "BMA certification program for food establishments including street vendors, with hygiene standards and periodic inspection",
+      "strengths": [
+        "Established program",
+        "Government-backed certification"
+      ],
+      "weaknesses": [
+        "Limited coverage of informal vendors",
+        "Enforcement inconsistent",
+        "No consumer-facing transparency"
+      ],
+      "region": "Bangkok, Thailand"
+    },
+    {
+      "name": "FSSAI Food Safety Connect App (India)",
+      "approach": "Mobile app allowing consumers to report food safety violations, verify FSSAI licenses, and track complaint resolution",
+      "strengths": [
+        "Citizen-powered reporting",
+        "Real-time photo/video evidence",
+        "Transparent tracking"
+      ],
+      "weaknesses": [
+        "Requires smartphone",
+        "Dependent on government responsiveness"
+      ],
+      "region": "India"
+    },
+    {
+      "name": "Gerakan Keamanan Pangan Desa (GKPD) - Indonesia",
+      "approach": "Community-based food safety movement in villages with trained cadres monitoring food providers and educating communities",
+      "strengths": [
+        "Village-level community empowerment",
+        "Cadre-based monitoring",
+        "Integration with local health centers"
+      ],
+      "weaknesses": [
+        "Challenges in cadre retention",
+        "Inconsistent monitoring follow-up"
+      ],
+      "region": "Indonesia"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "Citizen Reporting and Early Warning Platform",
+      "description": "Mobile-first platform enabling consumers to report food safety concerns with photo/video evidence, location tagging, and crowd-sourced vendor ratings",
+      "potentialImpact": "Transforms consumers from passive victims to active monitors; creates accountability loop for vendors",
+      "feasibility": "High"
+    },
+    {
+      "area": "Vendor Self-Assessment and Certification Tools",
+      "description": "Simple mobile or paper-based tools for vendors to assess their own food safety practices daily, with incentives for compliance",
+      "potentialImpact": "Builds vendor capacity and ownership; creates visible trust signal for consumers",
+      "feasibility": "Medium"
+    },
+    {
+      "area": "Community Food Safety Volunteer Networks",
+      "description": "Train community health volunteers, students, or retired professionals as food safety monitors who regularly visit street food areas and provide education",
+      "potentialImpact": "Creates trusted local presence; bridges gap between formal authorities and informal vendors",
+      "feasibility": "Medium-High"
+    },
+    {
+      "area": "Vendor Livelihood and Safety Co-Investment",
+      "description": "Program combining food safety improvements with vendor business support (microloans for equipment, bulk purchasing, marketing assistance)",
+      "potentialImpact": "Addresses root cause of vendor non-compliance (economic precarity); creates positive incentives",
+      "feasibility": "Medium"
+    }
+  ],
+  "resources": [
+    {
+      "title": "WHO Estimates of the Global Burden of Foodborne Diseases",
+      "type": "Report",
+      "url": "https://www.who.int/publications/i/item/9789241565165",
+      "description": "Comprehensive WHO report establishing baseline global burden of foodborne diseases"
+    },
+    {
+      "title": "Food Safety Regulations and Surveillance in Bangkok, Thailand",
+      "type": "Academic Paper",
+      "url": "https://link.springer.com/article/10.1186/s40794-025-00284-x",
+      "description": "Recent study compiling 5 years of Bangkok food safety surveillance data"
+    },
+    {
+      "title": "WIEGO Street Vending in Bangkok: Legal and Policy Frameworks",
+      "type": "Research Report",
+      "url": "https://www.wiego.org/wp-content/uploads/2019/09/Street-Vending-Bangkok-Legal-and-Policy-Framework-Law-Case-Study.pdf",
+      "description": "In-depth analysis of Bangkok street vendor demographics and working conditions"
+    },
+    {
+      "title": "FSSAI Food Safety Connect App",
+      "type": "Mobile Application",
+      "url": "https://play.google.com/store/apps/details?id=safety.connect.food",
+      "description": "India's citizen food safety reporting app as reference model"
+    }
+  ],
+  "keyInsights": [
+    "The 40% 'blind spot' reflects not just enforcement gaps but structural informality - solutions must work with informal sector dynamics rather than trying to formalize it away.",
+    "Street vendors are not the problem; they are essential partners who lack support and face economic pressures that undermine safety - framing matters for intervention design.",
+    "Children under 5 bear disproportionate burden (40% of DALYs) yet are not decision-makers - intervention must target caregivers and the food environments families rely on.",
+    "Consumer power asymmetry is a leverage point - citizens currently have no effective voice but could become active monitors if given accessible tools and responsive channels.",
+    "Successful models exist (FSSAI app, PGS, GKPD) but none are comprehensive - opportunity is to combine citizen reporting, vendor self-assessment, and community monitoring."
+  ],
+  "tangibleEquivalent": {
+    "en": "Like playing Russian Roulette with your lunch every day.",
+    "th": "เหมือนเล่นรัสเซียนรูเล็ตต์กับอาหารกลางวันของคุณทุกวัน"
+  }
+}

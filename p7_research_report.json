@@ -1,0 +1,513 @@
+{
+  "problemId": "P7",
+  "title": "Data Rich, Action Poor",
+  "track": "Environmental Health & Community Impact",
+  "statistics": [
+    {
+      "stat": "32,300 deaths annually in Thailand attributed to air pollution",
+      "source": "Health Effects Institute",
+      "year": 2020
+    },
+    {
+      "stat": "4,240 non-accidental deaths annually in Bangkok linked to PM2.5 exposure",
+      "source": "BenMAP Analysis, International Journal of Environmental Research and Public Health",
+      "year": 2020
+    },
+    {
+      "stat": "Thailand's annual average PM2.5 is 24.3 μg/m³ - 4.9 times WHO guideline of 5 μg/m³",
+      "source": "IQAir World Air Quality Report",
+      "year": 2019
+    },
+    {
+      "stat": "87% of Thailand's 68 million people live in areas exceeding WHO PM2.5 guidelines",
+      "source": "Air Quality Life Index, Energy Policy Institute",
+      "year": 2020
+    },
+    {
+      "stat": "Thailand ranked 28th most polluted country out of 98 countries",
+      "source": "IQAir World Air Quality Report",
+      "year": 2019
+    },
+    {
+      "stat": "621,000 deaths in Southeast Asia linked to PM2.5 exposure",
+      "source": "State of Global Air Report",
+      "year": 2021
+    },
+    {
+      "stat": "Chiang Mai ranked world's most polluted city with AQI of 223 (15x WHO limit)",
+      "source": "IQAir",
+      "year": 2023
+    },
+    {
+      "stat": "PM2.5 exposure cuts average life expectancy by 1.8 years in Thailand; 3-4 years in Northern Thailand",
+      "source": "Thailand Clean Air Network",
+      "year": 2023
+    },
+    {
+      "stat": "52.3% of Thailand's workforce (21 million) in informal sector - disproportionately exposed",
+      "source": "National Statistical Office Thailand",
+      "year": 2023
+    },
+    {
+      "stat": "Outdoor workers in Bangkok exposed to average PM2.5 of 43.94 μg/m³ - exceeding WHO and Thai standards",
+      "source": "Stockholm Environment Institute",
+      "year": 2024
+    },
+    {
+      "stat": "10-12 million people suffer from PM2.5 exposure annually in Thailand",
+      "source": "Nopparatrajathanee Hospital",
+      "year": 2025
+    },
+    {
+      "stat": "37 of world's 40 most polluted cities are in Southeast Asia",
+      "source": "World Resources Institute",
+      "year": 2023
+    }
+  ],
+  "affectedPopulations": [
+    {
+      "group": "Outdoor Workers (Informal Sector)",
+      "size": "21 million workers (52.3% of Thai workforce)",
+      "painPoints": [
+        "Must work outdoors regardless of pollution levels to earn income",
+        "Limited access to protective equipment (N95 masks cost ~15 baht each)",
+        "No paid sick leave or health insurance coverage",
+        "Exposed to 43.94 μg/m³ average PM2.5 vs WHO guideline of 15 μg/m³",
+        "Higher incidence of respiratory symptoms: headaches, burning eyes, sneezing, nasal congestion"
+      ]
+    },
+    {
+      "group": "Motorcycle Taxi Drivers",
+      "size": "188,178 registered drivers in Thailand; 72% in central region",
+      "painPoints": [
+        "Work 10+ hours daily in traffic pollution",
+        "Bear full cost of safety equipment (~15 baht per N95 mask)",
+        "No employer-provided health protections",
+        "High risk of lung function impairment",
+        "Limited ability to reduce work hours during high pollution periods"
+      ]
+    },
+    {
+      "group": "Street Vendors & Market Traders",
+      "size": "Approximately 28% of Bangkok's workforce",
+      "painPoints": [
+        "Stationary outdoor work near high-traffic areas",
+        "Exposure to both vehicle emissions and cooking fumes",
+        "Highest rate of work-related injuries (20%) among informal workers",
+        "Cannot relocate or work remotely",
+        "Low awareness of personal exposure levels"
+      ]
+    },
+    {
+      "group": "Children & Elderly",
+      "size": "Approximately 15 million children (0-14) and 12 million elderly (60+) in Thailand",
+      "painPoints": [
+        "Developing/compromised respiratory systems more vulnerable",
+        "Schools often lack air filtration systems",
+        "Limited agency to take protective actions independently",
+        "Higher rates of asthma and respiratory infections during haze season",
+        "Elderly often lack digital literacy to access AQI apps"
+      ]
+    },
+    {
+      "group": "Northern Thailand Residents (Chiang Mai Region)",
+      "size": "Approximately 6 million in 8 northern provinces",
+      "painPoints": [
+        "Face world's worst air quality during Feb-May burning season",
+        "PM2.5 peaks at 187.6 μg/m³ - 12.5x WHO daily standard",
+        "Transboundary pollution from Myanmar, Laos, Cambodia compounds local sources",
+        "Tourism-dependent economy conflicts with health warnings",
+        "Limited political attention to seasonal crisis"
+      ]
+    },
+    {
+      "group": "People with Pre-existing Conditions",
+      "size": "10-12 million affected annually",
+      "painPoints": [
+        "Asthma, COPD, cardiovascular conditions severely aggravated",
+        "Require 4x normal medication during pollution peaks",
+        "Cannot avoid necessary outdoor activities (work, appointments)",
+        "Increased hospitalization rates during haze season",
+        "Limited access to clean air shelters"
+      ]
+    }
+  ],
+  "stakeholderMap": {
+    "primary": [
+      {
+        "stakeholder": "Informal Outdoor Workers",
+        "role": "Most affected population with highest exposure",
+        "influence": "Low - limited political voice",
+        "interest": "High - direct health impact"
+      },
+      {
+        "stakeholder": "Children & Elderly",
+        "role": "Vulnerable populations with limited agency",
+        "influence": "Medium - through parents/caregivers",
+        "interest": "High - severe health impacts"
+      },
+      {
+        "stakeholder": "Urban Poor Communities",
+        "role": "Residents in high-pollution neighborhoods",
+        "influence": "Low - marginalized populations",
+        "interest": "High - environmental injustice"
+      },
+      {
+        "stakeholder": "People with Respiratory Conditions",
+        "role": "High-risk health population",
+        "influence": "Medium - medical advocacy",
+        "interest": "Very High - immediate health threats"
+      }
+    ],
+    "secondary": [
+      {
+        "stakeholder": "Pollution Control Department (PCD)",
+        "role": "Government monitoring and regulation",
+        "influence": "High - policy authority",
+        "interest": "High - mandate"
+      },
+      {
+        "stakeholder": "Bangkok Metropolitan Administration (BMA)",
+        "role": "Local governance and enforcement",
+        "influence": "High - implementation",
+        "interest": "Medium - public health responsibility"
+      },
+      {
+        "stakeholder": "Healthcare Providers & Hospitals",
+        "role": "Treatment and data collection",
+        "influence": "Medium - medical authority",
+        "interest": "High - patient outcomes"
+      },
+      {
+        "stakeholder": "NGOs & Civil Society",
+        "role": "Advocacy and community engagement",
+        "influence": "Medium - public awareness",
+        "interest": "High - mission alignment"
+      },
+      {
+        "stakeholder": "Tech Companies & App Developers",
+        "role": "Data platforms and tools",
+        "influence": "Medium - information access",
+        "interest": "Medium - market opportunity"
+      },
+      {
+        "stakeholder": "Academic Institutions",
+        "role": "Research and evidence generation",
+        "influence": "Medium - credibility",
+        "interest": "High - public health research"
+      },
+      {
+        "stakeholder": "Employers (Formal Sector)",
+        "role": "Workplace protection policies",
+        "influence": "High - employee actions",
+        "interest": "Low-Medium - productivity"
+      },
+      {
+        "stakeholder": "Media",
+        "role": "Public awareness and accountability",
+        "influence": "High - narrative shaping",
+        "interest": "Medium - public interest stories"
+      }
+    ]
+  },
+  "rootCauses": [
+    {
+      "cause": "Data-Action Disconnect",
+      "explanation": "Real-time air quality data exists (over 1,161 monitoring stations in Thailand) but is not translated into actionable, context-specific guidance that people can act upon. AQI numbers alone don't tell people what to DO.",
+      "systemic": true
+    },
+    {
+      "cause": "Economic Barriers to Self-Protection",
+      "explanation": "Informal workers (52% of workforce) cannot afford to reduce work hours during pollution peaks. N95 masks, air purifiers, and sealed homes are luxuries they cannot afford. Opportunity cost of protection is too high.",
+      "systemic": true
+    },
+    {
+      "cause": "One-Size-Fits-All Alerts",
+      "explanation": "Current AQI systems provide generic advice (stay indoors) that's irrelevant for those who must work outdoors. No personalized recommendations based on individual circumstances, location, or health status.",
+      "systemic": false
+    },
+    {
+      "cause": "Limited Hyperlocal Data",
+      "explanation": "Monitoring stations are sparse and don't capture neighborhood-level variations. People cannot see pollution levels specific to their actual route, workplace, or home area.",
+      "systemic": true
+    },
+    {
+      "cause": "Low Environmental Health Literacy",
+      "explanation": "Many residents, especially in informal sector, don't understand the health impacts of PM2.5 or how to interpret AQI data. 60% of surveyed Bangkok residents had low awareness of local air quality.",
+      "systemic": false
+    },
+    {
+      "cause": "App Engagement Decay",
+      "explanation": "Research shows air quality app engagement drops 80% after 12 weeks. Users check apps initially but stop when data doesn't lead to actionable outcomes they can control.",
+      "systemic": false
+    },
+    {
+      "cause": "Fragmented Information Ecosystem",
+      "explanation": "Multiple apps (Air4Thai, IQAir, Nafas, AirBKK) with different data sources, standards, and interfaces. No unified platform with trusted, localized guidance.",
+      "systemic": true
+    },
+    {
+      "cause": "Structural Inequality",
+      "explanation": "Lower-income and informal workers live in areas with higher pollution (near highways, industrial zones), work in exposed conditions, and lack resources for protection - a classic environmental justice issue.",
+      "systemic": true
+    }
+  ],
+  "grading": {
+    "severity": {
+      "score": 9,
+      "justification": "32,000+ deaths annually in Thailand, life expectancy reduced by 1.8-4 years, and 10-12 million people directly affected each year. PM2.5 levels routinely exceed WHO guidelines by 4-15x during peak seasons. Northern Thailand experiences some of the world's worst air quality."
+    },
+    "difficulty": {
+      "score": 8,
+      "justification": "Requires behavior change in populations with limited agency and resources. Must address economic barriers (informal workers can't stop working), structural inequality (environmental justice), and overcome app engagement challenges. Data exists but action gap is deeply entrenched in socio-economic structures."
+    },
+    "impact": {
+      "score": 9,
+      "justification": "Successfully translating data into action could directly reduce exposure for millions of vulnerable people. Even modest behavior changes (mask-wearing, route selection, timing adjustments) can significantly reduce personal PM2.5 exposure. Community-level interventions could shift social norms and pressure policy."
+    },
+    "urgency": {
+      "score": 9,
+      "justification": "Climate change is worsening pollution patterns. Chiang Mai's 2023 record pollution, increasing wildfire frequency, and transboundary pollution make this a rapidly escalating crisis. Each burning season (Feb-May) causes measurable health damage that accumulates over time."
+    }
+  },
+  "existingSolutions": [
+    {
+      "name": "Air4Thai App",
+      "approach": "Official government app providing AQI data from 70+ monitoring stations across Thailand",
+      "strengths": [
+        "Official data source with government credibility",
+        "Covers all provinces",
+        "Free access",
+        "518K+ downloads"
+      ],
+      "weaknesses": [
+        "Low user rating (2.1/5)",
+        "Data-centric without actionable guidance",
+        "Poor user experience",
+        "No personalization",
+        "Low engagement after download"
+      ],
+      "region": "Thailand (national)"
+    },
+    {
+      "name": "Nafas (Indonesia)",
+      "approach": "Indonesian air quality app with 160+ sensors in major cities, activity recommendations, and 'Clean Air Zone' certification",
+      "strengths": [
+        "Hyperlocal sensor network",
+        "Activity/lifestyle recommendations based on AQI",
+        "Clean Air Zone directory for safe indoor spaces",
+        "Alerts and notifications",
+        "Integration with air purifiers"
+      ],
+      "weaknesses": [
+        "Indonesia-focused (not Thailand)",
+        "Limited to urban areas",
+        "Requires device purchase for full features",
+        "Login issues reported by users"
+      ],
+      "region": "Indonesia (Jabodetabek, Bandung, Surabaya, Bali)"
+    },
+    {
+      "name": "AirBKK",
+      "approach": "Bangkok-specific app with hourly updates and 7-day forecasts using WRF-Chem system",
+      "strengths": [
+        "City-specific for Bangkok",
+        "Forecasts for planning outdoor activities",
+        "Government-backed data"
+      ],
+      "weaknesses": [
+        "Bangkok only",
+        "Limited actionability",
+        "No personalization"
+      ],
+      "region": "Bangkok, Thailand"
+    },
+    {
+      "name": "SENSOR FOR ALL (Chulalongkorn University)",
+      "approach": "Academic project deploying low-cost sensors across Thailand with real-time dashboard",
+      "strengths": [
+        "Dense sensor network for hyperlocal data",
+        "Academic credibility",
+        "Real-time and standard AQI formats",
+        "7-day forecasts by region"
+      ],
+      "weaknesses": [
+        "Dashboard-focused, not mobile app",
+        "Limited behavioral guidance",
+        "Research project (not scaled product)"
+      ],
+      "region": "Thailand (national)"
+    },
+    {
+      "name": "CanAIRy Alert (WRI)",
+      "approach": "Air quality forecasting and analytical tools for cities in Global South",
+      "strengths": [
+        "Predictive capability for advance warnings",
+        "Designed for resource-constrained cities",
+        "Supports public communication"
+      ],
+      "weaknesses": [
+        "City government-focused (not consumer app)",
+        "Limited to participating cities",
+        "Not yet scaled in Thailand"
+      ],
+      "region": "Global South (pilot in Jakarta)"
+    },
+    {
+      "name": "Southeast Asia Air Quality Community of Practice",
+      "approach": "Regional knowledge-sharing network for air quality practitioners",
+      "strengths": [
+        "Cross-border knowledge exchange",
+        "Policy-level influence",
+        "Capacity building"
+      ],
+      "weaknesses": [
+        "Practitioner-focused (not community-facing)",
+        "Slow policy-level change",
+        "Limited direct impact on individual behavior"
+      ],
+      "region": "Southeast Asia"
+    },
+    {
+      "name": "Community-Based Air Quality Monitoring (CBPR)",
+      "approach": "Community-based participatory research with residents monitoring local air quality",
+      "strengths": [
+        "Empowers communities with data",
+        "Builds local capacity and awareness",
+        "Grounds solutions in lived experience",
+        "Can influence policy when organized"
+      ],
+      "weaknesses": [
+        "Resource-intensive to scale",
+        "Requires sustained community engagement",
+        "Data quality varies with low-cost sensors",
+        "Not widely implemented in Thailand"
+      ],
+      "region": "Global (examples: Houston, Boston Chinatown)"
+    }
+  ],
+  "opportunityAreas": [
+    {
+      "area": "Personalized Action Recommendations",
+      "description": "Transform generic AQI data into context-specific actions based on user profile (occupation, health status, location, schedule). Example: A motorcycle taxi driver receives different guidance than an office worker for the same AQI level.",
+      "potentialImpact": "High - Research shows personalized data increases protective behavior adoption by 23%",
+      "feasibility": "Medium - Requires user profiling, behavioral science integration, and local context data"
+    },
+    {
+      "area": "Community-Level Alert Systems",
+      "description": "Neighborhood-based notification networks that trigger collective protective actions. When AQI exceeds threshold, entire community receives synchronized alerts via multiple channels (WhatsApp, LINE, loudspeakers, community leaders).",
+      "potentialImpact": "High - Social norms and collective action overcome individual apathy",
+      "feasibility": "Medium-High - Leverages existing community structures and free messaging platforms"
+    },
+    {
+      "area": "Route Optimization for Pollution Avoidance",
+      "description": "Navigation system that factors real-time PM2.5 into route planning. Helps pedestrians, cyclists, and motorcycle commuters find lower-exposure paths through the city.",
+      "potentialImpact": "Medium - Can reduce personal exposure by 20-40% without behavior change",
+      "feasibility": "High - Combines existing mapping with AQI data; similar to traffic routing"
+    },
+    {
+      "area": "Clean Air Shelter Network",
+      "description": "Map of certified clean air spaces (libraries, community centers, malls with HEPA filtration) accessible during pollution peaks. Partner with existing venues to achieve certification.",
+      "potentialImpact": "High - Provides actual safe spaces, not just data",
+      "feasibility": "Medium - Requires partnerships, certification standards, and public trust"
+    },
+    {
+      "area": "Informal Worker Protection Toolkit",
+      "description": "Co-designed with informal workers: simple, visual daily action cards, mask distribution networks, employer/contractor accountability tools, and emergency income protection during extreme pollution.",
+      "potentialImpact": "Very High - Directly serves most vulnerable population",
+      "feasibility": "Medium - Requires stakeholder buy-in, funding for protective equipment, and trust-building"
+    },
+    {
+      "area": "Gamified Community Challenges",
+      "description": "Competitions between neighborhoods for pollution reduction actions, clean air certifications, and community protection achievements. Leverages social comparison and gamification.",
+      "potentialImpact": "Medium - Increases engagement and social proof",
+      "feasibility": "High - Can build on existing community competition frameworks"
+    },
+    {
+      "area": "Health-AQI Translation Layer",
+      "description": "Convert AQI numbers into personal health impact terms: 'At current levels, breathing this air for 1 hour = smoking X cigarettes' or 'Your expected symptoms today: burning eyes, headache'. Makes invisible threat visceral.",
+      "potentialImpact": "High - Research shows relatable framing increases action 3x",
+      "feasibility": "High - Straightforward communication design challenge"
+    },
+    {
+      "area": "Time-Sensitive Activity Scheduler",
+      "description": "AQI-based daily planning tool that recommends best times for outdoor activities (jogging, errands, commuting) based on forecasted pollution levels. Pushes notifications for 'green windows'.",
+      "potentialImpact": "Medium-High - Enables proactive planning rather than reactive avoidance",
+      "feasibility": "High - Uses existing forecast data in new decision-support format"
+    }
+  ],
+  "resources": [
+    {
+      "title": "State of Global Air Report - Asia",
+      "type": "Report",
+      "url": "https://www.stateofglobalair.org/sites/default/files/documents/2025-01/soga-asia-report.pdf",
+      "description": "Comprehensive data on PM2.5 exposure and health impacts across Central, South, and Southeast Asia from 1990-2021"
+    },
+    {
+      "title": "Particulate Matter Pollution in Bangkok: Assessing Outdoor Workers",
+      "type": "Research Paper",
+      "url": "https://www.tandfonline.com/doi/full/10.1080/23748834.2024.2390274",
+      "description": "Study of PM2.5 exposure among outdoor workers in Bangkok, including survey data on symptoms and mitigation measures"
+    },
+    {
+      "title": "Can Apps Make Air Pollution Visible?",
+      "type": "Research Paper",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3353132",
+      "description": "UCLA study on user engagement with air quality apps, motivations for behavior change, and design recommendations"
+    },
+    {
+      "title": "Public Engagement with Air Quality Data: Health Behavior Change Theory",
+      "type": "Research Paper",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10234807/",
+      "description": "Framework for translating air quality data into behavior change using health behavior theory"
+    },
+    {
+      "title": "Engaging Communities in Addressing Air Quality: A Scoping Review",
+      "type": "Research Paper",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9484248/",
+      "description": "Evidence on community engagement approaches for air quality, including monitoring, mapping, and advocacy strategies"
+    },
+    {
+      "title": "SENSOR FOR ALL Dashboard",
+      "type": "Platform",
+      "url": "http://sensorforall.eng.chula.ac.th/",
+      "description": "Real-time AQI monitoring network by Chulalongkorn University with forecasts and province-level data"
+    },
+    {
+      "title": "Air Quality Explorer - SERVIR Mekong",
+      "type": "Platform",
+      "url": "https://aqatmekong-servir.adpc.net/en/",
+      "description": "Regional air quality tracking for Mekong countries with satellite and ground-based data"
+    },
+    {
+      "title": "WRI Southeast Asia Air Quality Community of Practice",
+      "type": "Network",
+      "url": "https://www.wri.org/cities/air-quality/community-of-practice-southeast-asia",
+      "description": "Regional network of air quality practitioners for knowledge exchange and capacity building"
+    },
+    {
+      "title": "An Assessment of Annual Mortality Attributable to Ambient PM2.5 in Bangkok",
+      "type": "Research Paper",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7578932/",
+      "description": "Health burden analysis showing 4,240 annual deaths in Bangkok linked to PM2.5 exposure"
+    },
+    {
+      "title": "Behavior Change Interventions in Practice (Rare)",
+      "type": "Guide",
+      "url": "https://behavior.rare.org/wp-content/uploads/2021/02/Behavior-Change-Interventions-in-Practice-final.pdf",
+      "description": "Practical framework for designing environmental behavior change interventions with case studies"
+    }
+  ],
+  "keyInsights": [
+    "The data-action gap is fundamentally an equity issue: those most exposed (informal workers, urban poor) have the least capacity to act on data, and current solutions don't account for their constraints.",
+    "Generic AQI advice (stay indoors, avoid exercise) is irrelevant for the 52% of Thai workers who cannot reduce outdoor work without losing income. Solutions must be occupation and circumstance-specific.",
+    "App engagement drops 80% after 12 weeks because users don't see actionable outcomes. Data without agency leads to disengagement. Solutions must provide controllable actions, not just information.",
+    "Community-based approaches outperform individual app-based interventions because they create social accountability, collective action, and can address structural barriers that individuals cannot overcome alone.",
+    "Behavioral research shows personalized, relatable framing (e.g., 'this equals X cigarettes') increases protective action 3x more than raw AQI numbers. The translation layer is critical.",
+    "Thailand has relatively good monitoring infrastructure (1,161+ stations) but lacks the 'last mile' infrastructure that translates data into community-level action - the sensors exist, the systems don't.",
+    "Northern Thailand's seasonal crisis (Feb-May) creates a predictable, recurring problem that could be addressed with annual preparation protocols, but currently catches communities unprepared each year.",
+    "Transboundary pollution (from Myanmar, Laos, Cambodia) accounts for up to 45% of PM2.5 in northern Thailand, requiring regional coordination beyond national policies.",
+    "Environmental health literacy is low: 60% of surveyed Bangkok residents had low awareness of local air quality and its health impacts. Data alone doesn't create understanding.",
+    "The informal sector's lack of social protections (no paid leave, no health insurance) means pollution exposure becomes a compounding disadvantage - they can't afford to protect themselves and can't afford not to work."
+  ]
+}
