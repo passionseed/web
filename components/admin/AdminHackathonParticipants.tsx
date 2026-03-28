@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search, Users, UserCheck, UserX, Trash2, PieChart as PieChartIcon } from "lucide-react";
+import { Loader2, Search, Users, UserCheck, UserX, Trash2, PieChart as PieChartIcon, UsersRound } from "lucide-react";
 import { format } from "date-fns";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
@@ -167,6 +167,11 @@ export function AdminHackathonParticipants() {
     total: participants.length,
     withTeam: participants.filter((p) => p.team && !p.is_in_waitlist).length,
     withoutTeam: participants.filter((p) => !p.team).length,
+    teamCount: new Set(
+      participants
+        .filter((p) => p.team && !p.is_in_waitlist)
+        .map((p) => p.team!.id)
+    ).size,
   };
 
   // Generate chart data based on selected type
@@ -228,7 +233,7 @@ export function AdminHackathonParticipants() {
   return (
     <div className="space-y-4">
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -269,6 +274,19 @@ export function AdminHackathonParticipants() {
                 ? ((stats.withoutTeam / stats.total) * 100).toFixed(1)
                 : 0}
               % of total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Teams</CardTitle>
+            <UsersRound className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.teamCount}</div>
+            <p className="text-xs text-muted-foreground">
+              Avg {stats.teamCount > 0 ? (stats.withTeam / stats.teamCount).toFixed(1) : 0} per team
             </p>
           </CardContent>
         </Card>
