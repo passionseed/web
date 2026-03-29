@@ -208,7 +208,7 @@ export default function HackathonOnboardingPage() {
   };
 
   return (
-    <div className="dawn-theme relative min-h-screen w-full overflow-hidden bg-[#020617] text-slate-200 font-[family-name:var(--font-kodchasan)] flex items-center justify-center py-12 sm:py-24 px-4 sm:px-6">
+    <div className="dawn-theme relative min-h-screen w-full overflow-hidden bg-[#020617] text-slate-200 font-[family-name:var(--font-mitr)] flex items-center justify-center py-12 sm:py-24 px-4 sm:px-6">
       {/* Toast */}
       <AnimatePresence>
         {toast && (
@@ -246,7 +246,7 @@ export default function HackathonOnboardingPage() {
             className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 xl:gap-24"
           >
             <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium tracking-tight text-white leading-tight">
                 Discover <br className="hidden sm:block" />
                 Your{" "}
                 <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -264,13 +264,13 @@ export default function HackathonOnboardingPage() {
                   <StepProgress stepNum={1} />
 
                   <div className="space-y-1.5">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">About You</h2>
+                    <h2 className="text-2xl font-medium text-white tracking-tight">About You</h2>
                     <p className="text-sm text-slate-400 font-medium">Your goals, your why, your role</p>
                   </div>
 
                   <form onSubmit={handleStep1Submit} className="space-y-5">
                     <div className="space-y-1.5">
-                      <Label htmlFor="name" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <Label htmlFor="name" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Your Name
                       </Label>
                       <Input
@@ -285,7 +285,7 @@ export default function HackathonOnboardingPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="dream_faculty" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <Label htmlFor="dream_faculty" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Dream faculty / major — and why
                       </Label>
                       <Textarea
@@ -301,7 +301,7 @@ export default function HackathonOnboardingPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-1.5">
-                        <Label htmlFor="confidence_level" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <Label htmlFor="confidence_level" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                           Confidence in getting in
                         </Label>
                         <select id="confidence_level" name="confidence_level" required defaultValue={formData.confidence_level || ""} className="ei-select">
@@ -315,7 +315,7 @@ export default function HackathonOnboardingPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="family_support_level" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <Label htmlFor="family_support_level" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                           Family support level
                         </Label>
                         <select id="family_support_level" name="family_support_level" required defaultValue={formData.family_support_level || ""} className="ei-select">
@@ -330,7 +330,7 @@ export default function HackathonOnboardingPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="school_level" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <Label htmlFor="school_level" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                         School Level / ระดับการศึกษา
                       </Label>
                       <select id="school_level" name="school_level" required defaultValue={formData.school_level || ""} className="ei-select">
@@ -341,7 +341,7 @@ export default function HackathonOnboardingPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="why_hackathon" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <Label htmlFor="why_hackathon" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Why did you join this hackathon?
                       </Label>
                       <Textarea
@@ -357,7 +357,7 @@ export default function HackathonOnboardingPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-1.5">
-                        <Label htmlFor="team_role_preference" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <Label htmlFor="team_role_preference" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                           Your primary role in a team
                         </Label>
                         <select id="team_role_preference" name="team_role_preference" required defaultValue={formData.team_role_preference || ""} className="ei-select">
@@ -372,7 +372,7 @@ export default function HackathonOnboardingPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="ai_proficiency" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <Label htmlFor="ai_proficiency" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                           AI proficiency
                         </Label>
                         <select id="ai_proficiency" name="ai_proficiency" required defaultValue={formData.ai_proficiency || ""} className="ei-select">
@@ -409,7 +409,7 @@ export default function HackathonOnboardingPage() {
             className="relative z-10 max-w-3xl mx-auto w-full"
           >
             <div className="text-center mb-10">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              <h1 className="text-4xl md:text-5xl font-medium mb-4">
                 <span className="text-white tracking-tight">What Lights You Up?</span>
               </h1>
               <p className="text-lg text-slate-400 max-w-2xl mx-auto font-medium">
@@ -476,7 +476,7 @@ export default function HackathonOnboardingPage() {
             className="relative z-10 max-w-5xl mx-auto w-full"
           >
             <div className="text-center mb-10">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              <h1 className="text-4xl md:text-5xl font-medium mb-4">
                 <span className="text-white tracking-tight">Explore the Problems</span>
               </h1>
               <p className="text-lg text-slate-400 max-w-2xl mx-auto font-medium">

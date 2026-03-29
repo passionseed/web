@@ -293,7 +293,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                     <div className="text-center space-y-8 mb-16">
                         <h1
                             ref={heroTextRef}
-                            className={`text-6xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-none ${showTitle ? (instant ? 'opacity-100' : 'animate-titleReveal') : 'opacity-0'}`}
+                            className={`text-6xl md:text-8xl lg:text-9xl font-medium tracking-tight leading-none ${showTitle ? (instant ? 'opacity-100' : 'animate-titleReveal') : 'opacity-0'}`}
                             style={{ fontFamily: "'Sora', sans-serif" }}
                         >
                             <span className="block bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -308,7 +308,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                             className={`max-w-4xl mx-auto ${instant ? '' : 'transition-all duration-1000 delay-500'} ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                         >
                             <p className="text-xl md:text-2xl text-gray-300 leading-relaxed text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                                ที่ The Next Decade Hackathon 2026 <span className="text-cyan-400 font-semibold">พื้นฐานไม่ใช่ข้อจำกัด แต่คือจุดเริ่มต้นของการเรียนรู้</span> เราเปลี่ยนพื้นที่แข่งขันให้กลายเป็นโอกาสให้คุณได้ทดลอง สร้างสรรค์ และเรียนรู้จากการลงมือทำจริงได้แบบไม่ต้องกังวล ผ่านระบบเหล่านี้:
+                                ที่ The Next Decade Hackathon 2026 <span className="text-cyan-400 font-medium">พื้นฐานไม่ใช่ข้อจำกัด แต่คือจุดเริ่มต้นของการเรียนรู้</span> เราเปลี่ยนพื้นที่แข่งขันให้กลายเป็นโอกาสให้คุณได้ทดลอง สร้างสรรค์ และเรียนรู้จากการลงมือทำจริงได้แบบไม่ต้องกังวล ผ่านระบบเหล่านี้:
                             </p>
                         </div>
 
@@ -348,7 +348,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                                             <item.icon className="text-white" size={32} strokeWidth={2.5} />
                                         </div>
 
-                                        <h3 className="text-2xl font-bold text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                        <h3 className="text-2xl font-medium text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
                                             {item.title}
                                         </h3>
 
@@ -388,7 +388,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
 
                     <div className="container mx-auto px-4 relative z-10 max-w-6xl">
                         <div className="text-center mb-20">
-                            <h2 className="text-5xl md:text-6xl font-bold mb-6" style={{ fontFamily: "'Sora', sans-serif" }}>
+                            <h2 className="text-5xl md:text-6xl font-medium mb-6" style={{ fontFamily: "'Sora', sans-serif" }}>
                                 <span className="bg-gradient-to-r from-cyan-300 to-purple-400 bg-clip-text text-transparent">
                                     การเดินทางสู่ Impact
                                 </span>
@@ -433,7 +433,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                                         <step.icon className="text-white" size={28} strokeWidth={2.5} />
                                     </div>
 
-                                    <h3 className="text-2xl font-bold text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                    <h3 className="text-2xl font-medium text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
                                         {step.title}
                                     </h3>
 
@@ -457,7 +457,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
 
                     <div className="container mx-auto px-4 relative z-10 max-w-6xl">
                         <div className="text-center mb-20">
-                            <h2 className="text-5xl md:text-6xl font-bold mb-6" style={{ fontFamily: "'Sora', sans-serif" }}>
+                            <h2 className="text-5xl md:text-6xl font-medium mb-6" style={{ fontFamily: "'Sora', sans-serif" }}>
                                 <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">
                                     ระบบสนับสนุนที่ครบครัน
                                 </span>
@@ -479,7 +479,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                            <h3 className="text-4xl font-medium text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
                                                 Mentor - คนคอยช่วยดูแล
                                             </h3>
                                             <p className="text-lg text-gray-300 leading-relaxed" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -500,7 +500,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                                         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mb-6 shadow-2xl shadow-cyan-500/50">
                                             <BookOpen className="text-white" size={40} strokeWidth={2.5} />
                                         </div>
-                                        <h3 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                        <h3 className="text-3xl font-medium text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
                                             Learning Guideline
                                         </h3>
                                         <p className="text-gray-300 leading-relaxed" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -516,7 +516,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                                         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center mb-6 shadow-2xl shadow-purple-500/50">
                                             <FlaskConical className="text-white" size={40} strokeWidth={2.5} />
                                         </div>
-                                        <h3 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                        <h3 className="text-3xl font-medium text-white mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
                                             Tester
                                         </h3>
                                         <p className="text-gray-300 leading-relaxed" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -544,7 +544,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                                     <Shield className="text-white" size={40} strokeWidth={2.5} />
                                 </div>
 
-                                <h2 className="text-4xl md:text-5xl font-bold mb-8" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                <h2 className="text-4xl md:text-5xl font-medium mb-8" style={{ fontFamily: "'Sora', sans-serif" }}>
                                     <span className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
                                         ไม่ต้องกังวลว่าจะทำได้หรือไม่
                                     </span>
@@ -554,13 +554,13 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
                                     <p>
                                         เราเข้าใจว่าการเริ่มต้นสร้าง Startup อาจดูน่ากลัว โดยเฉพาะเมื่อคุณไม่มีประสบการณ์มาก่อน
                                     </p>
-                                    <p className="text-xl font-semibold text-white">
+                                    <p className="text-xl font-medium text-white">
                                         นั่นคือเหตุผลที่เราสร้างระบบสนับสนุนที่ครบครัน
                                     </p>
                                     <p>
-                                        ไม่ว่าคุณจะมาจากพื้นฐานใด ไม่ว่าคุณจะมีทักษะอะไรอยู่แล้ว <span className="text-cyan-400 font-semibold">คุณสามารถสร้าง Impact ได้</span> ด้วยความช่วยเหลือจาก Mentor, Learning Guidelines ที่ชัดเจน และ Feedback จาก Tester
+                                        ไม่ว่าคุณจะมาจากพื้นฐานใด ไม่ว่าคุณจะมีทักษะอะไรอยู่แล้ว <span className="text-cyan-400 font-medium">คุณสามารถสร้าง Impact ได้</span> ด้วยความช่วยเหลือจาก Mentor, Learning Guidelines ที่ชัดเจน และ Feedback จาก Tester
                                     </p>
-                                    <p className="text-2xl font-bold bg-gradient-to-r from-amber-300 via-orange-300 to-pink-300 bg-clip-text text-transparent mt-8">
+                                    <p className="text-2xl font-medium bg-gradient-to-r from-amber-300 via-orange-300 to-pink-300 bg-clip-text text-transparent mt-8">
                                         เพราะทุกคนมีศักยภาพที่จะเปลี่ยนแปลงโลก
                                     </p>
                                 </div>
@@ -577,7 +577,7 @@ export default function ImpactLandingPage({ isLoggedIn }: ImpactLandingPageProps
 
                     <div className="container mx-auto px-4 relative z-10">
                         <div className="text-center max-w-4xl mx-auto space-y-10">
-                            <h2 className="text-5xl md:text-7xl font-bold leading-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
+                            <h2 className="text-5xl md:text-7xl font-medium leading-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
                                 <span className="block bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
                                     พร้อมที่จะเริ่มต้น
                                 </span>
