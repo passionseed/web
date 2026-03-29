@@ -979,7 +979,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
           className="mb-32 max-w-5xl mx-auto mt-12"
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-medium mb-4">
               Why Sponsor The Next Decade Hackathon?
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -996,7 +996,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-6 border border-purple-500/30 relative z-10">
                 <Target className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3 relative z-10">
+              <h3 className="text-xl font-medium text-white mb-3 relative z-10">
                 Hyper-Targeted Reach
               </h3>
               <p className="text-gray-400 leading-relaxed relative z-10 text-sm">
@@ -1014,7 +1014,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               <div className="w-12 h-12 rounded-2xl bg-fuchsia-500/20 flex items-center justify-center mb-6 border border-fuchsia-500/30 relative z-10">
                 <TrendingUp className="w-6 h-6 text-fuchsia-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3 relative z-10">
+              <h3 className="text-xl font-medium text-white mb-3 relative z-10">
                 Learning, Adaptation & Resilience
               </h3>
               <p className="text-gray-400 leading-relaxed relative z-10 text-sm">
@@ -1032,7 +1032,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/30 relative z-10">
                 <Users className="w-6 h-6 text-indigo-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3 relative z-10">
+              <h3 className="text-xl font-medium text-white mb-3 relative z-10">
                 Train a Capable Workforce
               </h3>
               <p className="text-gray-400 leading-relaxed relative z-10 text-sm">
@@ -1056,7 +1056,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl -mr-20 -mt-20" />
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                <h3 className="text-2xl md:text-3xl font-medium text-white mb-4">
                   Exclusive Talent Discovery
                 </h3>
                 <p className="text-gray-300 text-lg leading-relaxed">
@@ -1066,7 +1066,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
                   problems.
                   <br />
                   <br />
-                  <span className="text-purple-300 font-semibold">
+                  <span className="text-purple-300 font-medium">
                     Full access to this system is exclusively shared with our
                     Diamond and Platinum tier sponsors.
                   </span>
@@ -1087,7 +1087,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
           className="mb-32 max-w-5xl mx-auto"
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-medium mb-4">
               Hackathon Tracks
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -1101,7 +1101,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               <div className="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-6 border border-purple-500/30">
                 <TrackTraditionalIcon className="w-8 h-8 text-purple-400" />
               </div>
-              <h3 className="text-xl font-bold text-purple-400 mb-2">
+              <h3 className="text-xl font-medium text-purple-400 mb-2">
                 Traditional & Integrative Healthcare
               </h3>
               <p className="text-sm text-gray-400 mb-6">
@@ -1122,7 +1122,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               <div className="w-14 h-14 rounded-2xl bg-fuchsia-500/20 flex items-center justify-center mb-6 border border-fuchsia-500/30">
                 <TrackMentalIcon className="w-8 h-8 text-fuchsia-400" />
               </div>
-              <h3 className="text-xl font-bold text-fuchsia-400 mb-2">
+              <h3 className="text-xl font-medium text-fuchsia-400 mb-2">
                 Mental Health
               </h3>
               <p className="text-sm text-gray-400 mb-6">
@@ -1141,7 +1141,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/30">
                 <TrackCommunityIcon className="w-8 h-8 text-indigo-400" />
               </div>
-              <h3 className="text-xl font-bold text-indigo-400 mb-2">
+              <h3 className="text-xl font-medium text-indigo-400 mb-2">
                 Community & Public Health
               </h3>
               <p className="text-sm text-gray-400 mb-6">
@@ -1167,7 +1167,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
           className="mb-32 max-w-5xl mx-auto"
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-medium mb-4">
               What Participants Will Gain
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -1220,7 +1220,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
                 >
                   <outcome.Icon className={`w-7 h-7 ${outcome.color}`} />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">
+                <h3 className="text-xl font-medium text-white mb-3">
                   {outcome.title}
                 </h3>
                 <p className="text-gray-400 leading-relaxed">{outcome.desc}</p>
@@ -1237,7 +1237,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
           className="mb-32 max-w-5xl mx-auto"
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-medium mb-4">
               Innovation Journey
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -1282,10 +1282,10 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               >
                 <div className="w-4 h-4 rounded-full bg-purple-500 mb-4 shadow-[0_0_10px_rgba(168,85,247,0.8)] group-hover:scale-150 transition-transform" />
                 <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 w-full backdrop-blur-sm hover:bg-white/[0.05] transition-colors">
-                  <div className="text-purple-400 text-sm font-bold mb-1 uppercase tracking-wider">
+                  <div className="text-purple-400 text-sm font-medium mb-1 uppercase tracking-wider">
                     {step.date}
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-3">
+                  <h3 className="text-lg font-medium text-white mb-3">
                     {step.phase}
                   </h3>
                   <div className="space-y-2 text-sm">
@@ -1320,7 +1320,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
           className="mb-32 max-w-5xl mx-auto"
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-medium mb-4">
               Our Partners
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -1339,7 +1339,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <h3 className="text-2xl font-bold text-blue-400">
+                <h3 className="text-2xl font-medium text-blue-400">
                   AMSA THAILAND
                 </h3>
               </div>
@@ -1388,7 +1388,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <h3 className="text-2xl font-bold text-pink-400">
+                <h3 className="text-2xl font-medium text-pink-400">
                   STEM like Her
                 </h3>
               </div>
@@ -1486,7 +1486,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
                       key={level}
                       className="flex flex-col items-center p-3 rounded-lg bg-white/[0.02] border border-white/5"
                     >
-                      <span className="text-2xl font-bold text-purple-300">{count}</span>
+                      <span className="text-2xl font-medium text-purple-300">{count}</span>
                       <span className="text-xs text-gray-400 text-center mt-1">{level}</span>
                     </div>
                   ))}
@@ -1511,7 +1511,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               Limited Availability
             </span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
+          <h2 className="text-2xl md:text-3xl font-medium mb-4">
             Secure Your Sponsorship Early
           </h2>
           <p className="text-gray-400 text-lg">
@@ -1548,7 +1548,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
 
               {/* Highlight Banner for Diamond */}
               {pkg.highlight && (
-                <div className="absolute top-0 left-0 w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white text-xs font-bold uppercase tracking-wider py-2 text-center z-20 shadow-[0_0_20px_rgba(232,121,249,0.6)] border-b border-white/20">
+                <div className="absolute top-0 left-0 w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white text-xs font-medium uppercase tracking-wider py-2 text-center z-20 shadow-[0_0_20px_rgba(232,121,249,0.6)] border-b border-white/20">
                   <span className="inline-block animate-pulse">
                     {pkg.highlight}
                   </span>
@@ -1589,7 +1589,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
                       className={`w-16 h-16 relative z-10 drop-shadow-2xl ${pkg.isPremium ? "scale-125" : ""}`}
                     />
                   </motion.div>
-                  <h3 className="text-2xl font-bold text-white tracking-wide">
+                  <h3 className="text-2xl font-medium text-white tracking-wide">
                     {pkg.name}
                   </h3>
                 </div>
@@ -1632,7 +1632,7 @@ export function SponsorshipContent({ stats }: { stats: HackathonStats }) {
               {/* CTA Button */}
               <div className="relative z-10 p-6 pt-0 mt-auto">
                 <button
-                  className={`w-full py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2
+                  className={`w-full py-3 px-4 rounded-xl font-medium text-sm transition-all duration-300 flex items-center justify-center gap-2
                   ${
                     pkg.isPremium
                       ? "bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-[0_0_20px_rgba(232,121,249,0.4)] hover:shadow-[0_0_30px_rgba(232,121,249,0.7)] hover:scale-[1.03] border border-white/20"

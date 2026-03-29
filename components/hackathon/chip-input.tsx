@@ -102,7 +102,7 @@ export function ChipInput({
       {/* Label Section */}
       <div className="mb-2">
         <label className="ei-label dawn-theme flex flex-col gap-0.5">
-          <span className="text-[#e2e8f0] font-semibold" style={{ fontFamily: "var(--font-kodchasan), 'Kodchasan', sans-serif" }}>
+          <span className="text-[#e2e8f0] font-medium">
             {label}
           </span>
           {labelEn && (
@@ -114,7 +114,7 @@ export function ChipInput({
       </div>
 
       {/* Prompt */}
-      <p className="text-[#94a3b8] text-sm mb-3" style={{ fontFamily: "var(--font-bai-jamjuree), 'Bai Jamjuree', sans-serif" }}>
+      <p className="text-[#94a3b8] text-sm mb-3">
         {prompt}
       </p>
 
@@ -149,7 +149,6 @@ export function ChipInput({
               animate-in fade-in zoom-in duration-200
               max-w-[200px] sm:max-w-[250px]
             "
-            style={{ fontFamily: "var(--font-kodchasan), 'Kodchasan', sans-serif" }}
           >
             <span className="truncate">{chip}</span>
             <button
@@ -188,7 +187,6 @@ export function ChipInput({
               outline-none
               py-1
             "
-            style={{ fontFamily: "var(--font-kodchasan), 'Kodchasan', sans-serif" }}
             maxLength={maxChars}
           />
         )}

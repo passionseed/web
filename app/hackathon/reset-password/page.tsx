@@ -80,7 +80,7 @@ function ResetPasswordForm() {
 
         <div className="relative z-10 w-full max-w-md px-6 py-12">
           <div className="bg-[#0d1219]/80 backdrop-blur-sm border border-red-500/20 rounded-2xl p-8">
-            <h1 className="text-2xl font-bold mb-4 text-red-400">Invalid Reset Link</h1>
+            <h1 className="text-2xl font-medium mb-4 text-red-400">Invalid Reset Link</h1>
             <p className="text-gray-400 mb-6">This password reset link is invalid or has expired.</p>
             <Button
               onClick={() => router.push("/hackathon/forgot-password")}
@@ -108,7 +108,7 @@ function ResetPasswordForm() {
         </button>
 
         <div className="bg-[#0d1219]/80 backdrop-blur-sm border border-[#91C4E3]/20 rounded-2xl p-8 shadow-[0_0_40px_rgba(145,196,227,0.08)]">
-          <h1 className="text-3xl font-bold mb-1 bg-gradient-to-r from-[#91C4E3] to-[#65ABFC] bg-clip-text text-transparent font-[family-name:var(--font-poppins)]">
+          <h1 className="text-3xl font-medium mb-1 bg-gradient-to-r from-[#91C4E3] to-[#65ABFC] bg-clip-text text-transparent font-[family-name:var(--font-poppins)]">
             Reset Password
           </h1>
           <p className="text-gray-400 text-sm mb-2">The Next Decade Hackathon 2026</p>
