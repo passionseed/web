@@ -382,7 +382,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                             {/* Subtitle - GSAP handwriting animation */}
                             <h2
                                 ref={subtitleRef}
-                                className="text-4xl md:text-5xl font-semibold text-white mb-3 font-[family-name:var(--font-reenie-beanie)]"
+                                className="text-4xl md:text-5xl font-medium text-white mb-3 font-[family-name:var(--font-reenie-beanie)]"
                                 style={{
                                     clipPath: 'inset(0 100% 0 0)',
                                     textShadow: '0 0 30px rgba(145,196,227,0.4)',
@@ -432,7 +432,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#91C4E3] opacity-[0.04] blur-[120px] rounded-full pointer-events-none" />
                         <div className="container mx-auto px-4 relative z-10">
                             <div className="max-w-5xl mx-auto text-center">
-                                <h2 className="text-4xl md:text-5xl font-bold mb-3" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
+                                <h2 className="text-4xl md:text-5xl font-medium mb-3" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
                                     <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
                                         Watch the Story
                                     </span>
@@ -469,7 +469,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                         <div className="container mx-auto px-4 relative z-10">
                             <div className="max-w-5xl mx-auto">
-                                <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
+                                <h2 className="text-4xl md:text-5xl font-medium mb-12 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
                                     <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
                                         Anyone Can Make an Impact
                                     </span>
@@ -477,7 +477,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                 <div className="space-y-6">
                                     <div className="mb-12">
                                         <p className="text-gray-200 text-lg md:text-xl leading-relaxed text-center">
-                                            ที่ The Next Decade Hackathon 2026 <span className="text-[#91C4E3] font-semibold">พื้นฐานไม่ใช่ข้อจำกัด แต่คือจุดเริ่มต้นของการเรียนรู้</span> เราเปลี่ยนพื้นที่แข่งขันให้กลายเป็นโอกาสให้คุณได้ทดลอง สร้างสรรค์ และเรียนรู้จากการลงมือทำจริงได้แบบไม่ต้องกังวล ผ่านระบบเหล่านี้:
+                                            ที่ The Next Decade Hackathon 2026 <span className="text-[#91C4E3] font-medium">พื้นฐานไม่ใช่ข้อจำกัด แต่คือจุดเริ่มต้นของการเรียนรู้</span> เราเปลี่ยนพื้นที่แข่งขันให้กลายเป็นโอกาสให้คุณได้ทดลอง สร้างสรรค์ และเรียนรู้จากการลงมือทำจริงได้แบบไม่ต้องกังวล ผ่านระบบเหล่านี้:
                                         </p>
                                     </div>
 
@@ -488,7 +488,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                                 <MentorshipIllustration className="w-full h-full" />
                                             </div>
                                             <div className="flex-1 text-center md:text-left">
-                                                <h4 className="text-[#91C4E3] font-semibold text-xl md:text-2xl mb-3">Personal Mentorship</h4>
+                                                <h4 className="text-[#91C4E3] font-medium text-xl md:text-2xl mb-3">Personal Mentorship</h4>
                                                 <p className="text-gray-300 text-base md:text-lg leading-relaxed">
                                                     เรามีการจัดสรร Mentor ประจำแต่ละกลุ่มเพื่อคอยให้คำปรึกษาและ Feedback อย่างใกล้ชิด พี่ๆจะช่วยให้คำแนะนำและดูแลให้น้องๆมือใหม่ยังคงอยู่ในเส้นทางและพัฒนาไอเดียได้อย่างเต็มศักยภาพ
                                                 </p>
@@ -503,9 +503,9 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                                 <GuidelineIllustration className="w-full h-full" />
                                             </div>
                                             <div className="flex-1 text-center md:text-left">
-                                                <h4 className="text-[#A594BA] font-semibold text-xl md:text-2xl mb-3">Learning Guideline</h4>
+                                                <h4 className="text-[#A594BA] font-medium text-xl md:text-2xl mb-3">Learning Guideline</h4>
                                                 <p className="text-gray-300 text-base md:text-lg leading-relaxed">
-                                                    คุณจะได้เรียนรู้กระบวนการสร้างนวัตกรรมอย่างเป็นระบบผ่านหลักสูตร <span className="text-[#A594BA] font-semibold">Design Thinking</span> ที่มุ่งเน้นการลงมือทำจริงเพื่อให้ได้ผลงานที่ใช้งานได้จริง (Functional Prototype) และมีเว็บคอย guide ทางให้ในแต่ละขั้นตอน
+                                                    คุณจะได้เรียนรู้กระบวนการสร้างนวัตกรรมอย่างเป็นระบบผ่านหลักสูตร <span className="text-[#A594BA] font-medium">Design Thinking</span> ที่มุ่งเน้นการลงมือทำจริงเพื่อให้ได้ผลงานที่ใช้งานได้จริง (Functional Prototype) และมีเว็บคอย guide ทางให้ในแต่ละขั้นตอน
                                                 </p>
                                             </div>
                                         </div>
@@ -518,7 +518,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                                 <TesterIllustration className="w-full h-full" />
                                             </div>
                                             <div className="flex-1 text-center md:text-left">
-                                                <h4 className="text-[#91C4E3] font-semibold text-xl md:text-2xl mb-3">Tester</h4>
+                                                <h4 className="text-[#91C4E3] font-medium text-xl md:text-2xl mb-3">Tester</h4>
                                                 <p className="text-gray-300 text-base md:text-lg leading-relaxed">
                                                     หัวใจสำคัญคือการนำ Prototype ไปทดลองใช้จริง เพื่อรับ Feedback มาพัฒนาผลงานให้แม่นยำ ขั้นตอนนี้จะช่วยสร้างความมั่นใจว่าสิ่งที่คุณสร้างขึ้นนั้นสามารถแก้ปัญหาได้ตรงจุดและตอบโจทย์คนใช้งานจริง ก่อนนำเสนอผลงานในรอบสุดท้าย
                                                 </p>
@@ -561,7 +561,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                             </div>
 
                                             {/* Title */}
-                                            <h3 className="text-3xl md:text-4xl font-bold text-[#91C4E3] mb-8 text-center"
+                                            <h3 className="text-3xl md:text-4xl font-medium text-[#91C4E3] mb-8 text-center"
                                                 style={{
                                                     textShadow: '0 0 30px rgba(145,196,227,0.5)',
                                                     letterSpacing: '-0.02em'
@@ -613,7 +613,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                             </div>
 
                                             {/* Title */}
-                                            <h3 className="text-3xl md:text-4xl font-bold text-[#A594BA] mb-8 text-center"
+                                            <h3 className="text-3xl md:text-4xl font-medium text-[#A594BA] mb-8 text-center"
                                                 style={{
                                                     textShadow: '0 0 30px rgba(165,148,186,0.5)',
                                                     letterSpacing: '-0.02em'
@@ -659,7 +659,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                     {/* Tracks Section - Minimal Design */}
                     <section className="py-32 relative z-10">
                         <div className="container mx-auto px-4 relative z-10">
-                            <h2 className="text-5xl md:text-6xl font-bold mb-20 text-center">
+                            <h2 className="text-5xl md:text-6xl font-medium mb-20 text-center">
                                 <span className="text-white/90">
                                     Tracks
                                 </span>
@@ -675,7 +675,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                         <div className="flex items-center gap-8 md:gap-12 flex-1">
                                             {/* Number */}
                                             <div className="flex-shrink-0 flex items-center gap-6">
-                                                <span className="text-6xl md:text-8xl font-bold text-white group-hover:text-[#91C4E3] transition-all duration-500 leading-none">
+                                                <span className="text-6xl md:text-8xl font-medium text-white group-hover:text-[#91C4E3] transition-all duration-500 leading-none">
                                                     01
                                                 </span>
                                                 <HeartPulse className="w-12 h-12 md:w-16 md:h-16 text-[#91C4E3] transition-all duration-500" strokeWidth={1} />
@@ -683,7 +683,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                                             {/* Content */}
                                             <div className="flex-1 space-y-2 relative z-10">
-                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
+                                                <h3 className="text-2xl md:text-3xl font-medium text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
                                                     Traditional & Integrative Healthcare
                                                 </h3>
                                                 {expandedTrack !== 1 && (
@@ -740,7 +740,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                         <div className="flex items-center gap-8 md:gap-12 flex-1">
                                             {/* Number */}
                                             <div className="flex-shrink-0 flex items-center gap-6">
-                                                <span className="text-6xl md:text-8xl font-bold text-white group-hover:text-[#A594BA] transition-all duration-500 leading-none">
+                                                <span className="text-6xl md:text-8xl font-medium text-white group-hover:text-[#A594BA] transition-all duration-500 leading-none">
                                                     02
                                                 </span>
                                                 <Brain className="w-12 h-12 md:w-16 md:h-16 text-[#A594BA] transition-all duration-500" strokeWidth={1} />
@@ -748,7 +748,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                                             {/* Content */}
                                             <div className="flex-1 space-y-2 relative z-10">
-                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#A594BA] transition-colors duration-300">
+                                                <h3 className="text-2xl md:text-3xl font-medium text-white/90 group-hover:text-[#A594BA] transition-colors duration-300">
                                                     Mental Health
                                                 </h3>
                                                 {expandedTrack !== 2 && (
@@ -805,7 +805,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                         <div className="flex items-center gap-8 md:gap-12 flex-1">
                                             {/* Number */}
                                             <div className="flex-shrink-0 flex items-center gap-6">
-                                                <span className="text-6xl md:text-8xl font-bold text-white group-hover:text-[#91C4E3] transition-all duration-500 leading-none">
+                                                <span className="text-6xl md:text-8xl font-medium text-white group-hover:text-[#91C4E3] transition-all duration-500 leading-none">
                                                     03
                                                 </span>
                                                 <Globe className="w-12 h-12 md:w-16 md:h-16 text-[#91C4E3] transition-all duration-500" strokeWidth={1} />
@@ -813,7 +813,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                                             {/* Content */}
                                             <div className="flex-1 space-y-2 relative z-10">
-                                                <h3 className="text-2xl md:text-3xl font-bold text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
+                                                <h3 className="text-2xl md:text-3xl font-medium text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
                                                     Community, Public & Environmental Health
                                                 </h3>
                                                 {expandedTrack !== 3 && (
@@ -891,7 +891,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                         <div className="container mx-auto px-4 relative z-10">
                             <div className="text-center mb-16">
-                                <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight" style={{ textShadow: '0 0 40px rgba(165,148,186,0.4)' }}>
+                                <h2 className="text-4xl md:text-5xl font-medium mb-6 tracking-tight" style={{ textShadow: '0 0 40px rgba(165,148,186,0.4)' }}>
                                     <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
                                         Beyond the Hackathon
                                     </span>
@@ -925,7 +925,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                         <div className="mb-8 p-5 bg-white/5 rounded-full border border-white/10 group-hover:scale-110 group-hover:border-[#91C4E3]/40 transition-all duration-500 shadow-inner">
                                             {item.icon}
                                         </div>
-                                        <h3 className="text-2xl font-bold text-white mb-4">{item.title}</h3>
+                                        <h3 className="text-2xl font-medium text-white mb-4">{item.title}</h3>
                                         <p className="text-gray-400 text-lg leading-relaxed">{item.desc}</p>
                                     </div>
                                 ))}
@@ -989,12 +989,12 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                             {/* Pass Info Grid */}
                                             <div className="grid grid-cols-2 gap-6 mb-8">
                                                 <div className="text-center md:text-left">
-                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] block mb-2">Pass Type</span>
-                                                    <span className="text-xl md:text-2xl font-bold text-white tracking-wide">SPECIAL INVITE</span>
+                                                    <span className="text-[10px] text-gray-500 font-medium uppercase tracking-[0.2em] block mb-2">Pass Type</span>
+                                                    <span className="text-xl md:text-2xl font-medium text-white tracking-wide">SPECIAL INVITE</span>
                                                 </div>
                                                 <div className="text-center md:text-right">
-                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] block mb-2">Role</span>
-                                                    <span className="text-xl md:text-2xl font-bold text-[#91C4E3] tracking-wide">INNOVATOR</span>
+                                                    <span className="text-[10px] text-gray-500 font-medium uppercase tracking-[0.2em] block mb-2">Role</span>
+                                                    <span className="text-xl md:text-2xl font-medium text-[#91C4E3] tracking-wide">INNOVATOR</span>
                                                 </div>
                                             </div>
 
@@ -1039,7 +1039,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                         </div>
 
                         <div className="container mx-auto px-4">
-                            <h2 className="text-4xl md:text-5xl font-bold mb-16 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
+                            <h2 className="text-4xl md:text-5xl font-medium mb-16 text-center" style={{ textShadow: '0 0 30px rgba(145,196,227,0.3)' }}>
                                 <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
                                     Organizations & Partners
                                 </span>
@@ -1053,7 +1053,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                             <img src="/hackathon/AMSA.png" alt="AMSA Thailand" className="w-24 h-24 object-contain" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">AMSA Thailand</h3>
+                                            <h3 className="text-2xl font-medium text-[#91C4E3] mb-3">AMSA Thailand</h3>
                                             <p className="text-gray-300 leading-relaxed text-sm">
                                                 เครือข่ายนักศึกษาแพทย์ที่ทำงานด้านสาธารณสุข การแลกเปลี่ยนความรู้ และความร่วมมือด้านสุขภาพ
                                             </p>
@@ -1068,7 +1068,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                             <img src="/hackathon/PS.png" alt="Passionseed" className="w-24 h-24 object-contain" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 12px rgba(165,148,186,0.3))' }} />
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">Passionseed</h3>
+                                            <h3 className="text-2xl font-medium text-[#91C4E3] mb-3">Passionseed</h3>
                                             <p className="text-gray-300 leading-relaxed text-sm">
                                                 องค์กรที่พัฒนาเยาวชนผ่านการเรียนรู้ด้านเทคโนโลยี เช่น AI การสร้างผลิตภัณฑ์ดิจิทัล และนวัตกรรม เพื่อสร้างโปรเจกต์ที่ใช้ได้จริง
                                             </p>
@@ -1083,7 +1083,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                             <img src="/hackathon/StemLike.png" alt="STEM Like Her" className="w-24 h-24 object-contain" loading="lazy" decoding="async" style={{ filter: 'drop-shadow(0 0 12px rgba(145,196,227,0.3))' }} />
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="text-2xl font-bold text-[#91C4E3] mb-3">STEM Like Her</h3>
+                                            <h3 className="text-2xl font-medium text-[#91C4E3] mb-3">STEM Like Her</h3>
                                             <p className="text-gray-300 leading-relaxed text-sm">
                                                 องค์กรนักศึกษาที่สนับสนุนและสร้างแรงบันดาลใจให้ผู้หญิงและเยาวชนในสาย STEM
                                             </p>
@@ -1109,7 +1109,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
 
                         <div className="container mx-auto px-4 relative z-10">
                             <div className="text-center max-w-4xl mx-auto space-y-8">
-                                <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                                <h2 className="text-4xl md:text-5xl font-medium leading-tight">
                                     <span className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] bg-clip-text text-transparent">
                                         มาร่วมสำรวจและสร้างอนาคตของการดูแลสุขภาพไปด้วยกัน
                                     </span>

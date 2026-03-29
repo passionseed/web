@@ -162,7 +162,7 @@ export function ProblemExplorer({
             {/* Track header */}
             <div className="flex items-center gap-3 border-b border-white/10 pb-3">
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-slate-900"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-900"
                 style={{ backgroundColor: track.color }}
               >
                 {track.trackNum}
@@ -235,7 +235,7 @@ export function ProblemExplorer({
                     </div>
 
                     {/* Title */}
-                    <h4 className="mb-2 font-heading text-lg font-bold text-white">
+                    <h4 className="mb-2 font-heading text-lg font-medium text-white">
                       {problem.title.th}
                     </h4>
                     <p className="mb-3 text-xs text-slate-400">{problem.title.en}</p>
@@ -266,11 +266,6 @@ export function ProblemExplorer({
                         </span>
                       ))}
                     </div>
-
-                    {/* Selection indicator */}
-                    {isSelected && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
-                    )}
                   </div>
                 );
               })}

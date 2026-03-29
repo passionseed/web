@@ -420,7 +420,7 @@ export default function RegisterPage() {
         >
           <div className="mb-7">
             <h1
-              className="text-3xl font-bold mb-1 bio-title font-[family-name:var(--font-mitr)]"
+              className="text-3xl font-medium mb-1 bio-title font-[family-name:var(--font-mitr)]"
               style={{
                 background: "linear-gradient(130deg, #91C4E3 0%, #65ABFC 100%)",
                 WebkitBackgroundClip: "text",
@@ -640,7 +640,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-3 rounded-full text-sm font-semibold uppercase tracking-widest transition-all duration-300 disabled:opacity-40 bio-btn font-[family-name:var(--font-mitr)]"
+              className="w-full mt-3 rounded-full text-sm font-medium uppercase tracking-widest transition-all duration-300 disabled:opacity-40 bio-btn font-[family-name:var(--font-mitr)]"
               style={{
                 padding: "0.875rem 1rem",
                 background: loading

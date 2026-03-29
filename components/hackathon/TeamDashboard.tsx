@@ -189,7 +189,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
     };
 
     const handleBackToHome = () => {
-        router.push("/hackathon");
+        router.push("/hackathon/dashboard");
     };
 
     const LogoutButton = () => (
@@ -240,13 +240,13 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                 <div className="w-full max-w-lg space-y-6 relative z-10">
                     <div className="text-center">
                         <p className="text-[#7aa4c4] text-sm tracking-widest uppercase mb-1 font-medium">ทีมของคุณ</p>
-                        <h1 className="text-4xl font-bold text-white">{team.name}</h1>
+                        <h1 className="text-4xl font-medium text-white">{team.name}</h1>
                     </div>
 
                     <div className="bg-gradient-to-br from-[#0d1219]/95 to-[#0a0f16]/95 border border-[#4a6b82]/20 rounded-2xl p-6 text-center shadow-[0_0_25px_rgba(74,107,130,0.15)]">
                         <p className="text-gray-400 text-sm mb-2 font-medium">รหัสล็อบบี้</p>
                         <div className="flex items-center justify-center gap-3">
-                            <span className="text-5xl font-bold tracking-[0.3em] text-[#7aa4c4] font-mono" style={{ textShadow: '0 0 20px rgba(106,154,196,0.5)' }}>
+                            <span className="text-5xl font-medium tracking-[0.3em] text-[#7aa4c4] font-mono" style={{ textShadow: '0 0 20px rgba(106,154,196,0.5)' }}>
                                 {team.lobby_code}
                             </span>
                             <button onClick={copyCode} className="text-gray-300 hover:text-[#7aa4c4] transition-colors bg-[#1a2530]/60 border border-[#5a7a94]/30 hover:border-[#7aa4c4]/60 p-2 rounded-lg">
@@ -260,7 +260,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2 text-[#7aa4c4]">
                                 <Users className="w-5 h-5" />
-                                <span className="font-semibold">สมาชิก ({team.members.length})</span>
+                                <span className="font-medium">สมาชิก ({team.members.length})</span>
                             </div>
                             <button onClick={refreshTeam} className="text-gray-300 hover:text-[#7aa4c4] transition-colors bg-[#1a2530]/60 border border-[#5a7a94]/30 hover:border-[#7aa4c4]/60 p-2 rounded-lg">
                                 <RefreshCw className="w-4 h-4" />
@@ -326,7 +326,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                             <div className="bg-gradient-to-br from-[#0d1219]/90 to-[#121c29]/80 border border-[#4a6b82]/15 rounded-2xl p-5 shadow-[0_0_20px_rgba(74,107,130,0.1)]">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Sparkles className="w-4 h-4 text-[#91C4E3]" />
-                                    <span className="font-semibold text-[#7aa4c4] text-sm">Team Problem Interests</span>
+                                    <span className="font-medium text-[#7aa4c4] text-sm">Team Problem Interests</span>
                                 </div>
                                 {shared.length > 0 && (
                                     <div className="mb-4 p-3 rounded-xl border border-[#91C4E3]/20" style={{ background: "rgba(145,196,227,0.05)" }}>
@@ -406,7 +406,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                             <div className="w-16 h-16 mx-auto bg-[#5a7a94]/30 border-2 border-[#5a7a94]/50 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(90,122,148,0.4)]">
                                 <RocketIcon className="w-8 h-8 text-[#7aa4c4]" />
                             </div>
-                            <h2 className="text-3xl font-bold text-[#7aa4c4]">สร้างทีม</h2>
+                            <h2 className="text-3xl font-medium text-[#7aa4c4]">สร้างทีม</h2>
                             <p className="text-gray-300 text-sm mt-2">ตั้งชื่อทีมและรับรหัสล็อบบี้</p>
                         </div>
                         <div className="space-y-4">
@@ -421,7 +421,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                             <button
                                 onClick={handleCreate}
                                 disabled={loading}
-                                className="w-full bg-gradient-to-r from-[#5a7a94] to-[#4a6a84] hover:from-[#6a9ac4] hover:to-[#5a8ab4] text-white font-bold py-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_25px_rgba(90,122,148,0.4)] hover:shadow-[0_0_40px_rgba(106,154,196,0.6)] hover:scale-[1.02] border border-[#7aa4c4]/30"
+                                className="w-full bg-gradient-to-r from-[#5a7a94] to-[#4a6a84] hover:from-[#6a9ac4] hover:to-[#5a8ab4] text-white font-medium py-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_25px_rgba(90,122,148,0.4)] hover:shadow-[0_0_40px_rgba(106,154,196,0.6)] hover:scale-[1.02] border border-[#7aa4c4]/30"
                             >
                                 {loading ? "กำลังสร้าง..." : "สร้างทีม"}
                             </button>
@@ -452,7 +452,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                             <div className="w-16 h-16 mx-auto bg-[#8b7a9a]/30 border-2 border-[#8b7a9a]/50 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(139,122,154,0.4)]">
                                 <KeyIcon className="w-8 h-8 text-[#b5a4ca]" />
                             </div>
-                            <h2 className="text-3xl font-bold text-[#b5a4ca]">เข้าร่วมทีม</h2>
+                            <h2 className="text-3xl font-medium text-[#b5a4ca]">เข้าร่วมทีม</h2>
                             <p className="text-gray-300 text-sm mt-2">ใส่รหัสล็อบบี้ 6 หลัก</p>
                         </div>
                         <div className="space-y-4">
@@ -468,7 +468,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                             <button
                                 onClick={handleJoin}
                                 disabled={loading || lobbyCode.length < 6}
-                                className="w-full bg-gradient-to-r from-[#8b7a9a] to-[#7b6a8a] hover:from-[#b5a4ca] hover:to-[#a594ba] text-white font-bold py-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_25px_rgba(139,122,154,0.4)] hover:shadow-[0_0_40px_rgba(181,164,202,0.6)] hover:scale-[1.02] border border-[#b5a4ca]/30"
+                                className="w-full bg-gradient-to-r from-[#8b7a9a] to-[#7b6a8a] hover:from-[#b5a4ca] hover:to-[#a594ba] text-white font-medium py-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_25px_rgba(139,122,154,0.4)] hover:shadow-[0_0_40px_rgba(181,164,202,0.6)] hover:scale-[1.02] border border-[#b5a4ca]/30"
                             >
                                 {loading ? "กำลังเข้าร่วม..." : "เข้าร่วม"}
                             </button>
@@ -502,7 +502,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                                     <FindIcon className="w-8 h-8 text-[#8abade]" />
                                 </div>
                             </div>
-                            <h2 className="text-3xl font-bold text-[#8abade] mb-3">เข้าสู่รายชื่อหาทีมแล้ว!</h2>
+                            <h2 className="text-3xl font-medium text-[#8abade] mb-3">เข้าสู่รายชื่อหาทีมแล้ว!</h2>
                             <p className="text-gray-300 text-sm">เราได้เพิ่มคุณเข้าสู่รายชื่อหาทีมแล้ว</p>
                         </div>
 
@@ -562,7 +562,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                     <p className="text-[#7aa4c4] text-base tracking-[0.3em] uppercase mb-3 font-medium">
                         ยินดีต้อนรับ
                     </p>
-                    <h1 className="text-5xl md:text-6xl font-bold mb-2 text-white" style={{ letterSpacing: '-0.02em' }}>
+                    <h1 className="text-5xl md:text-6xl font-medium mb-2 text-white" style={{ letterSpacing: '-0.02em' }}>
                         {participant.name}
                     </h1>
                     <p className="text-gray-300 mt-3 text-base font-medium">เลือกวิธีเข้าร่วมทีมของคุณ</p>
@@ -581,7 +581,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                                     <RocketIcon className="w-8 h-8 text-[#7aa4c4]" />
                                 </div>
                                 <div className="flex-1 text-left">
-                                    <h3 className="text-2xl font-bold text-white group-hover:text-[#7aa4c4] transition-colors duration-300">
+                                    <h3 className="text-2xl font-medium text-white group-hover:text-[#7aa4c4] transition-colors duration-300">
                                         สร้างทีม
                                     </h3>
                                     <p className="text-gray-300 text-sm mt-1 group-hover:text-gray-200 transition-colors">
@@ -609,7 +609,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                                     <KeyIcon className="w-8 h-8 text-[#b5a4ca]" />
                                 </div>
                                 <div className="flex-1 text-left">
-                                    <h3 className="text-2xl font-bold text-white group-hover:text-[#b5a4ca] transition-colors duration-300">
+                                    <h3 className="text-2xl font-medium text-white group-hover:text-[#b5a4ca] transition-colors duration-300">
                                         เข้าร่วมทีม
                                     </h3>
                                     <p className="text-gray-300 text-sm mt-1 group-hover:text-gray-200 transition-colors">
@@ -637,7 +637,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                                     <FindIcon className="w-8 h-8 text-[#8abade]" />
                                 </div>
                                 <div className="flex-1 text-left">
-                                    <h3 className="text-2xl font-bold text-white group-hover:text-[#8abade] transition-colors duration-300">
+                                    <h3 className="text-2xl font-medium text-white group-hover:text-[#8abade] transition-colors duration-300">
                                         หาทีม
                                     </h3>
                                     <p className="text-gray-300 text-sm mt-1 group-hover:text-gray-200 transition-colors">

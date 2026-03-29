@@ -13,28 +13,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import gsap from "gsap";
-import { ClipboardList, Users } from "lucide-react";
+import { ClipboardList, Users, Check, Sparkles, BookOpen, Home, ArrowRight } from "lucide-react";
 import type { HackathonParticipant } from "@/lib/hackathon/db";
+
+import FractalGlassBackground from "@/components/hackathon/ClarityGlassBackground";
 
 const ONBOARDING_NUDGE_KEY = "hackathon_onboarding_nudge_dismissed";
 
 export default function HackathonDashboardPage() {
   const router = useRouter();
-  const waterRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [participant, setParticipant] = useState<HackathonParticipant | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [showOnboardingNudge, setShowOnboardingNudge] = useState(false);
 
   useEffect(() => {
-    if (waterRef.current) {
-      gsap.to(waterRef.current, {
-        yPercent: -100,
-        duration: 0.9,
-        ease: "power3.inOut",
-        delay: 0.1,
-      });
-    }
 
     let attempts = 0;
     const maxAttempts = 6;
@@ -112,119 +105,73 @@ export default function HackathonDashboardPage() {
   };
 
   const handleLogout = async () => {
-    if (waterRef.current) {
-      gsap.fromTo(
-        waterRef.current,
-        { yPercent: 100 },
-        {
-          yPercent: 0,
-          duration: 0.9,
-          ease: "power3.inOut",
-          onComplete: () => {
-            fetch("/api/hackathon/logout", { method: "POST" }).then(() => {
-              router.push("/hackathon");
-            });
-          },
-        }
-      );
-    } else {
-      await fetch("/api/hackathon/logout", { method: "POST" });
-      router.push("/hackathon");
-    }
+    await fetch("/api/hackathon/logout", { method: "POST" });
+    router.push("/hackathon");
   };
 
   return (
-    <div
-      className="min-h-screen text-white relative overflow-hidden flex items-center justify-center"
-      style={{ background: "linear-gradient(to bottom, #010108 0%, #010210 60%, #010D18 100%)" }}
-    >
+    <div className="min-h-screen text-white relative overflow-hidden flex items-center justify-center font-[family-name:var(--font-mitr)]">
+      <FractalGlassBackground />
       <Dialog
         open={showOnboardingNudge}
         onOpenChange={(open) => {
           if (!open) dismissOnboardingNudge();
         }}
       >
-        <DialogContent className="border-[#91C4E3]/25 bg-[#0d1219] text-white sm:max-w-md">
+        <DialogContent className="border-[#91C4E3]/25 bg-[#0d1219] text-white sm:max-w-md font-[family-name:var(--font-mitr)]">
           <DialogHeader>
-            <DialogTitle className="text-xl text-white">Complete your onboarding</DialogTitle>
-            <DialogDescription className="text-gray-400 text-left">
-              A short quiz helps us understand your goals and match you with problems and teammates.
-              You can start it now or anytime from your dashboard.
+            <DialogTitle className="text-xl text-white">ทำแบบสอบถามให้เสร็จสมบูรณ์</DialogTitle>
+            <DialogDescription className="text-gray-400 text-left mt-2 text-sm leading-relaxed">
+              แบบสอบถามสั้นๆ จะช่วยให้เราเข้าใจเป้าหมายของคุณ และจับคู่คุณกับโจทย์แฮกกาธอนและเพื่อนร่วมทีม คุณสามารถเริ่มทำได้เลย หรือทำเมื่อไหร่ก็ได้จากแดชบอร์ดของคุณ
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row">
+          <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row mt-4">
             <Button
               type="button"
               variant="ghost"
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white hover:bg-white/5 font-[family-name:var(--font-mitr)]"
               onClick={dismissOnboardingNudge}
             >
-              Maybe later
+              ไว้ทีหลัง
             </Button>
             <Button
               type="button"
-              className="bg-[#9D81AC] hover:bg-[#8a6f99] text-white"
+              className="bg-gradient-to-r from-[#8b7a9a] to-[#7b6a8a] hover:from-[#b5a4ca] hover:to-[#a594ba] text-white border border-[#b5a4ca]/30 shadow-[0_0_15px_rgba(139,122,154,0.4)] transition-all font-[family-name:var(--font-mitr)]"
               onClick={goToOnboarding}
             >
-              Start onboarding
+              เริ่มทำแบบสอบถาม
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#91C4E3] opacity-5 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#9D81AC] opacity-5 blur-[150px] rounded-full pointer-events-none" />
 
-      <div
-        ref={waterRef}
-        className="fixed inset-0 z-20 pointer-events-none overflow-hidden"
-        style={{ background: "linear-gradient(to bottom, #4a90c4 0%, #1a5a8a 50%, #0d3a5c 100%)" }}
-      >
-        <div className="absolute -top-10 left-0 w-[200%] h-16" style={{ animation: "waveShift 2s linear infinite" }}>
-          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" className="w-1/2 h-full inline-block">
-            <path d="M0,30 C180,60 360,0 540,30 C720,60 900,0 1080,30 C1260,60 1440,0 1440,30 L1440,60 L0,60 Z" fill="#4a90c4" />
-          </svg>
-          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" className="w-1/2 h-full inline-block">
-            <path d="M0,30 C180,60 360,0 540,30 C720,60 900,0 1080,30 C1260,60 1440,0 1440,30 L1440,60 L0,60 Z" fill="#4a90c4" />
-          </svg>
-        </div>
-      </div>
-
-      <style jsx>{`
-        @keyframes waveShift {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-      `}</style>
 
       <div ref={contentRef} className="relative z-30 w-full max-w-lg px-6 py-12 text-center space-y-8 opacity-0">
         {participant ? (
           <>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="text-5xl mb-4">🎉</div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-[#91C4E3] to-[#65ABFC] bg-clip-text text-transparent font-[family-name:var(--font-poppins)]">
-                You&apos;re in!
+              <p className="text-[#91C4E3] text-sm tracking-widest uppercase mb-1 font-medium">คุณได้เข้าร่วมแล้ว!</p>
+              <h1 className="text-4xl md:text-5xl font-medium bg-gradient-to-r from-[#91C4E3] to-[#65ABFC] bg-clip-text text-transparent">
+                ยินดีต้อนรับ
               </h1>
-              <p className="text-gray-400">Welcome to The Next Decade Hackathon 2026</p>
+              <p className="text-gray-300 font-medium">The Next Decade Hackathon 2026</p>
             </div>
 
             {onboardingComplete === false && (
-              <div className="bg-amber-950/40 backdrop-blur-sm border border-amber-500/35 rounded-2xl p-5 text-left shadow-[0_0_32px_rgba(245,158,11,0.08)]">
+              <div className="bg-gradient-to-br from-amber-950/60 to-amber-900/40 backdrop-blur-md border border-amber-500/30 rounded-2xl p-5 text-left shadow-[0_0_30px_rgba(245,158,11,0.15)]">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-lg bg-amber-500/15 p-2 text-amber-400">
+                  <div className="mt-0.5 rounded-xl bg-amber-500/20 p-2.5 text-amber-400 border border-amber-500/30">
                     <ClipboardList className="h-5 w-5" aria-hidden />
                   </div>
                   <div className="flex-1 space-y-3 min-w-0">
                     <div>
-                      <p className="text-amber-200 font-semibold text-sm uppercase tracking-wide">
-                        Onboarding incomplete
+                      <p className="text-amber-300 font-medium text-sm">
+                        ยังทำแบบสอบถามไม่เสร็จ
                       </p>
-                      <p className="text-gray-400 text-sm mt-1">
-                        Finish the short quiz when you&apos;re ready — it powers problem picks and team matching.
+                      <p className="text-gray-200 text-sm mt-1 leading-relaxed">
+                        ทำแบบสอบถามสั้นๆ ให้เสร็จเมื่อคุณพร้อม ข้อมูลนี้จะช่วยในการเลือกปัญหาและจับคู่ทีม
                       </p>
                     </div>
                     <Button
@@ -232,9 +179,9 @@ export default function HackathonDashboardPage() {
                       onClick={() =>
                         router.push("/hackathon/onboarding?returnTo=/hackathon/dashboard")
                       }
-                      className="w-full sm:w-auto bg-amber-600/90 hover:bg-amber-600 text-white"
+                      className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-white border border-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all duration-300 font-[family-name:var(--font-mitr)]"
                     >
-                      Start onboarding quiz
+                      เริ่มทำแบบสอบถาม
                     </Button>
                   </div>
                 </div>
@@ -242,37 +189,47 @@ export default function HackathonDashboardPage() {
             )}
 
             {onboardingComplete === true && (
-              <div className="bg-emerald-950/30 backdrop-blur-sm border border-emerald-500/25 rounded-2xl px-4 py-3 text-left">
-                <p className="text-emerald-200/90 text-sm font-medium">Onboarding complete</p>
-                <p className="text-gray-500 text-xs mt-0.5">Thanks — your responses are saved.</p>
+              <div className="bg-gradient-to-br from-emerald-950/40 to-emerald-900/20 backdrop-blur-md border border-emerald-500/30 rounded-2xl px-5 py-4 text-left shadow-[0_0_20px_rgba(16,185,129,0.1)] flex items-center gap-3">
+                <div className="rounded-full bg-emerald-500/20 p-1.5 text-emerald-400 border border-emerald-500/30">
+                  <Check className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-emerald-300 text-sm font-medium">ทำแบบสอบถามเสร็จสิ้น</p>
+                  <p className="text-emerald-100/70 text-xs mt-0.5">ขอบคุณ — ระบบได้บันทึกคำตอบของคุณแล้ว</p>
+                </div>
               </div>
             )}
 
-            <div className="bg-[#0d1219]/80 backdrop-blur-sm border border-[#91C4E3]/20 rounded-2xl p-6 text-left space-y-4 shadow-[0_0_40px_rgba(145,196,227,0.08)]">
-              <div className="flex justify-between items-start">
+            <div className="bg-gradient-to-br from-[#0d1219]/90 to-[#121c29]/80 backdrop-blur-md border border-[#4a6b82]/30 rounded-3xl p-6 md:p-8 text-left space-y-5 shadow-[0_0_30px_rgba(74,107,130,0.15)] relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#91C4E3]/0 via-[#91C4E3]/5 to-[#91C4E3]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              <div className="flex justify-between items-start relative z-10">
                 <div>
-                  <p className="text-xl font-semibold">{participant.name}</p>
-                  <p className="text-gray-400 text-sm">{participant.email}</p>
+                  <p className="text-2xl font-medium text-white">{participant.name}</p>
+                  <p className="text-[#91C4E3] text-sm mt-1 bg-[#91C4E3]/10 inline-block px-3 py-1 rounded-full border border-[#91C4E3]/30 font-medium">
+                    {participant.role}
+                  </p>
                 </div>
-                <span className="text-xs bg-[#91C4E3]/10 border border-[#91C4E3]/30 text-[#91C4E3] rounded-full px-3 py-1">
-                  {participant.role}
-                </span>
               </div>
 
-              <div className="border-t border-[#91C4E3]/10 pt-4 space-y-2 text-sm text-gray-400">
-                <div className="flex justify-between">
-                  <span>University / Org</span>
-                  <span className="text-white">{participant.university}</span>
+              <div className="border-t border-[#4a6b82]/30 pt-4 space-y-3 text-sm text-gray-300 relative z-10">
+                <div className="grid grid-cols-2 gap-2 pb-2">
+                  <span className="text-[#5a7a94] font-medium">อีเมล</span>
+                  <span className="text-white text-right break-words">{participant.email}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pb-2">
+                  <span className="text-[#5a7a94] font-medium">มหาวิทยาลัย / องค์กร</span>
+                  <span className="text-white text-right">{participant.university}</span>
                 </div>
                 {participant.team_name && (
-                  <div className="flex justify-between">
-                    <span>Team</span>
-                    <span className="text-white">{participant.team_name}</span>
+                  <div className="grid grid-cols-2 gap-2 pb-2">
+                    <span className="text-[#5a7a94] font-medium">ทีม</span>
+                    <span className="text-[#b5a4ca] font-medium text-right">{participant.team_name}</span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span>Registered</span>
-                  <span className="text-white">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="text-[#5a7a94] font-medium">วันที่สมัคร</span>
+                  <span className="text-white text-right font-mono text-xs mt-0.5">
                     {new Date(participant.created_at).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
@@ -285,29 +242,56 @@ export default function HackathonDashboardPage() {
 
             <Button
               asChild
-              className="w-full bg-[#91C4E3]/15 hover:bg-[#91C4E3]/25 text-[#91C4E3] border border-[#91C4E3]/35"
+              className="w-full bg-gradient-to-r from-[#5a7a94] to-[#4a6a84] hover:from-[#6a9ac4] hover:to-[#5a8ab4] text-white font-medium py-6 rounded-xl transition-all duration-300 shadow-[0_0_25px_rgba(90,122,148,0.4)] hover:shadow-[0_0_40px_rgba(106,154,196,0.6)] hover:scale-[1.02] border border-[#7aa4c4]/30 font-[family-name:var(--font-mitr)]"
             >
-              <Link href="/hackathon/team" className="inline-flex items-center justify-center gap-2">
-                <Users className="h-4 w-4" aria-hidden />
-                Team dashboard
+              <Link href="/hackathon/team" className="inline-flex items-center justify-center gap-2 text-lg">
+                <Users className="h-5 w-5" aria-hidden />
+                แดชบอร์ดทีม
               </Link>
             </Button>
 
-            <div className="bg-[#0d1219]/60 border border-[#A594BA]/20 rounded-2xl p-6 text-sm text-gray-400 space-y-2">
-              <p className="text-white font-medium">What&apos;s next?</p>
-              <p>
-                The hackathon kicks off on{" "}
-                <span className="text-[#91C4E3]">March 15, 2026</span>. We&apos;ll send event details and updates to
-                your email.
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                asChild
+                variant="outline"
+                className="w-full bg-[#1a2530]/40 hover:bg-[#1a2530]/80 border-[#4a6b82]/30 hover:border-[#7aa4c4]/60 text-gray-300 hover:text-white transition-all py-5 font-[family-name:var(--font-mitr)]"
+              >
+                <Link href="/hackathon/challenge" className="flex flex-col items-center gap-1.5 h-auto">
+                  <BookOpen className="h-4 w-4 text-[#7aa4c4]" />
+                  <span className="text-xs">รายละเอียดโจทย์</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="w-full bg-[#1a2530]/40 hover:bg-[#1a2530]/80 border-[#4a6b82]/30 hover:border-[#7aa4c4]/60 text-gray-300 hover:text-white transition-all py-5 font-[family-name:var(--font-mitr)]"
+              >
+                <Link href="/hackathon" className="flex flex-col items-center gap-1.5 h-auto">
+                  <Home className="h-4 w-4 text-[#7aa4c4]" />
+                  <span className="text-xs">หน้าแรก</span>
+                </Link>
+              </Button>
+            </div>
+
+            <div className="bg-[#1a2530]/60 border border-[#b5a4ca]/30 rounded-2xl p-5 text-sm text-gray-300 space-y-2 shadow-[0_0_20px_rgba(139,122,154,0.1)]">
+              <div className="flex items-center gap-2 text-[#b5a4ca] font-medium mb-1">
+                <Sparkles className="w-4 h-4" />
+                <p>ขั้นตอนต่อไป?</p>
+              </div>
+              <p className="leading-relaxed">
+                แฮกกาธอนจะเริ่มในวันที่ <span className="text-[#b5a4ca] font-medium">4 เมษายน 2026</span> เราจะส่งรายละเอียดและอัปเดตกิจกรรมไปที่อีเมลของคุณ
               </p>
             </div>
 
-            <Button onClick={handleLogout} variant="ghost" className="text-gray-500 hover:text-white text-sm">
-              Log out
+            <Button onClick={handleLogout} variant="ghost" className="text-gray-400 hover:text-red-300 hover:bg-red-500/10 text-sm transition-colors mt-2 font-[family-name:var(--font-mitr)]">
+              ออกจากระบบ
             </Button>
           </>
         ) : (
-          <p className="text-gray-500 text-sm">Setting up your account...</p>
+          <div className="flex flex-col items-center justify-center h-full space-y-4">
+            <div className="w-8 h-8 rounded-full border-2 border-[#91C4E3]/30 border-t-[#91C4E3] animate-spin" />
+            <p className="text-[#91C4E3]/70 text-sm font-medium">กำลังโหลดข้อมูล...</p>
+          </div>
         )}
       </div>
     </div>
