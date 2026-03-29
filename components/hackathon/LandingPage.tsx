@@ -656,213 +656,193 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                         </div>
                     </section>
 
-                    {/* Tracks Section - Minimal Design */}
-                    <section className="py-32 relative z-10">
+                    {/* Tracks Section */}
+                    <section className="py-20 md:py-32 relative z-10">
                         <div className="container mx-auto px-4 relative z-10">
-                            <h2 className="text-5xl md:text-6xl font-medium mb-20 text-center">
-                                <span className="text-white/90">
+                            <div className="text-center mb-12 md:mb-16">
+                                <p className="text-xs tracking-[0.25em] uppercase text-[#91C4E3]/50 mb-3 font-[family-name:var(--font-mitr)]">9 Problems · 3 Tracks</p>
+                                <h2 className="text-4xl md:text-6xl font-medium text-white/90">
                                     Tracks
-                                </span>
-                            </h2>
+                                </h2>
+                            </div>
 
-                            <div className="max-w-7xl mx-auto space-y-2">
+                            <div className="max-w-2xl mx-auto md:max-w-7xl space-y-4">
                                 {/* Track 1 */}
                                 <div
                                     onClick={() => setExpandedTrack(expandedTrack === 1 ? null : 1)}
-                                    className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#91C4E3]/5 rounded-2xl"
+                                    className={`group relative cursor-pointer rounded-2xl border transition-all duration-300 ${expandedTrack === 1 ? 'border-[#91C4E3]/40 bg-[#91C4E3]/5 shadow-[0_0_40px_rgba(145,196,227,0.08)]' : 'border-white/8 bg-white/[0.03] active:bg-[#91C4E3]/5'}`}
                                 >
-                                    <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
-                                        <div className="flex items-center gap-8 md:gap-12 flex-1">
-                                            {/* Number */}
-                                            <div className="flex-shrink-0 flex items-center gap-6">
-                                                <span className="text-6xl md:text-8xl font-medium text-white group-hover:text-[#91C4E3] transition-all duration-500 leading-none">
-                                                    01
-                                                </span>
-                                                <HeartPulse className="w-12 h-12 md:w-16 md:h-16 text-[#91C4E3] transition-all duration-500" strokeWidth={1} />
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="flex-1 space-y-2 relative z-10">
-                                                <h3 className="text-2xl md:text-3xl font-medium text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
-                                                    Traditional & Integrative Healthcare
-                                                </h3>
-                                                {expandedTrack !== 1 && (
-                                                    <p className="text-sm text-gray-500 group-hover:text-[#91C4E3]/60 transition-colors">
-                                                        Click to see detail
-                                                    </p>
-                                                )}
-                                            </div>
+                                    {/* Track header */}
+                                    <div className="flex items-center gap-4 p-5 md:p-8">
+                                        {/* Icon badge */}
+                                        <div className={`flex-shrink-0 w-11 h-11 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${expandedTrack === 1 ? 'bg-[#91C4E3]/15 border border-[#91C4E3]/30' : 'bg-white/5 border border-white/10 group-hover:border-[#91C4E3]/30 group-hover:bg-[#91C4E3]/10'}`}>
+                                            <HeartPulse className="w-5 h-5 md:w-6 md:h-6 text-[#91C4E3]" strokeWidth={1.5} />
                                         </div>
 
-                                        {/* Arrow indicator */}
-                                        <div className={`flex-shrink-0 text-white/20 group-hover:text-[#91C4E3] transition-all duration-300 ${expandedTrack === 1 ? 'rotate-90' : ''}`}>
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                        {/* Title block */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <span className="text-[10px] font-mono text-[#91C4E3]/40 tracking-widest">01</span>
+                                                <span className="text-[10px] text-[#91C4E3]/40 tracking-[0.15em] uppercase font-[family-name:var(--font-mitr)]">Healthcare</span>
+                                            </div>
+                                            <h3 className={`text-base md:text-2xl font-medium leading-snug transition-colors duration-200 ${expandedTrack === 1 ? 'text-[#91C4E3]' : 'text-white/90 group-hover:text-[#91C4E3]'}`}>
+                                                Traditional & Integrative Healthcare
+                                            </h3>
+                                        </div>
+
+                                        {/* Expand toggle */}
+                                        <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
+                                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${expandedTrack === 1 ? 'text-[#91C4E3] border-[#91C4E3]/40 bg-[#91C4E3]/10' : 'text-white/30 border-white/10 group-hover:text-[#91C4E3]/60 group-hover:border-[#91C4E3]/20'}`}>3 problems</span>
+                                            <svg
+                                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                                className={`transition-all duration-300 ${expandedTrack === 1 ? 'rotate-180 text-[#91C4E3]' : 'text-white/20 group-hover:text-[#91C4E3]/50'}`}
+                                            >
+                                                <polyline points="6 9 12 15 18 9" />
                                             </svg>
                                         </div>
                                     </div>
 
-                                    {/* Details - Hidden by default, shown on click */}
-                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 1 ? 'max-h-[500px]' : 'max-h-0'}`}>
-                                        <div className="px-8 md:px-12 pb-8">
-                                            <div className="space-y-4 ml-[7rem] md:ml-[10rem]">
-                                                <p className="text-[#91C4E3]/50 text-[10px] uppercase tracking-[0.2em] mb-4 font-[family-name:var(--font-mitr)]">3 specific problems to solve</p>
-                                                {[
-                                                    { num: 'P1', title: 'The Last-Mile Chronic Disease Gap', brief: 'How might we design a low-cost, community-deployable screening tool that enables rural communities to detect chronic disease risk — without requiring hospital infrastructure?' },
-                                                    { num: 'P2', title: 'The Traditional Medicine Data Desert', brief: 'How might we create a bridge that digitizes traditional medicine outcomes and makes them interoperable with modern health records — enabling integrated, evidence-based care?' },
-                                                    { num: 'P3', title: 'Preventive Intervention at Scale', brief: 'How might we build a predictive health risk platform that identifies high-risk individuals early and triggers personalized preventive action — before symptoms appear?' },
-                                                ].map((p) => (
-                                                    <div key={p.num} className="flex items-start gap-3 group/problem">
-                                                        <span className="text-xs text-[#91C4E3]/30 font-mono mt-0.5 w-6 flex-shrink-0 group-hover/problem:text-[#91C4E3]/60 transition-colors">{p.num}</span>
+                                    {/* Problems list */}
+                                    <div className={`overflow-hidden transition-all duration-500 ease-out ${expandedTrack === 1 ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                                        <div className="px-5 md:px-8 pb-5 md:pb-8 space-y-3">
+                                            <div className="h-px bg-[#91C4E3]/15 mb-4" />
+                                            {[
+                                                { num: 'P1', title: 'The Last-Mile Chronic Disease Gap', brief: 'How might we design a low-cost, community-deployable screening tool that enables rural communities to detect chronic disease risk — without requiring hospital infrastructure?' },
+                                                { num: 'P2', title: 'The Traditional Medicine Data Desert', brief: 'How might we create a bridge that digitizes traditional medicine outcomes and makes them interoperable with modern health records — enabling integrated, evidence-based care?' },
+                                                { num: 'P3', title: 'Preventive Intervention at Scale', brief: 'How might we build a predictive health risk platform that identifies high-risk individuals early and triggers personalized preventive action — before symptoms appear?' },
+                                            ].map((p) => (
+                                                <div key={p.num} className="rounded-xl bg-white/[0.03] border border-white/6 p-4 hover:border-[#91C4E3]/25 hover:bg-[#91C4E3]/5 transition-all duration-200 cursor-default">
+                                                    <div className="flex items-start gap-3">
+                                                        <span className="text-[10px] text-[#91C4E3]/50 font-mono mt-0.5 flex-shrink-0 bg-[#91C4E3]/10 px-1.5 py-0.5 rounded">{p.num}</span>
                                                         <div>
-                                                            <p className="text-sm text-white/70 font-medium mb-1 group-hover/problem:text-[#91C4E3] transition-colors">{p.title}</p>
+                                                            <p className="text-sm font-medium text-white/85 mb-1.5 leading-snug">{p.title}</p>
                                                             <p className="text-xs text-gray-500 leading-relaxed">{p.brief}</p>
                                                         </div>
                                                     </div>
-                                                ))}
-                                                <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#91C4E3]/60 hover:text-[#91C4E3] transition-colors mt-3 font-[family-name:var(--font-mitr)]">
-                                                    Read full brief →
-                                                </a>
-                                            </div>
+                                                </div>
+                                            ))}
+                                            <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#91C4E3]/60 hover:text-[#91C4E3] transition-colors pt-1 font-[family-name:var(--font-mitr)]">
+                                                Read full brief →
+                                            </a>
                                         </div>
                                     </div>
-
-                                    {/* Bottom border */}
-                                    <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 1 ? 'via-[#91C4E3]/40' : 'via-white/5 group-hover:via-[#91C4E3]/40'}`} />
                                 </div>
 
                                 {/* Track 2 */}
                                 <div
                                     onClick={() => setExpandedTrack(expandedTrack === 2 ? null : 2)}
-                                    className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#A594BA]/5 rounded-2xl"
+                                    className={`group relative cursor-pointer rounded-2xl border transition-all duration-300 ${expandedTrack === 2 ? 'border-[#A594BA]/40 bg-[#A594BA]/5 shadow-[0_0_40px_rgba(165,148,186,0.08)]' : 'border-white/8 bg-white/[0.03] active:bg-[#A594BA]/5'}`}
                                 >
-                                    <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
-                                        <div className="flex items-center gap-8 md:gap-12 flex-1">
-                                            {/* Number */}
-                                            <div className="flex-shrink-0 flex items-center gap-6">
-                                                <span className="text-6xl md:text-8xl font-medium text-white group-hover:text-[#A594BA] transition-all duration-500 leading-none">
-                                                    02
-                                                </span>
-                                                <Brain className="w-12 h-12 md:w-16 md:h-16 text-[#A594BA] transition-all duration-500" strokeWidth={1} />
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="flex-1 space-y-2 relative z-10">
-                                                <h3 className="text-2xl md:text-3xl font-medium text-white/90 group-hover:text-[#A594BA] transition-colors duration-300">
-                                                    Mental Health
-                                                </h3>
-                                                {expandedTrack !== 2 && (
-                                                    <p className="text-sm text-gray-500 group-hover:text-[#A594BA]/60 transition-colors">
-                                                        Click to see detail
-                                                    </p>
-                                                )}
-                                            </div>
+                                    <div className="flex items-center gap-4 p-5 md:p-8">
+                                        <div className={`flex-shrink-0 w-11 h-11 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${expandedTrack === 2 ? 'bg-[#A594BA]/15 border border-[#A594BA]/30' : 'bg-white/5 border border-white/10 group-hover:border-[#A594BA]/30 group-hover:bg-[#A594BA]/10'}`}>
+                                            <Brain className="w-5 h-5 md:w-6 md:h-6 text-[#A594BA]" strokeWidth={1.5} />
                                         </div>
 
-                                        {/* Arrow indicator */}
-                                        <div className={`flex-shrink-0 text-white/20 group-hover:text-[#A594BA] transition-all duration-300 ${expandedTrack === 2 ? 'rotate-90' : ''}`}>
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <span className="text-[10px] font-mono text-[#A594BA]/40 tracking-widest">02</span>
+                                                <span className="text-[10px] text-[#A594BA]/40 tracking-[0.15em] uppercase font-[family-name:var(--font-mitr)]">Mental</span>
+                                            </div>
+                                            <h3 className={`text-base md:text-2xl font-medium leading-snug transition-colors duration-200 ${expandedTrack === 2 ? 'text-[#A594BA]' : 'text-white/90 group-hover:text-[#A594BA]'}`}>
+                                                Mental Health
+                                            </h3>
+                                        </div>
+
+                                        <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
+                                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${expandedTrack === 2 ? 'text-[#A594BA] border-[#A594BA]/40 bg-[#A594BA]/10' : 'text-white/30 border-white/10 group-hover:text-[#A594BA]/60 group-hover:border-[#A594BA]/20'}`}>3 problems</span>
+                                            <svg
+                                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                                className={`transition-all duration-300 ${expandedTrack === 2 ? 'rotate-180 text-[#A594BA]' : 'text-white/20 group-hover:text-[#A594BA]/50'}`}
+                                            >
+                                                <polyline points="6 9 12 15 18 9" />
                                             </svg>
                                         </div>
                                     </div>
 
-                                    {/* Details - Hidden by default, shown on click */}
-                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 2 ? 'max-h-[500px]' : 'max-h-0'}`}>
-                                        <div className="px-8 md:px-12 pb-8">
-                                            <div className="space-y-4 ml-[7rem] md:ml-[10rem]">
-                                                <p className="text-[#A594BA]/50 text-[10px] uppercase tracking-[0.2em] mb-4 font-[family-name:var(--font-mitr)]">3 specific problems to solve</p>
-                                                {[
-                                                    { num: 'P4', title: 'The Stigma Wall', brief: 'How might we design a destigmatized early mental health detection and support system that meets young people where they are — without labeling or exposing them?' },
-                                                    { num: 'P5', title: 'Connected But Alone', brief: 'How might we design an intervention that addresses root-cause social isolation — not just surface-level connection — for teenagers and young adults?' },
-                                                    { num: 'P6', title: 'Mental Healthcare in the Last Mile', brief: 'How might we build a scalable, culturally appropriate mental wellness support system for underserved communities where professional help is inaccessible?' },
-                                                ].map((p) => (
-                                                    <div key={p.num} className="flex items-start gap-3 group/problem">
-                                                        <span className="text-xs text-[#A594BA]/30 font-mono mt-0.5 w-6 flex-shrink-0 group-hover/problem:text-[#A594BA]/60 transition-colors">{p.num}</span>
+                                    <div className={`overflow-hidden transition-all duration-500 ease-out ${expandedTrack === 2 ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                                        <div className="px-5 md:px-8 pb-5 md:pb-8 space-y-3">
+                                            <div className="h-px bg-[#A594BA]/15 mb-4" />
+                                            {[
+                                                { num: 'P4', title: 'The Stigma Wall', brief: 'How might we design a destigmatized early mental health detection and support system that meets young people where they are — without labeling or exposing them?' },
+                                                { num: 'P5', title: 'Connected But Alone', brief: 'How might we design an intervention that addresses root-cause social isolation — not just surface-level connection — for teenagers and young adults?' },
+                                                { num: 'P6', title: 'Mental Healthcare in the Last Mile', brief: 'How might we build a scalable, culturally appropriate mental wellness support system for underserved communities where professional help is inaccessible?' },
+                                            ].map((p) => (
+                                                <div key={p.num} className="rounded-xl bg-white/[0.03] border border-white/6 p-4 hover:border-[#A594BA]/25 hover:bg-[#A594BA]/5 transition-all duration-200 cursor-default">
+                                                    <div className="flex items-start gap-3">
+                                                        <span className="text-[10px] text-[#A594BA]/50 font-mono mt-0.5 flex-shrink-0 bg-[#A594BA]/10 px-1.5 py-0.5 rounded">{p.num}</span>
                                                         <div>
-                                                            <p className="text-sm text-white/70 font-medium mb-1 group-hover/problem:text-[#A594BA] transition-colors">{p.title}</p>
+                                                            <p className="text-sm font-medium text-white/85 mb-1.5 leading-snug">{p.title}</p>
                                                             <p className="text-xs text-gray-500 leading-relaxed">{p.brief}</p>
                                                         </div>
                                                     </div>
-                                                ))}
-                                                <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#A594BA]/60 hover:text-[#A594BA] transition-colors mt-3 font-[family-name:var(--font-mitr)]">
-                                                    Read full brief →
-                                                </a>
-                                            </div>
+                                                </div>
+                                            ))}
+                                            <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#A594BA]/60 hover:text-[#A594BA] transition-colors pt-1 font-[family-name:var(--font-mitr)]">
+                                                Read full brief →
+                                            </a>
                                         </div>
                                     </div>
-
-                                    {/* Bottom border */}
-                                    <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 2 ? 'via-[#A594BA]/40' : 'via-white/5 group-hover:via-[#A594BA]/40'}`} />
                                 </div>
 
                                 {/* Track 3 */}
                                 <div
                                     onClick={() => setExpandedTrack(expandedTrack === 3 ? null : 3)}
-                                    className="group relative cursor-pointer transition-all duration-500 ease-out hover:bg-[#91C4E3]/5 rounded-2xl"
+                                    className={`group relative cursor-pointer rounded-2xl border transition-all duration-300 ${expandedTrack === 3 ? 'border-[#91C4E3]/40 bg-[#91C4E3]/5 shadow-[0_0_40px_rgba(145,196,227,0.08)]' : 'border-white/8 bg-white/[0.03] active:bg-[#91C4E3]/5'}`}
                                 >
-                                    <div className="flex items-center justify-between gap-8 md:gap-12 p-8 md:p-12">
-                                        <div className="flex items-center gap-8 md:gap-12 flex-1">
-                                            {/* Number */}
-                                            <div className="flex-shrink-0 flex items-center gap-6">
-                                                <span className="text-6xl md:text-8xl font-medium text-white group-hover:text-[#91C4E3] transition-all duration-500 leading-none">
-                                                    03
-                                                </span>
-                                                <Globe className="w-12 h-12 md:w-16 md:h-16 text-[#91C4E3] transition-all duration-500" strokeWidth={1} />
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="flex-1 space-y-2 relative z-10">
-                                                <h3 className="text-2xl md:text-3xl font-medium text-white/90 group-hover:text-[#91C4E3] transition-colors duration-300">
-                                                    Community, Public & Environmental Health
-                                                </h3>
-                                                {expandedTrack !== 3 && (
-                                                    <p className="text-sm text-gray-500 group-hover:text-[#91C4E3]/60 transition-colors">
-                                                        Click to see detail
-                                                    </p>
-                                                )}
-                                            </div>
+                                    <div className="flex items-center gap-4 p-5 md:p-8">
+                                        <div className={`flex-shrink-0 w-11 h-11 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${expandedTrack === 3 ? 'bg-[#91C4E3]/15 border border-[#91C4E3]/30' : 'bg-white/5 border border-white/10 group-hover:border-[#91C4E3]/30 group-hover:bg-[#91C4E3]/10'}`}>
+                                            <Globe className="w-5 h-5 md:w-6 md:h-6 text-[#91C4E3]" strokeWidth={1.5} />
                                         </div>
 
-                                        {/* Arrow indicator */}
-                                        <div className={`flex-shrink-0 text-white/20 group-hover:text-[#91C4E3] transition-all duration-300 ${expandedTrack === 3 ? 'rotate-90' : ''}`}>
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <span className="text-[10px] font-mono text-[#91C4E3]/40 tracking-widest">03</span>
+                                                <span className="text-[10px] text-[#91C4E3]/40 tracking-[0.15em] uppercase font-[family-name:var(--font-mitr)]">Community</span>
+                                            </div>
+                                            <h3 className={`text-base md:text-2xl font-medium leading-snug transition-colors duration-200 ${expandedTrack === 3 ? 'text-[#91C4E3]' : 'text-white/90 group-hover:text-[#91C4E3]'}`}>
+                                                Community, Public & Environmental Health
+                                            </h3>
+                                        </div>
+
+                                        <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
+                                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${expandedTrack === 3 ? 'text-[#91C4E3] border-[#91C4E3]/40 bg-[#91C4E3]/10' : 'text-white/30 border-white/10 group-hover:text-[#91C4E3]/60 group-hover:border-[#91C4E3]/20'}`}>3 problems</span>
+                                            <svg
+                                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                                className={`transition-all duration-300 ${expandedTrack === 3 ? 'rotate-180 text-[#91C4E3]' : 'text-white/20 group-hover:text-[#91C4E3]/50'}`}
+                                            >
+                                                <polyline points="6 9 12 15 18 9" />
                                             </svg>
                                         </div>
                                     </div>
 
-                                    {/* Details - Hidden by default, shown on click */}
-                                    <div className={`overflow-hidden transition-all duration-700 ease-out ${expandedTrack === 3 ? 'max-h-[500px]' : 'max-h-0'}`}>
-                                        <div className="px-8 md:px-12 pb-8">
-                                            <div className="space-y-4 ml-[7rem] md:ml-[10rem]">
-                                                <p className="text-[#91C4E3]/50 text-[10px] uppercase tracking-[0.2em] mb-4 font-[family-name:var(--font-mitr)]">3 specific problems to solve</p>
-                                                {[
-                                                    { num: 'P7', title: 'Data Rich, Action Poor', brief: 'How might we turn real-time environmental health data into actionable community behavior change — at the neighborhood level, not just on a dashboard?' },
-                                                    { num: 'P8', title: 'The Food Safety Blind Spot', brief: 'How might we design a community-powered food safety monitoring and early warning system that works without requiring top-down government enforcement?' },
-                                                    { num: 'P9', title: 'PM2.5 vs. Our Children', brief: 'How might we build a predictive PM2.5 alert and response system that triggers preemptive protective actions for schools and children — before dangerous exposure occurs?' },
-                                                ].map((p) => (
-                                                    <div key={p.num} className="flex items-start gap-3 group/problem">
-                                                        <span className="text-xs text-[#91C4E3]/30 font-mono mt-0.5 w-6 flex-shrink-0 group-hover/problem:text-[#91C4E3]/60 transition-colors">{p.num}</span>
+                                    <div className={`overflow-hidden transition-all duration-500 ease-out ${expandedTrack === 3 ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                                        <div className="px-5 md:px-8 pb-5 md:pb-8 space-y-3">
+                                            <div className="h-px bg-[#91C4E3]/15 mb-4" />
+                                            {[
+                                                { num: 'P7', title: 'Data Rich, Action Poor', brief: 'How might we turn real-time environmental health data into actionable community behavior change — at the neighborhood level, not just on a dashboard?' },
+                                                { num: 'P8', title: 'The Food Safety Blind Spot', brief: 'How might we design a community-powered food safety monitoring and early warning system that works without requiring top-down government enforcement?' },
+                                                { num: 'P9', title: 'PM2.5 vs. Our Children', brief: 'How might we build a predictive PM2.5 alert and response system that triggers preemptive protective actions for schools and children — before dangerous exposure occurs?' },
+                                            ].map((p) => (
+                                                <div key={p.num} className="rounded-xl bg-white/[0.03] border border-white/6 p-4 hover:border-[#91C4E3]/25 hover:bg-[#91C4E3]/5 transition-all duration-200 cursor-default">
+                                                    <div className="flex items-start gap-3">
+                                                        <span className="text-[10px] text-[#91C4E3]/50 font-mono mt-0.5 flex-shrink-0 bg-[#91C4E3]/10 px-1.5 py-0.5 rounded">{p.num}</span>
                                                         <div>
-                                                            <p className="text-sm text-white/70 font-medium mb-1 group-hover/problem:text-[#91C4E3] transition-colors">{p.title}</p>
+                                                            <p className="text-sm font-medium text-white/85 mb-1.5 leading-snug">{p.title}</p>
                                                             <p className="text-xs text-gray-500 leading-relaxed">{p.brief}</p>
                                                         </div>
                                                     </div>
-                                                ))}
-                                                <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#91C4E3]/60 hover:text-[#91C4E3] transition-colors mt-3 font-[family-name:var(--font-mitr)]">
-                                                    Read full brief →
-                                                </a>
-                                            </div>
+                                                </div>
+                                            ))}
+                                            <a href="/hackathon/challenge" className="inline-flex items-center gap-1.5 text-xs text-[#91C4E3]/60 hover:text-[#91C4E3] transition-colors pt-1 font-[family-name:var(--font-mitr)]">
+                                                Read full brief →
+                                            </a>
                                         </div>
                                     </div>
-
-                                    {/* Bottom border */}
-                                    <div className={`h-px bg-gradient-to-r from-transparent to-transparent transition-colors duration-500 ${expandedTrack === 3 ? 'via-[#91C4E3]/40' : 'via-white/5 group-hover:via-[#91C4E3]/40'}`} />
                                 </div>
                             </div>
+
                             {/* View Full Challenge Brief CTA */}
-                            <div className="text-center mt-12">
+                            <div className="text-center mt-10">
                                 <a
                                     href="/hackathon/challenge"
                                     className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full border border-[#91C4E3]/30 text-[#91C4E3] text-sm font-[family-name:var(--font-mitr)] hover:border-[#91C4E3]/60 hover:bg-[#91C4E3]/5 transition-all duration-300"

@@ -309,6 +309,16 @@ export default function ProblemDetailPage() {
   }
 
   const trackInfo = TRACK_INFO[problem.trackNum] || TRACK_INFO["01"];
+  const sourcedStatistics = problem.statistics.filter((stat) => stat.sources.length > 0);
+  const sourcedDeepResearch =
+    problem.deepResearch?.flatMap((section) => {
+      const sourcedEvidence = section.evidence.filter((item) => item.sources.length > 0);
+      if (!sourcedEvidence.length) {
+        return [];
+      }
+
+      return [{ ...section, evidence: sourcedEvidence }];
+    }) || [];
 
   return (
     <div
@@ -427,28 +437,30 @@ export default function ProblemDetailPage() {
 
       <section className="pb-20">
         <div className="container mx-auto px-4 max-w-5xl space-y-6">
-          <ExpandableSection title={copy.research} icon={BarChart3} color={problem.color} defaultOpen>
-            <div className="grid md:grid-cols-2 gap-4">
-              {problem.statistics.map((stat, index) => (
-                <div
-                  key={`${stat.stat.en}-${index}`}
-                  className="rounded-xl p-4 border-l-2 space-y-3"
-                  style={{ borderColor: problem.color, background: `${problem.color}08` }}
-                >
-                  <p className={`text-sm text-gray-300 leading-relaxed ${textFontClass}`}>
-                    {getLocalizedText(stat.stat, lang)}
-                  </p>
-                  <SourceLinks sources={stat.sources} color={problem.color} />
-                  {stat.year ? <p className="text-xs text-gray-500">{stat.year}</p> : null}
-                </div>
-              ))}
-            </div>
-          </ExpandableSection>
+          {sourcedStatistics.length ? (
+            <ExpandableSection title={copy.research} icon={BarChart3} color={problem.color} defaultOpen>
+              <div className="grid md:grid-cols-2 gap-4">
+                {sourcedStatistics.map((stat, index) => (
+                  <div
+                    key={`${stat.stat.en}-${index}`}
+                    className="rounded-xl p-4 border-l-2 space-y-3"
+                    style={{ borderColor: problem.color, background: `${problem.color}08` }}
+                  >
+                    <p className={`text-sm text-gray-300 leading-relaxed ${textFontClass}`}>
+                      {getLocalizedText(stat.stat, lang)}
+                    </p>
+                    <SourceLinks sources={stat.sources} color={problem.color} />
+                    {stat.year ? <p className="text-xs text-gray-500">{stat.year}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </ExpandableSection>
+          ) : null}
 
-          {problem.deepResearch?.length ? (
+          {sourcedDeepResearch.length ? (
             <ExpandableSection title={copy.deepResearch} icon={Lightbulb} color={problem.color} defaultOpen>
               <div className="space-y-4">
-                {problem.deepResearch.map((section, index) => (
+                {sourcedDeepResearch.map((section, index) => (
                   <div
                     key={`${section.title.en}-${index}`}
                     className="rounded-2xl border border-white/6 p-5 space-y-4"
@@ -481,208 +493,6 @@ export default function ProblemDetailPage() {
               </div>
             </ExpandableSection>
           ) : null}
-
-          <ExpandableSection title={copy.affectedPopulations} icon={Users} color={problem.color}>
-            <div className="grid md:grid-cols-2 gap-4">
-              {problem.affectedPopulations.map((population, index) => (
-                <div key={`${population.group.en}-${index}`} className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(13,18,25,0.5)" }}>
-                  <h4 className={`font-medium text-white mb-1 ${textFontClass}`}>{getLocalizedText(population.group, lang)}</h4>
-                  <p className={`text-sm text-gray-500 mb-3 ${textFontClass}`}>
-                    {copy.size}: {getLocalizedText(population.size, lang)}
-                  </p>
-                  <ul className="space-y-1">
-                    {population.painPoints.map((point, pointIndex) => (
-                      <li key={`${point.en}-${pointIndex}`} className={`text-sm text-gray-400 ${textFontClass}`}>
-                        • {getLocalizedText(point, lang)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </ExpandableSection>
-
-          <ExpandableSection title={copy.stakeholderMap} icon={Users} color={problem.color}>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h4 className={`text-sm uppercase tracking-wider text-gray-500 mb-3 ${textFontClass}`}>{copy.primaryStakeholders}</h4>
-                <div className="space-y-3">
-                  {problem.stakeholderMap.primary.map((stakeholder, index) => (
-                    <div key={`${stakeholder.role.en}-${index}`} className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(13,18,25,0.5)" }}>
-                      <h5 className={`font-medium text-white mb-2 ${textFontClass}`}>{getLocalizedText(stakeholder.role, lang)}</h5>
-                      {stakeholder.needs.length ? (
-                        <div className="mb-2">
-                          <p className={`text-xs text-gray-500 mb-1 ${textFontClass}`}>{copy.needs}</p>
-                          <ul className="text-xs text-gray-400 space-y-0.5">
-                            {stakeholder.needs.map((need, needIndex) => (
-                              <li key={`${need.en}-${needIndex}`} className={textFontClass}>
-                                • {getLocalizedText(need, lang)}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {stakeholder.painPoints.length ? (
-                        <div>
-                          <p className={`text-xs text-gray-500 mb-1 ${textFontClass}`}>{copy.painPoints}</p>
-                          <ul className="text-xs text-gray-400 space-y-0.5">
-                            {stakeholder.painPoints.map((pain, painIndex) => (
-                              <li key={`${pain.en}-${painIndex}`} className={textFontClass}>
-                                • {getLocalizedText(pain, lang)}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {stakeholder.influence ? (
-                        <p className={`text-xs text-gray-500 mt-3 ${textFontClass}`}>
-                          {copy.influence}: <span className="text-gray-300">{getLocalizedText(stakeholder.influence, lang)}</span>
-                        </p>
-                      ) : null}
-                      {stakeholder.interest ? (
-                        <p className={`text-xs text-gray-500 mt-1 ${textFontClass}`}>
-                          {copy.interest}: <span className="text-gray-300">{getLocalizedText(stakeholder.interest, lang)}</span>
-                        </p>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className={`text-sm uppercase tracking-wider text-gray-500 mb-3 ${textFontClass}`}>{copy.secondaryStakeholders}</h4>
-                <div className="space-y-3">
-                  {problem.stakeholderMap.secondary.map((stakeholder, index) => (
-                    <div key={`${stakeholder.role.en}-${index}`} className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(13,18,25,0.5)" }}>
-                      <h5 className={`font-medium text-white mb-2 ${textFontClass}`}>{getLocalizedText(stakeholder.role, lang)}</h5>
-                      {stakeholder.needs.length ? (
-                        <div className="mb-2">
-                          <p className={`text-xs text-gray-500 mb-1 ${textFontClass}`}>{copy.needs}</p>
-                          <ul className="text-xs text-gray-400 space-y-0.5">
-                            {stakeholder.needs.map((need, needIndex) => (
-                              <li key={`${need.en}-${needIndex}`} className={textFontClass}>
-                                • {getLocalizedText(need, lang)}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {stakeholder.painPoints.length ? (
-                        <div>
-                          <p className={`text-xs text-gray-500 mb-1 ${textFontClass}`}>{copy.painPoints}</p>
-                          <ul className="text-xs text-gray-400 space-y-0.5">
-                            {stakeholder.painPoints.map((pain, painIndex) => (
-                              <li key={`${pain.en}-${painIndex}`} className={textFontClass}>
-                                • {getLocalizedText(pain, lang)}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      {stakeholder.influence ? (
-                        <p className={`text-xs text-gray-500 mt-3 ${textFontClass}`}>
-                          {copy.influence}: <span className="text-gray-300">{getLocalizedText(stakeholder.influence, lang)}</span>
-                        </p>
-                      ) : null}
-                      {stakeholder.interest ? (
-                        <p className={`text-xs text-gray-500 mt-1 ${textFontClass}`}>
-                          {copy.interest}: <span className="text-gray-300">{getLocalizedText(stakeholder.interest, lang)}</span>
-                        </p>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </ExpandableSection>
-
-          <ExpandableSection title={copy.rootCauses} icon={AlertTriangle} color={problem.color}>
-            <div className="space-y-3">
-              {problem.rootCauses.map((cause, index) => (
-                <div key={`${cause.cause.en}-${index}`} className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(13,18,25,0.5)" }}>
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h4 className={`font-medium text-white ${textFontClass}`}>{getLocalizedText(cause.cause, lang)}</h4>
-                    {cause.systemic ? (
-                      <span className="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
-                        Systemic
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className={`text-sm text-gray-400 ${textFontClass}`}>{getLocalizedText(cause.explanation, lang)}</p>
-                </div>
-              ))}
-            </div>
-          </ExpandableSection>
-
-          <ExpandableSection title={copy.existingSolutions} icon={Target} color={problem.color}>
-            <div className="grid md:grid-cols-2 gap-4">
-              {problem.existingSolutions.map((solution, index) => (
-                <div key={`${solution.name.en}-${index}`} className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(13,18,25,0.5)" }}>
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h4 className={`font-medium text-white ${textFontClass}`}>{getLocalizedText(solution.name, lang)}</h4>
-                    <span className={`text-xs text-gray-500 ${textFontClass}`}>{getLocalizedText(solution.region, lang)}</span>
-                  </div>
-                  <p className={`text-sm text-gray-400 mb-3 ${textFontClass}`}>{getLocalizedText(solution.approach, lang)}</p>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <div>
-                      <p className={`text-xs text-green-400 mb-1 ${textFontClass}`}>{copy.strengths}</p>
-                      <ul className="text-xs text-gray-500 space-y-0.5">
-                        {solution.strengths.map((strength, strengthIndex) => (
-                          <li key={`${strength.en}-${strengthIndex}`} className={textFontClass}>
-                            + {getLocalizedText(strength, lang)}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className={`text-xs text-red-400 mb-1 ${textFontClass}`}>{copy.weaknesses}</p>
-                      <ul className="text-xs text-gray-500 space-y-0.5">
-                        {solution.weaknesses.map((weakness, weaknessIndex) => (
-                          <li key={`${weakness.en}-${weaknessIndex}`} className={textFontClass}>
-                            - {getLocalizedText(weakness, lang)}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ExpandableSection>
-
-          <ExpandableSection title={copy.opportunityAreas} icon={Zap} color={problem.color} defaultOpen>
-            <div className="grid md:grid-cols-2 gap-4">
-              {problem.opportunityAreas.map((opportunity, index) => (
-                <div key={`${opportunity.area.en}-${index}`} className="p-4 rounded-xl border border-white/5" style={{ background: "rgba(13,18,25,0.5)" }}>
-                  <h4 className={`font-medium text-white mb-2 ${textFontClass}`}>{getLocalizedText(opportunity.area, lang)}</h4>
-                  <p className={`text-sm text-gray-400 mb-3 ${textFontClass}`}>{getLocalizedText(opportunity.description, lang)}</p>
-                  {opportunity.potentialImpact ? (
-                    <p className={`text-xs text-gray-500 mb-3 ${textFontClass}`}>
-                      {copy.impactLabel}: <span className="text-gray-300">{getLocalizedText(opportunity.potentialImpact, lang)}</span>
-                    </p>
-                  ) : null}
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={`px-2 py-1 rounded-full ${textFontClass}`} style={{ background: `${problem.color}18`, color: problem.color }}>
-                      {copy.feasibility}: {getLocalizedText(opportunity.feasibility, lang)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ExpandableSection>
-
-          <ExpandableSection title={copy.keyInsights} icon={Lightbulb} color={problem.color}>
-            <div className="space-y-3">
-              {problem.keyInsights.map((insight, index) => (
-                <div key={`${insight.en}-${index}`} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: `${problem.color}06` }}>
-                  <span className="text-lg" style={{ color: problem.color }}>
-                    💡
-                  </span>
-                  <p className={`text-sm text-gray-300 ${textFontClass}`}>{getLocalizedText(insight, lang)}</p>
-                </div>
-              ))}
-            </div>
-          </ExpandableSection>
 
           <ExpandableSection title={copy.resources} icon={ExternalLink} color={problem.color}>
             <div className="grid md:grid-cols-2 gap-3">
