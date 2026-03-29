@@ -55,11 +55,46 @@ describe("ProblemDetailPage", () => {
             ],
           },
         ],
-        affectedPopulations: [],
-        stakeholderMap: { primary: [], secondary: [] },
-        rootCauses: [],
-        existingSolutions: [],
-        opportunityAreas: [],
+        affectedPopulations: [
+          {
+            group: "Rural elders",
+            size: "6.6 million",
+            painPoints: ["Long travel times"],
+          },
+        ],
+        stakeholderMap: {
+          primary: [
+            {
+              role: "Village health volunteers",
+              needs: ["Clear referral routes"],
+            },
+          ],
+          secondary: [],
+        },
+        rootCauses: [
+          {
+            cause: "Distance from facilities",
+            explanation: "Long travel and transport costs delay screening",
+            systemic: true,
+          },
+        ],
+        existingSolutions: [
+          {
+            name: "Mobile clinics",
+            approach: "Periodic rural outreach",
+            strengths: ["Trusted presence"],
+            weaknesses: ["Inconsistent coverage"],
+            region: "Thailand",
+          },
+        ],
+        opportunityAreas: [
+          {
+            area: "Community-led screening",
+            description: "Train trusted local actors to run first-pass checks",
+            potentialImpact: "Earlier triage",
+            feasibility: "Medium",
+          },
+        ],
         resources: [
           {
             title: "WHO Thailand",
@@ -113,6 +148,11 @@ describe("ProblemDetailPage", () => {
 
     const sourceLink = screen.getAllByRole("link", { name: /WHO Thailand/i })[0];
     expect(sourceLink).toHaveAttribute("href", "https://www.who.int/thailand");
+    expect(screen.queryByText("Affected Populations")).not.toBeInTheDocument();
+    expect(screen.queryByText("Stakeholder Map")).not.toBeInTheDocument();
+    expect(screen.queryByText("Root Causes")).not.toBeInTheDocument();
+    expect(screen.queryByText("Existing Solutions")).not.toBeInTheDocument();
+    expect(screen.queryByText("Opportunity Areas")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "TH" }));
 

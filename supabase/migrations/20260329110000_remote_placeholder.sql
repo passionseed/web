@@ -1,3 +1,0 @@
--- Placeholder migration file added to reconcile local migration history
--- with the linked remote project. The corresponding migration version
--- already exists remotely.

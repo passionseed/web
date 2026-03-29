@@ -37,6 +37,19 @@ export default function HackathonDashboardPage() {
         .then((r) => r.json())
         .then((data) => {
           if (data.participant) {
+            if (data.participant.is_admin) {
+              setOnboardingComplete(true);
+              setParticipant(data.participant);
+              if (contentRef.current) {
+                gsap.fromTo(
+                  contentRef.current,
+                  { opacity: 0, y: 20 },
+                  { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+                );
+              }
+              return;
+            }
+
             fetch("/api/hackathon/pre-questionnaire")
               .then((r) => r.json())
               .then((questionnaireData) => {
