@@ -75,7 +75,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Valid fileName is required" }, { status: 400 });
     }
 
-    if (!fileName.includes(`submissions/${user.id}/`)) {
+    if (!fileName.startsWith(`submissions/${user.id}/`)) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
