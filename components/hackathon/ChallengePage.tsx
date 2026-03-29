@@ -20,7 +20,7 @@ const TRACKS = [
       {
         num: "P1",
         titleEn: "The Last-Mile Chronic Disease Gap",
-        titleTh: "ช่องว่างโรคเรื้อรังในพื้นที่ห่างไกล",
+        titleTh: "สู้กับโรคเรื้อรังในพื้นที่ห่างไกล",
         hookEn: "Over 70% of Thai elderly live in rural areas far from chronic disease screening systems, causing diseases to be detected too late.",
         hookTh: "ผู้สูงอายุไทยกว่า 70% อาศัยในชนบทห่างไกลจากระบบการตรวจคัดกรองโรคเรื้อรัง ส่งผลให้โรคถูกตรวจพบในระยะที่สายเกินไป",
         challengeEn:
@@ -37,7 +37,7 @@ const TRACKS = [
       {
         num: "P2",
         titleEn: "The Traditional Medicine Data Desert",
-        titleTh: "ช่องว่างข้อมูลแพทย์แผนไทย",
+        titleTh: "แพทย์แผนไทย ไร้Data",
         hookEn: "Thailand has over 30,000 traditional medicine practitioners, but treatment data is rarely recorded or connected to modern health systems.",
         hookTh: "ประเทศไทยมีผู้ประกอบวิชาชีพแพทย์แผนไทยกว่า 30,000 คน แต่ข้อมูลการรักษาแทบไม่ถูกบันทึกหรือเชื่อมต่อกับระบบสุขภาพสมัยใหม่",
         challengeEn:
@@ -54,7 +54,7 @@ const TRACKS = [
       {
         num: "P3",
         titleEn: "Preventive Intervention at Scale",
-        titleTh: "การแทรกแซงเชิงป้องกันในวงกว้าง",
+        titleTh: "ตรวจและรักษา ก่อนจะสายเกินไป",
         hookEn: "Only 1 in 5 Thais at high risk of NCDs receives preventive intervention before the disease develops.",
         hookTh: "มีคนไทยเพียง 1 ใน 5 ที่มีความเสี่ยงสูงต่อโรค NCDs ที่ได้รับการแทรกแซงเชิงป้องกันก่อนที่โรคจะพัฒนาขึ้น",
         challengeEn:
@@ -146,7 +146,7 @@ const TRACKS = [
       {
         num: "P7",
         titleEn: "Data Rich, Action Poor",
-        titleTh: "ข้อมูลมาก การกระทำน้อย",
+        titleTh: "ข้อมูลมากมาย ไหนล่ะการกระทำ?",
         hookEn: "Real-time air quality data is already available, but communities can't translate that data into protective actions.",
         hookTh: "ข้อมูลคุณภาพอากาศแบบ Real-time มีพร้อมแล้ว แต่ชุมชนไม่สามารถแปลงข้อมูลเหล่านั้นเป็นการกระทำเพื่อป้องกันตัวได้",
         challengeEn:
@@ -163,7 +163,7 @@ const TRACKS = [
       {
         num: "P8",
         titleEn: "The Food Safety Blind Spot",
-        titleTh: "จุดบอดด้านความปลอดภัยอาหาร",
+        titleTh: "อร่อยให้หก สกปรก...หรือเปล่า?",
         hookEn: "40% of Thai street food markets lack consistent food safety inspection, resulting in tens of thousands of food-related illnesses per year.",
         hookTh: "40% ของตลาดอาหารริมทางในไทยขาดระบบตรวจสอบความปลอดภัยที่สม่ำเสมอ ส่งผลให้มีผู้ป่วยจากอาหารหลายหมื่นคนต่อปี",
         challengeEn:
@@ -180,7 +180,7 @@ const TRACKS = [
       {
         num: "P9",
         titleEn: "PM2.5 vs. Our Children",
-        titleTh: "PM2.5 กับเด็กๆ ของเรา",
+        titleTh: "เมืองหลวงควันและฝุ่นมากมาย",
         hookEn: "PM2.5 dust disproportionately affects school children, but most schools lack timely warning systems or prevention plans.",
         hookTh: "ฝุ่น PM2.5 ส่งผลกระทบต่อเด็กนักเรียนอย่างไม่สมส่วน แต่โรงเรียนส่วนใหญ่ไม่มีระบบแจ้งเตือนหรือแผนป้องกันที่ทันการณ์",
         challengeEn:
@@ -365,7 +365,7 @@ export default function ChallengePage() {
             The Next Decade Hackathon 2026
           </p>
           <h1
-            className="text-5xl md:text-7xl font-bold mb-6 leading-tight"
+            className="text-5xl md:text-7xl font-medium mb-6 leading-tight"
             style={{
               background: "linear-gradient(135deg, #91C4E3 0%, #ffffff 40%, #A594BA 100%)",
               WebkitBackgroundClip: "text",
@@ -413,7 +413,7 @@ export default function ChallengePage() {
                 <div className="flex items-center gap-6 mb-10">
                   <div className="flex items-center gap-4 flex-1">
                     <span
-                      className="text-7xl md:text-8xl font-bold leading-none select-none"
+                      className="text-7xl md:text-8xl font-medium leading-none select-none"
                       style={{ color: `${track.color}35`, textShadow: `0 0 60px ${track.color}20` }}
                     >
                       {track.num}
@@ -421,7 +421,7 @@ export default function ChallengePage() {
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <Icon className="w-5 h-5" style={{ color: track.color, filter: `drop-shadow(0 0 6px ${track.color}80)` }} strokeWidth={1.5} />
-                        <h2 className="text-2xl md:text-3xl font-bold" style={{ color: track.color }}>
+                        <h2 className="text-2xl md:text-3xl font-medium" style={{ color: track.color }}>
                           {track.title}
                         </h2>
                       </div>
@@ -569,7 +569,7 @@ export default function ChallengePage() {
                                         <s.icon className="w-3.5 h-3.5" style={{ color: track.color }} />
                                         <span className="text-[10px] uppercase text-gray-500">{s.label}</span>
                                       </div>
-                                      <span className="text-xs font-bold" style={{ color: track.color }}>{s.score}</span>
+                                      <span className="text-xs font-medium" style={{ color: track.color }}>{s.score}</span>
                                     </div>
                                     <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                                       <div 
@@ -632,7 +632,7 @@ export default function ChallengePage() {
                 <p className="text-xs text-[#91C4E3]/70 uppercase tracking-widest mb-3 font-[family-name:var(--font-bai-jamjuree)]">
                   {lang === "en" ? "Open Track" : "โจทย์เปิดกว้าง"}
                 </p>
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                <h3 className="text-2xl md:text-3xl font-medium text-white mb-4">
                   {lang === "en" ? "Bring Your Own Observation" : "นำเสนอโจทย์ของคุณเอง"}
                 </h3>
                 <p className="text-white/70 text-base leading-relaxed font-[family-name:var(--font-bai-jamjuree)] mb-6">
@@ -657,7 +657,7 @@ export default function ChallengePage() {
           <div className="text-center mb-14">
             <p className="text-xs text-[#91C4E3]/50 tracking-[0.3em] uppercase mb-3 font-[family-name:var(--font-bai-jamjuree)]">How you'll be scored</p>
             <h2
-              className="text-4xl md:text-5xl font-bold"
+              className="text-4xl md:text-5xl font-medium"
               style={{
                 background: "linear-gradient(135deg, #91C4E3 0%, #A594BA 100%)",
                 WebkitBackgroundClip: "text",
@@ -675,7 +675,7 @@ export default function ChallengePage() {
                 style={{ background: "rgba(13,18,25,0.7)" }}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">{c.label}</h3>
+                  <h3 className="text-lg font-medium text-white">{c.label}</h3>
                   <span
                     className="text-2xl font-black font-mono"
                     style={{ color: c.color }}
@@ -707,7 +707,7 @@ export default function ChallengePage() {
           <div className="text-center mb-14">
             <p className="text-xs text-[#91C4E3]/50 tracking-[0.3em] uppercase mb-3 font-[family-name:var(--font-bai-jamjuree)]">What you can win</p>
             <h2
-              className="text-4xl md:text-5xl font-bold"
+              className="text-4xl md:text-5xl font-medium"
               style={{
                 background: "linear-gradient(135deg, #91C4E3 0%, #A594BA 100%)",
                 WebkitBackgroundClip: "text",
@@ -733,7 +733,7 @@ export default function ChallengePage() {
                 <div className="text-4xl mb-4">{prize.icon}</div>
                 <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-[family-name:var(--font-bai-jamjuree)]">{prize.label}</p>
                 <p
-                  className="text-xl font-bold"
+                  className="text-xl font-medium"
                   style={{ color: prize.glow, textShadow: `0 0 20px ${prize.glow}40` }}
                 >
                   To be revealed
@@ -749,7 +749,7 @@ export default function ChallengePage() {
           >
             <div className="flex items-center gap-3 mb-6">
               <Star className="w-5 h-5 text-[#91C4E3]" strokeWidth={1.5} />
-              <h3 className="text-lg font-bold text-white">Special Awards</h3>
+              <h3 className="text-lg font-medium text-white">Special Awards</h3>
             </div>
             <div className="grid sm:grid-cols-3 gap-4">
               {[
@@ -758,7 +758,7 @@ export default function ChallengePage() {
                 { title: "Best Beginner Team", desc: "Outstanding work from first-time hackathon participants" },
               ].map((award) => (
                 <div key={award.title} className="space-y-1">
-                  <p className="text-sm font-semibold text-[#91C4E3]/80">{award.title}</p>
+                  <p className="text-sm font-medium text-[#91C4E3]/80">{award.title}</p>
                   <p className="text-xs text-gray-500 leading-relaxed font-[family-name:var(--font-bai-jamjuree)]">{award.desc}</p>
                 </div>
               ))}
@@ -776,7 +776,7 @@ export default function ChallengePage() {
       <section className="py-24 relative z-10 border-t border-white/5">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <h2
-            className="text-4xl md:text-5xl font-bold mb-6"
+            className="text-4xl md:text-5xl font-medium mb-6"
             style={{
               background: "linear-gradient(135deg, #91C4E3 0%, #ffffff 50%, #A594BA 100%)",
               WebkitBackgroundClip: "text",
@@ -792,7 +792,7 @@ export default function ChallengePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => router.push("/hackathon/register")}
-              className="px-10 py-4 rounded-full text-sm font-semibold transition-all duration-300 hover:scale-105 font-[family-name:var(--font-bai-jamjuree)]"
+              className="px-10 py-4 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 font-[family-name:var(--font-bai-jamjuree)]"
               style={{
                 background: "linear-gradient(135deg, rgba(145,196,227,0.2), rgba(165,148,186,0.2))",
                 border: "1px solid rgba(145,196,227,0.55)",
@@ -804,7 +804,7 @@ export default function ChallengePage() {
             </button>
             <button
               onClick={() => router.push("/hackathon/team")}
-              className="px-10 py-4 rounded-full text-sm font-semibold text-gray-400 hover:text-white transition-all duration-300 border border-white/10 hover:border-white/20 font-[family-name:var(--font-bai-jamjuree)]"
+              className="px-10 py-4 rounded-full text-sm font-medium text-gray-400 hover:text-white transition-all duration-300 border border-white/10 hover:border-white/20 font-[family-name:var(--font-bai-jamjuree)]"
             >
               View Your Team
             </button>

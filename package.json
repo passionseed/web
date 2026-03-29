@@ -9,6 +9,7 @@
     "build:production": "./scripts/build-production.sh",
     "build:production:analyze": "./scripts/build-production.sh --analyze",
     "optimize:images": "node scripts/optimize-images.js",
+    "generate:hackathon-briefs": "tsx scripts/generate-hackathon-problem-briefs.ts",
     "migrate:logs": "node scripts/migrate-console-logs.js",
     "migrate:logs:dry": "node scripts/migrate-console-logs.js --dry-run",
     "start": "next start",
