@@ -2,19 +2,25 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ProblemDetailPage from "@/components/hackathon/ProblemDetailPage";
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
+let mockSearchParams = new URLSearchParams();
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
+    replace: mockReplace,
   }),
   useParams: () => ({
     problemId: "P1",
   }),
+  usePathname: () => "/hackathon/challenge/P1",
+  useSearchParams: () => mockSearchParams,
 }));
 
 describe("ProblemDetailPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSearchParams = new URLSearchParams();
     global.fetch = jest.fn().mockResolvedValue({
       json: async () => ({
         problemId: "P1",
@@ -155,9 +161,22 @@ describe("ProblemDetailPage", () => {
     expect(screen.queryByText("Opportunity Areas")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "TH" }));
+    expect(mockReplace).toHaveBeenCalledWith("/hackathon/challenge/P1?lang=th");
 
     expect(await screen.findByText("ช่องว่างโรคเรื้อรังในพื้นที่ห่างไกล")).toBeInTheDocument();
     expect(screen.getByText("ภาพรวมหลักฐานในไทย")).toBeInTheDocument();
     expect(screen.getByText("การติดตามผลมักล้มเหลวเมื่อระบบคัดกรองและระบบส่งต่อแยกขาดจากกัน")).toBeInTheDocument();
+  });
+
+  it("boots Thai from the lang url param", async () => {
+    mockSearchParams = new URLSearchParams("lang=th");
+
+    render(<ProblemDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("ช่องว่างโรคเรื้อรังในพื้นที่ห่างไกล")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("ภาพรวมหลักฐานในไทย")).toBeInTheDocument();
   });
 });

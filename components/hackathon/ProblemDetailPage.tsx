@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   BarChart3,
@@ -41,6 +41,10 @@ const TRACK_INFO: Record<string, { title: string; subtitle: string; icon: string
 };
 
 type Lang = "en" | "th";
+
+function normalizeLang(value: string | null | undefined): Lang {
+  return value === "th" ? "th" : "en";
+}
 
 const COPY = {
   en: {
@@ -247,11 +251,13 @@ function LangToggle({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => voi
 
 export default function ProblemDetailPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useParams();
+  const searchParams = useSearchParams();
   const problemId = params?.problemId as string;
   const [problem, setProblem] = useState<ProblemBrief | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>(normalizeLang(searchParams?.get("lang")));
 
   useEffect(() => {
     let cancelled = false;
@@ -274,6 +280,20 @@ export default function ProblemDetailPage() {
       cancelled = true;
     };
   }, [problemId]);
+
+  useEffect(() => {
+    const nextLang = normalizeLang(searchParams?.get("lang"));
+    setLang((currentLang) => (currentLang === nextLang ? currentLang : nextLang));
+  }, [searchParams]);
+
+  function handleLangChange(nextLang: Lang) {
+    setLang(nextLang);
+
+    const nextParams = new URLSearchParams(searchParams?.toString() || "");
+    nextParams.set("lang", nextLang);
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+  }
 
   const copy = COPY[lang];
   const textFontClass =
@@ -338,7 +358,7 @@ export default function ProblemDetailPage() {
             <span className="text-xs text-gray-600 font-mono tracking-widest hidden md:block">
               {problem.problemId} · {lang === "th" ? trackInfo.subtitle : trackInfo.title}
             </span>
-            <LangToggle lang={lang} onChange={setLang} />
+            <LangToggle lang={lang} onChange={handleLangChange} />
           </div>
         </div>
       </div>
