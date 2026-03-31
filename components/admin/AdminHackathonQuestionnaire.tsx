@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -18,6 +18,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Search, Users, CheckCircle, Clock, Bookmark, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -81,6 +88,10 @@ export function AdminHackathonQuestionnaire() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [schoolFilter, setSchoolFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [aiFilter, setAiFilter] = useState("all");
+  const [problemFilter, setProblemFilter] = useState("all");
 
   useEffect(() => {
     fetchQuestionnaires();
@@ -105,11 +116,17 @@ export function AdminHackathonQuestionnaire() {
 
   const filteredParticipants = completedParticipants.filter((p) => {
     const query = searchQuery.toLowerCase();
-    return (
+    const matchesSearch = (
       p.name.toLowerCase().includes(query) ||
       p.email?.toLowerCase().includes(query) ||
       p.university?.toLowerCase().includes(query)
     );
+    const matchesSchool = schoolFilter === "all" || p.school_level === schoolFilter;
+    const matchesRole = roleFilter === "all" || p.team_role_preference === roleFilter;
+    const matchesAi = aiFilter === "all" || p.ai_proficiency === aiFilter;
+    const matchesProblem =
+      problemFilter === "all" || p.problem_preferences?.includes(problemFilter);
+    return matchesSearch && matchesSchool && matchesRole && matchesAi && matchesProblem;
   });
 
   const stats = {
@@ -118,6 +135,48 @@ export function AdminHackathonQuestionnaire() {
     completionRate: data?.stats.completion_rate || 0,
     avgProblemsSaved: data?.stats.avg_problems_saved || 0,
   };
+  const filteredStats = {
+    responses: filteredParticipants.length,
+    avgConfidence:
+      filteredParticipants.length > 0
+        ? (
+            filteredParticipants.reduce(
+              (sum, p) => sum + (p.confidence_level ?? 0),
+              0
+            ) / filteredParticipants.length
+          ).toFixed(1)
+        : "0.0",
+    avgFamilySupport:
+      filteredParticipants.length > 0
+        ? (
+            filteredParticipants.reduce(
+              (sum, p) => sum + (p.family_support_level ?? 0),
+              0
+            ) / filteredParticipants.length
+          ).toFixed(1)
+        : "0.0",
+  };
+  const uniqueRoles = Array.from(
+    new Set(
+      completedParticipants
+        .map((p) => p.team_role_preference)
+        .filter((role): role is string => Boolean(role))
+    )
+  ).sort();
+  const uniqueAiLevels = Array.from(
+    new Set(
+      completedParticipants
+        .map((p) => p.ai_proficiency)
+        .filter((level): level is string => Boolean(level))
+    )
+  ).sort();
+  const uniqueProblems = Array.from(
+    new Set(
+      completedParticipants
+        .flatMap((p) => p.problem_preferences || [])
+        .filter((problem): problem is string => Boolean(problem))
+    )
+  ).sort();
 
   // Build chart data from problem_counts
   const chartData = Object.entries(data?.stats.problem_counts || {})
@@ -336,6 +395,68 @@ export function AdminHackathonQuestionnaire() {
               className="pl-10"
             />
           </div>
+          <div className="grid gap-2 mt-3 md:grid-cols-4">
+            <Select value={schoolFilter} onValueChange={setSchoolFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter school level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All school levels</SelectItem>
+                <SelectItem value="university">University</SelectItem>
+                <SelectItem value="high_school">High School</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All roles</SelectItem>
+                {uniqueRoles.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    {getRoleLabel(role)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={aiFilter} onValueChange={setAiFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter AI proficiency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All AI levels</SelectItem>
+                {uniqueAiLevels.map((level) => (
+                  <SelectItem key={level} value={level}>
+                    {level}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={problemFilter} onValueChange={setProblemFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter problem" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All problems</SelectItem>
+                {uniqueProblems.map((problem) => (
+                  <SelectItem key={problem} value={problem}>
+                    {problem}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2 mt-3 md:grid-cols-3">
+            <Badge variant="outline" className="justify-center py-1.5">
+              Filtered responses: {filteredStats.responses}
+            </Badge>
+            <Badge variant="outline" className="justify-center py-1.5">
+              Avg confidence: {filteredStats.avgConfidence}/5
+            </Badge>
+            <Badge variant="outline" className="justify-center py-1.5">
+              Avg family support: {filteredStats.avgFamilySupport}/5
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -348,6 +469,7 @@ export function AdminHackathonQuestionnaire() {
                   <TableHead>Good At</TableHead>
                   <TableHead>Problems</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>AI Level</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
@@ -356,7 +478,7 @@ export function AdminHackathonQuestionnaire() {
                 {filteredParticipants.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center text-muted-foreground py-8"
                     >
                       {searchQuery
@@ -366,9 +488,8 @@ export function AdminHackathonQuestionnaire() {
                   </TableRow>
                 ) : (
                   filteredParticipants.map((p) => (
-                    <>
+                    <Fragment key={p.id}>
                       <TableRow
-                        key={p.id}
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => toggleExpand(p.id)}
                       >
@@ -438,6 +559,11 @@ export function AdminHackathonQuestionnaire() {
                           </Badge>
                         </TableCell>
                         <TableCell>
+                          <Badge variant="secondary">
+                            {p.ai_proficiency || "N/A"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <Badge
                             className="bg-green-500/10 text-green-600 hover:bg-green-500/20"
                           >
@@ -455,7 +581,7 @@ export function AdminHackathonQuestionnaire() {
                       </TableRow>
                       {expandedRow === p.id && (
                         <TableRow className="bg-muted/30">
-                          <TableCell colSpan={8} className="p-4">
+                          <TableCell colSpan={9} className="p-4">
                             <div className="grid grid-cols-2 gap-4 text-sm">
                               <div className="space-y-3">
                                 <div>
@@ -545,7 +671,7 @@ export function AdminHackathonQuestionnaire() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   ))
                 )}
               </TableBody>

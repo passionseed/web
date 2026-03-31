@@ -15,6 +15,7 @@ import { AdminMapsManagement } from "./AdminMapsManagement";
 import { AdminJourneyPeek } from "./AdminJourneyPeek";
 import { AdminDirectionFinder } from "./AdminDirectionFinder";
 import { AdminHackathonParticipants } from "./AdminHackathonParticipants";
+import { AdminHackathonTeams } from "./AdminHackathonTeams";
 import { AdminHackathonAnalytics } from "./AdminHackathonAnalytics";
 import { AdminHackathonQuestionnaire } from "./AdminHackathonQuestionnaire";
 import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
@@ -143,11 +144,15 @@ export function AdminDashboard() {
               <Tabs defaultValue="participants" className="space-y-4">
                 <TabsList>
                   <TabsTrigger value="participants">Participants</TabsTrigger>
+                  <TabsTrigger value="teams">Teams</TabsTrigger>
                   <TabsTrigger value="questionnaire">Questionnaire</TabsTrigger>
                   <TabsTrigger value="analytics">Page Analytics</TabsTrigger>
                 </TabsList>
                 <TabsContent value="participants">
                   <AdminHackathonParticipants key={`hackathon-${refreshKey}`} />
+                </TabsContent>
+                <TabsContent value="teams">
+                  <AdminHackathonTeams key={`teams-${refreshKey}`} />
                 </TabsContent>
                 <TabsContent value="questionnaire">
                   <AdminHackathonQuestionnaire key={`questionnaire-${refreshKey}`} />
