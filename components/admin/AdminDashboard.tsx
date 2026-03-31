@@ -12,21 +12,17 @@ import {
 import { AdminStatsOverview } from "./AdminStatsOverview";
 import { AdminUserManagement } from "./AdminUserManagement";
 import { AdminMapsManagement } from "./AdminMapsManagement";
-import { AdminJourneyPeek } from "./AdminJourneyPeek";
 import { AdminDirectionFinder } from "./AdminDirectionFinder";
 import { AdminHackathonParticipants } from "./AdminHackathonParticipants";
 import { AdminHackathonTeams } from "./AdminHackathonTeams";
 import { AdminHackathonAnalytics } from "./AdminHackathonAnalytics";
 import { AdminHackathonQuestionnaire } from "./AdminHackathonQuestionnaire";
 import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
-import { AdminStudentOnboarding } from "./AdminStudentOnboarding";
 import { AdminEventTracker } from "./AdminEventTracker";
 import {
   Users,
   Activity,
   Settings,
-  BarChart3,
-  Eye,
   Archive,
   Compass,
   Trophy,
@@ -59,7 +55,8 @@ export function AdminDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList>
+        <div className="w-full overflow-x-auto pb-2 -mb-2">
+          <TabsList className="inline-flex w-max min-w-full justify-start">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             User Management
@@ -92,27 +89,16 @@ export function AdminDashboard() {
             <Zap className="h-4 w-4" />
             Event Tracker
           </TabsTrigger>
-          <TabsTrigger value="student-onboarding" className="flex items-center gap-2">
-            <GraduationCap className="h-4 w-4" />
-            Student Onboarding
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="journey-peek" className="flex items-center gap-2">
-            <Eye className="h-4 w-4" />
-            Journey Peek
-          </TabsTrigger>
-          <TabsTrigger value="archive" className="flex items-center gap-2">
+          <TabsTrigger value="university-data" className="flex items-center gap-2">
             <Archive className="h-4 w-4" />
-            Archive
+            University Data
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Settings
           </TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="users" className="space-y-4">
           <AdminUserManagement
@@ -173,44 +159,23 @@ export function AdminDashboard() {
           <AdminEventTracker key={`event-tracker-${refreshKey}`} />
         </TabsContent>
 
-        <TabsContent value="student-onboarding" className="space-y-4">
-          <AdminStudentOnboarding key={`onboarding-${refreshKey}`} />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
+        <TabsContent value="university-data" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Platform Analytics</CardTitle>
+              <CardTitle>University Data Management</CardTitle>
               <CardDescription>
-                View platform usage statistics and trends
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Analytics dashboard coming soon...
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="journey-peek" className="space-y-4">
-          <AdminJourneyPeek key={`journey-peek-${refreshKey}`} />
-        </TabsContent>
-
-        <TabsContent value="archive" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Archive Management</CardTitle>
-              <CardDescription>
-                Manage archived data and system resources
+                Manage university archive for educational pathways
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <a href="/admin/archive/universities" className="block">
-                  <Card className="cursor-pointer hover:bg-slate-800/50 transition-colors">
+                  <Card className="cursor-pointer hover:bg-slate-800/50 transition-colors h-full">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Universities</CardTitle>
+                      <div className="flex items-center gap-2 mb-1">
+                        <GraduationCap className="h-5 w-5 text-blue-400" />
+                        <CardTitle className="text-lg">Universities</CardTitle>
+                      </div>
                       <CardDescription>
                         Manage university archive for educational pathways
                       </CardDescription>
@@ -223,39 +188,6 @@ export function AdminDashboard() {
                     </CardContent>
                   </Card>
                 </a>
-
-                <a href="/admin/archive/ai" className="block">
-                  <Card className="cursor-pointer hover:bg-slate-800/50 transition-colors">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">AI Agents</CardTitle>
-                      <CardDescription>
-                        Manage AI agents and prompts
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-slate-400">
-                        Configure AI behavior for different use cases like
-                        roadmap generation.
-                      </p>
-                    </CardContent>
-                  </Card>
-                </a>
-
-                <Card className="opacity-50 cursor-not-allowed">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-slate-500">
-                      Learning Resources
-                    </CardTitle>
-                    <CardDescription>
-                      Coming soon - Manage learning resources
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-slate-500">
-                      Future archive for educational content and materials.
-                    </p>
-                  </CardContent>
-                </Card>
               </div>
             </CardContent>
           </Card>
