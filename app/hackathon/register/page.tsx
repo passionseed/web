@@ -400,7 +400,7 @@ export default function RegisterPage() {
         <div className="absolute left-0 shore" style={{ top: 0, width: "100%", height: "1px", background: "#91C4E3" }} />
       </div>
 
-      {/* ── Form ── */}
+      {/* ── Closed Notice ── */}
       <div ref={formRef} className="relative z-[30] w-full max-w-lg px-6 py-10">
         <button
           onClick={handleBack}
@@ -411,250 +411,61 @@ export default function RegisterPage() {
         </button>
 
         <div
-          className="rounded-2xl p-8 form-card"
+          className="rounded-2xl p-10 form-card text-center"
           style={{
             background: "rgba(1, 5, 12, 0.9)",
             border: "1px solid rgba(101,171,252,0.2)",
             backdropFilter: "blur(16px)",
           }}
         >
-          <div className="mb-7">
-            <h1
-              className="text-3xl font-medium mb-1 bio-title font-[family-name:var(--font-mitr)]"
+          {/* Lock icon */}
+          <div className="flex justify-center mb-6">
+            <div
+              className="rounded-full flex items-center justify-center"
               style={{
-                background: "linear-gradient(130deg, #91C4E3 0%, #65ABFC 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                width: "72px",
+                height: "72px",
+                background: "rgba(101,171,252,0.07)",
+                border: "1px solid rgba(101,171,252,0.18)",
+                boxShadow: "0 0 30px rgba(101,171,252,0.12)",
               }}
             >
-              ลงทะเบียน
-            </h1>
-            <p className="text-sm mb-1.5" style={{ color: "#7AAED0" }}>
-              The Next Decade Hackathon 2026
-            </p>
-            <p className="text-xs font-[family-name:var(--font-mitr)]" style={{ color: "#2A3A50" }}>
-              ลงทะเบียนแล้วใช่ไหม?{" "}
-              <button
-                onClick={() => router.push("/hackathon/login")}
-                className="transition-colors hover:underline font-[family-name:var(--font-mitr)]"
-                style={{ color: "#65ABFC" }}
-              >
-                เข้าสู่ระบบ
-              </button>
-            </p>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#65ABFC" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
           </div>
 
-          {error && (
-            <div
-              className="mb-5 px-4 py-3 rounded-xl text-sm font-[family-name:var(--font-mitr)]"
-              style={{
-                background: "rgba(255,70,70,0.07)",
-                border: "1px solid rgba(255,70,70,0.22)",
-                color: "#FF8888",
-              }}
-            >
-              {error}
-            </div>
-          )}
+          <h1
+            className="text-3xl font-medium mb-3 bio-title font-[family-name:var(--font-mitr)]"
+            style={{
+              background: "linear-gradient(130deg, #91C4E3 0%, #65ABFC 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            ปิดรับลงทะเบียนแล้ว
+          </h1>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {([
-              { name: "name", label: "ชื่อ-นามสกุล", type: "text", placeholder: "สมชาย ใจดี", required: true },
-              { name: "email", label: "อีเมล", type: "email", placeholder: "somchai@example.com", required: true },
-              { name: "phone", label: "เบอร์โทรศัพท์", type: "tel", placeholder: "0812345678", required: true },
-              { name: "password", label: "รหัสผ่าน", type: "password", placeholder: "อย่างน้อย 6 ตัวอักษร", required: true },
-            ] as const).map((f) => (
-              <div key={f.name}>
-                <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
-                  {f.label}
-                </label>
-                <input
-                  name={f.name}
-                  type={f.type}
-                  value={form[f.name]}
-                  onChange={handleChange}
-                  onFocus={() => setFocused(f.name)}
-                  onBlur={() => setFocused(null)}
-                  required={f.required}
-                  placeholder={f.placeholder}
-                  style={inputStyle(f.name)}
-                  className="font-[family-name:var(--font-mitr)]"
-                />
-              </div>
-            ))}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
-                  ระดับการศึกษา
-                </label>
-                <select
-                  name="track"
-                  value={form.track}
-                  onChange={handleChange}
-                  onFocus={() => setFocused("track")}
-                  onBlur={() => setFocused(null)}
-                  required
-                  style={{
-                    ...inputStyle("track"),
-                    appearance: "none",
-                    color: form.track ? "#C0D8F0" : "#2A3A50",
-                  }}
-                  className="font-[family-name:var(--font-mitr)]"
-                >
-                  <option value="" disabled style={{ background: "#010D18", color: "#2A3A50" }}>
-                    เลือกระดับการศึกษา
-                  </option>
-                  {TRACKS.map((t) => (
-                    <option key={t} value={t} style={{ background: "#010D18", color: "#C0D8F0" }}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <p className="text-sm mb-2 font-[family-name:var(--font-mitr)]" style={{ color: "#7AAED0" }}>
+            The Next Decade Hackathon 2026
+          </p>
 
-              <div>
-                <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
-                  ชั้นปี
-                </label>
-                <select
-                  name="grade_level"
-                  value={form.grade_level}
-                  onChange={handleChange}
-                  onFocus={() => setFocused("grade_level")}
-                  onBlur={() => setFocused(null)}
-                  required
-                  disabled={!form.track}
-                  style={{
-                    ...inputStyle("grade_level"),
-                    appearance: "none",
-                    color: form.grade_level ? "#C0D8F0" : "#2A3A50",
-                    opacity: !form.track ? 0.5 : 1,
-                  }}
-                  className="font-[family-name:var(--font-mitr)]"
-                >
-                  <option value="" disabled style={{ background: "#010D18", color: "#2A3A50" }}>
-                    {form.track ? "เลือกชั้นปี" : "โปรดเลือกระดับการศึกษาก่อน"}
-                  </option>
-                  {form.track && GRADES[form.track]?.map((g) => (
-                    <option key={g} value={g} style={{ background: "#010D18", color: "#C0D8F0" }}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+          <p className="text-sm mb-8 font-[family-name:var(--font-mitr)]" style={{ color: "#3A5A70" }}>
+            ขออภัย การลงทะเบียนสำหรับงานนี้ได้ปิดรับแล้ว
+          </p>
 
-            <div>
-              <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
-                สถานศึกษา
-              </label>
-              <input
-                name="university"
-                type="text"
-                value={form.university}
-                onChange={handleChange}
-                onFocus={() => setFocused("university")}
-                onBlur={() => setFocused(null)}
-                required
-                placeholder="ชื่อโรงเรียน / มหาวิทยาลัย"
-                style={inputStyle("university")}
-                className="font-[family-name:var(--font-mitr)]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs mb-3 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
-                ระดับความชำนาญในการแข่ง ({form.experience_level})
-              </label>
-              <div className="px-1 mb-6">
-                <Slider
-                  min={1}
-                  max={10}
-                  step={1}
-                  value={[form.experience_level]}
-                  onValueChange={(vals) => setForm((prev) => ({ ...prev, experience_level: vals[0] }))}
-                  className="mb-2"
-                />
-                <div className="flex justify-between text-[10px] font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
-                  <span>ครั้งแรก</span>
-                  <span>ชำนาญสุดๆ</span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
-                เล่าเรื่องอะไรก็ได้เท่ๆเกี่ยวกับตัวเองอย่างนึง
-              </label>
-              <textarea
-                name="bio"
-                value={form.bio}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, bio: e.target.value }));
-                  setError("");
-                }}
-                onFocus={() => setFocused("bio")}
-                onBlur={() => setFocused(null)}
-                required
-                placeholder="เช่น ผมเคยเขียนโค้ดจนลืมกินข้าว 3 วันติด..."
-                rows={3}
-                style={{
-                  ...inputStyle("bio"),
-                  resize: "none",
-                }}
-                className="font-[family-name:var(--font-mitr)]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
-                รู้จักเราจากทางไหน
-              </label>
-              <select
-                name="referral_source"
-                value={form.referral_source}
-                onChange={handleChange}
-                onFocus={() => setFocused("referral_source")}
-                onBlur={() => setFocused(null)}
-                required
-                style={{
-                  ...inputStyle("referral_source"),
-                  appearance: "none",
-                  color: form.referral_source ? "#C0D8F0" : "#2A3A50",
-                }}
-                className="font-[family-name:var(--font-mitr)]"
-              >
-                <option value="" disabled style={{ background: "#010D18", color: "#2A3A50" }}>
-                  เลือกช่องทาง
-                </option>
-                {REFERRAL_SOURCES.map((source) => (
-                  <option key={source} value={source} style={{ background: "#010D18", color: "#C0D8F0" }}>
-                    {source}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-
-
+          <p className="text-xs font-[family-name:var(--font-mitr)]" style={{ color: "#2A3A50" }}>
+            ลงทะเบียนแล้วใช่ไหม?{" "}
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-3 rounded-full text-sm font-medium uppercase tracking-widest transition-all duration-300 disabled:opacity-40 bio-btn font-[family-name:var(--font-mitr)]"
-              style={{
-                padding: "0.875rem 1rem",
-                background: loading
-                  ? "rgba(70,130,200,0.12)"
-                  : "linear-gradient(135deg, rgba(101,171,252,0.12), rgba(145,196,227,0.12))",
-                border: "1px solid rgba(101,171,252,0.38)",
-                color: "#91C4E3",
-                letterSpacing: "0.18em",
-                textShadow: "0 0 12px rgba(101,171,252,0.5)",
-              }}
+              onClick={() => router.push("/hackathon/login")}
+              className="transition-colors hover:underline font-[family-name:var(--font-mitr)]"
+              style={{ color: "#65ABFC" }}
             >
-              {loading ? "กำลังลงทะเบียน..." : "ลงทะเบียน"}
+              เข้าสู่ระบบ
             </button>
-          </form>
+          </p>
         </div>
       </div>
     </div>
