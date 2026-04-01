@@ -185,7 +185,7 @@ export default function CelebrationPage() {
                     {/* Handwritten subtitle */}
                     {showContent && (
                         <p
-                            className="text-5xl md:text-6xl font-medium text-white animate-fadeUp"
+                            className="text-4xl md:text-5xl font-medium text-white animate-fadeUp"
                             style={{
                                 animationDelay: "0.5s",
                                 animationFillMode: "both",

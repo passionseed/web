@@ -395,19 +395,48 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                             <div
                                 className={`${instant ? '' : 'transition-opacity duration-1000'} ${showContent ? 'opacity-100' : 'opacity-0'}`}
                             >
-                                {/* Registration Closed */}
+                                {/* Register Button */}
                                 <div className="pt-6 flex flex-col items-center gap-2">
-                                    <div
-                                        className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full"
-                                        style={{
-                                            background: "rgba(101,171,252,0.08)",
-                                            border: "1px solid rgba(101,171,252,0.3)",
-                                        }}
-                                    >
-                                        <span className="w-2 h-2 rounded-full bg-[#65ABFC]" style={{ boxShadow: "0 0 8px rgba(101,171,252,0.9)" }} />
-                                        <span className="text-base font-medium text-[#65ABFC] tracking-wide">Registration Closed</span>
-                                    </div>
-                                    <p className="text-sm text-white/40">We&apos;ve reached 800 participants</p>
+                                    {isLoggedIn ? (
+                                        <Button
+                                            size="lg"
+                                            onClick={handleRegister}
+                                            className="bg-[#9D81AC] hover:bg-[#8a6f99] text-white text-xl px-12 py-6 rounded-full shadow-[0_0_40px_rgba(157,129,172,0.6)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(157,129,172,1)] transform hover:scale-105"
+                                        >
+                                            Your Team
+                                        </Button>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center gap-3">
+                                                <div
+                                                    className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full"
+                                                    style={{
+                                                        background: "rgba(101,171,252,0.08)",
+                                                        border: "1px solid rgba(101,171,252,0.3)",
+                                                    }}
+                                                >
+                                                    <span className="w-2 h-2 rounded-full bg-[#65ABFC]" style={{ boxShadow: "0 0 8px rgba(101,171,252,0.9)" }} />
+                                                    <span className="text-base font-medium text-[#65ABFC] tracking-wide">Registration Closed</span>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => router.push("/hackathon/login")}
+                                                    className="bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full px-5 py-2 text-sm transition-all duration-300"
+                                                >
+                                                    Login
+                                                </Button>
+                                            </div>
+                                            <p className="text-sm text-white/50 max-w-md leading-relaxed">
+                                                ขอขอบคุณผู้สมัครทุกท่านที่ให้ความสนใจ The Next Decade Hackathon อย่างล้นหลาม จนตอนนี้ยอดสมัครพุ่งขึ้นถึง 800 กว่าคน!
+                                            </p>
+                                            <p className="text-sm text-white/50 max-w-md leading-relaxed">
+                                                สำหรับใครที่สมัครไม่ทัน... ไม่ต้องเสียใจไปนะครับ/คะ! 🥺
+                                            </p>
+                                            <p className="text-sm text-white/60 max-w-md leading-relaxed font-medium">
+                                                โอกาสสุดท้ายกำลังจะมา! เราจะเปิดระบบให้ลงทะเบียนรอบเก็บตกอีกครั้งใน <span className="text-[#91C4E3]">วันที่ 4 เมษายนนี้</span> 🔥 จำกัดเพียง <span className="text-[#91C4E3]">20 ที่นั่งสุดท้าย</span>เท่านั้น! (First come, first served)
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1098,19 +1127,46 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                         มาร่วมสำรวจและสร้างอนาคตของการดูแลสุขภาพไปด้วยกัน
                                     </span>
                                 </h2>
-                                <div className="flex flex-col items-center gap-2">
-                                    <div
-                                        className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full"
-                                        style={{
-                                            background: "rgba(101,171,252,0.08)",
-                                            border: "1px solid rgba(101,171,252,0.3)",
-                                        }}
+                                {isLoggedIn ? (
+                                    <Button
+                                        size="lg"
+                                        onClick={handleRegister}
+                                        className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] hover:from-[#7ab3d3] hover:to-[#9484aa] text-white text-xl px-14 py-7 rounded-full shadow-[0_0_40px_rgba(145,196,227,0.5)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(145,196,227,0.8)] transform hover:scale-105"
                                     >
-                                        <span className="w-2 h-2 rounded-full bg-[#65ABFC]" style={{ boxShadow: "0 0 8px rgba(101,171,252,0.9)" }} />
-                                        <span className="text-base font-medium text-[#65ABFC] tracking-wide">Registration Closed</span>
+                                        Your Team
+                                    </Button>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full"
+                                                style={{
+                                                    background: "rgba(101,171,252,0.08)",
+                                                    border: "1px solid rgba(101,171,252,0.3)",
+                                                }}
+                                            >
+                                                <span className="w-2 h-2 rounded-full bg-[#65ABFC]" style={{ boxShadow: "0 0 8px rgba(101,171,252,0.9)" }} />
+                                                <span className="text-base font-medium text-[#65ABFC] tracking-wide">Registration Closed</span>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => router.push("/hackathon/login")}
+                                                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full px-5 py-2 text-sm transition-all duration-300"
+                                            >
+                                                Login
+                                            </Button>
+                                        </div>
+                                        <p className="text-sm text-white/50 max-w-md leading-relaxed">
+                                            ขอขอบคุณผู้สมัครทุกท่านที่ให้ความสนใจ The Next Decade Hackathon อย่างล้นหลาม จนตอนนี้ยอดสมัครพุ่งขึ้นถึง 800 กว่าคน!
+                                        </p>
+                                        <p className="text-sm text-white/50 max-w-md leading-relaxed">
+                                            สำหรับใครที่สมัครไม่ทัน... ไม่ต้องเสียใจไปนะครับ/คะ! 🥺
+                                        </p>
+                                        <p className="text-sm text-white/60 max-w-md leading-relaxed font-medium">
+                                            โอกาสสุดท้ายกำลังจะมา! เราจะเปิดระบบให้ลงทะเบียนรอบเก็บตกอีกครั้งใน <span className="text-[#91C4E3]">วันที่ 4 เมษายนนี้</span> 🔥 จำกัดเพียง <span className="text-[#91C4E3]">20 ที่นั่งสุดท้าย</span>เท่านั้น! (First come, first served)
+                                        </p>
                                     </div>
-                                    <p className="text-sm text-white/40">We&apos;ve reached 800 participants</p>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </section>
