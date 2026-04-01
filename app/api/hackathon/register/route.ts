@@ -3,6 +3,7 @@ import { hashPassword, generateSessionToken, SESSION_COOKIE, SESSION_EXPIRY_DAYS
 import { findParticipantByEmail, createParticipant, createSession } from "@/lib/hackathon/db";
 
 async function handlePOST(req: NextRequest) {
+  return NextResponse.json({ error: "Registration is closed" }, { status: 403 });
   try {
     const body = await req.json();
     const { name, email, phone, password, university, track, grade_level, experience_level, referral_source, bio, team_name } = body;
