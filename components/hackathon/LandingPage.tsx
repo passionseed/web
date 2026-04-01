@@ -397,7 +397,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                             >
                                 {/* Register Button */}
                                 <div className="pt-6 flex flex-col items-center gap-2">
-                                    {isLoggedIn ? (
+                                    {!mounted ? null : isLoggedIn ? (
                                         <Button
                                             size="lg"
                                             onClick={handleRegister}
@@ -1127,7 +1127,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                         มาร่วมสำรวจและสร้างอนาคตของการดูแลสุขภาพไปด้วยกัน
                                     </span>
                                 </h2>
-                                {isLoggedIn ? (
+                                {!mounted ? null : isLoggedIn ? (
                                     <Button
                                         size="lg"
                                         onClick={handleRegister}
