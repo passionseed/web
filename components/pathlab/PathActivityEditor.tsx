@@ -44,17 +44,9 @@ const ACTIVITY_FORMATS = [
   { value: "text", label: "Read Text/Article", needsBody: true, canHaveAssessment: true },
   { value: "pdf", label: "Read PDF Document", needsUrl: true, canHaveAssessment: true },
   { value: "image", label: "View Image", needsUrl: true, canHaveAssessment: true },
-  { value: "resource_link", label: "Visit External Link", needsUrl: true, canHaveAssessment: true },
-  { value: "quiz", label: "Take a Quiz", hasAssessment: true, assessmentOnly: true },
   { value: "text_answer", label: "Submit Text Answer", hasAssessment: true, assessmentOnly: true },
   { value: "file_upload", label: "Upload a File", hasAssessment: true, assessmentOnly: true },
   { value: "image_upload", label: "Upload an Image", hasAssessment: true, assessmentOnly: true },
-  { value: "checklist", label: "Complete Checklist", hasAssessment: true, assessmentOnly: true },
-  { value: "daily_reflection", label: "Daily Reflection", hasAssessment: true, needsBody: true, assessmentOnly: true },
-  { value: "daily_prompt", label: "Respond to Daily Prompt", needsBody: true, canHaveAssessment: true },
-  { value: "reflection_card", label: "Reflection Card", needsBody: true, canHaveAssessment: true },
-  { value: "emotion_check", label: "Emotion Check", needsBody: true, canHaveAssessment: true },
-  { value: "progress_snapshot", label: "Progress Snapshot", needsBody: true, canHaveAssessment: true },
   { value: "ai_chat", label: "AI Chat (with Objective)", isAIChat: true },
   { value: "npc_chat", label: "NPC Conversation (Branching Dialogue)", isNPCChat: true },
 ];
@@ -86,17 +78,11 @@ export function PathActivityEditor({
       "npc_chat",
       "ai_chat",
       "text",
-      "daily_prompt",
-      "reflection_card",
       "video",
       "short_video",
       "canva_slide",
       "pdf",
       "image",
-      "resource_link",
-      "order_code",
-      "emotion_check",
-      "progress_snapshot",
     ];
     for (const contentType of highPriorityTypeOrder) {
       const found = sortedExistingContent.find((content) => content.content_type === contentType);
@@ -589,7 +575,7 @@ export function PathActivityEditor({
                 {format === 'canva_slide' && 'Canva Slide URL *'}
                 {format === 'pdf' && 'PDF URL *'}
                 {format === 'image' && 'Image URL *'}
-                {format === 'resource_link' && 'Link URL *'}
+                {format === 'image' && 'Image URL *'}
               </Label>
               <Input
                 id="contentUrl"
@@ -630,11 +616,6 @@ export function PathActivityEditor({
         <div className="space-y-2">
           <Label htmlFor="contentBody">
             {format === 'text' && 'Text Content (Markdown supported) *'}
-            {format === 'daily_reflection' && 'Reflection Prompt *'}
-            {format === 'daily_prompt' && 'Daily Prompt *'}
-            {format === 'reflection_card' && 'Reflection Card Content *'}
-            {format === 'emotion_check' && 'Emotion Check Content *'}
-            {format === 'progress_snapshot' && 'Progress Snapshot Content *'}
           </Label>
           <Textarea
             id="contentBody"
@@ -792,11 +773,6 @@ export function PathActivityEditor({
             </Label>
           </div>
 
-          {format === 'quiz' && (
-            <p className="text-xs text-blue-300/70">
-              Note: Quiz questions can be added after creating the activity
-            </p>
-          )}
         </div>
       )}
 

@@ -25,6 +25,7 @@ interface PageBuilderProps {
   initialTitle: string | null;
   initialContextText: string;
   initialReflectionPrompts: string[];
+  initialActivities?: FullPathActivity[];
 }
 
 export function PageBuilder({
@@ -34,6 +35,7 @@ export function PageBuilder({
   initialTitle,
   initialContextText,
   initialReflectionPrompts,
+  initialActivities,
 }: PageBuilderProps) {
   const [activitiesLoaded, setActivitiesLoaded] = useState(false);
   const [showActivityEditor, setShowActivityEditor] = useState(false);
@@ -115,8 +117,13 @@ export function PageBuilder({
   // Unsaved changes warning
   useUnsavedChanges(isDirty);
 
-  // Load activities client-side after render
+  // Load activities — use server-provided ones if available, otherwise fetch
   useEffect(() => {
+    if (initialActivities) {
+      initActivities(initialActivities);
+      setActivitiesLoaded(true);
+      return;
+    }
     fetch(`/api/pathlab/activities?dayId=${pageId}`)
       .then(r => r.json())
       .then(data => {

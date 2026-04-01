@@ -9,6 +9,7 @@ import {
   Poppins,
   Reenie_Beanie,
   Kodchasan,
+  Noto_Sans_Thai,
 } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
@@ -78,6 +79,13 @@ const kodchasan = Kodchasan({
   preload: false,
 });
 
+const notoSansThai = Noto_Sans_Thai({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["thai"],
+  variable: "--font-noto-sans-thai",
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: "Passion Seed",
   description: "Discover and nurture your passions",
@@ -141,7 +149,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${mitr.variable} ${poppins.variable} ${reenieBeanie.variable} ${kodchasan.variable}`}
+        className={`${libreFranklin.variable} ${spaceMono.variable} ${krub.variable} ${baiJamjuree.variable} ${mitr.variable} ${poppins.variable} ${reenieBeanie.variable} ${kodchasan.variable} ${notoSansThai.variable}`}
       >
         <ThemeProvider
           attribute="class"

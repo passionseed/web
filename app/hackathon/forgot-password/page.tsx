@@ -64,7 +64,7 @@ export default function HackathonForgotPasswordPage() {
         </button>
 
         <div className="bg-[#0d1219]/80 backdrop-blur-sm border border-[#91C4E3]/20 rounded-2xl p-8 shadow-[0_0_40px_rgba(145,196,227,0.08)]">
-          <h1 className="text-3xl font-bold mb-1 bg-gradient-to-r from-[#91C4E3] to-[#65ABFC] bg-clip-text text-transparent font-[family-name:var(--font-poppins)]">
+          <h1 className="text-3xl font-medium mb-1 bg-gradient-to-r from-[#91C4E3] to-[#65ABFC] bg-clip-text text-transparent font-[family-name:var(--font-poppins)]">
             Forgot Password
           </h1>
           <p className="text-gray-400 text-sm mb-2">The Next Decade Hackathon 2026</p>

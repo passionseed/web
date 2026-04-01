@@ -12,7 +12,18 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error("Global error boundary caught:", error);
-  }, [error]);
+
+    // Transient WebSocket/realtime errors from Supabase — auto-reset instead of
+    // showing the crash page. The connection will recover on its own.
+    const isConnectionError =
+      error.message === "Connection closed." ||
+      error.message?.includes("Connection closed") ||
+      error.message?.includes("WebSocket");
+
+    if (isConnectionError) {
+      reset();
+    }
+  }, [error, reset]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">

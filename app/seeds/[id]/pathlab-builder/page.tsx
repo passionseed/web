@@ -5,7 +5,7 @@ import { PathDayBuilder } from "@/components/pathlab/PathDayBuilder";
 import { PageBuilder } from "@/components/pathlab/PageBuilder";
 import { GeneratedPathReview } from "@/components/pathlab/GeneratedPathReview";
 import { PATHLAB_CURRICULUM } from "../../pathlab/curriculum";
-import { ArrowLeft, Map as MapIcon, Bug } from "lucide-react";
+import { ArrowLeft, Map as MapIcon, Bug, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { DebugButton } from "@/components/pathlab/DebugButton";
@@ -254,6 +254,14 @@ export default async function PathLabBuilderPage({
               >
                 Reports
               </Link>
+              <a
+                href={`/api/pathlab/paths/${path.id}/export`}
+                download
+                className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-white"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export JSON
+              </a>
               <DebugButton
                 data={{
                   seedId,

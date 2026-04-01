@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/utils/supabase/client";
 import {
   Card,
   CardContent,
@@ -52,7 +51,7 @@ import type {
   UserPlannerStatus,
   EventType,
 } from "@/types/events";
-import { calculateProgress, STEP_EVENTS, EVENT_TYPES } from "@/types/events";
+import { STEP_EVENTS } from "@/types/events";
 
 const USERS_PER_PAGE = 50;
 const EVENTS_PER_PAGE = 100;
@@ -71,7 +70,7 @@ const STATUS_LABELS: Record<UserPlannerStatus, string> = {
   churned: "Churned",
 };
 
-const EVENT_LABELS: Record<EventType, string> = {
+const EVENT_LABELS: Record<string, string> = {
   portfolio_uploaded: "Portfolio Uploaded",
   interest_quiz_started: "Quiz Started",
   interest_quiz_completed: "Quiz Completed",
@@ -79,7 +78,64 @@ const EVENT_LABELS: Record<EventType, string> = {
   tcas_program_viewed: "Program Viewed",
   tcas_program_saved: "Program Saved",
   plan_created: "Plan Created",
+  career_searched: "Career Searched",
+  mobile_app_opened: "App Opened",
 };
+
+function EventDetailViewer({
+  type,
+  data,
+}: {
+  type: string;
+  data: any;
+}) {
+  switch (type) {
+    case "career_searched":
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium">"{data.query}"</span>
+          <span className="text-xs text-muted-foreground">{data.results_count} results found</span>
+        </div>
+      );
+    case "mobile_app_opened":
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-sm">{data.device_model}</span>
+          <span className="text-xs text-muted-foreground">{data.os_version} (App v{data.app_version})</span>
+        </div>
+      );
+    case "portfolio_uploaded":
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-sm">{data.file_count} files</span>
+          <span className="text-xs text-muted-foreground">{data.file_types?.join(", ")}</span>
+        </div>
+      );
+    case "interest_quiz_completed":
+      return (
+        <div className="flex flex-wrap gap-1">
+          {data.top_interests?.map((interest: string) => (
+            <Badge key={interest} variant="secondary" className="text-[10px] py-0">
+              {interest}
+            </Badge>
+          ))}
+        </div>
+      );
+    case "tcas_program_viewed":
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-xs">ID: {data.program_id}</span>
+          <span className="text-xs text-muted-foreground">Source: {data.source}</span>
+        </div>
+      );
+    default:
+      return (
+        <pre className="text-xs text-muted-foreground max-w-xs truncate overflow-hidden">
+          {JSON.stringify(data)}
+        </pre>
+      );
+  }
+}
 
 export function AdminEventTracker() {
   const [users, setUsers] = useState<UserPlannerStatusRow[]>([]);
@@ -97,105 +153,63 @@ export function AdminEventTracker() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserPlannerStatusRow | null>(null);
   const [userEvents, setUserEvents] = useState<UserEvent[]>([]);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [groupBySession, setGroupBySession] = useState(false);
 
   const fetchStats = useCallback(async () => {
-    const supabase = createClient();
-
-    // Get total users with events
-    const { data: statusData } = await supabase
-      .from("user_planner_status")
-      .select("*");
-
-    if (!statusData) return;
-
-    const totalUsers = statusData.length;
-    const completed = statusData.filter((u) => u.status === "completed").length;
-    const activeToday = statusData.filter((u) => {
-      if (!u.last_event_at) return false;
-      const lastEvent = new Date(u.last_event_at);
-      const today = new Date();
-      return lastEvent.toDateString() === today.toDateString();
-    }).length;
-
-    // Calculate average sessions (unique session_ids per user)
-    const { data: sessionData } = await supabase
-      .from("user_events")
-      .select("user_id, session_id");
-
-    const userSessions = new Map<string, Set<string>>();
-    sessionData?.forEach((e) => {
-      if (!userSessions.has(e.user_id)) {
-        userSessions.set(e.user_id, new Set());
-      }
-      if (e.session_id) {
-        userSessions.get(e.user_id)!.add(e.session_id);
-      }
+    const response = await fetch(`/api/admin/event-tracker?days=${dateFilter}`, {
+      credentials: "same-origin",
     });
 
-    const avgSessions =
-      userSessions.size > 0
-        ? Array.from(userSessions.values()).reduce((sum, s) => sum + s.size, 0) /
-          userSessions.size
-        : 0;
+    if (!response.ok) {
+      console.error("Error fetching stats");
+      return;
+    }
 
-    setStats({
-      totalUsers,
-      activeToday,
-      completed,
-      avgSessions: Math.round(avgSessions * 10) / 10,
-    });
-  }, []);
+    const data = await response.json();
+    setStats(data.stats);
+  }, [dateFilter]);
 
   const fetchUsers = useCallback(async () => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("user_planner_status")
-      .select("*")
-      .order("last_event_at", { ascending: false, nullsFirst: false });
+    const response = await fetch(`/api/admin/event-tracker?days=${dateFilter}`, {
+      credentials: "same-origin",
+    });
 
-    if (error) {
-      console.error("Error fetching users:", error);
+    if (!response.ok) {
+      console.error("Error fetching users");
       return;
     }
 
-    setUsers(data || []);
-  }, []);
+    const data = await response.json();
+    setUsers(data.users || []);
+  }, [dateFilter]);
 
   const fetchEvents = useCallback(async () => {
-    const supabase = createClient();
-    const daysAgo = parseInt(dateFilter, 10);
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - daysAgo);
+    const response = await fetch(`/api/admin/event-tracker?days=${dateFilter}`, {
+      credentials: "same-origin",
+    });
 
-    const { data, error } = await supabase
-      .from("user_events")
-      .select("*")
-      .gte("created_at", startDate.toISOString())
-      .order("created_at", { ascending: false })
-      .limit(EVENTS_PER_PAGE);
-
-    if (error) {
-      console.error("Error fetching events:", error);
+    if (!response.ok) {
+      console.error("Error fetching events");
       return;
     }
 
-    setEvents(data || []);
+    const data = await response.json();
+    setEvents((data.events || []).slice(0, EVENTS_PER_PAGE));
   }, [dateFilter]);
 
   const fetchUserEvents = useCallback(async (userId: string) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("user_events")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+    const response = await fetch(`/api/admin/event-tracker?userId=${userId}`, {
+      credentials: "same-origin",
+    });
 
-    if (error) {
-      console.error("Error fetching user events:", error);
+    if (!response.ok) {
+      console.error("Error fetching user events");
       return;
     }
 
-    setUserEvents(data || []);
+    const data = await response.json();
+    setUserEvents(data.events || []);
   }, []);
 
   useEffect(() => {
@@ -234,12 +248,29 @@ export function AdminEventTracker() {
   );
   const totalUserPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
 
+  // Filter events
+  const filteredEvents = events.filter((event) => {
+    if (typeFilter !== "all" && event.event_type !== typeFilter) return false;
+    return true;
+  });
+
+  // Group events by session if enabled
+  const processedEvents = groupBySession 
+    ? [...filteredEvents].sort((a, b) => {
+        const sA = a.session_id || "no-session";
+        const sB = b.session_id || "no-session";
+        if (sA < sB) return -1;
+        if (sA > sB) return 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      })
+    : filteredEvents;
+
   // Paginate events
-  const paginatedEvents = events.slice(
+  const paginatedEvents = processedEvents.slice(
     (eventPage - 1) * EVENTS_PER_PAGE,
     eventPage * EVENTS_PER_PAGE
   );
-  const totalEventPages = Math.ceil(events.length / EVENTS_PER_PAGE);
+  const totalEventPages = Math.ceil(processedEvents.length / EVENTS_PER_PAGE);
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "Never";
@@ -432,17 +463,51 @@ export function AdminEventTracker() {
               <CardTitle>Event Log</CardTitle>
               <CardDescription>Recent events across all users</CardDescription>
             </div>
-            <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Select range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Last 1 day</SelectItem>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground px-1 text-right">Grouping</span>
+                <Button
+                  variant={groupBySession ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => setGroupBySession(!groupBySession)}
+                  className="h-9 px-3"
+                >
+                  {groupBySession ? "By Session" : "Flat List"}
+                </Button>
+              </div>
+              
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground px-1">Event Type</span>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types</SelectItem>
+                    {Object.entries(EVENT_LABELS).map(([type, label]) => (
+                      <SelectItem key={type} value={type}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground px-1">Time Range</span>
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Select range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Last 1 day</SelectItem>
+                    <SelectItem value="7">Last 7 days</SelectItem>
+                    <SelectItem value="30">Last 30 days</SelectItem>
+                    <SelectItem value="90">Last 90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -472,8 +537,7 @@ export function AdminEventTracker() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {EVENT_LABELS[event.event_type as EventType] ||
-                            event.event_type}
+                          {EVENT_LABELS[event.event_type] || event.event_type}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -485,9 +549,10 @@ export function AdminEventTracker() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <pre className="text-xs text-muted-foreground max-w-xs truncate">
-                          {JSON.stringify(event.event_data)}
-                        </pre>
+                        <EventDetailViewer
+                          type={event.event_type}
+                          data={event.event_data}
+                        />
                       </TableCell>
                     </TableRow>
                   );
@@ -499,8 +564,8 @@ export function AdminEventTracker() {
             <div className="flex items-center justify-between pt-4">
               <div className="text-sm text-muted-foreground">
                 Showing {(eventPage - 1) * EVENTS_PER_PAGE + 1} to{" "}
-                {Math.min(eventPage * EVENTS_PER_PAGE, events.length)} of{" "}
-                {events.length} events
+                {Math.min(eventPage * EVENTS_PER_PAGE, processedEvents.length)} of{" "}
+                {processedEvents.length} events
               </div>
               <div className="flex gap-2">
                 <Button
@@ -577,7 +642,7 @@ export function AdminEventTracker() {
                             : "bg-gray-500/20 text-gray-400"
                         }`}
                       >
-                        {EVENT_LABELS[eventType].split(" ")[0]}
+                        {EVENT_LABELS[eventType]?.split(" ")[0] || eventType}
                       </div>
                     );
                   })}
@@ -603,10 +668,9 @@ export function AdminEventTracker() {
                         </div>
                         <div className="flex-1">
                           <Badge variant="outline" className="text-xs">
-                            {EVENT_LABELS[event.event_type as EventType] ||
-                              event.event_type}
+                            {EVENT_LABELS[event.event_type] || event.event_type}
                           </Badge>
-                          {Object.keys(event.event_data).length > 0 && (
+                          {event.event_data && Object.keys(event.event_data).length > 0 && (
                             <pre className="text-xs text-muted-foreground mt-1">
                               {JSON.stringify(event.event_data, null, 2)}
                             </pre>
