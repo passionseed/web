@@ -12,34 +12,19 @@
 // Activities are now typed by their content_type or assessment_type
 
 export type PathContentType =
-  // Inherited from nodes
   | 'video'
-  | 'short_video'       // Short-form video content (< 2 min)
+  | 'short_video'   // Short-form video content (< 2 min)
   | 'canva_slide'
   | 'text'
   | 'image'
   | 'pdf'
-  | 'resource_link'
-  | 'order_code'
-  // PathLab-specific content types
-  | 'daily_prompt'      // Daily question or challenge
-  | 'reflection_card'   // Guided reflection with prompts
-  | 'emotion_check'     // Emotional state tracking
-  | 'progress_snapshot' // Progress visualization
-  | 'ai_chat'           // AI chat with objective tracking
-  | 'npc_chat';         // Scripted conversation with NPCs (branching dialogue)
+  | 'ai_chat'       // AI chat with objective tracking
+  | 'npc_chat';     // Scripted conversation with NPCs (branching dialogue)
 
 export type PathAssessmentType =
-  // Inherited from nodes
-  | 'quiz'
   | 'text_answer'
   | 'file_upload'
-  | 'image_upload'
-  | 'checklist'
-  // PathLab-specific assessment types
-  | 'daily_reflection'  // Daily structured reflection
-  | 'interest_rating'   // Interest level assessment
-  | 'energy_check';     // Energy/engagement check
+  | 'image_upload';
 
 export type PathActivityProgressStatus =
   | 'not_started'
@@ -342,31 +327,9 @@ export interface PathMigrationDetails {
  * PathContentMetadata - Typed metadata for different content types
  */
 export type PathContentMetadata =
-  | DailyPromptMetadata
-  | ReflectionCardMetadata
-  | EmotionCheckMetadata
-  | ProgressSnapshotMetadata
   | AIChatMetadata
   | NPCChatMetadata
   | Record<string, any>;
-
-export interface DailyPromptMetadata {
-  prompt_type: 'reflection' | 'action' | 'gratitude' | 'challenge';
-  difficulty?: 1 | 2 | 3 | 4 | 5;
-}
-
-export interface ReflectionCardMetadata {
-  prompts: string[];
-  categories?: string[];
-}
-
-export interface EmotionCheckMetadata {
-  emotion_scale: Array<{ value: number; label: string }>;
-}
-
-export interface ProgressSnapshotMetadata {
-  metrics: Array<{ name: string; value: number; max: number }>;
-}
 
 export interface AIChatMetadata {
   system_prompt: string;             // Prompt for the AI
@@ -386,31 +349,7 @@ export interface NPCChatMetadata {
 /**
  * PathAssessmentMetadata - Typed metadata for different assessment types
  */
-export type PathAssessmentMetadata =
-  | ChecklistMetadata
-  | DailyReflectionMetadata
-  | InterestRatingMetadata
-  | EnergyCheckMetadata
-  | Record<string, any>;
-
-export interface ChecklistMetadata {
-  items: Array<{ id: string; text: string; required?: boolean }>;
-}
-
-export interface DailyReflectionMetadata {
-  prompts: string[];
-  min_words?: number;
-}
-
-export interface InterestRatingMetadata {
-  scale_min: number;
-  scale_max: number;
-  labels?: { min: string; max: string };
-}
-
-export interface EnergyCheckMetadata {
-  levels: Array<{ value: number; label: string; description?: string }>;
-}
+export type PathAssessmentMetadata = Record<string, any>;
 
 // =====================================================
 // BUILDER TYPES (for PathDayBuilder component)

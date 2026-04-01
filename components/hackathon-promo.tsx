@@ -23,7 +23,7 @@ export function HackathonPromo() {
           <div className="mb-8 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-400 backdrop-blur-sm">
               <Trophy className="h-4 w-4" />
-              Registration Open
+              Registration Closed · 800 Participants
             </span>
           </div>
 

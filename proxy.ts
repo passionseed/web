@@ -1,17 +1,15 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
-  // Handle Supabase session updates
-  const response = await updateSession(request);
-
-  // Check for admin routes
-  if (request.nextUrl.pathname.startsWith("/admin")) {
-    // This basic check will be handled by the page component
-    // More sophisticated middleware checks could be added here
+  // Skip session refresh for API routes — they handle auth themselves,
+  // and calling getUser() on every API request stacks up under load (504 timeout).
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next({ request });
   }
 
-  return response;
+  // Handle Supabase session updates for page navigations only
+  return await updateSession(request);
 }
 
 export const config = {

@@ -9,6 +9,8 @@ export const EVENT_TYPES = {
   TCAS_PROGRAM_VIEWED: 'tcas_program_viewed',
   TCAS_PROGRAM_SAVED: 'tcas_program_saved',
   PLAN_CREATED: 'plan_created',
+  CAREER_SEARCHED: 'career_searched',
+  MOBILE_APP_OPENED: 'mobile_app_opened',
 } as const;
 
 export type EventType = typeof EVENT_TYPES[keyof typeof EVENT_TYPES];
@@ -50,6 +52,17 @@ export interface PlanCreatedData {
   program_ids: string[];
 }
 
+export interface CareerSearchedData {
+  query: string;
+  results_count: number;
+}
+
+export interface MobileAppOpenedData {
+  device_model: string;
+  os_version: string;
+  app_version: string;
+}
+
 // Union type for all event data
 export type EventData =
   | PortfolioUploadedData
@@ -59,6 +72,8 @@ export type EventData =
   | TcasProgramViewedData
   | TcasProgramSavedData
   | PlanCreatedData
+  | CareerSearchedData
+  | MobileAppOpenedData
   | Record<string, unknown>; // Fallback for extensibility
 
 // Database row type

@@ -22,6 +22,7 @@ export type HackathonParticipant = {
   bio: string;
   team_name: string | null;
   created_at: string;
+  is_admin?: boolean;
 };
 
 export async function findParticipantByEmail(email: string) {

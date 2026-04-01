@@ -73,7 +73,7 @@ export default function LineOAPage() {
         duration: 1.0,
         ease: "power3.inOut",
         onComplete: () => {
-          router.push("/hackathon/team");
+          router.push("/hackathon/dashboard");
         },
       }
     );
@@ -305,7 +305,7 @@ export default function LineOAPage() {
         >
           <div className="mb-7 text-center">
             <h1
-              className="text-3xl font-bold mb-3 bio-title font-[family-name:var(--font-mitr)]"
+              className="text-3xl font-medium mb-3 bio-title font-[family-name:var(--font-mitr)]"
               style={{
                 background: "linear-gradient(130deg, #91C4E3 0%, #65ABFC 100%)",
                 WebkitBackgroundClip: "text",
@@ -343,7 +343,7 @@ export default function LineOAPage() {
           <div className="space-y-3">
             <button
               onClick={handleAddLine}
-              className="w-full rounded-full text-sm font-semibold uppercase tracking-widest transition-all duration-300 bio-btn font-[family-name:var(--font-mitr)]"
+              className="w-full rounded-full text-sm font-medium uppercase tracking-widest transition-all duration-300 bio-btn font-[family-name:var(--font-mitr)]"
               style={{
                 padding: "0.875rem 1rem",
                 background: "linear-gradient(135deg, rgba(6,219,99,0.15), rgba(0,195,0,0.15))",
@@ -358,7 +358,7 @@ export default function LineOAPage() {
 
             <button
               onClick={handleNext}
-              className="w-full rounded-full text-sm font-semibold uppercase tracking-widest transition-all duration-300 bio-btn font-[family-name:var(--font-mitr)]"
+              className="w-full rounded-full text-sm font-medium uppercase tracking-widest transition-all duration-300 bio-btn font-[family-name:var(--font-mitr)]"
               style={{
                 padding: "0.875rem 1rem",
                 background: "linear-gradient(135deg, rgba(101,171,252,0.12), rgba(145,196,227,0.12))",
