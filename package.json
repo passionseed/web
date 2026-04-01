@@ -13,7 +13,7 @@
     "migrate:logs": "node scripts/migrate-console-logs.js",
     "migrate:logs:dry": "node scripts/migrate-console-logs.js --dry-run",
     "start": "next start",
-    "lint": "next dev",
+    "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:load": "tsx scripts/test-concurrent-jobs.ts",
