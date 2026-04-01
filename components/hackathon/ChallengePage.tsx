@@ -1,202 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { HeartPulse, Brain, Globe, Star, ChevronDown, Zap, AlertTriangle, Target, Heart, Clock } from "lucide-react";
+import { HeartPulse, Brain, Globe, Star, ChevronDown, Zap, AlertTriangle, Target, Heart, Clock, Loader2 } from "lucide-react";
+import { getHackathonTracksWithChallenges, HackathonTrack } from "@/lib/supabase/hackathon";
 
 type Lang = "en" | "th";
 
-const TRACKS = [
-  {
-    id: 1,
-    num: "01",
-    title: "Traditional & Integrative Healthcare",
-    subtitle: "แพทย์แผนไทยและการแพทย์เชิงป้องกัน",
-    icon: HeartPulse,
-    color: "#91C4E3",
-    colorMuted: "rgba(145,196,227,0.12)",
-    colorBorder: "rgba(145,196,227,0.25)",
-    problems: [
-      {
-        num: "P1",
-        titleEn: "The Last-Mile Chronic Disease Gap",
-        titleTh: "สู้กับโรคเรื้อรังในพื้นที่ห่างไกล",
-        hookEn: "Over 70% of Thai elderly live in rural areas far from chronic disease screening systems, causing diseases to be detected too late.",
-        hookTh: "ผู้สูงอายุไทยกว่า 70% อาศัยในชนบทห่างไกลจากระบบการตรวจคัดกรองโรคเรื้อรัง ส่งผลให้โรคถูกตรวจพบในระยะที่สายเกินไป",
-        challengeEn:
-          "How might we design a low-cost, community-deployable screening tool that enables rural communities to detect chronic disease risk early — without requiring hospital infrastructure?",
-        challengeTh:
-          "เราจะออกแบบเครื่องมือคัดกรองต้นทุนต่ำที่ชุมชนสามารถนำไปใช้เองได้ เพื่อช่วยให้คนในชนบทตรวจพบความเสี่ยงโรคเรื้อรังได้ตั้งแต่เนิ่น ๆ โดยไม่ต้องพึ่งโรงพยาบาลได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "Like leaving your grandparents' check engine light on until the car breaks down.",
-          th: "เหมือนปล่อยให้ไฟเตือนเครื่องยนต์ของปู่ย่าตายายสว่างค้างไว้ จนกว่ารถจะพัง"
-        },
-        scores: { severity: 8, difficulty: 8, impact: 9, urgency: 8 },
-        tags: ["Rural Health", "Screening", "Low-cost Tech"],
-      },
-      {
-        num: "P2",
-        titleEn: "The Traditional Medicine Data Desert",
-        titleTh: "แพทย์แผนไทย ไร้Data",
-        hookEn: "Thailand has over 30,000 traditional medicine practitioners, but treatment data is rarely recorded or connected to modern health systems.",
-        hookTh: "ประเทศไทยมีผู้ประกอบวิชาชีพแพทย์แผนไทยกว่า 30,000 คน แต่ข้อมูลการรักษาแทบไม่ถูกบันทึกหรือเชื่อมต่อกับระบบสุขภาพสมัยใหม่",
-        challengeEn:
-          "How might we create a bridge that digitizes traditional medicine treatment outcomes and makes them interoperable with modern health records — enabling integrated, evidence-based care?",
-        challengeTh:
-          "เราจะสร้างระบบที่แปลงข้อมูลการรักษาแพทย์แผนไทยให้เป็นดิจิทัล และเชื่อมต่อกับบันทึกสุขภาพสมัยใหม่ได้ เพื่อนำไปสู่การดูแลสุขภาพแบบบูรณาการที่มีหลักฐานรองรับได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "Like burning a library of 30,000 medical books every generation.",
-          th: "เหมือนการเผาห้องสมุดตำราแพทย์ 30,000 เล่มทิ้งในทุกๆ รุ่น"
-        },
-        scores: { severity: 8, difficulty: 8, impact: 9, urgency: 7 },
-        tags: ["Digital Health", "Interoperability", "Traditional Medicine"],
-      },
-      {
-        num: "P3",
-        titleEn: "Preventive Intervention at Scale",
-        titleTh: "ตรวจและรักษา ก่อนจะสายเกินไป",
-        hookEn: "Only 1 in 5 Thais at high risk of NCDs receives preventive intervention before the disease develops.",
-        hookTh: "มีคนไทยเพียง 1 ใน 5 ที่มีความเสี่ยงสูงต่อโรค NCDs ที่ได้รับการแทรกแซงเชิงป้องกันก่อนที่โรคจะพัฒนาขึ้น",
-        challengeEn:
-          "How might we build a predictive health risk platform that identifies high-risk individuals early and triggers personalized preventive action — before symptoms appear?",
-        challengeTh:
-          "เราจะสร้างแพลตฟอร์มประเมินความเสี่ยงด้านสุขภาพเชิงพยากรณ์ที่ระบุตัวบุคคลที่มีความเสี่ยงสูงได้แต่เนิ่น ๆ และกระตุ้นให้เกิดการป้องกันแบบเฉพาะบุคคลก่อนที่อาการจะปรากฏได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "Like ignoring a leaky roof until the house floods. 400,000 lives lost yearly.",
-          th: "เหมือนเพิกเฉยต่อหลังคารั่วจนน้ำท่วมบ้าน 400,000 ชีวิตสูญเสียทุกปี"
-        },
-        scores: { severity: 9, difficulty: 8, impact: 9, urgency: 9 },
-        tags: ["Predictive Analytics", "NCDs", "Behavioral Change"],
-      },
-    ],
-  },
-  {
-    id: 2,
-    num: "02",
-    title: "Mental Health",
-    subtitle: "สุขภาพจิตและความเป็นอยู่ที่ดี",
-    icon: Brain,
-    color: "#A594BA",
-    colorMuted: "rgba(165,148,186,0.12)",
-    colorBorder: "rgba(165,148,186,0.25)",
-    problems: [
-      {
-        num: "P4",
-        titleEn: "The Stigma Wall",
-        titleTh: "กำแพงแห่งอคติ",
-        hookEn: "37% of Thai students experience burnout, but more than 85% have never sought help out of fear of social judgment.",
-        hookTh: "37% ของนักศึกษาไทยมีอาการ Burnout แต่มากกว่า 85% ไม่เคยขอความช่วยเหลือ เพราะกลัวการถูกตัดสินจากสังคม",
-        challengeEn:
-          "How might we design a destigmatized early mental health detection and support system that meets young people where they are — without labeling or exposing them?",
-        challengeTh:
-          "เราจะออกแบบระบบตรวจจับปัญหาสุขภาพจิตระยะแรกและระบบสนับสนุน ที่คนหนุ่มสาวเข้าถึงได้โดยไม่ต้องกลัวการถูกตัดสินหรือถูกเปิดเผยตัวตนได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "Like having a broken leg, but society tells you it's 'just in your head'.",
-          th: "เหมือนขาหัก แต่สังคมบอกคุณว่า 'คุณแค่คิดไปเอง'"
-        },
-        scores: { severity: 9, difficulty: 8, impact: 9, urgency: 9 },
-        tags: ["Destigmatization", "Youth", "Early Detection"],
-      },
-      {
-        num: "P5",
-        titleEn: "Connected But Alone",
-        titleTh: "เชื่อมต่อแต่โดดเดี่ยว",
-        hookEn: "Teen loneliness in Thailand has reached crisis levels despite increased social media use — because online connections don't resolve real-life social isolation.",
-        hookTh: "ความเหงาในวัยรุ่นไทยถึงระดับวิกฤตแม้จะใช้ Social Media มากขึ้น เพราะการเชื่อมต่อออนไลน์ไม่ได้แก้ปัญหาการแยกตัวจากสังคมในชีวิตจริง",
-        challengeEn:
-          "How might we design an intervention that addresses root-cause social isolation — not just surface-level connection — for teenagers and young adults?",
-        challengeTh:
-          "เราจะออกแบบการแทรกแซงที่แก้ไขการโดดเดี่ยวทางสังคมในเชิงต้นเหตุ ไม่ใช่แค่การเชื่อมต่อแบบผิวเผิน สำหรับวัยรุ่นและผู้ใหญ่ตอนต้นได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "The mortality impact is equivalent to smoking 15 cigarettes a day.",
-          th: "ผลกระทบต่ออัตราการตายเทียบเท่ากับการสูบบุหรี่ 15 มวนต่อวัน"
-        },
-        scores: { severity: 9, difficulty: 8, impact: 10, urgency: 10 },
-        tags: ["Social Isolation", "Teenagers", "Intervention"],
-      },
-      {
-        num: "P6",
-        titleEn: "Mental Healthcare in the Last Mile",
-        titleTh: "สุขภาพจิตในพื้นที่ห่างไกล",
-        hookEn: "Rural Thailand has only 1 psychiatrist per 200,000 people, leaving those who need help with no way to access care.",
-        hookTh: "พื้นที่ชนบทของไทยมีจิตแพทย์เพียง 1 คนต่อประชากร 200,000 คน ทำให้คนที่ต้องการความช่วยเหลือไม่มีทางเข้าถึงการดูแล",
-        challengeEn:
-          "How might we build a scalable, culturally appropriate mental wellness support system for underserved communities — where professional help is inaccessible?",
-        challengeTh:
-          "เราจะสร้างระบบสนับสนุนสุขภาพจิตที่ปรับขนาดได้และเหมาะสมกับวัฒนธรรม สำหรับชุมชนที่ขาดแคลนซึ่งเข้าถึงความช่วยเหลือจากผู้เชี่ยวชาญไม่ได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "Imagine 1 doctor trying to treat a packed stadium of 200,000 people.",
-          th: "ลองจินตนาการถึงหมอ 1 คนที่พยายามรักษาคน 200,000 คนในสเตเดียมที่อัดแน่น"
-        },
-        scores: { severity: 9, difficulty: 8, impact: 9, urgency: 9 },
-        tags: ["Access", "Rural Communities", "Scalable Care"],
-      },
-    ],
-  },
-  {
-    id: 3,
-    num: "03",
-    title: "Community, Public & Environmental Health",
-    subtitle: "สุขภาพชุมชนและสิ่งแวดล้อม",
-    icon: Globe,
-    color: "#91C4E3",
-    colorMuted: "rgba(145,196,227,0.12)",
-    colorBorder: "rgba(145,196,227,0.25)",
-    problems: [
-      {
-        num: "P7",
-        titleEn: "Data Rich, Action Poor",
-        titleTh: "ข้อมูลมากมาย ไหนล่ะการกระทำ?",
-        hookEn: "Real-time air quality data is already available, but communities can't translate that data into protective actions.",
-        hookTh: "ข้อมูลคุณภาพอากาศแบบ Real-time มีพร้อมแล้ว แต่ชุมชนไม่สามารถแปลงข้อมูลเหล่านั้นเป็นการกระทำเพื่อป้องกันตัวได้",
-        challengeEn:
-          "How might we turn real-time environmental health data into actionable community behavior change — at the neighborhood level, not just on a dashboard?",
-        challengeTh:
-          "เราจะแปลงข้อมูลสุขภาพสิ่งแวดล้อมแบบ Real-time ให้กลายเป็นการเปลี่ยนพฤติกรรมของชุมชนที่ลงมือทำได้จริงในระดับย่าน ไม่ใช่แค่บน Dashboard ได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "Like having a fire alarm that rings, but gives you no water to put out the fire.",
-          th: "เหมือนมีสัญญาณเตือนไฟไหม้ดังขึ้น แต่ไม่มีน้ำให้คุณดับไฟ"
-        },
-        scores: { severity: 9, difficulty: 7, impact: 9, urgency: 8 },
-        tags: ["Environmental Data", "Behavior Change", "Community"],
-      },
-      {
-        num: "P8",
-        titleEn: "The Food Safety Blind Spot",
-        titleTh: "อร่อยให้หก สกปรก...หรือเปล่า?",
-        hookEn: "40% of Thai street food markets lack consistent food safety inspection, resulting in tens of thousands of food-related illnesses per year.",
-        hookTh: "40% ของตลาดอาหารริมทางในไทยขาดระบบตรวจสอบความปลอดภัยที่สม่ำเสมอ ส่งผลให้มีผู้ป่วยจากอาหารหลายหมื่นคนต่อปี",
-        challengeEn:
-          "How might we design a community-powered food safety monitoring and early warning system that works without requiring top-down government enforcement?",
-        challengeTh:
-          "เราจะออกแบบระบบติดตามและเตือนภัยความปลอดภัยอาหารที่ขับเคลื่อนโดยชุมชน โดยไม่ต้องรอการบังคับใช้จากภาครัฐได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "Like playing Russian Roulette with your lunch every day.",
-          th: "เหมือนเล่นรัสเซียนรูเล็ตต์กับอาหารกลางวันของคุณทุกวัน"
-        },
-        scores: { severity: 8, difficulty: 7, impact: 8, urgency: 7 },
-        tags: ["Food Safety", "Community Monitoring", "Public Health"],
-      },
-      {
-        num: "P9",
-        titleEn: "PM2.5 vs. Our Children",
-        titleTh: "เมืองหลวงควันและฝุ่นมากมาย",
-        hookEn: "PM2.5 dust disproportionately affects school children, but most schools lack timely warning systems or prevention plans.",
-        hookTh: "ฝุ่น PM2.5 ส่งผลกระทบต่อเด็กนักเรียนอย่างไม่สมส่วน แต่โรงเรียนส่วนใหญ่ไม่มีระบบแจ้งเตือนหรือแผนป้องกันที่ทันการณ์",
-        challengeEn:
-          "How might we build a predictive PM2.5 alert and response system that triggers preemptive protective actions for schools and children — before dangerous exposure occurs?",
-        challengeTh:
-          "เราจะสร้างระบบแจ้งเตือนและตอบสนอง PM2.5 เชิงพยากรณ์ที่กระตุ้นให้เกิดการป้องกันล่วงหน้าสำหรับโรงเรียนและเด็กก่อนที่จะเกิดการสัมผัสอันตรายได้อย่างไร?",
-        tangibleEquivalent: {
-          en: "Like forcing 13.6 million kids to smoke cigarettes before recess.",
-          th: "เหมือนบังคับให้เด็ก 13.6 ล้านคนสูบบุหรี่ก่อนพักเบรก"
-        },
-        scores: { severity: 9, difficulty: 7, impact: 9, urgency: 10 },
-        tags: ["Air Quality", "Children", "Predictive Alerts"],
-      },
-    ],
-  },
-];
+const ICON_MAP: Record<string, any> = {
+  HeartPulse,
+  Brain,
+  Globe,
+};
+
+function hexToRgba(hex: string | null, alpha: number) {
+  if (!hex) return `rgba(255,255,255,${alpha})`;
+  const h = hex.replace("#", "");
+  const r = parseInt(h.length === 3 ? h.slice(0, 1).repeat(2) : h.slice(0, 2), 16);
+  const g = parseInt(h.length === 3 ? h.slice(1, 2).repeat(2) : h.slice(2, 4), 16);
+  const b = parseInt(h.length === 3 ? h.slice(2, 3).repeat(2) : h.slice(4, 6), 16);
+  return isNaN(r) ? `rgba(255,255,255,${alpha})` : `rgba(${r},${g},${b},${alpha})`;
+}
+
 
 const JUDGING_CRITERIA = [
   {
@@ -253,6 +78,17 @@ export default function ChallengePage() {
   const router = useRouter();
   const [expandedProblem, setExpandedProblem] = useState<string | null>(null);
   const [lang, setLang] = useState<Lang>("en");
+  const [tracks, setTracks] = useState<HackathonTrack[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTracks = async () => {
+      const data = await getHackathonTracksWithChallenges();
+      setTracks(data);
+      setLoading(false);
+    };
+    fetchTracks();
+  }, []);
 
   return (
     <div
@@ -384,20 +220,24 @@ export default function ChallengePage() {
 
           {/* Track quick-nav */}
           <div className="flex flex-wrap justify-center gap-3 mt-10">
-            {TRACKS.map((t) => (
+            {tracks.map((t, i) => {
+              const numStr = `0${i + 1}`;
+              const trackColor = t.color || "#91C4E3";
+              const trackColorMuted = hexToRgba(trackColor, 0.12);
+              return (
               <a
                 key={t.id}
                 href={`#track-${t.id}`}
                 className="text-xs px-4 py-2 rounded-full border transition-all duration-200 font-[family-name:var(--font-bai-jamjuree)]"
                 style={{
-                  borderColor: `${t.color}30`,
-                  color: t.color,
-                  background: t.colorMuted,
+                  borderColor: `${trackColor}30`,
+                  color: trackColor,
+                  background: trackColorMuted,
                 }}
               >
-                {t.num} — {t.title.split(" ").slice(0, 2).join(" ")}
+                {numStr} — {t.title.split(" ").slice(0, 2).join(" ")}
               </a>
-            ))}
+            )})}
           </div>
         </div>
       </section>
@@ -405,8 +245,18 @@ export default function ChallengePage() {
       {/* Tracks + Problems */}
       <section className="pb-20 relative z-10">
         <div className="container mx-auto px-4 max-w-5xl space-y-20">
-          {TRACKS.map((track) => {
-            const Icon = track.icon;
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-[#91C4E3]" />
+            </div>
+          ) : (
+          tracks.map((track, i) => {
+            const numStr = `0${i + 1}`;
+            const Icon = track.icon && ICON_MAP[track.icon] ? ICON_MAP[track.icon] : Star;
+            const trackColor = track.color || "#91C4E3";
+            const trackColorMuted = hexToRgba(trackColor, 0.12);
+            const trackColorBorder = hexToRgba(trackColor, 0.25);
+
             return (
               <div key={track.id} id={`track-${track.id}`} className="scroll-mt-24">
                 {/* Track Header */}
@@ -414,14 +264,14 @@ export default function ChallengePage() {
                   <div className="flex items-center gap-4 flex-1">
                     <span
                       className="text-7xl md:text-8xl font-medium leading-none select-none"
-                      style={{ color: `${track.color}35`, textShadow: `0 0 60px ${track.color}20` }}
+                      style={{ color: `${trackColor}35`, textShadow: `0 0 60px ${trackColor}20` }}
                     >
-                      {track.num}
+                      {numStr}
                     </span>
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <Icon className="w-5 h-5" style={{ color: track.color, filter: `drop-shadow(0 0 6px ${track.color}80)` }} strokeWidth={1.5} />
-                        <h2 className="text-2xl md:text-3xl font-medium" style={{ color: track.color }}>
+                        <Icon className="w-5 h-5" style={{ color: trackColor, filter: `drop-shadow(0 0 6px ${trackColor}80)` }} strokeWidth={1.5} />
+                        <h2 className="text-2xl md:text-3xl font-medium" style={{ color: trackColor }}>
                           {track.title}
                         </h2>
                       </div>
@@ -432,22 +282,24 @@ export default function ChallengePage() {
 
                 {/* Problem Cards */}
                 <div className="space-y-3">
-                  {track.problems.map((p) => {
-                    const key = `${track.id}-${p.num}`;
+                  {track.challenges?.map((p) => {
+                    const key = p.id;
                     const isOpen = expandedProblem === key;
-                    const title = lang === "th" ? p.titleTh : p.titleEn;
-                    const hook = lang === "th" ? p.hookTh : p.hookEn;
-                    const challenge = lang === "th" ? p.challengeTh : p.challengeEn;
+                    const title = lang === "th" && p.title_th ? p.title_th : p.title_en;
+                    const hook = lang === "th" && p.hook_th ? p.hook_th : p.hook_en;
+                    const challenge = lang === "th" && p.challenge_th ? p.challenge_th : p.challenge_en;
                     const contextLabel = lang === "th" ? "บริบท" : "Context";
                     const challengeLabel = lang === "th" ? "โจทย์" : "The Challenge";
+                    const tangibleEq = lang === "th" && p.tangible_equivalent_th ? p.tangible_equivalent_th : p.tangible_equivalent_en;
+
                     return (
                       <div
                         key={p.num}
                         className="rounded-2xl border transition-all duration-500 cursor-pointer overflow-hidden"
                         style={{
-                          borderColor: isOpen ? track.colorBorder : "rgba(255,255,255,0.06)",
-                          background: isOpen ? track.colorMuted : "rgba(13,18,25,0.6)",
-                          boxShadow: isOpen ? `0 0 60px ${track.color}22, inset 0 0 40px ${track.color}06` : "none",
+                          borderColor: isOpen ? trackColorBorder : "rgba(255,255,255,0.06)",
+                          background: isOpen ? trackColorMuted : "rgba(13,18,25,0.6)",
+                          boxShadow: isOpen ? `0 0 60px ${trackColor}22, inset 0 0 40px ${trackColor}06` : "none",
                         }}
                         onClick={() => setExpandedProblem(isOpen ? null : key)}
                       >
@@ -456,13 +308,13 @@ export default function ChallengePage() {
                           <div className="flex items-center gap-5 flex-1 min-w-0">
                             <span
                               className="text-xs font-mono flex-shrink-0 w-8"
-                              style={{ color: `${track.color}50` }}
+                              style={{ color: `${trackColor}50` }}
                             >
                               {p.num}
                             </span>
                             <h3
                               className="text-lg md:text-xl font-normal truncate font-[family-name:var(--font-bai-jamjuree)]"
-                              style={{ color: isOpen ? track.color : "rgba(255,255,255,0.8)" }}
+                              style={{ color: isOpen ? trackColor : "rgba(255,255,255,0.8)" }}
                             >
                               {title}
                             </h3>
@@ -470,7 +322,7 @@ export default function ChallengePage() {
                           <ChevronDown
                             className="flex-shrink-0 w-4 h-4 transition-transform duration-300"
                             style={{
-                              color: `${track.color}60`,
+                              color: `${trackColor}60`,
                               transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                             }}
                           />
@@ -483,7 +335,7 @@ export default function ChallengePage() {
                           <div className="overflow-hidden">
                             <div className="px-6 md:px-8 pb-8 space-y-6 pt-2">
                               {/* Divider */}
-                              <div className="h-px" style={{ background: `${track.color}20` }} />
+                              <div className="h-px" style={{ background: `${trackColor}20` }} />
                               
                               <div className="flex flex-col md:flex-row gap-6">
                                 {/* Thumbnail */}
@@ -500,8 +352,8 @@ export default function ChallengePage() {
                             <div
                               className="rounded-xl p-5 border-l-2"
                               style={{
-                                borderColor: track.color,
-                                background: `${track.color}08`,
+                                borderColor: trackColor,
+                                background: `${trackColor}08`,
                               }}
                             >
                               <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-[family-name:var(--font-bai-jamjuree)]">
@@ -512,7 +364,7 @@ export default function ChallengePage() {
 
                                   {/* Challenge Statement */}
                                   <div>
-                                    <p className="text-xs uppercase tracking-widest mb-3 font-[family-name:var(--font-bai-jamjuree)]" style={{ color: `${track.color}70` }}>
+                                    <p className="text-xs uppercase tracking-widest mb-3 font-[family-name:var(--font-bai-jamjuree)]" style={{ color: `${trackColor}70` }}>
                                       {challengeLabel}
                                     </p>
                                     <p className="text-white/75 text-base leading-relaxed font-light font-[family-name:var(--font-bai-jamjuree)]">{challenge}</p>
@@ -522,14 +374,14 @@ export default function ChallengePage() {
 
                             {/* Tags */}
                             <div className="flex flex-wrap gap-2 mb-6">
-                              {p.tags.map((tag) => (
+                              {p.tags?.map((tag) => (
                                 <span
                                   key={tag}
                                   className="text-xs px-3 py-1.5 rounded-full font-[family-name:var(--font-bai-jamjuree)] tracking-wide"
                                   style={{
-                                    background: `${track.color}18`,
-                                    border: `1px solid ${track.color}40`,
-                                    color: track.color,
+                                    background: `${trackColor}18`,
+                                    border: `1px solid ${trackColor}40`,
+                                    color: trackColor,
                                   }}
                                 >
                                   {tag}
@@ -540,17 +392,17 @@ export default function ChallengePage() {
                             {/* Tangible Equivalent & Scores */}
                             <div className="flex flex-col md:flex-row gap-6 mb-4">
                               <div className="flex-1 rounded-2xl p-6 border border-white/5 relative overflow-hidden group shadow-lg" style={{ background: "rgba(13,18,25,0.8)" }}>
-                                <div className="absolute inset-0 transition-opacity duration-1000 opacity-0 group-hover:opacity-100" style={{ background: `radial-gradient(circle at top right, ${track.color}10 0%, transparent 70%)` }} />
+                                <div className="absolute inset-0 transition-opacity duration-1000 opacity-0 group-hover:opacity-100" style={{ background: `radial-gradient(circle at top right, ${trackColor}10 0%, transparent 70%)` }} />
                                 <div className="relative z-10 flex items-start gap-4">
-                                  <div className="p-2 rounded-full shrink-0" style={{ background: `${track.color}15` }}>
-                                    <Zap className="w-5 h-5" style={{ color: track.color }} />
+                                  <div className="p-2 rounded-full shrink-0" style={{ background: `${trackColor}15` }}>
+                                    <Zap className="w-5 h-5" style={{ color: trackColor }} />
                                   </div>
                                   <div>
-                                    <p className="text-[10px] uppercase tracking-widest mb-2 font-[family-name:var(--font-bai-jamjuree)]" style={{ color: `${track.color}70` }}>
+                                    <p className="text-[10px] uppercase tracking-widest mb-2 font-[family-name:var(--font-bai-jamjuree)]" style={{ color: `${trackColor}70` }}>
                                       Real-World Impact
                                     </p>
                                     <p className="text-base text-white/90 leading-relaxed font-[family-name:var(--font-bai-jamjuree)] drop-shadow-sm font-medium">
-                                      "{'tangibleEquivalent' in p ? (p as any).tangibleEquivalent[lang] : ''}"
+                                      "{tangibleEq}"
                                     </p>
                                   </div>
                                 </div>
@@ -558,26 +410,26 @@ export default function ChallengePage() {
                               
                               <div className="grid grid-cols-2 gap-3 md:w-64 shrink-0 rounded-2xl p-5 border border-white/5" style={{ background: "rgba(13,18,25,0.6)" }}>
                                 {[
-                                  { label: "Sev", score: (p as any).scores?.severity, icon: AlertTriangle },
-                                  { label: "Diff", score: (p as any).scores?.difficulty, icon: Target },
-                                  { label: "Imp", score: (p as any).scores?.impact, icon: Heart },
-                                  { label: "Urg", score: (p as any).scores?.urgency, icon: Clock }
+                                  { label: "Sev", score: p.severity, icon: AlertTriangle },
+                                  { label: "Diff", score: p.difficulty, icon: Target },
+                                  { label: "Imp", score: p.impact, icon: Heart },
+                                  { label: "Urg", score: p.urgency, icon: Clock }
                                 ].map(s => (
                                   <div key={s.label} className="space-y-1.5">
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-1.5">
-                                        <s.icon className="w-3.5 h-3.5" style={{ color: track.color }} />
+                                        <s.icon className="w-3.5 h-3.5" style={{ color: trackColor }} />
                                         <span className="text-[10px] uppercase text-gray-500">{s.label}</span>
                                       </div>
-                                      <span className="text-xs font-medium" style={{ color: track.color }}>{s.score}</span>
+                                      <span className="text-xs font-medium" style={{ color: trackColor }}>{s.score}</span>
                                     </div>
                                     <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                                       <div 
                                         className="h-full rounded-full"
                                         style={{ 
                                           width: `${(s.score || 0) * 10}%`, 
-                                          background: `linear-gradient(90deg, ${track.color}60, ${track.color})`,
-                                          boxShadow: `0 0 4px ${track.color}40`
+                                          background: `linear-gradient(90deg, ${trackColor}60, ${trackColor})`,
+                                          boxShadow: `0 0 4px ${trackColor}40`
                                         }}
                                       />
                                     </div>
@@ -594,9 +446,9 @@ export default function ChallengePage() {
                               }}
                               className="text-sm px-4 py-2 rounded-full transition-all duration-200 hover:scale-105 font-[family-name:var(--font-bai-jamjuree)]"
                               style={{
-                                background: `${track.color}15`,
-                                border: `1px solid ${track.color}30`,
-                                color: track.color,
+                                background: `${trackColor}15`,
+                                border: `1px solid ${trackColor}30`,
+                                color: trackColor,
                               }}
                             >
                               View Full Research →
@@ -610,7 +462,7 @@ export default function ChallengePage() {
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </section>
 
