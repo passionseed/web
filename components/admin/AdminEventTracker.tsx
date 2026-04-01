@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/utils/supabase/client";
 import {
   Card,
   CardContent,
@@ -52,7 +51,7 @@ import type {
   UserPlannerStatus,
   EventType,
 } from "@/types/events";
-import { calculateProgress, STEP_EVENTS, EVENT_TYPES } from "@/types/events";
+import { STEP_EVENTS } from "@/types/events";
 
 const USERS_PER_PAGE = 50;
 const EVENTS_PER_PAGE = 100;
@@ -158,103 +157,59 @@ export function AdminEventTracker() {
   const [groupBySession, setGroupBySession] = useState(false);
 
   const fetchStats = useCallback(async () => {
-    const supabase = createClient();
-
-    // Get total users with events
-    const { data: statusData } = await supabase
-      .from("user_planner_status")
-      .select("*");
-
-    if (!statusData) return;
-
-    const totalUsers = statusData.length;
-    const completed = statusData.filter((u) => u.status === "completed").length;
-    const activeToday = statusData.filter((u) => {
-      if (!u.last_event_at) return false;
-      const lastEvent = new Date(u.last_event_at);
-      const today = new Date();
-      return lastEvent.toDateString() === today.toDateString();
-    }).length;
-
-    // Calculate average sessions (unique session_ids per user)
-    const { data: sessionData } = await supabase
-      .from("user_events")
-      .select("user_id, session_id");
-
-    const userSessions = new Map<string, Set<string>>();
-    sessionData?.forEach((e) => {
-      if (!userSessions.has(e.user_id)) {
-        userSessions.set(e.user_id, new Set());
-      }
-      if (e.session_id) {
-        userSessions.get(e.user_id)!.add(e.session_id);
-      }
+    const response = await fetch(`/api/admin/event-tracker?days=${dateFilter}`, {
+      credentials: "same-origin",
     });
 
-    const avgSessions =
-      userSessions.size > 0
-        ? Array.from(userSessions.values()).reduce((sum, s) => sum + s.size, 0) /
-          userSessions.size
-        : 0;
+    if (!response.ok) {
+      console.error("Error fetching stats");
+      return;
+    }
 
-    setStats({
-      totalUsers,
-      activeToday,
-      completed,
-      avgSessions: Math.round(avgSessions * 10) / 10,
-    });
-  }, []);
+    const data = await response.json();
+    setStats(data.stats);
+  }, [dateFilter]);
 
   const fetchUsers = useCallback(async () => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("user_planner_status")
-      .select("*")
-      .order("last_event_at", { ascending: false, nullsFirst: false });
+    const response = await fetch(`/api/admin/event-tracker?days=${dateFilter}`, {
+      credentials: "same-origin",
+    });
 
-    if (error) {
-      console.error("Error fetching users:", error);
+    if (!response.ok) {
+      console.error("Error fetching users");
       return;
     }
 
-    setUsers(data || []);
-  }, []);
+    const data = await response.json();
+    setUsers(data.users || []);
+  }, [dateFilter]);
 
   const fetchEvents = useCallback(async () => {
-    const supabase = createClient();
-    const daysAgo = parseInt(dateFilter, 10);
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - daysAgo);
+    const response = await fetch(`/api/admin/event-tracker?days=${dateFilter}`, {
+      credentials: "same-origin",
+    });
 
-    const { data, error } = await supabase
-      .from("user_events")
-      .select("*")
-      .gte("created_at", startDate.toISOString())
-      .order("created_at", { ascending: false })
-      .limit(EVENTS_PER_PAGE);
-
-    if (error) {
-      console.error("Error fetching events:", error);
+    if (!response.ok) {
+      console.error("Error fetching events");
       return;
     }
 
-    setEvents(data || []);
+    const data = await response.json();
+    setEvents((data.events || []).slice(0, EVENTS_PER_PAGE));
   }, [dateFilter]);
 
   const fetchUserEvents = useCallback(async (userId: string) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("user_events")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+    const response = await fetch(`/api/admin/event-tracker?userId=${userId}`, {
+      credentials: "same-origin",
+    });
 
-    if (error) {
-      console.error("Error fetching user events:", error);
+    if (!response.ok) {
+      console.error("Error fetching user events");
       return;
     }
 
-    setUserEvents(data || []);
+    const data = await response.json();
+    setUserEvents(data.events || []);
   }, []);
 
   useEffect(() => {
