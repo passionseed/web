@@ -25,6 +25,7 @@ CREATE POLICY "pathlab_activities_readable" ON public.path_activities
 -- path_assessments
 -- =====================================================
 DROP POLICY IF EXISTS "users_can_view_path_assessments" ON public.path_assessments;
+DROP POLICY IF EXISTS "pathlab_assessments_readable" ON public.path_assessments;
 
 CREATE POLICY "pathlab_assessments_readable" ON public.path_assessments
   FOR SELECT

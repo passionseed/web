@@ -68,6 +68,7 @@ GRANT SELECT ON TABLE public.hackathon_top_referrers TO authenticated;
 -- FIX SECURITY DEFINER / EXPOSED VIEWS
 -- =====================================================
 
+DROP VIEW IF EXISTS public.team_members_with_profiles;
 CREATE OR REPLACE VIEW public.team_members_with_profiles
 WITH (security_invoker = true) AS
 SELECT
@@ -83,6 +84,7 @@ WHERE ct.is_active = true;
 
 GRANT SELECT ON TABLE public.team_members_with_profiles TO authenticated;
 
+DROP VIEW IF EXISTS public.students_without_teams;
 CREATE OR REPLACE VIEW public.students_without_teams
 WITH (security_invoker = true) AS
 SELECT
@@ -106,6 +108,7 @@ WHERE cm.role = 'student'
 
 GRANT SELECT ON TABLE public.students_without_teams TO authenticated;
 
+DROP VIEW IF EXISTS public.model_performance_stats;
 CREATE OR REPLACE VIEW public.model_performance_stats
 WITH (security_invoker = true) AS
 SELECT
@@ -131,6 +134,7 @@ WHERE created_at > NOW() - INTERVAL '30 days'
 GROUP BY model_provider, model_name
 ORDER BY avg_time_ms ASC NULLS LAST;
 
+DROP VIEW IF EXISTS public.generation_stats_hourly;
 CREATE OR REPLACE VIEW public.generation_stats_hourly
 WITH (security_invoker = true) AS
 SELECT
@@ -149,6 +153,7 @@ WHERE created_at > NOW() - INTERVAL '7 days'
 GROUP BY DATE_TRUNC('hour', created_at)
 ORDER BY hour DESC;
 
+DROP VIEW IF EXISTS public.generation_stats_daily;
 CREATE OR REPLACE VIEW public.generation_stats_daily
 WITH (security_invoker = true) AS
 SELECT
@@ -172,6 +177,7 @@ WHERE created_at > NOW() - INTERVAL '30 days'
 GROUP BY DATE_TRUNC('day', created_at)
 ORDER BY day DESC;
 
+DROP VIEW IF EXISTS public.cache_effectiveness_stats;
 CREATE OR REPLACE VIEW public.cache_effectiveness_stats
 WITH (security_invoker = true) AS
 SELECT
@@ -192,6 +198,7 @@ HAVING COUNT(*) > 1
 ORDER BY usage_count DESC, max_cache_hits DESC
 LIMIT 50;
 
+DROP VIEW IF EXISTS public.error_analysis;
 CREATE OR REPLACE VIEW public.error_analysis
 WITH (security_invoker = true) AS
 SELECT
@@ -210,6 +217,7 @@ WHERE error_message IS NOT NULL
 GROUP BY model_provider, model_name, error_message
 ORDER BY error_count DESC, last_occurrence DESC;
 
+DROP VIEW IF EXISTS public.hackathon_daily_unique_visitors;
 CREATE OR REPLACE VIEW public.hackathon_daily_unique_visitors
 WITH (security_invoker = true) AS
 SELECT
@@ -224,6 +232,7 @@ WHERE viewed_at > NOW() - INTERVAL '90 days'
 GROUP BY DATE(viewed_at)
 ORDER BY date DESC;
 
+DROP VIEW IF EXISTS public.hackathon_hourly_visitors;
 CREATE OR REPLACE VIEW public.hackathon_hourly_visitors
 WITH (security_invoker = true) AS
 SELECT
@@ -236,6 +245,7 @@ WHERE viewed_at > NOW() - INTERVAL '7 days'
 GROUP BY DATE_TRUNC('hour', viewed_at)
 ORDER BY hour DESC;
 
+DROP VIEW IF EXISTS public.hackathon_top_referrers;
 CREATE OR REPLACE VIEW public.hackathon_top_referrers
 WITH (security_invoker = true) AS
 SELECT
@@ -250,6 +260,7 @@ GROUP BY referrer
 ORDER BY unique_visitors DESC
 LIMIT 20;
 
+DROP VIEW IF EXISTS public.program_career_mapping_details;
 CREATE OR REPLACE VIEW public.program_career_mapping_details
 WITH (security_invoker = true) AS
 SELECT

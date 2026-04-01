@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import type { UserEvent, UserPlannerStatusRow } from "@/types/events";
@@ -116,7 +115,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      const lastEventAt = existingEvents[0]?.created_at ?? event.created_at;
+      const lastEventAt = existingEvents[0]?.created_at || null;
       const status = getStatus(
         lastEventAt,
         existingEvents.some((candidate) => candidate.event_type === "plan_created"),

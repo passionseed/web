@@ -9,10 +9,8 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        // When pointing at localhost (no Docker), disable background token
-        // refresh so we don't spam the console with 503 errors.
-        autoRefreshToken: !isLocal,
-        persistSession: !isLocal,
+        autoRefreshToken: true,
+        persistSession: true,
       },
     }
   );
