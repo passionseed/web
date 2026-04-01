@@ -268,24 +268,6 @@ export default function CelebrationPage() {
             </div>
         </div>
 
-        {/* Partner logos — portal to bypass overflow:clip */}
-        {mounted && createPortal(
-            <div
-                className="fixed top-6 right-6 z-[9999] flex items-center gap-3"
-                style={{ opacity: showContent ? 1 : 0, transition: "opacity 1000ms" }}
-            >
-                <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                    <img src="/hackathon/PS.png" alt="PS Logo" className="w-full h-full object-contain" loading="lazy" decoding="async" />
-                </div>
-                <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                    <img src="/hackathon/StemLike.png" alt="STEM Like Her Logo" className="w-full h-full object-contain" loading="lazy" decoding="async" />
-                </div>
-                <div className="w-12 h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                    <img src="/hackathon/AMSA.png" alt="AMSA Logo" className="w-full h-full object-contain" loading="lazy" decoding="async" />
-                </div>
-            </div>,
-            document.body
-        )}
         </>
     );
 }
