@@ -82,9 +82,9 @@ export async function createSession(participantId: string, token: string) {
   if (error) throw error;
 }
 
-export async function getSessionParticipant(token: string): Promise<HackathonParticipant | null> {
+export async function getSessionParticipant(token: string, client?: ReturnType<typeof createClient>): Promise<HackathonParticipant | null> {
   const now = new Date().toISOString();
-  const { data } = await getClient()
+  const { data } = await (client ?? getClient())
     .from("hackathon_sessions")
     .select("expires_at, hackathon_participants(id, name, email, phone, university, role, track, grade_level, experience_level, referral_source, bio, team_name, created_at)")
     .eq("token", token)
