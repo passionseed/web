@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE } from "@/lib/hackathon/auth";
-import { getSessionParticipant } from "@/lib/hackathon/db";
+import { getSessionParticipant, updateParticipant } from "@/lib/hackathon/db";
 import { createClient } from "@/utils/supabase/server";
 
 export async function GET(req: NextRequest) {
@@ -47,4 +47,39 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({ participant: null }, { status: 401 });
+}
+
+export async function PATCH(req: NextRequest) {
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const participant = await getSessionParticipant(token);
+  if (!participant) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const { name, phone, university, track, grade_level, experience_level, bio } = body;
+
+  if (!name?.trim() || !phone?.trim() || !university?.trim() || !track?.trim() || !grade_level?.trim() || !bio?.trim()) {
+    return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+  }
+
+  if (typeof experience_level !== "number" || experience_level < 1 || experience_level > 10) {
+    return NextResponse.json({ error: "Invalid experience level" }, { status: 400 });
+  }
+
+  try {
+    const updated = await updateParticipant(participant.id, {
+      name: name.trim(),
+      phone: phone.trim(),
+      university: university.trim(),
+      track,
+      grade_level,
+      experience_level,
+      bio: bio.trim(),
+    });
+    return NextResponse.json({ participant: updated });
+  } catch (err) {
+    console.error("Update participant error:", err);
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+  }
 }

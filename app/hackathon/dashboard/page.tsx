@@ -13,12 +13,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import gsap from "gsap";
-import { ClipboardList, Users, Check, Sparkles, BookOpen, Home, ArrowRight, Search } from "lucide-react";
+import { ClipboardList, Users, Check, Sparkles, BookOpen, Home, ArrowRight, Search, Settings } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import type { HackathonParticipant } from "@/lib/hackathon/db";
 
 import FractalGlassBackground from "@/components/hackathon/ClarityGlassBackground";
 
 const ONBOARDING_NUDGE_KEY = "hackathon_onboarding_nudge_dismissed";
+
+const TRACKS = [
+  "นักเรียนมัธยมปลาย หรือเทียบเท่า",
+  "นักศึกษามหาวิทยาลัย",
+];
+
+const GRADES: Record<string, string[]> = {
+  "นักเรียนมัธยมปลาย หรือเทียบเท่า": ["ม.4", "ม.5", "ม.6", "ปวช.", "อื่นๆ"],
+  "นักศึกษามหาวิทยาลัย": ["ปวส.", "ปริญญาตรี", "ปริญญาโท", "ปริญญาเอก"],
+};
 
 export default function HackathonDashboardPage() {
   const router = useRouter();
@@ -26,6 +37,19 @@ export default function HackathonDashboardPage() {
   const [participant, setParticipant] = useState<HackathonParticipant | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [showOnboardingNudge, setShowOnboardingNudge] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({
+    name: "",
+    phone: "",
+    university: "",
+    track: "",
+    grade_level: "",
+    experience_level: 1,
+    bio: "",
+  });
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
+  const [settingsFocused, setSettingsFocused] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -122,6 +146,72 @@ export default function HackathonDashboardPage() {
     router.push("/hackathon");
   };
 
+  const openSettings = () => {
+    if (!participant) return;
+    setSettingsForm({
+      name: participant.name,
+      phone: participant.phone,
+      university: participant.university,
+      track: participant.track,
+      grade_level: participant.grade_level,
+      experience_level: participant.experience_level,
+      bio: participant.bio,
+    });
+    setSettingsError("");
+    setShowSettings(true);
+  };
+
+  const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setSettingsForm((prev) => {
+      if (name === "track" && value !== prev.track) {
+        return { ...prev, track: value, grade_level: "" };
+      }
+      return { ...prev, [name]: value };
+    });
+    setSettingsError("");
+  };
+
+  const handleSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsLoading(true);
+    setSettingsError("");
+    try {
+      const res = await fetch("/api/hackathon/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settingsForm),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSettingsError(data.error || "Failed to update profile");
+        return;
+      }
+      setParticipant(data.participant);
+      setShowSettings(false);
+    } catch {
+      setSettingsError("Something went wrong. Please try again.");
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const settingsInputStyle = (name: string): React.CSSProperties => ({
+    width: "100%",
+    borderRadius: "0.75rem",
+    padding: "0.65rem 0.875rem",
+    outline: "none",
+    transition: "all 0.3s",
+    background: settingsFocused === name ? "#0d1219" : "#0a0f16",
+    border: `1px solid ${settingsFocused === name ? "rgba(101,171,252,0.45)" : "rgba(74,107,130,0.35)"}`,
+    boxShadow: settingsFocused === name
+      ? "0 0 18px rgba(101,171,252,0.08), inset 0 0 18px rgba(101,171,252,0.02)"
+      : "none",
+    color: "#C0D8F0",
+    caretColor: "#65ABFC",
+    fontSize: "0.875rem",
+  });
+
   return (
     <div className="min-h-screen text-white relative overflow-hidden flex items-center justify-center font-[family-name:var(--font-mitr)]">
       <FractalGlassBackground />
@@ -158,7 +248,160 @@ export default function HackathonDashboardPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="border-[#4a6b82]/30 bg-[#0d1219] text-white sm:max-w-md font-[family-name:var(--font-mitr)] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-white">แก้ไขโปรไฟล์</DialogTitle>
+            <DialogDescription className="text-[#5a7a94] text-sm">
+              อัปเดตข้อมูลส่วนตัวของคุณ
+            </DialogDescription>
+          </DialogHeader>
 
+          {settingsError && (
+            <div
+              className="px-4 py-3 rounded-xl text-sm font-[family-name:var(--font-mitr)]"
+              style={{
+                background: "rgba(255,70,70,0.07)",
+                border: "1px solid rgba(255,70,70,0.22)",
+                color: "#FF8888",
+              }}
+            >
+              {settingsError}
+            </div>
+          )}
+
+          <form onSubmit={handleSettingsSubmit} className="space-y-4 mt-2">
+            {([
+              { name: "name", label: "ชื่อ-นามสกุล", type: "text" },
+              { name: "phone", label: "เบอร์โทรศัพท์", type: "tel" },
+              { name: "university", label: "สถานศึกษา", type: "text" },
+            ] as const).map((f) => (
+              <div key={f.name}>
+                <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
+                  {f.label}
+                </label>
+                <input
+                  name={f.name}
+                  type={f.type}
+                  value={settingsForm[f.name]}
+                  onChange={handleSettingsChange}
+                  onFocus={() => setSettingsFocused(f.name)}
+                  onBlur={() => setSettingsFocused(null)}
+                  required
+                  style={settingsInputStyle(f.name)}
+                  className="font-[family-name:var(--font-mitr)]"
+                />
+              </div>
+            ))}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
+                  ระดับการศึกษา
+                </label>
+                <select
+                  name="track"
+                  value={settingsForm.track}
+                  onChange={handleSettingsChange}
+                  onFocus={() => setSettingsFocused("track")}
+                  onBlur={() => setSettingsFocused(null)}
+                  required
+                  style={{ ...settingsInputStyle("track"), appearance: "none", color: settingsForm.track ? "#C0D8F0" : "#2A3A50" }}
+                  className="font-[family-name:var(--font-mitr)]"
+                >
+                  <option value="" disabled style={{ background: "#0d1219", color: "#2A3A50" }}>เลือก</option>
+                  {TRACKS.map((t) => (
+                    <option key={t} value={t} style={{ background: "#0d1219", color: "#C0D8F0" }}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
+                  ชั้นปี
+                </label>
+                <select
+                  name="grade_level"
+                  value={settingsForm.grade_level}
+                  onChange={handleSettingsChange}
+                  onFocus={() => setSettingsFocused("grade_level")}
+                  onBlur={() => setSettingsFocused(null)}
+                  required
+                  disabled={!settingsForm.track}
+                  style={{
+                    ...settingsInputStyle("grade_level"),
+                    appearance: "none",
+                    color: settingsForm.grade_level ? "#C0D8F0" : "#2A3A50",
+                    opacity: !settingsForm.track ? 0.5 : 1,
+                  }}
+                  className="font-[family-name:var(--font-mitr)]"
+                >
+                  <option value="" disabled style={{ background: "#0d1219", color: "#2A3A50" }}>
+                    {settingsForm.track ? "เลือกชั้นปี" : "เลือกระดับก่อน"}
+                  </option>
+                  {settingsForm.track && GRADES[settingsForm.track]?.map((g) => (
+                    <option key={g} value={g} style={{ background: "#0d1219", color: "#C0D8F0" }}>{g}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs mb-2 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
+                ระดับความชำนาญในการแข่ง ({settingsForm.experience_level})
+              </label>
+              <div className="px-1 mb-1">
+                <Slider
+                  min={1}
+                  max={10}
+                  step={1}
+                  value={[settingsForm.experience_level]}
+                  onValueChange={(vals) => setSettingsForm((prev) => ({ ...prev, experience_level: vals[0] }))}
+                  className="mb-2"
+                />
+                <div className="flex justify-between text-[10px] font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
+                  <span>ครั้งแรก</span>
+                  <span>ชำนาญสุดๆ</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]" style={{ color: "#3A6080" }}>
+                เรื่องเท่ๆ เกี่ยวกับตัวเอง
+              </label>
+              <textarea
+                name="bio"
+                value={settingsForm.bio}
+                onChange={handleSettingsChange}
+                onFocus={() => setSettingsFocused("bio")}
+                onBlur={() => setSettingsFocused(null)}
+                required
+                rows={3}
+                style={{ ...settingsInputStyle("bio"), resize: "none" }}
+                className="font-[family-name:var(--font-mitr)]"
+              />
+            </div>
+
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowSettings(false)}
+                className="text-[#5a7a94] hover:text-white hover:bg-white/5 font-[family-name:var(--font-mitr)]"
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="submit"
+                disabled={settingsLoading || !!participant?.is_admin}
+                className="bg-gradient-to-r from-[#5a7a94] to-[#4a6a84] hover:from-[#6a9ac4] hover:to-[#5a8ab4] text-white border border-[#7aa4c4]/30 shadow-[0_0_15px_rgba(90,122,148,0.4)] transition-all font-[family-name:var(--font-mitr)] disabled:opacity-40"
+              >
+                {settingsLoading ? "กำลังบันทึก..." : "บันทึก"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <div ref={contentRef} className="relative z-30 w-full max-w-lg px-6 py-12 text-center space-y-8 opacity-0">
         {participant ? (
@@ -223,6 +466,13 @@ export default function HackathonDashboardPage() {
                     {participant.role}
                   </p>
                 </div>
+                <button
+                  onClick={openSettings}
+                  className="p-2 rounded-xl transition-all duration-200 hover:bg-[#4a6b82]/20 text-[#4a6b82] hover:text-[#91C4E3]"
+                  aria-label="แก้ไขโปรไฟล์"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
               </div>
 
               <div className="border-t border-[#4a6b82]/30 pt-4 space-y-3 text-sm text-gray-300 relative z-10">
@@ -275,7 +525,7 @@ export default function HackathonDashboardPage() {
               </Button>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <Button
                 asChild
                 variant="outline"
@@ -285,6 +535,14 @@ export default function HackathonDashboardPage() {
                   <BookOpen className="h-4 w-4 text-[#7aa4c4]" />
                   <span className="text-xs">รายละเอียดโจทย์</span>
                 </Link>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={openSettings}
+                className="w-full bg-[#1a2530]/40 hover:bg-[#1a2530]/80 border-[#4a6b82]/30 hover:border-[#7aa4c4]/60 text-gray-300 hover:text-white transition-all py-5 font-[family-name:var(--font-mitr)] flex flex-col items-center gap-1.5 h-auto"
+              >
+                <Settings className="h-4 w-4 text-[#7aa4c4]" />
+                <span className="text-xs">ตั้งค่า</span>
               </Button>
               <Button
                 asChild
