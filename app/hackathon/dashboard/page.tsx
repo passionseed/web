@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import gsap from "gsap";
-import { ClipboardList, Users, Check, Sparkles, BookOpen, Home, ArrowRight } from "lucide-react";
+import { ClipboardList, Users, Check, Sparkles, BookOpen, Home, ArrowRight, Search } from "lucide-react";
 import type { HackathonParticipant } from "@/lib/hackathon/db";
 
 import FractalGlassBackground from "@/components/hackathon/ClarityGlassBackground";
@@ -262,6 +262,18 @@ export default function HackathonDashboardPage() {
                 แดชบอร์ดทีม
               </Link>
             </Button>
+
+            {onboardingComplete === true && (
+              <Button
+                asChild
+                className="w-full bg-gradient-to-r from-[#8b7a9a] to-[#7b6a8a] hover:from-[#b5a4ca] hover:to-[#a594ba] text-white font-medium py-6 rounded-xl transition-all duration-300 shadow-[0_0_25px_rgba(139,122,154,0.35)] hover:shadow-[0_0_40px_rgba(181,164,202,0.45)] hover:scale-[1.02] border border-[#b5a4ca]/30 font-[family-name:var(--font-mitr)]"
+              >
+                <Link href="/hackathon/team-matching" className="inline-flex items-center justify-center gap-2 text-lg">
+                  <Search className="h-5 w-5" aria-hidden />
+                  ค้นหาและจัดอันดับทีมเมต
+                </Link>
+              </Button>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <Button

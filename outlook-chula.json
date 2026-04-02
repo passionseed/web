@@ -1,0 +1,217 @@
+{
+  "cookies": [
+    {
+      "name": "userid",
+      "value": "10032002B87E6463",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1782874701.324719,
+      "size": 22,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "SSREnabled",
+      "value": "2",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1777690703.836639,
+      "size": 11,
+      "httpOnly": false,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "msal.cache.encryption",
+      "value": "%7B%22id%22%3A%22019d4c20-bb3c-7a43-b0d8-75e81d262ba6%22%2C%22key%22%3A%22oe6gpzcbT1w9t21-dPMx1NEo57KMjztIK6DIJ_NXPX0%22%7D",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": -1.0,
+      "size": 144,
+      "httpOnly": false,
+      "secure": true,
+      "session": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "UserIndex",
+      "value": "H4sIAAAAAAAAChWNOxKDMAxEnf8B0qdKKyJkSzZUqXKCXED%2BMBRMGuD%2BsYun2UL79miMOVRulWPLr3rMQ4QDuoFZ3uu25%2FLbujTvi3aaum0%2B1Zc7IQmgA6Qv0shhpL5JnuT7zMVH6C0juDgIaAwOmHLM6tLkMJ3byKXx0WUt19ZDtJknVJAoBMXbBOqrP0gVlmiTDaHV%2FlBO8%2BCyAAAA",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1777690701.324603,
+      "size": 233,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "OhpAuthC1",
+      "value": "SY_SvZSCLgCtehZORA3OezBwjvUn4RlR9rPnR7BpEVgFmAhwm-ZQpeXibaCtMa2BTVNLO0AByOY6uv8yog1Bydxqq9Z6CxZSVXMWzSqmv4cBhTg61ID4EHOcvVzXmlMQ3Ba5eA57koHNWjHMu9K19c4_FJmKO_YTn5whimCV9yCxExvt_m1g8O501fQv4fyIrSwwyANrJ66Glp69kOq9S-2ey2rje-q15yNx6TdsDVmNOofQJUZL0T7tIhuihx9PCJHl8alcXHbAc76wkllIxSfDvH3ZJMGs7VUfYLLlAdcpgFM2LAoYJ9M42gz1ZuXiAoo3dDCtpKfVZ-YstTAJoJg8jWstsArkZWZwP9-8jO8vA1BBs0cEZVF81iSRGAYsk150z29YRGqpc56URZqFPWkafT14HZW32zQ9N_5b6Mpz6Bs7dzRWaLrZvHvW_NpaTSg5kwMjOTn0nkwtYCn9sLAKQjwSIWusNxD8bCu99HVuzmhgmPHEwqncxKXDKV5MOS5E7dGeSX3j2keYvEtjIGD6DgIViRTbfP69Nk1sSfMrR3bzWD5Ai_ILGfeTPFOtnzHsSSvMjif7vNWvkIr1_FyV-C1Vd30d7-klsFY3F_O6iPXxuSl6fy-bZcRntg-2eUDBEhmTZ11ErZqaTk5rSTo-bIW10Uo5fL6DBtR8HocJzzgnREC967d_s_a3ZBOCQjFy2e0WZXbICvjcPxdbucSTxSQcuxHrB7vanMPENzCcz2ENWJ86cMqAhNYZvDdVfMG2erBz-B1IxQ_K4X55UrjJZBltXuX7eyBoRx6X7VsQYw26KLXx9GwMbPQpQMIqzVHJVUf1sxTHfti4_xAILG6dVl8xChusFGLKLNykrDM1XnkE1TKjMbj-qh7tsJRcApftT9ZLNK4LtcPzfT955pSbK_76ds3ODjJvqX_qj2L_af_UR5oyKs9XfbCjyjTz6_rwsGeqCMFLgQxmBqUX6BOvtle1lwANkhXynvnSrrh5Bid40jwS6-bv2b8ZIHliNpk_NJfr7WtKtOHo8B2kmK2FloTjfWeqTfW_9eS3HxdbVv16wpNFD80RiRA-AWDWK8Vrc62IkZSrWjWVW43tPNz220om2HIkxzZqrEvw3Wk4ckFSCbIMn9LbZQveW4iicRsF5Fc8QcvRpOnrWOB_UfYz8Avva3bQuP5qojVqwUWijzQKQkei0YzN0lt8i9MWHldsV2uVcwkgytDjHDpbiam2YQrtzg09RvBQdclsVRqz7neGGrhUzY8vQjk_jpQi0nnNXxaJIsV4Ihloz-Qjr77AlXpGsBoXctJdLQktRboyRJlVaDO2HR9GN44Fnp3Ci-YpaFU4LTD3xu9kHrFFw4c1EhDN6QjVyg45h5fJD8PnTFilCDSbWSzfdRrbFAI1NYuOEd5YLPePLd5J2i_3QCkfb-RAsQkmcoEY7ypt9Fd0BmO5lSx-B6OmUzzKPahtbsPfKsfM5KeKwM95729MKeWNd6JS7Xpw7fH8sqxhB4i8Anap899u4oAu-Pkflm0_JkuNEP2Bz1of1GSlb_1XUE5CXeW6ugK9anGn0NcTqzmIXdHiAirYQ_GVSjNmalaCt5na6aeA_DCH5vErhg8izgRFPX-HwVIN7LAm61SkJoyoMl5LJ-cl99Edz30nrwJ1f0nOgCGusheJEoSkSD_-NEcijUftf9p0QNcUkaRwhJXuBoeRNCzqOC8XxkNQ9HUJ1OZu43lCbzQLyl-K47eQdW4Rzs8mGB_6Yi5t8hyR3VNdJ49elZilVnUqz3b1JmbTJGz9ml83IiZfyq-FZ7qxY2mHiIZUOfWD19vL8PYa7fQh3rix_Q61g_kdp3pBvMf_JtiRTzX5jc9EOvTMlqNb77Yc9EWuXG1aAJW0WoMsMwljRMUaiXeKmuHHZXuFUh11D7FOPHFQE-bz56ZensubfvNL1MSvLCRaONuTh0Rnh95wKj6RAQ-nKijgvcrMDWRHQGHPrci2wotaE9Ln_C2AUPiy_f1T4de0ScXo-ePcTBVHvVvMHRBCBhlr6sTJbM_FNpevIgKC0QAhGCBViC-f-F-9-7qtWjG7HCxR6Bb9M6WPkMI6zKg5sLwi6-s0gRK2Wh3AYt9AYGVofn_pERjBHo9o-J2yfPcmExcqFeS158JWFnpPernLVEcr1wjYUFSMWfLI56eowtDp814k_fWLcjhC0CxOyOf3s-7jB9wrjxO0jMolBEyi42xQYWrYz6YezFIe4wYyNDil0rjreOhOgZfKKmz3pnEvd_yg4tD1tFRyNEIqH-JgnzfuD4_v0uCUSCsJZe3MWAr-RbGUXNlsHrzjSYxpKTttff9EK_IMkm7fdTokpNuCr466VuCCpbz6dsNzuuEdDJ-HHZJTH6kwepZXqtxARKdRHVLxgjJtCu9XmjmzFgKMrJ8b7d7zodZ2oXBStV0drWcyWSjBIq3E88Aaes7YWEOZjAQgeEcbmGKQpj5qfAOm2H-PwRd1nM0VFeeVZFBv9YvkH0a4GcUXmjW3_nm5PsTP7Hisv77XA4vYcDki8lnUIZEWkskCOM9F20SKDB7YTAcMM94v6a5tX4RkWo4uFdQiDNonNqZ0b2b-iOOkfS-VNglKdFwUuKeswMtcqBN_ayB_BXwby4szyyIsmnEoFZpJ5j3lN07yzkRbnQjFdgFgPQ-48GLgJuC--12TuIOYpxEN68wt7GxTMzEFLeL63W9Pu4OTTnIKY6X1O_oWLZckmlaWw5YghvuC0MP955mnv03Y5LZfDVzEV9oz-1o0gd5elExPN2PU4Ajezjz2YXH5Rgff7cFYIfuVD53SYhXWJ2WwnV1g5TcY7gEwG0dIr4AlBBk_OoQ1hDYGm9cuusPqcD4CAWsjGZGj5BvF9xMk7l6peFXapUPD1uYVhZbiHvfF1vaQgJy1OUlYwaroTL07DuGV5Ta3MtmG-h0XrSZ85TSOxwpB882C9abbyPauAGKC5xrBejg-u70roQXiqPjhX0GI_AY6BVFWP174rbedxAXYiXx4-EAm9OQe2A9Qd1hdqtlqbQL80TQ_eC5CjW1BmAG6B88awAc07lEJKcwPXqqae9wBz15BJn5l-3Nxix9fwxDn8D32LXEAtbOPj1_heS7Y8YeSGijepBo2JGioocgtVEOTiBheLIjL5aBeRskSa5mHFGLoAPkHLCvIQQNKZwD1mJ6SwrCo0abAuo989MtkP1t3q8-xAFGQW1L1SAkPLO-ASqY-Vq8Cz0ySCq0f3N9JfE4VMrAdOT-7utX_Z1pdisKmr5ICDdMAySLIixvRgiiyQgNOkg-_S5MSk12pirDV7qRFjU8hMXI47djyCixgzYE6OmIR2rUenvWHlHRXaimWEgqbBXGPMqFhvzWleQLeJBn7iGPxPSHB6fVGQOaYGMXUkKyETPt_e6pRRU_P-S4UrwqDg7Uf9MqJrnCMLBajACreV7LuTghHAlscOaZfizLxPmW6Vzk7choqVcE2DWvDLR8-AnkmQX5Wvqn675CSZlzu3U2BrtoowYi8IdgmK-aV5b2v1fvbH5NEr85SpQWP61t_5KwKi9D5NAviMRulWzwIlqFb7obULTJnfqv-vYToYvUGhtcarso4qcq1v8XPWuBOEVjHG5CGbSOo92yW_-YQCdRJsTcwBjcTPfKQJ5V2bEbFF_UIO0RC2K7tKgjoUtvSZL9n8Q90sSk68Dxng6Zc38R78AExrpAAfqFv6USjQdEVQMqO_33l4F6v4Te9OdpaIyud-FAWP2NZ0EVGTgRd5CeYD8QMR5ZdK8CxEE2J_E0J0jTe1DII2OsAQEYYGfWsvWL1LODhweAZ-a_VkhGGUcGzanneBiVAFHZwWuArzAm2YJAZuWMgLxFqjwhqt5UGjlSsYWF0jyvhWyFnLWBALAzsXRVwn0ciP5-dptIOWtCFvodu3sTKnL4J1fRPu4BWKVFZdhgsriY_HlI",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1782874701.324636,
+      "size": 3968,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "OhpAuthC2",
+      "value": "sqZ-PHHhKEVghYA5CEeT6Rpebr5qjtNCBQQh5O8gNMjqgo-QKIJFzM1VhLksAkuoq-I6isyrcqYRSqifx8VE1BDzNRpp02cjIE9YQWsZVlcFa-1xmmXOAi80w5OViplMJK3fRVtqMtfyFp7WXWEyFHaRZEReTApE4as4YEslJTgsUxk2gJquWTowHcezBD-GvxMD9R9FOqRbIdNU1cDEepPLDyfAo1llezynluhrqL3z7JNBbdqmAG1rzyGyEBnrHcs7Z2gjztQZlrO6NOdpWVENrd1ocqsO63Cq0qymJltmULOGSqkbVAQ1f3sVdx_uTZ9JwCqsRANIbNePOtqi3PMB8Z161aHuF8HWjvZt2QC2A1voE0KJx_JoI3tKlp3_B4YKJMw3bS7dHrOlWRAbCnao_FJd77lrFpKdKEt41byEndmyBp3uCvCmMLxJgpI1fTkGjQN_vkmE3PCa_mhdJdnK_JJN_J7taXvVZpraCcDezzzGxV7rCv3rx5mhLRRv-v-MsSf5HdH7q-lSHdEq2Z2MvNm8txdC6YfEYvURkQq_g7_VCkX4KU6zVx-mQTha0QBiQrdrbpbJlQl8xQbNo0cm3Ae_6fT5Ike3G18fxlqKFQpqKYJFA5jDG2I9cA-Jd9aTeX52EISCnmGcFwyDHFowFxf0ntbvUjWszyzPlXD64-jNmeCyrNO1AToakPXKdk_hXN8wKO6hAWFb5XCgPKCNY-sKSFylTnPboO3UYB2epKE_R7fR5G9buu5urplrctw7LAAPwowsW34iWfd-ZKLjur5OPYrM8AIhpuxONSc-yg1aTNtkv6u0YU4Slxz8xTqgUAWfl10Xamc4frUL25MWfISIc54AZw1qVG9XDi0iqxKi0Yq6kLL2K6y5nyZ9dobtzyTnTyag9pAhKYsqoQ4I_3fKzYpOTzQpMilR5V9aga9z9L-k",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1782874701.324681,
+      "size": 957,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "AjaxSessionKey",
+      "value": "Bl%2FYsZRYs2Gi88sxEahAVyeBgmqk0kZjgYe3qE7aKlzC7kmrrOJCumFBOYebZXdjfNTpNYWmojOx44CzlOls6A%3D%3D",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1782874701.324704,
+      "size": 108,
+      "httpOnly": false,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "PersonalizationCookie",
+      "value": "DzGLEuaKJSdgsaYvMBcI0dZ7f4s4O8v4LdRkjuHFNCQXaHTkpCwtC9mt%2BSA%2FIAfcBF%2FIgDtxzZ1vbzrQpaEJHbo%2F43n8RU20N8T7gxFs6wDJv9xmab%2F7I2CFaHsvK%2FRpqSWCcMjTmGQeNJZrzHUx3BqTVlxXCyY%2F4DzhaQKspIGLkP%2F1sbhghKzhb%2BdldMoBAiIe6vj2fBLhftPhYNTqybIF3U76nBjohDosC%2BDhrcehjbFYVd0AEm%2B1pH4KJD6D5B9hpgv6qEk9%2FSI7U9AEa6t%2FAnDzxH3uNvtuhgtltk1RzL%2B%2FZXI8f1dR5i6LN7FY",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1780369103.836596,
+      "size": 371,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "OH.RNG",
+      "value": "ww",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1782874706.0,
+      "size": 8,
+      "httpOnly": false,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "CS",
+      "value": "CS%3Ddark%26T%3Dsystem",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1806634706.544956,
+      "size": 24,
+      "httpOnly": false,
+      "secure": true,
+      "session": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "OH.SID",
+      "value": "9c45d448-0ef0-40c4-a08b-eae4cc99e19e",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": -1.0,
+      "size": 42,
+      "httpOnly": true,
+      "secure": true,
+      "session": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "OhpToken",
+      "value": "AQAAABowNi8zMC8yMDI2IDA0OjAwOjI5ICswMDowMJYSMldReTJMcnBQVXFUUE5XemlMVi1BUGlld2RsY0FEemVDNk40NEdBYnRXNXNfU3NPX2c4S1FvcndRSmVKQ29DSVdZQktjSzV5SW9YQnBvb3pvczE4UTZFTF9vUTFkaFc2SHpwdU9NdHRUNlRIZkg4NGphNkxlSnl4YVRJaG9IWEtCLUJzemsyT0ZZWDB5TC1mVWFMYmhIMG5UXzVEbzBZLWxwbHZyRHhxdHN0MGdGbG5NakZ5YjZlSFlsVXhmeDJmRWJuc3NyZTUzYy10Wk5KQ1VDNjVWZzNCdm9yNGljbEhPZHRxcTNPT3J2aC1lVU4zaEZlT0RxXzhLU2RWb09oQ2RVTVVYaGNmX2JSTFZQMk93SlNzcFRKRzJNTFhWbjNSMkl5RkJoUERqbldpTkdlNlQteWQ2M1oyaEwtNEVnMWtUVnNjeEg4R3pIaHZWeDh0S2xMQ0F1UGc3MnI2V2g1S0RVdXhpUmd3R0taUWdQdmJ0b2dGbE1fZ2JmbEV1SEc4T3hJcGZVTDVsVUR5b2tUSHlzQTd5OC1xbERURU8yNTRrTzRZMktJWnJLVkVQdkVId0l4Z2J0OXAxanVoWWFUNGhoTmtNTUxhblNlMHg4Z2ZiWkttSW9lWmpBV1oxbmd0T2xhTENtcy1oWjhxV0dZQk4xMUNBbDd1YzJMeDM5ajZ6MXgyNVNJRDVJNlh4Wm9zd01PY093Mnh6MVNaNHhIaDFaejhiUkozdUFJUnVUZl9Kb1VmR3JIVGNUcGoyanZ2Y18wSDV5b2QxakFlQ3o1OFAyYU9xbmlRbWJ3WERSYWdZZ01Sd2NBQVRURHItRjRJQW5GbXRrRy1tR3BYSVBKaFE1WG1wa2pXWEdjSXBsVTVjYWlIQnA1bG9wdkxwX0tEZnEydzNvTWFjLXBycnhVa1E0blhma2xEaHI3eENYZHZTS1lvMk5hT0RLRWxLMDF6d1NObkd6azEzeTVlaVhmM1piRjNGSlRTSHlwbjVRTHNUckduSnV5ZkJKM1ZvSTV4VU00ajgwVXBISmoxYjlwM1ZOQjZiMkswYmlVbGhlX29DU0lnam1mN2tyaUV5QXoxMlZfM19mX3VHS29vUG1QUVhHTVBYZjU5XzlWdjBNcDF6MzZSY0ZfSUZTZ3VyWk1VYTlWMVcyVlNwV1JiQk9ZcXZOcktDSGR3RkZTQS1mY1ktcW96Q2pwMm13SmxHOGFzQWk4UXlzN2poMUdwZnh2WjdXa2lUTzJ1dzc3bGNqTmVzcGk1cF8wXzA1RTdGM29XNC00YlFxQnNaZmdkYVRHNWcyS3AyRjktNEplT2JRWUpMS3hON2xJWjdrTEZScjNyVF95YWRkb0hoT2ZLSkt5YWVzZVQxYTdKT2QxMnVxbVIyc3BOMnRMR1g4VHd1VURGSDZLZU03WmVDM0c4aC1FRDR2enpkdGlBYzVRWk9SbEFiZUl0dVpDS2xLZjhSb0VMTXVUbFRETjdPWUM4TW0yMzBOWXdCd0laT3FrWXFsUktVTmE0WjBybWtxVHBUZHU5SGRvX1V3OU5uaVNBNXdtTV82TGxPQWo1TjhlbFM4d1VOYmtoSkxCM2ZkRXM3Tm1CUGk2R2Q1dE5wQlZxbUNUQXZWajlvTzRKRXFXYkN3Tlg3bVIwSURtckZTcWYycmd1dGpWT1cxQS0xSXV1M3ozMTlQaXpoeGppZExrRnNBT2dGOGd3MzNHb21uZnJwZkVNT21xTm15R2tXZzVaVWx0VklHekpYRnZwbGgyeUZzbXRxaEtrYTdjcktCaS1adm1ob3l6UE54cHJvOWdlS09wYlBNelFibjg1UWVLMGRMUDAzU2hoSUhIbUNJSFhBWGJyczlnUG5YYUUyTDV3c2RkRHc0RGJCTS1HU0tPd1I0T1hMNFRrQS1nWXRQRmhRaUVYRG9qY2JRa0xnb0FQVkJmaHQ5YWt2OHMwRmhLSHFXaS1KdEx0U0lTSkNWS2lsUHlidzZZODFsRGE4ZGNmVXdkTnpsUWk4T3FYcVk1SUFCSHg3V0FSYUNEQTVDY0dITzFsN1hMc1ZwRGJrcU1sdWNjOW9xc1NKNFRLbk1ESzZCXzZJTFBDNHNDRWx0cVl0SEQ1X1lELU4zclRLVUQzbkJ0bjJXSW1zRFdtWDE0NUJCdWNsbTQ0cDJjZmtwT2dFaVIzaU00cDAzTUh0c1FmSnJ0ZEJSV1MwZG55QlJKanBDWWZhc2pxY0dWQ3VBQmFsQWhZX29qRUhnXzhabmVaRTdsRWt0WmlfRVEzQVUycFlfS1A1NV82Q0ctNzhOY1RnWTVnMGxjNEtXRlQ0S3p3bmR0SktQWVZvd1BhRDY5WlI5RFY5cHR4WU1DME45MzVQaFpzbHJ1U0xYMzVINlBDRmI2ak5oa1luaExzNGtKRUEzUGhjc1ZLYVB2T09JbmhveTdrRWdfeWhZRUtRYUlyU0lITWVuRmlCLXhkdW80TXEyQWk1YURPSmZRTFdYOWVnTjVyQ0duM2xWODFnZjhFWHFPRFR2QUlQRV9JY0ZhZFJtOVNCc3pyWFNFd1pSY2hjcndlUVNsaGZ4RXpISUZTQ001S2FFRmJUQXp3TjBBRFVKRlNET1N4LWJIWlY2NWVjMkNxYVFFS2RnZm9jdnZaNG54NlZSOEwxR0g5b3VhZ1c1UnhHc09GbGlqYmlraDE1Z3JIVlZGUmFMM2hUV3pWYkRLa2h2Y2lRNW1fbDZLTkpwZktiYTBueGhTZmp1a1c4dHQ5UjhpLUhUYWpKLUwyOGJjRFQtbnFXUG5aVW1GcXNaNThTa3lBTjYzM3liS2NETGNSN1plTGJaUjZrRGpZWXRKcTFGa3YwaGdNOFdRWDdBa1poUTU1eWlHNmhpekVydGJrOXVicV90Z0V5QW1SUmU1SHBURWJKMG1ZTm54ckRrdWxTWTV0UWJMOFNqMnZVM19KQTJHUm5GUjdBTmZES3R1dV9yTHg1Uk1uQVk1cmtORnF6MW0wNWhULW5RUGJwazJpaU8za29ETktkT3Y3QTdXdUhVbHJFM0NHZWx0SW05d1R4ZmRzaXFKM05ydWVKVEY4UjJRZDdGTDhtYmxrMEVDN284dC1Qdw%3D%3D",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1782874707.472039,
+      "size": 3160,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "OhpAuth",
+      "value": "chunks-2",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1782874701.324621,
+      "size": 15,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "OH.DCAffinity",
+      "value": "OH-wus",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1775127507.471953,
+      "size": 19,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    },
+    {
+      "name": "OH.FLID",
+      "value": "a18bddef-a3ad-40a8-807f-9edc9b874212",
+      "domain": "m365.cloud.microsoft",
+      "path": "/",
+      "expires": 1806634700.668215,
+      "size": 43,
+      "httpOnly": true,
+      "secure": true,
+      "session": false,
+      "sameSite": "None"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "https://m365.cloud.microsoft",
+      "localStorage": [
+        {
+          "name": "SydneyLoggingBeforeUnload",
+          "value": ""
+        },
+        {
+          "name": "sessionStorePartial",
+          "value": "{\"state\":{\"isSessionPaneOpen\":false},\"version\":0}"
+        },
+        {
+          "name": "mats-telemetry-profile-id",
+          "value": "019d4c20-bb3f-7ab2-82da-4815a8c002b6"
+        },
+        {
+          "name": "Search3sLoggingBeforeUnload",
+          "value": ""
+        },
+        {
+          "name": "msal.version",
+          "value": "4.28.2"
+        }
+      ],
+      "sessionStorage": [
+        {
+          "name": "m365-chat.upsellSettings",
+          "value": "{\"dimeSettings\":{\"enableDimeFlightsOverrides\":false,\"dimeFlights\":{}}}"
+        }
+      ]
+    }
+  ]
+}

@@ -49,6 +49,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
     const [matchingPosition, setMatchingPosition] = useState<number | null>(null);
     const [teamInterests, setTeamInterests] = useState<InterestEntry[]>([]);
     const [isMatching, setIsMatching] = useState(false);
+    const [hasActiveMatchingEvent, setHasActiveMatchingEvent] = useState(false);
     const router = useRouter();
 
     const handleLogout = async () => {
@@ -95,6 +96,22 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
             checkMatchingStatus();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [team]);
+
+    useEffect(() => {
+        if (team) {
+            setHasActiveMatchingEvent(false);
+            return;
+        }
+
+        fetch("/api/hackathon/matching/event")
+            .then((response) => response.json())
+            .then((data) => {
+                setHasActiveMatchingEvent(Boolean(data.state?.event));
+            })
+            .catch(() => {
+                setHasActiveMatchingEvent(false);
+            });
     }, [team]);
 
     useEffect(() => {
@@ -627,7 +644,13 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
 
                     {/* Find Team Button */}
                     <button
-                        onClick={handleStartMatching}
+                        onClick={() => {
+                            if (hasActiveMatchingEvent) {
+                                router.push("/hackathon/matching");
+                                return;
+                            }
+                            handleStartMatching();
+                        }}
                         className="group relative overflow-hidden rounded-3xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-[#1e2a35]/95 to-[#263a4a]/90 border-2 border-[#6a9ac4]/50 hover:border-[#8abade]/80 shadow-[0_0_30px_rgba(106,154,196,0.3)] hover:shadow-[0_0_40px_rgba(138,186,222,0.5)]"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-[#6a9ac4]/0 via-[#6a9ac4]/20 to-[#6a9ac4]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -638,10 +661,12 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                                 </div>
                                 <div className="flex-1 text-left">
                                     <h3 className="text-2xl font-medium text-white group-hover:text-[#8abade] transition-colors duration-300">
-                                        หาทีม
+                                        {hasActiveMatchingEvent ? "จัดอันดับคนที่เจอ" : "หาทีม"}
                                     </h3>
                                     <p className="text-gray-300 text-sm mt-1 group-hover:text-gray-200 transition-colors">
-                                        จับคู่อัตโนมัติกับสมาชิกทีมที่ยังเปิดรับ
+                                        {hasActiveMatchingEvent
+                                            ? "เลือกคนที่คุณได้คุยด้วยและจัดอันดับเพื่อให้ระบบจับทีมอัตโนมัติ"
+                                            : "จับคู่อัตโนมัติกับสมาชิกทีมที่ยังเปิดรับ"}
                                     </p>
                                 </div>
                                 <div className="text-[#6a9ac4] group-hover:text-[#8abade] group-hover:translate-x-1 transition-all duration-300">

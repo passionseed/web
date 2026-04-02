@@ -1,11 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 import { SESSION_EXPIRY_DAYS } from "./auth";
+import {
+  buildHackathonTeams,
+  canCreateValidTeams,
+  type HackathonMatchingParticipant,
+} from "./team-matching";
 
 function getClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+export function getHackathonAdminClient() {
+  return getClient();
 }
 
 export type HackathonParticipant = {
@@ -112,6 +121,40 @@ export type HackathonTeamWithMembers = HackathonTeam & {
   members: HackathonTeamMember[];
 };
 
+export type HackathonMatchingEventStatus =
+  | "draft"
+  | "live"
+  | "ranking_locked"
+  | "matched"
+  | "failed";
+
+export type HackathonMatchingEvent = {
+  id: string;
+  name: string;
+  status: HackathonMatchingEventStatus;
+  min_team_size: number;
+  max_team_size: number;
+  ranking_deadline: string | null;
+  matched_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type HackathonMatchingCandidate = {
+  id: string;
+  name: string;
+  university: string;
+  track: string;
+  bio: string;
+  problem_preferences: string[];
+  team_role_preference: string | null;
+};
+
+export type HackathonParticipantMatchingState = {
+  metParticipantIds: string[];
+  rankedParticipantIds: string[];
+};
+
 function generateLobbyCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -209,6 +252,336 @@ export async function getParticipantTeam(participantId: string): Promise<Hackath
   }));
 
   return { ...team, members } as HackathonTeamWithMembers;
+}
+
+export async function getLatestHackathonMatchingEvent(): Promise<HackathonMatchingEvent | null> {
+  const { data, error } = await getClient()
+    .from("hackathon_matching_events")
+    .select("*")
+    .neq("status", "draft")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) return null;
+  return data as HackathonMatchingEvent;
+}
+
+export async function getHackathonMatchingEvent(
+  eventId: string
+): Promise<HackathonMatchingEvent | null> {
+  const { data, error } = await getClient()
+    .from("hackathon_matching_events")
+    .select("*")
+    .eq("id", eventId)
+    .single();
+
+  if (error || !data) return null;
+  return data as HackathonMatchingEvent;
+}
+
+export async function listHackathonMatchingCandidates(
+  excludeParticipantId?: string
+): Promise<HackathonMatchingCandidate[]> {
+  const supabase = getClient();
+
+  const { data: teamMembers, error: teamMemberError } = await supabase
+    .from("hackathon_team_members")
+    .select("participant_id");
+
+  if (teamMemberError) throw teamMemberError;
+
+  const assignedIds = new Set((teamMembers || []).map((row) => row.participant_id));
+  if (excludeParticipantId) {
+    assignedIds.add(excludeParticipantId);
+  }
+
+  const { data: participants, error: participantError } = await supabase
+    .from("hackathon_participants")
+    .select("id, name, university, track, bio")
+    .order("name", { ascending: true });
+  if (participantError) throw participantError;
+
+  const unassignedParticipants = (participants || []).filter(
+    (participant) => !assignedIds.has(participant.id)
+  );
+  const participantIds = unassignedParticipants.map((participant) => participant.id);
+  if (participantIds.length === 0) return [];
+
+  const { data: questionnaires, error: questionnaireError } = await supabase
+    .from("hackathon_pre_questionnaires")
+    .select("participant_id, problem_preferences, team_role_preference")
+    .in("participant_id", participantIds);
+
+  if (questionnaireError) throw questionnaireError;
+
+  const questionnaireMap = new Map(
+    (questionnaires || []).map((questionnaire) => [
+      questionnaire.participant_id,
+      questionnaire,
+    ])
+  );
+
+  return unassignedParticipants.map((participant) => {
+    const questionnaire = questionnaireMap.get(participant.id);
+    return {
+      id: participant.id,
+      name: participant.name,
+      university: participant.university,
+      track: participant.track,
+      bio: participant.bio,
+      problem_preferences: questionnaire?.problem_preferences ?? [],
+      team_role_preference: questionnaire?.team_role_preference ?? null,
+    };
+  });
+}
+
+export async function getParticipantHackathonMatchingState(
+  eventId: string,
+  participantId: string
+): Promise<HackathonParticipantMatchingState> {
+  const supabase = getClient();
+
+  const [{ data: metRows, error: metError }, { data: rankingRows, error: rankingError }] =
+    await Promise.all([
+      supabase
+        .from("hackathon_matching_met_connections")
+        .select("met_participant_id")
+        .eq("event_id", eventId)
+        .eq("participant_id", participantId),
+      supabase
+        .from("hackathon_matching_rankings")
+        .select("ranked_participant_id, rank_order")
+        .eq("event_id", eventId)
+        .eq("participant_id", participantId)
+        .order("rank_order", { ascending: true }),
+    ]);
+
+  if (metError) throw metError;
+  if (rankingError) throw rankingError;
+
+  return {
+    metParticipantIds: (metRows || []).map((row) => row.met_participant_id),
+    rankedParticipantIds: (rankingRows || []).map((row) => row.ranked_participant_id),
+  };
+}
+
+export async function replaceParticipantHackathonMetConnections(
+  eventId: string,
+  participantId: string,
+  metParticipantIds: string[]
+) {
+  const uniqueIds = [...new Set(metParticipantIds)].filter((id) => id !== participantId);
+  const supabase = getClient();
+
+  const { error: deleteError } = await supabase
+    .from("hackathon_matching_met_connections")
+    .delete()
+    .eq("event_id", eventId)
+    .eq("participant_id", participantId);
+
+  if (deleteError) throw deleteError;
+
+  if (uniqueIds.length === 0) return;
+
+  const { error: insertError } = await supabase
+    .from("hackathon_matching_met_connections")
+    .insert(
+      uniqueIds.map((metParticipantId) => ({
+        event_id: eventId,
+        participant_id: participantId,
+        met_participant_id: metParticipantId,
+      }))
+    );
+
+  if (insertError) throw insertError;
+}
+
+export async function replaceParticipantHackathonRankings(
+  eventId: string,
+  participantId: string,
+  rankedParticipantIds: string[]
+) {
+  const uniqueRankedIds = [...new Set(rankedParticipantIds)].filter(
+    (id) => id !== participantId
+  );
+  const { metParticipantIds } = await getParticipantHackathonMatchingState(
+    eventId,
+    participantId
+  );
+  const allowedIds = new Set(metParticipantIds);
+
+  if (uniqueRankedIds.some((id) => !allowedIds.has(id))) {
+    throw new Error("Rankings must be limited to people you marked as met");
+  }
+
+  const supabase = getClient();
+  const { error: deleteError } = await supabase
+    .from("hackathon_matching_rankings")
+    .delete()
+    .eq("event_id", eventId)
+    .eq("participant_id", participantId);
+
+  if (deleteError) throw deleteError;
+
+  if (uniqueRankedIds.length === 0) return;
+
+  const { error: insertError } = await supabase
+    .from("hackathon_matching_rankings")
+    .insert(
+      uniqueRankedIds.map((rankedParticipantId, index) => ({
+        event_id: eventId,
+        participant_id: participantId,
+        ranked_participant_id: rankedParticipantId,
+        rank_order: index + 1,
+      }))
+    );
+
+  if (insertError) throw insertError;
+}
+
+export async function runHackathonAutomaticTeamMatching(eventId: string) {
+  const supabase = getClient();
+  const event = await getHackathonMatchingEvent(eventId);
+
+  if (!event) {
+    throw new Error("Matching event not found");
+  }
+
+  if (event.status === "draft") {
+    throw new Error("Matching event is not active");
+  }
+
+  const eligibleCandidates = await listHackathonMatchingCandidates();
+  if (eligibleCandidates.length === 0) {
+    throw new Error("No eligible participants to match");
+  }
+
+  if (!canCreateValidTeams(eligibleCandidates.length)) {
+    throw new Error("Not enough unteamed participants to create valid teams");
+  }
+
+  const participantIds = eligibleCandidates.map((candidate) => candidate.id);
+  const { data: rankingRows, error: rankingError } = await supabase
+    .from("hackathon_matching_rankings")
+    .select("participant_id, ranked_participant_id, rank_order")
+    .eq("event_id", eventId)
+    .in("participant_id", participantIds)
+    .order("rank_order", { ascending: true });
+
+  if (rankingError) throw rankingError;
+
+  const rankingMap = new Map<string, string[]>();
+  for (const row of rankingRows || []) {
+    const existing = rankingMap.get(row.participant_id) ?? [];
+    existing.push(row.ranked_participant_id);
+    rankingMap.set(row.participant_id, existing);
+  }
+
+  const matchingParticipants: HackathonMatchingParticipant[] = eligibleCandidates.map(
+    (candidate) => ({
+      id: candidate.id,
+      name: candidate.name,
+      rankedParticipantIds: rankingMap.get(candidate.id) ?? [],
+      problemPreferences: candidate.problem_preferences,
+      teamRolePreference: candidate.team_role_preference,
+    })
+  );
+
+  const runInput = {
+    eventId,
+    participants: matchingParticipants,
+  };
+
+  const matchedTeams = buildHackathonTeams(matchingParticipants);
+  const createdTeams: HackathonTeamWithMembers[] = [];
+
+  for (let index = 0; index < matchedTeams.length; index += 1) {
+    const matchedTeam = matchedTeams[index];
+    const [ownerId, ...memberIds] = matchedTeam.memberIds;
+    const createdTeam = await createTeam(ownerId, `${event.name} Team ${index + 1}`);
+
+    if (memberIds.length > 0) {
+      const { error: insertMemberError } = await supabase
+        .from("hackathon_team_members")
+        .insert(
+          memberIds.map((participantId) => ({
+            team_id: createdTeam.id,
+            participant_id: participantId,
+          }))
+        );
+
+      if (insertMemberError) throw insertMemberError;
+    }
+
+    const hydratedTeam = await getParticipantTeam(ownerId);
+    if (hydratedTeam) createdTeams.push(hydratedTeam);
+  }
+
+  const { data: runRow, error: runError } = await supabase
+    .from("hackathon_matching_runs")
+    .insert({
+      event_id: eventId,
+      status: "running",
+      input_snapshot: runInput,
+    })
+    .select("id")
+    .single();
+
+  if (runError) throw runError;
+
+  try {
+    const { error: updateEventError } = await supabase
+      .from("hackathon_matching_events")
+      .update({
+        status: "matched",
+        matched_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", eventId);
+
+    if (updateEventError) throw updateEventError;
+
+    const { error: finalizeRunError } = await supabase
+      .from("hackathon_matching_runs")
+      .update({
+        status: "matched",
+        result_snapshot: {
+          matchedTeams,
+          createdTeams,
+        },
+      })
+      .eq("id", runRow.id);
+
+    if (finalizeRunError) throw finalizeRunError;
+
+    return {
+      event,
+      matchedTeams,
+      createdTeams,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to finalize matching";
+
+    await supabase
+      .from("hackathon_matching_events")
+      .update({
+        status: "failed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", eventId);
+
+    await supabase
+      .from("hackathon_matching_runs")
+      .update({
+        status: "failed",
+        error_message: message,
+      })
+      .eq("id", runRow.id);
+
+    throw error;
+  }
 }
 
 export async function updateParticipantPassword(participantId: string, passwordHash: string) {
