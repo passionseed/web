@@ -400,7 +400,7 @@ export default function RegisterPage() {
         <div className="absolute left-0 shore" style={{ top: 0, width: "100%", height: "1px", background: "#91C4E3" }} />
       </div>
 
-      {/* ── Form ── */}
+      {/* ── Closed / Full Notice ── */}
       <div ref={formRef} className="relative z-[30] w-full max-w-lg px-6 py-10">
         <button
           onClick={handleBack}
@@ -411,38 +411,63 @@ export default function RegisterPage() {
         </button>
 
         <div
-          className="rounded-2xl p-8 form-card"
+          className="rounded-2xl p-10 form-card text-center"
           style={{
             background: "rgba(1, 5, 12, 0.9)",
             border: "1px solid rgba(101,171,252,0.2)",
             backdropFilter: "blur(16px)",
           }}
         >
-          <div className="mb-7">
-            <h1
-              className="text-3xl font-medium mb-1 bio-title font-[family-name:var(--font-mitr)]"
+          <div className="flex justify-center mb-6">
+            <div
+              className="rounded-full flex items-center justify-center"
               style={{
-                background: "linear-gradient(130deg, #91C4E3 0%, #65ABFC 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                width: "72px",
+                height: "72px",
+                background: "rgba(101,171,252,0.07)",
+                border: "1px solid rgba(101,171,252,0.18)",
+                boxShadow: "0 0 30px rgba(101,171,252,0.12)",
               }}
             >
-              ลงทะเบียน
-            </h1>
-            <p className="text-sm mb-1.5" style={{ color: "#7AAED0" }}>
-              The Next Decade Hackathon 2026
-            </p>
-            <p className="text-xs font-[family-name:var(--font-mitr)]" style={{ color: "#2A3A50" }}>
-              ลงทะเบียนแล้วใช่ไหม?{" "}
-              <button
-                onClick={() => router.push("/hackathon/login")}
-                className="transition-colors hover:underline font-[family-name:var(--font-mitr)]"
-                style={{ color: "#65ABFC" }}
-              >
-                เข้าสู่ระบบ
-              </button>
-            </p>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#65ABFC" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="23" y1="11" x2="17" y2="11" />
+              </svg>
+            </div>
           </div>
+
+          <h1
+            className="text-3xl font-medium mb-3 bio-title font-[family-name:var(--font-mitr)]"
+            style={{
+              background: "linear-gradient(130deg, #91C4E3 0%, #65ABFC 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            เต็มแล้ว!
+          </h1>
+
+          <p className="text-sm mb-2 font-[family-name:var(--font-mitr)]" style={{ color: "#7AAED0" }}>
+            The Next Decade Hackathon 2026
+          </p>
+
+          <p className="text-sm mb-8 font-[family-name:var(--font-mitr)]" style={{ color: "#3A5A70" }}>
+            ขออภัย ที่นั่งสำหรับงานนี้เต็มแล้ว ขอบคุณที่ให้ความสนใจ!
+          </p>
+
+          <p className="text-xs font-[family-name:var(--font-mitr)]" style={{ color: "#2A3A50" }}>
+            ลงทะเบียนแล้วใช่ไหม?{" "}
+            <button
+              onClick={() => router.push("/hackathon/login")}
+              className="transition-colors hover:underline font-[family-name:var(--font-mitr)]"
+              style={{ color: "#65ABFC" }}
+            >
+              เข้าสู่ระบบ
+            </button>
+          </p>
+        </div>
 
           {error && (
             <div

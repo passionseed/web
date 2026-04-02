@@ -76,7 +76,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
         if (isTransitioning || !waterRef.current) return;
         setIsTransitioning(true);
 
-        const targetPath = isLoggedIn ? "/hackathon/team" : "/hackathon/register";
+        const targetPath = isLoggedIn ? "/hackathon/dashboard" : "/hackathon/register";
 
         const tl = gsap.timeline();
 
@@ -403,7 +403,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                             onClick={handleRegister}
                                             className="bg-[#9D81AC] hover:bg-[#8a6f99] text-white text-xl px-12 py-6 rounded-full shadow-[0_0_40px_rgba(157,129,172,0.6)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(157,129,172,1)] transform hover:scale-105"
                                         >
-                                            Your Team
+                                            Dashboard
                                         </Button>
                                     ) : (
                                         <>
@@ -1133,7 +1133,7 @@ export default function LandingPage({ isLoggedIn }: LandingPageProps) {
                                         onClick={handleRegister}
                                         className="bg-gradient-to-r from-[#91C4E3] to-[#A594BA] hover:from-[#7ab3d3] hover:to-[#9484aa] text-white text-xl px-14 py-7 rounded-full shadow-[0_0_40px_rgba(145,196,227,0.5)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(145,196,227,0.8)] transform hover:scale-105"
                                     >
-                                        Your Team
+                                        Dashboard
                                     </Button>
                                 ) : (
                                     <div className="flex flex-col items-center gap-3">

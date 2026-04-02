@@ -393,7 +393,7 @@ export default function HackathonDashboardPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={settingsLoading}
+                disabled={settingsLoading || !!participant?.is_admin}
                 className="bg-gradient-to-r from-[#5a7a94] to-[#4a6a84] hover:from-[#6a9ac4] hover:to-[#5a8ab4] text-white border border-[#7aa4c4]/30 shadow-[0_0_15px_rgba(90,122,148,0.4)] transition-all font-[family-name:var(--font-mitr)] disabled:opacity-40"
               >
                 {settingsLoading ? "กำลังบันทึก..." : "บันทึก"}
@@ -466,15 +466,13 @@ export default function HackathonDashboardPage() {
                     {participant.role}
                   </p>
                 </div>
-                {!participant.is_admin && (
-                  <button
-                    onClick={openSettings}
-                    className="p-2 rounded-xl transition-all duration-200 hover:bg-[#4a6b82]/20 text-[#4a6b82] hover:text-[#91C4E3]"
-                    aria-label="แก้ไขโปรไฟล์"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
-                )}
+                <button
+                  onClick={openSettings}
+                  className="p-2 rounded-xl transition-all duration-200 hover:bg-[#4a6b82]/20 text-[#4a6b82] hover:text-[#91C4E3]"
+                  aria-label="แก้ไขโปรไฟล์"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
               </div>
 
               <div className="border-t border-[#4a6b82]/30 pt-4 space-y-3 text-sm text-gray-300 relative z-10">
@@ -515,7 +513,7 @@ export default function HackathonDashboardPage() {
               </Link>
             </Button>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <Button
                 asChild
                 variant="outline"
@@ -525,6 +523,14 @@ export default function HackathonDashboardPage() {
                   <BookOpen className="h-4 w-4 text-[#7aa4c4]" />
                   <span className="text-xs">รายละเอียดโจทย์</span>
                 </Link>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={openSettings}
+                className="w-full bg-[#1a2530]/40 hover:bg-[#1a2530]/80 border-[#4a6b82]/30 hover:border-[#7aa4c4]/60 text-gray-300 hover:text-white transition-all py-5 font-[family-name:var(--font-mitr)] flex flex-col items-center gap-1.5 h-auto"
+              >
+                <Settings className="h-4 w-4 text-[#7aa4c4]" />
+                <span className="text-xs">ตั้งค่า</span>
               </Button>
               <Button
                 asChild
