@@ -59,6 +59,8 @@ export function AdminHackathonTeams() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
+  const [runningMatching, setRunningMatching] = useState(false);
+  const [matchingMessage, setMatchingMessage] = useState("");
 
   useEffect(() => {
     fetchTeams();
@@ -135,6 +137,35 @@ export function AdminHackathonTeams() {
     document.body.removeChild(link);
   };
 
+  const runAutoMatching = async () => {
+    setRunningMatching(true);
+    setMatchingMessage("");
+
+    try {
+      const response = await fetch("/api/admin/hackathon/team-matching/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMatchingMessage(data.error || "Failed to run automatic matching");
+        return;
+      }
+
+      setMatchingMessage(
+        `Created ${data.result?.createdTeams?.length ?? 0} matched teams.`
+      );
+      await fetchTeams();
+    } catch (error) {
+      console.error("Error running auto matching:", error);
+      setMatchingMessage("Failed to run automatic matching");
+    } finally {
+      setRunningMatching(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -200,11 +231,32 @@ export function AdminHackathonTeams() {
                 Browse all teams and their respective members.
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={downloadCSV} className="border-slate-700 hover:bg-slate-800 transition-all font-medium">
-              <Download className="mr-2 h-4 w-4" />
-              Download CSV
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={runAutoMatching}
+                disabled={runningMatching}
+                className="border-slate-700 hover:bg-slate-800 transition-all font-medium"
+              >
+                {runningMatching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Users className="mr-2 h-4 w-4" />
+                )}
+                Run Auto Matching
+              </Button>
+              <Button variant="outline" size="sm" onClick={downloadCSV} className="border-slate-700 hover:bg-slate-800 transition-all font-medium">
+                <Download className="mr-2 h-4 w-4" />
+                Download CSV
+              </Button>
+            </div>
           </div>
+          {matchingMessage && (
+            <div className="mt-3 rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-sm text-blue-100">
+              {matchingMessage}
+            </div>
+          )}
           <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
