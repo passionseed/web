@@ -15,15 +15,6 @@ const ALLOWED_FILE_TYPES = [
 ];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
-// Local Supabase — for writing submissions
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
-// Remote Supabase — for validating hackathon sessions (created by edge function)
 function getHackathonAuthClient() {
   const url = process.env.HACKATHON_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key = process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -41,11 +32,11 @@ function fileExtension(filename: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Auth
   const token = extractToken(req);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const participant = await getSessionParticipant(token, getHackathonAuthClient());
+  const supabase = getHackathonAuthClient();
+  const participant = await getSessionParticipant(token, supabase);
   if (!participant) return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
 
   const contentType = req.headers.get("content-type") ?? "";
@@ -57,17 +48,14 @@ export async function POST(req: NextRequest) {
   let uploadedFileUrls: string[] | null = null;
 
   if (contentType.includes("application/json")) {
-    // text_answer
     const body = await req.json();
     activityId = body.activityId;
     assessmentId = body.assessmentId;
     textAnswer = body.textAnswer ?? null;
-
     if (!activityId || !assessmentId) {
       return NextResponse.json({ error: "activityId and assessmentId are required" }, { status: 400 });
     }
   } else {
-    // image_upload or file_upload
     const formData = await req.formData();
     activityId = formData.get("activityId") as string;
     assessmentId = formData.get("assessmentId") as string;
@@ -76,11 +64,9 @@ export async function POST(req: NextRequest) {
     if (!activityId || !assessmentId || !file) {
       return NextResponse.json({ error: "activityId, assessmentId and file are required" }, { status: 400 });
     }
-
     if (file.size > MAX_SIZE) {
       return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 });
     }
-
     const isImage = ALLOWED_IMAGE_TYPES.includes(file.type);
     const isDoc = ALLOWED_FILE_TYPES.includes(file.type);
     if (!isImage && !isDoc) {
@@ -91,7 +77,6 @@ export async function POST(req: NextRequest) {
     const random = Math.random().toString(36).substring(2, 8);
     const ext = fileExtension(file.name);
     const path = `hackathon/${participant.id}/${activityId}/${timestamp}_${random}.${ext}`;
-
     const result = await b2.uploadFile(file, participant.id, activityId, path);
 
     if (isImage) {
@@ -101,10 +86,57 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 3. Upsert submission — use remote DB (where migrations are applied)
-  const supabase = getHackathonAuthClient();
+  // Look up the activity's submission_scope
+  const { data: activity } = await supabase
+    .from("hackathon_phase_activities")
+    .select("submission_scope")
+    .eq("id", activityId)
+    .single();
+
+  const scope = (activity as any)?.submission_scope ?? "individual";
   const now = new Date().toISOString();
 
+  if (scope === "team") {
+    // Find participant's team
+    const { data: membership } = await supabase
+      .from("hackathon_team_members")
+      .select("team_id")
+      .eq("participant_id", participant.id)
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json({ error: "You must be in a team to submit a team activity" }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from("hackathon_phase_activity_team_submissions")
+      .upsert(
+        {
+          team_id: membership.team_id,
+          activity_id: activityId,
+          assessment_id: assessmentId,
+          submitted_by: participant.id,
+          text_answer: textAnswer,
+          image_url: uploadedUrl,
+          file_urls: uploadedFileUrls,
+          status: "submitted",
+          submitted_at: now,
+          updated_at: now,
+        },
+        { onConflict: "team_id,activity_id" }
+      )
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("[hackathon/submit] team DB error:", error.message);
+      return NextResponse.json({ error: "Failed to save submission", detail: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ submissionId: data.id, url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null });
+  }
+
+  // Individual submission
   const { data, error } = await supabase
     .from("hackathon_phase_activity_submissions")
     .upsert(
@@ -125,21 +157,9 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    console.error("[hackathon/submit] DB error code:", error.code);
-    console.error("[hackathon/submit] DB error message:", error.message);
-    console.error("[hackathon/submit] DB error details:", error.details);
-    console.error("[hackathon/submit] DB error hint:", error.hint);
-    console.error("[hackathon/submit] upsert payload:", JSON.stringify({
-      participant_id: participant.id,
-      activity_id: activityId,
-      assessment_id: assessmentId,
-      status: "submitted",
-    }));
+    console.error("[hackathon/submit] individual DB error:", error.message);
     return NextResponse.json({ error: "Failed to save submission", detail: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({
-    submissionId: data.id,
-    url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null,
-  });
+  return NextResponse.json({ submissionId: data.id, url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null });
 }

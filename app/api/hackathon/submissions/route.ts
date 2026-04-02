@@ -29,15 +29,37 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ submissions: [] });
   }
 
-  const { data, error } = await supabase
-    .from("hackathon_phase_activity_submissions")
-    .select("activity_id, status")
+  // Get participant's team (if any)
+  const { data: membership } = await supabase
+    .from("hackathon_team_members")
+    .select("team_id")
     .eq("participant_id", participant.id)
-    .in("activity_id", activityIds);
+    .maybeSingle();
 
-  if (error) {
-    return NextResponse.json({ error: "Failed to fetch submissions" }, { status: 500 });
-  }
+  const teamId = (membership as any)?.team_id ?? null;
 
-  return NextResponse.json({ submissions: data ?? [] });
+  // Fetch individual + team submissions in parallel
+  const [{ data: individualData }, { data: teamData }] = await Promise.all([
+    supabase
+      .from("hackathon_phase_activity_submissions")
+      .select("activity_id, status")
+      .eq("participant_id", participant.id)
+      .in("activity_id", activityIds),
+    teamId
+      ? supabase
+          .from("hackathon_phase_activity_team_submissions")
+          .select("activity_id, status")
+          .eq("team_id", teamId)
+          .in("activity_id", activityIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  // Merge: team submission takes precedence for team-scoped activities
+  const merged = new Map<string, string>();
+  for (const s of individualData ?? []) merged.set(s.activity_id, s.status);
+  for (const s of teamData ?? []) merged.set(s.activity_id, s.status);
+
+  const submissions = Array.from(merged.entries()).map(([activity_id, status]) => ({ activity_id, status }));
+
+  return NextResponse.json({ submissions });
 }
