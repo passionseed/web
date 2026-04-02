@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     const { password_hash: _, ...safe } = participant;
 
-    const res = NextResponse.json({ participant: safe });
+    const res = NextResponse.json({ participant: safe, token });
     res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
