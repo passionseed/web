@@ -400,7 +400,7 @@ export default function RegisterPage() {
         <div className="absolute left-0 shore" style={{ top: 0, width: "100%", height: "1px", background: "#91C4E3" }} />
       </div>
 
-      {/* ── Closed Notice ── */}
+      {/* ── Closed / Full Notice ── */}
       <div ref={formRef} className="relative z-[30] w-full max-w-lg px-6 py-10">
         <button
           onClick={handleBack}
@@ -418,7 +418,6 @@ export default function RegisterPage() {
             backdropFilter: "blur(16px)",
           }}
         >
-          {/* Lock icon */}
           <div className="flex justify-center mb-6">
             <div
               className="rounded-full flex items-center justify-center"
@@ -431,8 +430,10 @@ export default function RegisterPage() {
               }}
             >
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#65ABFC" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="23" y1="11" x2="17" y2="11" />
               </svg>
             </div>
           </div>
@@ -445,7 +446,7 @@ export default function RegisterPage() {
               WebkitTextFillColor: "transparent",
             }}
           >
-            ปิดรับลงทะเบียนแล้ว
+            เต็มแล้ว!
           </h1>
 
           <p className="text-sm mb-2 font-[family-name:var(--font-mitr)]" style={{ color: "#7AAED0" }}>
@@ -453,7 +454,7 @@ export default function RegisterPage() {
           </p>
 
           <p className="text-sm mb-8 font-[family-name:var(--font-mitr)]" style={{ color: "#3A5A70" }}>
-            ขออภัย การลงทะเบียนสำหรับงานนี้ได้ปิดรับแล้ว
+            ขออภัย ที่นั่งสำหรับงานนี้เต็มแล้ว ขอบคุณที่ให้ความสนใจ!
           </p>
 
           <p className="text-xs font-[family-name:var(--font-mitr)]" style={{ color: "#2A3A50" }}>

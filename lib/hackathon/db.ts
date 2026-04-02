@@ -584,6 +584,28 @@ export async function runHackathonAutomaticTeamMatching(eventId: string) {
   }
 }
 
+export async function updateParticipant(
+  id: string,
+  fields: {
+    name?: string;
+    phone?: string;
+    university?: string;
+    track?: string;
+    grade_level?: string;
+    experience_level?: number;
+    bio?: string;
+  }
+) {
+  const { data, error } = await getClient()
+    .from("hackathon_participants")
+    .update(fields)
+    .eq("id", id)
+    .select("id, name, email, phone, university, role, track, grade_level, experience_level, referral_source, bio, team_name, created_at")
+    .single();
+  if (error) throw error;
+  return data as HackathonParticipant;
+}
+
 export async function updateParticipantPassword(participantId: string, passwordHash: string) {
   const { error } = await getClient()
     .from("hackathon_participants")
