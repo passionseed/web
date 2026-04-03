@@ -37,24 +37,12 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await admin
     .from("hackathon_participants")
-    .select("name, email, phone, university, track, grade_level, team_name, created_at")
+    .select("email")
     .order("created_at", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const rows = data ?? [];
-  const headers = ["name", "email", "phone", "university", "track", "grade_level", "team_name", "created_at"];
-  const escape = (v: unknown) => {
-    const s = v == null ? "" : String(v);
-    return s.includes(",") || s.includes('"') || s.includes("\n")
-      ? `"${s.replace(/"/g, '""')}"`
-      : s;
-  };
-
-  const csv = [
-    headers.join(","),
-    ...rows.map((r) => headers.map((h) => escape(r[h as keyof typeof r])).join(",")),
-  ].join("\n");
+  const csv = ["email", ...(data ?? []).map((r) => r.email)].join("\n");
 
   return new NextResponse(csv, {
     headers: {
