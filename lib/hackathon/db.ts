@@ -56,6 +56,7 @@ export async function createParticipant(params: {
   referral_source: string;
   bio: string;
   team_name?: string;
+  special_invite?: boolean;
 }) {
   const { data, error } = await getClient()
     .from("hackathon_participants")
