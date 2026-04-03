@@ -2,8 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 
 function getClient() {
   return createClient(
-    process.env.HACKATHON_SUPABASE_URL!,
-    process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
 
@@ -49,16 +49,31 @@ export async function upsertTeamFinderEntry(
 }
 
 export async function listTeamFinderParticipants(): Promise<TeamFinderParticipant[]> {
-  const { data, error } = await getClient()
+  const client = getClient();
+
+  const { data: entries, error: entriesError } = await client
     .from("hackathon_team_finder")
-    .select("preferences, hackathon_participants(id, name)")
+    .select("participant_id, preferences")
     .order("created_at", { ascending: true });
-  if (error) throw error;
-  type Row = { preferences: string[]; hackathon_participants: { id: string; name: string } | null };
-  return ((data as unknown) as Row[] ?? []).map((row) => ({
-    id: row.hackathon_participants?.id ?? "",
-    name: row.hackathon_participants?.name ?? "",
-    preferences: row.preferences,
+  if (entriesError) throw entriesError;
+  if (!entries || entries.length === 0) return [];
+
+  const ids = entries.map((e: { participant_id: string }) => e.participant_id);
+
+  const { data: participants, error: participantsError } = await client
+    .from("hackathon_participants")
+    .select("id, name")
+    .in("id", ids);
+  if (participantsError) throw participantsError;
+
+  const nameById = Object.fromEntries(
+    (participants ?? []).map((p: { id: string; name: string }) => [p.id, p.name])
+  );
+
+  return entries.map((e: { participant_id: string; preferences: string[] }) => ({
+    id: e.participant_id,
+    name: nameById[e.participant_id] ?? "",
+    preferences: e.preferences,
   }));
 }
 
