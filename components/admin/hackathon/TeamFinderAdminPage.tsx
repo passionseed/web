@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TeamResultsPanel } from "@/components/admin/team-matching/TeamResultsPanel";
 import { matchTeams } from "@/components/admin/team-matching/matchTeams";
@@ -61,6 +61,13 @@ export default function TeamFinderAdminPage() {
     setConfirmResult({ teamsCreated: data.teamsCreated });
   };
 
+  const resetPreferences = async () => {
+    if (!confirm("รีเซ็ต preference ของทุกคน?")) return;
+    const res = await fetch("/api/admin/hackathon/team-finder/reset-preferences", { method: "POST" });
+    if (!res.ok) { setError("รีเซ็ตไม่สำเร็จ"); return; }
+    await fetchParticipants();
+  };
+
   const nameById = Object.fromEntries(participants.map((p) => [p.id, p.name]));
 
   return (
@@ -76,9 +83,19 @@ export default function TeamFinderAdminPage() {
           {participants.length === 0 ? "โหลดข้อมูล" : "รีเฟรช"}
         </Button>
         {participants.length > 0 && (
-          <span className="text-sm text-muted-foreground">
-            {participants.length} คนกำลังหาทีม
-          </span>
+          <>
+            <span className="text-sm text-muted-foreground">
+              {participants.length} คนกำลังหาทีม
+            </span>
+            <Button
+              onClick={resetPreferences}
+              variant="outline"
+              className="border-red-800 bg-[#1a1a1a] text-red-400 hover:bg-red-950 hover:text-red-300 gap-2 ml-auto"
+            >
+              <Trash2 className="h-4 w-4" />
+              รีเซ็ต preference
+            </Button>
+          </>
         )}
       </div>
 

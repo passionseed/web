@@ -49,6 +49,9 @@ function makeUnionFind(ids: string[]) {
 export function matchTeams(users: SimUser[]): Team[] {
   if (users.length === 0) return [];
 
+  // Exclude users who picked no preferences at all
+  users = users.filter((u) => u.preferences.length > 0);
+
   const prefSet = new Set(
     users.flatMap((u) => u.preferences.map((p) => `${u.id}:${p}`))
   );
@@ -138,13 +141,17 @@ export function matchTeams(users: SimUser[]): Team[] {
     // Form their own group(s), never exceeding 5, never leaving a group of 1-2
     splitIntoTeams(remaining).forEach((chunk) => teamGroups.push(chunk));
   } else if (remaining.length > 0) {
-    // Merge into the group with most capacity
-    const target = [...teamGroups].sort((a, b) => a.length - b.length)[0];
-    if (target) {
-      remaining.forEach((id) => target.push(id));
-    } else {
-      teamGroups.push(remaining);
-    }
+    // Merge into groups with capacity, respecting the 5-member cap
+    remaining.forEach((id) => {
+      const target = [...teamGroups]
+        .filter((g) => g.length < 5)
+        .sort((a, b) => a.length - b.length)[0];
+      if (target) {
+        target.push(id);
+      } else {
+        teamGroups.push([id]);
+      }
+    });
   }
 
   return teamGroups.map((group) => ({

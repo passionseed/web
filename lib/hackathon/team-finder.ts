@@ -77,6 +77,14 @@ export async function listTeamFinderParticipants(): Promise<TeamFinderParticipan
   }));
 }
 
+export async function resetAllPreferences(): Promise<void> {
+  const { error } = await getClient()
+    .from("hackathon_team_finder")
+    .update({ preferences: [] })
+    .neq("participant_id", "00000000-0000-0000-0000-000000000000"); // match all rows
+  if (error) throw error;
+}
+
 export async function listTeamFinderParticipantsExcluding(
   excludeParticipantId: string
 ): Promise<TeamFinderParticipant[]> {
