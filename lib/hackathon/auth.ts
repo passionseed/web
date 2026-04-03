@@ -9,8 +9,22 @@ export function hashPassword(password: string): string {
 export function verifyPassword(password: string, stored: string): boolean {
   const [salt, hash] = stored.split(":");
   const hashBuffer = Buffer.from(hash, "hex");
-  const verifyHash = crypto.scryptSync(password, salt, 64);
-  return crypto.timingSafeEqual(hashBuffer, verifyHash);
+
+  // Method 1: Salt as characters (original legacy method)
+  // crypto.scryptSync treats string salt as UTF-8 bytes
+  const verifyHash1 = crypto.scryptSync(password, salt, 64);
+  if (crypto.timingSafeEqual(hashBuffer, verifyHash1)) return true;
+
+  // Method 2: Salt as actual bytes (standard method)
+  try {
+    const saltBuffer = Buffer.from(salt, "hex");
+    const verifyHash2 = crypto.scryptSync(password, saltBuffer, 64);
+    if (crypto.timingSafeEqual(hashBuffer, verifyHash2)) return true;
+  } catch (e) {
+    // Ignore buffer conversion errors
+  }
+
+  return false;
 }
 
 export function generateSessionToken(): string {
