@@ -57,7 +57,8 @@ export async function POST(req: NextRequest) {
     });
     return res;
   } catch (err) {
-    console.error("Mentor register error:", JSON.stringify(err), err);
-    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
+    const msg = err instanceof Error ? err.message : JSON.stringify(err);
+    console.error("Mentor register error:", msg, err);
+    return NextResponse.json({ error: "Registration failed", detail: msg }, { status: 500 });
   }
 }

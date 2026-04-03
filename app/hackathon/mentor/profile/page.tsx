@@ -52,13 +52,13 @@ export default function MentorProfilePage() {
   });
 
   useEffect(() => {
-    if (!pageRef.current) return;
+    if (!mentor || !pageRef.current) return;
     gsap.fromTo(
       pageRef.current,
       { opacity: 0, y: 20 },
       { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
     );
-  }, []);
+  }, [mentor]);
 
   useEffect(() => {
     fetch("/api/hackathon/mentor/me")
