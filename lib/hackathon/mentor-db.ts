@@ -82,32 +82,59 @@ export async function createMentorProfile(params: {
   bio?: string;
   session_type?: MentorSessionType;
 }): Promise<MentorProfile> {
-  // Create a Supabase auth user
+  // Create a Supabase auth user (or reuse existing if already created)
+  let authUserId: string;
   const { data: authData, error: authError } = await getClient().auth.admin.createUser({
     email: params.email.toLowerCase(),
     // Random password — auth is handled by our own session tokens
     password: crypto.randomBytes(16).toString("hex"),
     email_confirm: true,
   });
-  if (authError) throw authError;
+  if (authError) {
+    if (authError.code === "email_exists") {
+      // Auth user was created in a prior failed attempt — look it up
+      const { data: listData, error: listError } = await getClient().auth.admin.listUsers();
+      if (listError) throw listError;
+      const existing = listData.users.find(
+        (u) => u.email?.toLowerCase() === params.email.toLowerCase()
+      );
+      if (!existing) throw authError;
+      authUserId = existing.id;
+    } else {
+      throw authError;
+    }
+  } else {
+    authUserId = authData.user.id;
+  }
 
   const { data, error } = await getClient()
     .from("mentor_profiles")
-    .insert({
-      user_id: authData.user.id,
-      full_name: params.full_name,
-      email: params.email.toLowerCase(),
-      password_hash: params.password_hash,
-      profession: params.profession ?? "",
-      institution: params.institution ?? "",
-      bio: params.bio ?? "",
-      session_type: params.session_type ?? "healthcare",
-    })
+    .upsert(
+      {
+        user_id: authUserId,
+        full_name: params.full_name,
+        email: params.email.toLowerCase(),
+        password_hash: params.password_hash,
+        profession: params.profession ?? "",
+        institution: params.institution ?? "",
+        bio: params.bio ?? "",
+        session_type: params.session_type ?? "healthcare",
+      },
+      { onConflict: "user_id" }
+    )
     .select(
       "id, user_id, full_name, email, profession, institution, bio, photo_url, session_type, is_approved, created_at, updated_at"
     )
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error("mentor_profiles upsert error:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw error;
+  }
   return data as MentorProfile;
 }
 
@@ -134,7 +161,7 @@ export async function updateMentorProfile(
 export async function createMentorSession(mentorId: string, token: string): Promise<void> {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + SESSION_EXPIRY_DAYS);
-  const { error } = await getClient().from("mentor_sessions").insert({
+  const { error } = await getClient().from("mentor_auth_sessions").insert({
     mentor_id: mentorId,
     token,
     expires_at: expiresAt.toISOString(),
@@ -145,7 +172,7 @@ export async function createMentorSession(mentorId: string, token: string): Prom
 export async function getMentorBySessionToken(token: string): Promise<MentorProfile | null> {
   const now = new Date().toISOString();
   const { data } = await getClient()
-    .from("mentor_sessions")
+    .from("mentor_auth_sessions")
     .select(
       "expires_at, mentor_profiles(id, user_id, full_name, email, profession, institution, bio, photo_url, session_type, is_approved, created_at, updated_at)"
     )
@@ -157,7 +184,7 @@ export async function getMentorBySessionToken(token: string): Promise<MentorProf
 }
 
 export async function deleteMentorSession(token: string): Promise<void> {
-  await getClient().from("mentor_sessions").delete().eq("token", token);
+  await getClient().from("mentor_auth_sessions").delete().eq("token", token);
 }
 
 // --- Availability ---

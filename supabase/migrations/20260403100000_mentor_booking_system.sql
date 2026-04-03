@@ -1,5 +1,5 @@
 -- Mentor Booking System
--- Tables: mentor_profiles, mentor_availability, mentor_bookings, mentor_team_assignments, mentor_sessions
+-- Tables: mentor_profiles, mentor_availability, mentor_bookings, mentor_team_assignments, mentor_auth_sessions
 
 -- Enums
 DO $$ BEGIN
@@ -59,8 +59,8 @@ CREATE TABLE IF NOT EXISTS public.mentor_team_assignments (
   assigned_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
--- mentor_sessions (session tokens)
-CREATE TABLE IF NOT EXISTS public.mentor_sessions (
+-- mentor_auth_sessions (session tokens for mentor portal login)
+CREATE TABLE IF NOT EXISTS public.mentor_auth_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   mentor_id UUID NOT NULL REFERENCES public.mentor_profiles(id) ON DELETE CASCADE,
   token TEXT NOT NULL UNIQUE,
@@ -75,8 +75,8 @@ CREATE INDEX IF NOT EXISTS mentor_bookings_mentor_idx ON public.mentor_bookings(
 CREATE INDEX IF NOT EXISTS mentor_bookings_student_idx ON public.mentor_bookings(student_id);
 CREATE INDEX IF NOT EXISTS mentor_bookings_status_idx ON public.mentor_bookings(status);
 CREATE INDEX IF NOT EXISTS mentor_team_assignments_mentor_idx ON public.mentor_team_assignments(mentor_id);
-CREATE INDEX IF NOT EXISTS mentor_sessions_token_idx ON public.mentor_sessions(token);
-CREATE INDEX IF NOT EXISTS mentor_sessions_mentor_idx ON public.mentor_sessions(mentor_id);
+CREATE INDEX IF NOT EXISTS mentor_auth_sessions_token_idx ON public.mentor_auth_sessions(token);
+CREATE INDEX IF NOT EXISTS mentor_auth_sessions_mentor_idx ON public.mentor_auth_sessions(mentor_id);
 
 -- updated_at trigger for mentor_profiles
 CREATE OR REPLACE FUNCTION update_mentor_profiles_updated_at()
@@ -94,7 +94,7 @@ ALTER TABLE public.mentor_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mentor_availability ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mentor_bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mentor_team_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.mentor_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mentor_auth_sessions ENABLE ROW LEVEL SECURITY;
 
 -- mentor_profiles policies
 DROP POLICY IF EXISTS "Approved mentor profiles are public" ON public.mentor_profiles;
@@ -142,4 +142,4 @@ CREATE POLICY "Mentors see own assignments" ON public.mentor_team_assignments
     mentor_id IN (SELECT id FROM public.mentor_profiles WHERE user_id = auth.uid())
   );
 
--- mentor_sessions: service-role only, no public RLS policies needed
+-- mentor_auth_sessions: service-role only, no public RLS policies needed
