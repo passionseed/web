@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Copy, Check, Users, Clock, RefreshCw, Sparkles } from "lucide-react";
 import FractalGlassBackground from "@/components/hackathon/ClarityGlassBackground";
 import { PartyIcon, CrownIcon, RocketIcon, KeyIcon, FindIcon } from "@/components/hackathon/TeamIcons";
-import TeamFinderView from "@/components/hackathon/TeamFinderView";
 
 type Member = {
     participant_id: string;
@@ -36,7 +35,7 @@ type Props = {
     participant: Participant;
 };
 
-type View = "home" | "create" | "join" | "matching" | "find-team";
+type View = "home" | "create" | "join" | "matching";
 
 export default function TeamDashboard({ initialTeam, participant }: Props) {
     const [team, setTeam] = useState<Team | null>(initialTeam);
@@ -497,21 +496,6 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         );
     }
 
-    // ─── Find Team View ────────────────────────────────────────────────────
-    if (view === "find-team") {
-        return (
-            <div className="min-h-screen relative text-white font-[family-name:var(--font-mitr)] overflow-hidden">
-                <FractalGlassBackground />
-                <div className="relative z-10">
-                    <TeamFinderView
-                        participant={participant}
-                        onBack={() => setView("home")}
-                    />
-                </div>
-            </div>
-        );
-    }
-
     // ─── Matching View ─────────────────────────────────────────────────────
     if (view === "matching") {
         return (
@@ -665,7 +649,7 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                                 router.push("/hackathon/matching");
                                 return;
                             }
-                            setView("find-team");
+                            handleStartMatching();
                         }}
                         className="group relative overflow-hidden rounded-3xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-[#1e2a35]/95 to-[#263a4a]/90 border-2 border-[#6a9ac4]/50 hover:border-[#8abade]/80 shadow-[0_0_30px_rgba(106,154,196,0.3)] hover:shadow-[0_0_40px_rgba(138,186,222,0.5)]"
                     >

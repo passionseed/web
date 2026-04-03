@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUp, ArrowDown, Search, Users, Sparkles } from "lucide-react";
+import { ArrowUp, ArrowDown, Search, Users, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FractalGlassBackground from "@/components/hackathon/ClarityGlassBackground";
+import { PreferenceCombobox } from "@/components/admin/team-matching/PreferenceCombobox";
+import type { SimUser } from "@/components/admin/team-matching/types";
 
 type MatchingEvent = {
   id: string;
@@ -53,6 +55,16 @@ export default function TeamMatchingPage() {
   const [savingRankings, setSavingRankings] = useState(false);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
+
+  // Find Team modal state
+  const [finderOpen, setFinderOpen] = useState(false);
+  const [finderLoaded, setFinderLoaded] = useState(false);
+  const [finderOptedIn, setFinderOptedIn] = useState(false);
+  const [finderOthers, setFinderOthers] = useState<{ id: string; name: string }[]>([]);
+  const [finderPrefs, setFinderPrefs] = useState<string[]>([]);
+  const [finderJoining, setFinderJoining] = useState(false);
+  const [finderSaveMsg, setFinderSaveMsg] = useState("");
+  const finderDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -203,6 +215,58 @@ export default function TeamMatchingPage() {
     }
   }
 
+  const loadFinderStatus = useCallback(async () => {
+    const res = await fetch("/api/hackathon/team-finder/status");
+    if (!res.ok) return;
+    const data = await res.json();
+    setFinderOptedIn(data.isOptedIn);
+    setFinderOthers(data.participants);
+    setFinderPrefs(data.preferences);
+    setFinderLoaded(true);
+  }, []);
+
+  const openFinder = () => {
+    setFinderOpen(true);
+    if (!finderLoaded) loadFinderStatus();
+  };
+
+  const handleFinderJoin = async () => {
+    setFinderJoining(true);
+    const res = await fetch("/api/hackathon/team-finder/join", { method: "POST" });
+    setFinderJoining(false);
+    if (res.ok) await loadFinderStatus();
+  };
+
+  const saveFinderPrefs = useCallback(async (prefs: string[]) => {
+    setFinderSaveMsg("กำลังบันทึก...");
+    const res = await fetch("/api/hackathon/team-finder/preferences", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ preferences: prefs }),
+    });
+    setFinderSaveMsg(res.ok ? "บันทึกแล้ว" : "บันทึกไม่สำเร็จ");
+    setTimeout(() => setFinderSaveMsg(""), 2000);
+  }, []);
+
+  const setFinderPref = (index: number, userId: string | null) => {
+    const next = [...finderPrefs];
+    if (userId === null) {
+      next.splice(index, 1);
+    } else {
+      next[index] = userId;
+    }
+    setFinderPrefs(next);
+    if (finderDebounceRef.current) clearTimeout(finderDebounceRef.current);
+    finderDebounceRef.current = setTimeout(() => saveFinderPrefs(next), 600);
+  };
+
+  const finderOptionsFor = (index: number): SimUser[] => {
+    const otherSelected = finderPrefs.filter((_, j) => j !== index);
+    return finderOthers
+      .filter((p) => !otherSelected.includes(p.id))
+      .map((p) => ({ id: p.id, name: p.name, preferences: [] }));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen relative flex items-center justify-center text-white">
@@ -216,6 +280,7 @@ export default function TeamMatchingPage() {
   }
 
   return (
+    <>
     <div className="min-h-screen relative overflow-hidden text-white font-[family-name:var(--font-mitr)]">
       <FractalGlassBackground />
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6">
@@ -233,7 +298,7 @@ export default function TeamMatchingPage() {
                 event closes, the system will create the strongest possible 3-5 person teams.
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <Button
                 asChild
                 variant="outline"
@@ -246,6 +311,12 @@ export default function TeamMatchingPage() {
                 className="bg-gradient-to-r from-[#5a7a94] to-[#4a6a84] text-white hover:from-[#6a9ac4] hover:to-[#5a8ab4]"
               >
                 <Link href="/hackathon/team">Team page</Link>
+              </Button>
+              <Button
+                onClick={openFinder}
+                className="bg-gradient-to-r from-[#3a5a6a] to-[#2a4a5a] border border-[#6a9ac4]/40 text-[#8abade] hover:from-[#4a6a7a] hover:to-[#3a5a6a] hover:text-white"
+              >
+                หาทีม
               </Button>
             </div>
           </div>
@@ -477,5 +548,65 @@ export default function TeamMatchingPage() {
         )}
       </div>
     </div>
+
+    {/* Find Team Modal */}
+    {finderOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setFinderOpen(false)} />
+        <div className="relative w-full max-w-md rounded-3xl border border-[#6a9ac4]/30 bg-[#0d1219] p-6 shadow-[0_0_40px_rgba(106,154,196,0.2)]">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-white">หาทีม</h2>
+            <button onClick={() => setFinderOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {!finderLoaded && (
+            <p className="text-sm text-slate-400 text-center py-6">กำลังโหลด...</p>
+          )}
+
+          {finderLoaded && !finderOptedIn && (
+            <div className="text-center py-4">
+              <p className="text-sm text-slate-300 mb-4">
+                เข้าร่วมเพื่อให้คนอื่นเห็นชื่อคุณและเลือกคนที่คุณอยากร่วมทีมด้วย
+              </p>
+              <p className="text-sm text-slate-500 mb-6">
+                {finderOthers.length} คนกำลังหาทีมอยู่
+              </p>
+              <Button
+                onClick={handleFinderJoin}
+                disabled={finderJoining}
+                className="bg-[#6a9ac4] hover:bg-[#8abade] text-white"
+              >
+                {finderJoining ? "กำลังเข้าร่วม..." : "เข้าร่วมหาทีม"}
+              </Button>
+            </div>
+          )}
+
+          {finderLoaded && finderOptedIn && (
+            <div>
+              <p className="text-xs text-slate-400 mb-4">
+                เลือกคนที่คุณอยากร่วมทีมด้วย (สูงสุด 5 คน, เรียงตามลำดับความต้องการ) — {finderOthers.length + 1} คนกำลังหาทีม
+              </p>
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <PreferenceCombobox
+                    key={i}
+                    value={finderPrefs[i] ?? null}
+                    onChange={(val) => setFinderPref(i, val)}
+                    options={finderOptionsFor(i)}
+                    placeholder={`อันดับ ${i + 1}...`}
+                  />
+                ))}
+              </div>
+              {finderSaveMsg && (
+                <p className="text-xs text-slate-400 mt-3 text-right">{finderSaveMsg}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
