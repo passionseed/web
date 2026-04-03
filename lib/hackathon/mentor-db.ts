@@ -92,14 +92,11 @@ export async function createMentorProfile(params: {
   });
   if (authError) {
     if (authError.code === "email_exists") {
-      // Auth user was created in a prior failed attempt — look it up
-      const { data: listData, error: listError } = await getClient().auth.admin.listUsers();
-      if (listError) throw listError;
-      const existing = listData.users.find(
-        (u) => u.email?.toLowerCase() === params.email.toLowerCase()
-      );
-      if (!existing) throw authError;
-      authUserId = existing.id;
+      // Auth user was created in a prior failed attempt — look it up by email
+      const { data: userData, error: userError } = await getClient()
+        .auth.admin.getUserByEmail(params.email.toLowerCase());
+      if (userError || !userData?.user) throw authError;
+      authUserId = userData.user.id;
     } else {
       throw authError;
     }
