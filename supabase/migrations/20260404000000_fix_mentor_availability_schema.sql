@@ -31,3 +31,5 @@ CREATE POLICY "Mentors manage own availability" ON public.mentor_availability
   FOR ALL USING (
     mentor_id IN (SELECT id FROM public.mentor_profiles WHERE user_id = auth.uid())
   );
+
+NOTIFY pgrst, 'reload schema';
