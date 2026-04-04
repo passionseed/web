@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, generateSessionToken, SESSION_COOKIE, SESSION_EXPIRY_DAYS } from "@/lib/hackathon/auth";
 import { findParticipantByEmail, createParticipant, createSession, getHackathonAdminClient } from "@/lib/hackathon/db";
 
-const SPECIAL_CAP = 25;
+const SPECIAL_CAP = 0;
 
 async function getSpecialCount() {
   const { count } = await getHackathonAdminClient()
