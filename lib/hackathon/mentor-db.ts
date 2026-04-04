@@ -66,7 +66,7 @@ export async function findMentorById(id: string): Promise<MentorProfile | null> 
   const { data } = await getClient()
     .from("mentor_profiles")
     .select(
-      "id, user_id, full_name, email, profession, institution, bio, photo_url, session_type, is_approved, created_at, updated_at"
+      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at"
     )
     .eq("id", id)
     .single();
@@ -123,7 +123,7 @@ export async function createMentorProfile(params: {
       { onConflict: "user_id" }
     )
     .select(
-      "id, user_id, full_name, email, profession, institution, bio, photo_url, session_type, is_approved, created_at, updated_at"
+      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at"
     )
     .single();
   if (error) {
@@ -149,7 +149,7 @@ export async function updateMentorProfile(
     .update(updates)
     .eq("id", id)
     .select(
-      "id, user_id, full_name, email, profession, institution, bio, photo_url, session_type, is_approved, created_at, updated_at"
+      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at"
     )
     .single();
   if (error) throw error;
@@ -174,13 +174,86 @@ export async function getMentorBySessionToken(token: string): Promise<MentorProf
   const { data } = await getClient()
     .from("mentor_auth_sessions")
     .select(
-      "expires_at, mentor_profiles(id, user_id, full_name, email, profession, institution, bio, photo_url, session_type, is_approved, created_at, updated_at)"
+      "expires_at, mentor_profiles(id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at)"
     )
     .eq("token", token)
     .gt("expires_at", now)
     .single();
   if (!data) return null;
   return data.mentor_profiles as unknown as MentorProfile;
+}
+
+export async function getMentorByLineUserId(lineUserId: string): Promise<MentorProfile | null> {
+  const { data } = await getClient()
+    .from("mentor_profiles")
+    .select("id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at")
+    .eq("line_user_id", lineUserId)
+    .single();
+  return (data as MentorProfile) ?? null;
+}
+
+export async function setMentorLineUserId(mentorId: string, lineUserId: string): Promise<void> {
+  const { error } = await getClient()
+    .from("mentor_profiles")
+    .update({ line_user_id: lineUserId })
+    .eq("id", mentorId);
+  if (error) throw error;
+}
+
+export async function storeLineConnectCode(lineUserId: string, code: string): Promise<void> {
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  // Delete any previous code for this Line user first
+  await getClient()
+    .from("mentor_line_connect_codes")
+    .delete()
+    .eq("line_user_id", lineUserId);
+  const { error } = await getClient()
+    .from("mentor_line_connect_codes")
+    .insert({ code, line_user_id: lineUserId, expires_at: expiresAt });
+  if (error) throw error;
+}
+
+export async function consumeLineConnectCode(code: string): Promise<string | null> {
+  const now = new Date().toISOString();
+  const { data } = await getClient()
+    .from("mentor_line_connect_codes")
+    .select("line_user_id")
+    .eq("code", code.toUpperCase().trim())
+    .gt("expires_at", now)
+    .single();
+  if (!data) return null;
+  // Delete after use (one-time)
+  // NOTE: There is a theoretical race condition where two concurrent submissions
+  // of the same code could both pass the SELECT before either deletes.
+  // In practice this is near-impossible (human users, 6-char code, 10min window).
+  await getClient()
+    .from("mentor_line_connect_codes")
+    .delete()
+    .eq("code", code.toUpperCase().trim());
+  return data.line_user_id;
+}
+
+export async function createBooking(params: {
+  mentor_id: string;
+  student_id: string | null;
+  slot_datetime: string;
+  duration_minutes?: number;
+  notes?: string;
+}): Promise<MentorBooking> {
+  const { data, error } = await getClient()
+    .from("mentor_bookings")
+    .insert({
+      mentor_id: params.mentor_id,
+      student_id: params.student_id ?? null,
+      slot_datetime: params.slot_datetime,
+      duration_minutes: params.duration_minutes ?? 30,
+      status: "pending",
+      notes: params.notes ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as MentorBooking;
 }
 
 export async function deleteMentorSession(token: string): Promise<void> {

@@ -10,6 +10,7 @@ export type MentorProfile = {
   institution: string;
   bio: string;
   photo_url: string | null;
+  line_user_id: string | null;
   session_type: MentorSessionType;
   is_approved: boolean;
   created_at: string;
