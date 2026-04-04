@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, Users, Clock, RefreshCw, Sparkles, X } from "lucide-react";
+import { Copy, Check, Users, Clock, RefreshCw, Sparkles, X, Link } from "lucide-react";
 import FractalGlassBackground from "@/components/hackathon/ClarityGlassBackground";
 import { PartyIcon, CrownIcon, RocketIcon, KeyIcon, FindIcon } from "@/components/hackathon/TeamIcons";
 import { PreferenceCombobox } from "@/components/admin/team-matching/PreferenceCombobox";
@@ -55,6 +55,14 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
     const router = useRouter();
 
     // Find Team modal state
+    // Invite link state
+    const [inviteToken, setInviteToken] = useState<string | null>(null);
+    const [inviteEnabled, setInviteEnabled] = useState(false);
+    const [inviteCopied, setInviteCopied] = useState(false);
+    const [inviteLoading, setInviteLoading] = useState(false);
+    const [isInvited, setIsInvited] = useState(false);
+    const [inviteAlreadyUsed, setInviteAlreadyUsed] = useState(false);
+
     const [finderOpen, setFinderOpen] = useState(false);
     const [finderLoaded, setFinderLoaded] = useState(false);
     const [finderOptedIn, setFinderOptedIn] = useState(false);
@@ -130,6 +138,16 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         }
     }, []);
 
+    const loadInviteStatus = useCallback(async () => {
+        const res = await fetch("/api/hackathon/team/invite/status");
+        if (!res.ok) return;
+        const data = await res.json();
+        setInviteToken(data.invite?.token ?? null);
+        setInviteEnabled(data.enabled ?? false);
+        setIsInvited(data.isInvited ?? false);
+        setInviteAlreadyUsed(data.alreadyUsed ?? false);
+    }, []);
+
     const checkMatchingStatus = useCallback(async () => {
         const res = await fetch("/api/hackathon/team/match/status");
         if (res.ok) {
@@ -183,6 +201,11 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         const interval = setInterval(refreshTeam, 5000);
         return () => clearInterval(interval);
     }, [team, refreshTeam]);
+
+    useEffect(() => {
+        if (!team) return;
+        loadInviteStatus();
+    }, [team, loadInviteStatus]);
 
     useEffect(() => {
         if (!team) return;
@@ -267,6 +290,22 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
             const data = await res.json();
             setError(data.error || "ไม่สามารถออกจากทีมได้");
         }
+    };
+
+    const handleCreateInvite = async () => {
+        setInviteLoading(true);
+        const res = await fetch("/api/hackathon/team/invite/create", { method: "POST" });
+        setInviteLoading(false);
+        if (!res.ok) { const d = await res.json(); setError(d.error || "สร้างลิงก์ไม่สำเร็จ"); return; }
+        const data = await res.json();
+        setInviteToken(data.token);
+    };
+
+    const copyInviteLink = () => {
+        if (!inviteToken) return;
+        navigator.clipboard.writeText(`${window.location.origin}/hackathon/register/invite/${inviteToken}`);
+        setInviteCopied(true);
+        setTimeout(() => setInviteCopied(false), 2000);
     };
 
     const handleBackToHome = () => {
@@ -454,14 +493,46 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                         );
                     })()}
 
-                    {/* Leave Team Button */}
-                    <button
-                        onClick={handleLeaveTeam}
-                        disabled={loading}
-                        className="w-full bg-gradient-to-r from-[#4a3a3a] to-[#3a2a2a] hover:from-[#6a3a3a] hover:to-[#5a2a2a] text-gray-300 hover:text-red-300 font-medium py-3 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-red-500/20 hover:border-red-400/50 shadow-[0_0_15px_rgba(220,38,38,0.15)] hover:shadow-[0_0_25px_rgba(239,68,68,0.3)]"
-                    >
-                        {loading ? "กำลังออกจากทีม..." : "ออกจากทีม"}
-                    </button>
+                    {/* Invite Link (owner only, team < 5, feature enabled, not already used) */}
+                    {isOwner && inviteEnabled && team.members.length < 5 && !inviteAlreadyUsed && (
+                        <div className="bg-gradient-to-br from-[#0d1219]/90 to-[#121c29]/80 border border-[#4a6b82]/15 rounded-2xl p-5 shadow-[0_0_20px_rgba(74,107,130,0.1)]">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Link className="w-4 h-4 text-[#7aa4c4]" />
+                                <span className="font-medium text-[#7aa4c4] text-sm">ลิงก์เชิญสมาชิก</span>
+                                <span className="text-xs text-gray-500 ml-auto">ใช้ได้ 1 ครั้ง</span>
+                            </div>
+                            {!inviteToken ? (
+                                <button
+                                    onClick={handleCreateInvite}
+                                    disabled={inviteLoading}
+                                    className="w-full py-2.5 rounded-xl text-sm font-medium transition-all duration-300 border border-[#5a7a94]/40 hover:border-[#7aa4c4]/60 text-[#7aa4c4] hover:text-white"
+                                    style={{ background: "rgba(74,107,130,0.1)" }}
+                                >
+                                    {inviteLoading ? "กำลังสร้าง..." : "สร้างลิงก์เชิญ"}
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 rounded-xl px-3 py-2 text-xs font-mono truncate" style={{ background: "rgba(10,20,30,0.8)", border: "1px solid rgba(74,107,130,0.3)", color: "#4A7090" }}>
+                                        {`${typeof window !== "undefined" ? window.location.origin : ""}/hackathon/register/invite/${inviteToken}`}
+                                    </div>
+                                    <button onClick={copyInviteLink} className="flex-shrink-0 p-2 rounded-lg border border-[#5a7a94]/30 hover:border-[#7aa4c4]/60 text-gray-300 hover:text-[#7aa4c4] transition-colors">
+                                        {inviteCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Leave Team Button — hidden for invited members */}
+                    {!isInvited && (
+                        <button
+                            onClick={handleLeaveTeam}
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-[#4a3a3a] to-[#3a2a2a] hover:from-[#6a3a3a] hover:to-[#5a2a2a] text-gray-300 hover:text-red-300 font-medium py-3 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-red-500/20 hover:border-red-400/50 shadow-[0_0_15px_rgba(220,38,38,0.15)] hover:shadow-[0_0_25px_rgba(239,68,68,0.3)]"
+                        >
+                            {loading ? "กำลังออกจากทีม..." : "ออกจากทีม"}
+                        </button>
+                    )}
                 </div>
             </div>
         );

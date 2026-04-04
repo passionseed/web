@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { RefreshCw, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TeamResultsPanel } from "@/components/admin/team-matching/TeamResultsPanel";
 import { matchTeams } from "@/components/admin/team-matching/matchTeams";
@@ -14,6 +14,25 @@ type Participant = {
 };
 
 export default function TeamFinderAdminPage() {
+  const [inviteEnabled, setInviteEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/hackathon/invite-toggle")
+      .then((r) => r.json())
+      .then((d) => setInviteEnabled(d.enabled ?? false))
+      .catch(() => {});
+  }, []);
+
+  const toggleInvite = async () => {
+    const next = !inviteEnabled;
+    setInviteEnabled(next);
+    await fetch("/api/admin/hackathon/invite-toggle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: next }),
+    });
+  };
+
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(false);
   const [teams, setTeams] = useState<Team[] | null>(null);
@@ -72,6 +91,20 @@ export default function TeamFinderAdminPage() {
 
   return (
     <div>
+      {/* Invite feature toggle */}
+      {inviteEnabled !== null && (
+        <div className="flex items-center justify-between mb-4 px-4 py-3 rounded-xl border" style={{ background: "rgba(20,20,20,0.8)", borderColor: inviteEnabled ? "rgba(74,222,128,0.3)" : "rgba(100,100,100,0.2)" }}>
+          <div>
+            <p className="text-sm font-medium text-white">ลิงก์เชิญสมาชิกทีม</p>
+            <p className="text-xs text-muted-foreground">อนุญาตให้หัวหน้าทีมสร้างลิงก์เชิญสมาชิกคนที่ 6</p>
+          </div>
+          <button onClick={toggleInvite} className="flex items-center gap-2 text-sm transition-colors" style={{ color: inviteEnabled ? "#4ade80" : "#6b7280" }}>
+            {inviteEnabled ? <ToggleRight className="h-6 w-6" /> : <ToggleLeft className="h-6 w-6" />}
+            {inviteEnabled ? "เปิดอยู่" : "ปิดอยู่"}
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center gap-4 mb-6">
         <Button
           onClick={fetchParticipants}

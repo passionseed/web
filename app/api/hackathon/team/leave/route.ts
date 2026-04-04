@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE } from "@/lib/hackathon/auth";
 import { getSessionParticipant } from "@/lib/hackathon/db";
+import { isInvitedMember } from "@/lib/hackathon/invites";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 
@@ -15,6 +16,11 @@ export async function POST() {
     const participant = await getSessionParticipant(token);
     if (!participant) {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    const invited = await isInvitedMember(participant.id);
+    if (invited) {
+      return NextResponse.json({ error: "ไม่สามารถออกจากทีมได้ เนื่องจากคุณเข้าร่วมผ่านลิงก์เชิญ" }, { status: 403 });
     }
 
     const supabase = await createClient();
