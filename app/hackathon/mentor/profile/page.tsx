@@ -42,6 +42,7 @@ export default function MentorProfilePage() {
     instagram_url: "",
     linkedin_url: "",
     website_url: "",
+    max_hours_per_week: "4",
   });
 
   const inputStyle = (name: string): React.CSSProperties => ({
@@ -86,6 +87,7 @@ export default function MentorProfilePage() {
           instagram_url: m.instagram_url ?? "",
           linkedin_url: m.linkedin_url ?? "",
           website_url: m.website_url ?? "",
+          max_hours_per_week: String(m.max_hours_per_week ?? 4),
         });
       })
       .catch(() => router.replace("/hackathon/mentor/login"));
@@ -168,7 +170,12 @@ export default function MentorProfilePage() {
       const profileRes = await fetch("/api/hackathon/mentor/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          max_hours_per_week: form.max_hours_per_week
+            ? parseFloat(form.max_hours_per_week)
+            : null,
+        }),
       });
       if (!profileRes.ok) {
         const d = await profileRes.json();
@@ -359,6 +366,40 @@ export default function MentorProfilePage() {
               Weekly Availability
             </h2>
             <MentorAvailabilityGrid slots={slots} onChange={setSlots} />
+          </div>
+
+          {/* Weekly commitment */}
+          <div
+            className="rounded-3xl p-8"
+            style={{
+              background: "linear-gradient(135deg, rgba(13,18,25,0.9), rgba(18,28,41,0.8))",
+              border: "1px solid rgba(74,107,130,0.3)",
+            }}
+          >
+            <h2 className="text-lg font-medium text-white mb-1 font-[family-name:var(--font-bai-jamjuree)]">
+              Weekly Commitment
+            </h2>
+            <p className="text-xs mb-5 font-[family-name:var(--font-mitr)]" style={{ color: "#5a7a94" }}>
+              Maximum hours you can dedicate to mentoring per week
+            </p>
+            <div className="flex items-center gap-4">
+              <input
+                name="max_hours_per_week"
+                type="number"
+                min="0.5"
+                max="40"
+                step="0.5"
+                value={form.max_hours_per_week}
+                onChange={handleChange}
+                onFocus={() => setFocused("max_hours_per_week")}
+                onBlur={() => setFocused(null)}
+                style={{ ...inputStyle("max_hours_per_week"), width: "120px" }}
+                className="font-[family-name:var(--font-mitr)]"
+              />
+              <span className="text-sm font-[family-name:var(--font-mitr)]" style={{ color: "#7fa8c8" }}>
+                hours / week
+              </span>
+            </div>
           </div>
 
           {/* Line Notification */}

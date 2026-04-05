@@ -14,6 +14,7 @@ export type MentorProfile = {
   instagram_url: string | null;
   linkedin_url: string | null;
   website_url: string | null;
+  max_hours_per_week: number | null;
   session_type: MentorSessionType;
   is_approved: boolean;
   created_at: string;
