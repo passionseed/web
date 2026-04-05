@@ -291,7 +291,15 @@ export default function MentorDashboardPage() {
             ) : (
               <div className="space-y-3">
                 {filteredBookings.map((b) => (
-                  <MentorBookingCard key={b.id} booking={b} />
+                  <MentorBookingCard
+                    key={b.id}
+                    booking={b}
+                    onUpdate={(updated) =>
+                      setBookings((prev) =>
+                        prev.map((x) => (x.id === updated.id ? updated : x))
+                      )
+                    }
+                  />
                 ))}
               </div>
             )}
