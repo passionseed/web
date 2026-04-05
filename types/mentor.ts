@@ -11,6 +11,9 @@ export type MentorProfile = {
   bio: string;
   photo_url: string | null;
   line_user_id: string | null;
+  instagram_url: string | null;
+  linkedin_url: string | null;
+  website_url: string | null;
   session_type: MentorSessionType;
   is_approved: boolean;
   created_at: string;

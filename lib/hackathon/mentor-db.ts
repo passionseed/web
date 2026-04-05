@@ -66,7 +66,7 @@ export async function findMentorById(id: string): Promise<MentorProfile | null> 
   const { data } = await getClient()
     .from("mentor_profiles")
     .select(
-      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at"
+      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, instagram_url, linkedin_url, website_url, session_type, is_approved, created_at, updated_at"
     )
     .eq("id", id)
     .single();
@@ -123,7 +123,7 @@ export async function createMentorProfile(params: {
       { onConflict: "user_id" }
     )
     .select(
-      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at"
+      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, instagram_url, linkedin_url, website_url, session_type, is_approved, created_at, updated_at"
     )
     .single();
   if (error) {
@@ -149,7 +149,7 @@ export async function updateMentorProfile(
     .update(updates)
     .eq("id", id)
     .select(
-      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at"
+      "id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, instagram_url, linkedin_url, website_url, session_type, is_approved, created_at, updated_at"
     )
     .single();
   if (error) throw error;
@@ -174,7 +174,7 @@ export async function getMentorBySessionToken(token: string): Promise<MentorProf
   const { data } = await getClient()
     .from("mentor_auth_sessions")
     .select(
-      "expires_at, mentor_profiles(id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at)"
+      "expires_at, mentor_profiles(id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, instagram_url, linkedin_url, website_url, session_type, is_approved, created_at, updated_at)"
     )
     .eq("token", token)
     .gt("expires_at", now)
@@ -186,7 +186,7 @@ export async function getMentorBySessionToken(token: string): Promise<MentorProf
 export async function getMentorByLineUserId(lineUserId: string): Promise<MentorProfile | null> {
   const { data } = await getClient()
     .from("mentor_profiles")
-    .select("id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at, updated_at")
+    .select("id, user_id, full_name, email, profession, institution, bio, photo_url, line_user_id, instagram_url, linkedin_url, website_url, session_type, is_approved, created_at, updated_at")
     .eq("line_user_id", lineUserId)
     .single();
   return (data as MentorProfile) ?? null;

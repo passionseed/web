@@ -28,7 +28,7 @@ export async function GET() {
 
   const { data, error } = await getHackathonServiceClient()
     .from("mentor_profiles")
-    .select("id, full_name, email, profession, institution, bio, photo_url, line_user_id, session_type, is_approved, created_at")
+    .select("id, full_name, email, profession, institution, bio, photo_url, line_user_id, instagram_url, linkedin_url, website_url, session_type, is_approved, created_at")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: "Failed to fetch mentors" }, { status: 500 });
