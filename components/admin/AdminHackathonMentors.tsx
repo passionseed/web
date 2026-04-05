@@ -164,12 +164,12 @@ function MentorRow({
         <p className="text-xs text-slate-500 capitalize">{mentor.session_type} session</p>
       </div>
 
-      <div className="shrink-0">
+      <div className="shrink-0 flex items-center gap-2">
         {mentor.is_approved ? (
           <Button
             variant="outline"
             size="sm"
-            disabled={busy}
+            disabled={busy || removing}
             onClick={onRevoke}
             className="text-red-400 border-red-400/30 hover:bg-red-400/10 hover:text-red-300"
           >
@@ -178,13 +178,22 @@ function MentorRow({
         ) : (
           <Button
             size="sm"
-            disabled={busy}
+            disabled={busy || removing}
             onClick={onApprove}
             className="bg-emerald-600 hover:bg-emerald-500 text-white"
           >
             {busy ? "..." : "Approve"}
           </Button>
         )}
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy || removing}
+          onClick={onRemove}
+          className="text-slate-500 hover:text-red-400 hover:bg-red-400/10"
+        >
+          {removing ? "..." : "Remove"}
+        </Button>
       </div>
     </div>
   );
