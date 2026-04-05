@@ -18,6 +18,7 @@ import { AdminHackathonTeams } from "./AdminHackathonTeams";
 import { AdminHackathonAnalytics } from "./AdminHackathonAnalytics";
 import { AdminHackathonQuestionnaire } from "./AdminHackathonQuestionnaire";
 import { AdminHackathonMatching } from "./AdminHackathonMatching";
+import { AdminHackathonMentors } from "./AdminHackathonMentors";
 import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
 import { AdminEventTracker } from "./AdminEventTracker";
 import {
@@ -135,6 +136,7 @@ export function AdminDashboard() {
                   <TabsTrigger value="matching">Matching</TabsTrigger>
                   <TabsTrigger value="questionnaire">Questionnaire</TabsTrigger>
                   <TabsTrigger value="analytics">Page Analytics</TabsTrigger>
+                  <TabsTrigger value="mentors">Mentors</TabsTrigger>
                 </TabsList>
                 <TabsContent value="participants">
                   <AdminHackathonParticipants key={`hackathon-${refreshKey}`} />
@@ -150,6 +152,9 @@ export function AdminDashboard() {
                 </TabsContent>
                 <TabsContent value="analytics">
                   <AdminHackathonAnalytics />
+                </TabsContent>
+                <TabsContent value="mentors">
+                  <AdminHackathonMentors key={`mentors-${refreshKey}`} />
                 </TabsContent>
               </Tabs>
             </CardContent>
