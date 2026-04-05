@@ -39,6 +39,9 @@ export default function MentorProfilePage() {
     institution: "",
     bio: "",
     session_type: "healthcare" as MentorSessionType,
+    instagram_url: "",
+    linkedin_url: "",
+    website_url: "",
   });
 
   const inputStyle = (name: string): React.CSSProperties => ({
@@ -80,6 +83,9 @@ export default function MentorProfilePage() {
           institution: m.institution,
           bio: m.bio,
           session_type: m.session_type,
+          instagram_url: m.instagram_url ?? "",
+          linkedin_url: m.linkedin_url ?? "",
+          website_url: m.website_url ?? "",
         });
       })
       .catch(() => router.replace("/hackathon/mentor/login"));
@@ -437,6 +443,47 @@ export default function MentorProfilePage() {
                 </div>
               </>
             )}
+          </div>
+
+          {/* Social Links */}
+          <div
+            className="rounded-3xl p-8"
+            style={{
+              background: "linear-gradient(135deg, rgba(13,18,25,0.9), rgba(18,28,41,0.8))",
+              border: "1px solid rgba(74,107,130,0.3)",
+            }}
+          >
+            <h2 className="text-lg font-medium text-white mb-5 font-[family-name:var(--font-bai-jamjuree)]">
+              Social Links
+            </h2>
+            <div className="space-y-4">
+              {([
+                { name: "instagram_url", label: "Instagram", placeholder: "https://instagram.com/yourhandle", icon: "📸" },
+                { name: "linkedin_url", label: "LinkedIn", placeholder: "https://linkedin.com/in/yourprofile", icon: "💼" },
+                { name: "website_url", label: "Website / Portfolio", placeholder: "https://yourwebsite.com", icon: "🌐" },
+              ] as const).map((f) => (
+                <div key={f.name}>
+                  <label
+                    className="block text-xs mb-1.5 font-[family-name:var(--font-mitr)]"
+                    style={{ color: "#5a7a94" }}
+                  >
+                    <span className="mr-1.5">{f.icon}</span>
+                    {f.label}
+                  </label>
+                  <input
+                    name={f.name}
+                    type="url"
+                    value={form[f.name]}
+                    onChange={handleChange}
+                    onFocus={() => setFocused(f.name)}
+                    onBlur={() => setFocused(null)}
+                    placeholder={f.placeholder}
+                    style={inputStyle(f.name)}
+                    className="font-[family-name:var(--font-mitr)]"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Feedback */}

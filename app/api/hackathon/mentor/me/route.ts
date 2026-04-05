@@ -31,6 +31,9 @@ export async function PATCH(req: NextRequest) {
       "bio",
       "photo_url",
       "session_type",
+      "instagram_url",
+      "linkedin_url",
+      "website_url",
     ] as const;
     const updates: Record<string, unknown> = {};
     for (const key of allowed) {
