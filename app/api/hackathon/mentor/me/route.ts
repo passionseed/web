@@ -34,6 +34,7 @@ export async function PATCH(req: NextRequest) {
       "instagram_url",
       "linkedin_url",
       "website_url",
+      "max_hours_per_week",
     ] as const;
     const updates: Record<string, unknown> = {};
     for (const key of allowed) {
