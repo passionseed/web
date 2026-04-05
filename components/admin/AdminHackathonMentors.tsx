@@ -9,6 +9,7 @@ export function AdminHackathonMentors() {
   const [mentors, setMentors] = useState<MentorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [removeLoading, setRemoveLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   async function fetchMentors() {
@@ -23,6 +24,14 @@ export function AdminHackathonMentors() {
   useEffect(() => {
     fetchMentors();
   }, []);
+
+  async function removeMentor(id: string, name: string) {
+    if (!confirm(`Remove ${name}? This will delete their profile, sessions, availability, and bookings.`)) return;
+    setRemoveLoading(id);
+    const res = await fetch(`/api/admin/hackathon/mentors/${id}`, { method: "DELETE" });
+    if (res.ok) setMentors((prev) => prev.filter((m) => m.id !== id));
+    setRemoveLoading(null);
+  }
 
   async function setApproval(id: string, approve: boolean) {
     setActionLoading(id);
@@ -71,8 +80,10 @@ export function AdminHackathonMentors() {
               key={mentor.id}
               mentor={mentor}
               actionLoading={actionLoading}
+              removeLoading={removeLoading}
               onApprove={() => setApproval(mentor.id, true)}
               onRevoke={() => setApproval(mentor.id, false)}
+              onRemove={() => removeMentor(mentor.id, mentor.full_name)}
             />
           ))}
         </div>
@@ -86,8 +97,10 @@ export function AdminHackathonMentors() {
               key={mentor.id}
               mentor={mentor}
               actionLoading={actionLoading}
+              removeLoading={removeLoading}
               onApprove={() => setApproval(mentor.id, true)}
               onRevoke={() => setApproval(mentor.id, false)}
+              onRemove={() => removeMentor(mentor.id, mentor.full_name)}
             />
           ))}
         </div>
@@ -103,15 +116,20 @@ export function AdminHackathonMentors() {
 function MentorRow({
   mentor,
   actionLoading,
+  removeLoading,
   onApprove,
   onRevoke,
+  onRemove,
 }: {
   mentor: MentorProfile;
   actionLoading: string | null;
+  removeLoading: string | null;
   onApprove: () => void;
   onRevoke: () => void;
+  onRemove: () => void;
 }) {
   const busy = actionLoading === mentor.id;
+  const removing = removeLoading === mentor.id;
 
   return (
     <div className="flex items-center gap-4 rounded-lg border border-slate-700/50 bg-slate-800/30 px-4 py-3">
