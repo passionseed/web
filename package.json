@@ -40,6 +40,7 @@
     "@google/genai": "^0.14.1",
     "@hookform/resolvers": "^3.10.0",
     "@icons-pack/react-simple-icons": "^12.9.0",
+    "@line/bot-sdk": "^11.0.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",

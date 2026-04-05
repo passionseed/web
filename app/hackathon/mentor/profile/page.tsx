@@ -28,6 +28,10 @@ export default function MentorProfilePage() {
   const [photoLoading, setPhotoLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [lineCode, setLineCode] = useState("");
+  const [lineConnecting, setLineConnecting] = useState(false);
+  const [lineSuccess, setLineSuccess] = useState(false);
+  const [lineError, setLineError] = useState("");
   const [focused, setFocused] = useState<string | null>(null);
   const [form, setForm] = useState({
     full_name: "",
@@ -122,6 +126,30 @@ export default function MentorProfilePage() {
       setError("Photo upload failed");
     } finally {
       setPhotoLoading(false);
+    }
+  };
+
+  const handleConnectLine = async () => {
+    if (!lineCode.trim()) return;
+    setLineConnecting(true);
+    setLineError("");
+    try {
+      const res = await fetch("/api/hackathon/mentor/line-connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: lineCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "เชื่อมต่อไม่สำเร็จ");
+      setLineSuccess(true);
+      setLineCode("");
+      const meRes = await fetch("/api/hackathon/mentor/me");
+      const meData = await meRes.json();
+      if (meData.mentor) setMentor(meData.mentor);
+    } catch (err) {
+      setLineError(err instanceof Error ? err.message : "เชื่อมต่อไม่สำเร็จ");
+    } finally {
+      setLineConnecting(false);
     }
   };
 
@@ -325,6 +353,90 @@ export default function MentorProfilePage() {
               Weekly Availability
             </h2>
             <MentorAvailabilityGrid slots={slots} onChange={setSlots} />
+          </div>
+
+          {/* Line Notification */}
+          <div
+            className="rounded-3xl p-8"
+            style={{
+              background: "linear-gradient(135deg, rgba(13,18,25,0.9), rgba(18,28,41,0.8))",
+              border: "1px solid rgba(74,107,130,0.3)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+              <span style={{ fontSize: "1.25rem" }}>💬</span>
+              <h2 className="text-lg font-medium text-white font-[family-name:var(--font-bai-jamjuree)]">
+                Line Notification
+              </h2>
+            </div>
+
+            {mentor?.line_user_id ? (
+              <div className="text-sm font-[family-name:var(--font-mitr)]" style={{ color: "#4ade80" }}>
+                ✓ เชื่อมต่อ Line แล้ว
+              </div>
+            ) : (
+              <>
+                <p
+                  className="text-sm font-[family-name:var(--font-mitr)] mb-4"
+                  style={{ color: "#7fa8c8", lineHeight: 1.8 }}
+                >
+                  1. เพิ่ม <strong style={{ color: "#C0D8F0" }}>@PassionSeed</strong> เป็นเพื่อนใน Line<br />
+                  2. Bot จะส่งโค้ดให้คุณทางแชท<br />
+                  3. กรอกโค้ดนั้นด้านล่าง
+                </p>
+
+                {lineSuccess && (
+                  <p className="text-sm font-[family-name:var(--font-mitr)] mb-3" style={{ color: "#4ade80" }}>
+                    ✓ เชื่อมต่อสำเร็จ!
+                  </p>
+                )}
+                {lineError && (
+                  <p className="text-sm font-[family-name:var(--font-mitr)] mb-3" style={{ color: "#f87171" }}>
+                    {lineError}
+                  </p>
+                )}
+
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <input
+                    value={lineCode}
+                    onChange={(e) => setLineCode(e.target.value.toUpperCase())}
+                    placeholder="โค้ด 6 หลัก เช่น A3F9B2"
+                    maxLength={6}
+                    className="font-[family-name:var(--font-mitr)]"
+                    style={{
+                      flex: 1,
+                      borderRadius: "0.75rem",
+                      padding: "0.6rem 0.875rem",
+                      background: "#0d1219",
+                      border: "1px solid rgba(74,107,130,0.3)",
+                      color: "#C0D8F0",
+                      fontSize: "0.875rem",
+                      letterSpacing: "0.1em",
+                      outline: "none",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleConnectLine}
+                    disabled={lineConnecting || lineCode.length < 6}
+                    className="font-[family-name:var(--font-mitr)]"
+                    style={{
+                      padding: "0.6rem 1.25rem",
+                      borderRadius: "0.75rem",
+                      background: "rgba(0,195,0,0.15)",
+                      border: "1px solid rgba(0,195,0,0.3)",
+                      color: "#4ade80",
+                      cursor: lineConnecting || lineCode.length < 6 ? "not-allowed" : "pointer",
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                      opacity: lineCode.length < 6 ? 0.5 : 1,
+                    }}
+                  >
+                    {lineConnecting ? "..." : "เชื่อมต่อ"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Feedback */}
