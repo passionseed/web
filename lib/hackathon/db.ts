@@ -197,6 +197,30 @@ export async function joinTeam(lobbyCode: string, participantId: string): Promis
     .single();
   if (findError || !team) throw new Error("Invalid lobby code");
 
+  // Fetch leader and joiner tracks to enforce same-track rule
+  const [{ data: leader }, { data: joiner }] = await Promise.all([
+    supabase
+      .from("hackathon_participants")
+      .select("track")
+      .eq("id", team.owner_id)
+      .single(),
+    supabase
+      .from("hackathon_participants")
+      .select("track")
+      .eq("id", participantId)
+      .single(),
+  ]);
+
+  if (!leader || !joiner) throw new Error("Could not verify participant tracks");
+
+  const leaderIsHighschool = leader.track.includes("มัธยม");
+  const joinerIsHighschool = joiner.track.includes("มัธยม");
+
+  if (leaderIsHighschool !== joinerIsHighschool) {
+    const teamType = leaderIsHighschool ? "มัธยม" : "มหาวิทยาลัย";
+    throw new Error(`ทีมนี้รับเฉพาะผู้เข้าร่วมระดับ${teamType} เท่านั้น`);
+  }
+
   const { error: joinError } = await supabase
     .from("hackathon_team_members")
     .insert({ team_id: team.id, participant_id: participantId });
