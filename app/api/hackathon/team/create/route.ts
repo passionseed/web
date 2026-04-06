@@ -3,7 +3,12 @@ import { SESSION_COOKIE } from "@/lib/hackathon/auth";
 import { getSessionParticipant, createTeam } from "@/lib/hackathon/db";
 import { cookies } from "next/headers";
 
+const TEAM_OPERATIONS_LOCKED = true;
+
 export async function POST(req: NextRequest) {
+  if (TEAM_OPERATIONS_LOCKED) {
+    return NextResponse.json({ error: "การสร้างทีมถูกปิดชั่วคราว" }, { status: 403 });
+  }
     try {
         const cookieStore = await cookies();
         const token = cookieStore.get(SESSION_COOKIE)?.value;
