@@ -4,7 +4,12 @@ import { getSessionParticipant } from "@/lib/hackathon/db";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 
+const TEAM_OPERATIONS_LOCKED = true;
+
 export async function POST() {
+  if (TEAM_OPERATIONS_LOCKED) {
+    return NextResponse.json({ error: "การจับคู่ทีมถูกปิดชั่วคราว" }, { status: 403 });
+  }
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE)?.value;
