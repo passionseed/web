@@ -12,6 +12,4 @@ ALTER TABLE public.hackathon_phase_activity_assessments
   ADD CONSTRAINT hackathon_phase_activity_assessments_activity_id_display_order_key
   UNIQUE (activity_id, display_order);
 
--- Add index on (activity_id, display_order)
-CREATE INDEX hackathon_phase_activity_assessments_activity_id_display_order_idx
-  ON public.hackathon_phase_activity_assessments (activity_id, display_order);
+-- Index is created implicitly by the unique constraint above
