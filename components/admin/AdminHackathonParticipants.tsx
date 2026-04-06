@@ -172,6 +172,16 @@ export function AdminHackathonParticipants() {
         .filter((p) => p.team && !p.is_in_waitlist)
         .map((p) => p.team!.id)
     ).size,
+    uniTeams: new Set(
+      participants
+        .filter((p) => p.team && !p.is_in_waitlist && !p.track.includes("มัธยม"))
+        .map((p) => p.team!.id)
+    ).size,
+    highschoolTeams: new Set(
+      participants
+        .filter((p) => p.team && !p.is_in_waitlist && p.track.includes("มัธยม"))
+        .map((p) => p.team!.id)
+    ).size,
   };
 
   // Generate chart data based on selected type
@@ -233,7 +243,7 @@ export function AdminHackathonParticipants() {
   return (
     <div className="space-y-4">
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -287,6 +297,32 @@ export function AdminHackathonParticipants() {
             <div className="text-2xl font-bold">{stats.teamCount}</div>
             <p className="text-xs text-muted-foreground">
               Avg {stats.teamCount > 0 ? (stats.withTeam / stats.teamCount).toFixed(1) : 0} per team
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Uni Teams</CardTitle>
+            <UsersRound className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.uniTeams}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.teamCount > 0 ? ((stats.uniTeams / stats.teamCount) * 100).toFixed(1) : 0}% of teams
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Highschool Teams</CardTitle>
+            <UsersRound className="h-4 w-4 text-pink-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.highschoolTeams}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.teamCount > 0 ? ((stats.highschoolTeams / stats.teamCount) * 100).toFixed(1) : 0}% of teams
             </p>
           </CardContent>
         </Card>
