@@ -9,30 +9,43 @@ function generateConnectCode(): string {
 
 export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-line-signature");
+  console.log("[line-webhook] received, signature:", signature ? "present" : "missing");
+
   if (!signature) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
   const body = await req.text();
+  console.log("[line-webhook] body:", body.slice(0, 200));
 
-  if (!validateLineSignature(body, signature)) {
+  let signatureValid = false;
+  try {
+    signatureValid = validateLineSignature(body, signature);
+  } catch (err) {
+    console.error("[line-webhook] signature validation threw:", err);
+    return NextResponse.json({ error: "Signature validation error" }, { status: 500 });
+  }
+
+  if (!signatureValid) {
+    console.error("[line-webhook] invalid signature");
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
   const payload = JSON.parse(body);
+  console.log("[line-webhook] events:", payload.events?.map((e: { type: string }) => e.type));
 
   for (const event of payload.events ?? []) {
     if (event.type === "follow" && event.source?.userId) {
       const lineUserId: string = event.source.userId;
       const code = generateConnectCode();
+      console.log("[line-webhook] follow event, userId:", lineUserId, "code:", code);
 
       try {
         await storeLineConnectCode(lineUserId, code);
         await sendLineConnectCode(lineUserId, code);
+        console.log("[line-webhook] code sent successfully");
       } catch (err) {
-        console.error("Line connect code error:", err);
-        // Don't fail the webhook response — Line will retry if we return non-200
+        console.error("[line-webhook] connect code error:", err);
       }
     }
-    // Ignore all other event types (message, unfollow, etc.)
   }
 
   return NextResponse.json({ ok: true });
