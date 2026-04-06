@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getClient } from "@/lib/hackathon/mentor-db";
+import { createClient } from "@supabase/supabase-js";
+
+function getClient() {
+  return createClient(
+    process.env.HACKATHON_SUPABASE_URL!,
+    process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // Returns available (free) slots for a mentor for the next 14 days.
 // Combines the mentor's weekly availability schedule with existing bookings
@@ -31,7 +38,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Build a set for quick lookup: "dayOfWeek:hour"
-  const availSet = new Set(availability.map((a) => `${a.day_of_week}:${a.hour}`));
+  const availSet = new Set(availability.map((a: { day_of_week: number; hour: number }) => `${a.day_of_week}:${a.hour}`));
 
   // 2. Fetch existing bookings for the next 14 days (pending + confirmed)
   const now = new Date();
@@ -52,7 +59,7 @@ export async function GET(req: NextRequest) {
 
   // Build a set of booked slot starts (ISO strings rounded to the hour)
   const bookedSet = new Set(
-    (bookings ?? []).map((b) => {
+    (bookings ?? []).map((b: { slot_datetime: string }) => {
       const d = new Date(b.slot_datetime);
       d.setMinutes(0, 0, 0);
       return d.toISOString();
@@ -68,10 +75,8 @@ export async function GET(req: NextRequest) {
     const dayOfWeek = date.getDay(); // 0=Sun
 
     for (let hour = 0; hour <= 20; hour++) {
-      // Check mentor has this day+hour in their schedule
       if (!availSet.has(`${dayOfWeek}:${hour}`)) continue;
 
-      // Build the candidate slot datetime
       const slot = new Date(date);
       slot.setHours(hour, 0, 0, 0);
 
