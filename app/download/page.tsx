@@ -1,6 +1,7 @@
 import { Apple, Smartphone } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import QRCode from "react-qr-code";
 
 export default function DownloadPage() {
   return (
@@ -21,25 +22,43 @@ export default function DownloadPage() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-          <a
-            href="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775426216647.apk"
-            download="passionseed-app.apk"
-            className="ei-button-dusk w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold transition-all hover:scale-105 active:scale-95"
-          >
-            <Smartphone className="w-5 h-5" />
-            <span>Android APK</span>
-          </a>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mt-8">
+          <div className="flex flex-col items-center gap-3">
+            <a
+              href="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775426216647.apk"
+              download="passionseed-app.apk"
+              className="ei-button-dusk w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold transition-all hover:scale-105 active:scale-95"
+            >
+              <Smartphone className="w-5 h-5" />
+              <span>Android APK</span>
+            </a>
+            <div className="bg-white p-3 rounded-xl">
+              <QRCode
+                value="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775426216647.apk"
+                size={120}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Scan to download</p>
+          </div>
 
-          <a
-            href="https://testflight.apple.com/join/EtPfnhJW"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ei-button-dusk w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold transition-all hover:scale-105 active:scale-95"
-          >
-            <Apple className="w-5 h-5" />
-            <span>iOS TestFlight</span>
-          </a>
+          <div className="flex flex-col items-center gap-3">
+            <a
+              href="https://testflight.apple.com/join/EtPfnhJW"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ei-button-dusk w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold transition-all hover:scale-105 active:scale-95"
+            >
+              <Apple className="w-5 h-5" />
+              <span>iOS TestFlight</span>
+            </a>
+            <div className="bg-white p-3 rounded-xl">
+              <QRCode
+                value="https://testflight.apple.com/join/EtPfnhJW"
+                size={120}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Scan to download</p>
+          </div>
         </div>
 
         <div className="pt-8 text-sm text-muted-foreground space-y-2 border-t border-border/50">
