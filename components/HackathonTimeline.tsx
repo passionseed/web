@@ -33,7 +33,7 @@ const ITEMS: TimelineItem[] = [
     num: "04",
     title: "1st Submission",
     desc: "Submit your prototype and presentation slides.",
-    date: "29 May",
+    date: "22 May",
   },
   {
     num: "05",
