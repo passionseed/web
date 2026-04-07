@@ -5,7 +5,7 @@ import { isInvitedMember } from "@/lib/hackathon/invites";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 
-const TEAM_OPERATIONS_LOCKED = true;
+const TEAM_OPERATIONS_LOCKED = false;
 
 export async function POST() {
   if (TEAM_OPERATIONS_LOCKED) {
