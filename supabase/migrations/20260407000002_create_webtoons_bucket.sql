@@ -1,0 +1,18 @@
+-- Create webtoons storage bucket
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('webtoons', 'webtoons', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Grant public read access
+CREATE POLICY "Public read access for webtoons" ON storage.objects
+  FOR SELECT USING (bucket_id = 'webtoons');
+
+-- Grant service role write access
+CREATE POLICY "Service role can upload webtoons" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'webtoons' AND auth.role() = 'service_role');
+
+CREATE POLICY "Service role can update webtoons" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'webtoons' AND auth.role() = 'service_role');
+
+CREATE POLICY "Service role can delete webtoons" ON storage.objects
+  FOR DELETE USING (bucket_id = 'webtoons' AND auth.role() = 'service_role');
