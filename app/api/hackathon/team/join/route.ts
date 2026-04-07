@@ -3,7 +3,7 @@ import { SESSION_COOKIE } from "@/lib/hackathon/auth";
 import { getSessionParticipant, joinTeam } from "@/lib/hackathon/db";
 import { cookies } from "next/headers";
 
-const TEAM_OPERATIONS_LOCKED = true;
+const TEAM_OPERATIONS_LOCKED = false;
 
 export async function POST(req: NextRequest) {
   if (TEAM_OPERATIONS_LOCKED) {
