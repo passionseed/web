@@ -493,8 +493,8 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                         );
                     })()}
 
-                    {/* Invite Link (owner only, team < 5, feature enabled, not already used) */}
-                    {isOwner && inviteEnabled && team.members.length < 5 && !inviteAlreadyUsed && (
+                    {/* Invite Link — closed */}
+                    {false && isOwner && inviteEnabled && team.members.length < 5 && !inviteAlreadyUsed && (
                         <div className="bg-gradient-to-br from-[#0d1219]/90 to-[#121c29]/80 border border-[#4a6b82]/15 rounded-2xl p-5 shadow-[0_0_20px_rgba(74,107,130,0.1)]">
                             <div className="flex items-center gap-2 mb-3">
                                 <Link className="w-4 h-4 text-[#7aa4c4]" />
