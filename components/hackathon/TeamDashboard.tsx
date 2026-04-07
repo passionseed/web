@@ -523,7 +523,16 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                         </div>
                     )}
 
-                    {/* Leave Team Button — locked */}
+                    {/* Leave Team Button — hidden for invited members */}
+                    {!isInvited && (
+                        <button
+                            onClick={handleLeaveTeam}
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-[#4a3a3a] to-[#3a2a2a] hover:from-[#6a3a3a] hover:to-[#5a2a2a] text-gray-300 hover:text-red-300 font-medium py-3 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-red-500/20 hover:border-red-400/50 shadow-[0_0_15px_rgba(220,38,38,0.15)] hover:shadow-[0_0_25px_rgba(239,68,68,0.3)]"
+                        >
+                            {loading ? "กำลังออกจากทีม..." : "ออกจากทีม"}
+                        </button>
+                    )}
                 </div>
             </div>
         );
@@ -779,12 +788,98 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                     <p className="text-gray-300 mt-3 text-base font-medium">เลือกวิธีเข้าร่วมทีมของคุณ</p>
                 </div>
 
-                <div className="pt-4">
-                    <div className="rounded-3xl bg-gradient-to-br from-[#1a2530]/95 to-[#1e3444]/90 border-2 border-[#5a7a94]/30 p-8 text-center space-y-3">
-                        <div className="text-4xl">🔒</div>
-                        <h3 className="text-xl font-medium text-white">การจัดทีมปิดแล้ว</h3>
-                        <p className="text-gray-400 text-sm">ขณะนี้ไม่สามารถสร้าง เข้าร่วม หรือเปลี่ยนทีมได้<br />ติดต่อผู้จัดงานหากมีปัญหา</p>
-                    </div>
+                <div className="grid gap-5 pt-4">
+                    {/* Create Team Button */}
+                    <button
+                        onClick={() => setView("create")}
+                        className="group relative overflow-hidden rounded-3xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-[#1a2530]/95 to-[#1e3444]/90 border-2 border-[#5a7a94]/50 hover:border-[#6a9ac4]/80 shadow-[0_0_30px_rgba(90,122,148,0.3)] hover:shadow-[0_0_40px_rgba(106,154,196,0.5)]"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#5a7a94]/0 via-[#5a7a94]/20 to-[#5a7a94]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="relative p-7">
+                            <div className="flex items-center gap-5">
+                                <div className="w-16 h-16 rounded-2xl bg-[#5a7a94]/30 border-2 border-[#5a7a94]/50 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#5a7a94]/40 transition-all duration-300 shadow-[0_0_20px_rgba(90,122,148,0.4)]">
+                                    <RocketIcon className="w-8 h-8 text-[#7aa4c4]" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <h3 className="text-2xl font-medium text-white group-hover:text-[#7aa4c4] transition-colors duration-300">
+                                        สร้างทีม
+                                    </h3>
+                                    <p className="text-gray-300 text-sm mt-1 group-hover:text-gray-200 transition-colors">
+                                        สร้างล็อบบี้และรับรหัสเพื่อให้เพื่อนเข้าร่วม
+                                    </p>
+                                </div>
+                                <div className="text-[#5a7a94] group-hover:text-[#7aa4c4] group-hover:translate-x-1 transition-all duration-300">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+
+                    {/* Join Team Button */}
+                    <button
+                        onClick={() => setView("join")}
+                        className="group relative overflow-hidden rounded-3xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-[#251e30]/95 to-[#332940]/90 border-2 border-[#8b7a9a]/50 hover:border-[#b5a4ca]/80 shadow-[0_0_30px_rgba(139,122,154,0.3)] hover:shadow-[0_0_40px_rgba(181,164,202,0.5)]"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#8b7a9a]/0 via-[#8b7a9a]/20 to-[#8b7a9a]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="relative p-7">
+                            <div className="flex items-center gap-5">
+                                <div className="w-16 h-16 rounded-2xl bg-[#8b7a9a]/30 border-2 border-[#8b7a9a]/50 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#8b7a9a]/40 transition-all duration-300 shadow-[0_0_20px_rgba(139,122,154,0.4)]">
+                                    <KeyIcon className="w-8 h-8 text-[#b5a4ca]" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <h3 className="text-2xl font-medium text-white group-hover:text-[#b5a4ca] transition-colors duration-300">
+                                        เข้าร่วมทีม
+                                    </h3>
+                                    <p className="text-gray-300 text-sm mt-1 group-hover:text-gray-200 transition-colors">
+                                        ใส่รหัสล็อบบี้จากเพื่อนของคุณ
+                                    </p>
+                                </div>
+                                <div className="text-[#8b7a9a] group-hover:text-[#b5a4ca] group-hover:translate-x-1 transition-all duration-300">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+
+                    {/* Find Team Button */}
+                    <button
+                        onClick={() => {
+                            if (hasActiveMatchingEvent) {
+                                router.push("/hackathon/matching");
+                                return;
+                            }
+                            handleStartMatching();
+                        }}
+                        className="group relative overflow-hidden rounded-3xl transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-[#1e2a35]/95 to-[#263a4a]/90 border-2 border-[#6a9ac4]/50 hover:border-[#8abade]/80 shadow-[0_0_30px_rgba(106,154,196,0.3)] hover:shadow-[0_0_40px_rgba(138,186,222,0.5)]"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#6a9ac4]/0 via-[#6a9ac4]/20 to-[#6a9ac4]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="relative p-7">
+                            <div className="flex items-center gap-5">
+                                <div className="w-16 h-16 rounded-2xl bg-[#6a9ac4]/30 border-2 border-[#6a9ac4]/50 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#6a9ac4]/40 transition-all duration-300 shadow-[0_0_20px_rgba(106,154,196,0.4)]">
+                                    <FindIcon className="w-8 h-8 text-[#8abade]" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <h3 className="text-2xl font-medium text-white group-hover:text-[#8abade] transition-colors duration-300">
+                                        {hasActiveMatchingEvent ? "จัดอันดับคนที่เจอ" : "หาทีม"}
+                                    </h3>
+                                    <p className="text-gray-300 text-sm mt-1 group-hover:text-gray-200 transition-colors">
+                                        {hasActiveMatchingEvent
+                                            ? "เลือกคนที่คุณได้คุยด้วยและจัดอันดับเพื่อให้ระบบจับทีมอัตโนมัติ"
+                                            : "จับคู่อัตโนมัติกับสมาชิกทีมที่ยังเปิดรับ"}
+                                    </p>
+                                </div>
+                                <div className="text-[#6a9ac4] group-hover:text-[#8abade] group-hover:translate-x-1 transition-all duration-300">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
                 </div>
             </div>
         </div>
