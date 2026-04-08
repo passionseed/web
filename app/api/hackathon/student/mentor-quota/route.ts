@@ -31,16 +31,30 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (!membership?.team_id) {
-    // No team — treat as 1 chance (solo or unteamed, booking allowed per-student)
     return NextResponse.json({ chances_left: 1, booking: null });
   }
 
   const teamId = membership.team_id;
 
-  // Find any booking for this team (most recent)
+  // Find bookings for this team with mentor profile joined
   const { data: bookings } = await supabase
     .from("mentor_bookings")
-    .select("id, status, cancellation_reason, slot_datetime, mentor_id")
+    .select(`
+      id,
+      status,
+      cancellation_reason,
+      slot_datetime,
+      duration_minutes,
+      notes,
+      mentor_id,
+      mentor_profiles (
+        id,
+        full_name,
+        profession,
+        institution,
+        photo_url
+      )
+    `)
     .eq("team_id", teamId)
     .order("created_at", { ascending: false })
     .limit(10);
@@ -49,13 +63,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ chances_left: 1, booking: null });
   }
 
-  // Active = pending or confirmed (not cancelled)
+  // Active = pending or confirmed
   const activeBooking = bookings.find((b) => b.status !== "cancelled");
   if (activeBooking) {
     return NextResponse.json({ chances_left: 0, booking: activeBooking });
   }
 
-  // All bookings are cancelled — quota restored, return latest cancelled for reason display
+  // All cancelled — quota restored only if cancelled by mentor (not by student)
   const latestCancelled = bookings[0];
-  return NextResponse.json({ chances_left: 1, booking: latestCancelled });
+  const cancelledByStudent = latestCancelled.cancellation_reason === "ยกเลิกโดยผู้เข้าร่วม";
+  return NextResponse.json({
+    chances_left: cancelledByStudent ? 0 : 1,
+    booking: latestCancelled,
+  });
 }

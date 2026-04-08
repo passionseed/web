@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
 
   const { mentor_id, slot_datetime, notes } = body;
 
-  if (!mentor_id || !slot_datetime) {
-    return NextResponse.json({ error: "mentor_id and slot_datetime are required" }, { status: 400 });
+  if (!slot_datetime) {
+    return NextResponse.json({ error: "slot_datetime is required" }, { status: 400 });
   }
 
   // Look up team membership
@@ -63,25 +63,28 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Validate mentor exists and is approved
-  const { data: mentor } = await supabase
-    .from("mentor_profiles")
-    .select("id, full_name, email, profession, institution, bio, photo_url, line_user_id, instagram_url, linkedin_url, website_url, max_hours_per_week, session_type, is_approved, created_at, updated_at")
-    .eq("id", mentor_id)
-    .single<MentorProfile>();
-  if (!mentor) {
-    return NextResponse.json({ error: "Mentor not found" }, { status: 404 });
-  }
-
-  if (!mentor.is_approved) {
-    return NextResponse.json({ error: "Mentor is not available for booking" }, { status: 400 });
+  // Validate mentor if provided
+  let mentor: MentorProfile | null = null;
+  if (mentor_id) {
+    const { data } = await supabase
+      .from("mentor_profiles")
+      .select("id, full_name, email, profession, institution, bio, photo_url, line_user_id, instagram_url, linkedin_url, website_url, max_hours_per_week, session_type, is_approved, created_at, updated_at")
+      .eq("id", mentor_id)
+      .single<MentorProfile>();
+    if (!data) {
+      return NextResponse.json({ error: "Mentor not found" }, { status: 404 });
+    }
+    if (!data.is_approved) {
+      return NextResponse.json({ error: "Mentor is not available for booking" }, { status: 400 });
+    }
+    mentor = data;
   }
 
   // Insert booking — duration always 30 min
   const { data: booking, error: bookingError } = await supabase
     .from("mentor_bookings")
     .insert({
-      mentor_id,
+      mentor_id: mentor_id ?? null,
       student_id: participant.id,
       team_id: teamId,
       slot_datetime,
@@ -97,10 +100,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
   }
 
-  // Fire and forget — booking is already saved
-  sendMentorBookingNotification(mentor, booking as MentorBooking, participant.name).catch((err) =>
-    console.error("Line notification failed:", err)
-  );
+  // Notify mentor if one was specified
+  if (mentor) {
+    sendMentorBookingNotification(mentor, booking as MentorBooking, participant.name).catch((err) =>
+      console.error("Line notification failed:", err)
+    );
+  }
 
   return NextResponse.json({ booking: booking as MentorBooking });
 }
