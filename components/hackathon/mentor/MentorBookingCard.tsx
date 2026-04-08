@@ -76,7 +76,7 @@ export default function MentorBookingCard({ booking: initial, onUpdate }: Props)
             {" · "}
             {booking.duration_minutes} min
           </p>
-          {booking.discord_room !== null && (
+          {booking.status === "confirmed" && booking.discord_room != null && (
             <p
               className="text-xs font-medium font-[family-name:var(--font-space-mono)] mt-1"
               style={{ color: "#a78bfa" }}
