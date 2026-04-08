@@ -320,23 +320,32 @@ export async function getMentorBookings(
 
   const { data: participants } = await client
     .from("hackathon_participants")
-    .select("id, name, team_name")
+    .select("id, name")
     .in("id", studentIds);
 
-  const participantMap = new Map(
-    (participants ?? []).map((p: { id: string; name: string; team_name: string | null }) => [
-      p.id,
-      p,
+  const nameMap = new Map(
+    (participants ?? []).map((p: { id: string; name: string }) => [p.id, p.name])
+  );
+
+  // Look up actual team names via hackathon_team_members → hackathon_teams
+  const { data: memberships } = await client
+    .from("hackathon_team_members")
+    .select("participant_id, hackathon_teams(name)")
+    .in("participant_id", studentIds);
+
+  const teamMap = new Map(
+    (memberships ?? []).map((m: { participant_id: string; hackathon_teams: { name: string } | null }) => [
+      m.participant_id,
+      m.hackathon_teams?.name ?? null,
     ])
   );
 
   return bookings.map((b) => {
     if (!b.student_id) return b;
-    const p = participantMap.get(b.student_id);
     return {
       ...b,
-      student_name: p?.name ?? null,
-      group_name: p?.team_name ?? null,
+      student_name: nameMap.get(b.student_id) ?? null,
+      group_name: teamMap.get(b.student_id) ?? null,
     };
   });
 }

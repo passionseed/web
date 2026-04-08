@@ -1,4 +1,5 @@
 import * as line from "@line/bot-sdk";
+import { Resend } from "resend";
 import type { MentorBooking, MentorProfile } from "@/types/mentor";
 
 function getClient(): line.messagingApi.MessagingApiClient {
@@ -111,4 +112,64 @@ export async function replyLineTextMessage(replyToken: string, text: string): Pr
     replyToken,
     messages: [formatLineTextMessage(text)],
   });
+}
+
+export async function sendMentorCancellationEmail(
+  studentEmail: string,
+  studentName: string,
+  mentor: MentorProfile,
+  booking: MentorBooking,
+  reason: string
+): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    console.log("[Resend] RESEND_API_KEY not set — skipping cancellation email");
+    return;
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const slotDate = new Date(booking.slot_datetime);
+  const dateStr = slotDate.toLocaleDateString("th-TH", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "Asia/Bangkok",
+  });
+  const timeStr = slotDate.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Bangkok",
+  });
+
+  try {
+    await resend.emails.send({
+      from: "The Next Decade Hackathon 2026 <hi@noreply.passionseed.org>",
+      to: studentEmail,
+      subject: "การจองเซสชัน Mentor ถูกยกเลิก - The Next Decade Hackathon 2026",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #91C4E3;">เซสชัน Mentor ถูกยกเลิก</h1>
+          <p>สวัสดีครับ/ค่ะ คุณ${studentName},</p>
+          <p>
+            เซสชัน Mentor ที่ได้รับการยืนยันของคุณกับ <strong>${mentor.full_name}</strong>
+            ในวันที่ <strong>${dateStr}</strong> เวลา <strong>${timeStr}</strong>
+            (${booking.duration_minutes} นาที) ได้ถูกยกเลิกแล้ว
+          </p>
+          <div style="margin: 20px 0; padding: 16px; background: #f9f9f9; border-left: 4px solid #91C4E3; border-radius: 4px;">
+            <p style="margin: 0; color: #333; font-size: 14px;"><strong>เหตุผลที่ยกเลิก:</strong></p>
+            <p style="margin: 8px 0 0; color: #555; font-size: 14px;">${reason}</p>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            เราขออภัยในความไม่สะดวกที่เกิดขึ้น หากต้องการนัดหมายใหม่
+            สามารถเข้าไปจองเซสชันกับ Mentor ท่านอื่นได้ที่ระบบของเรา
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            ขอบคุณที่เข้าร่วม The Next Decade Hackathon 2026
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("[Resend] Failed to send mentor cancellation email:", err);
+  }
 }

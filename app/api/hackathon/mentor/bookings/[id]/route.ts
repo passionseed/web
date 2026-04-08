@@ -17,13 +17,13 @@ export async function PATCH(
     if (!mentor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const { status } = await req.json();
+    const { status, reason } = await req.json();
 
     if (!["confirmed", "cancelled"].includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    const result = await updateMentorBookingStatus(mentor, id, status);
+    const result = await updateMentorBookingStatus(mentor, id, status, reason);
     if (!result.booking) {
       return NextResponse.json(
         { error: result.error ?? "Failed to update booking" },
