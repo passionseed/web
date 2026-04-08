@@ -7,6 +7,13 @@ function getClient(): line.messagingApi.MessagingApiClient {
   return new line.messagingApi.MessagingApiClient({ channelAccessToken: token });
 }
 
+function formatLineTextMessage(text: string): line.messagingApi.TextMessage {
+  return {
+    type: "text",
+    text,
+  };
+}
+
 export function validateLineSignature(body: string, signature: string): boolean {
   const secret = process.env.LINE_CHANNEL_SECRET;
   if (!secret) throw new Error("LINE_CHANNEL_SECRET is not set");
@@ -15,10 +22,9 @@ export function validateLineSignature(body: string, signature: string): boolean 
 
 export async function sendLineConnectCode(lineUserId: string, code: string): Promise<void> {
   const client = getClient();
-  const message: line.messagingApi.TextMessage = {
-    type: "text",
-    text: `สวัสดีครับ! 👋\n\nเพื่อเชื่อมต่อ Line กับระบบ PassionSeed Mentor กรุณานำโค้ดนี้ไปกรอกในหน้า Profile:\n\n🔑 ${code}\n\n(โค้ดนี้จะหมดอายุใน 10 นาที)`,
-  };
+  const message = formatLineTextMessage(
+    `สวัสดีครับ! 👋\n\nเพื่อเชื่อมต่อ Line กับระบบ PassionSeed Mentor กรุณานำโค้ดนี้ไปกรอกในหน้า Profile:\n\n🔑 ${code}\n\n(โค้ดนี้จะหมดอายุใน 10 นาที)`
+  );
   await client.pushMessage({ to: lineUserId, messages: [message] });
 }
 
@@ -50,10 +56,9 @@ export async function sendMentorBookingNotification(
     timeZone: "Asia/Bangkok",
   });
 
-  const message: line.messagingApi.TextMessage = {
-    type: "text",
-    text: `📅 การจองใหม่!\n\nผู้จอง: ${bookerName}\nวันที่: ${dateStr}\nเวลา: ${timeStr}\nระยะเวลา: ${booking.duration_minutes} นาที${booking.notes ? `\nหมายเหตุ: ${booking.notes}` : ""}\n\nกรุณาเข้าสู่ระบบเพื่อยืนยันการจอง`,
-  };
+  const message = formatLineTextMessage(
+    `📅 การจองใหม่!\n\nผู้จอง: ${bookerName}\nวันที่: ${dateStr}\nเวลา: ${timeStr}\nระยะเวลา: ${booking.duration_minutes} นาที${booking.notes ? `\nหมายเหตุ: ${booking.notes}` : ""}\n\nพิมพ์ confirm หรือ decline เพื่อตอบกลับได้ทันที`
+  );
 
   await client.pushMessage({
     to: mentor.line_user_id,
@@ -82,10 +87,9 @@ export async function sendMentorSessionConfirmedNotification(
     timeZone: "Asia/Bangkok",
   });
 
-  const message: line.messagingApi.TextMessage = {
-    type: "text",
-    text: `✅ ยืนยันเซสชันแล้ว!\n\nวันที่: ${dateStr}\nเวลา: ${timeStr}\nระยะเวลา: ${booking.duration_minutes} นาที\n\n🎮 Discord Room: ${booking.discord_room}\n\n🔗 https://lin.ee/N5xIRuI`,
-  };
+  const message = formatLineTextMessage(
+    `✅ ยืนยันเซสชันแล้ว!\n\nวันที่: ${dateStr}\nเวลา: ${timeStr}\nระยะเวลา: ${booking.duration_minutes} นาที\n\n🎮 Discord Room: ${booking.discord_room}\n\n🔗 https://lin.ee/N5xIRuI`
+  );
 
   await client.pushMessage({
     to: mentor.line_user_id,
@@ -95,9 +99,16 @@ export async function sendMentorSessionConfirmedNotification(
 
 export async function sendLineWelcomeMessage(lineUserId: string, mentorName: string): Promise<void> {
   const client = getClient();
-  const message: line.messagingApi.TextMessage = {
-    type: "text",
-    text: `เชื่อมต่อสำเร็จ! 🎉\n\nสวัสดีครับ/ค่ะ คุณ${mentorName}\nคุณจะได้รับการแจ้งเตือนผ่าน Line เมื่อมีการจองเซสชันกับคุณ`,
-  };
+  const message = formatLineTextMessage(
+    `เชื่อมต่อสำเร็จ! 🎉\n\nสวัสดีครับ/ค่ะ คุณ${mentorName}\nคุณจะได้รับการแจ้งเตือนผ่าน Line เมื่อมีการจองเซสชันกับคุณ`
+  );
   await client.pushMessage({ to: lineUserId, messages: [message] });
+}
+
+export async function replyLineTextMessage(replyToken: string, text: string): Promise<void> {
+  const client = getClient();
+  await client.replyMessage({
+    replyToken,
+    messages: [formatLineTextMessage(text)],
+  });
 }
