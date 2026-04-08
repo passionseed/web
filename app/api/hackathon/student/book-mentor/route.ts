@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSessionParticipant } from "@/lib/hackathon/db";
+import { sendMentorBookingNotification } from "@/lib/hackathon/line";
 import type { MentorBooking } from "@/types/mentor";
 
 function getClient() {
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   // Validate mentor exists and is approved
   const { data: mentor, error: mentorError } = await supabase
     .from("mentor_profiles")
-    .select("id, is_approved")
+    .select("id, name, is_approved, line_user_id")
     .eq("id", mentor_id)
     .single();
 
@@ -70,6 +71,11 @@ export async function POST(req: NextRequest) {
     console.error("Mentor booking insert error:", bookingError);
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
   }
+
+  // Fire and forget — booking is already saved
+  sendMentorBookingNotification(mentor, booking as MentorBooking, participant.name).catch((err) =>
+    console.error("Line notification failed:", err)
+  );
 
   return NextResponse.json({ booking: booking as MentorBooking });
 }
