@@ -22,17 +22,15 @@ export async function PATCH(req: NextRequest) {
   const isAccepting = Boolean(body.is_accepting_bookings);
 
   const supabase = getServiceClient();
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("mentor_profiles")
     .update({ is_accepting_bookings: isAccepting })
-    .eq("id", mentor.id)
-    .select("is_accepting_bookings")
-    .single();
+    .eq("id", mentor.id);
 
   if (error) {
     console.error("availability-toggle error:", error);
     return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }
 
-  return NextResponse.json({ is_accepting_bookings: data.is_accepting_bookings });
+  return NextResponse.json({ is_accepting_bookings: isAccepting });
 }
