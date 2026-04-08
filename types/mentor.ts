@@ -36,6 +36,7 @@ export type MentorBooking = {
   duration_minutes: number;
   status: MentorBookingStatus;
   notes: string | null;
+  discord_room: number | null;
   created_at: string;
 };
 

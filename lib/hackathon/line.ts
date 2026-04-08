@@ -55,6 +55,38 @@ export async function sendMentorBookingNotification(
   });
 }
 
+export async function sendMentorSessionConfirmedNotification(
+  mentor: MentorProfile,
+  booking: MentorBooking & { discord_room: number }
+): Promise<void> {
+  if (!mentor.line_user_id) return;
+
+  const client = getClient();
+  const slotDate = new Date(booking.slot_datetime);
+  const dateStr = slotDate.toLocaleDateString("th-TH", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "Asia/Bangkok",
+  });
+  const timeStr = slotDate.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Bangkok",
+  });
+
+  const message: line.messagingApi.TextMessage = {
+    type: "text",
+    text: `✅ ยืนยันเซสชันแล้ว!\n\nวันที่: ${dateStr}\nเวลา: ${timeStr}\nระยะเวลา: ${booking.duration_minutes} นาที\n\n🎮 Discord Room: ${booking.discord_room}\n\n🔗 https://lin.ee/N5xIRuI`,
+  };
+
+  await client.pushMessage({
+    to: mentor.line_user_id,
+    messages: [message],
+  });
+}
+
 export async function sendLineWelcomeMessage(lineUserId: string, mentorName: string): Promise<void> {
   const client = getClient();
   const message: line.messagingApi.TextMessage = {

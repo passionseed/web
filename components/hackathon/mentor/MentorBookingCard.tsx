@@ -64,6 +64,14 @@ export default function MentorBookingCard({ booking: initial, onUpdate }: Props)
             {" · "}
             {booking.duration_minutes} min
           </p>
+          {booking.status === "confirmed" && booking.discord_room !== null && (
+            <p
+              className="text-xs font-medium font-[family-name:var(--font-space-mono)] mt-1"
+              style={{ color: "#a78bfa" }}
+            >
+              🎮 Discord Room {booking.discord_room}
+            </p>
+          )}
           {booking.notes && (
             <p
               className="text-xs mt-1 font-[family-name:var(--font-mitr)]"
