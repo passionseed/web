@@ -31,33 +31,29 @@ export async function POST() {
 
   const supabase = getServiceClient();
 
-  // Find all active bookings (pending or confirmed)
-  const { data: activeBookings, error: fetchError } = await supabase
+  // Find ALL bookings (active and cancelled) to fully reset quota
+  const { data: allBookings, error: fetchError } = await supabase
     .from("mentor_bookings")
-    .select("id")
-    .neq("status", "cancelled");
+    .select("id");
 
   if (fetchError) {
     console.error("reset-quota fetch error:", fetchError);
     return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 });
   }
 
-  if (!activeBookings || activeBookings.length === 0) {
-    return NextResponse.json({ reset: 0, message: "No active bookings to reset" });
+  if (!allBookings || allBookings.length === 0) {
+    return NextResponse.json({ reset: 0, message: "No bookings to reset" });
   }
 
-  const ids = activeBookings.map((b) => b.id);
+  const ids = allBookings.map((b) => b.id);
 
-  const { error: updateError } = await supabase
+  const { error: deleteError } = await supabase
     .from("mentor_bookings")
-    .update({
-      status: "cancelled",
-      cancellation_reason: "รีเซ็ตสิทธิ์โดย Admin",
-    })
+    .delete()
     .in("id", ids);
 
-  if (updateError) {
-    console.error("reset-quota update error:", updateError);
+  if (deleteError) {
+    console.error("reset-quota delete error:", deleteError);
     return NextResponse.json({ error: "Failed to reset bookings" }, { status: 500 });
   }
 
