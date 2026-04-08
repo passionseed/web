@@ -25,17 +25,42 @@ export async function POST(req: NextRequest) {
   const participant = await getSessionParticipant(token, supabase);
   if (!participant) return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
 
-  let body: { mentor_id?: string; slot_datetime?: string; duration_minutes?: number; notes?: string };
+  let body: { mentor_id?: string; slot_datetime?: string; notes?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { mentor_id, slot_datetime, duration_minutes, notes } = body;
+  const { mentor_id, slot_datetime, notes } = body;
 
   if (!mentor_id || !slot_datetime) {
     return NextResponse.json({ error: "mentor_id and slot_datetime are required" }, { status: 400 });
+  }
+
+  // Look up team membership
+  const { data: membership } = await supabase
+    .from("hackathon_team_members")
+    .select("team_id")
+    .eq("participant_id", participant.id)
+    .maybeSingle();
+
+  const teamId = membership?.team_id ?? null;
+
+  // Enforce one active booking per team
+  if (teamId) {
+    const { data: existingBookings } = await supabase
+      .from("mentor_bookings")
+      .select("id, status")
+      .eq("team_id", teamId)
+      .neq("status", "cancelled");
+
+    if (existingBookings && existingBookings.length > 0) {
+      return NextResponse.json(
+        { error: "ทีมของคุณใช้สิทธิ์จอง Mentor ครบแล้ว (1 ครั้งต่อทีม)" },
+        { status: 409 }
+      );
+    }
   }
 
   // Validate mentor exists and is approved
@@ -52,14 +77,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Mentor is not available for booking" }, { status: 400 });
   }
 
-  // Insert booking
+  // Insert booking — duration always 30 min
   const { data: booking, error: bookingError } = await supabase
     .from("mentor_bookings")
     .insert({
       mentor_id,
       student_id: participant.id,
+      team_id: teamId,
       slot_datetime,
-      duration_minutes: duration_minutes ?? 30,
+      duration_minutes: 30,
       notes: notes ?? null,
       status: "pending",
     })

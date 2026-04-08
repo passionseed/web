@@ -4,9 +4,10 @@ type Props = {
   bookings: MentorBooking[];
   sessionType: MentorSessionType;
   assignments?: MentorTeamAssignment[];
+  maxHoursPerWeek?: number | null;
 };
 
-export default function MentorStatsRow({ bookings, sessionType, assignments = [] }: Props) {
+export default function MentorStatsRow({ bookings, sessionType, assignments = [], maxHoursPerWeek }: Props) {
   const now = new Date();
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - now.getDay());
@@ -40,7 +41,12 @@ export default function MentorStatsRow({ bookings, sessionType, assignments = []
             value: String(bookings.filter((b) => b.status !== "cancelled").length),
           },
           { label: "This Week", value: String(thisWeek) },
-          { label: "Hours Given", value: totalHours.toFixed(1) },
+          {
+            label: "Hours Given",
+            value: maxHoursPerWeek
+              ? `${totalHours.toFixed(1)}/${maxHoursPerWeek}`
+              : totalHours.toFixed(1),
+          },
         ];
 
   return (
