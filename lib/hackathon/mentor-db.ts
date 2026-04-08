@@ -298,7 +298,8 @@ export async function getMentorBookings(
   mentorId: string,
   filter?: "upcoming" | "past" | "all"
 ): Promise<MentorBooking[]> {
-  let query = getClient()
+  const client = getClient();
+  let query = client
     .from("mentor_bookings")
     .select("*")
     .eq("mentor_id", mentorId)
@@ -311,7 +312,33 @@ export async function getMentorBookings(
   }
 
   const { data } = await query;
-  return (data ?? []) as MentorBooking[];
+  const bookings = (data ?? []) as MentorBooking[];
+
+  // Fetch participant names/group names for bookings that have a student_id
+  const studentIds = [...new Set(bookings.map((b) => b.student_id).filter(Boolean) as string[])];
+  if (studentIds.length === 0) return bookings;
+
+  const { data: participants } = await client
+    .from("hackathon_participants")
+    .select("id, name, team_name")
+    .in("id", studentIds);
+
+  const participantMap = new Map(
+    (participants ?? []).map((p: { id: string; name: string; team_name: string | null }) => [
+      p.id,
+      p,
+    ])
+  );
+
+  return bookings.map((b) => {
+    if (!b.student_id) return b;
+    const p = participantMap.get(b.student_id);
+    return {
+      ...b,
+      student_name: p?.name ?? null,
+      group_name: p?.team_name ?? null,
+    };
+  });
 }
 
 /**

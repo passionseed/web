@@ -27,7 +27,13 @@ export async function sendMentorBookingNotification(
   booking: MentorBooking,
   bookerName: string
 ): Promise<void> {
-  if (!mentor.line_user_id) return;
+  if (!mentor.line_user_id) {
+    console.warn("[Line] Skipping mentor booking notification: mentor has no connected line_user_id", {
+      mentorId: mentor.id,
+      bookingId: booking.id,
+    });
+    return;
+  }
 
   const client = getClient();
   const slotDate = new Date(booking.slot_datetime);

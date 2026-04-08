@@ -47,7 +47,11 @@ export default function MentorBookingCard({ booking: initial, onUpdate }: Props)
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <p className="text-sm text-white font-medium font-[family-name:var(--font-bai-jamjuree)]">
-            {booking.student_id
+            {booking.group_name
+              ? booking.group_name
+              : booking.student_name
+              ? booking.student_name
+              : booking.student_id
               ? `Student ${booking.student_id.slice(0, 6)}`
               : "No student yet"}
           </p>
