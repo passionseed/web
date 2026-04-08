@@ -11,8 +11,14 @@ export async function POST(req: NextRequest) {
     }
 
     const participant = await findParticipantByEmail(email);
-    if (!participant || !verifyPassword(password, participant.password_hash)) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    console.log("[login] email lookup:", email.toLowerCase(), "found:", !!participant, "has_hash:", !!participant?.password_hash);
+    if (!participant) {
+      return NextResponse.json({ error: "Invalid email or password", debug: "participant_not_found" }, { status: 401 });
+    }
+    const passwordOk = verifyPassword(password, participant.password_hash);
+    console.log("[login] verifyPassword result:", passwordOk);
+    if (!passwordOk) {
+      return NextResponse.json({ error: "Invalid email or password", debug: "password_mismatch" }, { status: 401 });
     }
 
     const token = generateSessionToken();
