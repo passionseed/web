@@ -383,17 +383,26 @@ export async function getOverlappingConfirmedBookings(
 export async function assignDiscordRooms(bookings: MentorBooking[]): Promise<MentorBooking[]> {
   if (bookings.length === 0) return [];
 
+  const client = getClient();
   const sorted = [...bookings].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  const { data, error } = await getClient()
-    .from("mentor_bookings")
-    .upsert(
-      sorted.map((b, i) => ({ id: b.id, discord_room: i + 1 })),
-      { onConflict: "id" }
+  await Promise.all(
+    sorted.map((b, i) =>
+      client
+        .from("mentor_bookings")
+        .update({ discord_room: i + 1 })
+        .eq("id", b.id)
     )
-    .select("*");
+  );
+
+  // Re-fetch updated bookings
+  const ids = sorted.map((b) => b.id);
+  const { data, error } = await client
+    .from("mentor_bookings")
+    .select("*")
+    .in("id", ids);
 
   if (error) throw error;
   return (data ?? []) as MentorBooking[];
