@@ -314,6 +314,64 @@ export async function getMentorBookings(
   return (data ?? []) as MentorBooking[];
 }
 
+/**
+ * Returns all confirmed bookings (across all mentors) whose time window
+ * overlaps with [slotDatetime, slotDatetime + durationMinutes).
+ * Two bookings overlap when: A.start < B.end AND B.start < A.end
+ */
+export async function getOverlappingConfirmedBookings(
+  slotDatetime: string,
+  durationMinutes: number,
+  excludeBookingId?: string
+): Promise<MentorBooking[]> {
+  const slotEnd = new Date(
+    new Date(slotDatetime).getTime() + durationMinutes * 60 * 1000
+  ).toISOString();
+
+  let query = getClient()
+    .from("mentor_bookings")
+    .select("*")
+    .eq("status", "confirmed")
+    .lt("slot_datetime", slotEnd);
+
+  if (excludeBookingId) {
+    query = query.neq("id", excludeBookingId);
+  }
+
+  const { data } = await query;
+  const candidates = (data ?? []) as MentorBooking[];
+
+  // Filter: booking must end after our session starts
+  return candidates.filter((b) => {
+    const bEnd = new Date(b.slot_datetime).getTime() + b.duration_minutes * 60 * 1000;
+    return bEnd > new Date(slotDatetime).getTime();
+  });
+}
+
+/**
+ * Given a set of confirmed bookings that all conflict with each other,
+ * assigns discord_room 1, 2, 3... in order of created_at ASC.
+ * Bulk-updates all provided bookings in the database.
+ */
+export async function assignDiscordRooms(bookings: MentorBooking[]): Promise<MentorBooking[]> {
+  if (bookings.length === 0) return [];
+
+  const sorted = [...bookings].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  const { data, error } = await getClient()
+    .from("mentor_bookings")
+    .upsert(
+      sorted.map((b, i) => ({ id: b.id, discord_room: i + 1 })),
+      { onConflict: "id" }
+    )
+    .select("*");
+
+  if (error) throw error;
+  return (data ?? []) as MentorBooking[];
+}
+
 // --- Team assignments ---
 
 export async function getMentorTeamAssignments(mentorId: string): Promise<MentorTeamAssignment[]> {
