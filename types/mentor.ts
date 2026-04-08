@@ -38,6 +38,9 @@ export type MentorBooking = {
   notes: string | null;
   discord_room: number | null;
   created_at: string;
+  // Joined fields (optional — populated in mentor dashboard queries)
+  student_name?: string | null;
+  group_name?: string | null;
 };
 
 export type MentorTeamAssignment = {

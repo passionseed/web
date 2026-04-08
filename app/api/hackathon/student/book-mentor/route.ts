@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSessionParticipant } from "@/lib/hackathon/db";
+import { findMentorById } from "@/lib/hackathon/mentor-db";
 import { sendMentorBookingNotification } from "@/lib/hackathon/line";
 import type { MentorBooking } from "@/types/mentor";
 
@@ -39,13 +40,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate mentor exists and is approved
-  const { data: mentor, error: mentorError } = await supabase
-    .from("mentor_profiles")
-    .select("id, name, is_approved, line_user_id")
-    .eq("id", mentor_id)
-    .single();
-
-  if (mentorError || !mentor) {
+  const mentor = await findMentorById(mentor_id);
+  if (!mentor) {
     return NextResponse.json({ error: "Mentor not found" }, { status: 404 });
   }
 
