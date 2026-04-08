@@ -17,21 +17,29 @@ type Props = {
 export default function MentorBookingCard({ booking: initial, onUpdate }: Props) {
   const [booking, setBooking] = useState(initial);
   const [loading, setLoading] = useState<"confirmed" | "cancelled" | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const style = STATUS_STYLES[booking.status] ?? STATUS_STYLES.pending;
   const dt = new Date(booking.slot_datetime);
 
   const updateStatus = async (status: "confirmed" | "cancelled") => {
     setLoading(status);
-    const res = await fetch(`/api/hackathon/mentor/bookings/${booking.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    const data = await res.json();
-    if (res.ok && data.booking) {
-      setBooking(data.booking);
-      onUpdate?.(data.booking);
+    setError(null);
+    try {
+      const res = await fetch(`/api/hackathon/mentor/bookings/${booking.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (res.ok && data.booking) {
+        setBooking(data.booking);
+        onUpdate?.(data.booking);
+      } else {
+        setError(data.error ?? "Failed to update booking");
+      }
+    } catch {
+      setError("Network error — please try again");
     }
     setLoading(null);
   };
@@ -96,6 +104,12 @@ export default function MentorBookingCard({ booking: initial, onUpdate }: Props)
           {style.label}
         </span>
       </div>
+
+      {error && (
+        <p className="text-xs font-[family-name:var(--font-mitr)]" style={{ color: "#f87171" }}>
+          {error}
+        </p>
+      )}
 
       {booking.status === "pending" && (
         <div className="flex gap-2">
