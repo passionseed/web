@@ -3,7 +3,10 @@ import {
   assignDiscordRooms,
   getOverlappingConfirmedBookings,
 } from "@/lib/hackathon/mentor-db";
-import { sendMentorSessionConfirmedNotification } from "@/lib/hackathon/line";
+import {
+  sendMentorSessionConfirmedNotification,
+  sendMentorCancellationEmail,
+} from "@/lib/hackathon/line";
 import type { MentorBooking, MentorProfile } from "@/types/mentor";
 
 function getClient() {
@@ -60,7 +63,8 @@ export async function getNextPendingBookingForMentor(
 export async function updateMentorBookingStatus(
   mentor: MentorProfile,
   bookingId: string,
-  status: "confirmed" | "cancelled"
+  status: "confirmed" | "cancelled",
+  reason?: string
 ): Promise<{ booking?: MentorBooking; error?: string; code?: number }> {
   const client = getClient();
   const booking = await getMentorBookingById(mentor.id, bookingId);
@@ -71,6 +75,12 @@ export async function updateMentorBookingStatus(
 
   if (booking.status === "cancelled") {
     return { error: "Booking already cancelled", code: 400 };
+  }
+
+  if (status === "cancelled" && booking.status === "confirmed") {
+    if (!reason || reason.trim().length === 0) {
+      return { error: "Reason is required when cancelling a confirmed booking", code: 400 };
+    }
   }
 
   if (status === "confirmed") {
@@ -143,6 +153,24 @@ export async function updateMentorBookingStatus(
 
   if (overlappingBeforeCancel.length > 0) {
     await assignDiscordRooms(overlappingBeforeCancel);
+  }
+
+  if (booking.student_id && reason) {
+    const { data: student } = await client
+      .from("hackathon_participants")
+      .select("name, email")
+      .eq("id", booking.student_id)
+      .single();
+
+    if (student?.email) {
+      sendMentorCancellationEmail(
+        student.email,
+        student.name,
+        mentor,
+        cancelled as MentorBooking,
+        reason
+      ).catch(console.error);
+    }
   }
 
   return { booking: cancelled as MentorBooking };
