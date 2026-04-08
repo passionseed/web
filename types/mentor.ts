@@ -17,6 +17,7 @@ export type MentorProfile = {
   max_hours_per_week: number | null;
   session_type: MentorSessionType;
   is_approved: boolean;
+  is_accepting_bookings: boolean;
   created_at: string;
   updated_at: string;
 };

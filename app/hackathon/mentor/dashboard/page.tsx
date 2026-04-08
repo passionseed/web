@@ -36,6 +36,7 @@ export default function MentorDashboardPage() {
   const [assignments, setAssignments] = useState<MentorTeamAssignment[]>([]);
   const [filter, setFilter] = useState<BookingFilter>("upcoming");
   const [dashTab, setDashTab] = useState<DashTab>("bookings");
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
     if (!mentor || !pageRef.current) return;
@@ -62,6 +63,24 @@ export default function MentorDashboardPage() {
       .then((r) => r.json())
       .then((data) => setBookings(data.bookings ?? []));
   }, [router]);
+
+  const handleToggleAvailability = async () => {
+    if (!mentor || toggling) return;
+    setToggling(true);
+    const next = !mentor.is_accepting_bookings;
+    try {
+      const res = await fetch("/api/hackathon/mentor/availability-toggle", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_accepting_bookings: next }),
+      });
+      if (res.ok) {
+        setMentor((m) => m ? { ...m, is_accepting_bookings: next } : m);
+      }
+    } finally {
+      setToggling(false);
+    }
+  };
 
   const handleLogout = async () => {
     await fetch("/api/hackathon/mentor/logout", { method: "POST" });
@@ -152,13 +171,54 @@ export default function MentorDashboardPage() {
               )}
             </div>
           </div>
-          <Button
-            asChild
-            variant="outline"
-            className="border-[#4a6b82]/40 text-[#91C4E3] hover:bg-[#91C4E3]/10 font-[family-name:var(--font-mitr)] shrink-0"
-          >
-            <Link href="/hackathon/mentor/profile">Edit Profile</Link>
-          </Button>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <Button
+              asChild
+              variant="outline"
+              className="border-[#4a6b82]/40 text-[#91C4E3] hover:bg-[#91C4E3]/10 font-[family-name:var(--font-mitr)]"
+            >
+              <Link href="/hackathon/mentor/profile">Edit Profile</Link>
+            </Button>
+            {/* Availability toggle */}
+            <button
+              onClick={handleToggleAvailability}
+              disabled={toggling}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all text-xs font-[family-name:var(--font-mitr)]"
+              style={{
+                background: mentor.is_accepting_bookings
+                  ? "rgba(52,211,153,0.12)"
+                  : "rgba(100,100,120,0.15)",
+                border: mentor.is_accepting_bookings
+                  ? "1px solid rgba(52,211,153,0.3)"
+                  : "1px solid rgba(100,100,120,0.3)",
+                color: mentor.is_accepting_bookings ? "#34d399" : "#6b7280",
+                opacity: toggling ? 0.6 : 1,
+              }}
+            >
+              {/* Toggle pill */}
+              <span
+                className="relative inline-flex w-8 h-4 rounded-full transition-colors"
+                style={{
+                  background: mentor.is_accepting_bookings
+                    ? "rgba(52,211,153,0.5)"
+                    : "rgba(100,100,120,0.4)",
+                }}
+              >
+                <span
+                  className="absolute top-0.5 w-3 h-3 rounded-full transition-all"
+                  style={{
+                    background: mentor.is_accepting_bookings ? "#34d399" : "#6b7280",
+                    left: mentor.is_accepting_bookings ? "calc(100% - 14px)" : "2px",
+                  }}
+                />
+              </span>
+              {toggling
+                ? "..."
+                : mentor.is_accepting_bookings
+                ? "รับนัด"
+                : "ปิดรับนัด"}
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
