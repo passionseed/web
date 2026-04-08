@@ -11,6 +11,8 @@ export function AdminHackathonMentors() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [removeLoading, setRemoveLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<string | null>(null);
 
   async function fetchMentors() {
     setLoading(true);
@@ -31,6 +33,23 @@ export function AdminHackathonMentors() {
     const res = await fetch(`/api/admin/hackathon/mentors/${id}`, { method: "DELETE" });
     if (res.ok) setMentors((prev) => prev.filter((m) => m.id !== id));
     setRemoveLoading(null);
+  }
+
+  async function resetQuota() {
+    if (!confirm("Reset mentor booking quota for all teams? Active bookings will be cancelled and all teams get 1 chance back.")) return;
+    setResetting(true);
+    setResetResult(null);
+    try {
+      const res = await fetch("/api/admin/hackathon/mentor-bookings/reset-quota", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) setResetResult(`Error: ${data.error}`);
+      else if (data.reset === 0) setResetResult("No active bookings — nothing changed.");
+      else setResetResult(`Reset ${data.reset} booking(s). All teams now have 1 chance.`);
+    } catch {
+      setResetResult("Request failed.");
+    } finally {
+      setResetting(false);
+    }
   }
 
   async function setApproval(id: string, approve: boolean) {
@@ -63,14 +82,30 @@ export function AdminHackathonMentors() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="text-sm text-muted-foreground">
           {approved.length} approved · {pending.length} pending
         </div>
-        <Button variant="outline" size="sm" onClick={fetchMentors}>
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={resetting}
+            onClick={resetQuota}
+            className="text-amber-400 border-amber-400/30 hover:bg-amber-400/10 hover:text-amber-300"
+          >
+            {resetting ? "Resetting..." : "Reset Booking Quota"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchMentors}>
+            Refresh
+          </Button>
+        </div>
       </div>
+      {resetResult && (
+        <p className="text-sm text-muted-foreground border border-slate-700/50 rounded-md px-3 py-2">
+          {resetResult}
+        </p>
+      )}
 
       {pending.length > 0 && (
         <div className="space-y-2">
