@@ -166,6 +166,7 @@ export default function MentorDashboardPage() {
           bookings={bookings}
           sessionType={mentor.session_type}
           assignments={assignments}
+          maxHoursPerWeek={mentor.max_hours_per_week}
         />
 
         {/* Group mentor tab nav */}

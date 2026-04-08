@@ -1,0 +1,61 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { getSessionParticipant } from "@/lib/hackathon/db";
+
+function getClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+function extractToken(req: NextRequest): string | null {
+  const auth = req.headers.get("authorization") ?? "";
+  if (auth.startsWith("Bearer ")) return auth.slice(7);
+  return null;
+}
+
+export async function GET(req: NextRequest) {
+  const token = extractToken(req);
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = getClient();
+  const participant = await getSessionParticipant(token, supabase);
+  if (!participant) return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
+
+  // Look up team membership
+  const { data: membership } = await supabase
+    .from("hackathon_team_members")
+    .select("team_id")
+    .eq("participant_id", participant.id)
+    .maybeSingle();
+
+  if (!membership?.team_id) {
+    // No team — treat as 1 chance (solo or unteamed, booking allowed per-student)
+    return NextResponse.json({ chances_left: 1, booking: null });
+  }
+
+  const teamId = membership.team_id;
+
+  // Find any booking for this team (most recent)
+  const { data: bookings } = await supabase
+    .from("mentor_bookings")
+    .select("id, status, cancellation_reason, slot_datetime, mentor_id")
+    .eq("team_id", teamId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (!bookings || bookings.length === 0) {
+    return NextResponse.json({ chances_left: 1, booking: null });
+  }
+
+  // Active = pending or confirmed (not cancelled)
+  const activeBooking = bookings.find((b) => b.status !== "cancelled");
+  if (activeBooking) {
+    return NextResponse.json({ chances_left: 0, booking: activeBooking });
+  }
+
+  // All bookings are cancelled — quota restored, return latest cancelled for reason display
+  const latestCancelled = bookings[0];
+  return NextResponse.json({ chances_left: 1, booking: latestCancelled });
+}

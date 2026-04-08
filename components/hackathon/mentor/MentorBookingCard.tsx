@@ -156,6 +156,14 @@ export default function MentorBookingCard({ booking: initial, onUpdate }: Props)
               {booking.notes}
             </p>
           )}
+          {booking.status === "cancelled" && booking.cancellation_reason && (
+            <p
+              className="text-xs mt-1 font-[family-name:var(--font-mitr)]"
+              style={{ color: "#f87171" }}
+            >
+              Reason: {booking.cancellation_reason}
+            </p>
+          )}
         </div>
         <span
           className="text-xs px-3 py-1 rounded-full font-medium font-[family-name:var(--font-mitr)] shrink-0"

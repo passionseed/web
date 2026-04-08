@@ -141,7 +141,7 @@ export async function updateMentorBookingStatus(
 
   const { data: cancelled, error: cancelError } = await client
     .from("mentor_bookings")
-    .update({ status: "cancelled", discord_room: null })
+    .update({ status: "cancelled", discord_room: null, cancellation_reason: reason ?? null })
     .eq("id", bookingId)
     .select("*")
     .single();

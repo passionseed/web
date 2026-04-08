@@ -224,71 +224,73 @@ revoke truncate on table "public"."hackathon_participant_push_tokens" from "serv
 
 revoke update on table "public"."hackathon_participant_push_tokens" from "service_role";
 
-alter table "public"."ai_chat_usage" drop constraint "ai_chat_usage_activity_id_fkey";
+alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_activity_id_fkey";
 
-alter table "public"."ai_chat_usage" drop constraint "ai_chat_usage_enrollment_id_fkey";
+alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_enrollment_id_fkey";
 
-alter table "public"."ai_chat_usage" drop constraint "ai_chat_usage_session_id_fkey";
+alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_session_id_fkey";
 
-alter table "public"."ai_chat_usage" drop constraint "ai_chat_usage_user_id_fkey";
+alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_user_id_fkey";
 
-alter table "public"."ai_chat_usage" drop constraint "ai_chat_usage_user_id_window_start_key";
+alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_user_id_window_start_key";
 
-alter table "public"."hackathon_activity_comment_replies" drop constraint "hackathon_activity_comment_replies_comment_id_fkey";
+alter table "public"."hackathon_activity_comment_replies" drop constraint if exists "hackathon_activity_comment_replies_comment_id_fkey";
 
-alter table "public"."hackathon_activity_comment_replies" drop constraint "hackathon_activity_comment_replies_content_check";
+alter table "public"."hackathon_activity_comment_replies" drop constraint if exists "hackathon_activity_comment_replies_content_check";
 
-alter table "public"."hackathon_activity_comment_replies" drop constraint "hackathon_activity_comment_replies_participant_id_fkey";
+alter table "public"."hackathon_activity_comment_replies" drop constraint if exists "hackathon_activity_comment_replies_participant_id_fkey";
 
-alter table "public"."hackathon_activity_comments" drop constraint "hackathon_activity_comments_activity_id_fkey";
+alter table "public"."hackathon_activity_comments" drop constraint if exists "hackathon_activity_comments_activity_id_fkey";
 
-alter table "public"."hackathon_activity_comments" drop constraint "hackathon_activity_comments_content_check";
+alter table "public"."hackathon_activity_comments" drop constraint if exists "hackathon_activity_comments_content_check";
 
-alter table "public"."hackathon_activity_comments" drop constraint "hackathon_activity_comments_participant_id_fkey";
+alter table "public"."hackathon_activity_comments" drop constraint if exists "hackathon_activity_comments_participant_id_fkey";
 
-alter table "public"."hackathon_participant_push_tokens" drop constraint "hackathon_participant_push_tokens_participant_id_fkey";
+alter table "public"."hackathon_participant_push_tokens" drop constraint if exists "hackathon_participant_push_tokens_participant_id_fkey";
 
-alter table "public"."hackathon_participant_push_tokens" drop constraint "hackathon_participant_push_tokens_platform_check";
+alter table "public"."hackathon_participant_push_tokens" drop constraint if exists "hackathon_participant_push_tokens_platform_check";
 
-alter table "public"."hackathon_participant_push_tokens" drop constraint "hackathon_participant_push_tokens_push_token_key";
+alter table "public"."hackathon_participant_push_tokens" drop constraint if exists "hackathon_participant_push_tokens_push_token_key";
 
-alter table "public"."hackathon_phase_activity_assessments" drop constraint "hackathon_phase_activity_assessments_activity_id_key";
+alter table "public"."hackathon_phase_activity_assessments" drop constraint if exists "hackathon_phase_activity_assessments_activity_id_key";
 
-alter table "public"."hackathon_phase_activity_submissions" drop constraint "hackathon_phase_activity_submiss_participant_id_activity_id_key";
+DO $$ BEGIN
+  alter table "public"."hackathon_phase_activity_submissions" drop constraint if exists "hackathon_phase_activity_submiss_participant_id_activity_id_key";
+EXCEPTION WHEN undefined_table THEN NULL; END $$;
 
-alter table "public"."jobs" drop constraint "jobs_automation_risk_check";
+alter table "public"."jobs" drop constraint if exists "jobs_automation_risk_check";
 
-alter table "public"."jobs" drop constraint "jobs_demand_trend_check";
+alter table "public"."jobs" drop constraint if exists "jobs_demand_trend_check";
 
-alter table "public"."jobs" drop constraint "jobs_viability_score_check";
+alter table "public"."jobs" drop constraint if exists "jobs_viability_score_check";
 
-alter table "public"."mindmap_topics" drop constraint "mindmap_topics_challenge_rating_check";
+alter table "public"."mindmap_topics" drop constraint if exists "mindmap_topics_challenge_rating_check";
 
-alter table "public"."mindmap_topics" drop constraint "mindmap_topics_progress_rating_check";
+alter table "public"."mindmap_topics" drop constraint if exists "mindmap_topics_progress_rating_check";
 
-alter table "public"."mindmap_topics" drop constraint "mindmap_topics_satisfaction_rating_check";
+alter table "public"."mindmap_topics" drop constraint if exists "mindmap_topics_satisfaction_rating_check";
 
-alter table "public"."score_events" drop constraint "score_events_journey_id_fkey";
+alter table "public"."score_events" drop constraint if exists "score_events_journey_id_fkey";
 
-alter table "public"."score_events" drop constraint "score_events_journey_or_reflection_check";
+alter table "public"."score_events" drop constraint if exists "score_events_journey_or_reflection_check";
 
-alter table "public"."score_events" drop constraint "score_events_reflection_id_fkey";
+alter table "public"."score_events" drop constraint if exists "score_events_reflection_id_fkey";
 
-alter table "public"."score_events" drop constraint "score_events_score_type_check";
+alter table "public"."score_events" drop constraint if exists "score_events_score_type_check";
 
-alter table "public"."score_events" drop constraint "score_events_score_value_check";
+alter table "public"."score_events" drop constraint if exists "score_events_score_value_check";
 
-alter table "public"."direction_finder_results" drop constraint "direction_finder_results_original_result_id_fkey";
+alter table "public"."direction_finder_results" drop constraint if exists "direction_finder_results_original_result_id_fkey";
 
-alter table "public"."hackathon_phase_activity_content" drop constraint "hackathon_phase_activity_content_content_type_check";
+alter table "public"."hackathon_phase_activity_content" drop constraint if exists "hackathon_phase_activity_content_content_type_check";
 
-alter table "public"."path_assessments" drop constraint "path_assessments_assessment_type_check";
+alter table "public"."path_assessments" drop constraint if exists "path_assessments_assessment_type_check";
 
-alter table "public"."path_content" drop constraint "path_content_content_type_check";
+alter table "public"."path_content" drop constraint if exists "path_content_content_type_check";
 
-alter table "public"."score_events" drop constraint "score_events_user_id_fkey";
+alter table "public"."score_events" drop constraint if exists "score_events_user_id_fkey";
 
-alter table "public"."student_node_progress" drop constraint "student_node_progress_user_id_fkey";
+alter table "public"."student_node_progress" drop constraint if exists "student_node_progress_user_id_fkey";
 
 drop function if exists "public"."increment_ai_chat_usage"(p_user_id uuid, p_activity_id uuid, p_enrollment_id uuid, p_session_id uuid);
 
@@ -304,13 +306,13 @@ drop view if exists "public"."students_without_teams";
 
 drop view if exists "public"."team_members_with_profiles";
 
-alter table "public"."ai_chat_usage" drop constraint "ai_chat_usage_pkey";
+alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_pkey";
 
-alter table "public"."hackathon_activity_comment_replies" drop constraint "hackathon_activity_comment_replies_pkey";
+alter table "public"."hackathon_activity_comment_replies" drop constraint if exists "hackathon_activity_comment_replies_pkey";
 
-alter table "public"."hackathon_activity_comments" drop constraint "hackathon_activity_comments_pkey";
+alter table "public"."hackathon_activity_comments" drop constraint if exists "hackathon_activity_comments_pkey";
 
-alter table "public"."hackathon_participant_push_tokens" drop constraint "hackathon_participant_push_tokens_pkey";
+alter table "public"."hackathon_participant_push_tokens" drop constraint if exists "hackathon_participant_push_tokens_pkey";
 
 drop index if exists "public"."ai_chat_usage_pkey";
 
@@ -404,23 +406,23 @@ alter table "public"."journey_simulations" enable row level security;
 
 alter table "public"."viability_cache" enable row level security;
 
-alter table "public"."hackathon_phase_activity_assessments" add column "display_order" integer not null default 0;
+alter table "public"."hackathon_phase_activity_assessments" add column if not exists "display_order" integer not null default 0;
 
 alter table "public"."jobs" drop column "company";
 
-alter table "public"."jobs" add column "description" text;
+alter table "public"."jobs" add column if not exists "description" text;
 
-alter table "public"."jobs" add column "industry" text;
+alter table "public"."jobs" add column if not exists "industry" text;
 
-alter table "public"."jobs" add column "median_salary" integer;
+alter table "public"."jobs" add column if not exists "median_salary" integer;
 
-alter table "public"."jobs" add column "required_degrees" text[] default '{}'::text[];
+alter table "public"."jobs" add column if not exists "required_degrees" text[] default '{}'::text[];
 
-alter table "public"."jobs" add column "top_hiring_regions" text[] default '{}'::text[];
+alter table "public"."jobs" add column if not exists "top_hiring_regions" text[] default '{}'::text[];
 
-alter table "public"."jobs" add column "updated_at" timestamp with time zone default now();
+alter table "public"."jobs" add column if not exists "updated_at" timestamp with time zone default now();
 
-alter table "public"."jobs" add column "viability_updated_at" timestamp with time zone;
+alter table "public"."jobs" add column if not exists "viability_updated_at" timestamp with time zone;
 
 alter table "public"."jobs" alter column "automation_risk" set data type double precision using "automation_risk"::double precision;
 
@@ -434,7 +436,7 @@ alter table "public"."mindmap_topics" drop column "reflection_why";
 
 alter table "public"."mindmap_topics" drop column "satisfaction_rating";
 
-alter table "public"."profiles" add column "expo_push_token" text;
+alter table "public"."profiles" add column if not exists "expo_push_token" text;
 
 alter table "public"."score_events" drop column "journey_id";
 
@@ -446,43 +448,43 @@ alter table "public"."score_events" drop column "score_type";
 
 alter table "public"."score_events" drop column "score_value";
 
-alter table "public"."score_events" add column "delta" integer;
+alter table "public"."score_events" add column if not exists "delta" integer;
 
-alter table "public"."score_events" add column "event_type" text;
+alter table "public"."score_events" add column if not exists "event_type" text;
 
-alter table "public"."score_events" add column "factor" text;
+alter table "public"."score_events" add column if not exists "factor" text;
 
-alter table "public"."score_events" add column "new_value" integer;
+alter table "public"."score_events" add column if not exists "new_value" integer;
 
-alter table "public"."score_events" add column "reason_string" text;
+alter table "public"."score_events" add column if not exists "reason_string" text;
 
-alter table "public"."score_events" add column "simulation_id" uuid;
+alter table "public"."score_events" add column if not exists "simulation_id" uuid;
 
-alter table "public"."score_events" add column "source_id" uuid;
+alter table "public"."score_events" add column if not exists "source_id" uuid;
 
-alter table "public"."score_events" add column "student_id" uuid not null;
+alter table "public"."score_events" add column if not exists "student_id" uuid not null;
 
 alter table "public"."score_events" alter column "created_at" drop not null;
 
 alter table "public"."score_events" alter column "user_id" drop not null;
 
-alter table "public"."seeds" add column "tags" text[] not null default '{}'::text[];
+alter table "public"."seeds" add column if not exists "tags" text[] not null default '{}'::text[];
 
-alter table "public"."universities" add column "country" text;
+alter table "public"."universities" add column if not exists "country" text;
 
-alter table "public"."universities" add column "linked_job_ids" uuid[] default '{}'::uuid[];
+alter table "public"."universities" add column if not exists "linked_job_ids" uuid[] default '{}'::uuid[];
 
-alter table "public"."universities" add column "programs" jsonb[] default '{}'::jsonb[];
+alter table "public"."universities" add column if not exists "programs" jsonb[] default '{}'::jsonb[];
 
-CREATE UNIQUE INDEX angpao_countdown_pkey ON public.angpao_countdown USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS angpao_countdown_pkey ON public.angpao_countdown USING btree (id);
 
-CREATE INDEX direction_finder_results_cache_key_idx ON public.direction_finder_results USING btree (cache_key);
+CREATE INDEX IF NOT EXISTS direction_finder_results_cache_key_idx ON public.direction_finder_results USING btree (cache_key);
 
-CREATE UNIQUE INDEX hackathon_phase_activity_assessments_activity_id_display_order_ ON public.hackathon_phase_activity_assessments USING btree (activity_id, display_order);
+CREATE UNIQUE INDEX IF NOT EXISTS hackathon_phase_activity_assessments_activity_id_display_order_ ON public.hackathon_phase_activity_assessments USING btree (activity_id, display_order);
 
-CREATE UNIQUE INDEX journey_simulations_pkey ON public.journey_simulations USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS journey_simulations_pkey ON public.journey_simulations USING btree (id);
 
-CREATE UNIQUE INDEX viability_cache_pkey ON public.viability_cache USING btree (job_id);
+CREATE UNIQUE INDEX IF NOT EXISTS viability_cache_pkey ON public.viability_cache USING btree (job_id);
 
 alter table "public"."angpao_countdown" add constraint "angpao_countdown_pkey" PRIMARY KEY using index "angpao_countdown_pkey";
 
@@ -494,7 +496,9 @@ alter table "public"."angpao_countdown" add constraint "angpao_countdown_id_chec
 
 alter table "public"."angpao_countdown" validate constraint "angpao_countdown_id_check";
 
-alter table "public"."hackathon_phase_activity_assessments" add constraint "hackathon_phase_activity_assessments_activity_id_display_order_" UNIQUE using index "hackathon_phase_activity_assessments_activity_id_display_order_";
+DO $$ BEGIN
+  alter table "public"."hackathon_phase_activity_assessments" add constraint "hackathon_phase_activity_assessments_activity_id_display_order_" UNIQUE using index "hackathon_phase_activity_assessments_activity_id_display_order_";
+EXCEPTION WHEN SQLSTATE '55000' OR SQLSTATE '42710' THEN NULL; END $$;
 
 alter table "public"."journey_simulations" add constraint "journey_simulations_job_id_fkey" FOREIGN KEY (job_id) REFERENCES public.jobs(id) ON DELETE SET NULL not valid;
 
