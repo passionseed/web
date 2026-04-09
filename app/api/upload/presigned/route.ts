@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { b2 } from "@/lib/backblaze";
 import { requireUploadAccess } from "@/lib/security/upload-access";
 import { safeServerError } from "@/lib/security/route-guards";
+import {
+  validateFile,
+  ALLOWED_GENERAL_TYPES,
+  MAX_GENERAL_SIZE,
+} from "@/lib/constants/upload";
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,9 +37,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Valid fileSize is required" }, { status: 400 });
     }
 
-    const MAX_FILE_SIZE = 40 * 1024 * 1024;
-    if (fileSize > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "File too large" }, { status: 400 });
+    const validation = validateFile(
+      fileName,
+      fileSize,
+      fileType,
+      ALLOWED_GENERAL_TYPES,
+      MAX_GENERAL_SIZE
+    );
+
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const presignedData = await b2.getPresignedUploadUrl(
