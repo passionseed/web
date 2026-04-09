@@ -92,6 +92,7 @@ export async function GET(
     }
 
     // Check if user is instructor/TA (can see all enrollments) or student (can see only their own)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const classroomData = assignment.classroom as any;
     const membership = classroomData?.classroom_memberships?.[0];
     const canViewAll =
@@ -201,10 +202,10 @@ export async function GET(
     });
 
     // Combine enrollment and user data
+    // ⚡ Bolt: Use Map for O(1) lookups instead of O(N) array.find() inside iterative methods
+    const userProfilesMap = new Map(userProfiles?.map(profile => [profile.user_id, profile]) || []);
     const enrichedEnrollments = enrollments.map((enrollment) => {
-      const userProfile = userProfiles?.find(
-        (profile) => profile.user_id === enrollment.user_id
-      );
+      const userProfile = userProfilesMap.get(enrollment.user_id);
       return {
         ...enrollment,
         user: userProfile
