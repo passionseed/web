@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { b2 } from "@/lib/backblaze";
 import { requireUploadAccess } from "@/lib/security/upload-access";
 import { safeServerError } from "@/lib/security/route-guards";
+import {
+  validateFile,
+  ALLOWED_GENERAL_TYPES,
+  ALLOWED_DOCUMENT_TYPES,
+  MAX_FILE_SIZE,
+} from "@/lib/constants/upload";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,32 +15,65 @@ export async function POST(request: NextRequest) {
     const { nodeId, fileName, fileType, fileSize, uploadType } = body;
 
     if (!nodeId || typeof nodeId !== "string" || nodeId.trim().length === 0) {
-      return NextResponse.json({ error: "Valid nodeId is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Valid nodeId is required" },
+        { status: 400 },
+      );
     }
 
     const access = await requireUploadAccess(nodeId);
     if (!access.ok) {
-      return NextResponse.json({ error: access.error }, { status: access.status });
+      return NextResponse.json(
+        { error: access.error },
+        { status: access.status },
+      );
     }
 
     const validUploadTypes = ["submission", "map-content"];
-    const finalUploadType = uploadType && validUploadTypes.includes(uploadType) ? uploadType : "submission";
+    const finalUploadType =
+      uploadType && validUploadTypes.includes(uploadType)
+        ? uploadType
+        : "submission";
 
-    if (!fileName || typeof fileName !== "string" || fileName.trim().length === 0) {
-      return NextResponse.json({ error: "Valid fileName is required" }, { status: 400 });
+    if (
+      !fileName ||
+      typeof fileName !== "string" ||
+      fileName.trim().length === 0
+    ) {
+      return NextResponse.json(
+        { error: "Valid fileName is required" },
+        { status: 400 },
+      );
     }
 
     if (!fileType || typeof fileType !== "string") {
-      return NextResponse.json({ error: "Valid fileType is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Valid fileType is required" },
+        { status: 400 },
+      );
     }
 
     if (!fileSize || typeof fileSize !== "number" || fileSize <= 0) {
-      return NextResponse.json({ error: "Valid fileSize is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Valid fileSize is required" },
+        { status: 400 },
+      );
     }
 
-    const MAX_FILE_SIZE = 40 * 1024 * 1024;
-    if (fileSize > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "File too large" }, { status: 400 });
+    const allowedTypes =
+      finalUploadType === "map-content"
+        ? ALLOWED_DOCUMENT_TYPES
+        : ALLOWED_GENERAL_TYPES;
+    const validation = validateFile(
+      fileName,
+      fileSize,
+      fileType,
+      allowedTypes,
+      MAX_FILE_SIZE,
+    );
+
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const presignedData = await b2.getPresignedUploadUrl(
@@ -44,7 +83,7 @@ export async function POST(request: NextRequest) {
       fileType,
       fileSize,
       finalUploadType as "submission" | "map-content",
-      3600
+      3600,
     );
 
     const fileUrl = `https://${process.env.B2_BUCKET_NAME}.${process.env.B2_ENDPOINT || "s3.us-west-000.backblazeb2.com"}/${presignedData.fileKey}`;
@@ -57,6 +96,9 @@ export async function POST(request: NextRequest) {
       fileUrl,
     });
   } catch (error) {
-    return safeServerError("Internal server error. Please try again later.", error);
+    return safeServerError(
+      "Internal server error. Please try again later.",
+      error,
+    );
   }
 }
