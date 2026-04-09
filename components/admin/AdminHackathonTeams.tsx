@@ -28,8 +28,14 @@ import {
   Layers,
   ChevronRight,
   Download,
+  Trophy,
+  FileText,
+  Image as ImageIcon,
+  Paperclip,
 } from "lucide-react";
 import { format } from "date-fns";
+
+// ─── Browser tab types ────────────────────────────────────────────────────────
 
 interface Participant {
   id: string;
@@ -54,7 +60,375 @@ interface HackathonTeam {
   hackathon_team_members: TeamMember[];
 }
 
+// ─── Leaderboard tab types ────────────────────────────────────────────────────
+
+interface LeaderboardMember {
+  name: string;
+  email: string;
+  university: string;
+}
+
+interface TeamSubmission {
+  id: string;
+  activity_id: string;
+  activity_title: string | null;
+  status: string;
+  text_answer: string | null;
+  image_url: string | null;
+  file_urls: string[];
+  submitted_at: string | null;
+  submitted_by_name: string | null;
+}
+
+interface IndividualSubmission {
+  id: string;
+  activity_id: string;
+  activity_title: string | null;
+  participant_name: string | null;
+  status: string;
+  text_answer: string | null;
+  image_url: string | null;
+  file_urls: string[];
+  submitted_at: string | null;
+}
+
+interface LeaderboardTeam {
+  id: string;
+  name: string;
+  lobby_code: string;
+  member_count: number;
+  members: LeaderboardMember[];
+  total_score: number;
+  team_submissions: TeamSubmission[];
+  individual_submissions: IndividualSubmission[];
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === "submitted" || status === "passed") {
+    return (
+      <Badge className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0">
+        {status}
+      </Badge>
+    );
+  }
+  if (status === "draft" || status === "in_progress") {
+    return (
+      <Badge className="text-[10px] bg-yellow-500/15 text-yellow-300 border border-yellow-500/30 px-2 py-0">
+        {status}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-400 px-2 py-0">
+      {status}
+    </Badge>
+  );
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  if (rank === 1) {
+    return (
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-400/20 border border-yellow-400/40 text-yellow-300 font-bold text-sm">
+        1
+      </span>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-400/20 border border-slate-400/40 text-slate-300 font-bold text-sm">
+        2
+      </span>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-400/20 border border-orange-400/40 text-orange-300 font-bold text-sm">
+        3
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-800/60 border border-slate-700 text-slate-400 font-bold text-sm">
+      {rank}
+    </span>
+  );
+}
+
+function ScoreBadge({ score, rank }: { score: number; rank: number }) {
+  if (rank === 1) {
+    return (
+      <Badge className="bg-yellow-400/15 text-yellow-300 border border-yellow-400/30 font-mono font-bold text-sm px-3">
+        {score}
+      </Badge>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <Badge className="bg-slate-400/15 text-slate-300 border border-slate-400/30 font-mono font-bold text-sm px-3">
+        {score}
+      </Badge>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <Badge className="bg-orange-400/15 text-orange-300 border border-orange-400/30 font-mono font-bold text-sm px-3">
+        {score}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="border-slate-700 text-slate-300 font-mono font-bold text-sm px-3">
+      {score}
+    </Badge>
+  );
+}
+
+function SubmissionRow({ sub }: { sub: TeamSubmission | IndividualSubmission }) {
+  return (
+    <div className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-slate-950/40 border border-slate-800/50">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <span className="text-xs font-semibold text-slate-200">
+          {sub.activity_title ?? sub.activity_id}
+        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <StatusBadge status={sub.status} />
+          {"submitted_by_name" in sub && sub.submitted_by_name && (
+            <span className="text-[10px] text-slate-500">{sub.submitted_by_name}</span>
+          )}
+          {"participant_name" in sub && sub.participant_name && (
+            <span className="text-[10px] text-slate-500">{sub.participant_name}</span>
+          )}
+          {sub.submitted_at && (
+            <span className="text-[10px] text-slate-600 font-mono">
+              {format(new Date(sub.submitted_at), "MMM d, HH:mm")}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {sub.text_answer && (
+        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mt-1">
+          {sub.text_answer.length > 100 ? sub.text_answer.slice(0, 100) + "…" : sub.text_answer}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2 mt-1 flex-wrap">
+        {sub.image_url && (
+          <div className="flex items-center gap-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={sub.image_url}
+              alt="submission"
+              className="h-10 w-10 object-cover rounded border border-slate-700"
+            />
+            <ImageIcon className="h-3 w-3 text-slate-500" />
+          </div>
+        )}
+        {sub.file_urls && sub.file_urls.length > 0 && (
+          <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-400 px-2 py-0 flex items-center gap-1">
+            <Paperclip className="h-2.5 w-2.5" />
+            {sub.file_urls.length} {sub.file_urls.length === 1 ? "file" : "files"}
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Leaderboard view ─────────────────────────────────────────────────────────
+
+function LeaderboardView() {
+  const [leaderboardTeams, setLeaderboardTeams] = useState<LeaderboardTeam[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch once on mount; no polling needed
+    fetch("/api/admin/hackathon/teams/submissions")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.teams) setLeaderboardTeams(data.teams);
+      })
+      .catch((err) => console.error("Error fetching leaderboard:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (leaderboardTeams.length === 0) {
+    return (
+      <div className="text-center text-slate-500 py-16">No teams found.</div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-slate-700/50 overflow-hidden bg-slate-950/20">
+      <Table>
+        <TableHeader className="bg-slate-900/60">
+          <TableRow className="hover:bg-transparent border-slate-700/50">
+            <TableHead className="w-[40px]"></TableHead>
+            <TableHead className="w-[56px] text-slate-300 font-medium tracking-tight">Rank</TableHead>
+            <TableHead className="text-slate-300 font-medium tracking-tight">Team</TableHead>
+            <TableHead className="text-slate-300 font-medium tracking-tight text-center">Members</TableHead>
+            <TableHead className="text-slate-300 font-medium tracking-tight text-right pr-6">Score</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {leaderboardTeams.map((team, index) => {
+            const rank = index + 1;
+            const isExpanded = expandedTeamId === team.id;
+
+            // Group individual submissions by participant name
+            const individualByParticipant = team.individual_submissions.reduce<
+              Record<string, IndividualSubmission[]>
+            >((acc, sub) => {
+              const key = sub.participant_name ?? "Unknown";
+              (acc[key] ??= []).push(sub);
+              return acc;
+            }, {});
+
+            return (
+              <React.Fragment key={team.id}>
+                <TableRow
+                  className={`cursor-pointer transition-all duration-200 border-slate-800/50 ${
+                    isExpanded ? "bg-blue-500/5" : "hover:bg-slate-800/40"
+                  }`}
+                  onClick={() => setExpandedTeamId(isExpanded ? null : team.id)}
+                >
+                  <TableCell>
+                    <motion.div
+                      animate={{ rotate: isExpanded ? 90 : 0 }}
+                      transition={{ duration: 0.2, ease: [0.05, 0.7, 0.35, 0.99] }}
+                    >
+                      <ChevronRight className="h-4 w-4 text-slate-500" />
+                    </motion.div>
+                  </TableCell>
+                  <TableCell>
+                    <RankBadge rank={rank} />
+                  </TableCell>
+                  <TableCell className="font-semibold text-blue-400">
+                    {team.name}
+                    <span className="ml-2 text-xs font-mono text-slate-600">{team.lobby_code}</span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-slate-500" />
+                      <span className="font-medium text-slate-200">{team.member_count}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right pr-6">
+                    <ScoreBadge score={team.total_score} rank={rank} />
+                  </TableCell>
+                </TableRow>
+
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableCell colSpan={5} className="p-0 border-none">
+                    <AnimatePresence initial={false}>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: [0.05, 0.7, 0.35, 0.99] }}
+                          className="overflow-hidden bg-slate-900/10 backdrop-blur-sm"
+                        >
+                          <div className="px-12 py-6 border-b border-slate-800/50 space-y-6">
+                            {/* Members */}
+                            <div>
+                              <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
+                                <Users className="h-4 w-4 text-blue-400" />
+                                Members
+                              </h4>
+                              <div className="flex flex-wrap gap-2">
+                                {team.members.map((m) => (
+                                  <div
+                                    key={m.email}
+                                    className="flex flex-col px-3 py-2 rounded-lg bg-slate-950/40 border border-slate-800/50 min-w-[160px]"
+                                  >
+                                    <span className="text-xs font-semibold text-slate-200">{m.name}</span>
+                                    <span className="text-[10px] text-slate-500 font-mono">{m.email}</span>
+                                    <span className="text-[10px] text-slate-600 mt-0.5">{m.university}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Team submissions */}
+                            {team.team_submissions.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
+                                  <FileText className="h-4 w-4 text-indigo-400" />
+                                  Team Submissions
+                                  <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-500 px-2 py-0 ml-1">
+                                    {team.team_submissions.length}
+                                  </Badge>
+                                </h4>
+                                <div className="space-y-2">
+                                  {team.team_submissions.map((sub) => (
+                                    <SubmissionRow key={sub.id} sub={sub} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Individual submissions grouped by participant */}
+                            {Object.keys(individualByParticipant).length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
+                                  <FileText className="h-4 w-4 text-purple-400" />
+                                  Individual Submissions
+                                  <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-500 px-2 py-0 ml-1">
+                                    {team.individual_submissions.length}
+                                  </Badge>
+                                </h4>
+                                <div className="space-y-4">
+                                  {Object.entries(individualByParticipant).map(([participantName, subs]) => (
+                                    <div key={participantName}>
+                                      <p className="text-xs font-semibold text-slate-400 mb-1.5 pl-1">
+                                        {participantName}
+                                      </p>
+                                      <div className="space-y-2 pl-2 border-l border-slate-800">
+                                        {subs.map((sub) => (
+                                          <SubmissionRow key={sub.id} sub={sub} />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {team.team_submissions.length === 0 &&
+                              team.individual_submissions.length === 0 && (
+                                <p className="text-xs text-slate-600 italic">No submissions yet.</p>
+                              )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export function AdminHackathonTeams() {
+  const [activeTab, setActiveTab] = useState<"browser" | "leaderboard">("browser");
   const [teams, setTeams] = useState<HackathonTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,7 +485,7 @@ export function AdminHackathonTeams() {
       "Member Joined At",
       "Participant Registered At",
     ];
-    
+
     const rows = teams.flatMap((team) =>
       team.hackathon_team_members.map((member) => [
         team.name,
@@ -222,201 +596,250 @@ export function AdminHackathonTeams() {
         </Card>
       </div>
 
-      <Card className="bg-slate-900/40 backdrop-blur-md border border-slate-700/50 shadow-xl overflow-hidden">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent italic">Hackathon Team Browser</CardTitle>
-              <CardDescription className="text-slate-400">
-                Browse all teams and their respective members.
-              </CardDescription>
+      {/* Tab switcher */}
+      <div className="flex items-center gap-2 border-b border-slate-700/50 pb-0">
+        <button
+          onClick={() => setActiveTab("browser")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "browser"
+              ? "border-blue-400 text-blue-300"
+              : "border-transparent text-slate-500 hover:text-slate-300"
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          Team Browser
+        </button>
+        <button
+          onClick={() => setActiveTab("leaderboard")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "leaderboard"
+              ? "border-yellow-400 text-yellow-300"
+              : "border-transparent text-slate-500 hover:text-slate-300"
+          }`}
+        >
+          <Trophy className="h-4 w-4" />
+          Leaderboard
+        </button>
+      </div>
+
+      {activeTab === "browser" && (
+        <Card className="bg-slate-900/40 backdrop-blur-md border border-slate-700/50 shadow-xl overflow-hidden">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent italic">Hackathon Team Browser</CardTitle>
+                <CardDescription className="text-slate-400">
+                  Browse all teams and their respective members.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={runAutoMatching}
+                  disabled={runningMatching}
+                  className="border-slate-700 hover:bg-slate-800 transition-all font-medium"
+                >
+                  {runningMatching ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Users className="mr-2 h-4 w-4" />
+                  )}
+                  Run Auto Matching
+                </Button>
+                <Button variant="outline" size="sm" onClick={downloadCSV} className="border-slate-700 hover:bg-slate-800 transition-all font-medium">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download CSV
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={runAutoMatching}
-                disabled={runningMatching}
-                className="border-slate-700 hover:bg-slate-800 transition-all font-medium"
-              >
-                {runningMatching ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Users className="mr-2 h-4 w-4" />
-                )}
-                Run Auto Matching
-              </Button>
-              <Button variant="outline" size="sm" onClick={downloadCSV} className="border-slate-700 hover:bg-slate-800 transition-all font-medium">
-                <Download className="mr-2 h-4 w-4" />
-                Download CSV
-              </Button>
+            {matchingMessage && (
+              <div className="mt-3 rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-sm text-blue-100">
+                {matchingMessage}
+              </div>
+            )}
+            <div className="relative mt-4">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by team name, lobby code, or member name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-slate-950/50 border-slate-700 focus:ring-blue-500/50"
+              />
             </div>
-          </div>
-          {matchingMessage && (
-            <div className="mt-3 rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-sm text-blue-100">
-              {matchingMessage}
-            </div>
-          )}
-          <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by team name, lobby code, or member name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-slate-950/50 border-slate-700 focus:ring-blue-500/50"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border border-slate-700/50 overflow-hidden bg-slate-950/20">
-            <Table>
-              <TableHeader className="bg-slate-900/60">
-                <TableRow className="hover:bg-transparent border-slate-700/50">
-                  <TableHead className="w-[40px]"></TableHead>
-                  <TableHead className="text-slate-300 font-medium tracking-tight">Team Name</TableHead>
-                  <TableHead className="text-slate-300 font-medium tracking-tight">Lobby Code</TableHead>
-                  <TableHead className="text-slate-300 font-medium tracking-tight text-center">Members</TableHead>
-                  <TableHead className="text-slate-300 font-medium tracking-tight">Created At</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTeams.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
-                      {searchQuery
-                        ? "No teams found matching your search"
-                        : "No teams created yet"}
-                    </TableCell>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border border-slate-700/50 overflow-hidden bg-slate-950/20">
+              <Table>
+                <TableHeader className="bg-slate-900/60">
+                  <TableRow className="hover:bg-transparent border-slate-700/50">
+                    <TableHead className="w-[40px]"></TableHead>
+                    <TableHead className="text-slate-300 font-medium tracking-tight">Team Name</TableHead>
+                    <TableHead className="text-slate-300 font-medium tracking-tight">Lobby Code</TableHead>
+                    <TableHead className="text-slate-300 font-medium tracking-tight text-center">Members</TableHead>
+                    <TableHead className="text-slate-300 font-medium tracking-tight">Created At</TableHead>
                   </TableRow>
-                ) : (
-                  filteredTeams.map((team) => (
-                    <React.Fragment key={team.id}>
-                      <TableRow
-                        className={`cursor-pointer transition-all duration-200 border-slate-800/50 ${
-                          expandedTeamId === team.id ? "bg-blue-500/5" : "hover:bg-slate-800/40"
-                        }`}
-                        onClick={() =>
-                          setExpandedTeamId(expandedTeamId === team.id ? null : team.id)
-                        }
-                      >
-                        <TableCell>
-                          <motion.div
-                            animate={{ rotate: expandedTeamId === team.id ? 90 : 0 }}
-                            transition={{ duration: 0.2, ease: [0.05, 0.7, 0.35, 0.99] }}
-                          >
-                            <ChevronRight className="h-4 w-4 text-slate-500" />
-                          </motion.div>
-                        </TableCell>
-                        <TableCell className="font-semibold text-blue-400 group-hover:text-blue-300 transition-colors">
-                          {team.name}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-mono text-xs border-blue-500/20 bg-blue-500/5 text-blue-300/80">
-                            {team.lobby_code}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="font-medium text-slate-200">{team.hackathon_team_members.length}</span>
-                            <div className="flex -space-x-2">
-                              {team.hackathon_team_members.slice(0, 3).map((m, i) => (
-                                <div key={i} className="h-5 w-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-400">
-                                  {m.hackathon_participants.name[0]}
-                                </div>
-                              ))}
-                              {team.hackathon_team_members.length > 3 && (
-                                <div className="h-5 w-5 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-[8px] text-slate-500">
-                                  +{team.hackathon_team_members.length - 3}
-                                </div>
-                              )}
+                </TableHeader>
+                <TableBody>
+                  {filteredTeams.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
+                        {searchQuery
+                          ? "No teams found matching your search"
+                          : "No teams created yet"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredTeams.map((team) => (
+                      <React.Fragment key={team.id}>
+                        <TableRow
+                          className={`cursor-pointer transition-all duration-200 border-slate-800/50 ${
+                            expandedTeamId === team.id ? "bg-blue-500/5" : "hover:bg-slate-800/40"
+                          }`}
+                          onClick={() =>
+                            setExpandedTeamId(expandedTeamId === team.id ? null : team.id)
+                          }
+                        >
+                          <TableCell>
+                            <motion.div
+                              animate={{ rotate: expandedTeamId === team.id ? 90 : 0 }}
+                              transition={{ duration: 0.2, ease: [0.05, 0.7, 0.35, 0.99] }}
+                            >
+                              <ChevronRight className="h-4 w-4 text-slate-500" />
+                            </motion.div>
+                          </TableCell>
+                          <TableCell className="font-semibold text-blue-400 group-hover:text-blue-300 transition-colors">
+                            {team.name}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono text-xs border-blue-500/20 bg-blue-500/5 text-blue-300/80">
+                              {team.lobby_code}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="font-medium text-slate-200">{team.hackathon_team_members.length}</span>
+                              <div className="flex -space-x-2">
+                                {team.hackathon_team_members.slice(0, 3).map((m, i) => (
+                                  <div key={i} className="h-5 w-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-400">
+                                    {m.hackathon_participants.name[0]}
+                                  </div>
+                                ))}
+                                {team.hackathon_team_members.length > 3 && (
+                                  <div className="h-5 w-5 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-[8px] text-slate-500">
+                                    +{team.hackathon_team_members.length - 3}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-slate-500">
-                          {format(new Date(team.created_at), "MMM d, yyyy")}
-                        </TableCell>
-                      </TableRow>
-                      
-                      <TableRow className="border-none hover:bg-transparent">
-                        <TableCell colSpan={5} className="p-0 border-none">
-                          <AnimatePresence initial={false}>
-                            {expandedTeamId === team.id && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.3, ease: [0.05, 0.7, 0.35, 0.99] }}
-                                className="overflow-hidden bg-slate-900/10 backdrop-blur-sm"
-                              >
-                                <div className="px-12 py-6 border-b border-slate-800/50">
-                                  <div className="flex items-center justify-between mb-4">
-                                    <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                                      <Users className="h-4 w-4 text-blue-400" />
-                                      Team Members
-                                    </h4>
-                                    <Badge variant="outline" className="text-[10px] border-slate-700 bg-slate-800/50 text-slate-400 px-2 py-0">
-                                      {team.hackathon_team_members.length} Active
-                                    </Badge>
-                                  </div>
-                                  
-                                  <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 shadow-inner overflow-hidden">
-                                    <Table>
-                                      <TableHeader className="bg-slate-900/80">
-                                        <TableRow className="hover:bg-transparent border-slate-800/50">
-                                          <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">Name</TableHead>
-                                          <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">University</TableHead>
-                                          <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">When Joined (Team)</TableHead>
-                                          <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9 text-right">When Reg (Hackathon)</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {team.hackathon_team_members.map((member) => (
-                                          <TableRow key={member.participant_id} className="hover:bg-slate-800/30 border-slate-800/50 group/member">
-                                            <TableCell className="text-sm py-3">
-                                              <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-200 group-hover/member:text-blue-200 transition-colors">{member.hackathon_participants.name}</span>
-                                                <span className="text-xs text-slate-500 font-mono">
-                                                  {member.hackathon_participants.email}
-                                                </span>
-                                              </div>
-                                            </TableCell>
-                                            <TableCell className="text-sm py-3 text-slate-400 font-medium">
-                                              {member.hackathon_participants.university}
-                                            </TableCell>
-                                            <TableCell className="text-xs py-3">
-                                              <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-blue-500/5 border border-blue-500/10 w-fit text-blue-300/70 group-hover/member:border-blue-500/30 transition-colors">
-                                                <Calendar className="h-3 w-3" />
-                                                {format(new Date(member.joined_at), "MMM d, HH:mm")}
-                                              </div>
-                                            </TableCell>
-                                            <TableCell className="text-xs py-3 text-right">
-                                              <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-purple-500/5 border border-purple-500/10 w-fit text-purple-300/70 group-hover/member:border-purple-500/30 transition-colors ml-auto">
-                                                <Calendar className="h-3 w-3" />
-                                                {format(
-                                                  new Date(member.hackathon_participants.created_at),
-                                                  "MMM d, HH:mm"
-                                                )}
-                                              </div>
-                                            </TableCell>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-500">
+                            {format(new Date(team.created_at), "MMM d, yyyy")}
+                          </TableCell>
+                        </TableRow>
+
+                        <TableRow className="border-none hover:bg-transparent">
+                          <TableCell colSpan={5} className="p-0 border-none">
+                            <AnimatePresence initial={false}>
+                              {expandedTeamId === team.id && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.3, ease: [0.05, 0.7, 0.35, 0.99] }}
+                                  className="overflow-hidden bg-slate-900/10 backdrop-blur-sm"
+                                >
+                                  <div className="px-12 py-6 border-b border-slate-800/50">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                        <Users className="h-4 w-4 text-blue-400" />
+                                        Team Members
+                                      </h4>
+                                      <Badge variant="outline" className="text-[10px] border-slate-700 bg-slate-800/50 text-slate-400 px-2 py-0">
+                                        {team.hackathon_team_members.length} Active
+                                      </Badge>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 shadow-inner overflow-hidden">
+                                      <Table>
+                                        <TableHeader className="bg-slate-900/80">
+                                          <TableRow className="hover:bg-transparent border-slate-800/50">
+                                            <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">Name</TableHead>
+                                            <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">University</TableHead>
+                                            <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">When Joined (Team)</TableHead>
+                                            <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9 text-right">When Reg (Hackathon)</TableHead>
                                           </TableRow>
-                                        ))}
-                                      </TableBody>
-                                    </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {team.hackathon_team_members.map((member) => (
+                                            <TableRow key={member.participant_id} className="hover:bg-slate-800/30 border-slate-800/50 group/member">
+                                              <TableCell className="text-sm py-3">
+                                                <div className="flex flex-col">
+                                                  <span className="font-semibold text-slate-200 group-hover/member:text-blue-200 transition-colors">{member.hackathon_participants.name}</span>
+                                                  <span className="text-xs text-slate-500 font-mono">
+                                                    {member.hackathon_participants.email}
+                                                  </span>
+                                                </div>
+                                              </TableCell>
+                                              <TableCell className="text-sm py-3 text-slate-400 font-medium">
+                                                {member.hackathon_participants.university}
+                                              </TableCell>
+                                              <TableCell className="text-xs py-3">
+                                                <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-blue-500/5 border border-blue-500/10 w-fit text-blue-300/70 group-hover/member:border-blue-500/30 transition-colors">
+                                                  <Calendar className="h-3 w-3" />
+                                                  {format(new Date(member.joined_at), "MMM d, HH:mm")}
+                                                </div>
+                                              </TableCell>
+                                              <TableCell className="text-xs py-3 text-right">
+                                                <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-purple-500/5 border border-purple-500/10 w-fit text-purple-300/70 group-hover/member:border-purple-500/30 transition-colors ml-auto">
+                                                  <Calendar className="h-3 w-3" />
+                                                  {format(
+                                                    new Date(member.hackathon_participants.created_at),
+                                                    "MMM d, HH:mm"
+                                                  )}
+                                                </div>
+                                              </TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
                                   </div>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === "leaderboard" && (
+        <Card className="bg-slate-900/40 backdrop-blur-md border border-slate-700/50 shadow-xl overflow-hidden">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent italic flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-yellow-400" />
+                  Hackathon Leaderboard
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Teams ranked by total score. Click any row to view submissions.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <LeaderboardView />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
