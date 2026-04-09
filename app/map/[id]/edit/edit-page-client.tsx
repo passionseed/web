@@ -349,15 +349,19 @@ export default function EditMapPage({
       const currentNodes = map.map_nodes || [];
       const initialNodes = initialMap.map_nodes || [];
 
+      // O(1) lookups for nodes
+      const currentNodeIds = new Set(currentNodes.map((n) => n.id));
+      const initialNodesMap = new Map(initialNodes.map((n) => [n.id, n]));
+
       // Nodes to delete
       const nodeIdsToDelete = initialNodes
-        .filter((inode) => !currentNodes.some((cnode) => cnode.id === inode.id))
+        .filter((inode) => !currentNodeIds.has(inode.id))
         .map((inode) => inode.id);
       batchUpdate.nodes.delete = nodeIdsToDelete;
 
       // Nodes to create and update
       currentNodes.forEach((cnode) => {
-        const inode = initialNodes.find((n) => n.id === cnode.id);
+        const inode = initialNodesMap.get(cnode.id);
         if (!inode) {
           // New node - only include actual column fields
           const { node_content, node_assessments, node_paths_source, node_paths_destination, id, ...nodeData } = cnode;
@@ -394,14 +398,20 @@ export default function EditMapPage({
       const currentPaths = currentNodes.flatMap(node => node.node_paths_source || []);
       const initialPaths = initialNodes.flatMap(node => node.node_paths_source || []);
 
+      // O(1) lookups for paths
+      const currentPathKeys = new Set(
+        currentPaths.map((p) => `${p.source_node_id}-${p.destination_node_id}`)
+      );
+      const initialPathKeys = new Set(
+        initialPaths.map((p) => `${p.source_node_id}-${p.destination_node_id}`)
+      );
+
       // Paths to delete
       batchUpdate.paths.delete = initialPaths
         .filter(
           (ipath) =>
-            !currentPaths.some(
-              (cpath) =>
-                cpath.source_node_id === ipath.source_node_id &&
-                cpath.destination_node_id === ipath.destination_node_id,
+            !currentPathKeys.has(
+              `${ipath.source_node_id}-${ipath.destination_node_id}`
             ),
         )
         .map((ipath) => ipath.id)
@@ -410,33 +420,35 @@ export default function EditMapPage({
       // Paths to create
       batchUpdate.paths.create = currentPaths.filter(
         (cpath) =>
-          !initialPaths.some(
-            (ipath) =>
-              ipath.source_node_id === cpath.source_node_id &&
-              ipath.destination_node_id === cpath.destination_node_id,
+          !initialPathKeys.has(
+            `${cpath.source_node_id}-${cpath.destination_node_id}`
           ),
       );
 
       console.log("📝 Detecting content and assessment changes...");
       // Detect content and assessment changes for each node
       currentNodes.forEach((cnode) => {
-        const inode = initialNodes.find((n) => n.id === cnode.id);
+        const inode = initialNodesMap.get(cnode.id);
         if (!inode) return; // New nodes handle their own content/assessments
 
         // Content changes
         const currentContent = cnode.node_content || [];
         const initialContent = inode.node_content || [];
 
+        // O(1) lookups for content
+        const currentContentIds = new Set(currentContent.map((c) => c.id));
+        const initialContentMap = new Map(initialContent.map((c) => [c.id, c]));
+
         // Content to delete
         batchUpdate.content.delete.push(
           ...initialContent
-            .filter((ic) => !currentContent.some((cc) => cc.id === ic.id))
+            .filter((ic) => !currentContentIds.has(ic.id))
             .map((ic) => ic.id),
         );
 
         // Content to create or update
         currentContent.forEach((cc) => {
-          const ic = initialContent.find((c) => c.id === cc.id);
+          const ic = initialContentMap.get(cc.id);
           const { id, ...contentData } = cc;
 
           if (!ic) {
@@ -457,16 +469,20 @@ export default function EditMapPage({
         const currentAssessments = cnode.node_assessments || [];
         const initialAssessments = inode.node_assessments || [];
 
+        // O(1) lookups for assessments
+        const currentAssessmentIds = new Set(currentAssessments.map((a) => a.id));
+        const initialAssessmentsMap = new Map(initialAssessments.map((a) => [a.id, a]));
+
         // Assessment to delete
         batchUpdate.assessments.delete.push(
           ...initialAssessments
-            .filter((ia) => !currentAssessments.some((ca) => ca.id === ia.id))
+            .filter((ia) => !currentAssessmentIds.has(ia.id))
             .map((ia) => ia.id),
         );
 
         // Assessment to create or update
         currentAssessments.forEach((ca) => {
-          const ia = initialAssessments.find((a) => a.id === ca.id);
+          const ia = initialAssessmentsMap.get(ca.id);
           // Strip out relationship fields
           const { quiz_questions, id, ...assessmentData } = ca;
 
@@ -506,6 +522,10 @@ export default function EditMapPage({
           const currentQuestions = currentAssessment.quiz_questions || [];
           const initialQuestions = initialAssessment.quiz_questions || [];
 
+          // O(1) lookups for quiz questions
+          const currentQuestionIds = new Set(currentQuestions.map((q) => q.id));
+          const initialQuestionsMap = new Map(initialQuestions.map((q) => [q.id, q]));
+
           // Quiz questions can be created, updated or deleted
           // However, to keep the batch update reliable, we only track changes
           // for assessments that already have real database IDs.
@@ -528,7 +548,7 @@ export default function EditMapPage({
           // Deleted questions - only real IDs that exist in initial but not current
           const questionsToDelete = initialQuestions.filter((iq) => {
             if (!iq.id || iq.id.startsWith("temp_")) return false;
-            const stillExists = currentQuestions.some((cq) => cq.id === iq.id);
+            const stillExists = currentQuestionIds.has(iq.id);
             if (!stillExists) {
               console.log("🗑️ Question marked for deletion:", iq.id);
               return true;
@@ -545,7 +565,7 @@ export default function EditMapPage({
           const questionsToUpdate = currentQuestions.filter((cq) => {
             if (!cq.id || cq.id.startsWith("temp_")) return false;
 
-            const iq = initialQuestions.find((q) => q.id === cq.id);
+            const iq = initialQuestionsMap.get(cq.id);
             if (!iq) {
               // Question exists in current but not initial - either newly created or state sync issue
               console.log(
