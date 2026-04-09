@@ -41,32 +41,32 @@
   "statistics": [
     {
       "stat": "9.8% of Thai adolescents reported loneliness in 2015 Global School-based Student Health Survey",
-      "source": "Global School-based Student Health Survey (GSHS)",
+      "sources": [{"label": "Global School-based Student Health Survey (GSHS)", "url": "https://www.who.int/teams/noncommunicable-diseases/surveillance/systems-tools/global-school-based-student-health-survey"}],
       "year": "2015"
     },
     {
       "stat": "72.2% of Thai adolescents aged 11-16 had mild (44.5%) or moderate (27.7%) depression",
-      "source": "Kasetsart Journal of Social Sciences",
+      "sources": [{"label": "Kasetsart Journal of Social Sciences", "url": "https://so04.tci-thaijo.org/index.php/KJSS/article/view/2568"}],
       "year": "2023"
     },
     {
       "stat": "17.4% of Thai teenagers aged 18 and under are at risk of self-harm",
-      "source": "Department of Mental Health Thailand Mental Health Check-in app",
+      "sources": [{"label": "Department of Mental Health Thailand Mental Health Check-in app", "url": "https://www.dmht.moph.go.th"}],
       "year": "2024"
     },
     {
       "stat": "Thailand suicide rate: 7.97 per 100,000 in 2022, up from 6.64 in 2019 (32% increase)",
-      "source": "WHO LIVE LIFE Thailand implementation report",
+      "sources": [{"label": "WHO LIVE LIFE Thailand implementation report", "url": "https://www.who.int/thailand/news/feature-stories/detail/strengthening-suicide-prevention-in-thailand-with-live-life"}],
       "year": "2022"
     },
     {
       "stat": "11% of Thai males and 23% of females aged 13-17 considered suicide",
-      "source": "2021 Global School-based Student Health Survey (Thailand)",
+      "sources": [{"label": "2021 Global School-based Student Health Survey (Thailand)", "url": "https://www.who.int/teams/noncommunicable-diseases/surveillance/systems-tools/global-school-based-student-health-survey"}],
       "year": "2021"
     },
     {
       "stat": "Female adolescents 3.4x more likely to feel 'always lonely' than males",
-      "source": "GSHS Southeast Asia analysis",
+      "sources": [{"label": "GSHS Southeast Asia analysis", "url": "https://journals.lww.com/shbh/fulltext/2025/07000/factors_associated_with_loneliness_among.7.aspx"}],
       "year": "2021"
     }
   ],
