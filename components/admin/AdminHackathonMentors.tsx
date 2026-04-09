@@ -3,10 +3,118 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Clock, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import type { MentorProfile } from "@/types/mentor";
+
+type AvailabilitySlot = { day_of_week: number; hour: number };
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+function AvailabilityModal({
+  mentor,
+  onClose,
+}: {
+  mentor: MentorProfile;
+  onClose: () => void;
+}) {
+  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/admin/hackathon/mentors/${mentor.id}/availability`)
+      .then((r) => r.json())
+      .then((d) => setSlots(d.slots ?? []))
+      .finally(() => setLoading(false));
+  }, [mentor.id]);
+
+  const slotSet = new Set(slots.map((s) => `${s.day_of_week}:${s.hour}`));
+
+  // Only show hours that have at least one slot
+  const activeHours = HOURS.filter((h) => DAYS.some((_, d) => slotSet.has(`${d}:${h}`)));
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.7)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl rounded-2xl border border-slate-700/60 bg-slate-900 shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/50">
+          <div>
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Availability</p>
+            <h3 className="text-base font-semibold text-white">{mentor.full_name}</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-slate-500 hover:text-white transition-colors p-1 rounded-md hover:bg-slate-700/50"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-5 h-5 rounded-full border-2 border-slate-600 border-t-slate-300 animate-spin" />
+            </div>
+          ) : slots.length === 0 ? (
+            <p className="text-sm text-slate-500 text-center py-8">No availability set yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr>
+                    <th className="text-left text-slate-500 font-medium pr-3 pb-2 w-14">Hour</th>
+                    {DAYS.map((d) => (
+                      <th key={d} className="text-center text-slate-400 font-medium pb-2 px-1 min-w-[36px]">
+                        {d}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeHours.map((h) => {
+                    const label = `${h.toString().padStart(2, "0")}:00`;
+                    return (
+                      <tr key={h} className="border-t border-slate-800/50">
+                        <td className="text-slate-500 font-mono pr-3 py-1.5">{label}</td>
+                        {DAYS.map((_, d) => {
+                          const active = slotSet.has(`${d}:${h}`);
+                          return (
+                            <td key={d} className="text-center py-1.5 px-1">
+                              {active ? (
+                                <div className="mx-auto w-5 h-5 rounded bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                </div>
+                              ) : (
+                                <div className="mx-auto w-5 h-5 rounded bg-slate-800/30" />
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <p className="text-xs text-slate-600 mt-4">
+                {slots.length} slot{slots.length !== 1 ? "s" : ""} set
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type Booking = {
   id: string;
@@ -40,6 +148,7 @@ export function AdminHackathonMentors() {
   const [resetting, setResetting] = useState(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
   const [expandedMentorId, setExpandedMentorId] = useState<string | null>(null);
+  const [availabilityMentor, setAvailabilityMentor] = useState<MentorProfile | null>(null);
 
   async function fetchData() {
     setLoading(true);
@@ -151,6 +260,7 @@ export function AdminHackathonMentors() {
               onApprove={() => setApproval(mentor.id, true)}
               onRevoke={() => setApproval(mentor.id, false)}
               onRemove={() => removeMentor(mentor.id, mentor.full_name)}
+              onShowAvailability={() => setAvailabilityMentor(mentor)}
             />
           ))}
         </div>
@@ -171,6 +281,7 @@ export function AdminHackathonMentors() {
               onApprove={() => setApproval(mentor.id, true)}
               onRevoke={() => setApproval(mentor.id, false)}
               onRemove={() => removeMentor(mentor.id, mentor.full_name)}
+              onShowAvailability={() => setAvailabilityMentor(mentor)}
             />
           ))}
         </div>
@@ -178,6 +289,13 @@ export function AdminHackathonMentors() {
 
       {mentors.length === 0 && (
         <p className="text-muted-foreground text-sm py-4">No mentor registrations yet.</p>
+      )}
+
+      {availabilityMentor && (
+        <AvailabilityModal
+          mentor={availabilityMentor}
+          onClose={() => setAvailabilityMentor(null)}
+        />
       )}
     </div>
   );
