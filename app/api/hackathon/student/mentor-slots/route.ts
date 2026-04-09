@@ -66,26 +66,37 @@ export async function GET(req: NextRequest) {
     })
   );
 
-  // 3. Generate concrete slots for the next 14 days
-  // All hours are in Bangkok time (UTC+7). We work in Bangkok time throughout.
+  // 3. Generate concrete slots for the next 14 days.
+  // Mentor hours are Bangkok wall-clock time (UTC+7).
+  // Strategy: iterate day offsets using Bangkok's current date as the anchor,
+  // then for each hour construct the UTC equivalent.
   const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
   const slots: string[] = [];
 
-  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
-    // Get the current Bangkok date
-    const bangkokNow = new Date(now.getTime() + BANGKOK_OFFSET_MS);
-    const bangkokDate = new Date(bangkokNow);
-    bangkokDate.setUTCDate(bangkokNow.getUTCDate() + dayOffset);
+  // Bangkok "today" at midnight UTC representation
+  // e.g. if Bangkok is 2026-04-10 13:49, bangkokMidnightUTC = 2026-04-10T00:00:00 - 7h = 2026-04-09T17:00:00Z
+  const nowBangkokMs = now.getTime() + BANGKOK_OFFSET_MS;
+  const nowBangkok = new Date(nowBangkokMs);
+  // Midnight of Bangkok today in UTC
+  const bangkokTodayMidnightUTC = new Date(Date.UTC(
+    nowBangkok.getUTCFullYear(),
+    nowBangkok.getUTCMonth(),
+    nowBangkok.getUTCDate(),
+  )).getTime() - BANGKOK_OFFSET_MS;
 
-    const dayOfWeek = (bangkokDate.getUTCDay() + 6) % 7; // 0=Mon in Bangkok
+  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+    // Bangkok midnight of this day, expressed in UTC ms
+    const dayMidnightUTC = bangkokTodayMidnightUTC + dayOffset * 24 * 60 * 60 * 1000;
+
+    // Day of week in Bangkok for this day (0=Mon)
+    const bangkokDayDate = new Date(dayMidnightUTC + BANGKOK_OFFSET_MS);
+    const dayOfWeek = (bangkokDayDate.getUTCDay() + 6) % 7;
 
     for (let hour = 0; hour <= 23; hour++) {
       if (!availSet.has(`${dayOfWeek}:${hour}`)) continue;
 
-      // Build slot as Bangkok time then convert to UTC
-      const slotBangkok = new Date(bangkokDate);
-      slotBangkok.setUTCHours(hour, 0, 0, 0);
-      const slotUTC = new Date(slotBangkok.getTime() - BANGKOK_OFFSET_MS);
+      // Slot UTC = Bangkok midnight UTC + hour offset
+      const slotUTC = new Date(dayMidnightUTC + hour * 60 * 60 * 1000);
 
       // Must be in the future (with a 30min buffer)
       if (slotUTC.getTime() <= now.getTime() + 30 * 60 * 1000) continue;
