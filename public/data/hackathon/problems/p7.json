@@ -41,32 +41,32 @@
   "statistics": [
     {
       "stat": "32,300 deaths annually in Thailand attributed to air pollution",
-      "source": "Health Effects Institute",
+      "sources": [{"label": "Health Effects Institute", "url": "https://www.healtheffects.org"}],
       "year": "2020"
     },
     {
       "stat": "87% of Thailand's population exposed to PM2.5 exceeding WHO guidelines",
-      "source": "IQAir World Air Quality Report",
+      "sources": [{"label": "IQAir World Air Quality Report", "url": "https://www.iqair.com"}],
       "year": "2023"
     },
     {
       "stat": "Chiang Mai hit world's worst air quality in 2023 (AQI 223)",
-      "source": "IQAir",
+      "sources": [{"label": "IQAir", "url": "https://www.iqair.com"}],
       "year": "2023"
     },
     {
       "stat": "Life expectancy reduced by 1.8-4 years due to PM2.5 exposure in Thailand",
-      "source": "Air Quality Life Index, University of Chicago",
+      "sources": [{"label": "Air Quality Life Index, University of Chicago", "url": "https://aqli.epic.uchicago.edu"}],
       "year": "2023"
     },
     {
       "stat": "52.3% of workforce in informal sector - most exposed, least able to act",
-      "source": "ILO / Thai Labor Statistics",
+      "sources": [{"label": "ILO / Thai Labor Statistics", "url": "https://www.ilo.org"}],
       "year": "2024"
     },
     {
       "stat": "Air pollution cost East Asia and Pacific 9.3% of GDP ($2.5 trillion) in 2019",
-      "source": "World Bank",
+      "sources": [{"label": "World Bank", "url": "https://www.worldbank.org"}],
       "year": "2019"
     }
   ],

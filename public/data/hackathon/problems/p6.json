@@ -41,32 +41,32 @@
   "statistics": [
     {
       "stat": "1.3 psychiatrists per 100,000 people in Thailand (nearly 10x below global average of 13)",
-      "source": "Thai Health Report 2025",
+      "sources": [{"label": "Thai Health Report 2025", "url": "https://www.thaihealth.or.th"}],
       "year": "2025"
     },
     {
       "stat": "13.4 million Thais have experienced mental health problems or psychiatric disorders",
-      "source": "Thai Health Report 2025",
+      "sources": [{"label": "Thai Health Report 2025", "url": "https://www.thaihealth.or.th"}],
       "year": "2024"
     },
     {
       "stat": "89% of Thais did not access mental health services in the past 12 months",
-      "source": "Nation Thailand, Thai Health 2025 Report",
+      "sources": [{"label": "Nation Thailand, Thai Health 2025 Report", "url": "https://www.nationthailand.com"}],
       "year": "2025"
     },
     {
       "stat": "Only 1.8% of total public health budget allocated to Department of Mental Health",
-      "source": "Thai Health Report 2025",
+      "sources": [{"label": "Thai Health Report 2025", "url": "https://www.thaihealth.or.th"}],
       "year": "2024"
     },
     {
       "stat": "7.9 suicides per 100,000 population (15 deaths per day, 85 attempts per day)",
-      "source": "Department of Mental Health, Thailand",
+      "sources": [{"label": "Department of Mental Health, Thailand", "url": "https://www.dmht.go.th"}],
       "year": "2023"
     },
     {
       "stat": "18 provinces in Thailand have no child/adolescent psychiatrist; 111 of 295 are based in Bangkok",
-      "source": "Thai Health Report 2025",
+      "sources": [{"label": "Thai Health Report 2025", "url": "https://www.thaihealth.or.th"}],
       "year": "2024"
     }
   ],

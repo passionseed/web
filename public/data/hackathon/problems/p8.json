@@ -41,32 +41,32 @@
   "statistics": [
     {
       "stat": "600 million people globally fall ill from contaminated food annually, with 420,000 deaths",
-      "source": "WHO Global Estimates of Foodborne Disease Burden",
+      "sources": [{"label": "WHO Global Estimates of Foodborne Disease Burden", "url": "https://www.who.int"}],
       "year": "2015"
     },
     {
       "stat": "South-East Asia Region has 150 million foodborne illness cases and 175,000 deaths annually",
-      "source": "WHO South-East Asia Regional Report",
+      "sources": [{"label": "WHO South-East Asia Regional Report", "url": "https://www.who.int"}],
       "year": "2016"
     },
     {
       "stat": "Children under 5 account for 30% of all foodborne disease deaths globally",
-      "source": "WHO Global Estimates",
+      "sources": [{"label": "WHO Global Estimates", "url": "https://www.who.int"}],
       "year": "2015"
     },
     {
       "stat": "Thailand reports approximately 1 million acute diarrhea cases and 120,000+ food poisoning cases annually",
-      "source": "Thai Ministry of Public Health, Bureau of Epidemiology",
+      "sources": [{"label": "Thai Ministry of Public Health, Bureau of Epidemiology", "url": "https://www.moph.go.th"}],
       "year": "2004"
     },
     {
       "stat": "E. coli contamination found in 12.40%-15.79% of contaminated food samples in Bangkok",
-      "source": "Food Safety Regulations and Surveillance in Bangkok study",
+      "sources": [{"label": "Food Safety Regulations and Surveillance in Bangkok study", "url": "https://link.springer.com"}],
       "year": "2024"
     },
     {
       "stat": "65% of employment in Thailand is informal (2024), with street vendors having 92%+ informality rate",
-      "source": "WIEGO Employment in Thailand Report",
+      "sources": [{"label": "WIEGO Employment in Thailand Report", "url": "https://www.wiego.org"}],
       "year": "2024"
     }
   ],
