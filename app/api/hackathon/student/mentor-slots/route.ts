@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const client = getClient();
 
-  // 1. Fetch mentor's weekly availability (day_of_week 0=Sun, hour 0-23)
+  // 1. Fetch mentor's weekly availability (day_of_week 0=Mon, hour 0-23)
   const { data: availability, error: availError } = await client
     .from("mentor_availability")
     .select("day_of_week, hour")
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
   for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
     const date = new Date(now);
     date.setDate(now.getDate() + dayOffset);
-    const dayOfWeek = date.getDay(); // 0=Sun
+    const dayOfWeek = (date.getDay() + 6) % 7; // convert JS 0=Sun to 0=Mon
 
     for (let hour = 0; hour <= 20; hour++) {
       if (!availSet.has(`${dayOfWeek}:${hour}`)) continue;
