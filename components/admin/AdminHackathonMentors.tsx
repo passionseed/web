@@ -10,7 +10,7 @@ import type { MentorProfile } from "@/types/mentor";
 
 type AvailabilitySlot = { day_of_week: number; hour: number };
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 function AvailabilityModal({
