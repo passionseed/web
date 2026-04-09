@@ -41,32 +41,32 @@
   "statistics": [
     {
       "stat": "13.6 million children in Thailand highly exposed to PM2.5",
-      "source": "UNICEF Thailand",
+      "sources": [{"label": "UNICEF Thailand", "url": "https://www.unicef.org/thailand"}],
       "year": "2025"
     },
     {
       "stat": "Children in Bangkok breathed unsafe air for 265 out of 365 days (70% of year) in 2023",
-      "source": "Save the Children",
+      "sources": [{"label": "Save the Children", "url": "https://www.savethechildren.net"}],
       "year": "2024"
     },
     {
       "stat": "Over 100 daily deaths among children under five in East Asia and Pacific linked to air pollution",
-      "source": "UNICEF East Asia Pacific",
+      "sources": [{"label": "UNICEF East Asia Pacific", "url": "https://www.unicef.org/eap"}],
       "year": "2025"
     },
     {
       "stat": "352 schools in Bangkok closed due to air pollution in January 2025",
-      "source": "Bangkok Metropolitan Administration",
+      "sources": [{"label": "Bangkok Metropolitan Administration", "url": "https://www.bangkok.go.th"}],
       "year": "2025"
     },
     {
       "stat": "52% of children in Chiang Mai exhibited restrictive lung function patterns in 2024 study",
-      "source": "PMC Research Study",
+      "sources": [{"label": "PMC Research Study", "url": "https://www.ncbi.nlm.nih.gov/pmc"}],
       "year": "2024"
     },
     {
       "stat": "27.9% of high school students in Bangkok reported severe respiratory symptoms from PM2.5 exposure",
-      "source": "Journal of Neonatal Surgery Study",
+      "sources": [{"label": "Journal of Neonatal Surgery Study", "url": "https://www.neonatalsurgery.com"}],
       "year": "2025"
     }
   ],

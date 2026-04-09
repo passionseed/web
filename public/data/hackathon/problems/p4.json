@@ -41,37 +41,37 @@
   "statistics": [
     {
       "stat": "37.8% of Thai adolescents categorized at risk for depression",
-      "source": "Patanavanich et al., Mae Fah Luang University study",
+      "sources": [{"label": "Patanavanich et al., Mae Fah Luang University study", "url": "https://www.mfu.ac.th"}],
       "year": "2022"
     },
     {
       "stat": "31.4% of Thai university students experience depressive symptoms, 14.2% have major depressive disorder",
-      "source": "Cambridge BJPsych Open, nationwide study of 14,621 students",
+      "sources": [{"label": "Cambridge BJPsych Open, nationwide study of 14,621 students", "url": "https://www.cambridge.org"}],
       "year": "2025"
     },
     {
       "stat": "57.9% of Thai undergraduate students experienced mental health problems post-COVID-19",
-      "source": "Nature Scientific Reports, Chiang Mai University study",
+      "sources": [{"label": "Nature Scientific Reports, Chiang Mai University study", "url": "https://www.nature.com"}],
       "year": "2024"
     },
     {
       "stat": "Suicide is the 3rd leading cause of death among Thai adolescents",
-      "source": "UNICEF Thailand Country Report",
+      "sources": [{"label": "UNICEF Thailand Country Report", "url": "https://www.unicef.org/thailand"}],
       "year": "2022"
     },
     {
       "stat": "Only 28 out of 100 depression patients access treatment in Thailand",
-      "source": "Chulalongkorn University DMIND Report",
+      "sources": [{"label": "Chulalongkorn University DMIND Report", "url": "https://www.chula.ac.th"}],
       "year": "2023"
     },
     {
       "stat": "89% of Thais did not access mental health services in the past 12 months",
-      "source": "Thai Health 2025 Report",
+      "sources": [{"label": "Thai Health 2025 Report", "url": "https://www.thaihealth.or.th"}],
       "year": "2025"
     },
     {
       "stat": "Thailand has 1.3 psychiatrists per 100,000 population (vs global average of 13)",
-      "source": "WHO / Thai Health 2025 Report",
+      "sources": [{"label": "WHO / Thai Health 2025 Report", "url": "https://www.who.int"}],
       "year": "2025"
     }
   ],

@@ -41,27 +41,27 @@
   "statistics": [
     {
       "stat": "NCDs account for 74-77% of all deaths in Thailand (400,000 annually)",
-      "source": "Ministry of Public Health Thailand / WHO",
+      "sources": [{"label": "Ministry of Public Health Thailand / WHO", "url": "https://www.moph.go.th"}],
       "year": "2023"
     },
     {
       "stat": "27% of diabetics and 48% of hypertensives in Thailand are unaware of their condition",
-      "source": "Thailand National Health Examination Survey",
+      "sources": [{"label": "Thailand National Health Examination Survey", "url": "https://hhisurvey.anamai.moph.go.th"}],
       "year": "2020"
     },
     {
       "stat": "THB 1.6 trillion annual economic cost from NCDs (9.7% of GDP)",
-      "source": "Ministry of Public Health Thailand",
+      "sources": [{"label": "Ministry of Public Health Thailand", "url": "https://www.moph.go.th"}],
       "year": "2023"
     },
     {
       "stat": "Only 4.9% of eligible Thais used annual health checkups in 2015",
-      "source": "Frontiers in Public Health",
+      "sources": [{"label": "Frontiers in Public Health", "url": "https://www.frontiersin.org"}],
       "year": "2024"
     },
     {
       "stat": "THB 211B investment could save 310,000 lives and return THB 430B",
-      "source": "Health Intervention and Technology Assessment Program (HITAP)",
+      "sources": [{"label": "Health Intervention and Technology Assessment Program (HITAP)", "url": "https://www.hitap.net"}],
       "year": "2023"
     }
   ],

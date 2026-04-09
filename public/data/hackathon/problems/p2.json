@@ -41,27 +41,27 @@
   "statistics": [
     {
       "stat": "Thailand has over 30,000 traditional medicine practitioners registered with DTAM",
-      "source": "WHO Global Report on Traditional Medicine 2025",
+      "sources": [{"label": "WHO Global Report on Traditional Medicine 2025", "url": "https://www.who.int"}],
       "year": "2024"
     },
     {
       "stat": "Over 80% of global population uses traditional medicine, particularly in Asia, Africa, and Latin America",
-      "source": "WHO Global Report on Traditional Medicine 2025",
+      "sources": [{"label": "WHO Global Report on Traditional Medicine 2025", "url": "https://www.who.int"}],
       "year": "2025"
     },
     {
       "stat": "Thai traditional medicine has been integrated into Universal Health Coverage since 2002",
-      "source": "HITAP Thailand",
+      "sources": [{"label": "HITAP Thailand", "url": "https://www.hitap.net"}],
       "year": "2022"
     },
     {
       "stat": "Only 15 OECD countries have nationally implemented electronic health record systems with adequate interoperability",
-      "source": "OECD Health Statistics",
+      "sources": [{"label": "OECD Health Statistics", "url": "https://www.oecd.org"}],
       "year": "2024"
     },
     {
       "stat": "8 of 10 ASEAN Member States have integrated traditional medicine into public health service systems",
-      "source": "ASEAN Joint Report on Primary Health Care 2023",
+      "sources": [{"label": "ASEAN Joint Report on Primary Health Care 2023", "url": "https://asean.org"}],
       "year": "2023"
     }
   ],
