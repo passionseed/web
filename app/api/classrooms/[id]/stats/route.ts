@@ -31,34 +31,34 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get role-specific counts
-    const { data: membershipData } = await supabase
-      .from("classroom_memberships")
-      .select("role")
-      .eq("classroom_id", classroomId);
+    // ⚡ Bolt Optimization: Combine independent DB queries using Promise.all to avoid waterfall
+    const [
+      { data: membershipData },
+      { count: activeAssignments },
+      { data: progressData }
+    ] = await Promise.all([
+      supabase
+        .from("classroom_memberships")
+        .select("role")
+        .eq("classroom_id", classroomId),
+      supabase
+        .from("classroom_assignments")
+        .select("*", { count: "exact", head: true })
+        .eq("classroom_id", classroomId)
+        .eq("is_active", true),
+      supabase
+        .from("assignment_enrollments")
+        .select(`
+          status,
+          classroom_assignments!inner(classroom_id)
+        `)
+        .eq("classroom_assignments.classroom_id", classroomId)
+    ]);
 
     const totalStudents = membershipData?.filter(m => m.role === "student").length || 0;
     const totalInstructors = membershipData?.filter(m => m.role === "instructor").length || 0;
     const totalTAs = membershipData?.filter(m => m.role === "ta").length || 0;
     const totalMembers = membershipData?.length || 0;
-
-    // Get active assignments count
-    const { count: activeAssignments } = await supabase
-      .from("classroom_assignments")
-      .select("*", { count: "exact", head: true })
-      .eq("classroom_id", classroomId)
-      .eq("is_active", true);
-
-    // Get completion statistics
-    const { data: progressData } = await supabase
-      .from("assignment_enrollments")
-      .select(
-        `
-        status,
-        classroom_assignments!inner(classroom_id)
-      `
-      )
-      .eq("classroom_assignments.classroom_id", classroomId);
 
     // Calculate completion rate
     const totalEnrollments = progressData?.length || 0;
