@@ -67,28 +67,35 @@ export async function GET(req: NextRequest) {
   );
 
   // 3. Generate concrete slots for the next 14 days
+  // All hours are in Bangkok time (UTC+7). We work in Bangkok time throughout.
+  const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
   const slots: string[] = [];
 
   for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
-    const date = new Date(now);
-    date.setDate(now.getDate() + dayOffset);
-    const dayOfWeek = (date.getDay() + 6) % 7; // convert JS 0=Sun to 0=Mon
+    // Get the current Bangkok date
+    const bangkokNow = new Date(now.getTime() + BANGKOK_OFFSET_MS);
+    const bangkokDate = new Date(bangkokNow);
+    bangkokDate.setUTCDate(bangkokNow.getUTCDate() + dayOffset);
 
-    for (let hour = 0; hour <= 20; hour++) {
+    const dayOfWeek = (bangkokDate.getUTCDay() + 6) % 7; // 0=Mon in Bangkok
+
+    for (let hour = 0; hour <= 23; hour++) {
       if (!availSet.has(`${dayOfWeek}:${hour}`)) continue;
 
-      const slot = new Date(date);
-      slot.setHours(hour, 0, 0, 0);
+      // Build slot as Bangkok time then convert to UTC
+      const slotBangkok = new Date(bangkokDate);
+      slotBangkok.setUTCHours(hour, 0, 0, 0);
+      const slotUTC = new Date(slotBangkok.getTime() - BANGKOK_OFFSET_MS);
 
       // Must be in the future (with a 30min buffer)
-      if (slot.getTime() <= now.getTime() + 30 * 60 * 1000) continue;
+      if (slotUTC.getTime() <= now.getTime() + 30 * 60 * 1000) continue;
 
       // Must not already be booked
-      const slotKey = new Date(slot);
+      const slotKey = new Date(slotUTC);
       slotKey.setMinutes(0, 0, 0);
       if (bookedSet.has(slotKey.toISOString())) continue;
 
-      slots.push(slot.toISOString());
+      slots.push(slotUTC.toISOString());
     }
   }
 

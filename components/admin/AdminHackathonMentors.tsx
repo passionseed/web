@@ -311,6 +311,7 @@ function MentorRow({
   onApprove,
   onRevoke,
   onRemove,
+  onShowAvailability,
 }: {
   mentor: MentorProfile;
   bookings: Booking[];
