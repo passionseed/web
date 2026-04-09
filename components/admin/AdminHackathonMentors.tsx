@@ -321,6 +321,7 @@ function MentorRow({
   onApprove: () => void;
   onRevoke: () => void;
   onRemove: () => void;
+  onShowAvailability: () => void;
 }) {
   const busy = actionLoading === mentor.id;
   const removing = removeLoading === mentor.id;
@@ -394,6 +395,15 @@ function MentorRow({
         </div>
 
         <div className="shrink-0 flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onShowAvailability}
+            className="text-slate-400 border-slate-600/50 hover:bg-slate-700/50 hover:text-slate-200"
+          >
+            <Clock className="h-3 w-3 mr-1" />
+            Schedule
+          </Button>
           {mentor.is_approved ? (
             <Button
               variant="outline"
