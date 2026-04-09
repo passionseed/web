@@ -135,8 +135,9 @@ export default function MentorBookingCard({ booking: initial, onUpdate }: Props)
               month: "short",
               day: "numeric",
               year: "numeric",
+              timeZone: "Asia/Bangkok",
             })}{" "}
-            {dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+            {dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" })}
             {" · "}
             {booking.duration_minutes} min
           </p>
