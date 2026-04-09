@@ -25,7 +25,7 @@ export default function DownloadPage() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mt-8">
           <div className="flex flex-col items-center gap-3">
             <a
-              href="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775426216647.apk"
+              href="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775718768983.apk"
               download="passionseed-app.apk"
               className="ei-button-dusk w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold transition-all hover:scale-105 active:scale-95"
             >
@@ -34,7 +34,7 @@ export default function DownloadPage() {
             </a>
             <div className="bg-white p-3 rounded-xl">
               <QRCode
-                value="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775426216647.apk"
+                value="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775718768983.apk"
                 size={120}
               />
             </div>
