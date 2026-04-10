@@ -62,6 +62,9 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
     const [inviteLoading, setInviteLoading] = useState(false);
     const [isInvited, setIsInvited] = useState(false);
     const [inviteAlreadyUsed, setInviteAlreadyUsed] = useState(false);
+    const [kickTarget, setKickTarget] = useState<{ id: string; name: string } | null>(null);
+    const [kicking, setKicking] = useState(false);
+    const [kickError, setKickError] = useState("");
 
     const [finderOpen, setFinderOpen] = useState(false);
     const [finderLoaded, setFinderLoaded] = useState(false);
@@ -292,6 +295,25 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
         }
     };
 
+    const handleKickConfirm = async () => {
+        if (!kickTarget) return;
+        setKicking(true);
+        setKickError("");
+        const res = await fetch("/api/hackathon/team/kick", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ participantId: kickTarget.id }),
+        });
+        setKicking(false);
+        if (res.ok) {
+            setTeam((prev) => prev ? { ...prev, members: prev.members.filter((m) => m.participant_id !== kickTarget.id) } : prev);
+            setKickTarget(null);
+        } else {
+            const data = await res.json();
+            setKickError(data.error || "ไม่สามารถลบสมาชิกได้");
+        }
+    };
+
     const handleCreateInvite = async () => {
         setInviteLoading(true);
         const res = await fetch("/api/hackathon/team/invite/create", { method: "POST" });
@@ -401,9 +423,20 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
                                             </p>
                                             <p className="text-gray-400 text-sm">{p.university} · {p.track}</p>
                                         </div>
-                                        <div className="flex items-center gap-1 text-gray-400 text-xs">
-                                            <Clock className="w-3 h-3" />
-                                            {new Date(m.joined_at).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1 text-gray-400 text-xs">
+                                                <Clock className="w-3 h-3" />
+                                                {new Date(m.joined_at).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}
+                                            </div>
+                                            {isOwner && !isMe && (
+                                                <button
+                                                    onClick={() => { setKickTarget({ id: m.participant_id, name: p.name }); setKickError(""); }}
+                                                    className="text-gray-500 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-400/10"
+                                                    title="นำออกจากทีม"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -416,6 +449,58 @@ export default function TeamDashboard({ initialTeam, participant }: Props) {
 
                     {isOwner && (
                         <p className="text-center text-gray-400 text-sm">รอสมาชิกเข้าร่วมทีม...</p>
+                    )}
+
+                    {/* Kick confirmation popup */}
+                    {kickTarget && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }}>
+                            <div className="w-full max-w-sm rounded-2xl border border-red-500/30 bg-[#0d1219] p-6 space-y-4 shadow-[0_0_40px_rgba(239,68,68,0.15)]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center shrink-0">
+                                        <X className="w-5 h-5 text-red-400" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-white">นำออกจากทีม</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">การดำเนินการนี้ไม่สามารถยกเลิกได้</p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-gray-300">
+                                    คุณแน่ใจหรือไม่ว่าต้องการนำ <span className="text-white font-medium">{kickTarget.name}</span> ออกจากทีม?
+                                    พวกเขาจะสามารถเข้าร่วมทีมอื่นได้หลังจากนี้
+                                </p>
+                                {kickError && (
+                                    <p className="text-xs text-red-400 border border-red-400/20 bg-red-400/10 rounded-lg px-3 py-2">{kickError}</p>
+                                )}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleKickConfirm}
+                                        disabled={kicking}
+                                        className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
+                                        style={{
+                                            background: kicking ? "rgba(239,68,68,0.1)" : "rgba(239,68,68,0.15)",
+                                            border: "1px solid rgba(239,68,68,0.3)",
+                                            color: kicking ? "rgba(239,68,68,0.5)" : "#f87171",
+                                            cursor: kicking ? "not-allowed" : "pointer",
+                                        }}
+                                    >
+                                        {kicking ? "กำลังดำเนินการ..." : "นำออก"}
+                                    </button>
+                                    <button
+                                        onClick={() => { setKickTarget(null); setKickError(""); }}
+                                        disabled={kicking}
+                                        className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
+                                        style={{
+                                            background: "rgba(90,122,148,0.1)",
+                                            border: "1px solid rgba(90,122,148,0.25)",
+                                            color: "#7aa4c4",
+                                            cursor: kicking ? "not-allowed" : "pointer",
+                                        }}
+                                    >
+                                        ยกเลิก
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {/* Team Problem Interests Panel */}
