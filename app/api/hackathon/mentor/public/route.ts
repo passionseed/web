@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   let query = getClient()
     .from("mentor_profiles")
-    .select("id, full_name, profession, institution, bio, photo_url, session_type, is_approved, is_accepting_bookings")
+    .select("id, full_name, profession, institution, bio, photo_url, session_type, is_approved, is_accepting_bookings, instagram, linkedin, facebook, website")
     .eq("is_approved", true);
 
   if (sessionType === "healthcare" || sessionType === "group") {
