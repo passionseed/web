@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Search, Users, UserCheck, UserX, Trash2, PieChart as PieChartIcon, UsersRound, Mail, GraduationCap } from "lucide-react";
+import { Loader2, Search, Users, UserCheck, UserX, Trash2, PieChart as PieChartIcon, UsersRound, Mail, GraduationCap, Link2, Plus, Copy, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
@@ -59,6 +59,15 @@ interface TeamDetail {
   join_code: string;
   created_at: string;
   members: TeamMember[];
+}
+
+interface RegisterLink {
+  id: string;
+  token: string;
+  note: string | null;
+  used: boolean;
+  created_at: string;
+  expires_at: string | null;
 }
 
 interface Participant {
@@ -105,6 +114,14 @@ export function AdminHackathonParticipants() {
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [loadingTeam, setLoadingTeam] = useState(false);
 
+  // Register links state
+  const [registerLinks, setRegisterLinks] = useState<RegisterLink[]>([]);
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [linksExpanded, setLinksExpanded] = useState(false);
+  const [newLinkNote, setNewLinkNote] = useState("");
+  const [creatingLink, setCreatingLink] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
   useEffect(() => {
     fetchParticipants();
   }, []);
@@ -122,6 +139,69 @@ export function AdminHackathonParticipants() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchRegisterLinks() {
+    setLinksLoading(true);
+    try {
+      const res = await fetch("/api/admin/hackathon/register-links");
+      const data = await res.json();
+      if (res.ok) setRegisterLinks(data.links);
+    } catch (err) {
+      console.error("Failed to fetch register links:", err);
+    } finally {
+      setLinksLoading(false);
+    }
+  }
+
+  async function createRegisterLink() {
+    setCreatingLink(true);
+    try {
+      const res = await fetch("/api/admin/hackathon/register-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: newLinkNote.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRegisterLinks((prev) => [data.link, ...prev]);
+        setNewLinkNote("");
+      }
+    } catch (err) {
+      console.error("Failed to create register link:", err);
+    } finally {
+      setCreatingLink(false);
+    }
+  }
+
+  async function deleteRegisterLink(id: string) {
+    try {
+      await fetch("/api/admin/hackathon/register-links", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      setRegisterLinks((prev) => prev.filter((l) => l.id !== id));
+    } catch (err) {
+      console.error("Failed to delete register link:", err);
+    }
+  }
+
+  function getLinkUrl(token: string) {
+    return `${window.location.origin}/hackathon/register/link/${token}`;
+  }
+
+  async function copyLink(token: string, id: string) {
+    await navigator.clipboard.writeText(getLinkUrl(token));
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  function handleToggleLinks() {
+    if (!linksExpanded && registerLinks.length === 0) {
+      fetchRegisterLinks();
+    }
+    setLinksExpanded((v) => !v);
   }
 
   async function openTeamDialog(teamId: string) {
@@ -286,6 +366,99 @@ export function AdminHackathonParticipants() {
 
   return (
     <div className="space-y-4">
+      {/* One-Time Register Links */}
+      <Card>
+        <CardHeader className="pb-3">
+          <button
+            onClick={handleToggleLinks}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-blue-400" />
+              <CardTitle className="text-base">One-Time Registration Links</CardTitle>
+              <Badge variant="secondary" className="text-xs">Bypass closed registration</Badge>
+            </div>
+            <span className="text-sm text-muted-foreground">{linksExpanded ? "▲" : "▼"}</span>
+          </button>
+        </CardHeader>
+
+        {linksExpanded && (
+          <CardContent className="space-y-4">
+            {/* Create new link */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Label / note (optional)"
+                value={newLinkNote}
+                onChange={(e) => setNewLinkNote(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") createRegisterLink(); }}
+                className="flex-1"
+              />
+              <Button onClick={createRegisterLink} disabled={creatingLink} size="sm">
+                {creatingLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4 mr-1" />Generate</>}
+              </Button>
+            </div>
+
+            {/* Links list */}
+            {linksLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : registerLinks.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No links generated yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {registerLinks.map((link) => (
+                  <div
+                    key={link.id}
+                    className={`flex items-center gap-3 rounded-lg border p-3 ${link.used ? "opacity-50" : ""}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        {link.note && (
+                          <span className="text-sm font-medium truncate">{link.note}</span>
+                        )}
+                        {link.used ? (
+                          <Badge variant="outline" className="text-xs text-orange-500 border-orange-500/30 shrink-0">Used</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs text-green-500 border-green-500/30 shrink-0">Active</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+                        /hackathon/register/link/{link.token.slice(0, 16)}…
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Created {format(new Date(link.created_at), "MMM d, yyyy HH:mm")}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      {!link.used && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyLink(link.token, link.id)}
+                          title="Copy link"
+                        >
+                          {copiedId === link.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteRegisterLink(link.id)}
+                        title="Delete link"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        )}
+      </Card>
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <Card>
