@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import gsap from "gsap";
-import { ClipboardList, Users, Check, Sparkles, BookOpen, Home, ArrowRight, Search, Settings } from "lucide-react";
+import { Bell, ClipboardList, Users, Check, Sparkles, BookOpen, Home, ArrowRight, Search, Settings } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import type { HackathonParticipant } from "@/lib/hackathon/db";
 
@@ -30,6 +30,22 @@ const GRADES: Record<string, string[]> = {
   "นักเรียนมัธยมปลาย หรือเทียบเท่า": ["ม.4", "ม.5", "ม.6", "ปวช.", "อื่นๆ"],
   "นักศึกษามหาวิทยาลัย": ["ปวส.", "ปริญญาตรี", "ปริญญาโท", "ปริญญาเอก"],
 };
+
+interface InboxItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  action_url: string | null;
+  read_at: string | null;
+  created_at: string;
+  metadata?: {
+    review_status?: string;
+    score_awarded?: number | null;
+    points_possible?: number | null;
+    activity_title?: string;
+  };
+}
 
 export default function HackathonDashboardPage() {
   const router = useRouter();
@@ -50,6 +66,8 @@ export default function HackathonDashboardPage() {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsError, setSettingsError] = useState("");
   const [settingsFocused, setSettingsFocused] = useState<string | null>(null);
+  const [inboxItems, setInboxItems] = useState<InboxItem[]>([]);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
   useEffect(() => {
 
@@ -129,6 +147,21 @@ export default function HackathonDashboardPage() {
     check();
   }, [router]);
 
+  useEffect(() => {
+    if (!participant || participant.is_admin) return;
+
+    fetch("/api/hackathon/inbox")
+      .then((response) => response.json())
+      .then((data) => {
+        setInboxItems(data.items ?? []);
+        setInboxUnreadCount(data.unread_count ?? 0);
+      })
+      .catch(() => {
+        setInboxItems([]);
+        setInboxUnreadCount(0);
+      });
+  }, [participant?.id, participant?.is_admin]);
+
   const dismissOnboardingNudge = () => {
     if (typeof window !== "undefined") {
       sessionStorage.setItem(ONBOARDING_NUDGE_KEY, "1");
@@ -144,6 +177,23 @@ export default function HackathonDashboardPage() {
   const handleLogout = async () => {
     await fetch("/api/hackathon/logout", { method: "POST" });
     router.push("/hackathon");
+  };
+
+  const markInboxRead = async (id?: string) => {
+    await fetch("/api/hackathon/inbox", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(id ? { id } : {}),
+    }).catch(() => null);
+
+    setInboxItems((items) =>
+      items.map((item) =>
+        id && item.id !== id
+          ? item
+          : { ...item, read_at: item.read_at ?? new Date().toISOString() }
+      )
+    );
+    setInboxUnreadCount((count) => (id ? Math.max(0, count - 1) : 0));
   };
 
   const openSettings = () => {
@@ -512,6 +562,69 @@ export default function HackathonDashboardPage() {
                 แดชบอร์ดทีม
               </Link>
             </Button>
+
+            {inboxItems.length > 0 && (
+              <div className="bg-gradient-to-br from-[#0d1219]/90 to-[#121c29]/80 backdrop-blur-md border border-[#4a6b82]/30 rounded-2xl p-5 text-left space-y-4 shadow-[0_0_24px_rgba(74,107,130,0.12)]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-[#91C4E3] font-medium">
+                    <Bell className="h-4 w-4" />
+                    <p>กล่องข้อความ</p>
+                    {inboxUnreadCount > 0 && (
+                      <span className="rounded-full bg-[#65ABFC]/20 px-2 py-0.5 text-xs text-[#B8DEFF] border border-[#65ABFC]/30">
+                        {inboxUnreadCount} ใหม่
+                      </span>
+                    )}
+                  </div>
+                  {inboxUnreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => markInboxRead()}
+                      className="text-xs text-[#7aa4c4] hover:text-white transition-colors"
+                    >
+                      อ่านทั้งหมด
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {inboxItems.slice(0, 3).map((item) => (
+                    <div
+                      key={item.id}
+                      className={`rounded-xl border p-3 ${
+                        item.read_at
+                          ? "border-[#4a6b82]/20 bg-[#101822]/50"
+                          : "border-[#91C4E3]/35 bg-[#91C4E3]/10"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-white">{item.title}</p>
+                          <p className="mt-1 text-xs leading-relaxed text-gray-300">{item.body}</p>
+                        </div>
+                        {!item.read_at && (
+                          <button
+                            type="button"
+                            onClick={() => markInboxRead(item.id)}
+                            className="shrink-0 rounded-lg border border-[#4a6b82]/30 px-2 py-1 text-[10px] text-[#91C4E3] hover:border-[#91C4E3]/60"
+                          >
+                            อ่านแล้ว
+                          </button>
+                        )}
+                      </div>
+                      {item.action_url && (
+                        <Link
+                          href={item.action_url}
+                          className="mt-2 inline-flex items-center gap-1 text-xs text-[#91C4E3] hover:text-white"
+                        >
+                          เปิดรายละเอียด
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {onboardingComplete === true && (
               <Button
