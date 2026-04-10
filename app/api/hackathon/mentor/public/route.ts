@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   let query = getClient()
     .from("mentor_profiles")
-    .select("id, full_name, profession, institution, bio, photo_url, session_type, is_approved, is_accepting_bookings, instagram, linkedin, facebook, website")
+    .select("id, full_name, profession, institution, bio, photo_url, session_type, is_approved, is_accepting_bookings, instagram_url, linkedin_url, website_url")
     .eq("is_approved", true);
 
   if (sessionType === "healthcare" || sessionType === "group") {
@@ -29,5 +29,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch mentors" }, { status: 500 });
   }
 
-  return NextResponse.json({ mentors: (data ?? []) as MentorProfile[] });
+  return NextResponse.json({ mentors: data ?? [] });
 }
