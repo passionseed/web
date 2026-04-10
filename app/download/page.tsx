@@ -1,7 +1,9 @@
 import { Apple, Smartphone } from "lucide-react";
-import Link from "next/link";
 import React from "react";
 import QRCode from "react-qr-code";
+
+const ANDROID_APK_URL =
+  "https://f005.backblazeb2.com/file/pseed-dev/build/build-1775798050075.apk";
 
 export default function DownloadPage() {
   return (
@@ -25,7 +27,7 @@ export default function DownloadPage() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mt-8">
           <div className="flex flex-col items-center gap-3">
             <a
-              href="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775718768983.apk"
+              href={ANDROID_APK_URL}
               download="passionseed-app.apk"
               className="ei-button-dusk w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold transition-all hover:scale-105 active:scale-95"
             >
@@ -34,7 +36,7 @@ export default function DownloadPage() {
             </a>
             <div className="bg-white p-3 rounded-xl">
               <QRCode
-                value="https://f005.backblazeb2.com/file/pseed-dev/build/build-1775718768983.apk"
+                value={ANDROID_APK_URL}
                 size={120}
               />
             </div>
