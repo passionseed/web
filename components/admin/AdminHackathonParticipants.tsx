@@ -27,7 +27,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search, Users, UserCheck, UserX, Trash2, PieChart as PieChartIcon, UsersRound } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, Search, Users, UserCheck, UserX, Trash2, PieChart as PieChartIcon, UsersRound, Mail, GraduationCap } from "lucide-react";
 import { format } from "date-fns";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
@@ -35,6 +41,24 @@ interface Team {
   id: string;
   name: string;
   join_code: string;
+}
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  university: string;
+  grade_level: string;
+  track: string;
+  joined_at: string;
+}
+
+interface TeamDetail {
+  id: string;
+  name: string;
+  join_code: string;
+  created_at: string;
+  members: TeamMember[];
 }
 
 interface Participant {
@@ -77,6 +101,9 @@ export function AdminHackathonParticipants() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [chartDataType, setChartDataType] = useState<ChartDataType>("referral");
+  const [selectedTeam, setSelectedTeam] = useState<TeamDetail | null>(null);
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const [loadingTeam, setLoadingTeam] = useState(false);
 
   useEffect(() => {
     fetchParticipants();
@@ -94,6 +121,23 @@ export function AdminHackathonParticipants() {
       console.error("Error fetching participants:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function openTeamDialog(teamId: string) {
+    setTeamDialogOpen(true);
+    setSelectedTeam(null);
+    setLoadingTeam(true);
+    try {
+      const response = await fetch(`/api/admin/hackathon/teams/${teamId}`);
+      const data = await response.json();
+      if (response.ok && data.team) {
+        setSelectedTeam(data.team);
+      }
+    } catch (error) {
+      console.error("Error fetching team details:", error);
+    } finally {
+      setLoadingTeam(false);
     }
   }
 
@@ -508,14 +552,17 @@ export function AdminHackathonParticipants() {
                               Finding Team
                             </Badge>
                           ) : (
-                            <div className="flex flex-col gap-1">
-                              <span className="font-medium text-sm">
+                            <button
+                              onClick={() => openTeamDialog(participant.team!.id)}
+                              className="flex flex-col gap-1 text-left hover:opacity-70 transition-opacity cursor-pointer"
+                            >
+                              <span className="font-medium text-sm underline decoration-dotted">
                                 {participant.team.name}
                               </span>
                               <span className="text-xs text-muted-foreground">
                                 Code: {participant.team.join_code}
                               </span>
-                            </div>
+                            </button>
                           )
                         ) : (
                           <Badge variant="outline" className="text-orange-500">
@@ -537,6 +584,60 @@ export function AdminHackathonParticipants() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Team Detail Dialog */}
+      <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UsersRound className="h-5 w-5" />
+              {selectedTeam ? selectedTeam.name : "Team Details"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {loadingTeam ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : selectedTeam ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline">Code: {selectedTeam.join_code}</Badge>
+                <span>{selectedTeam.members.length} member{selectedTeam.members.length !== 1 ? "s" : ""}</span>
+              </div>
+
+              <div className="space-y-2">
+                {selectedTeam.members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="rounded-lg border p-3 space-y-1"
+                  >
+                    <div className="font-medium">{member.name}</div>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Mail className="h-3.5 w-3.5" />
+                      {member.email}
+                    </div>
+                    {member.university && (
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <GraduationCap className="h-3.5 w-3.5" />
+                        {member.university}
+                        {member.grade_level ? ` · ${member.grade_level}` : ""}
+                      </div>
+                    )}
+                    {member.track && (
+                      <Badge variant="secondary" className="text-xs">
+                        {member.track}
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">Failed to load team details.</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
