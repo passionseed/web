@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
       slot_datetime,
       duration_minutes,
       notes,
+      discord_room,
       mentor_id,
       mentor_profiles (
         id,
