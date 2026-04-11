@@ -21,6 +21,10 @@ interface IndividualSubmissionDetail {
   participant_name: string | null;
   activity_id: string;
   activity_title: string | null;
+  activity_display_order: number | null;
+  phase_id: string | null;
+  phase_title: string | null;
+  phase_number: number | null;
   assessment_id: string | null;
   prompt: string | null;
   status: string;
@@ -34,6 +38,10 @@ interface TeamSubmissionDetail {
   id: string;
   activity_id: string;
   activity_title: string | null;
+  activity_display_order: number | null;
+  phase_id: string | null;
+  phase_title: string | null;
+  phase_number: number | null;
   assessment_id: string | null;
   prompt: string | null;
   status: string;
@@ -47,6 +55,10 @@ interface TeamSubmissionDetail {
 interface ActivityGroup {
   activity_id: string;
   activity_title: string | null;
+  activity_display_order: number | null;
+  phase_id: string | null;
+  phase_title: string | null;
+  phase_number: number | null;
   prompt: string | null;
   // Representative status across all submissions for this activity
   status: string;
@@ -63,6 +75,13 @@ interface TeamData {
   member_count: number;
   members: SubmissionMember[];
   total_score: number;
+  activities: ActivityGroup[];
+}
+
+interface PhaseGroup {
+  phase_id: string;
+  phase_title: string | null;
+  phase_number: number | null;
   activities: ActivityGroup[];
 }
 
@@ -108,6 +127,42 @@ function deriveActivityStatus(
   if (all.includes("pending_review")) return "pending_review";
   if (all.includes("submitted")) return "submitted";
   return "draft";
+}
+
+function buildPhaseGroups(team: TeamData): PhaseGroup[] {
+  const phaseMap = new Map<string, PhaseGroup>();
+
+  for (const activity of team.activities) {
+    const key = activity.phase_id ?? `phase-${activity.phase_number ?? "unknown"}`;
+    const existing = phaseMap.get(key);
+
+    if (existing) {
+      existing.activities.push(activity);
+      continue;
+    }
+
+    phaseMap.set(key, {
+      phase_id: key,
+      phase_title: activity.phase_title,
+      phase_number: activity.phase_number,
+      activities: [activity],
+    });
+  }
+
+  return Array.from(phaseMap.values())
+    .map((phase) => ({
+      ...phase,
+      activities: [...phase.activities].sort((a, b) => {
+        const orderA = a.activity_display_order ?? Number.MAX_SAFE_INTEGER;
+        const orderB = b.activity_display_order ?? Number.MAX_SAFE_INTEGER;
+        if (orderA !== orderB) return orderA - orderB;
+        return (a.activity_title ?? a.activity_id).localeCompare(b.activity_title ?? b.activity_id);
+      }),
+    }))
+    .sort(
+      (a, b) =>
+        (a.phase_number ?? Number.MAX_SAFE_INTEGER) - (b.phase_number ?? Number.MAX_SAFE_INTEGER)
+    );
 }
 
 // ─── TeamGrid ─────────────────────────────────────────────────────────────────
@@ -175,47 +230,113 @@ function TeamGrid({
 
 function ActivityList({
   team,
+  selectedPhaseId,
+  onSelectPhase,
   selectedActivityId,
   onSelectActivity,
 }: {
   team: TeamData;
+  selectedPhaseId: string | null;
+  onSelectPhase: (phaseId: string) => void;
   selectedActivityId: string | null;
   onSelectActivity: (activityId: string) => void;
 }) {
+  const phases = buildPhaseGroups(team);
+  const activePhase = phases.find((phase) => phase.phase_id === selectedPhaseId) ?? null;
+
   return (
     <div className="w-[34%] flex flex-col gap-2 overflow-y-auto max-h-[560px] pr-1">
       <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 px-1">
-        Activities · {team.activities.length}
+        Phases · {phases.length}
       </div>
-      {team.activities.length === 0 && (
+      {phases.length === 0 && (
         <div className="text-slate-500 text-sm text-center py-8">No submissions yet.</div>
       )}
-      {team.activities.map((activity) => {
-        const isSelected = selectedActivityId === activity.activity_id;
-        return (
-          <button
-            key={activity.activity_id}
-            onClick={() => onSelectActivity(activity.activity_id)}
-            className={`w-full text-left p-3 rounded-lg border transition-all ${
-              isSelected
-                ? "border-indigo-500 bg-indigo-500/6 shadow-[0_0_0_1px_#6366f1]"
-                : "border-slate-700/50 bg-slate-950/20 hover:border-slate-600"
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-xs font-semibold text-slate-200 truncate">
-                {activity.activity_title ?? activity.activity_id}
-              </span>
-              <StatusBadge status={activity.status} />
+      <div className="space-y-2">
+        {phases.map((phase) => {
+          const isSelected = phase.phase_id === activePhase?.phase_id;
+
+          return (
+            <div
+              key={phase.phase_id}
+              className="rounded-lg border border-slate-700/50 bg-slate-950/20 overflow-hidden"
+            >
+              <button
+                onClick={() => onSelectPhase(isSelected ? "" : phase.phase_id)}
+                className="w-full text-left p-3 transition-all"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className={`text-xs font-semibold ${isSelected ? "text-indigo-300" : "text-slate-200"}`}>
+                    Phase {phase.phase_number ?? "?"}: {phase.phase_title ?? "Untitled phase"}
+                  </div>
+                  <span className={`text-[10px] ${isSelected ? "text-indigo-300" : "text-slate-500"}`}>
+                    {isSelected ? "Hide" : "Show"}
+                  </span>
+                </div>
+                <div className="mt-1 text-[10px] text-slate-500">
+                  {phase.activities.length} activit{phase.activities.length === 1 ? "y" : "ies"}
+                </div>
+              </button>
+
+              {isSelected && (
+                <div className="border-t border-slate-800/60 px-2 pb-2">
+                  <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-2 mt-2 px-1">
+                    Activities · {phase.activities.length}
+                  </div>
+                  <div className="space-y-2">
+                    {phase.activities.map((activity) => {
+                      const isActivitySelected = selectedActivityId === activity.activity_id;
+                      const hasTeamSub = !!activity.team_submission;
+                      const hasIndividualSub = activity.participant_submissions.length > 0;
+
+                      return (
+                        <button
+                          key={activity.activity_id}
+                          onClick={() => onSelectActivity(activity.activity_id)}
+                          className={`w-full text-left p-3 rounded-lg border transition-all ${
+                            isActivitySelected
+                              ? "border-indigo-500 bg-indigo-500/6 shadow-[0_0_0_1px_#6366f1]"
+                              : "border-slate-700/50 bg-slate-950/20 hover:border-slate-600"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-xs font-semibold text-slate-200 truncate">
+                              {activity.activity_title ?? activity.activity_id}
+                            </span>
+                            <StatusBadge status={activity.status} />
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {hasTeamSub && (
+                              <Badge className="text-[9px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-1.5 py-0">
+                                Team
+                              </Badge>
+                            )}
+                            {hasIndividualSub && (
+                              <Badge className="text-[9px] bg-violet-500/10 text-violet-300 border border-violet-500/20 px-1.5 py-0">
+                                Individual
+                              </Badge>
+                            )}
+                            {activity.submitted_at && (
+                              <div className="text-[10px] text-slate-600">
+                                {formatDistanceToNow(new Date(activity.submitted_at), { addSuffix: true })}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-            {activity.submitted_at && (
-              <div className="text-[10px] text-slate-600">
-                {formatDistanceToNow(new Date(activity.submitted_at), { addSuffix: true })}
-              </div>
-            )}
-          </button>
-        );
-      })}
+          );
+        })}
+      </div>
+      {!activePhase && phases.length > 0 && (
+        <div className="text-slate-500 text-sm text-center py-6">
+          Click a phase to view its submitted activities.
+        </div>
+      )}
     </div>
   );
 }
@@ -249,6 +370,7 @@ function SubmissionDetail({
   // If activeMemberId is null or points to no individual sub, show team submission
   const viewingContent = activeIndividualSub ?? activity.team_submission;
   const isTeamView = activeIndividualSub === null;
+  const hasTextAnswer = Boolean(viewingContent?.text_answer?.trim());
 
   return (
     <div className="flex-1 flex flex-col rounded-lg border border-slate-700/50 bg-slate-950/20 overflow-hidden">
@@ -358,20 +480,18 @@ function SubmissionDetail({
               </p>
             </div>
 
-            <div>
-              <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
-                Submitted Answer
-              </div>
-              {viewingContent.text_answer ? (
+            {hasTextAnswer && (
+              <div>
+                <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
+                  Submitted Answer
+                </div>
                 <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3 max-h-[200px] overflow-y-auto">
                   <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
                     {viewingContent.text_answer}
                   </p>
                 </div>
-              ) : (
-                <p className="text-xs text-slate-600 italic">No text answer submitted</p>
-              )}
-            </div>
+              </div>
+            )}
 
             {viewingContent.image_url && (
               <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
@@ -435,6 +555,7 @@ export function AdminHackathonTeamSubmissions() {
   const [teams, setTeams] = useState<TeamData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<TeamData | null>(null);
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
 
@@ -462,6 +583,10 @@ export function AdminHackathonTeamSubmissions() {
             activityMap.set(ts.activity_id, {
               activity_id: ts.activity_id,
               activity_title: ts.activity_title,
+              activity_display_order: ts.activity_display_order,
+              phase_id: ts.phase_id,
+              phase_title: ts.phase_title,
+              phase_number: ts.phase_number,
               prompt: ts.prompt,
               status: ts.status,
               submitted_at: ts.submitted_at,
@@ -478,6 +603,10 @@ export function AdminHackathonTeamSubmissions() {
               activityMap.set(is.activity_id, {
                 activity_id: is.activity_id,
                 activity_title: is.activity_title,
+                activity_display_order: is.activity_display_order,
+                phase_id: is.phase_id,
+                phase_title: is.phase_title,
+                phase_number: is.phase_number,
                 prompt: is.prompt,
                 status: is.status,
                 submitted_at: is.submitted_at,
@@ -489,6 +618,28 @@ export function AdminHackathonTeamSubmissions() {
 
           // Recompute status for each activity
           for (const ag of activityMap.values()) {
+            if (ag.activity_display_order == null) {
+              ag.activity_display_order =
+                ag.team_submission?.activity_display_order ??
+                ag.participant_submissions[0]?.activity_display_order ??
+                null;
+            }
+            if (!ag.phase_id) {
+              ag.phase_id =
+                ag.team_submission?.phase_id ?? ag.participant_submissions[0]?.phase_id ?? null;
+            }
+            if (!ag.phase_title) {
+              ag.phase_title =
+                ag.team_submission?.phase_title ??
+                ag.participant_submissions[0]?.phase_title ??
+                null;
+            }
+            if (ag.phase_number == null) {
+              ag.phase_number =
+                ag.team_submission?.phase_number ??
+                ag.participant_submissions[0]?.phase_number ??
+                null;
+            }
             ag.status = deriveActivityStatus(ag.team_submission, ag.participant_submissions);
             // Use latest submitted_at
             const dates = [
@@ -498,6 +649,18 @@ export function AdminHackathonTeamSubmissions() {
             ag.submitted_at = dates.sort().at(-1) ?? null;
           }
 
+          const activities = Array.from(activityMap.values()).sort((a, b) => {
+            const phaseA = a.phase_number ?? Number.MAX_SAFE_INTEGER;
+            const phaseB = b.phase_number ?? Number.MAX_SAFE_INTEGER;
+            if (phaseA !== phaseB) return phaseA - phaseB;
+
+            const orderA = a.activity_display_order ?? Number.MAX_SAFE_INTEGER;
+            const orderB = b.activity_display_order ?? Number.MAX_SAFE_INTEGER;
+            if (orderA !== orderB) return orderA - orderB;
+
+            return (a.activity_title ?? a.activity_id).localeCompare(b.activity_title ?? b.activity_id);
+          });
+
           return {
             id: team.id,
             name: team.name,
@@ -506,7 +669,7 @@ export function AdminHackathonTeamSubmissions() {
             member_count: team.member_count,
             members: team.members,
             total_score: team.total_score,
-            activities: Array.from(activityMap.values()),
+            activities,
           };
         });
 
@@ -519,7 +682,23 @@ export function AdminHackathonTeamSubmissions() {
 
   function handleSelectTeam(team: TeamData) {
     setSelectedTeam(team);
+    setSelectedPhaseId(null);
     setSelectedActivityId(null);
+    setActiveMemberId(null);
+  }
+
+  function handleSelectPhase(phaseId: string) {
+    if (!selectedTeam) return;
+    if (!phaseId) {
+      setSelectedPhaseId(null);
+      setSelectedActivityId(null);
+      setActiveMemberId(null);
+      return;
+    }
+
+    const phase = buildPhaseGroups(selectedTeam).find((item) => item.phase_id === phaseId) ?? null;
+    setSelectedPhaseId(phaseId);
+    setSelectedActivityId(phase?.activities[0]?.activity_id ?? null);
     setActiveMemberId(null);
   }
 
@@ -578,6 +757,8 @@ export function AdminHackathonTeamSubmissions() {
       <div className="flex gap-4 min-h-[520px]">
         <ActivityList
           team={selectedTeam}
+          selectedPhaseId={selectedPhaseId}
+          onSelectPhase={handleSelectPhase}
           selectedActivityId={selectedActivityId}
           onSelectActivity={handleSelectActivity}
         />

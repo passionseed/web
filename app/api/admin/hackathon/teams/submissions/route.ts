@@ -76,7 +76,16 @@ export async function GET() {
             file_urls,
             submitted_at,
             submitted_by,
-            hackathon_phase_activities(title),
+            hackathon_phase_activities(
+              title,
+              display_order,
+              phase_id,
+              hackathon_program_phases(
+                id,
+                title,
+                phase_number
+              )
+            ),
             hackathon_participants(name),
             hackathon_phase_activity_assessments(id, metadata, display_order)
           `),
@@ -94,7 +103,16 @@ export async function GET() {
             image_url,
             file_urls,
             submitted_at,
-            hackathon_phase_activities(title),
+            hackathon_phase_activities(
+              title,
+              display_order,
+              phase_id,
+              hackathon_program_phases(
+                id,
+                title,
+                phase_number
+              )
+            ),
             hackathon_participants(name),
             hackathon_phase_activity_assessments(id, metadata, display_order)
           `),
@@ -154,7 +172,30 @@ export async function GET() {
           activity_id: s.activity_id,
           assessment_id: assessment?.id ?? null,
           prompt,
-          activity_title: (s.hackathon_phase_activities as unknown as { title: string } | null)?.title ?? null,
+          activity_title: (
+            s.hackathon_phase_activities as unknown as {
+              title: string;
+              display_order: number;
+              phase_id: string;
+              hackathon_program_phases?: { id: string; title: string; phase_number: number } | null;
+            } | null
+          )?.title ?? null,
+          activity_display_order: (
+            s.hackathon_phase_activities as unknown as { display_order: number } | null
+          )?.display_order ?? null,
+          phase_id: (
+            s.hackathon_phase_activities as unknown as { phase_id: string } | null
+          )?.phase_id ?? null,
+          phase_title: (
+            s.hackathon_phase_activities as unknown as {
+              hackathon_program_phases?: { title: string } | null;
+            } | null
+          )?.hackathon_program_phases?.title ?? null,
+          phase_number: (
+            s.hackathon_phase_activities as unknown as {
+              hackathon_program_phases?: { phase_number: number } | null;
+            } | null
+          )?.hackathon_program_phases?.phase_number ?? null,
           status: s.status,
           text_answer: s.text_answer ?? null,
           image_url: s.image_url ?? null,
@@ -176,7 +217,30 @@ export async function GET() {
             activity_id: s.activity_id,
             assessment_id: assessment?.id ?? null,
             prompt,
-            activity_title: (s.hackathon_phase_activities as unknown as { title: string } | null)?.title ?? null,
+            activity_title: (
+              s.hackathon_phase_activities as unknown as {
+                title: string;
+                display_order: number;
+                phase_id: string;
+                hackathon_program_phases?: { id: string; title: string; phase_number: number } | null;
+              } | null
+            )?.title ?? null,
+            activity_display_order: (
+              s.hackathon_phase_activities as unknown as { display_order: number } | null
+            )?.display_order ?? null,
+            phase_id: (
+              s.hackathon_phase_activities as unknown as { phase_id: string } | null
+            )?.phase_id ?? null,
+            phase_title: (
+              s.hackathon_phase_activities as unknown as {
+                hackathon_program_phases?: { title: string } | null;
+              } | null
+            )?.hackathon_program_phases?.title ?? null,
+            phase_number: (
+              s.hackathon_phase_activities as unknown as {
+                hackathon_program_phases?: { phase_number: number } | null;
+              } | null
+            )?.hackathon_program_phases?.phase_number ?? null,
             participant_name: (s.hackathon_participants as unknown as { name: string } | null)?.name ?? null,
             status: s.status,
             text_answer: s.text_answer ?? null,
