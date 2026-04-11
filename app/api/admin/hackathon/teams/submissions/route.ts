@@ -45,6 +45,7 @@ export async function GET() {
             id,
             name,
             lobby_code,
+            owner_id,
             hackathon_team_members(
               participant_id,
               hackathon_participants(
@@ -61,13 +62,14 @@ export async function GET() {
           .from("hackathon_team_scores")
           .select("team_id, total_score"),
 
-        // 3. All team submissions with activity title and submitter name
+        // 3. All team submissions with activity title, submitter name, and assessment prompt
         serviceClient
           .from("hackathon_phase_activity_team_submissions")
           .select(`
             id,
             team_id,
             activity_id,
+            assessment_id,
             status,
             text_answer,
             image_url,
@@ -75,23 +77,26 @@ export async function GET() {
             submitted_at,
             submitted_by,
             hackathon_phase_activities(title),
-            hackathon_participants(name)
+            hackathon_participants(name),
+            hackathon_phase_activity_assessments(id, metadata, display_order)
           `),
 
-        // 4. All individual submissions with activity title
+        // 4. All individual submissions with activity title and assessment prompt
         serviceClient
           .from("hackathon_phase_activity_submissions")
           .select(`
             id,
             participant_id,
             activity_id,
+            assessment_id,
             status,
             text_answer,
             image_url,
             file_urls,
             submitted_at,
             hackathon_phase_activities(title),
-            hackathon_participants(name)
+            hackathon_participants(name),
+            hackathon_phase_activity_assessments(id, metadata, display_order)
           `),
       ]);
 
@@ -129,46 +134,64 @@ export async function GET() {
     const assembled = teams.map((team: any) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const members = (team.hackathon_team_members ?? []).filter((m: any) => m.hackathon_participants != null).map((m: any) => ({
+        participant_id: m.participant_id as string,
         name: m.hackathon_participants.name as string,
         email: m.hackathon_participants.email as string,
         university: m.hackathon_participants.university as string,
+        is_owner: m.participant_id === team.owner_id,
       }));
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const memberParticipantIds = (team.hackathon_team_members ?? []).map((m: any) => m.participant_id as string).filter(Boolean);
 
       const rawTeamSubs = teamSubsByTeamId.get(team.id) ?? [];
-      const formattedTeamSubs = rawTeamSubs.map((s) => ({
-        id: s.id,
-        activity_id: s.activity_id,
-        activity_title: (s.hackathon_phase_activities as unknown as { title: string } | null)?.title ?? null,
-        status: s.status,
-        text_answer: s.text_answer ?? null,
-        image_url: s.image_url ?? null,
-        file_urls: s.file_urls ?? [],
-        submitted_at: s.submitted_at ?? null,
-        submitted_by_name: (s.hackathon_participants as unknown as { name: string } | null)?.name ?? null,
-      }));
-
-      const formattedIndividualSubs = memberParticipantIds.flatMap((pid: string) => {
-        const subs = individualSubsByParticipantId.get(pid) ?? [];
-        return subs.map((s) => ({
+      const formattedTeamSubs = rawTeamSubs.map((s) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const assessment = s.hackathon_phase_activity_assessments as unknown as { id: string; metadata: Record<string, string> | null; display_order: number } | null;
+        const prompt = assessment?.metadata?.prompt ?? assessment?.metadata?.submission_label ?? null;
+        return {
           id: s.id,
           activity_id: s.activity_id,
+          assessment_id: assessment?.id ?? null,
+          prompt,
           activity_title: (s.hackathon_phase_activities as unknown as { title: string } | null)?.title ?? null,
-          participant_name: (s.hackathon_participants as unknown as { name: string } | null)?.name ?? null,
           status: s.status,
           text_answer: s.text_answer ?? null,
           image_url: s.image_url ?? null,
           file_urls: s.file_urls ?? [],
           submitted_at: s.submitted_at ?? null,
-        }));
+          submitted_by_name: (s.hackathon_participants as unknown as { name: string } | null)?.name ?? null,
+        };
+      });
+
+      const formattedIndividualSubs = memberParticipantIds.flatMap((pid: string) => {
+        const subs = individualSubsByParticipantId.get(pid) ?? [];
+        return subs.map((s) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const assessment = s.hackathon_phase_activity_assessments as unknown as { id: string; metadata: Record<string, string> | null; display_order: number } | null;
+          const prompt = assessment?.metadata?.prompt ?? assessment?.metadata?.submission_label ?? null;
+          return {
+            id: s.id,
+            participant_id: pid,
+            activity_id: s.activity_id,
+            assessment_id: assessment?.id ?? null,
+            prompt,
+            activity_title: (s.hackathon_phase_activities as unknown as { title: string } | null)?.title ?? null,
+            participant_name: (s.hackathon_participants as unknown as { name: string } | null)?.name ?? null,
+            status: s.status,
+            text_answer: s.text_answer ?? null,
+            image_url: s.image_url ?? null,
+            file_urls: s.file_urls ?? [],
+            submitted_at: s.submitted_at ?? null,
+          };
+        });
       });
 
       return {
         id: team.id,
         name: team.name,
         lobby_code: team.lobby_code,
+        owner_id: team.owner_id,
         member_count: members.length,
         members,
         total_score: scoreByTeamId.get(team.id) ?? 0,
