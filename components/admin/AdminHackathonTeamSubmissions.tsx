@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FileText, Paperclip, Image as ImageIcon } from "lucide-react";
+import { Loader2, FileText, Paperclip, Image as ImageIcon, ChevronLeft, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -30,10 +30,8 @@ interface IndividualSubmissionDetail {
   submitted_at: string | null;
 }
 
-interface TeamSubmissionItem {
+interface TeamSubmissionDetail {
   id: string;
-  team_id: string;
-  team_name: string;
   activity_id: string;
   activity_title: string | null;
   assessment_id: string | null;
@@ -44,11 +42,29 @@ interface TeamSubmissionItem {
   file_urls: string[];
   submitted_at: string | null;
   submitted_by_name: string | null;
-  members: SubmissionMember[];
+}
+
+interface ActivityGroup {
+  activity_id: string;
+  activity_title: string | null;
+  prompt: string | null;
+  // Representative status across all submissions for this activity
+  status: string;
+  submitted_at: string | null;
+  team_submission: TeamSubmissionDetail | null;
   participant_submissions: IndividualSubmissionDetail[];
 }
 
-type FilterValue = "all" | "pending_review" | "submitted" | "passed" | "revision_required";
+interface TeamData {
+  id: string;
+  name: string;
+  lobby_code: string;
+  owner_id: string;
+  member_count: number;
+  members: SubmissionMember[];
+  total_score: number;
+  activities: ActivityGroup[];
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -79,75 +95,107 @@ function avatarColor(index: number): string {
   return AVATAR_COLORS[index % AVATAR_COLORS.length];
 }
 
-// ─── FilterPills ──────────────────────────────────────────────────────────────
-
-function FilterPills({
-  filter,
-  onFilter,
-  allItems,
-}: {
-  filter: FilterValue;
-  onFilter: (f: FilterValue) => void;
-  allItems: TeamSubmissionItem[];
-}) {
-  const counts: Record<FilterValue, number> = {
-    all: allItems.length,
-    submitted: allItems.filter((s) => s.status === "submitted").length,
-    pending_review: allItems.filter((s) => s.status === "pending_review").length,
-    passed: allItems.filter((s) => s.status === "passed").length,
-    revision_required: allItems.filter((s) => s.status === "revision_required").length,
-  };
-
-  const pills: { label: string; value: FilterValue }[] = [
-    { label: "All", value: "all" },
-    { label: "Submitted", value: "submitted" },
-    { label: "Pending Review", value: "pending_review" },
-    { label: "Passed", value: "passed" },
-    { label: "Needs Revision", value: "revision_required" },
+function deriveActivityStatus(
+  teamSub: TeamSubmissionDetail | null,
+  individualSubs: IndividualSubmissionDetail[]
+): string {
+  const all = [
+    ...(teamSub ? [teamSub.status] : []),
+    ...individualSubs.map((s) => s.status),
   ];
+  if (all.includes("revision_required")) return "revision_required";
+  if (all.includes("passed")) return "passed";
+  if (all.includes("pending_review")) return "pending_review";
+  if (all.includes("submitted")) return "submitted";
+  return "draft";
+}
+
+// ─── TeamGrid ─────────────────────────────────────────────────────────────────
+
+function TeamGrid({
+  teams,
+  onSelectTeam,
+}: {
+  teams: TeamData[];
+  onSelectTeam: (team: TeamData) => void;
+}) {
+  if (teams.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-slate-500 gap-3">
+        <Users className="h-8 w-8 opacity-40" />
+        <span className="text-sm">No teams with submissions found.</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {pills.map((p) => (
-        <button
-          key={p.value}
-          onClick={() => onFilter(p.value)}
-          className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-            filter === p.value
-              ? "bg-indigo-500/20 border-indigo-500/60 text-indigo-300"
-              : "border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-300 bg-transparent"
-          }`}
-        >
-          {p.label}
-          <span className="ml-1.5 opacity-60">{counts[p.value]}</span>
-        </button>
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      {teams.map((team) => {
+        const totalActivities = team.activities.length;
+        const passedCount = team.activities.filter((a) => a.status === "passed").length;
+        const pendingCount = team.activities.filter(
+          (a) => a.status === "submitted" || a.status === "pending_review"
+        ).length;
+
+        return (
+          <button
+            key={team.id}
+            onClick={() => onSelectTeam(team)}
+            className="text-left p-4 rounded-lg border border-slate-700/50 bg-slate-950/20 hover:border-slate-500 hover:bg-slate-900/40 transition-all group"
+          >
+            <div className="font-semibold text-slate-200 text-sm mb-1 group-hover:text-white transition-colors truncate">
+              {team.name}
+            </div>
+            <div className="text-[10px] font-mono text-slate-600 mb-3">{team.lobby_code}</div>
+            <div className="flex items-center gap-1 mb-2">
+              <Users className="h-3 w-3 text-slate-600" />
+              <span className="text-[10px] text-slate-500">{team.member_count} members</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] text-slate-500">{totalActivities} activit{totalActivities === 1 ? "y" : "ies"}</span>
+              {passedCount > 0 && (
+                <Badge className="text-[9px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30 px-1.5 py-0">
+                  {passedCount} passed
+                </Badge>
+              )}
+              {pendingCount > 0 && (
+                <Badge className="text-[9px] bg-yellow-500/15 text-yellow-300 border-yellow-500/30 px-1.5 py-0">
+                  {pendingCount} pending
+                </Badge>
+              )}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-// ─── SubmissionList ───────────────────────────────────────────────────────────
+// ─── ActivityList ─────────────────────────────────────────────────────────────
 
-function SubmissionList({
-  items,
-  selectedId,
-  onSelect,
+function ActivityList({
+  team,
+  selectedActivityId,
+  onSelectActivity,
 }: {
-  items: TeamSubmissionItem[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
+  team: TeamData;
+  selectedActivityId: string | null;
+  onSelectActivity: (activityId: string) => void;
 }) {
   return (
-    <div className="w-[34%] flex flex-col gap-2 overflow-y-auto max-h-[600px] pr-1">
-      {items.length === 0 && (
-        <div className="text-slate-500 text-sm text-center py-12">No submissions found.</div>
+    <div className="w-[34%] flex flex-col gap-2 overflow-y-auto max-h-[560px] pr-1">
+      <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 px-1">
+        Activities · {team.activities.length}
+      </div>
+      {team.activities.length === 0 && (
+        <div className="text-slate-500 text-sm text-center py-8">No submissions yet.</div>
       )}
-      {items.map((item) => {
-        const isSelected = item.id === selectedId;
+      {team.activities.map((activity) => {
+        const isSelected = selectedActivityId === activity.activity_id;
         return (
           <button
-            key={item.id}
-            onClick={() => onSelect(item.id)}
+            key={activity.activity_id}
+            onClick={() => onSelectActivity(activity.activity_id)}
             className={`w-full text-left p-3 rounded-lg border transition-all ${
               isSelected
                 ? "border-indigo-500 bg-indigo-500/6 shadow-[0_0_0_1px_#6366f1]"
@@ -155,15 +203,14 @@ function SubmissionList({
             }`}
           >
             <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-sm font-semibold text-slate-200 truncate">{item.team_name}</span>
-              <StatusBadge status={item.status} />
+              <span className="text-xs font-semibold text-slate-200 truncate">
+                {activity.activity_title ?? activity.activity_id}
+              </span>
+              <StatusBadge status={activity.status} />
             </div>
-            <div className="text-xs text-slate-500 truncate mb-1">
-              {item.activity_title ?? item.activity_id}
-            </div>
-            {item.submitted_at && (
+            {activity.submitted_at && (
               <div className="text-[10px] text-slate-600">
-                {formatDistanceToNow(new Date(item.submitted_at), { addSuffix: true })}
+                {formatDistanceToNow(new Date(activity.submitted_at), { addSuffix: true })}
               </div>
             )}
           </button>
@@ -173,31 +220,34 @@ function SubmissionList({
   );
 }
 
-// ─── DetailPanel ─────────────────────────────────────────────────────────────
+// ─── SubmissionDetail ─────────────────────────────────────────────────────────
 
-function DetailPanel({
-  selected,
+function SubmissionDetail({
+  team,
+  activity,
   activeMemberId,
   onMemberSwitch,
 }: {
-  selected: TeamSubmissionItem | null;
+  team: TeamData;
+  activity: ActivityGroup | null;
   activeMemberId: string | null;
   onMemberSwitch: (id: string) => void;
 }) {
-  if (!selected) {
+  if (!activity) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 rounded-lg border border-slate-700/50 bg-slate-950/20 text-slate-500">
         <FileText className="h-8 w-8 opacity-40" />
-        <span className="text-sm">Select a team submission to view details</span>
+        <span className="text-sm">Select an activity to view submission</span>
       </div>
     );
   }
 
   const activeIndividualSub = activeMemberId
-    ? selected.participant_submissions.find((ps) => ps.participant_id === activeMemberId) ?? null
+    ? activity.participant_submissions.find((ps) => ps.participant_id === activeMemberId) ?? null
     : null;
 
-  const viewingContent = activeIndividualSub ?? selected;
+  // If activeMemberId is null or points to no individual sub, show team submission
+  const viewingContent = activeIndividualSub ?? activity.team_submission;
   const isTeamView = activeIndividualSub === null;
 
   return (
@@ -208,8 +258,34 @@ function DetailPanel({
           View submission by
         </div>
         <div className="flex gap-2 flex-wrap">
-          {selected.members.map((member, idx) => {
-            const memberSub = selected.participant_submissions.find(
+          {/* Team submission pill (if exists) */}
+          {activity.team_submission && (
+            <button
+              onClick={() => onMemberSwitch("")}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all ${
+                isTeamView
+                  ? "border-indigo-500 bg-indigo-500/10 text-indigo-300"
+                  : "border-slate-700 hover:border-slate-500 text-slate-300 bg-transparent"
+              }`}
+            >
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white bg-slate-600">
+                T
+              </span>
+              <span>Team</span>
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  activity.team_submission.status === "passed"
+                    ? "bg-emerald-400"
+                    : activity.team_submission.status === "revision_required"
+                    ? "bg-red-400"
+                    : "bg-yellow-400"
+                }`}
+              />
+            </button>
+          )}
+          {/* Individual member pills */}
+          {team.members.map((member, idx) => {
+            const memberSub = activity.participant_submissions.find(
               (ps) => ps.participant_id === member.participant_id
             );
             const hasSubmission = !!memberSub;
@@ -252,99 +328,103 @@ function DetailPanel({
         </div>
       </div>
 
-      {/* Viewing label + activity context */}
+      {/* Viewing label + context */}
       <div className="px-4 py-2 border-b border-slate-800/60">
         <span className="text-[10px] text-slate-500">
           {isTeamView
             ? "Viewing team submission"
-            : `Viewing ${selected.members.find((m) => m.participant_id === activeMemberId)?.name ?? ""}'s submission`}
+            : `Viewing ${team.members.find((m) => m.participant_id === activeMemberId)?.name ?? ""}'s submission`}
         </span>
         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
           <Badge className="text-[9px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-1.5 py-0">
             {isTeamView ? "Team" : "Individual"}
           </Badge>
           <span className="text-xs font-semibold text-slate-200">
-            {viewingContent.activity_title ?? viewingContent.activity_id}
+            {activity.activity_title ?? activity.activity_id}
           </span>
         </div>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
-        {/* Assessment prompt */}
-        <div>
-          <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
-            Assessment Prompt
-          </div>
-          <p className="text-xs text-slate-400 italic">
-            {viewingContent.prompt ?? "No prompt available"}
-          </p>
-        </div>
-
-        {/* Answer */}
-        <div>
-          <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
-            Submitted Answer
-          </div>
-          {viewingContent.text_answer ? (
-            <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3 max-h-[200px] overflow-y-auto">
-              <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {viewingContent.text_answer}
+      {viewingContent ? (
+        <>
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+            <div>
+              <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
+                Assessment Prompt
+              </div>
+              <p className="text-xs text-slate-400 italic">
+                {activity.prompt ?? "No prompt available"}
               </p>
             </div>
-          ) : (
-            <p className="text-xs text-slate-600 italic">No text answer submitted</p>
-          )}
+
+            <div>
+              <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
+                Submitted Answer
+              </div>
+              {viewingContent.text_answer ? (
+                <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3 max-h-[200px] overflow-y-auto">
+                  <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    {viewingContent.text_answer}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-600 italic">No text answer submitted</p>
+              )}
+            </div>
+
+            {viewingContent.image_url && (
+              <div>
+                <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" /> Image
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={viewingContent.image_url}
+                  alt="submission"
+                  className="max-h-[120px] rounded border border-slate-700 object-contain"
+                />
+              </div>
+            )}
+
+            {viewingContent.file_urls && viewingContent.file_urls.length > 0 && (
+              <div>
+                <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 flex items-center gap-1">
+                  <Paperclip className="h-3 w-3" /> Files
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {viewingContent.file_urls.map((url, i) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 border border-slate-700 rounded px-2 py-1"
+                    >
+                      <Paperclip className="h-2.5 w-2.5" />
+                      File {i + 1}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 py-2.5 border-t border-slate-800/60 flex items-center justify-between">
+            <StatusBadge status={viewingContent.status} />
+            {viewingContent.submitted_at && (
+              <span className="text-[10px] text-slate-600">
+                Submitted {formatDistanceToNow(new Date(viewingContent.submitted_at), { addSuffix: true })}
+              </span>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 flex items-center justify-center text-slate-600 text-sm">
+          No submission content available
         </div>
-
-        {/* Image */}
-        {viewingContent.image_url && (
-          <div>
-            <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 flex items-center gap-1">
-              <ImageIcon className="h-3 w-3" /> Image
-            </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={viewingContent.image_url}
-              alt="submission"
-              className="max-h-[120px] rounded border border-slate-700 object-contain"
-            />
-          </div>
-        )}
-
-        {/* Files */}
-        {viewingContent.file_urls && viewingContent.file_urls.length > 0 && (
-          <div>
-            <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 flex items-center gap-1">
-              <Paperclip className="h-3 w-3" /> Files
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {viewingContent.file_urls.map((url, i) => (
-                <a
-                  key={url}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 border border-slate-700 rounded px-2 py-1"
-                >
-                  <Paperclip className="h-2.5 w-2.5" />
-                  File {i + 1}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-2.5 border-t border-slate-800/60 flex items-center justify-between">
-        <StatusBadge status={viewingContent.status} />
-        {viewingContent.submitted_at && (
-          <span className="text-[10px] text-slate-600">
-            Submitted {formatDistanceToNow(new Date(viewingContent.submitted_at), { addSuffix: true })}
-          </span>
-        )}
-      </div>
+      )}
     </div>
   );
 }
@@ -352,10 +432,10 @@ function DetailPanel({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function AdminHackathonTeamSubmissions() {
-  const [allItems, setAllItems] = useState<TeamSubmissionItem[]>([]);
+  const [teams, setTeams] = useState<TeamData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterValue>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<TeamData | null>(null);
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -363,83 +443,94 @@ export function AdminHackathonTeamSubmissions() {
       .then((r) => r.json())
       .then((data) => {
         if (!data.teams) return;
-        const items: TeamSubmissionItem[] = [];
-        for (const team of data.teams) {
-          // Team-scoped submissions: one card per team submission
-          for (const sub of team.team_submissions) {
-            items.push({
-              ...sub,
-              team_id: team.id,
-              team_name: team.name,
-              members: team.members,
-              participant_submissions: team.individual_submissions.filter(
-                (is: IndividualSubmissionDetail) => is.activity_id === sub.activity_id
-              ),
+
+        const assembled: TeamData[] = data.teams.map((team: {
+          id: string;
+          name: string;
+          lobby_code: string;
+          owner_id: string;
+          member_count: number;
+          members: SubmissionMember[];
+          total_score: number;
+          team_submissions: TeamSubmissionDetail[];
+          individual_submissions: IndividualSubmissionDetail[];
+        }) => {
+          // Group by activity_id
+          const activityMap = new Map<string, ActivityGroup>();
+
+          for (const ts of team.team_submissions) {
+            activityMap.set(ts.activity_id, {
+              activity_id: ts.activity_id,
+              activity_title: ts.activity_title,
+              prompt: ts.prompt,
+              status: ts.status,
+              submitted_at: ts.submitted_at,
+              team_submission: ts,
+              participant_submissions: [],
             });
           }
 
-          // Individual-scoped submissions: group by activity_id, one card per activity
-          const individualByActivity = new Map<string, IndividualSubmissionDetail[]>();
           for (const is of team.individual_submissions) {
-            const existing = individualByActivity.get(is.activity_id) ?? [];
-            existing.push(is);
-            individualByActivity.set(is.activity_id, existing);
+            const existing = activityMap.get(is.activity_id);
+            if (existing) {
+              existing.participant_submissions.push(is);
+            } else {
+              activityMap.set(is.activity_id, {
+                activity_id: is.activity_id,
+                activity_title: is.activity_title,
+                prompt: is.prompt,
+                status: is.status,
+                submitted_at: is.submitted_at,
+                team_submission: null,
+                participant_submissions: [is],
+              });
+            }
           }
-          for (const [activityId, subs] of individualByActivity) {
-            // Skip if already covered by a team submission for this activity
-            const alreadyCovered = team.team_submissions.some(
-              (ts: { activity_id: string }) => ts.activity_id === activityId
-            );
-            if (alreadyCovered) continue;
-            const first = subs[0];
-            items.push({
-              id: `individual-${team.id}-${activityId}`,
-              team_id: team.id,
-              team_name: team.name,
-              activity_id: activityId,
-              activity_title: first.activity_title,
-              assessment_id: first.assessment_id,
-              prompt: first.prompt,
-              // Use the most recent individual submission status as the card status
-              status: subs.some((s) => s.status === "passed")
-                ? "passed"
-                : subs.some((s) => s.status === "revision_required")
-                ? "revision_required"
-                : subs.some((s) => s.status === "pending_review" || s.status === "submitted")
-                ? "submitted"
-                : "draft",
-              text_answer: null,
-              image_url: null,
-              file_urls: [],
-              submitted_at: subs.reduce((latest, s) => {
-                if (!s.submitted_at) return latest;
-                if (!latest) return s.submitted_at;
-                return s.submitted_at > latest ? s.submitted_at : latest;
-              }, null as string | null),
-              submitted_by_name: null,
-              members: team.members,
-              participant_submissions: subs,
-            });
+
+          // Recompute status for each activity
+          for (const ag of activityMap.values()) {
+            ag.status = deriveActivityStatus(ag.team_submission, ag.participant_submissions);
+            // Use latest submitted_at
+            const dates = [
+              ag.team_submission?.submitted_at,
+              ...ag.participant_submissions.map((s) => s.submitted_at),
+            ].filter(Boolean) as string[];
+            ag.submitted_at = dates.sort().at(-1) ?? null;
           }
-        }
-        setAllItems(items);
+
+          return {
+            id: team.id,
+            name: team.name,
+            lobby_code: team.lobby_code,
+            owner_id: team.owner_id,
+            member_count: team.member_count,
+            members: team.members,
+            total_score: team.total_score,
+            activities: Array.from(activityMap.values()),
+          };
+        });
+
+        // Only show teams that have at least one submission
+        setTeams(assembled.filter((t) => t.activities.length > 0));
       })
       .catch((err) => console.error("Failed to load team submissions:", err))
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = filter === "all"
-    ? allItems
-    : allItems.filter((s) => s.status === filter);
+  function handleSelectTeam(team: TeamData) {
+    setSelectedTeam(team);
+    setSelectedActivityId(null);
+    setActiveMemberId(null);
+  }
 
-  const selected = allItems.find((s) => s.id === selectedId) ?? null;
-
-  function handleSelect(id: string) {
-    setSelectedId(id);
-    const item = allItems.find((s) => s.id === id);
-    if (!item) return;
-    const firstSubmitter = item.members.find((m) =>
-      item.participant_submissions.some((ps) => ps.participant_id === m.participant_id)
+  function handleSelectActivity(activityId: string) {
+    setSelectedActivityId(activityId);
+    if (!selectedTeam) return;
+    const activity = selectedTeam.activities.find((a) => a.activity_id === activityId);
+    if (!activity) return;
+    // Default to first member with individual submission, or team view
+    const firstSubmitter = selectedTeam.members.find((m) =>
+      activity.participant_submissions.some((ps) => ps.participant_id === m.participant_id)
     );
     setActiveMemberId(firstSubmitter?.participant_id ?? null);
   }
@@ -452,17 +543,47 @@ export function AdminHackathonTeamSubmissions() {
     );
   }
 
+  // Level 1: Team grid
+  if (!selectedTeam) {
+    return <TeamGrid teams={teams} onSelectTeam={handleSelectTeam} />;
+  }
+
+  // Level 2+3: Activity list + submission detail
+  const selectedActivity = selectedTeam.activities.find(
+    (a) => a.activity_id === selectedActivityId
+  ) ?? null;
+
   return (
-    <div className="flex flex-col gap-4">
-      <FilterPills filter={filter} onFilter={setFilter} allItems={allItems} />
+    <div className="flex flex-col gap-3">
+      {/* Back header */}
+      <button
+        onClick={() => setSelectedTeam(null)}
+        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors w-fit"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        All Teams
+      </button>
+
+      {/* Team name + members summary */}
+      <div className="flex items-center gap-3">
+        <span className="text-base font-semibold text-slate-100">{selectedTeam.name}</span>
+        <span className="text-[10px] font-mono text-slate-600">{selectedTeam.lobby_code}</span>
+        <div className="flex items-center gap-1 text-slate-500">
+          <Users className="h-3 w-3" />
+          <span className="text-[10px]">{selectedTeam.member_count} members</span>
+        </div>
+      </div>
+
+      {/* Two-panel layout */}
       <div className="flex gap-4 min-h-[520px]">
-        <SubmissionList
-          items={filtered}
-          selectedId={selectedId}
-          onSelect={handleSelect}
+        <ActivityList
+          team={selectedTeam}
+          selectedActivityId={selectedActivityId}
+          onSelectActivity={handleSelectActivity}
         />
-        <DetailPanel
-          selected={selected}
+        <SubmissionDetail
+          team={selectedTeam}
+          activity={selectedActivity}
           activeMemberId={activeMemberId}
           onMemberSwitch={setActiveMemberId}
         />
