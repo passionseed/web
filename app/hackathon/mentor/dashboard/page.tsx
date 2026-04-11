@@ -122,7 +122,7 @@ export default function MentorDashboardPage() {
 
       <div
         ref={pageRef}
-        className="relative z-10 max-w-2xl mx-auto px-6 space-y-8 opacity-0"
+        className="relative z-10 max-w-5xl mx-auto px-6 space-y-8 opacity-0"
       >
         {/* Header */}
         <div className="flex items-start justify-between">

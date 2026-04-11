@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ error: "Failed to assign team" }, { status: 500 });
+    console.error("[mentor/teams/assign] insert error:", JSON.stringify(error));
+    return NextResponse.json({ error: error.message, details: error }, { status: 500 });
   }
 
   return NextResponse.json({ success: true, already_assigned: false });
