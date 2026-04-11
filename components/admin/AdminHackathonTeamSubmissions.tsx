@@ -374,15 +374,15 @@ function SubmissionDetail({
             </div>
 
             {viewingContent.image_url && (
-              <div>
-                <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 flex items-center gap-1">
+              <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
+                <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-2 flex items-center gap-1">
                   <ImageIcon className="h-3 w-3" /> Image
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={viewingContent.image_url}
                   alt="submission"
-                  className="max-h-[120px] rounded border border-slate-700 object-contain"
+                  className="max-h-96 w-full rounded-md border border-slate-800 object-contain"
                 />
               </div>
             )}

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import gsap from "gsap";
 import MentorBookingCard from "@/components/hackathon/mentor/MentorBookingCard";
 import MentorStatsRow from "@/components/hackathon/mentor/MentorStatsRow";
+import { MentorTeamSubmissions } from "@/components/hackathon/mentor/MentorTeamSubmissions";
 import type { MentorProfile, MentorBooking, MentorTeamAssignment } from "@/types/mentor";
 
 type BookingFilter = "upcoming" | "past" | "all";
@@ -230,37 +231,7 @@ export default function MentorDashboardPage() {
               border: "1px solid rgba(74,107,130,0.3)",
             }}
           >
-            {assignments.length === 0 ? (
-              <p
-                className="text-center text-sm py-8 font-[family-name:var(--font-mitr)]"
-                style={{ color: "#5a7a94" }}
-              >
-                No teams assigned yet. An admin will assign teams to you.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {assignments.map((a) => (
-                  <div
-                    key={a.id}
-                    className="px-4 py-3 rounded-xl"
-                    style={{
-                      background: "rgba(165,148,186,0.08)",
-                      border: "1px solid rgba(165,148,186,0.2)",
-                    }}
-                  >
-                    <p className="text-sm font-medium text-white font-[family-name:var(--font-bai-jamjuree)]">
-                      Team {a.team_id.slice(0, 8)}
-                    </p>
-                    <p
-                      className="text-xs font-[family-name:var(--font-space-mono)]"
-                      style={{ color: "#A594BA" }}
-                    >
-                      Assigned {new Date(a.assigned_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+            <MentorTeamSubmissions />
           </div>
         )}
 
