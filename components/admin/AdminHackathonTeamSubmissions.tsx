@@ -365,6 +365,7 @@ export function AdminHackathonTeamSubmissions() {
         if (!data.teams) return;
         const items: TeamSubmissionItem[] = [];
         for (const team of data.teams) {
+          // Team-scoped submissions: one card per team submission
           for (const sub of team.team_submissions) {
             items.push({
               ...sub,
@@ -374,6 +375,50 @@ export function AdminHackathonTeamSubmissions() {
               participant_submissions: team.individual_submissions.filter(
                 (is: IndividualSubmissionDetail) => is.activity_id === sub.activity_id
               ),
+            });
+          }
+
+          // Individual-scoped submissions: group by activity_id, one card per activity
+          const individualByActivity = new Map<string, IndividualSubmissionDetail[]>();
+          for (const is of team.individual_submissions) {
+            const existing = individualByActivity.get(is.activity_id) ?? [];
+            existing.push(is);
+            individualByActivity.set(is.activity_id, existing);
+          }
+          for (const [activityId, subs] of individualByActivity) {
+            // Skip if already covered by a team submission for this activity
+            const alreadyCovered = team.team_submissions.some(
+              (ts: { activity_id: string }) => ts.activity_id === activityId
+            );
+            if (alreadyCovered) continue;
+            const first = subs[0];
+            items.push({
+              id: `individual-${team.id}-${activityId}`,
+              team_id: team.id,
+              team_name: team.name,
+              activity_id: activityId,
+              activity_title: first.activity_title,
+              assessment_id: first.assessment_id,
+              prompt: first.prompt,
+              // Use the most recent individual submission status as the card status
+              status: subs.some((s) => s.status === "passed")
+                ? "passed"
+                : subs.some((s) => s.status === "revision_required")
+                ? "revision_required"
+                : subs.some((s) => s.status === "pending_review" || s.status === "submitted")
+                ? "submitted"
+                : "draft",
+              text_answer: null,
+              image_url: null,
+              file_urls: [],
+              submitted_at: subs.reduce((latest, s) => {
+                if (!s.submitted_at) return latest;
+                if (!latest) return s.submitted_at;
+                return s.submitted_at > latest ? s.submitted_at : latest;
+              }, null as string | null),
+              submitted_by_name: null,
+              members: team.members,
+              participant_submissions: subs,
             });
           }
         }
