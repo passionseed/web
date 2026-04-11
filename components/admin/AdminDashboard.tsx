@@ -136,8 +136,6 @@ export function AdminDashboard() {
                   <TabsTrigger value="participants">Participants</TabsTrigger>
                   <TabsTrigger value="teams">Teams</TabsTrigger>
                   <TabsTrigger value="team-submissions">Team Submissions</TabsTrigger>
-                  <TabsTrigger value="submissions">Submissions</TabsTrigger>
-                  <TabsTrigger value="matching">Matching</TabsTrigger>
                   <TabsTrigger value="questionnaire">Questionnaire</TabsTrigger>
                   <TabsTrigger value="analytics">Page Analytics</TabsTrigger>
                   <TabsTrigger value="mentors">Mentors</TabsTrigger>
@@ -150,12 +148,6 @@ export function AdminDashboard() {
                 </TabsContent>
                 <TabsContent value="team-submissions">
                   <AdminHackathonTeamSubmissions key={`team-submissions-${refreshKey}`} />
-                </TabsContent>
-                <TabsContent value="submissions">
-                  <AdminHackathonSubmissions key={`submissions-${refreshKey}`} />
-                </TabsContent>
-                <TabsContent value="matching">
-                  <AdminHackathonMatching />
                 </TabsContent>
                 <TabsContent value="questionnaire">
                   <AdminHackathonQuestionnaire key={`questionnaire-${refreshKey}`} />
