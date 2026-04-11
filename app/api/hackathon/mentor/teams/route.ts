@@ -35,7 +35,15 @@ export async function GET(req: NextRequest) {
       db.from("hackathon_phase_activity_team_submissions").select(`
         id, team_id, activity_id, assessment_id, status,
         text_answer, image_url, file_urls, submitted_at, submitted_by,
-        hackathon_phase_activities(title),
+        hackathon_phase_activities(
+          title,
+          display_order,
+          phase_id,
+          hackathon_program_phases(
+            title,
+            phase_number
+          )
+        ),
         hackathon_participants(name),
         hackathon_phase_activity_assessments(id, metadata)
       `),
@@ -43,7 +51,15 @@ export async function GET(req: NextRequest) {
       db.from("hackathon_phase_activity_submissions").select(`
         id, participant_id, activity_id, assessment_id, status,
         text_answer, image_url, file_urls, submitted_at,
-        hackathon_phase_activities(title),
+        hackathon_phase_activities(
+          title,
+          display_order,
+          phase_id,
+          hackathon_program_phases(
+            title,
+            phase_number
+          )
+        ),
         hackathon_participants(name),
         hackathon_phase_activity_assessments(id, metadata)
       `),
@@ -101,6 +117,10 @@ export async function GET(req: NextRequest) {
       id: s.id,
       activity_id: s.activity_id,
       activity_title: s.hackathon_phase_activities?.title ?? null,
+      activity_display_order: s.hackathon_phase_activities?.display_order ?? null,
+      phase_id: s.hackathon_phase_activities?.phase_id ?? null,
+      phase_title: s.hackathon_phase_activities?.hackathon_program_phases?.title ?? null,
+      phase_number: s.hackathon_phase_activities?.hackathon_program_phases?.phase_number ?? null,
       assessment_id: s.hackathon_phase_activity_assessments?.id ?? null,
       prompt: extractPrompt(s.hackathon_phase_activity_assessments),
       status: s.status,
@@ -119,6 +139,10 @@ export async function GET(req: NextRequest) {
         participant_name: s.hackathon_participants?.name ?? null,
         activity_id: s.activity_id,
         activity_title: s.hackathon_phase_activities?.title ?? null,
+        activity_display_order: s.hackathon_phase_activities?.display_order ?? null,
+        phase_id: s.hackathon_phase_activities?.phase_id ?? null,
+        phase_title: s.hackathon_phase_activities?.hackathon_program_phases?.title ?? null,
+        phase_number: s.hackathon_phase_activities?.hackathon_program_phases?.phase_number ?? null,
         assessment_id: s.hackathon_phase_activity_assessments?.id ?? null,
         prompt: extractPrompt(s.hackathon_phase_activity_assessments),
         status: s.status,

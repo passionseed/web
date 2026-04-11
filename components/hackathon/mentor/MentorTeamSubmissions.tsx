@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, FileText, Paperclip, Image as ImageIcon, ChevronLeft, Users, Plus, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +21,10 @@ interface IndividualSubmissionDetail {
   participant_name: string | null;
   activity_id: string;
   activity_title: string | null;
+  activity_display_order: number | null;
+  phase_id: string | null;
+  phase_title: string | null;
+  phase_number: number | null;
   assessment_id: string | null;
   prompt: string | null;
   status: string;
@@ -34,6 +38,10 @@ interface TeamSubmissionDetail {
   id: string;
   activity_id: string;
   activity_title: string | null;
+  activity_display_order: number | null;
+  phase_id: string | null;
+  phase_title: string | null;
+  phase_number: number | null;
   assessment_id: string | null;
   prompt: string | null;
   status: string;
@@ -47,6 +55,10 @@ interface TeamSubmissionDetail {
 interface ActivityGroup {
   activity_id: string;
   activity_title: string | null;
+  activity_display_order: number | null;
+  phase_id: string | null;
+  phase_title: string | null;
+  phase_number: number | null;
   prompt: string | null;
   status: string;
   submitted_at: string | null;
@@ -77,6 +89,13 @@ interface AssembledTeam {
   activities: ActivityGroup[];
 }
 
+interface PhaseGroup {
+  phase_id: string;
+  phase_title: string | null;
+  phase_number: number | null;
+  activities: ActivityGroup[];
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function deriveActivityStatus(
@@ -101,6 +120,10 @@ function assembleTeam(team: TeamData): AssembledTeam {
     activityMap.set(ts.activity_id, {
       activity_id: ts.activity_id,
       activity_title: ts.activity_title,
+      activity_display_order: ts.activity_display_order,
+      phase_id: ts.phase_id,
+      phase_title: ts.phase_title,
+      phase_number: ts.phase_number,
       prompt: ts.prompt,
       status: ts.status,
       submitted_at: ts.submitted_at,
@@ -117,6 +140,10 @@ function assembleTeam(team: TeamData): AssembledTeam {
       activityMap.set(is.activity_id, {
         activity_id: is.activity_id,
         activity_title: is.activity_title,
+        activity_display_order: is.activity_display_order,
+        phase_id: is.phase_id,
+        phase_title: is.phase_title,
+        phase_number: is.phase_number,
         prompt: is.prompt,
         status: is.status,
         submitted_at: is.submitted_at,
@@ -127,6 +154,23 @@ function assembleTeam(team: TeamData): AssembledTeam {
   }
 
   for (const ag of activityMap.values()) {
+    if (ag.activity_display_order == null) {
+      ag.activity_display_order =
+        ag.team_submission?.activity_display_order ??
+        ag.participant_submissions[0]?.activity_display_order ??
+        null;
+    }
+    if (!ag.phase_id) {
+      ag.phase_id = ag.team_submission?.phase_id ?? ag.participant_submissions[0]?.phase_id ?? null;
+    }
+    if (!ag.phase_title) {
+      ag.phase_title =
+        ag.team_submission?.phase_title ?? ag.participant_submissions[0]?.phase_title ?? null;
+    }
+    if (ag.phase_number == null) {
+      ag.phase_number =
+        ag.team_submission?.phase_number ?? ag.participant_submissions[0]?.phase_number ?? null;
+    }
     ag.status = deriveActivityStatus(ag.team_submission, ag.participant_submissions);
     const dates = [
       ag.team_submission?.submitted_at,
@@ -134,6 +178,18 @@ function assembleTeam(team: TeamData): AssembledTeam {
     ].filter(Boolean) as string[];
     ag.submitted_at = dates.sort().at(-1) ?? null;
   }
+
+  const activities = Array.from(activityMap.values()).sort((a, b) => {
+    const phaseA = a.phase_number ?? Number.MAX_SAFE_INTEGER;
+    const phaseB = b.phase_number ?? Number.MAX_SAFE_INTEGER;
+    if (phaseA !== phaseB) return phaseA - phaseB;
+
+    const orderA = a.activity_display_order ?? Number.MAX_SAFE_INTEGER;
+    const orderB = b.activity_display_order ?? Number.MAX_SAFE_INTEGER;
+    if (orderA !== orderB) return orderA - orderB;
+
+    return (a.activity_title ?? a.activity_id).localeCompare(b.activity_title ?? b.activity_id);
+  });
 
   return {
     id: team.id,
@@ -143,7 +199,7 @@ function assembleTeam(team: TeamData): AssembledTeam {
     member_count: team.member_count,
     members: team.members,
     is_assigned: team.is_assigned,
-    activities: Array.from(activityMap.values()),
+    activities,
   };
 }
 
@@ -165,6 +221,39 @@ function statusDot(status: string): string {
   return "bg-yellow-400";
 }
 
+function buildPhaseGroups(team: AssembledTeam): PhaseGroup[] {
+  const phaseMap = new Map<string, PhaseGroup>();
+
+  for (const activity of team.activities) {
+    const key = activity.phase_id ?? `phase-${activity.phase_number ?? "unknown"}`;
+    const existing = phaseMap.get(key);
+
+    if (existing) {
+      existing.activities.push(activity);
+      continue;
+    }
+
+    phaseMap.set(key, {
+      phase_id: key,
+      phase_title: activity.phase_title,
+      phase_number: activity.phase_number,
+      activities: [activity],
+    });
+  }
+
+  return Array.from(phaseMap.values())
+    .map((phase) => ({
+      ...phase,
+      activities: [...phase.activities].sort((a, b) => {
+        const orderA = a.activity_display_order ?? Number.MAX_SAFE_INTEGER;
+        const orderB = b.activity_display_order ?? Number.MAX_SAFE_INTEGER;
+        if (orderA !== orderB) return orderA - orderB;
+        return (a.activity_title ?? a.activity_id).localeCompare(b.activity_title ?? b.activity_id);
+      }),
+    }))
+    .sort((a, b) => (a.phase_number ?? Number.MAX_SAFE_INTEGER) - (b.phase_number ?? Number.MAX_SAFE_INTEGER));
+}
+
 // ─── Team Picker Modal ────────────────────────────────────────────────────────
 
 function TeamPickerModal({
@@ -176,42 +265,79 @@ function TeamPickerModal({
   onPick: (teamId: string) => void;
   onClose: () => void;
 }) {
+  const [query, setQuery] = useState("");
   const unassigned = allTeams.filter((t) => !t.is_assigned);
+  const filtered = query.trim()
+    ? unassigned.filter(
+        (t) =>
+          t.name.toLowerCase().includes(query.toLowerCase()) ||
+          t.lobby_code.toLowerCase().includes(query.toLowerCase())
+      )
+    : unassigned;
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(1,1,8,0.85)", backdropFilter: "blur(6px)" }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ background: "rgba(1,1,8,0.92)", backdropFilter: "blur(8px)" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         className="w-full max-w-md rounded-2xl p-5 space-y-4"
         style={{
-          background: "linear-gradient(135deg, rgba(13,18,25,0.97), rgba(18,28,41,0.95))",
-          border: "1px solid rgba(74,107,130,0.3)",
+          background: "linear-gradient(135deg, rgba(10,15,22,0.99), rgba(15,23,35,0.99))",
+          border: "1px solid rgba(74,107,130,0.35)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
         }}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-white font-[family-name:var(--font-bai-jamjuree)]">
+          <h2 className="text-xl font-semibold text-white font-[family-name:var(--font-bai-jamjuree)]">
             Pick a Team
           </h2>
           <button
             onClick={onClose}
-            className="text-[#5a7a94] hover:text-white transition-colors p-1"
+            className="p-1 transition-colors"
+            style={{ color: "#5a7a94" }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#fff")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#5a7a94")}
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
+        {/* Search */}
+        <div className="relative">
+          <input
+            autoFocus
+            type="text"
+            placeholder="Search by team name or code..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full rounded-xl px-3 py-2 text-base outline-none font-[family-name:var(--font-mitr)]"
+            style={{
+              background: "rgba(1,1,8,0.6)",
+              border: "1px solid rgba(74,107,130,0.3)",
+              color: "#c8d8e4",
+            }}
+          />
+        </div>
+
         {unassigned.length === 0 ? (
           <p
-            className="text-sm text-center py-6 font-[family-name:var(--font-mitr)]"
+            className="py-6 text-center text-sm font-[family-name:var(--font-mitr)]"
             style={{ color: "#5a7a94" }}
           >
             All teams are already assigned.
           </p>
+        ) : filtered.length === 0 ? (
+          <p
+            className="py-6 text-center text-sm font-[family-name:var(--font-mitr)]"
+            style={{ color: "#5a7a94" }}
+          >
+            No teams match &ldquo;{query}&rdquo;.
+          </p>
         ) : (
           <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-            {unassigned.map((team) => (
+            {filtered.map((team) => (
               <button
                 key={team.id}
                 onClick={() => onPick(team.id)}
@@ -229,7 +355,7 @@ function TeamPickerModal({
                   (e.currentTarget as HTMLElement).style.borderColor = "rgba(165,148,186,0.15)";
                 }}
               >
-                <p className="text-sm font-medium text-white font-[family-name:var(--font-bai-jamjuree)]">
+                <p className="text-base font-medium text-white font-[family-name:var(--font-bai-jamjuree)]">
                   {team.name}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5">
@@ -253,28 +379,37 @@ function TeamPickerModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
 
 // ─── Activity List ─────────────────────────────────────────────────────────────
 
 function ActivityList({
   team,
+  selectedPhaseId,
+  onSelectPhase,
   selectedActivityId,
   onSelectActivity,
 }: {
   team: AssembledTeam;
+  selectedPhaseId: string | null;
+  onSelectPhase: (phaseId: string) => void;
   selectedActivityId: string | null;
   onSelectActivity: (id: string) => void;
 }) {
+  const phases = buildPhaseGroups(team);
+  const activePhase = phases.find((phase) => phase.phase_id === selectedPhaseId) ?? null;
+
   return (
     <div className="w-[34%] flex flex-col gap-2 overflow-y-auto max-h-[480px] pr-1">
       <div
-        className="text-[9px] font-semibold tracking-widest uppercase mb-1 px-1 font-[family-name:var(--font-mitr)]"
+        className="text-xs font-semibold tracking-widest uppercase mb-1 px-1 font-[family-name:var(--font-mitr)]"
         style={{ color: "#3d5a6e" }}
       >
-        Activities · {team.activities.length}
+        Phases · {phases.length}
       </div>
-      {team.activities.length === 0 && (
+      {phases.length === 0 && (
         <p
           className="text-sm text-center py-8 font-[family-name:var(--font-mitr)]"
           style={{ color: "#5a7a94" }}
@@ -282,40 +417,141 @@ function ActivityList({
           No submissions yet.
         </p>
       )}
-      {team.activities.map((activity) => {
-        const isSelected = selectedActivityId === activity.activity_id;
-        return (
-          <button
-            key={activity.activity_id}
-            onClick={() => onSelectActivity(activity.activity_id)}
-            className="w-full text-left p-3 rounded-xl border transition-all"
-            style={{
-              background: isSelected ? "rgba(145,196,227,0.08)" : "rgba(13,18,25,0.6)",
-              borderColor: isSelected ? "rgba(145,196,227,0.4)" : "rgba(74,107,130,0.2)",
-            }}
-          >
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span
-                className="text-xs font-semibold truncate font-[family-name:var(--font-bai-jamjuree)]"
+
+      <div className="space-y-2">
+        {phases.map((phase) => {
+          const isSelected = phase.phase_id === activePhase?.phase_id;
+
+          return (
+            <div
+              key={phase.phase_id}
+              className="rounded-xl border overflow-hidden"
+              style={{
+                background: "rgba(13,18,25,0.6)",
+                borderColor: isSelected ? "rgba(145,196,227,0.4)" : "rgba(74,107,130,0.2)",
+              }}
+            >
+              <button
+                onClick={() => onSelectPhase(isSelected ? "" : phase.phase_id)}
+                className="w-full text-left p-3 transition-all"
                 style={{ color: isSelected ? "#91C4E3" : "#c8d8e4" }}
               >
-                {activity.activity_title ?? activity.activity_id}
-              </span>
-              <span
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDot(activity.status)}`}
-              />
+                <div className="flex items-center justify-between gap-2">
+                  <div
+                    className="text-sm font-semibold font-[family-name:var(--font-bai-jamjuree)]"
+                  >
+                    Phase {phase.phase_number ?? "?"}: {phase.phase_title ?? "Untitled phase"}
+                  </div>
+                  <span
+                    className="text-xs font-[family-name:var(--font-mitr)]"
+                    style={{ color: isSelected ? "#91C4E3" : "#5a7a94" }}
+                  >
+                    {isSelected ? "Hide" : "Show"}
+                  </span>
+                </div>
+                <div
+                  className="mt-1 text-[10px] font-[family-name:var(--font-mitr)]"
+                  style={{ color: "#5a7a94" }}
+                >
+                  {phase.activities.length} activit{phase.activities.length === 1 ? "y" : "ies"}
+                </div>
+              </button>
+
+              {isSelected && (
+                <div
+                  className="border-t px-2 pb-2"
+                  style={{ borderColor: "rgba(74,107,130,0.15)" }}
+                >
+                  <div
+                    className="text-xs font-semibold tracking-widest uppercase mb-2 mt-2 px-1 font-[family-name:var(--font-mitr)]"
+                    style={{ color: "#3d5a6e" }}
+                  >
+                    Activities · {phase.activities.length}
+                  </div>
+                  <div className="space-y-2">
+                    {phase.activities.map((activity) => {
+                      const isActivitySelected = selectedActivityId === activity.activity_id;
+                      const hasTeamSub = !!activity.team_submission;
+                      const hasIndividualSub = activity.participant_submissions.length > 0;
+
+                      return (
+                        <button
+                          key={activity.activity_id}
+                          onClick={() => onSelectActivity(activity.activity_id)}
+                          className="w-full text-left p-3 rounded-xl border transition-all"
+                          style={{
+                            background: isActivitySelected
+                              ? "rgba(145,196,227,0.08)"
+                              : "rgba(13,18,25,0.75)",
+                            borderColor: isActivitySelected
+                              ? "rgba(145,196,227,0.4)"
+                              : "rgba(74,107,130,0.2)",
+                          }}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span
+                              className="text-sm font-semibold truncate font-[family-name:var(--font-bai-jamjuree)]"
+                              style={{ color: isActivitySelected ? "#91C4E3" : "#c8d8e4" }}
+                            >
+                              {activity.activity_title ?? activity.activity_id}
+                            </span>
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDot(activity.status)}`}
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {hasTeamSub && (
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded font-[family-name:var(--font-mitr)]"
+                                style={{
+                                  background: "rgba(145,196,227,0.08)",
+                                  border: "1px solid rgba(145,196,227,0.2)",
+                                  color: "#91C4E3",
+                                }}
+                              >
+                                Team
+                              </span>
+                            )}
+                            {hasIndividualSub && (
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded font-[family-name:var(--font-mitr)]"
+                                style={{
+                                  background: "rgba(165,148,186,0.08)",
+                                  border: "1px solid rgba(165,148,186,0.2)",
+                                  color: "#A594BA",
+                                }}
+                              >
+                                Individual
+                              </span>
+                            )}
+                            {activity.submitted_at && (
+                              <span
+                                className="text-[10px] font-[family-name:var(--font-mitr)]"
+                                style={{ color: "#3d5a6e" }}
+                              >
+                                {formatDistanceToNow(new Date(activity.submitted_at), { addSuffix: true })}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-            {activity.submitted_at && (
-              <p
-                className="text-[10px] font-[family-name:var(--font-mitr)]"
-                style={{ color: "#3d5a6e" }}
-              >
-                {formatDistanceToNow(new Date(activity.submitted_at), { addSuffix: true })}
-              </p>
-            )}
-          </button>
-        );
-      })}
+          );
+        })}
+      </div>
+
+      {!activePhase && phases.length > 0 && (
+        <p
+          className="text-sm text-center py-6 font-[family-name:var(--font-mitr)]"
+          style={{ color: "#5a7a94" }}
+        >
+          Click a phase to view its submitted activities.
+        </p>
+      )}
     </div>
   );
 }
@@ -357,6 +593,7 @@ function SubmissionDetail({
 
   const viewingContent = activeIndividualSub ?? activity.team_submission;
   const isTeamView = activeIndividualSub === null;
+  const hasTextAnswer = Boolean(viewingContent?.text_answer?.trim());
 
   return (
     <div
@@ -372,7 +609,7 @@ function SubmissionDetail({
         style={{ borderColor: "rgba(74,107,130,0.15)" }}
       >
         <div
-          className="text-[9px] font-semibold tracking-widest uppercase mb-2 font-[family-name:var(--font-mitr)]"
+          className="text-xs font-semibold tracking-widest uppercase mb-2 font-[family-name:var(--font-mitr)]"
           style={{ color: "#3d5a6e" }}
         >
           View submission by
@@ -381,18 +618,18 @@ function SubmissionDetail({
           {activity.team_submission && (
             <button
               onClick={() => onMemberSwitch("")}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all"
               style={{
                 background: isTeamView ? "rgba(145,196,227,0.1)" : "transparent",
                 borderColor: isTeamView ? "rgba(145,196,227,0.4)" : "rgba(74,107,130,0.25)",
                 color: isTeamView ? "#91C4E3" : "#7a9ab2",
               }}
             >
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white bg-slate-600">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white bg-slate-600">
                 T
               </span>
               <span className="font-[family-name:var(--font-mitr)]">Team</span>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusDot(activity.team_submission.status)}`} />
+              <span className={`w-2 h-2 rounded-full ${statusDot(activity.team_submission.status)}`} />
             </button>
           )}
           {team.members.map((member, idx) => {
@@ -406,7 +643,7 @@ function SubmissionDetail({
                 key={member.participant_id}
                 disabled={!hasSubmission}
                 onClick={() => hasSubmission && onMemberSwitch(member.participant_id)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all"
                 style={{
                   opacity: hasSubmission ? 1 : 0.35,
                   cursor: hasSubmission ? "pointer" : "not-allowed",
@@ -416,14 +653,14 @@ function SubmissionDetail({
                 }}
               >
                 <span
-                  className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white ${avatarColor(idx)}`}
+                  className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white ${avatarColor(idx)}`}
                 >
                   {member.name.charAt(0).toUpperCase()}
                 </span>
                 <span className="font-[family-name:var(--font-mitr)]">{member.name.split(" ")[0]}</span>
-                {member.is_owner && <span className="text-[9px]">👑</span>}
+                {member.is_owner && <span className="text-xs">👑</span>}
                 {hasSubmission && memberSub && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${statusDot(memberSub.status)}`} />
+                  <span className={`w-2 h-2 rounded-full ${statusDot(memberSub.status)}`} />
                 )}
               </button>
             );
@@ -431,88 +668,48 @@ function SubmissionDetail({
         </div>
       </div>
 
-      {/* Viewing label */}
-      <div
-        className="px-4 py-2 border-b"
-        style={{ borderColor: "rgba(74,107,130,0.15)" }}
-      >
-        <span
-          className="text-[10px] font-[family-name:var(--font-mitr)]"
-          style={{ color: "#5a7a94" }}
-        >
-          {isTeamView
-            ? "Viewing team submission"
-            : `Viewing ${team.members.find((m) => m.participant_id === activeMemberId)?.name ?? ""}'s submission`}
-        </span>
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span
-            className="text-[9px] px-2 py-0.5 rounded-full font-[family-name:var(--font-mitr)]"
-            style={{
-              background: "rgba(145,196,227,0.08)",
-              border: "1px solid rgba(145,196,227,0.2)",
-              color: "#91C4E3",
-            }}
-          >
-            {isTeamView ? "Team" : "Individual"}
-          </span>
-          <span
-            className="text-xs font-semibold font-[family-name:var(--font-bai-jamjuree)]"
-            style={{ color: "#c8d8e4" }}
-          >
-            {activity.activity_title ?? activity.activity_id}
-          </span>
-        </div>
-      </div>
-
       {viewingContent ? (
         <>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
             <div>
               <div
-                className="text-[9px] font-semibold tracking-widest uppercase mb-1 font-[family-name:var(--font-mitr)]"
+                className="text-xs font-semibold tracking-widest uppercase mb-2 font-[family-name:var(--font-mitr)]"
                 style={{ color: "#3d5a6e" }}
               >
                 Assessment Prompt
               </div>
               <p
-                className="text-xs italic font-[family-name:var(--font-mitr)]"
+                className="text-lg leading-relaxed italic font-[family-name:var(--font-mitr)] sm:text-xl"
                 style={{ color: "#7a9ab2" }}
               >
                 {activity.prompt ?? "No prompt available"}
               </p>
             </div>
 
-            <div>
-              <div
-                className="text-[9px] font-semibold tracking-widest uppercase mb-1 font-[family-name:var(--font-mitr)]"
-                style={{ color: "#3d5a6e" }}
-              >
-                Submitted Answer
-              </div>
-              {viewingContent.text_answer ? (
+            {hasTextAnswer && (
+              <div>
                 <div
-                  className="rounded-lg p-3 max-h-[200px] overflow-y-auto"
+                  className="text-xs font-semibold tracking-widest uppercase mb-2 font-[family-name:var(--font-mitr)]"
+                  style={{ color: "#3d5a6e" }}
+                >
+                  Submitted Answer
+                </div>
+                <div
+                  className="rounded-lg p-4 max-h-[240px] overflow-y-auto"
                   style={{
                     background: "rgba(1,1,8,0.6)",
                     border: "1px solid rgba(74,107,130,0.2)",
                   }}
                 >
                   <p
-                    className="text-xs leading-relaxed whitespace-pre-wrap font-[family-name:var(--font-mitr)]"
+                    className="text-sm leading-relaxed whitespace-pre-wrap font-[family-name:var(--font-mitr)] sm:text-base"
                     style={{ color: "#c8d8e4" }}
                   >
                     {viewingContent.text_answer}
                   </p>
                 </div>
-              ) : (
-                <p
-                  className="text-xs italic font-[family-name:var(--font-mitr)]"
-                  style={{ color: "#3d5a6e" }}
-                >
-                  No text answer submitted
-                </p>
-              )}
-            </div>
+              </div>
+            )}
 
             {viewingContent.image_url && (
               <div
@@ -523,10 +720,10 @@ function SubmissionDetail({
                 }}
               >
                 <div
-                  className="text-[9px] font-semibold tracking-widest uppercase mb-2 flex items-center gap-1 font-[family-name:var(--font-mitr)]"
+                  className="text-xs font-semibold tracking-widest uppercase mb-2 flex items-center gap-1.5 font-[family-name:var(--font-mitr)]"
                   style={{ color: "#3d5a6e" }}
                 >
-                  <ImageIcon className="h-3 w-3" /> Image
+                  <ImageIcon className="h-4 w-4" /> Image
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -541,10 +738,10 @@ function SubmissionDetail({
             {viewingContent.file_urls && viewingContent.file_urls.length > 0 && (
               <div>
                 <div
-                  className="text-[9px] font-semibold tracking-widest uppercase mb-1 flex items-center gap-1 font-[family-name:var(--font-mitr)]"
+                  className="text-xs font-semibold tracking-widest uppercase mb-2 flex items-center gap-1.5 font-[family-name:var(--font-mitr)]"
                   style={{ color: "#3d5a6e" }}
                 >
-                  <Paperclip className="h-3 w-3" /> Files
+                  <Paperclip className="h-4 w-4" /> Files
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {viewingContent.file_urls.map((url, i) => (
@@ -553,7 +750,7 @@ function SubmissionDetail({
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[10px] rounded px-2 py-1 transition-colors font-[family-name:var(--font-mitr)]"
+                      className="flex items-center gap-1.5 text-sm rounded px-3 py-1.5 transition-colors font-[family-name:var(--font-mitr)]"
                       style={{
                         color: "#91C4E3",
                         border: "1px solid rgba(74,107,130,0.3)",
@@ -573,7 +770,7 @@ function SubmissionDetail({
             style={{ borderColor: "rgba(74,107,130,0.15)" }}
           >
             <span
-              className="text-[9px] px-2 py-0.5 rounded-full font-[family-name:var(--font-mitr)]"
+              className="text-xs px-2.5 py-1 rounded-full font-[family-name:var(--font-mitr)]"
               style={{
                 background:
                   viewingContent.status === "passed"
@@ -599,7 +796,7 @@ function SubmissionDetail({
             </span>
             {viewingContent.submitted_at && (
               <span
-                className="text-[10px] font-[family-name:var(--font-mitr)]"
+                className="text-xs font-[family-name:var(--font-mitr)]"
                 style={{ color: "#3d5a6e" }}
               >
                 {formatDistanceToNow(new Date(viewingContent.submitted_at), { addSuffix: true })}
@@ -629,6 +826,7 @@ export function MentorTeamSubmissions() {
 
   // Submission view state
   const [selectedTeam, setSelectedTeam] = useState<AssembledTeam | null>(null);
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
 
@@ -662,13 +860,6 @@ export function MentorTeamSubmissions() {
           const assembled = reloaded.teams.map(assembleTeam);
           setAllTeams(assembled);
           setShowPicker(false);
-          // Open the team's submission view
-          const team = assembled.find((t: AssembledTeam) => t.id === teamId);
-          if (team) {
-            setSelectedTeam(team);
-            setSelectedActivityId(null);
-            setActiveMemberId(null);
-          }
         }
       }
     } finally {
@@ -678,7 +869,23 @@ export function MentorTeamSubmissions() {
 
   function handleSelectTeam(team: AssembledTeam) {
     setSelectedTeam(team);
+    setSelectedPhaseId(null);
     setSelectedActivityId(null);
+    setActiveMemberId(null);
+  }
+
+  function handleSelectPhase(phaseId: string) {
+    if (!selectedTeam) return;
+    if (!phaseId) {
+      setSelectedPhaseId(null);
+      setSelectedActivityId(null);
+      setActiveMemberId(null);
+      return;
+    }
+
+    const phase = buildPhaseGroups(selectedTeam).find((item) => item.phase_id === phaseId) ?? null;
+    setSelectedPhaseId(phaseId);
+    setSelectedActivityId(phase?.activities[0]?.activity_id ?? null);
     setActiveMemberId(null);
   }
 
@@ -712,31 +919,25 @@ export function MentorTeamSubmissions() {
       <div className="flex flex-col gap-3">
         <button
           onClick={() => setSelectedTeam(null)}
-          className="flex items-center gap-1.5 text-xs transition-colors w-fit font-[family-name:var(--font-mitr)]"
+          className="flex w-fit items-center gap-1.5 text-base transition-colors font-[family-name:var(--font-mitr)]"
           style={{ color: "#5a7a94" }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#91C4E3")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#5a7a94")}
         >
-          <ChevronLeft className="h-3.5 w-3.5" />
+          <ChevronLeft className="h-4 w-4" />
           My Teams
         </button>
 
         <div className="flex items-center gap-3">
           <span
-            className="text-base font-semibold font-[family-name:var(--font-bai-jamjuree)]"
+            className="text-2xl font-semibold font-[family-name:var(--font-bai-jamjuree)]"
             style={{ color: "#c8d8e4" }}
           >
             {selectedTeam.name}
           </span>
-          <span
-            className="text-[10px] font-[family-name:var(--font-space-mono)]"
-            style={{ color: "#3d5a6e" }}
-          >
-            {selectedTeam.lobby_code}
-          </span>
           <div className="flex items-center gap-1" style={{ color: "#5a7a94" }}>
-            <Users className="h-3 w-3" />
-            <span className="text-[10px] font-[family-name:var(--font-mitr)]">
+            <Users className="h-4 w-4" />
+            <span className="text-lg font-[family-name:var(--font-mitr)]">
               {selectedTeam.member_count} members
             </span>
           </div>
@@ -745,6 +946,8 @@ export function MentorTeamSubmissions() {
         <div className="flex gap-4" style={{ minHeight: "480px" }}>
           <ActivityList
             team={selectedTeam}
+            selectedPhaseId={selectedPhaseId}
+            onSelectPhase={handleSelectPhase}
             selectedActivityId={selectedActivityId}
             onSelectActivity={handleSelectActivity}
           />
@@ -797,21 +1000,15 @@ export function MentorTeamSubmissions() {
               }}
             >
               <div
-                className="font-semibold text-sm mb-0.5 font-[family-name:var(--font-bai-jamjuree)]"
+                className="mb-0.5 text-lg font-semibold font-[family-name:var(--font-bai-jamjuree)]"
                 style={{ color: "#c8d8e4" }}
               >
                 {team.name}
               </div>
-              <div
-                className="text-[10px] mb-3 font-[family-name:var(--font-space-mono)]"
-                style={{ color: "#3d5a6e" }}
-              >
-                {team.lobby_code}
-              </div>
-              <div className="flex items-center gap-1 mb-2">
-                <Users className="h-3 w-3" style={{ color: "#3d5a6e" }} />
+              <div className="flex items-center gap-1 mb-2 mt-3">
+                <Users className="h-4 w-4" style={{ color: "#3d5a6e" }} />
                 <span
-                  className="text-[10px] font-[family-name:var(--font-mitr)]"
+                  className="text-sm font-[family-name:var(--font-mitr)]"
                   style={{ color: "#5a7a94" }}
                 >
                   {team.member_count} members
@@ -819,7 +1016,7 @@ export function MentorTeamSubmissions() {
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span
-                  className="text-[10px] font-[family-name:var(--font-mitr)]"
+                  className="text-sm font-[family-name:var(--font-mitr)]"
                   style={{ color: "#5a7a94" }}
                 >
                   {team.activities.length} activit{team.activities.length === 1 ? "y" : "ies"}
@@ -877,7 +1074,7 @@ export function MentorTeamSubmissions() {
           ) : (
             <Plus className="h-5 w-5" />
           )}
-          <span className="text-xs font-[family-name:var(--font-mitr)]">
+          <span className="text-base font-[family-name:var(--font-mitr)]">
             {assigning ? "Assigning..." : "Add Team"}
           </span>
         </button>
@@ -885,7 +1082,7 @@ export function MentorTeamSubmissions() {
 
       {assignedTeams.length === 0 && (
         <p
-          className="text-center text-sm mt-4 font-[family-name:var(--font-mitr)]"
+          className="mt-4 text-center text-sm font-[family-name:var(--font-mitr)]"
           style={{ color: "#3d5a6e" }}
         >
           Click &ldquo;Add Team&rdquo; to self-assign a team and view their submissions.
