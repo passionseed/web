@@ -3,7 +3,7 @@ import React from "react";
 import QRCode from "react-qr-code";
 
 const ANDROID_APK_URL =
-  "https://f005.backblazeb2.com/file/pseed-dev/build/build-1775798050075.apk";
+  "https://f005.us-east-005.backblazeb2.com/file/pseed-dev/build/build-1775964640785.apk";
 
 export default function DownloadPage() {
   return (

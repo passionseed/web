@@ -7,7 +7,7 @@ dotenv.config();
 // Use the remote/production keys if available
 const SUPABASE_URL = process.env.HACKATHON_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-const APK_PATH = '/Users/bunyasit/dev/passionseed/ps_app/build-1775426216647.apk';
+const APK_PATH = '/Users/bunyasit/dev/passionseed/ps_app/build-1775963712869.apk';
 const BUCKET_NAME = 'apks';
 
 async function uploadApk() {
