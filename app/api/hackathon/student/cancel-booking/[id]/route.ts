@@ -58,11 +58,14 @@ export async function POST(
     return NextResponse.json({ error: "Booking already cancelled" }, { status: 400 });
   }
 
+  const cancelledByStudentBeforeAccept = booking.status === "pending";
   const { error: cancelError } = await supabase
     .from("mentor_bookings")
     .update({
       status: "cancelled",
-      cancellation_reason: "ยกเลิกโดยผู้เข้าร่วม",
+      cancellation_reason: cancelledByStudentBeforeAccept
+        ? "ยกเลิกโดยผู้เข้าร่วมก่อนรับ"
+        : "ยกเลิกโดยผู้เข้าร่วม",
     })
     .eq("id", bookingId);
 
