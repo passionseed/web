@@ -102,17 +102,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-const AVATAR_COLORS = [
-  "bg-indigo-500",
-  "bg-sky-500",
-  "bg-violet-500",
-  "bg-emerald-500",
-  "bg-rose-500",
-];
-
-function avatarColor(index: number): string {
-  return AVATAR_COLORS[index % AVATAR_COLORS.length];
-}
 
 function deriveActivityStatus(
   teamSub: TeamSubmissionDetail | null,
@@ -343,11 +332,72 @@ function ActivityList({
 
 // ─── SubmissionDetail ─────────────────────────────────────────────────────────
 
+function SubmissionContent({ sub }: { sub: TeamSubmissionDetail | IndividualSubmissionDetail }) {
+  const hasTextAnswer = Boolean(sub.text_answer?.trim());
+
+  return (
+    <div className="space-y-3">
+      {hasTextAnswer && (
+        <div>
+          <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
+            Submitted Answer
+          </div>
+          <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3 max-h-[200px] overflow-y-auto">
+            <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+              {sub.text_answer}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {sub.image_url && (
+        <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
+          <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-2 flex items-center gap-1">
+            <ImageIcon className="h-3 w-3" /> Image
+          </div>
+          <a href={sub.image_url} target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={sub.image_url}
+              alt=""
+              className="max-h-96 w-full rounded-md border border-slate-800 object-contain hover:opacity-90 transition-opacity cursor-zoom-in"
+              referrerPolicy="no-referrer"
+            />
+          </a>
+        </div>
+      )}
+
+      {sub.file_urls && sub.file_urls.length > 0 && (
+        <div>
+          <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 flex items-center gap-1">
+            <Paperclip className="h-3 w-3" /> Files
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sub.file_urls.map((url, i) => (
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 border border-slate-700 rounded px-2 py-1"
+              >
+                <Paperclip className="h-2.5 w-2.5" />
+                File {i + 1}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!hasTextAnswer && !sub.image_url && (!sub.file_urls || sub.file_urls.length === 0) && (
+        <p className="text-xs text-slate-600 italic">No content submitted.</p>
+      )}
+    </div>
+  );
+}
+
 function SubmissionDetail({
-  team,
   activity,
-  activeMemberId,
-  onMemberSwitch,
 }: {
   team: TeamData;
   activity: ActivityGroup | null;
@@ -363,188 +413,70 @@ function SubmissionDetail({
     );
   }
 
-  const activeIndividualSub = activeMemberId
-    ? activity.participant_submissions.find((ps) => ps.participant_id === activeMemberId) ?? null
-    : null;
-
-  // If activeMemberId is null or points to no individual sub, show team submission
-  const viewingContent = activeIndividualSub ?? activity.team_submission;
-  const isTeamView = activeIndividualSub === null;
-  const hasTextAnswer = Boolean(viewingContent?.text_answer?.trim());
+  const hasTeamSub = !!activity.team_submission;
+  const hasIndividualSubs = activity.participant_submissions.length > 0;
 
   return (
     <div className="flex-1 flex flex-col rounded-lg border border-slate-700/50 bg-slate-950/20 overflow-hidden">
-      {/* Participant switcher */}
-      <div className="px-4 pt-3 pb-2 border-b border-slate-800/60">
-        <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-2">
-          View submission by
+      {/* Prompt */}
+      <div className="px-4 py-3 border-b border-slate-800/60">
+        <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
+          Assessment Prompt
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {/* Team submission pill (if exists) */}
-          {activity.team_submission && (
-            <button
-              onClick={() => onMemberSwitch("")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all ${
-                isTeamView
-                  ? "border-indigo-500 bg-indigo-500/10 text-indigo-300"
-                  : "border-slate-700 hover:border-slate-500 text-slate-300 bg-transparent"
-              }`}
-            >
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white bg-slate-600">
-                T
-              </span>
-              <span>Team</span>
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  activity.team_submission.status === "passed"
-                    ? "bg-emerald-400"
-                    : activity.team_submission.status === "revision_required"
-                    ? "bg-red-400"
-                    : "bg-yellow-400"
-                }`}
-              />
-            </button>
-          )}
-          {/* Individual member pills */}
-          {team.members.map((member, idx) => {
-            const memberSub = activity.participant_submissions.find(
-              (ps) => ps.participant_id === member.participant_id
-            );
-            const hasSubmission = !!memberSub;
-            const isActive = activeMemberId === member.participant_id;
+        <p className="text-xs text-slate-400 italic">
+          {activity.prompt ?? "No prompt available"}
+        </p>
+      </div>
 
-            return (
-              <button
-                key={member.participant_id}
-                disabled={!hasSubmission}
-                onClick={() => hasSubmission && onMemberSwitch(member.participant_id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all ${
-                  !hasSubmission
-                    ? "opacity-40 cursor-not-allowed border-slate-700 bg-transparent text-slate-400"
-                    : isActive
-                    ? "border-indigo-500 bg-indigo-500/10 text-indigo-300"
-                    : "border-slate-700 hover:border-slate-500 text-slate-300 bg-transparent"
-                }`}
-              >
-                <span
-                  className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white ${avatarColor(idx)}`}
-                >
-                  {member.name.charAt(0).toUpperCase()}
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5 min-h-0">
+        {/* Team submission */}
+        {hasTeamSub && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Badge className="text-[9px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-1.5 py-0">
+                Team
+              </Badge>
+              <StatusBadge status={activity.team_submission!.status} />
+              {activity.team_submission!.submitted_at && (
+                <span className="text-[10px] text-slate-600">
+                  {formatDistanceToNow(new Date(activity.team_submission!.submitted_at), { addSuffix: true })}
                 </span>
-                <span>{member.name.split(" ")[0]}</span>
-                {member.is_owner && <span className="text-[9px]">👑</span>}
-                {hasSubmission && memberSub && (
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      memberSub.status === "passed"
-                        ? "bg-emerald-400"
-                        : memberSub.status === "revision_required"
-                        ? "bg-red-400"
-                        : "bg-yellow-400"
-                    }`}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Viewing label + context */}
-      <div className="px-4 py-2 border-b border-slate-800/60">
-        <span className="text-[10px] text-slate-500">
-          {isTeamView
-            ? "Viewing team submission"
-            : `Viewing ${team.members.find((m) => m.participant_id === activeMemberId)?.name ?? ""}'s submission`}
-        </span>
-        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-          <Badge className="text-[9px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-1.5 py-0">
-            {isTeamView ? "Team" : "Individual"}
-          </Badge>
-          <span className="text-xs font-semibold text-slate-200">
-            {activity.activity_title ?? activity.activity_id}
-          </span>
-        </div>
-      </div>
-
-      {viewingContent ? (
-        <>
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
-            <div>
-              <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
-                Assessment Prompt
-              </div>
-              <p className="text-xs text-slate-400 italic">
-                {activity.prompt ?? "No prompt available"}
-              </p>
+              )}
             </div>
-
-            {hasTextAnswer && (
-              <div>
-                <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
-                  Submitted Answer
-                </div>
-                <div className="bg-slate-900/60 border border-slate-800 rounded-md p-3 max-h-[200px] overflow-y-auto">
-                  <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
-                    {viewingContent.text_answer}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {viewingContent.image_url && (
-              <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
-                <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-2 flex items-center gap-1">
-                  <ImageIcon className="h-3 w-3" /> Image
-                </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={viewingContent.image_url}
-                  alt="submission"
-                  className="max-h-96 w-full rounded-md border border-slate-800 object-contain"
-                />
-              </div>
-            )}
-
-            {viewingContent.file_urls && viewingContent.file_urls.length > 0 && (
-              <div>
-                <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1 flex items-center gap-1">
-                  <Paperclip className="h-3 w-3" /> Files
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {viewingContent.file_urls.map((url, i) => (
-                    <a
-                      key={url}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 border border-slate-700 rounded px-2 py-1"
-                    >
-                      <Paperclip className="h-2.5 w-2.5" />
-                      File {i + 1}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+            <SubmissionContent sub={activity.team_submission!} />
           </div>
+        )}
 
-          {/* Footer */}
-          <div className="px-4 py-2.5 border-t border-slate-800/60 flex items-center justify-between">
-            <StatusBadge status={viewingContent.status} />
-            {viewingContent.submitted_at && (
-              <span className="text-[10px] text-slate-600">
-                Submitted {formatDistanceToNow(new Date(viewingContent.submitted_at), { addSuffix: true })}
-              </span>
-            )}
+        {/* Individual submissions */}
+        {hasIndividualSubs && (
+          <div className="space-y-4">
+            {activity.participant_submissions.map((ps) => (
+              <div key={ps.id}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className="text-[9px] bg-violet-500/10 text-violet-300 border border-violet-500/20 px-1.5 py-0">
+                    Individual
+                  </Badge>
+                  <span className="text-xs font-semibold text-slate-300">{ps.participant_name ?? "Unknown"}</span>
+                  <StatusBadge status={ps.status} />
+                  {ps.submitted_at && (
+                    <span className="text-[10px] text-slate-600">
+                      {formatDistanceToNow(new Date(ps.submitted_at), { addSuffix: true })}
+                    </span>
+                  )}
+                </div>
+                <SubmissionContent sub={ps} />
+              </div>
+            ))}
           </div>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center text-slate-600 text-sm">
-          No submission content available
-        </div>
-      )}
+        )}
+
+        {!hasTeamSub && !hasIndividualSubs && (
+          <div className="flex items-center justify-center text-slate-600 text-sm py-8">
+            No submission content available
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -557,7 +489,6 @@ export function AdminHackathonTeamSubmissions() {
   const [selectedTeam, setSelectedTeam] = useState<TeamData | null>(null);
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
-  const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/hackathon/teams/submissions")
@@ -684,7 +615,6 @@ export function AdminHackathonTeamSubmissions() {
     setSelectedTeam(team);
     setSelectedPhaseId(null);
     setSelectedActivityId(null);
-    setActiveMemberId(null);
   }
 
   function handleSelectPhase(phaseId: string) {
@@ -692,26 +622,16 @@ export function AdminHackathonTeamSubmissions() {
     if (!phaseId) {
       setSelectedPhaseId(null);
       setSelectedActivityId(null);
-      setActiveMemberId(null);
       return;
     }
 
     const phase = buildPhaseGroups(selectedTeam).find((item) => item.phase_id === phaseId) ?? null;
     setSelectedPhaseId(phaseId);
     setSelectedActivityId(phase?.activities[0]?.activity_id ?? null);
-    setActiveMemberId(null);
   }
 
   function handleSelectActivity(activityId: string) {
     setSelectedActivityId(activityId);
-    if (!selectedTeam) return;
-    const activity = selectedTeam.activities.find((a) => a.activity_id === activityId);
-    if (!activity) return;
-    // Default to first member with individual submission, or team view
-    const firstSubmitter = selectedTeam.members.find((m) =>
-      activity.participant_submissions.some((ps) => ps.participant_id === m.participant_id)
-    );
-    setActiveMemberId(firstSubmitter?.participant_id ?? null);
   }
 
   if (loading) {
@@ -765,9 +685,10 @@ export function AdminHackathonTeamSubmissions() {
         <SubmissionDetail
           team={selectedTeam}
           activity={selectedActivity}
-          activeMemberId={activeMemberId}
-          onMemberSwitch={setActiveMemberId}
+          activeMemberId={null}
+          onMemberSwitch={() => {}}
         />
+
       </div>
     </div>
   );

@@ -84,3 +84,44 @@ export async function GET(
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+// POST /api/admin/hackathon/teams/[teamId] — reset mentor booking quota for a specific team
+export async function POST(
+  _request: Request,
+  { params }: { params: Promise<{ teamId: string }> }
+) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("role", "admin");
+  if (!roles || roles.length === 0) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+
+  const { teamId } = await params;
+  const serviceClient = getServiceClient();
+
+  const { data: bookings, error: fetchError } = await serviceClient
+    .from("mentor_bookings")
+    .select("id")
+    .eq("team_id", teamId);
+
+  if (fetchError) return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 });
+
+  if (!bookings || bookings.length === 0) {
+    return NextResponse.json({ reset: 0, message: "No bookings to reset" });
+  }
+
+  const ids = bookings.map((b) => b.id);
+  const { error: deleteError } = await serviceClient
+    .from("mentor_bookings")
+    .delete()
+    .in("id", ids);
+
+  if (deleteError) return NextResponse.json({ error: "Failed to reset quota" }, { status: 500 });
+
+  return NextResponse.json({ reset: ids.length });
+}
