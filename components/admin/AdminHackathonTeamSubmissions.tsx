@@ -174,12 +174,31 @@ function TeamGrid({
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {teams.map((team) => {
+      {teams.map((team, index) => {
+        const rank = index + 1;
         const totalActivities = team.activities.length;
         const passedCount = team.activities.filter((a) => a.status === "passed").length;
         const pendingCount = team.activities.filter(
           (a) => a.status === "submitted" || a.status === "pending_review"
         ).length;
+
+        const rankStyle =
+          rank === 1
+            ? "text-yellow-300 border-yellow-400/40 bg-yellow-400/10"
+            : rank === 2
+            ? "text-slate-300 border-slate-400/40 bg-slate-400/10"
+            : rank === 3
+            ? "text-orange-300 border-orange-400/40 bg-orange-400/10"
+            : "text-slate-500 border-slate-700 bg-transparent";
+
+        const scoreStyle =
+          rank === 1
+            ? "text-yellow-300"
+            : rank === 2
+            ? "text-slate-300"
+            : rank === 3
+            ? "text-orange-300"
+            : "text-slate-400";
 
         return (
           <button
@@ -187,6 +206,16 @@ function TeamGrid({
             onClick={() => onSelectTeam(team)}
             className="text-left p-4 rounded-lg border border-slate-700/50 bg-slate-950/20 hover:border-slate-500 hover:bg-slate-900/40 transition-all group"
           >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span
+                className={`inline-flex items-center justify-center w-5 h-5 rounded-full border text-[10px] font-bold shrink-0 ${rankStyle}`}
+              >
+                {rank}
+              </span>
+              <span className={`text-xs font-bold font-mono ${scoreStyle}`}>
+                {team.total_score} pts
+              </span>
+            </div>
             <div className="font-semibold text-slate-200 text-sm mb-1 group-hover:text-white transition-colors truncate">
               {team.name}
             </div>
