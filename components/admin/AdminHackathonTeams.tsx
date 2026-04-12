@@ -185,6 +185,40 @@ function ScoreBadge({ score, rank }: { score: number; rank: number }) {
   );
 }
 
+function ResetMentorTicketButton({ teamId, teamName }: { teamId: string; teamName: string }) {
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function handleReset() {
+    if (!confirm(`Reset mentor ticket for team "${teamName}"? This will delete all their mentor bookings.`)) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/hackathon/mentor-bookings/reset-quota-team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team_id: teamId }),
+      });
+      if (res.ok) setDone(true);
+      else alert("Failed to reset ticket");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="text-xs border-amber-700/50 text-amber-400 hover:bg-amber-900/20"
+      onClick={handleReset}
+      disabled={loading || done}
+    >
+      {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+      {done ? "✓ Ticket Reset" : "Reset Mentor Ticket"}
+    </Button>
+  );
+}
+
 function SubmissionRow({ sub }: { sub: TeamSubmission | IndividualSubmission }) {
   return (
     <div className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-slate-950/40 border border-slate-800/50">
@@ -341,6 +375,11 @@ function LeaderboardView() {
                           className="overflow-hidden bg-slate-900/10 backdrop-blur-sm"
                         >
                           <div className="px-12 py-6 border-b border-slate-800/50 space-y-6">
+                            {/* Admin actions */}
+                            <div className="flex items-center gap-3">
+                              <ResetMentorTicketButton teamId={team.id} teamName={team.name} />
+                            </div>
+
                             {/* Members */}
                             <div>
                               <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
