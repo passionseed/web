@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { buildActivityCommentsByActivity } from "@/lib/hackathon/activity-comments";
 
 function getServiceClient() {
   return createServiceClient(
@@ -35,8 +36,15 @@ export async function GET() {
 
     const serviceClient = getServiceClient();
 
-    // Run all 4 queries in parallel
-    const [teamsResult, scoresResult, teamSubsResult, individualSubsResult] =
+    // Run all queries in parallel
+    const [
+      teamsResult,
+      scoresResult,
+      teamSubsResult,
+      individualSubsResult,
+      commentsResult,
+      repliesResult,
+    ] =
       await Promise.all([
         // 1. All teams with members
         serviceClient
@@ -116,17 +124,69 @@ export async function GET() {
             hackathon_participants(name),
             hackathon_phase_activity_assessments(id, metadata, display_order)
           `),
+
+        serviceClient
+          .from("hackathon_activity_comments")
+          .select(`
+            id,
+            activity_id,
+            participant_id,
+            content,
+            engagement_score,
+            created_at,
+            updated_at,
+            is_edited,
+            hackathon_participants(name, display_name, avatar_url)
+          `)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: true }),
+
+        serviceClient
+          .from("hackathon_activity_comment_replies")
+          .select(`
+            id,
+            comment_id,
+            participant_id,
+            content,
+            created_at,
+            updated_at,
+            is_edited,
+            hackathon_participants(name, display_name, avatar_url)
+          `)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: true }),
       ]);
 
-    if (teamsResult.error) {
-      console.error("Error fetching teams:", teamsResult.error);
-      return NextResponse.json({ error: "Failed to fetch teams" }, { status: 500 });
+    if (
+      teamsResult.error ||
+      scoresResult.error ||
+      teamSubsResult.error ||
+      individualSubsResult.error ||
+      commentsResult.error ||
+      repliesResult.error
+    ) {
+      console.error("Error fetching admin team submissions:", {
+        teams: teamsResult.error,
+        scores: scoresResult.error,
+        teamSubmissions: teamSubsResult.error,
+        individualSubmissions: individualSubsResult.error,
+        comments: commentsResult.error,
+        replies: repliesResult.error,
+      });
+      return NextResponse.json(
+        { error: "Failed to fetch hackathon team submissions" },
+        { status: 500 }
+      );
     }
 
     const teams = teamsResult.data ?? [];
     const scores = scoresResult.data ?? [];
     const teamSubs = teamSubsResult.data ?? [];
     const individualSubs = individualSubsResult.data ?? [];
+    const commentsByActivityId = buildActivityCommentsByActivity(
+      commentsResult.data ?? [],
+      repliesResult.data ?? []
+    );
 
     // Build lookup maps for O(1) access
     const scoreByTeamId = new Map(
@@ -267,7 +327,10 @@ export async function GET() {
     // Sort by total_score descending
     assembled.sort((a, b) => b.total_score - a.total_score);
 
-    return NextResponse.json({ teams: assembled });
+    return NextResponse.json({
+      teams: assembled,
+      activity_comments_by_id: commentsByActivityId,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     console.error("Error in hackathon submissions API:", err);

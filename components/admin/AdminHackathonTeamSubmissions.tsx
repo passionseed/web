@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FileText, Paperclip, Image as ImageIcon, ChevronLeft, Users } from "lucide-react";
+import {
+  Loader2,
+  FileText,
+  Paperclip,
+  Image as ImageIcon,
+  ChevronLeft,
+  MessageSquare,
+  Users,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -52,6 +60,32 @@ interface TeamSubmissionDetail {
   submitted_by_name: string | null;
 }
 
+interface ActivityCommentReply {
+  id: string;
+  comment_id: string;
+  participant_id: string;
+  participant_name: string;
+  participant_avatar_url: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  is_edited: boolean;
+}
+
+interface ActivityComment {
+  id: string;
+  activity_id: string;
+  participant_id: string;
+  participant_name: string;
+  participant_avatar_url: string | null;
+  content: string;
+  engagement_score: number;
+  created_at: string;
+  updated_at: string;
+  is_edited: boolean;
+  replies: ActivityCommentReply[];
+}
+
 interface ActivityGroup {
   activity_id: string;
   activity_title: string | null;
@@ -65,6 +99,7 @@ interface ActivityGroup {
   submitted_at: string | null;
   team_submission: TeamSubmissionDetail | null;
   participant_submissions: IndividualSubmissionDetail[];
+  comments: ActivityComment[];
 }
 
 interface TeamData {
@@ -112,6 +147,10 @@ const AVATAR_COLORS = [
 
 function avatarColor(index: number): string {
   return AVATAR_COLORS[index % AVATAR_COLORS.length];
+}
+
+function authorInitial(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || "?";
 }
 
 function deriveActivityStatus(
@@ -321,6 +360,12 @@ function ActivityList({
                                 {formatDistanceToNow(new Date(activity.submitted_at), { addSuffix: true })}
                               </div>
                             )}
+                            {activity.comments.length > 0 && (
+                              <Badge className="text-[9px] bg-sky-500/10 text-sky-300 border border-sky-500/20 px-1.5 py-0">
+                                <MessageSquare className="mr-1 h-2.5 w-2.5" />
+                                {activity.comments.length}
+                              </Badge>
+                            )}
                           </div>
                         </button>
                       );
@@ -335,6 +380,89 @@ function ActivityList({
       {!activePhase && phases.length > 0 && (
         <div className="text-slate-500 text-sm text-center py-6">
           Click a phase to view its submitted activities.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActivityCommentsSection({ comments }: { comments: ActivityComment[] }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase">
+          Activity Comments
+        </div>
+        <Badge className="border border-sky-500/20 bg-sky-500/10 px-1.5 py-0 text-[9px] text-sky-300">
+          {comments.length}
+        </Badge>
+      </div>
+
+      {comments.length === 0 ? (
+        <div className="rounded-md border border-dashed border-slate-800 bg-slate-900/30 p-3 text-xs text-slate-500">
+          No activity comments yet.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {comments.map((comment) => (
+            <div
+              key={comment.id}
+              className="rounded-md border border-slate-800 bg-slate-900/40 p-3"
+            >
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/20 text-[11px] font-semibold text-sky-200">
+                    {authorInitial(comment.participant_name)}
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-200">
+                      {comment.participant_name}
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      {comment.is_edited ? " · edited" : ""}
+                    </div>
+                  </div>
+                </div>
+                {comment.replies.length > 0 && (
+                  <span className="text-[10px] text-slate-500">
+                    {comment.replies.length} repl{comment.replies.length === 1 ? "y" : "ies"}
+                  </span>
+                )}
+              </div>
+
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-300">
+                {comment.content}
+              </p>
+
+              {comment.replies.length > 0 && (
+                <div className="mt-3 space-y-2 border-l border-slate-800 pl-3">
+                  {comment.replies.map((reply) => (
+                    <div
+                      key={reply.id}
+                      className="rounded-md border border-slate-800/80 bg-slate-950/40 p-2.5"
+                    >
+                      <div className="mb-1.5 flex items-center gap-2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/20 text-[10px] font-semibold text-violet-200">
+                          {authorInitial(reply.participant_name)}
+                        </div>
+                        <div className="text-[11px] font-semibold text-slate-200">
+                          {reply.participant_name}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                          {reply.is_edited ? " · edited" : ""}
+                        </div>
+                      </div>
+                      <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-300">
+                        {reply.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -480,6 +608,8 @@ function SubmissionDetail({
               </p>
             </div>
 
+            <ActivityCommentsSection comments={activity.comments} />
+
             {hasTextAnswer && (
               <div>
                 <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
@@ -576,6 +706,11 @@ export function AdminHackathonTeamSubmissions() {
           team_submissions: TeamSubmissionDetail[];
           individual_submissions: IndividualSubmissionDetail[];
         }) => {
+          const activityCommentsById = (data.activity_comments_by_id ?? {}) as Record<
+            string,
+            ActivityComment[]
+          >;
+
           // Group by activity_id
           const activityMap = new Map<string, ActivityGroup>();
 
@@ -592,6 +727,7 @@ export function AdminHackathonTeamSubmissions() {
               submitted_at: ts.submitted_at,
               team_submission: ts,
               participant_submissions: [],
+              comments: activityCommentsById[ts.activity_id] ?? [],
             });
           }
 
@@ -612,6 +748,7 @@ export function AdminHackathonTeamSubmissions() {
                 submitted_at: is.submitted_at,
                 team_submission: null,
                 participant_submissions: [is],
+                comments: activityCommentsById[is.activity_id] ?? [],
               });
             }
           }
