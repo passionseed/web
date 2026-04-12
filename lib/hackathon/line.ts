@@ -58,7 +58,7 @@ export async function sendMentorBookingNotification(
   });
 
   const message = formatLineTextMessage(
-    `📅 การจองใหม่!\n\nผู้จอง: ${bookerName}\nวันที่: ${dateStr}\nเวลา: ${timeStr}\nระยะเวลา: ${booking.duration_minutes} นาที${booking.notes ? `\nหมายเหตุ: ${booking.notes}` : ""}\n\nพิมพ์ confirm หรือ decline เพื่อตอบกลับได้ทันที`
+    `📅 การจองใหม่!\n\nผู้จอง: ${bookerName}\nวันที่: ${dateStr}\nเวลา: ${timeStr}\nระยะเวลา: ${booking.duration_minutes} นาที${booking.notes ? `\nหมายเหตุ: ${booking.notes}` : ""}`
   );
 
   await client.pushMessage({
