@@ -35,8 +35,10 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search, Mail, X, Send, Eye, Users, FileText } from "lucide-react";
-import { TEMPLATE_VARIABLES, renderTemplate, EmailTemplateVars } from "@/lib/hackathon/email";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Search, Mail, X, Send, Eye, Users, FileText, LayoutTemplate, Code } from "lucide-react";
+import { TEMPLATE_VARIABLES, type EmailTemplateVars } from "@/lib/hackathon/email";
+import { renderCustomEmail, type EmailTemplate } from "@/lib/hackathon/email-templates";
 
 interface Participant {
   id: string;
@@ -67,6 +69,7 @@ export function AdminHackathonEmailSender() {
     submissionStatuses: [],
     activityTitles: [],
   });
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [counts, setCounts] = useState({ total: 0, filtered: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -82,6 +85,7 @@ export function AdminHackathonEmailSender() {
   const [subjectTemplate, setSubjectTemplate] = useState("");
   const [bodyTemplate, setBodyTemplate] = useState("");
   const [lastFocused, setLastFocused] = useState<"subject" | "body">("body");
+  const [previewTab, setPreviewTab] = useState<"rendered" | "html">("rendered");
   
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -115,12 +119,18 @@ export function AdminHackathonEmailSender() {
         setParticipants(data.participants || []);
         if (data.filterOptions) setFilterOptions(data.filterOptions);
         if (data.counts) setCounts(data.counts);
+        if (data.templates) setTemplates(data.templates);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
+  }
+
+  function loadTemplate(template: EmailTemplate) {
+    setSubjectTemplate(template.subject);
+    setBodyTemplate(template.body);
   }
 
   function toggleSelection(id: string) {
@@ -245,8 +255,11 @@ export function AdminHackathonEmailSender() {
         role: "Frontend",
       };
 
-  const renderedSubject = renderTemplate(subjectTemplate || "Subject Preview", previewVars);
-  const renderedBody = renderTemplate(bodyTemplate || "Body Preview", previewVars);
+  const previewEmail = renderCustomEmail(
+    subjectTemplate || "Subject Preview",
+    bodyTemplate || "<p>Body Preview</p>",
+    previewVars
+  );
 
   return (
     <div className="space-y-4">
@@ -279,7 +292,7 @@ export function AdminHackathonEmailSender() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-[1fr_300px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
@@ -454,26 +467,55 @@ export function AdminHackathonEmailSender() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+                <LayoutTemplate className="h-5 w-5" />
                 Email Template
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {templates.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <LayoutTemplate className="h-4 w-4" />
+                    Quick Start — Choose a Template
+                  </Label>
+                  <Select onValueChange={(val) => {
+                    const t = templates.find((t) => t.id === val);
+                    if (t) loadTemplate(t);
+                  }}>
+                    <SelectTrigger className="h-auto py-2">
+                      <SelectValue placeholder="Select a pre-made template..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[400px]">
+                      {templates.map((t) => (
+                        <SelectItem key={t.id} value={t.id} className="py-3">
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="font-medium">{t.name}</span>
+                            <span className="text-xs text-muted-foreground">{t.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label>Variables</Label>
+                <Label className="flex items-center gap-2">
+                  Variables
+                  <span className="text-xs text-muted-foreground font-normal">Click to insert</span>
+                </Label>
                 <div className="flex flex-wrap gap-1">
                   {TEMPLATE_VARIABLES.map((v) => (
                     <Badge 
                       key={v.key} 
                       variant="outline" 
-                      className="cursor-pointer hover:bg-muted"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
                       onClick={() => insertVariable(v.key)}
                     >
                       {v.label}
                     </Badge>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">Click a variable to insert at cursor.</p>
               </div>
 
               <div className="space-y-2">
@@ -483,19 +525,31 @@ export function AdminHackathonEmailSender() {
                   value={subjectTemplate}
                   onChange={(e) => setSubjectTemplate(e.target.value)}
                   onFocus={() => setLastFocused("subject")}
-                  placeholder="Welcome to {{team_name}}!"
+                  placeholder="Welcome to PassionSeed Hackathon!"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Body (HTML supported)</Label>
+                <Label className="flex items-center justify-between">
+                  <span>Body</span>
+                  <span className="text-xs text-muted-foreground font-normal">HTML supported. Use **bold** and *italic*</span>
+                </Label>
                 <Textarea 
                   ref={bodyRef}
                   value={bodyTemplate}
                   onChange={(e) => setBodyTemplate(e.target.value)}
                   onFocus={() => setLastFocused("body")}
-                  placeholder="Hi {{name}},<br/><br/>Welcome to the hackathon..."
-                  className="min-h-[200px]"
+                  placeholder="Hi {{name}},
+
+Welcome to the hackathon! We're excited to have {{team_name}} participating.
+
+**Important dates:**
+* Submission deadline: March 15
+* Demo day: March 20
+
+Best regards,
+PassionSeed Team"
+                  className="min-h-[220px] font-mono text-sm"
                 />
               </div>
             </CardContent>
@@ -503,28 +557,57 @@ export function AdminHackathonEmailSender() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Live Preview
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Preview
+                </CardTitle>
+                <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as "rendered" | "html")} className="w-auto">
+                  <TabsList className="h-8">
+                    <TabsTrigger value="rendered" className="text-xs px-2">
+                      <Eye className="h-3 w-3 mr-1" />
+                      Rendered
+                    </TabsTrigger>
+                    <TabsTrigger value="html" className="text-xs px-2">
+                      <Code className="h-3 w-3 mr-1" />
+                      HTML
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
               <CardDescription>
                 {previewParticipant ? `Previewing for ${previewParticipant.name}` : "Preview with sample data"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border p-4 space-y-4 bg-muted/30">
-                <div>
-                  <div className="text-xs text-muted-foreground font-semibold mb-1">SUBJECT</div>
-                  <div className="font-medium">{renderedSubject || "—"}</div>
+              <TabsContent value="rendered" className="mt-0">
+                <div className="rounded-lg border bg-white overflow-hidden">
+                  <div className="bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-3">
+                    <p className="text-white font-semibold text-sm">PassionSeed Hackathon</p>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Subject</p>
+                      <p className="font-medium text-sm">{previewEmail.subject}</p>
+                    </div>
+                    <div className="border-t pt-3">
+                      <div 
+                        className="prose prose-sm max-w-none text-sm"
+                        dangerouslySetInnerHTML={{ __html: previewEmail.html.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] || previewEmail.html }}
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 border-t text-xs text-muted-foreground text-center">
+                    PassionSeed — Empowering the next generation of innovators
+                  </div>
                 </div>
-                <div className="border-t pt-2">
-                  <div className="text-xs text-muted-foreground font-semibold mb-1">BODY</div>
-                  <div 
-                    className="text-sm prose prose-sm max-w-none break-words whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: renderedBody || "—" }}
-                  />
+              </TabsContent>
+
+              <TabsContent value="html" className="mt-0">
+                <div className="rounded-lg border bg-muted p-3 overflow-auto max-h-[300px]">
+                  <pre className="text-xs font-mono whitespace-pre-wrap break-all">{previewEmail.html}</pre>
                 </div>
-              </div>
+              </TabsContent>
 
               <Button 
                 className="w-full mt-4" 

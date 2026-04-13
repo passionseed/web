@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 import {
-  sendBatchEmails,
-  type EmailTemplateVars,
-} from "@/lib/hackathon/email";
+  renderCustomEmail,
+  type EmailTemplate,
+  HACKATHON_TEMPLATES,
+} from "@/lib/hackathon/email-templates";
+import { type EmailTemplateVars } from "@/lib/hackathon/email";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "hi@noreply.passionseed.org";
 
 function getServiceClient() {
   return createServiceClient(
@@ -32,9 +38,6 @@ async function requireAdmin() {
   return roles?.length ? user : null;
 }
 
-/** GET /api/admin/hackathon/email-sender
- *  Returns filter options (distinct values for each filter dimension)
- *  and filtered participant list with counts. */
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin();
   if (!admin)
@@ -165,11 +168,10 @@ export async function GET(req: NextRequest) {
       total: participants.length,
       filtered: filtered.length,
     },
+    templates: HACKATHON_TEMPLATES,
   });
 }
 
-/** POST /api/admin/hackathon/email-sender
- *  Sends batch personalized emails to selected participants. */
 export async function POST(req: NextRequest) {
   const admin = await requireAdmin();
   if (!admin)
@@ -181,10 +183,12 @@ export async function POST(req: NextRequest) {
       recipientIds,
       subjectTemplate,
       bodyTemplate,
+      templateId,
     }: {
       recipientIds: string[];
       subjectTemplate: string;
       bodyTemplate: string;
+      templateId?: string;
     } = body;
 
     if (!recipientIds?.length) {
@@ -193,15 +197,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    if (!subjectTemplate?.trim()) {
+    if (!subjectTemplate?.trim() || !bodyTemplate?.trim()) {
       return NextResponse.json(
-        { error: "Subject is required" },
-        { status: 400 }
-      );
-    }
-    if (!bodyTemplate?.trim()) {
-      return NextResponse.json(
-        { error: "Email body is required" },
+        { error: "Subject and body are required" },
         { status: 400 }
       );
     }
@@ -226,7 +224,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const recipients = (participants ?? []).map((p: any) => {
+    const BATCH_SIZE = 100;
+    let sent = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    const emailList = (participants ?? []).map((p: any) => {
       const teamMember = Array.isArray(p.hackathon_team_members)
         ? p.hackathon_team_members[0]
         : p.hackathon_team_members;
@@ -243,16 +246,40 @@ export async function POST(req: NextRequest) {
         role: p.role ?? "",
       };
 
-      return { email: p.email, vars };
+      const { subject, html, text } = renderCustomEmail(
+        subjectTemplate,
+        bodyTemplate,
+        vars
+      );
+
+      return {
+        from: `PassionSeed <${FROM_EMAIL}>`,
+        to: [p.email],
+        subject,
+        html,
+        text,
+      };
     });
 
-    const result = await sendBatchEmails({
-      recipients,
-      subjectTemplate,
-      bodyTemplate,
-    });
+    for (let i = 0; i < emailList.length; i += BATCH_SIZE) {
+      const chunk = emailList.slice(i, i + BATCH_SIZE);
 
-    return NextResponse.json(result);
+      try {
+        const { error } = await resend.batch.send(chunk);
+        if (error) {
+          failed += chunk.length;
+          errors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`);
+        } else {
+          sent += chunk.length;
+        }
+      } catch (err) {
+        failed += chunk.length;
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        errors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${msg}`);
+      }
+    }
+
+    return NextResponse.json({ sent, failed, errors });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Internal server error";

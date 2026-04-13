@@ -202,18 +202,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const [adminCommentsResult] = await Promise.all([
-    serviceClient
-      .from("hackathon_submission_admin_comments")
-      .select("*")
-      .in("individual_submission_id", (individualResult.data ?? []).map((s) => s.id).length > 0
-        ? (individualResult.data ?? []).map((s) => s.id)
-        : [""])
-      .or(
-        `team_submission_id.in.(${(teamResult.data ?? []).map((s) => s.id).join(",") || ""})`
-      )
-      .order("created_at", { ascending: true }),
-  ]);
+  const individualIds = (individualResult.data ?? []).map((s) => s.id);
+  const teamIdsFromSubs = (teamResult.data ?? []).map((s) => s.id);
+
+  let adminCommentsResult = { data: [] as any[], error: null as any };
+  if (individualIds.length > 0 || teamIdsFromSubs.length > 0) {
+    const query = serviceClient.from("hackathon_submission_admin_comments").select("*");
+    if (individualIds.length > 0 && teamIdsFromSubs.length > 0) {
+      query.or(`individual_submission_id.in.(${individualIds.join(",")}),team_submission_id.in.(${teamIdsFromSubs.join(",")})`);
+    } else if (individualIds.length > 0) {
+      query.in("individual_submission_id", individualIds);
+    } else if (teamIdsFromSubs.length > 0) {
+      query.in("team_submission_id", teamIdsFromSubs);
+    }
+    adminCommentsResult = await query.order("created_at", { ascending: true });
+  }
 
   if (adminCommentsResult.error) {
     console.error("[admin/hackathon/activities] admin comments error:", adminCommentsResult.error);
