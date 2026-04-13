@@ -21,6 +21,8 @@ import { AdminHackathonMatching } from "./AdminHackathonMatching";
 import { AdminHackathonMentors } from "./AdminHackathonMentors";
 import { AdminHackathonSubmissions } from "./AdminHackathonSubmissions";
 import { AdminHackathonTeamSubmissions } from "./AdminHackathonTeamSubmissions";
+import { AdminHackathonActivities } from "./AdminHackathonActivities";
+import { AdminHackathonEmailSender } from "./AdminHackathonEmailSender";
 import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
 import { AdminEventTracker } from "./AdminEventTracker";
 import {
@@ -131,15 +133,20 @@ export function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="participants" className="space-y-4">
+              <Tabs defaultValue="activities" className="space-y-4">
                 <TabsList>
+                  <TabsTrigger value="activities">Activities</TabsTrigger>
                   <TabsTrigger value="participants">Participants</TabsTrigger>
                   <TabsTrigger value="teams">Teams</TabsTrigger>
                   <TabsTrigger value="team-submissions">Team Submissions</TabsTrigger>
                   <TabsTrigger value="questionnaire">Questionnaire</TabsTrigger>
                   <TabsTrigger value="analytics">Page Analytics</TabsTrigger>
                   <TabsTrigger value="mentors">Mentors</TabsTrigger>
+                  <TabsTrigger value="email-sender">Email Sender</TabsTrigger>
                 </TabsList>
+                <TabsContent value="activities">
+                  <AdminHackathonActivities key={`activities-${refreshKey}`} />
+                </TabsContent>
                 <TabsContent value="participants">
                   <AdminHackathonParticipants key={`hackathon-${refreshKey}`} />
                 </TabsContent>
@@ -157,6 +164,9 @@ export function AdminDashboard() {
                 </TabsContent>
                 <TabsContent value="mentors">
                   <AdminHackathonMentors key={`mentors-${refreshKey}`} />
+                </TabsContent>
+                <TabsContent value="email-sender">
+                  <AdminHackathonEmailSender key={`email-${refreshKey}`} />
                 </TabsContent>
               </Tabs>
             </CardContent>
