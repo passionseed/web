@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:prod": "dotenv -e .env.production -o -- next dev --turbopack",
     "build": "next build",
     "build:analyze": "ANALYZE=true next build",
     "build:production": "./scripts/build-production.sh",
@@ -152,6 +153,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^11.0.0",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.2",
     "eslint-config-next": "15.3.2",
     "glob": "^11.1.0",
