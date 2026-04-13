@@ -70,11 +70,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ chances_left: 0, booking: activeBooking });
   }
 
-  // All cancelled — quota restored only if cancelled by mentor (not by student)
+  // All cancelled — quota restored unless cancelled by student after mentor accepted
   const latestCancelled = bookings[0];
-  const cancelledByStudent = latestCancelled.cancellation_reason === "ยกเลิกโดยผู้เข้าร่วม";
+  const cancelledByStudentAfterAccept = latestCancelled.cancellation_reason === "ยกเลิกโดยผู้เข้าร่วม";
   return NextResponse.json({
-    chances_left: cancelledByStudent ? 0 : 1,
+    chances_left: cancelledByStudentAfterAccept ? 0 : 1,
     booking: latestCancelled,
   });
 }

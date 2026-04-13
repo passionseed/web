@@ -32,6 +32,7 @@ import {
   FileText,
   Image as ImageIcon,
   Paperclip,
+  RotateCcw,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -182,6 +183,40 @@ function ScoreBadge({ score, rank }: { score: number; rank: number }) {
     <Badge variant="outline" className="border-slate-700 text-slate-300 font-mono font-bold text-sm px-3">
       {score}
     </Badge>
+  );
+}
+
+function ResetMentorTicketButton({ teamId, teamName }: { teamId: string; teamName: string }) {
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function handleReset() {
+    if (!confirm(`Reset mentor ticket for team "${teamName}"? This will delete all their mentor bookings.`)) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/hackathon/mentor-bookings/reset-quota-team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team_id: teamId }),
+      });
+      if (res.ok) setDone(true);
+      else alert("Failed to reset ticket");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="text-xs border-amber-700/50 text-amber-400 hover:bg-amber-900/20"
+      onClick={handleReset}
+      disabled={loading || done}
+    >
+      {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+      {done ? "✓ Ticket Reset" : "Reset Mentor Ticket"}
+    </Button>
   );
 }
 
@@ -341,6 +376,11 @@ function LeaderboardView() {
                           className="overflow-hidden bg-slate-900/10 backdrop-blur-sm"
                         >
                           <div className="px-12 py-6 border-b border-slate-800/50 space-y-6">
+                            {/* Admin actions */}
+                            <div className="flex items-center gap-3">
+                              <ResetMentorTicketButton teamId={team.id} teamName={team.name} />
+                            </div>
+
                             {/* Members */}
                             <div>
                               <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
@@ -435,6 +475,8 @@ export function AdminHackathonTeams() {
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
   const [runningMatching, setRunningMatching] = useState(false);
   const [matchingMessage, setMatchingMessage] = useState("");
+  const [resettingQuotaTeamId, setResettingQuotaTeamId] = useState<string | null>(null);
+  const [quotaResetMessage, setQuotaResetMessage] = useState<{ teamId: string; message: string } | null>(null);
 
   useEffect(() => {
     fetchTeams();
@@ -509,6 +551,27 @@ export function AdminHackathonTeams() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const resetTeamQuota = async (teamId: string) => {
+    setResettingQuotaTeamId(teamId);
+    setQuotaResetMessage(null);
+    try {
+      const response = await fetch(`/api/admin/hackathon/teams/${teamId}`, { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) {
+        setQuotaResetMessage({ teamId, message: data.error || "Failed to reset quota" });
+        return;
+      }
+      setQuotaResetMessage({
+        teamId,
+        message: data.reset === 0 ? "No bookings to reset" : `Reset ${data.reset} booking(s) — quota restored`,
+      });
+    } catch {
+      setQuotaResetMessage({ teamId, message: "Failed to reset quota" });
+    } finally {
+      setResettingQuotaTeamId(null);
+    }
   };
 
   const runAutoMatching = async () => {
@@ -755,9 +818,28 @@ export function AdminHackathonTeams() {
                                         <Users className="h-4 w-4 text-blue-400" />
                                         Team Members
                                       </h4>
-                                      <Badge variant="outline" className="text-[10px] border-slate-700 bg-slate-800/50 text-slate-400 px-2 py-0">
-                                        {team.hackathon_team_members.length} Active
-                                      </Badge>
+                                      <div className="flex items-center gap-2">
+                                        {quotaResetMessage?.teamId === team.id && (
+                                          <span className="text-[10px] text-slate-400">{quotaResetMessage.message}</span>
+                                        )}
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={(e) => { e.stopPropagation(); resetTeamQuota(team.id); }}
+                                          disabled={resettingQuotaTeamId === team.id}
+                                          className="border-slate-700 hover:bg-slate-800 text-xs h-7 px-2"
+                                        >
+                                          {resettingQuotaTeamId === team.id ? (
+                                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                          ) : (
+                                            <RotateCcw className="h-3 w-3 mr-1" />
+                                          )}
+                                          Reset Mentor Quota
+                                        </Button>
+                                        <Badge variant="outline" className="text-[10px] border-slate-700 bg-slate-800/50 text-slate-400 px-2 py-0">
+                                          {team.hackathon_team_members.length} Active
+                                        </Badge>
+                                      </div>
                                     </div>
 
                                     <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 shadow-inner overflow-hidden">
