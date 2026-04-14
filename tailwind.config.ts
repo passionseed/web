@@ -118,6 +118,9 @@ const config = {
         "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "marquee": "marquee 30s linear infinite",
       },
+      transitionDuration: {
+        '2000': '2000ms',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

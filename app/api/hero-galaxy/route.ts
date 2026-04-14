@@ -163,6 +163,10 @@ export async function GET() {
         displayedPrograms: nodes.length,
         displayedUniversities: hubs.length,
       },
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
     });
   } catch (error) {
     console.error("Error in hero-galaxy API:", error);

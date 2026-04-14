@@ -351,7 +351,7 @@ export function PortalVinyl() {
                   <div
                     ref={vinylRef}
                     className={cn(
-                      "relative w-[240px] h-[240px] md:w-[280px] md:h-[280px] rounded-full shadow-2xl overflow-hidden transition-transform duration-[2000ms] ease-linear will-change-transform",
+                      "relative w-[240px] h-[240px] md:w-[280px] md:h-[280px] rounded-full shadow-2xl overflow-hidden transition-transform duration-2000 ease-linear will-change-transform",
                       isPlaying ? "animate-[spin_4s_linear_infinite]" : "" // Using CSS animation for continuous spin
                     )}
                     style={{

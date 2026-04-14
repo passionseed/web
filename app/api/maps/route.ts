@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
       node_count: map.node_count,
     }));
 
-    return NextResponse.json(formattedMaps);
+    return NextResponse.json(formattedMaps, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+      }
+    });
   } catch (error) {
     console.error("Error fetching maps:", error);
     return NextResponse.json(
