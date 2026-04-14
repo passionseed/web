@@ -1,4 +1,7 @@
 {
+  "speedInsights": {
+    "enabled": false
+  },
   "headers": [
     {
       "source": "/data/hackathon/problems/(.*)",
@@ -8,6 +11,20 @@
           "value": "public, max-age=3600"
         }
       ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, stale-while-revalidate=300"
+        }
+      ]
     }
-  ]
+  ],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 10
+    }
+  }
 }

@@ -128,11 +128,19 @@ export async function GET(request: NextRequest) {
         );
 
         if (titleMatch) {
-          return NextResponse.json({ results: [titleMatch] });
+          return NextResponse.json({ results: [titleMatch] }, {
+            headers: {
+              'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+            }
+          });
         }
       }
       
-      return NextResponse.json({ results });
+      return NextResponse.json({ results }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+        }
+      });
     } catch (error) {
       console.error('Error searching Apple Music:', error);
       return NextResponse.json({ results: [] });
