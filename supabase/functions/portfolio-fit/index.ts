@@ -158,6 +158,12 @@ async function handleScore(req: Request): Promise<Response> {
   }
 
   const { round_ids = [], force_refresh = false } = body;
+
+  await supabase.from("funnel_events").insert({
+    user_id: user.id,
+    event_name: "grading_request",
+    metadata: { round_count: round_ids.length },
+  });
   if (!Array.isArray(round_ids) || round_ids.length === 0) {
     return json({ error: "round_ids must be a non-empty array" }, 400);
   }
