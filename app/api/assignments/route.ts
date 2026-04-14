@@ -27,10 +27,6 @@ export async function GET(request: NextRequest) {
       success: true,
       data: assignments,
       count: assignments.length,
-    }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120'
-      }
     });
   } catch (error) {
     console.error("Get assignments error:", error);

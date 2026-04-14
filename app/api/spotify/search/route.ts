@@ -193,11 +193,7 @@ export async function GET(request: NextRequest) {
       const data: SpotifySearchResponse = await response.json();
       const results = data.tracks.items.map(formatTrackResult);
       
-      return NextResponse.json({ results }, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-        }
-      });
+      return NextResponse.json({ results });
     } catch (error) {
       console.error('Error searching Spotify:', error);
       // Fallback to mock data if API fails

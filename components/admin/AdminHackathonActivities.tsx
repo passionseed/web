@@ -90,7 +90,7 @@ interface Review {
   score_awarded: number | null;
   feedback: string | null;
   reviewed_at: string | null;
-  reviewer_id: string | null;
+  reviewed_by_user_id: string | null;
 }
 
 interface AdminComment {

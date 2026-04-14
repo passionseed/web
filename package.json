@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:prod": "dotenv -e .env.production -o -- next dev --turbopack",
+    "dev:local": "next dev --turbopack",
     "build": "next build",
     "build:analyze": "ANALYZE=true next build",
     "build:production": "./scripts/build-production.sh",

@@ -13,7 +13,6 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { createClient } from "@/utils/supabase/server";
@@ -161,7 +160,6 @@ export default async function RootLayout({
             <DirectionFinderProvider>
               <ErrorBoundary>
                 <Layout>{children}</Layout>
-                <SpeedInsights />
                 <SonnerToaster />
                 <DevHealthCheck />
                 <TOSAcceptanceModal />

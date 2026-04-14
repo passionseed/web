@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { 
   AlertTriangle, 
   CheckCircle, 
@@ -16,10 +17,8 @@ import {
   AlertCircle,
   ArrowRight
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -62,6 +61,22 @@ export function CEODashboard({ userId }: CEODashboardProps) {
 
   useEffect(() => {
     loadData();
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    const cards = document.querySelectorAll(".ei-card");
+    cards.forEach((card) => observer.observe(card));
+
+    return () => observer.disconnect();
   }, []);
 
   async function loadData() {
@@ -113,42 +128,59 @@ export function CEODashboard({ userId }: CEODashboardProps) {
 
   async function handleResolveAlert(alertId: string) {
     await resolveAlert(alertId);
-    setAlerts(alerts.filter(a => a.id !== alertId));
+    setAlerts(alerts.filter((a) => a.id !== alertId));
   }
 
   async function handleApproveContent(suggestionId: string) {
     await approveContent(suggestionId);
-    setContent(content.filter(c => c.id !== suggestionId));
+    setContent(content.filter((c) => c.id !== suggestionId));
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex items-center gap-2 text-muted-foreground">
+      <div className="min-h-screen flex items-center justify-center dusk-gradient">
+        <div className="flex items-center gap-3 text-amber-100/70">
           <RefreshCw className="h-5 w-5 animate-spin" />
-          <span>Loading CEO Dashboard...</span>
+          <span className="font-bai-jamjuree text-sm tracking-wide">
+            Loading CEO Dashboard...
+          </span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
+    <div className="min-h-screen relative overflow-hidden dusk-gradient">
+      <div className="dusk-atmosphere" />
+      
+      <header className="relative z-10 border-b border-white/[0.05] bg-[#06000f]/80 backdrop-blur-xl sticky top-0">
+        <div className="container mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">PassionSeed CEO Dashboard</h1>
-              <p className="text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  Team
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold text-white font-kodchasan tracking-tight">
+                PassionSeed CEO Dashboard
+              </h1>
+              <p className="text-sm text-slate-400 font-bai-jamjuree mt-0.5">
                 PMF Command Center • Live Data
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={loadData}>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={loadData}
+                className="ei-button-outline"
+              >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Button size="sm">
+              <Button size="sm" className="ei-button-dusk">
                 <Target className="h-4 w-4 mr-2" />
                 Actions
               </Button>
@@ -157,80 +189,91 @@ export function CEODashboard({ userId }: CEODashboardProps) {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 space-y-8">
-        {alerts.length > 0 && (
+      <main className="relative z-10 container mx-auto px-6 py-8 space-y-8">
+        {alerts.filter((a) => a.severity === "critical" || a.severity === "warning").length > 0 && (
           <div className="space-y-3">
             {alerts
-              .filter(a => a.severity === 'critical' || a.severity === 'warning')
+              .filter((a) => a.severity === "critical" || a.severity === "warning")
               .slice(0, 3)
-              .map(alert => (
-                <Alert 
-                  key={alert.id} 
-                  variant={alert.severity === 'critical' ? 'destructive' : 'default'}
+              .map((alert) => (
+                <div
+                  key={alert.id}
                   className={cn(
-                    "border-l-4",
-                    alert.severity === 'critical' && "border-l-red-500",
-                    alert.severity === 'warning' && "border-l-yellow-500"
+                    "relative overflow-hidden rounded-xl p-4 border backdrop-blur-sm",
+                    alert.severity === "critical"
+                      ? "bg-red-950/30 border-red-500/30"
+                      : "bg-amber-950/30 border-amber-500/30"
                   )}
                 >
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="flex items-center gap-2">
-                    {alert.severity === 'critical' ? 'Critical Issue' : 'Attention Needed'}
-                    {alert.affected_users && (
-                      <Badge variant="secondary">
-                        {alert.affected_users} users
-                      </Badge>
-                    )}
-                  </AlertTitle>
-                  <AlertDescription className="flex items-center justify-between">
-                    <span>{alert.message}</span>
-                    <Button 
-                      variant="ghost" 
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className={cn(
+                      "h-5 w-5 flex-shrink-0 mt-0.5",
+                      alert.severity === "critical" ? "text-red-400" : "text-amber-400"
+                    )} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={cn(
+                          "text-sm font-semibold",
+                          alert.severity === "critical" ? "text-red-300" : "text-amber-300"
+                        )}>
+                          {alert.severity === "critical" ? "Critical Issue" : "Attention Needed"}
+                        </span>
+                        {alert.affected_users && (
+                          <Badge variant="secondary" className="bg-white/5 text-slate-300 border-white/10">
+                            {alert.affected_users} users
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-300">{alert.message}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleResolveAlert(alert.id)}
+                      className="text-slate-400 hover:text-white hover:bg-white/5"
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
                       Resolve
                     </Button>
-                  </AlertDescription>
-                </Alert>
+                  </div>
+                </div>
               ))}
           </div>
         )}
 
         <section>
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white font-kodchasan tracking-tight">
+            <Target className="h-5 w-5 text-amber-400" />
             North Star Metrics
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               title="Monthly Revenue (MRR)"
-              value={`฿${metrics?.mrr.toLocaleString() || '0'}`}
+              value={`฿${metrics?.mrr.toLocaleString() || "0"}`}
               change={metrics?.mrr_change || 0}
               icon={<DollarSign className="h-5 w-5" />}
-              trend={metrics?.mrr_change && metrics.mrr_change > 0 ? 'up' : 'down'}
+              trend={metrics?.mrr_change && metrics.mrr_change > 0 ? "up" : "down"}
             />
             <MetricCard
               title="Paying Customers"
-              value={metrics?.paying_customers.toString() || '0'}
+              value={metrics?.paying_customers.toString() || "0"}
               change={metrics?.customers_change || 0}
               icon={<Users className="h-5 w-5" />}
-              trend={metrics?.customers_change && metrics.customers_change > 0 ? 'up' : 'down'}
+              trend={metrics?.customers_change && metrics.customers_change > 0 ? "up" : "down"}
             />
             <MetricCard
               title="Week-4 Retention"
               value={`${metrics?.week4_retention || 0}%`}
               change={metrics?.retention_change || 0}
               icon={<Activity className="h-5 w-5" />}
-              trend={metrics?.retention_change && metrics.retention_change > 0 ? 'up' : 'down'}
+              trend={metrics?.retention_change && metrics.retention_change > 0 ? "up" : "down"}
             />
             <MetricCard
               title="Customer Acquisition Cost"
               value={`฿${metrics?.cac || 0}`}
               change={metrics?.cac_change || 0}
               icon={<TrendingUp className="h-5 w-5" />}
-              trend={metrics?.cac_change && metrics.cac_change < 0 ? 'up' : 'down'}
+              trend={metrics?.cac_change && metrics.cac_change < 0 ? "up" : "down"}
               inverseTrend
             />
           </div>
@@ -238,24 +281,31 @@ export function CEODashboard({ userId }: CEODashboardProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <section>
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white font-kodchasan tracking-tight">
+              <TrendingDown className="h-5 w-5 text-amber-400" />
               Hackathon → Paid Funnel
             </h2>
-            <Card>
-              <CardContent className="pt-6 space-y-4">
+            <div className="ei-card p-6">
+              <div className="space-y-4">
                 {funnel.map((stage, index) => (
                   <div key={stage.name} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{stage.name}</span>
+                      <span className="font-medium text-slate-200 font-bai-jamjuree">
+                        {stage.name}
+                      </span>
                       <div className="flex items-center gap-3">
-                        <span className="text-muted-foreground">
+                        <span className="text-slate-400 font-mono text-xs">
                           {stage.count.toLocaleString()} users
                         </span>
                         {index > 0 && (
-                          <Badge 
+                          <Badge
                             variant={stage.is_target_met ? "default" : "destructive"}
-                            className="text-xs"
+                            className={cn(
+                              "text-xs font-mono",
+                              stage.is_target_met
+                                ? "bg-green-500/10 text-green-400 border-green-500/30"
+                                : "bg-red-500/10 text-red-400 border-red-500/30"
+                            )}
                           >
                             {stage.conversion_rate}%
                           </Badge>
@@ -263,119 +313,129 @@ export function CEODashboard({ userId }: CEODashboardProps) {
                       </div>
                     </div>
                     <div className="relative">
-                      <Progress 
-                        value={index === 0 ? 100 : stage.conversion_rate} 
+                      <Progress
+                        value={index === 0 ? 100 : stage.conversion_rate}
                         className={cn(
-                          "h-3",
-                          !stage.is_target_met && index > 0 && "bg-red-100"
+                          "h-2.5 bg-white/5",
+                          !stage.is_target_met && index > 0 && "[&>div]:bg-red-500"
                         )}
                       />
                       {index > 0 && !stage.is_target_met && (
                         <div className="absolute -top-1 right-0">
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
+                          <AlertTriangle className="h-4 w-4 text-red-400" />
                         </div>
                       )}
                     </div>
                     {index < funnel.length - 1 && (
                       <div className="flex justify-center py-1">
-                        <ArrowRight className="h-4 w-4 text-muted-foreground rotate-90" />
+                        <ArrowRight className="h-4 w-4 text-slate-600 rotate-90" />
                       </div>
                     )}
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white font-kodchasan tracking-tight">
+              <Activity className="h-5 w-5 text-amber-400" />
               Cohort Retention
             </h2>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {cohorts.slice(0, 3).map((cohort) => (
-                    <div key={cohort.cohort_date} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">
-                          {new Date(cohort.cohort_date).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })} Cohort
-                        </span>
-                        <span className="text-muted-foreground">
-                          {cohort.total_users} users
-                        </span>
-                      </div>
-                      <div className="flex gap-1">
-                        {cohort.retention.map((week) => (
-                          <div 
-                            key={week.week}
-                            className="flex-1 space-y-1"
-                            title={`Week ${week.week}: ${week.users} users (${week.rate}%)`}
-                          >
-                            <div 
-                              className={cn(
-                                "h-8 rounded-sm transition-all",
-                                week.rate >= 50 ? "bg-green-500" :
-                                week.rate >= 30 ? "bg-yellow-500" : "bg-red-500"
-                              )}
-                              style={{ opacity: 0.3 + (week.rate / 100) * 0.7 }}
-                            />
-                            <div className="text-center text-xs text-muted-foreground">
-                              W{week.week}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+            <div className="ei-card p-6">
+              <div className="space-y-5">
+                {cohorts.slice(0, 3).map((cohort) => (
+                  <div key={cohort.cohort_date} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-slate-200">
+                        {new Date(cohort.cohort_date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })} Cohort
+                      </span>
+                      <span className="text-slate-400 text-xs font-mono">
+                        {cohort.total_users} users
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="flex gap-1">
+                      {cohort.retention.map((week) => (
+                        <div
+                          key={week.week}
+                          className="flex-1 space-y-1"
+                          title={`Week ${week.week}: ${week.users} users (${week.rate}%)`}
+                        >
+                          <div
+                            className={cn(
+                              "h-8 rounded-sm transition-all duration-500",
+                              week.rate >= 50
+                                ? "bg-emerald-500/60"
+                                : week.rate >= 30
+                                ? "bg-amber-500/60"
+                                : "bg-red-500/60"
+                            )}
+                            style={{ opacity: 0.3 + (week.rate / 100) * 0.7 }}
+                          />
+                          <div className="text-center text-[10px] text-slate-500 font-mono">
+                            W{week.week}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
         </div>
 
         <section>
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white font-kodchasan tracking-tight">
+            <Bot className="h-5 w-5 text-amber-400" />
             AI Agents Status
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {agents.map((agent) => (
-              <Card key={agent.agent_name} className={cn(
-                "border-l-4",
-                agent.is_healthy ? "border-l-green-500" : "border-l-red-500"
-              )}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Bot className="h-4 w-4" />
-                    {agent.agent_name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "h-2 w-2 rounded-full",
-                        agent.is_healthy ? "bg-green-500" : "bg-red-500"
-                      )} />
-                      <span className="text-sm text-muted-foreground">
-                        {agent.is_healthy ? 'Healthy' : 'Issue Detected'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Last run: {new Date(agent.last_run).toLocaleDateString()}
-                    </p>
-                    {agent.alerts_generated > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {agent.alerts_generated} alerts
-                      </Badge>
-                    )}
+              <motion.div
+                key={agent.agent_name}
+                whileHover={{ y: -3 }}
+                className={cn(
+                  "ei-card p-5 border-l-4",
+                  agent.is_healthy
+                    ? "border-l-emerald-500"
+                    : "border-l-red-500"
+                )}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-amber-400" />
+                    <span className="font-semibold text-white text-sm">
+                      {agent.agent_name}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        "h-2 w-2 rounded-full",
+                        agent.is_healthy ? "bg-emerald-500" : "bg-red-500"
+                      )}
+                    />
+                    <span className="text-xs text-slate-400">
+                      {agent.is_healthy ? "Healthy" : "Issue Detected"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-mono">
+                    Last run: {new Date(agent.last_run).toLocaleDateString()}
+                  </p>
+                  {agent.alerts_generated > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-xs"
+                    >
+                      {agent.alerts_generated} alerts
+                    </Badge>
+                  )}
+                </div>
+              </motion.div>
             ))}
           </div>
         </section>
@@ -383,15 +443,16 @@ export function CEODashboard({ userId }: CEODashboardProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <RefreshCw className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold flex items-center gap-2 text-white font-kodchasan tracking-tight">
+                <RefreshCw className="h-5 w-5 text-amber-400" />
                 Weekly Retro
               </h2>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={handleGenerateRetro}
                 disabled={generatingRetro}
+                className="ei-button-outline"
               >
                 {generatingRetro ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -401,49 +462,68 @@ export function CEODashboard({ userId }: CEODashboardProps) {
                 Generate New
               </Button>
             </div>
-            <Card>
-              <CardContent className="pt-6 space-y-6">
+            <div className="ei-card p-6">
+              <div className="space-y-6">
                 {retro ? (
                   <>
                     <div>
-                      <h3 className="text-sm font-semibold text-green-600 mb-2 flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
                         <CheckCircle className="h-4 w-4" />
                         Wins
                       </h3>
-                      <ul className="space-y-1">
+                      <ul className="space-y-2">
                         {retro.wins.map((win, i) => (
-                          <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                            <span className="text-green-500 mt-0.5">•</span>
+                          <li
+                            key={i}
+                            className="text-sm text-slate-300 flex items-start gap-2"
+                          >
+                            <span className="text-emerald-500 mt-1">•</span>
                             {win}
                           </li>
                         ))}
                       </ul>
                     </div>
-                    <Separator />
+                    <Separator className="bg-white/5" />
                     <div>
-                      <h3 className="text-sm font-semibold text-red-600 mb-2 flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4" />
                         Blockers
                       </h3>
-                      <ul className="space-y-1">
-                        {retro.blockers.length > 0 ? retro.blockers.map((blocker, i) => (
-                          <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                            <span className="text-red-500 mt-0.5">•</span>
-                            {blocker}
+                      <ul className="space-y-2">
+                        {retro.blockers.length > 0 ? (
+                          retro.blockers.map((blocker, i) => (
+                            <li
+                              key={i}
+                              className="text-sm text-slate-300 flex items-start gap-2"
+                            >
+                              <span className="text-red-500 mt-1">•</span>
+                              {blocker}
+                            </li>
+                          ))
+                        ) : (
+                          <li className="text-sm text-slate-500">
+                            No major blockers this week
                           </li>
-                        )) : (
-                          <li className="text-sm text-muted-foreground">No major blockers this week</li>
                         )}
                       </ul>
                     </div>
-                    <Separator />
+                    <Separator className="bg-white/5" />
                     <div>
-                      <h3 className="text-sm font-semibold mb-2">Action Items</h3>
+                      <h3 className="text-sm font-semibold text-white mb-3">
+                        Action Items
+                      </h3>
                       <ul className="space-y-2">
                         {retro.action_items.map((item, i) => (
-                          <li key={i} className="text-sm flex items-center justify-between">
+                          <li
+                            key={i}
+                            className="text-sm flex items-center justify-between text-slate-300"
+                          >
                             <span>{item.task}</span>
-                            <Badge variant="outline" size="sm">
+                            <Badge
+                              variant="outline"
+                              size="sm"
+                              className="border-white/10 text-slate-400"
+                            >
                               {item.owner}
                             </Badge>
                           </li>
@@ -452,11 +532,11 @@ export function CEODashboard({ userId }: CEODashboardProps) {
                     </div>
                   </>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-slate-500">
                     <p>No retro generated yet</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
+                    <Button
+                      variant="outline"
+                      className="mt-4 ei-button-outline"
                       onClick={handleGenerateRetro}
                       disabled={generatingRetro}
                     >
@@ -464,64 +544,74 @@ export function CEODashboard({ userId }: CEODashboardProps) {
                     </Button>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white font-kodchasan tracking-tight">
+              <Calendar className="h-5 w-5 text-amber-400" />
               AI Content Suggestions
             </h2>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {content.length > 0 ? content.slice(0, 3).map((suggestion) => (
-                    <div 
-                      key={suggestion.id} 
-                      className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+            <div className="ei-card p-6">
+              <div className="space-y-3">
+                {content.length > 0 ? (
+                  content.slice(0, 3).map((suggestion) => (
+                    <motion.div
+                      key={suggestion.id}
+                      whileHover={{ x: 4 }}
+                      className="p-4 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer group"
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="secondary" className="text-xs capitalize">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge
+                              variant="secondary"
+                              className="text-xs capitalize bg-amber-500/10 text-amber-400 border-amber-500/20"
+                            >
                               {suggestion.platform}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(suggestion.suggested_date).toLocaleDateString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric' 
-                              })}
+                            <span className="text-xs text-slate-500">
+                              {new Date(suggestion.suggested_date).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )}
                             </span>
                           </div>
-                          <h4 className="text-sm font-medium">{suggestion.title}</h4>
+                          <h4 className="text-sm font-medium text-slate-200 mb-1 group-hover:text-white transition-colors">
+                            {suggestion.title}
+                          </h4>
                           {suggestion.ai_reasoning && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-slate-500">
                               AI: {suggestion.ai_reasoning}
                             </p>
                           )}
                         </div>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => handleApproveContent(suggestion.id)}
+                          className="text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10"
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  )) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No content suggestions yet</p>
-                      <p className="text-sm mt-1">
-                        AI agents will generate suggestions based on user signals
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <p>No content suggestions yet</p>
+                    <p className="text-sm mt-1 text-slate-600">
+                      AI agents will generate suggestions based on user signals
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
         </div>
       </main>
@@ -534,40 +624,48 @@ interface MetricCardProps {
   value: string;
   change: number;
   icon: React.ReactNode;
-  trend: 'up' | 'down';
+  trend: "up" | "down";
   inverseTrend?: boolean;
 }
 
 function MetricCard({ title, value, change, icon, trend, inverseTrend }: MetricCardProps) {
-  const isPositive = inverseTrend 
-    ? (trend === 'down' && change > 0) || (trend === 'up' && change < 0)
+  const isPositive = inverseTrend
+    ? (trend === "down" && change > 0) || (trend === "up" && change < 0)
     : change > 0;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+    <motion.div
+      whileHover={{ y: -3, transition: { duration: 0.2 } }}
+      className="ei-card p-6"
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-400 font-bai-jamjuree mb-1">
+            {title}
+          </p>
+          <p className="text-2xl font-bold text-white font-kodchasan tracking-tight">
+            {value}
+          </p>
+          <div
+            className={cn(
+              "flex items-center gap-1 mt-2 text-xs font-medium",
+              isPositive ? "text-emerald-400" : "text-red-400"
+            )}
+          >
+            {isPositive ? (
+              <TrendingUp className="h-3 w-3" />
+            ) : (
+              <TrendingDown className="h-3 w-3" />
+            )}
+            {change > 0 ? "+" : ""}
+            {change.toFixed(0)}%
+            <span className="text-slate-500 font-normal ml-1">from last month</span>
+          </div>
+        </div>
+        <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-400">
           {icon}
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className={cn(
-          "text-xs flex items-center gap-1 mt-1",
-          isPositive ? "text-green-600" : "text-red-600"
-        )}>
-          {isPositive ? (
-            <TrendingUp className="h-3 w-3" />
-          ) : (
-            <TrendingDown className="h-3 w-3" />
-          )}
-          {change > 0 ? '+' : ''}{change.toFixed(0)}%
-          <span className="text-muted-foreground ml-1">from last month</span>
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+    </motion.div>
   );
 }

@@ -136,7 +136,7 @@ export async function GET(req: NextRequest) {
           score_awarded,
           feedback,
           reviewed_at,
-          reviewer_id
+          reviewed_by_user_id
         )
       `)
       .in("activity_id", activityIdFilter)
@@ -163,7 +163,7 @@ export async function GET(req: NextRequest) {
           score_awarded,
           feedback,
           reviewed_at,
-          reviewer_id
+          reviewed_by_user_id
         )
       `)
       .in("activity_id", activityIdFilter)
