@@ -11,6 +11,7 @@ import {
 } from "@/types/reflection";
 import { Project, ProjectFormData } from "@/types/project";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { trackFunnelEventClient } from "./funnel-tracking";
 
 export type { ReflectionTimelineNode };
 
@@ -50,6 +51,8 @@ export async function createProject(data: ProjectFormData): Promise<Project> {
     .single();
 
   if (projectError) throw projectError;
+
+  trackFunnelEventClient(user.id, "portfolio_start").catch(console.error);
 
   // 2. Link tags to the project
   if (data.tagIds?.length) {

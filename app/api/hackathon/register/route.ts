@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, generateSessionToken, SESSION_COOKIE, SESSION_EXPIRY_DAYS } from "@/lib/hackathon/auth";
 import { findParticipantByEmail, createParticipant, createSession } from "@/lib/hackathon/db";
+import { createClient } from "@supabase/supabase-js";
 
 async function handlePOST(req: NextRequest) {
   return NextResponse.json({ error: "Registration is closed — we are already full!" }, { status: 403 });
@@ -23,6 +24,22 @@ async function handlePOST(req: NextRequest) {
 
     const password_hash = hashPassword(password);
     const participant = await createParticipant({ name, email, phone, password_hash, university, role: "Participant", track, grade_level, experience_level, referral_source, bio, team_name });
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    await supabase.from("funnel_events").insert({
+      user_id: participant.id,
+      event_name: "hackathon_signup",
+      metadata: { 
+        track, 
+        university, 
+        grade_level,
+        source: referral_source 
+      },
+    });
 
     const token = generateSessionToken();
     await createSession(participant.id, token);
