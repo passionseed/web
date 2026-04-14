@@ -1,16 +1,14 @@
 ---
 active: true
-iteration: 5
+iteration: 11
 max_iterations: 500
-completion_promise: "VERIFIED"
+completion_promise: "DONE"
 initial_completion_promise: "DONE"
-verification_attempt_id: "037348ea-6630-48c2-a8f9-e7e67cd5dac5"
-started_at: "2026-04-14T08:53:11.761Z"
+started_at: "2026-04-14T16:32:13.805Z"
 session_id: "ses_274ea3f77ffeHNjp3V45iM707p"
 ultrawork: true
-verification_pending: true
 strategy: "continue"
-message_count_at_start: 6
+message_count_at_start: 96
 ---
 Exceeded free resources
 Build Minutes

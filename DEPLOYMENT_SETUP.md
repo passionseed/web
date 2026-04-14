@@ -11,64 +11,69 @@ This setup addresses your exceeded Vercel free tier limits:
 
 ### 2. GitHub Actions Build Workflow (.github/workflows/deploy.yml)
 - **Problem**: 2h 6m build minutes vs 0s on free tier
-- **Fix**: Builds run on GitHub Actions (free), deploy prebuilt artifacts to Vercel
+- **Fix**: Uses `vercel build` on GitHub Actions (free), deploys prebuilt artifacts
 - **Impact**: Zero Vercel build minutes used
+- **Note**: Uses `vercel build` (not `next build`) to produce correct `.vercel/output`
 
-### 3. API Route Caching
+### 3. API Route Caching (proxy.ts)
 - **Problem**: 1.6M Edge Requests, 1.4M Function Invocations
-- **Fix**: Added `Cache-Control` headers to:
-  - `/api/maps/list` - 60s cache, 300s stale-while-revalidate
-  - `/api/spotify/search` - 300s cache, 600s stale-while-revalidate  
-  - `/api/deezer/search` - 300s cache, 600s stale-while-revalidate
-  - `/api/apple-music/search` - 300s cache, 600s stale-while-revalidate
-  - `/api/assignments` - 30s cache, 120s stale-while-revalidate
-  - `/api/maps` - 60s cache, 300s stale-while-revalidate
-- **Impact**: Reduced function calls by serving cached responses
+- **Fix**: Added cache headers in proxy.ts (merged with existing session handling):
+  - `/api/maps/*` - 60s s-maxage, 300s stale-while-revalidate
+  - `/api/assignments/*` - 30s s-maxage, 120s stale-while-revalidate
+  - `/api/hero-galaxy` - 300s s-maxage, 600s stale-while-revalidate
+  - `/api/tcas/*` - 300s s-maxage, 600s stale-while-revalidate
+  - `*/search`, `*/list` endpoints - 300s s-maxage, 600s stale-while-revalidate
+- **Matcher scope**: Tight allowlist to avoid unnecessary edge executions
+- **Impact**: CDN caching reduces function invocations
 
-### 4. Rate Limiting Middleware (middleware.ts)
-- **Problem**: Potential abuse causing high request volume
-- **Fix**: 100 requests/minute per IP for API routes
-- **Impact**: Prevents abuse, reduces unnecessary invocations
+### 4. Data Folder Caching (vercel.json)
+- **Source**: `/data/hackathon/problems/*`
+- **Cache**: 3600s s-maxage, 86400s stale-while-revalidate
 
 ## Required Setup
 
-### 1. GitHub Secrets
+### 1. CRITICAL: Disable Vercel Git Integration
 
-Add these secrets to your GitHub repository (Settings > Secrets and variables > Actions):
+**This is mandatory** - otherwise Vercel will still build on every push:
+
+1. Go to Vercel Dashboard → Your Project
+2. Settings → Git
+3. **Uncheck** "Build every push" or disconnect the Git integration
+4. Only deploy via GitHub Actions CLI from now on
+
+### 2. GitHub Secrets
+
+Add these secrets (Settings → Secrets and variables → Actions):
 
 ```
-VERCEL_TOKEN          # Get from: vercel tokens create
-VERCEL_ORG_ID         # Get from: vercel teams list (or vercel whoami for personal)
-VERCEL_PROJECT_ID     # Get from: .vercel/project.json or vercel projects list
+VERCEL_TOKEN          # vercel tokens create
+VERCEL_ORG_ID         # cat .vercel/project.json
+VERCEL_PROJECT_ID     # cat .vercel/project.json
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
-To get Vercel credentials:
+Get credentials:
 ```bash
-# Login to Vercel CLI
 vercel login
-
-# Get token
 vercel tokens create
-
-# Get org and project ID
 cat .vercel/project.json
 ```
 
-### 2. Vercel Project Settings
+### 3. Verify Cache is Working (After Deployment)
 
-1. Go to your Vercel dashboard
-2. Select your project
-3. Go to Settings > General
-4. Set **Build Command**: `echo "Build handled by GitHub Actions"`
-5. Set **Output Directory**: `.vercel/output`
+Test that caching actually reduces invocations:
 
-This prevents Vercel from running its own builds.
+```bash
+# Test an API endpoint
+curl -I https://your-app.vercel.app/api/maps
 
-### 3. Disable Speed Insights (if not already)
+# Check for these headers:
+# cache-control: public, s-maxage=60, stale-while-revalidate=300
+# x-vercel-cache: HIT (or STALE on first request)
+```
 
-Go to Vercel dashboard > Your Project > Speed Insights > Disable
+If you see `x-vercel-cache: MISS` on repeat requests, caching isn't working.
 
 ## Expected Impact
 
@@ -76,23 +81,41 @@ Go to Vercel dashboard > Your Project > Speed Insights > Disable
 |--------|--------|-------|-----------|
 | Build Minutes | 2h 6m | ~0 | 100% |
 | Speed Insights | 53K | 0 | 100% |
-| Edge Requests | 1.6M | ~800K | ~50% |
-| Function Invocations | 1.4M | ~700K | ~50% |
+| Edge Requests | 1.6M | Variable* | Depends on cache HIT rate |
+| Function Invocations | 1.4M | Variable* | Depends on cache HIT rate |
+
+*Cache effectiveness depends on traffic patterns and whether requests vary by cookies/auth.
 
 ## Monitoring
 
-Watch your Vercel usage dashboard after deployment:
+Watch your Vercel usage dashboard:
 https://vercel.com/dashboard
 
-If still exceeding limits after these changes, consider:
-1. Upgrading to Pro ($20/month)
-2. More aggressive caching (increase s-maxage values)
-3. Adding a CDN like Cloudflare in front of Vercel
+Check for:
+- Build minutes stopped increasing
+- `x-vercel-cache: HIT` on repeat API requests
+- Reduced function invocation count
+
+## Troubleshooting
+
+**Build minutes still increasing?**
+→ Vercel Git Integration not disabled. Check project settings.
+
+**Cache always showing MISS?**
+→ Requests may have cookies/auth headers that prevent caching. Check with `curl -I`.
+
+**Function invocations not decreasing?**
+→ Most traffic may be authenticated (can't be cached). Consider:
+- Reducing client-side polling intervals
+- Adding client-side caching (SWR with longer dedupe intervals)
+- Upgrading to Pro plan ($20/month)
 
 ## Next Steps
 
-1. Add GitHub secrets listed above
-2. Push this branch to trigger GitHub Actions workflow
-3. Verify the workflow runs successfully
-4. Monitor Vercel usage for 24-48 hours
-5. Adjust cache durations in middleware.ts if needed
+1. **Disable Vercel Git Integration** (critical)
+2. Add GitHub secrets
+3. Push to trigger GitHub Actions workflow
+4. Verify `x-vercel-cache: HIT` on API endpoints
+5. Monitor usage for 48 hours
+
+If still exceeding limits, the Pro plan ($20/month) may be necessary for your traffic volume.
