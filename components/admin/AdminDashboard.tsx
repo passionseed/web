@@ -25,6 +25,7 @@ import { AdminHackathonActivities } from "./AdminHackathonActivities";
 import { AdminHackathonEmailSender } from "./AdminHackathonEmailSender";
 import { AdminBetaRegistrations } from "./AdminBetaRegistrations";
 import { AdminEventTracker } from "./AdminEventTracker";
+import { AdminProductAnalytics } from "./AdminProductAnalytics";
 import {
   Users,
   Activity,
@@ -35,6 +36,7 @@ import {
   TestTube,
   GraduationCap,
   Zap,
+  BarChart3,
 } from "lucide-react";
 
 export function AdminDashboard() {
@@ -60,9 +62,13 @@ export function AdminDashboard() {
       <AdminStatsOverview key={refreshKey} />
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="users" className="space-y-4">
+      <Tabs defaultValue="analytics" className="space-y-4">
         <div className="w-full overflow-x-auto pb-2 -mb-2">
           <TabsList className="inline-flex w-max min-w-full justify-start">
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Product Analytics
+          </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             User Management
@@ -105,6 +111,10 @@ export function AdminDashboard() {
           </TabsTrigger>
         </TabsList>
         </div>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <AdminProductAnalytics />
+        </TabsContent>
 
         <TabsContent value="users" className="space-y-4">
           <AdminUserManagement
