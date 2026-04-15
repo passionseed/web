@@ -18,7 +18,6 @@ import { TaskList } from "@/components/ps/task-list";
 import { createClient } from "@/utils/supabase/server";
 import { TestButton } from "@/components/ps/test-button";
 import { Button } from "@/components/ui/button";
-import { trackWeeklyActivityServer } from "@/lib/supabase/funnel-tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -114,9 +113,6 @@ async function UserTasksFetcher() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user?.id) {
-    await trackWeeklyActivityServer(user.id);
-  }
 
   return (
     <div className="bg-[#111827]/50 border border-white/10 rounded-sm p-4">
