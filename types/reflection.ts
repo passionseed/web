@@ -54,6 +54,23 @@ export interface MonthlyInsight {
   most_used_tag: Tag | null;
   progress_notes: string | null;
   created_at: string;
+  currentStreak?: number;
+  lastReflectionDate?: string;
+  bestDay?: {
+    date: string;
+    averageScore: number;
+    emotion: EmotionType;
+  };
+  mostCommonEmotion?: {
+    emotion: EmotionType;
+    count: number;
+  };
+  topTopics?: {
+    tagId: string;
+    name: string;
+    count: number;
+    averageScore: number;
+  }[];
 }
 
 export interface ReflectionFormData {

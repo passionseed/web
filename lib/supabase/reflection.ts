@@ -11,7 +11,7 @@ import {
 } from "@/types/reflection";
 import { Project, ProjectFormData } from "@/types/project";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { trackFunnelEventClient } from "./funnel-tracking";
+import { trackFunnelEventClient } from "@/lib/supabase/funnel-tracking";
 
 export type { ReflectionTimelineNode };
 

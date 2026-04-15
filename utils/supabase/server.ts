@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 // In local dev, fail fast if Docker/Supabase isn't running (3s).
@@ -40,6 +41,21 @@ export async function createClient() {
       },
     }
   );
+}
+
+/**
+ * Create a service role client for admin operations.
+ * This bypasses RLS and should only be used in server-side admin functions.
+ */
+export function createServiceRoleClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  
+  if (!key) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
+  }
+  
+  return createSupabaseClient(url, key);
 }
 
 
