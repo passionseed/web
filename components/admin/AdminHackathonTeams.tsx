@@ -33,7 +33,16 @@ import {
   Image as ImageIcon,
   Paperclip,
   RotateCcw,
+  Phone,
+  MessageCircle,
+  X,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
 
 // ─── Browser tab types ────────────────────────────────────────────────────────
@@ -44,6 +53,12 @@ interface Participant {
   email: string;
   university: string;
   created_at: string;
+  phone?: string | null;
+  line_id?: string | null;
+  discord_username?: string | null;
+  instagram_handle?: string | null;
+  grade_level?: string | null;
+  track?: string | null;
 }
 
 interface TeamMember {
@@ -217,6 +232,92 @@ function ResetMentorTicketButton({ teamId, teamName }: { teamId: string; teamNam
       {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
       {done ? "✓ Ticket Reset" : "Reset Mentor Ticket"}
     </Button>
+  );
+}
+
+function ParticipantDetailModal({
+  participant,
+  isOwner,
+  onClose,
+}: {
+  participant: Participant;
+  isOwner: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="bg-slate-900 border border-slate-700/50 text-slate-100 max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-blue-300">
+            {participant.name}
+            {isOwner && (
+              <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">
+                Owner
+              </span>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 pt-1">
+          <div className="space-y-1.5 text-sm">
+            <div className="flex gap-2 text-slate-400">
+              <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">Email</span>
+              <span className="font-mono text-slate-300 break-all">{participant.email}</span>
+            </div>
+            <div className="flex gap-2 text-slate-400">
+              <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">University</span>
+              <span className="text-slate-300">{participant.university || "—"}</span>
+            </div>
+            {participant.grade_level && (
+              <div className="flex gap-2 text-slate-400">
+                <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">Grade</span>
+                <span className="text-slate-300">{participant.grade_level}</span>
+              </div>
+            )}
+            {participant.track && (
+              <div className="flex gap-2 text-slate-400">
+                <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">Track</span>
+                <span className="text-slate-300">{participant.track}</span>
+              </div>
+            )}
+          </div>
+
+          {(participant.phone || participant.line_id || participant.discord_username || participant.instagram_handle) && (
+            <div className="border-t border-slate-700/50 pt-3 space-y-2">
+              {participant.phone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-3.5 w-3.5 text-green-400 shrink-0" />
+                  <a href={`tel:${participant.phone}`} className="text-green-300 hover:underline font-mono">
+                    {participant.phone}
+                  </a>
+                </div>
+              )}
+              {participant.line_id && (
+                <div className="flex items-center gap-2 text-sm">
+                  <MessageCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                  <span className="text-emerald-300 font-mono">LINE: {participant.line_id}</span>
+                </div>
+              )}
+              {participant.discord_username && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-indigo-400 font-bold text-xs w-3.5 text-center shrink-0">#</span>
+                  <span className="text-indigo-300 font-mono">{participant.discord_username}</span>
+                </div>
+              )}
+              {participant.instagram_handle && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-pink-400 font-bold text-xs w-3.5 text-center shrink-0">@</span>
+                  <span className="text-pink-300 font-mono">{participant.instagram_handle}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="border-t border-slate-700/50 pt-2 text-[10px] text-slate-600 font-mono">
+            Registered {format(new Date(participant.created_at), "MMM d, yyyy HH:mm")}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -477,6 +578,7 @@ export function AdminHackathonTeams() {
   const [matchingMessage, setMatchingMessage] = useState("");
   const [resettingQuotaTeamId, setResettingQuotaTeamId] = useState<string | null>(null);
   const [quotaResetMessage, setQuotaResetMessage] = useState<{ teamId: string; message: string } | null>(null);
+  const [selectedParticipant, setSelectedParticipant] = useState<{ participant: Participant; isOwner: boolean } | null>(null);
 
   useEffect(() => {
     fetchTeams();
@@ -846,7 +948,7 @@ export function AdminHackathonTeams() {
                                       <Table>
                                         <TableHeader className="bg-slate-900/80">
                                           <TableRow className="hover:bg-transparent border-slate-800/50">
-                                            <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">Name</TableHead>
+                                            <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">Name <span className="normal-case text-slate-600 font-normal">(click for details)</span></TableHead>
                                             <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">University</TableHead>
                                             <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9">When Joined (Team)</TableHead>
                                             <TableHead className="text-[10px] text-slate-400 uppercase tracking-[0.1em] h-9 text-right">When Reg (Hackathon)</TableHead>
@@ -854,10 +956,19 @@ export function AdminHackathonTeams() {
                                         </TableHeader>
                                         <TableBody>
                                           {team.hackathon_team_members.map((member) => (
-                                            <TableRow key={member.participant_id} className="hover:bg-slate-800/30 border-slate-800/50 group/member">
+                                            <TableRow
+                                              key={member.participant_id}
+                                              className="hover:bg-slate-800/30 border-slate-800/50 group/member cursor-pointer"
+                                              onClick={(e) => { e.stopPropagation(); setSelectedParticipant({ participant: member.hackathon_participants, isOwner: member.participant_id === team.owner_id }); }}
+                                            >
                                               <TableCell className="text-sm py-3">
                                                 <div className="flex flex-col">
-                                                  <span className="font-semibold text-slate-200 group-hover/member:text-blue-200 transition-colors">{member.hackathon_participants.name}</span>
+                                                  <span className="font-semibold text-slate-200 group-hover/member:text-blue-200 transition-colors">
+                                                    {member.hackathon_participants.name}
+                                                    {member.participant_id === team.owner_id && (
+                                                      <span className="ml-1.5 text-[9px] px-1 py-0.5 rounded bg-yellow-500/15 text-yellow-300 border border-yellow-500/30 align-middle">Owner</span>
+                                                    )}
+                                                  </span>
                                                   <span className="text-xs text-slate-500 font-mono">
                                                     {member.hackathon_participants.email}
                                                   </span>
@@ -900,6 +1011,14 @@ export function AdminHackathonTeams() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {selectedParticipant && (
+        <ParticipantDetailModal
+          participant={selectedParticipant.participant}
+          isOwner={selectedParticipant.isOwner}
+          onClose={() => setSelectedParticipant(null)}
+        />
       )}
 
       {activeTab === "leaderboard" && (

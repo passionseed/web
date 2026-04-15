@@ -4,8 +4,8 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 function getServiceClient() {
   return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.HACKATHON_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
 
@@ -49,7 +49,13 @@ export async function GET() {
             name,
             email,
             university,
-            created_at
+            created_at,
+            phone,
+            line_id,
+            discord_username,
+            instagram_handle,
+            grade_level,
+            track
           )
         )
       `)
