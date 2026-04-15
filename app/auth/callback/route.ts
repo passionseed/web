@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { trackAppRegister, assignUserToCohort } from "@/lib/supabase/funnel-tracking";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -12,6 +13,12 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.session && data.user) {
       const userId = data.user.id;
+      const isNewUser = data.user.created_at && new Date(data.user.created_at) > new Date(Date.now() - 60000);
+      
+      if (isNewUser) {
+        await trackAppRegister(userId);
+        await assignUserToCohort(userId, 'organic', 'oauth_signup');
+      }
       // Attempt to create a profile entry.
       // This assumes a 'profiles' table with an 'id' column linked to auth.users.id.
       // Using upsert to avoid errors if the profile already exists or to create it.
