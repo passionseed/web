@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { createClient as createHackathonClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,17 +23,22 @@ async function checkAdminAccess() {
   return user;
 }
 
-async function syncHackathonToFunnel() {
+async function syncHackathonToFunnel(_formData: FormData): Promise<void> {
   "use server";
   
-  const supabase = await createClient();
+  const mainSupabase = createServiceRoleClient();
   
-  const { data: participants, error } = await supabase
+  const hackathonSupabase = createHackathonClient(
+    process.env.HACKATHON_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  
+  const { data: participants, error } = await hackathonSupabase
     .from("hackathon_participants")
     .select("id, track, university, grade_level, referral_source, created_at");
     
   if (error || !participants) {
-    return { success: false, error: error?.message, count: 0 };
+    redirect("/admin/ceo/sync-hackathon-data?error=" + encodeURIComponent(error?.message || "Unknown error"));
   }
   
   const funnelEvents = participants.map((p) => ({
@@ -47,12 +53,12 @@ async function syncHackathonToFunnel() {
     },
   }));
   
-  const { error: insertError } = await supabase
+  const { error: insertError } = await mainSupabase
     .from("funnel_events")
     .insert(funnelEvents);
     
   if (insertError) {
-    return { success: false, error: insertError.message, count: 0 };
+    redirect("/admin/ceo/sync-hackathon-data?error=" + encodeURIComponent(insertError.message));
   }
   
   const cohortAssignments = participants.map((p) => {
@@ -69,15 +75,11 @@ async function syncHackathonToFunnel() {
     };
   });
   
-  const { error: cohortError } = await supabase
+  const { error: cohortError } = await mainSupabase
     .from("cohort_assignments")
     .insert(cohortAssignments);
     
-  return { 
-    success: true, 
-    count: participants.length,
-    cohortError: cohortError?.message 
-  };
+  redirect("/admin/ceo/sync-hackathon-data?success=true&count=" + participants.length + (cohortError ? "&cohortError=" + encodeURIComponent(cohortError.message) : ""));
 }
 
 export default async function SyncHackathonDataPage() {

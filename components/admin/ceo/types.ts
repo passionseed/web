@@ -95,6 +95,9 @@ export interface NorthStarMetrics {
   retention_change: number;
   cac: number;
   cac_change: number;
+  hackathon_signups: number;
+  app_adoption: number;
+  portfolio_completions: number;
 }
 
 export interface FunnelStage {

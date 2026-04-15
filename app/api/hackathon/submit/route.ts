@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { b2 } from "@/lib/backblaze";
 import { getSessionParticipant } from "@/lib/hackathon/db";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createMainClient } from "@/utils/supabase/server";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 const ALLOWED_FILE_TYPES = [
@@ -160,6 +161,17 @@ export async function POST(req: NextRequest) {
     console.error("[hackathon/submit] individual DB error:", error.message);
     return NextResponse.json({ error: "Failed to save submission", detail: error.message }, { status: 500 });
   }
+
+  const mainSupabase = createMainClient();
+  await mainSupabase.from("funnel_events").insert({
+    user_id: participant.id,
+    event_name: "hackathon_activity_complete",
+    metadata: {
+      activity_id: activityId,
+      assessment_id: assessmentId,
+      submission_type: uploadedUrl ? "image" : uploadedFileUrls ? "file" : "text",
+    },
+  });
 
   return NextResponse.json({ submissionId: data.id, url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null });
 }

@@ -13,51 +13,55 @@ import {
 const supabase = createClient();
 
 export async function getNorthStarMetrics(): Promise<NorthStarMetrics> {
-  const endDate = new Date().toISOString().split('T')[0];
-  const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const prevStartDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  
-  const [currentMetrics, previousMetrics] = await Promise.all([
-    supabase
-      .from('funnel_events')
-      .select('event_name, user_id')
-      .gte('event_timestamp', startDate)
-      .lte('event_timestamp', endDate),
-    supabase
-      .from('funnel_events')
-      .select('event_name, user_id')
-      .gte('event_timestamp', prevStartDate)
-      .lte('event_timestamp', startDate)
-  ]);
+  const { data: allEvents } = await supabase
+    .from('funnel_events')
+    .select('event_name, user_id, event_timestamp');
 
-  const currentEvents = currentMetrics.data || [];
-  const previousEvents = previousMetrics.data || [];
+  const events = allEvents || [];
   
-  const currentPaid = new Set(currentEvents.filter(e => e.event_name === 'payment_convert').map(e => e.user_id));
-  const previousPaid = new Set(previousEvents.filter(e => e.event_name === 'payment_convert').map(e => e.user_id));
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   
-  const currentMrr = currentPaid.size * 250;
-  const previousMrr = previousPaid.size * 250;
+  const currentEvents = events.filter(e => new Date(e.event_timestamp) >= thirtyDaysAgo);
+  const previousEvents = events.filter(e => {
+    const date = new Date(e.event_timestamp);
+    return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+  });
+  
+  const allTimeHackathon = new Set(events.filter(e => e.event_name === 'hackathon_signup').map(e => e.user_id));
+  const allTimeApp = new Set(events.filter(e => e.event_name === 'app_register').map(e => e.user_id));
+  const allTimePortfolio = new Set(events.filter(e => e.event_name === 'portfolio_complete').map(e => e.user_id));
+  const allTimePaid = new Set(events.filter(e => e.event_name === 'payment_convert').map(e => e.user_id));
   
   return {
-    mrr: currentMrr,
-    mrr_change: ((currentMrr - previousMrr) / Math.max(previousMrr, 1)) * 100,
-    paying_customers: currentPaid.size,
-    customers_change: currentPaid.size - previousPaid.size,
-    week4_retention: 31,
-    retention_change: -5,
-    cac: 266,
-    cac_change: -15,
+    mrr: 0,
+    mrr_change: 0,
+    paying_customers: allTimePaid.size,
+    customers_change: 0,
+    week4_retention: calculateRetention(currentEvents, previousEvents),
+    retention_change: 0,
+    cac: 0,
+    cac_change: 0,
+    hackathon_signups: allTimeHackathon.size,
+    app_adoption: allTimeApp.size,
+    portfolio_completions: allTimePortfolio.size,
   };
 }
 
-export async function getFunnelMetrics(): Promise<FunnelStage[]> {
-  const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+function calculateRetention(currentEvents: any[], previousEvents: any[]): number {
+  // Simplified retention calculation
+  const currentActive = new Set(currentEvents.filter(e => e.event_name === 'weekly_active').map(e => e.user_id));
+  const totalUsers = new Set(currentEvents.map(e => e.user_id));
   
+  if (totalUsers.size === 0) return 0;
+  return Math.round((currentActive.size / totalUsers.size) * 100);
+}
+
+export async function getFunnelMetrics(): Promise<FunnelStage[]> {
   const { data: events } = await supabase
     .from('funnel_events')
     .select('event_name, user_id')
-    .gte('event_timestamp', startDate)
     .order('event_timestamp', { ascending: true });
 
   if (!events) return [];
@@ -242,9 +246,9 @@ export async function generateRetro(): Promise<WeeklyRetro> {
   const endOfWeek = new Date();
   endOfWeek.setDate(endOfWeek.getDate() - endOfWeek.getDay());
   
-  const { data: metrics } = await getNorthStarMetrics();
+  const metrics = await getNorthStarMetrics();
   
-  const { data: funnel } = await getFunnelMetrics();
+  const funnel = await getFunnelMetrics();
   
   const wins = [
     `${metrics.paying_customers} paying customers`,
