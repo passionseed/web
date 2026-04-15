@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { trackAppRegister, assignUserToCohort } from "@/lib/supabase/funnel-tracking";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -81,11 +80,7 @@ export async function GET(request: Request) {
         }
         console.log("Final profile data:", profile);
         
-        const isNewSignup = retryCount > 0 || profileError?.code === "PGRST116";
-        if (isNewSignup) {
-          await trackAppRegister(userId, "oauth", undefined);
-          await assignUserToCohort(userId, "organic", undefined);
-        }
+
       }
 
       console.log(redirectTo, "redirectTo");
