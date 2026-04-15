@@ -52,8 +52,6 @@ export async function createProject(data: ProjectFormData): Promise<Project> {
 
   if (projectError) throw projectError;
 
-  trackFunnelEventClient(user.id, "portfolio_start").catch(console.error);
-
   // 2. Link tags to the project
   if (data.tagIds?.length) {
     const { error: tagsError } = await supabase

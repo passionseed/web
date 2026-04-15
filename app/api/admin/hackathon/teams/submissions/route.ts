@@ -5,8 +5,8 @@ import { buildActivityCommentsByActivity } from "@/lib/hackathon/activity-commen
 
 function getServiceClient() {
   return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.HACKATHON_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
 
@@ -70,7 +70,7 @@ export async function GET() {
           .from("hackathon_team_scores")
           .select("team_id, total_score"),
 
-        // 3. All team submissions with activity title, submitter name, and assessment prompt
+        // 3. All team submissions - get activity info through assessment to avoid duplicate join
         serviceClient
           .from("hackathon_phase_activity_team_submissions")
           .select(`
@@ -84,21 +84,25 @@ export async function GET() {
             file_urls,
             submitted_at,
             submitted_by,
-            hackathon_phase_activities(
-              title,
+            hackathon_participants!submitted_by(name),
+            hackathon_phase_activity_assessments!assessment_id(
+              id,
+              metadata,
               display_order,
-              phase_id,
-              hackathon_program_phases(
-                id,
+              hackathon_phase_activities(
                 title,
-                phase_number
+                display_order,
+                phase_id,
+                hackathon_program_phases(
+                  id,
+                  title,
+                  phase_number
+                )
               )
-            ),
-            hackathon_participants(name),
-            hackathon_phase_activity_assessments(id, metadata, display_order)
+            )
           `),
 
-        // 4. All individual submissions with activity title and assessment prompt
+        // 4. All individual submissions - get activity info through assessment to avoid duplicate join
         serviceClient
           .from("hackathon_phase_activity_submissions")
           .select(`
@@ -111,18 +115,22 @@ export async function GET() {
             image_url,
             file_urls,
             submitted_at,
-            hackathon_phase_activities(
-              title,
+            hackathon_participants!participant_id(name),
+            hackathon_phase_activity_assessments!assessment_id(
+              id,
+              metadata,
               display_order,
-              phase_id,
-              hackathon_program_phases(
-                id,
+              hackathon_phase_activities(
                 title,
-                phase_number
+                display_order,
+                phase_id,
+                hackathon_program_phases(
+                  id,
+                  title,
+                  phase_number
+                )
               )
-            ),
-            hackathon_participants(name),
-            hackathon_phase_activity_assessments(id, metadata, display_order)
+            )
           `),
 
         serviceClient
@@ -225,37 +233,29 @@ export async function GET() {
       const rawTeamSubs = teamSubsByTeamId.get(team.id) ?? [];
       const formattedTeamSubs = rawTeamSubs.map((s) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const assessment = s.hackathon_phase_activity_assessments as unknown as { id: string; metadata: Record<string, string> | null; display_order: number } | null;
+        const assessment = s.hackathon_phase_activity_assessments as unknown as {
+          id: string;
+          metadata: Record<string, string> | null;
+          display_order: number;
+          hackathon_phase_activities?: {
+            title: string;
+            display_order: number;
+            phase_id: string;
+            hackathon_program_phases?: { id: string; title: string; phase_number: number } | null;
+          } | null;
+        } | null;
+        const activity = assessment?.hackathon_phase_activities ?? null;
         const prompt = assessment?.metadata?.prompt ?? assessment?.metadata?.submission_label ?? null;
         return {
           id: s.id,
           activity_id: s.activity_id,
           assessment_id: assessment?.id ?? null,
           prompt,
-          activity_title: (
-            s.hackathon_phase_activities as unknown as {
-              title: string;
-              display_order: number;
-              phase_id: string;
-              hackathon_program_phases?: { id: string; title: string; phase_number: number } | null;
-            } | null
-          )?.title ?? null,
-          activity_display_order: (
-            s.hackathon_phase_activities as unknown as { display_order: number } | null
-          )?.display_order ?? null,
-          phase_id: (
-            s.hackathon_phase_activities as unknown as { phase_id: string } | null
-          )?.phase_id ?? null,
-          phase_title: (
-            s.hackathon_phase_activities as unknown as {
-              hackathon_program_phases?: { title: string } | null;
-            } | null
-          )?.hackathon_program_phases?.title ?? null,
-          phase_number: (
-            s.hackathon_phase_activities as unknown as {
-              hackathon_program_phases?: { phase_number: number } | null;
-            } | null
-          )?.hackathon_program_phases?.phase_number ?? null,
+          activity_title: activity?.title ?? null,
+          activity_display_order: activity?.display_order ?? null,
+          phase_id: activity?.phase_id ?? null,
+          phase_title: activity?.hackathon_program_phases?.title ?? null,
+          phase_number: activity?.hackathon_program_phases?.phase_number ?? null,
           status: s.status,
           text_answer: s.text_answer ?? null,
           image_url: s.image_url ?? null,
@@ -269,7 +269,18 @@ export async function GET() {
         const subs = individualSubsByParticipantId.get(pid) ?? [];
         return subs.map((s) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const assessment = s.hackathon_phase_activity_assessments as unknown as { id: string; metadata: Record<string, string> | null; display_order: number } | null;
+          const assessment = s.hackathon_phase_activity_assessments as unknown as {
+            id: string;
+            metadata: Record<string, string> | null;
+            display_order: number;
+            hackathon_phase_activities?: {
+              title: string;
+              display_order: number;
+              phase_id: string;
+              hackathon_program_phases?: { id: string; title: string; phase_number: number } | null;
+            } | null;
+          } | null;
+          const activity = assessment?.hackathon_phase_activities ?? null;
           const prompt = assessment?.metadata?.prompt ?? assessment?.metadata?.submission_label ?? null;
           return {
             id: s.id,
@@ -277,30 +288,11 @@ export async function GET() {
             activity_id: s.activity_id,
             assessment_id: assessment?.id ?? null,
             prompt,
-            activity_title: (
-              s.hackathon_phase_activities as unknown as {
-                title: string;
-                display_order: number;
-                phase_id: string;
-                hackathon_program_phases?: { id: string; title: string; phase_number: number } | null;
-              } | null
-            )?.title ?? null,
-            activity_display_order: (
-              s.hackathon_phase_activities as unknown as { display_order: number } | null
-            )?.display_order ?? null,
-            phase_id: (
-              s.hackathon_phase_activities as unknown as { phase_id: string } | null
-            )?.phase_id ?? null,
-            phase_title: (
-              s.hackathon_phase_activities as unknown as {
-                hackathon_program_phases?: { title: string } | null;
-              } | null
-            )?.hackathon_program_phases?.title ?? null,
-            phase_number: (
-              s.hackathon_phase_activities as unknown as {
-                hackathon_program_phases?: { phase_number: number } | null;
-              } | null
-            )?.hackathon_program_phases?.phase_number ?? null,
+            activity_title: activity?.title ?? null,
+            activity_display_order: activity?.display_order ?? null,
+            phase_id: activity?.phase_id ?? null,
+            phase_title: activity?.hackathon_program_phases?.title ?? null,
+            phase_number: activity?.hackathon_program_phases?.phase_number ?? null,
             participant_name: (s.hackathon_participants as unknown as { name: string } | null)?.name ?? null,
             status: s.status,
             text_answer: s.text_answer ?? null,
