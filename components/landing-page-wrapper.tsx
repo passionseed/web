@@ -5,6 +5,7 @@ import Image from "next/image";
 import { LandingHero } from "@/components/landing-hero";
 import { LandingHackathonBanner } from "@/components/landing-hackathon-banner";
 import { LandingLogos } from "@/components/landing-logos";
+import { LandingTestimonials } from "@/components/landing-testimonials";
 import { LandingFeatures } from "@/components/landing-features";
 import { LandingExpertCta } from "@/components/landing-expert-cta";
 import { LandingParents } from "@/components/landing-parents";
@@ -137,6 +138,7 @@ export function LandingPageWrapper({ children }: LandingPageWrapperProps) {
       <main className="flex flex-col" style={{ paddingTop: bannerHeight }}>
         <LandingHero />
         <LandingLogos />
+        <LandingTestimonials />
         <LandingFeatures />
         <LandingExpertCta />
         {children}
