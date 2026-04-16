@@ -196,7 +196,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS analytics_funnel_by_cohort AS
 WITH user_cohorts AS (
   SELECT 
     user_id,
-    cohort_week
+    cohort_week,
+    first_active_date
   FROM analytics_user_cohorts
   WHERE cohort_week >= CURRENT_DATE - INTERVAL '12 weeks'
 ),
@@ -207,7 +208,8 @@ user_achievements AS (
     MAX(CASE WHEN event_type = 'seed_completed' THEN 1 ELSE 0 END) as completed_seed,
     COUNT(CASE WHEN event_type = 'seed_completed' THEN 1 END) as seeds_completed,
     MAX(CASE WHEN event_type = 'portfolio_item_added' THEN 1 ELSE 0 END) as added_portfolio,
-    MAX(CASE WHEN event_type = 'program_saved' THEN 1 ELSE 0 END) as saved_program
+    MAX(CASE WHEN event_type = 'program_saved' THEN 1 ELSE 0 END) as saved_program,
+    MIN(CASE WHEN event_type = 'seed_completed' THEN created_at END) as first_seed_completed_at
   FROM public.user_events
   WHERE created_at >= CURRENT_DATE - INTERVAL '90 days'
   GROUP BY user_id
@@ -220,6 +222,11 @@ SELECT
   SUM(CASE WHEN ua.seeds_completed >= 3 THEN 1 ELSE 0 END) as became_engaged,
   SUM(ua.added_portfolio) as added_portfolio,
   SUM(ua.saved_program) as saved_program,
+  SUM(ua.seeds_completed) as total_seeds_completed,
+  SUM(ua.added_portfolio) as users_with_portfolio,
+  SUM(ua.saved_program) as users_with_program_save,
+  AVG(EXTRACT(DAY FROM (ua.first_seed_completed_at - uc.first_active_date)))::numeric(10,2) as avg_days_to_first_seed,
+  ROUND(SUM(CASE WHEN ua.seeds_completed >= 3 THEN 1 ELSE 0 END)::numeric / NULLIF(COUNT(*), 0) * 100, 2) as overall_engagement_rate,
   -- Cohort conversion rates
   ROUND(SUM(ua.completed_onboarding)::numeric / NULLIF(COUNT(*), 0) * 100, 2) as pct_onboarding,
   ROUND(SUM(ua.completed_seed)::numeric / NULLIF(COUNT(*), 0) * 100, 2) as pct_first_seed,

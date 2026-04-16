@@ -1,48 +1,28 @@
 drop trigger if exists "ai_chat_usage_updated_at" on "public"."ai_chat_usage";
 
-drop trigger if exists "trg_replies_updated_at" on "public"."hackathon_activity_comment_replies";
 
-drop trigger if exists "trg_update_engagement_on_delete" on "public"."hackathon_activity_comment_replies";
 
-drop trigger if exists "trg_update_engagement_on_insert" on "public"."hackathon_activity_comment_replies";
 
-drop trigger if exists "trg_update_engagement_on_update" on "public"."hackathon_activity_comment_replies";
 
-drop trigger if exists "trg_comments_updated_at" on "public"."hackathon_activity_comments";
 
-drop trigger if exists "trg_push_tokens_updated_at" on "public"."hackathon_participant_push_tokens";
 
 drop policy "Service role can manage AI chat usage" on "public"."ai_chat_usage";
 
 drop policy "Users can view their own AI chat usage" on "public"."ai_chat_usage";
 
-drop policy "Admins and mentors can delete any reply" on "public"."hackathon_activity_comment_replies";
 
-drop policy "Authors can delete own replies" on "public"."hackathon_activity_comment_replies";
 
-drop policy "Authors can update own replies" on "public"."hackathon_activity_comment_replies";
 
-drop policy "Participants can insert own replies" on "public"."hackathon_activity_comment_replies";
 
-drop policy "Participants can view replies" on "public"."hackathon_activity_comment_replies";
 
-drop policy "Admins and mentors can delete any comment" on "public"."hackathon_activity_comments";
 
-drop policy "Authors can delete own comments" on "public"."hackathon_activity_comments";
 
-drop policy "Authors can update own comments" on "public"."hackathon_activity_comments";
 
-drop policy "Participants can insert own comments" on "public"."hackathon_activity_comments";
 
-drop policy "Participants can view comments" on "public"."hackathon_activity_comments";
 
-drop policy "Participants can delete own push tokens" on "public"."hackathon_participant_push_tokens";
 
-drop policy "Participants can insert own push tokens" on "public"."hackathon_participant_push_tokens";
 
-drop policy "Participants can update own push tokens" on "public"."hackathon_participant_push_tokens";
 
-drop policy "Participants can view own push tokens" on "public"."hackathon_participant_push_tokens";
 
 drop policy "Users can delete own score events" on "public"."score_events";
 
@@ -98,131 +78,68 @@ revoke truncate on table "public"."ai_chat_usage" from "service_role";
 
 revoke update on table "public"."ai_chat_usage" from "service_role";
 
-revoke delete on table "public"."hackathon_activity_comment_replies" from "anon";
 
-revoke insert on table "public"."hackathon_activity_comment_replies" from "anon";
 
-revoke references on table "public"."hackathon_activity_comment_replies" from "anon";
 
-revoke select on table "public"."hackathon_activity_comment_replies" from "anon";
 
-revoke trigger on table "public"."hackathon_activity_comment_replies" from "anon";
 
-revoke truncate on table "public"."hackathon_activity_comment_replies" from "anon";
 
-revoke update on table "public"."hackathon_activity_comment_replies" from "anon";
 
-revoke delete on table "public"."hackathon_activity_comment_replies" from "authenticated";
 
-revoke insert on table "public"."hackathon_activity_comment_replies" from "authenticated";
 
-revoke references on table "public"."hackathon_activity_comment_replies" from "authenticated";
 
-revoke select on table "public"."hackathon_activity_comment_replies" from "authenticated";
 
-revoke trigger on table "public"."hackathon_activity_comment_replies" from "authenticated";
 
-revoke truncate on table "public"."hackathon_activity_comment_replies" from "authenticated";
 
-revoke update on table "public"."hackathon_activity_comment_replies" from "authenticated";
 
-revoke delete on table "public"."hackathon_activity_comment_replies" from "service_role";
 
-revoke insert on table "public"."hackathon_activity_comment_replies" from "service_role";
 
-revoke references on table "public"."hackathon_activity_comment_replies" from "service_role";
 
-revoke select on table "public"."hackathon_activity_comment_replies" from "service_role";
 
-revoke trigger on table "public"."hackathon_activity_comment_replies" from "service_role";
 
-revoke truncate on table "public"."hackathon_activity_comment_replies" from "service_role";
 
-revoke update on table "public"."hackathon_activity_comment_replies" from "service_role";
 
-revoke delete on table "public"."hackathon_activity_comments" from "anon";
 
-revoke insert on table "public"."hackathon_activity_comments" from "anon";
 
-revoke references on table "public"."hackathon_activity_comments" from "anon";
 
-revoke select on table "public"."hackathon_activity_comments" from "anon";
 
-revoke trigger on table "public"."hackathon_activity_comments" from "anon";
 
-revoke truncate on table "public"."hackathon_activity_comments" from "anon";
 
-revoke update on table "public"."hackathon_activity_comments" from "anon";
 
-revoke delete on table "public"."hackathon_activity_comments" from "authenticated";
 
-revoke insert on table "public"."hackathon_activity_comments" from "authenticated";
 
-revoke references on table "public"."hackathon_activity_comments" from "authenticated";
 
-revoke select on table "public"."hackathon_activity_comments" from "authenticated";
 
-revoke trigger on table "public"."hackathon_activity_comments" from "authenticated";
 
-revoke truncate on table "public"."hackathon_activity_comments" from "authenticated";
 
-revoke update on table "public"."hackathon_activity_comments" from "authenticated";
 
-revoke delete on table "public"."hackathon_activity_comments" from "service_role";
 
-revoke insert on table "public"."hackathon_activity_comments" from "service_role";
 
-revoke references on table "public"."hackathon_activity_comments" from "service_role";
 
-revoke select on table "public"."hackathon_activity_comments" from "service_role";
 
-revoke trigger on table "public"."hackathon_activity_comments" from "service_role";
 
-revoke truncate on table "public"."hackathon_activity_comments" from "service_role";
 
-revoke update on table "public"."hackathon_activity_comments" from "service_role";
 
-revoke delete on table "public"."hackathon_participant_push_tokens" from "anon";
 
-revoke insert on table "public"."hackathon_participant_push_tokens" from "anon";
 
-revoke references on table "public"."hackathon_participant_push_tokens" from "anon";
 
-revoke select on table "public"."hackathon_participant_push_tokens" from "anon";
 
-revoke trigger on table "public"."hackathon_participant_push_tokens" from "anon";
 
-revoke truncate on table "public"."hackathon_participant_push_tokens" from "anon";
 
-revoke update on table "public"."hackathon_participant_push_tokens" from "anon";
 
-revoke delete on table "public"."hackathon_participant_push_tokens" from "authenticated";
 
-revoke insert on table "public"."hackathon_participant_push_tokens" from "authenticated";
 
-revoke references on table "public"."hackathon_participant_push_tokens" from "authenticated";
 
-revoke select on table "public"."hackathon_participant_push_tokens" from "authenticated";
 
-revoke trigger on table "public"."hackathon_participant_push_tokens" from "authenticated";
 
-revoke truncate on table "public"."hackathon_participant_push_tokens" from "authenticated";
 
-revoke update on table "public"."hackathon_participant_push_tokens" from "authenticated";
 
-revoke delete on table "public"."hackathon_participant_push_tokens" from "service_role";
 
-revoke insert on table "public"."hackathon_participant_push_tokens" from "service_role";
 
-revoke references on table "public"."hackathon_participant_push_tokens" from "service_role";
 
-revoke select on table "public"."hackathon_participant_push_tokens" from "service_role";
 
-revoke trigger on table "public"."hackathon_participant_push_tokens" from "service_role";
 
-revoke truncate on table "public"."hackathon_participant_push_tokens" from "service_role";
 
-revoke update on table "public"."hackathon_participant_push_tokens" from "service_role";
 
 alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_activity_id_fkey";
 
@@ -234,23 +151,14 @@ alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_us
 
 alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_user_id_window_start_key";
 
-alter table "public"."hackathon_activity_comment_replies" drop constraint if exists "hackathon_activity_comment_replies_comment_id_fkey";
 
-alter table "public"."hackathon_activity_comment_replies" drop constraint if exists "hackathon_activity_comment_replies_content_check";
 
-alter table "public"."hackathon_activity_comment_replies" drop constraint if exists "hackathon_activity_comment_replies_participant_id_fkey";
 
-alter table "public"."hackathon_activity_comments" drop constraint if exists "hackathon_activity_comments_activity_id_fkey";
 
-alter table "public"."hackathon_activity_comments" drop constraint if exists "hackathon_activity_comments_content_check";
 
-alter table "public"."hackathon_activity_comments" drop constraint if exists "hackathon_activity_comments_participant_id_fkey";
 
-alter table "public"."hackathon_participant_push_tokens" drop constraint if exists "hackathon_participant_push_tokens_participant_id_fkey";
 
-alter table "public"."hackathon_participant_push_tokens" drop constraint if exists "hackathon_participant_push_tokens_platform_check";
 
-alter table "public"."hackathon_participant_push_tokens" drop constraint if exists "hackathon_participant_push_tokens_push_token_key";
 
 alter table "public"."hackathon_phase_activity_assessments" drop constraint if exists "hackathon_phase_activity_assessments_activity_id_key";
 
@@ -308,23 +216,16 @@ drop view if exists "public"."team_members_with_profiles";
 
 alter table "public"."ai_chat_usage" drop constraint if exists "ai_chat_usage_pkey";
 
-alter table "public"."hackathon_activity_comment_replies" drop constraint if exists "hackathon_activity_comment_replies_pkey";
 
-alter table "public"."hackathon_activity_comments" drop constraint if exists "hackathon_activity_comments_pkey";
 
-alter table "public"."hackathon_participant_push_tokens" drop constraint if exists "hackathon_participant_push_tokens_pkey";
 
 drop index if exists "public"."ai_chat_usage_pkey";
 
 drop index if exists "public"."ai_chat_usage_user_id_window_start_key";
 
-drop index if exists "public"."hackathon_activity_comment_replies_pkey";
 
-drop index if exists "public"."hackathon_activity_comments_pkey";
 
-drop index if exists "public"."hackathon_participant_push_tokens_pkey";
 
-drop index if exists "public"."hackathon_participant_push_tokens_push_token_key";
 
 drop index if exists "public"."hackathon_phase_activity_assessments_activity_id_key";
 
@@ -354,11 +255,8 @@ drop index if exists "public"."idx_score_events_user_created";
 
 drop table "public"."ai_chat_usage";
 
-drop table "public"."hackathon_activity_comment_replies";
 
-drop table "public"."hackathon_activity_comments";
 
-drop table "public"."hackathon_participant_push_tokens";
 
 
   create table "public"."angpao_countdown" (
