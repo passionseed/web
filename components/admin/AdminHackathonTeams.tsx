@@ -59,6 +59,7 @@ interface Participant {
   instagram_handle?: string | null;
   grade_level?: string | null;
   track?: string | null;
+  password_hash?: string | null;
 }
 
 interface TeamMember {
@@ -244,6 +245,34 @@ function ParticipantDetailModal({
   isOwner: boolean;
   onClose: () => void;
 }) {
+  const [newPassword, setNewPassword] = useState("");
+  const [settingPassword, setSettingPassword] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function handleSetPassword() {
+    if (!newPassword.trim()) return;
+    setSettingPassword(true);
+    setPasswordMsg(null);
+    try {
+      const res = await fetch("/api/admin/hackathon/participants/set-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantId: participant.id, password: newPassword }),
+      });
+      if (res.ok) {
+        setPasswordMsg({ ok: true, text: `Password set to "${newPassword}"` });
+        setNewPassword("");
+      } else {
+        const d = await res.json();
+        setPasswordMsg({ ok: false, text: d.error ?? "Failed" });
+      }
+    } catch {
+      setPasswordMsg({ ok: false, text: "Network error" });
+    } finally {
+      setSettingPassword(false);
+    }
+  }
+
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="bg-slate-900 border border-slate-700/50 text-slate-100 max-w-sm">
@@ -262,6 +291,76 @@ function ParticipantDetailModal({
             <div className="flex gap-2 text-slate-400">
               <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">Email</span>
               <span className="font-mono text-slate-300 break-all">{participant.email}</span>
+            </div>
+            {participant.password_hash && (
+              <div className="flex gap-2 items-start">
+                <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">Orig. hash</span>
+                <div className="flex-1 flex flex-col gap-1">
+                  <span
+                    className="font-mono text-slate-500 break-all text-[10px] leading-relaxed cursor-pointer hover:text-slate-300 transition-colors select-all"
+                    title="Click to copy"
+                    onClick={() => navigator.clipboard.writeText(participant.password_hash!)}
+                  >
+                    {participant.password_hash}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-[10px] h-6 px-2 border-slate-700 text-slate-400 hover:text-slate-200 w-fit"
+                    onClick={async () => {
+                      setSettingPassword(true);
+                      setPasswordMsg(null);
+                      try {
+                        const res = await fetch("/api/admin/hackathon/participants/set-password", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ participantId: participant.id, rawHash: participant.password_hash }),
+                        });
+                        setPasswordMsg(res.ok
+                          ? { ok: true, text: "Original password restored" }
+                          : { ok: false, text: "Failed to restore" }
+                        );
+                      } catch {
+                        setPasswordMsg({ ok: false, text: "Network error" });
+                      } finally {
+                        setSettingPassword(false);
+                      }
+                    }}
+                    disabled={settingPassword}
+                  >
+                    {settingPassword ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : null}
+                    Restore original
+                  </Button>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 items-start">
+              <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-2">Password</span>
+              <div className="flex-1 flex flex-col gap-1">
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSetPassword(); }}
+                    placeholder="Set new password…"
+                    className="flex-1 text-xs bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60"
+                  />
+                  <Button
+                    size="sm"
+                    className="text-xs h-7 px-2 bg-blue-600/80 hover:bg-blue-600 text-white shrink-0"
+                    onClick={handleSetPassword}
+                    disabled={settingPassword || !newPassword.trim()}
+                  >
+                    {settingPassword ? <Loader2 className="h-3 w-3 animate-spin" /> : "Set"}
+                  </Button>
+                </div>
+                {passwordMsg && (
+                  <span className={`text-[11px] font-mono ${passwordMsg.ok ? "text-emerald-400" : "text-red-400"}`}>
+                    {passwordMsg.text}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-2 text-slate-400">
               <span className="w-24 shrink-0 text-slate-500 text-xs uppercase tracking-wider pt-0.5">University</span>
