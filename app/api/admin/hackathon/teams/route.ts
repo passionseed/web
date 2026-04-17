@@ -55,7 +55,8 @@ export async function GET() {
             discord_username,
             instagram_handle,
             grade_level,
-            track
+            track,
+            password_hash
           )
         )
       `)
