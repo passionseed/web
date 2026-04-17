@@ -32,4 +32,4 @@ export function generateSessionToken(): string {
 }
 
 export const SESSION_COOKIE = "hackathon_token";
-export const SESSION_EXPIRY_DAYS = 7;
+export const SESSION_EXPIRY_DAYS = 60;
