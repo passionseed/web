@@ -3,5 +3,7 @@
     "pnpm install"
   ],
   "teardown": [],
-  "run": []
+  "run": [
+    "pnpm dev:prod"
+  ]
 }
