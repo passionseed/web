@@ -140,7 +140,7 @@ interface Submission {
   text_answer: string | null;
   image_url: string | null;
   file_urls: string[];
-  revisions: Revision[];
+  revisions?: Revision[];
   participant: Person | null;
   team: Team | null;
   team_members: Person[];
@@ -890,8 +890,8 @@ export function AdminHackathonActivities() {
                     <section className="min-w-0">
                       <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
                         <FileText className="h-3 w-3" />
-                        {selectedSubmission.revisions.length > 0
-                          ? `Current attempt (R${selectedSubmission.revisions.length + 1})`
+                        {(selectedSubmission.revisions?.length ?? 0) > 0
+                          ? `Current attempt (R${(selectedSubmission.revisions?.length ?? 0) + 1})`
                           : "Text answer"}
                       </p>
                       <p className="whitespace-pre-wrap text-[15px] font-light leading-7 text-slate-100 break-words">
@@ -900,9 +900,9 @@ export function AdminHackathonActivities() {
                     </section>
                   )}
 
-                  {selectedSubmission.revisions.length > 0 && (
+                  {(selectedSubmission.revisions?.length ?? 0) > 0 && (
                     <RevisionThread
-                      revisions={selectedSubmission.revisions}
+                      revisions={selectedSubmission.revisions ?? []}
                       currentText={selectedSubmission.text_answer}
                     />
                   )}
