@@ -63,6 +63,171 @@ function pickOne<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null;
 }
 
+function compactText(value: string | null | undefined, maxLength: number) {
+  if (!value) return null;
+  const normalized = value.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength).trimEnd()}…`;
+}
+
+function compactPhaseSpec(phaseSpec: string | null, phaseNumber: number | null, phaseTitle: string | null) {
+  if (!phaseSpec) {
+    return `Phase ${phaseNumber ?? "?"}: ${phaseTitle ?? "Unknown phase"} (no detailed spec available)`;
+  }
+
+  const lines = phaseSpec
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^```/.test(line));
+
+  const picked: string[] = [];
+  let length = 0;
+
+  for (const line of lines) {
+    if (line.length < 3) continue;
+    const normalized = line.replace(/^#+\s*/, "");
+    if (!/[A-Za-z\u0E00-\u0E7F]/.test(normalized)) continue;
+    if (picked.includes(normalized)) continue;
+    if (length + normalized.length > 1400) break;
+    picked.push(normalized);
+    length += normalized.length + 1;
+    if (picked.length >= 10) break;
+  }
+
+  return picked.join("\n");
+}
+
+function inferActivityLens(activityTitle: string | null, activityInstructions: string | null) {
+  const source = `${activityTitle ?? ""} ${activityInstructions ?? ""}`.toLowerCase();
+
+  const lenses = [
+    {
+      pattern: /(problem|pain point|user need|insight|customer problem|needs?)/,
+      outcome: "Clarify the real user problem, not just a broad topic.",
+      evidence: "Specific user, concrete pain, why it matters now.",
+      redFlag: "Generic social issue summary with no sharp user insight.",
+    },
+    {
+      pattern: /(interview|survey|research|observe|observation|validation|evidence)/,
+      outcome: "Show learning from reality, not guesses.",
+      evidence: "Quotes, patterns, counts, or surprising observations.",
+      redFlag: "Claims without source, fake certainty, no evidence trail.",
+    },
+    {
+      pattern: /(system|stakeholder|ecosystem|map|root cause|causal|leverage)/,
+      outcome: "Map the system and identify leverage points.",
+      evidence: "Actors, incentives, constraints, and why one leverage point matters most.",
+      redFlag: "Flat list of causes with no relationships or tradeoffs.",
+    },
+    {
+      pattern: /(solution|prototype|mvp|feature|design|wireframe|mockup|build)/,
+      outcome: "Propose a solution tightly matched to the problem.",
+      evidence: "Who it is for, what it changes, and why this design choice fits.",
+      redFlag: "Feature list with weak problem-solution fit.",
+    },
+    {
+      pattern: /(experiment|test|pilot|assumption|hypothesis|metric|success)/,
+      outcome: "Design a test that can prove or disprove the riskiest assumption.",
+      evidence: "Clear hypothesis, metric, target user, and decision rule.",
+      redFlag: "Activity plan with no measurable learning goal.",
+    },
+    {
+      pattern: /(pitch|story|presentation|demo|deck)/,
+      outcome: "Communicate a crisp story from problem to insight to action.",
+      evidence: "Clear narrative, not buzzwords; one memorable takeaway.",
+      redFlag: "Over-claiming impact without support.",
+    },
+    {
+      pattern: /(reflection|journal|retrospective|learned|takeaway)/,
+      outcome: "Show genuine reflection and changed thinking.",
+      evidence: "What surprised them, what changed, what they would do next.",
+      redFlag: "Performative positivity with no real self-correction.",
+    },
+  ];
+
+  const matched = lenses.find((lens) => lens.pattern.test(source));
+  return matched ?? {
+    outcome: "Meet the activity's real learning goal, not just complete the format.",
+    evidence: "Specific, concrete thinking tied to the instructions.",
+    redFlag: "Vague answers that sound polished but prove little.",
+  };
+}
+
+type AssessmentRow = {
+  id?: string;
+  assessment_type?: string | null;
+  points_possible?: number | null;
+  is_graded?: boolean | null;
+  display_order?: number | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+function formatAssessmentQuestions(assessments: AssessmentRow[]): string {
+  if (!assessments?.length) return "(no assessment questions defined)";
+
+  return assessments
+    .map((a, idx) => {
+      const m = (a.metadata ?? {}) as Record<string, unknown>;
+      const prompt =
+        (typeof m.prompt === "string" && m.prompt) ||
+        (typeof m.question === "string" && m.question) ||
+        (typeof m.submission_label === "string" && m.submission_label) ||
+        null;
+      const label =
+        (typeof m.label === "string" && m.label) ||
+        (typeof m.title === "string" && m.title) ||
+        null;
+      const helper =
+        (typeof m.helper_text === "string" && m.helper_text) ||
+        (typeof m.description === "string" && m.description) ||
+        null;
+      const min = typeof m.min_length === "number" ? m.min_length : null;
+      const max = typeof m.max_length === "number" ? m.max_length : null;
+
+      const parts: string[] = [];
+      parts.push(
+        `Q${idx + 1} (${a.assessment_type ?? "?"}${
+          a.points_possible != null ? `, ${a.points_possible}pt` : ""
+        }${a.is_graded ? ", graded" : ""}):`
+      );
+      if (label) parts.push(`Label: ${label}`);
+      if (prompt) parts.push(`Prompt: ${prompt}`);
+      if (helper) parts.push(`Helper: ${helper}`);
+      if (min != null || max != null) {
+        parts.push(`Length: ${min ?? 0}..${max ?? "∞"} chars`);
+      }
+      if (!prompt && !label && !helper) {
+        const rest = Object.keys(m).filter((k) => typeof m[k] !== "object");
+        if (rest.length) parts.push(`Meta: ${rest.map((k) => `${k}=${m[k]}`).join("; ")}`);
+      }
+      return parts.join("\n");
+    })
+    .join("\n\n");
+}
+
+type PriorRevision = {
+  n: number;
+  text_answer: string | null;
+  review: {
+    status?: string | null;
+    feedback?: string | null;
+  } | null;
+};
+
+function formatPriorRevisions(revisions: PriorRevision[]): string | null {
+  if (!revisions?.length) return null;
+  return revisions
+    .slice(-3)
+    .map((r) => {
+      const status = r.review?.status ?? "ungraded";
+      const fb = compactText(r.review?.feedback ?? null, 400) ?? "(no feedback)";
+      const text = compactText(r.text_answer, 500) ?? "(no text)";
+      return `R${r.n} [${status}]\nanswer: ${text}\nfeedback given: ${fb}`;
+    })
+    .join("\n\n");
+}
+
 function buildPrompt(params: {
   phaseSpec: string | null;
   phaseNumber: number | null;
@@ -70,11 +235,13 @@ function buildPrompt(params: {
   activityTitle: string | null;
   activityInstructions: string | null;
   pointsPossible: number | null;
+  assessments: AssessmentRow[];
   textAnswer: string | null;
   imageUrl: string | null;
   fileUrls: string[];
   scope: "individual" | "team";
   ownerLabel: string;
+  priorRevisions: PriorRevision[];
 }) {
   const {
     phaseSpec,
@@ -88,78 +255,72 @@ function buildPrompt(params: {
     fileUrls,
     scope,
     ownerLabel,
+    assessments,
+    priorRevisions,
   } = params;
 
+  const phaseContext = compactPhaseSpec(phaseSpec, phaseNumber, phaseTitle);
+  const activityLens = inferActivityLens(activityTitle, activityInstructions);
+  const shortInstructions = compactText(activityInstructions, 900) ?? "(no instructions provided)";
+  const shortAnswer = compactText(textAnswer, 2200) ?? "(no text submitted)";
+  const assessmentQuestions = compactText(formatAssessmentQuestions(assessments), 1600) ?? "(none)";
+  const priorBlock = formatPriorRevisions(priorRevisions);
+
   return [
-    "# Role",
-    "You are a seasoned startup advisor and social-change mentor reviewing a high school student's hackathon work.",
-    "Think like a mix of YC partner and systems-thinking coach: sharp, warm, honest, and allergic to fluff.",
-    "Your job is to move this student forward — praise only what is real, call out vague thinking directly, and give one concrete next move they can do today.",
+    "You are a startup advisor + social impact mentor grading one hackathon activity.",
+    "Use backward design: infer the intended learning outcome, ask what evidence would prove it, then judge only from the submission.",
     "",
-    "# Language — CRITICAL",
-    "Detect the primary language of the student's submission below and respond ENTIRELY in that language.",
-    "- If the submission is mostly Thai (ไทย / มี or any Thai script), write EVERYTHING in Thai — both your live thinking and the JSON string values (feedback, reasoning). Use warm, direct Thai like a พี่ mentor, not formal academic Thai.",
-    "- If mostly English, respond in English.",
-    "- If mixed, follow whichever dominates. Mirror their voice.",
-    "- NEVER translate or mix languages inside one paragraph. One language, start to end.",
+    "LANGUAGE — STRICT",
+    "Detect the language of the student's SUBMISSION text (not the instructions, not the phase spec).",
+    "- If the submission contains ANY Thai script (ก-๙), write EVERYTHING in natural Thai — your live thinking, your reasoning, the feedback, everything. Use warm พี่-style Thai, not formal academic Thai.",
+    "- Only if the submission is purely English (zero Thai characters), write in English.",
+    "- Never mix languages inside one sentence. Never translate the student's words back to English when writing in Thai.",
+    "- This rule overrides any default language habit you have.",
     "",
-    "# Ground rules",
-    "- Address the student as 'you' in second person (or 'คุณ' / 'เธอ' in Thai — match their register).",
-    "- No checklist theatre: skip rubric jargon. Speak like a human mentor at a whiteboard.",
-    "- No hedging, no 'great job!', no emojis. Be specific about what's real vs. hand-wavy.",
-    "- If the submission is near-empty, low-effort, or copy-pasted AI slop, say so plainly and require revision.",
-    "- Feedback must reference the student's own words/numbers. Never generic advice.",
+    "Be warm, direct, specific. No fluff, no rubric recital, no emojis.",
     "",
-    "# Phase context (what this phase is really trying to teach)",
-    phaseSpec
-      ? phaseSpec
-      : `Phase ${phaseNumber ?? "?"}: ${phaseTitle ?? "Unknown phase"} (no detailed spec available — grade based on activity instructions only)`,
+    "PHASE AIM",
+    phaseContext,
     "",
-    "# Activity",
+    "ACTIVITY",
     `Title: ${activityTitle ?? "(untitled)"}`,
-    `Scope: ${scope === "team" ? "team submission" : "individual submission"}`,
-    `Submitted by: ${ownerLabel}`,
+    `Scope: ${scope}`,
+    `Owner: ${ownerLabel}`,
     pointsPossible != null ? `Points possible: ${pointsPossible}` : "Ungraded (no numeric score)",
     "",
-    "## Instructions the student saw",
-    activityInstructions ?? "(no instructions provided — infer from activity title)",
+    "Backward-design lens for this activity:",
+    `- Desired outcome: ${activityLens.outcome}`,
+    `- Evidence to look for: ${activityLens.evidence}`,
+    `- Red flag: ${activityLens.redFlag}`,
     "",
-    "# Student submission",
-    textAnswer ? `## Written answer\n${textAnswer}` : "## Written answer\n(no text submitted)",
-    imageUrl ? `## Image URL\n${imageUrl}` : "",
-    fileUrls.length > 0 ? `## Attached files\n${fileUrls.join("\n")}` : "",
+    "INSTRUCTIONS",
+    shortInstructions,
     "",
-    "# What to produce",
+    "ASSESSMENT QUESTIONS (what the student was literally asked to answer)",
+    assessmentQuestions,
+    "Judge the submission directly against these questions, not just the title.",
     "",
-    "## review_status",
-    "- 'passed' — the submission shows real thinking AND meets the activity's intent. You would be proud to forward this to a real stakeholder.",
-    "- 'revision_required' — there's effort but something is missing (vague, generic, wrong scope, skipped key criteria, looks AI-generated).",
-    "- 'pending_review' — use only if you truly can't tell (e.g., submission is only an image link you can't see).",
+    priorBlock ? "PRIOR ATTEMPTS (oldest → newest). Judge whether the student addressed previous feedback." : "",
+    priorBlock ?? "",
+    priorBlock ? "" : "",
+    "CURRENT SUBMISSION",
+    `Text:\n${shortAnswer}`,
+    imageUrl ? `Image URL: ${imageUrl}` : "",
+    fileUrls.length > 0 ? `Files:\n${fileUrls.join("\n")}` : "",
     "",
-    "## score_awarded",
+    "GRADING RULES",
+    "- passed = real thinking + clear evidence of the activity outcome.",
+    "- revision_required = effort is visible but key evidence is weak, vague, generic, off-scope, or AI-sloppy.",
+    "- pending_review = only when you truly cannot judge from the provided material.",
     pointsPossible != null
-      ? `A number 0..${pointsPossible}. Be calibrated: ${pointsPossible} = exemplary; around ${Math.round(pointsPossible * 0.7)} = solid pass; below ${Math.round(pointsPossible * 0.5)} = revision_required.`
-      : "null (this activity is ungraded).",
+      ? `- score_awarded = 0..${pointsPossible}. Around ${Math.round(pointsPossible * 0.7)} = solid pass.`
+      : "- score_awarded = null.",
+    "- feedback = 3 short paragraphs: what is real, what is missing, next move within 30 minutes.",
+    "- reasoning = 2-4 short admin-only sentences explaining the judgment.",
     "",
-    "## feedback (to the student, shown in their inbox)",
-    "Write 3 short sections, separated by blank lines. Total ~150-250 words, no headings needed:",
-    "1. What's real — one concrete thing from their submission that is genuinely strong, quoted or paraphrased.",
-    "2. What's missing or off — the single sharpest gap, in one or two sentences. Be direct.",
-    "3. Your next move — one specific, doable step they can take in the next 30 minutes to level up (not a vague 'think deeper'). Frame it as an advisor would: 'Try X. Then Y.'",
-    "",
-    "If revision is required, make the next move actionable enough that they can resubmit today.",
-    "",
-    "## reasoning (admin-only, not shown to student)",
-    "2-4 sentences: why you scored this way, which phase criteria they hit/missed, any red flags (AI-generated, copy-paste, off-topic).",
-    "",
-    "# Output format — CRITICAL",
-    "Stream your response in TWO parts:",
-    "",
-    "PART 1 — Live thinking (shown to admin as it streams):",
-    "Write 2-4 short sentences of your live reasoning — what you notice, what matters, where you're leaning. Plain prose, in the student's language. No headings, no JSON, no 'I am now going to...' meta-talk.",
-    "",
-    "PART 2 — JSON block (parsed by the app):",
-    "After your thinking, emit a blank line, then a code fence with the JSON object. Exact shape:",
+    "OUTPUT",
+    "Part 1: stream 2-4 short sentences of live reasoning for the admin.",
+    "Part 2: output one JSON block in a ```json fence using exactly:",
     "```json",
     "{",
     '  "review_status": "passed" | "revision_required" | "pending_review",',
@@ -170,8 +331,7 @@ function buildPrompt(params: {
     '  "reasoning": "<admin-only rationale>"',
     "}",
     "```",
-    "",
-    "After the closing ``` of the JSON block, stop. No more text.",
+    "Stop after the JSON fence.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -195,7 +355,8 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
         phase_id,
         hackathon_program_phases(id, phase_number, title)
       ),
-      hackathon_phase_activity_assessments(id, points_possible, is_graded)
+      hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, display_order, metadata),
+      revisions
     `)
     .eq("id", id)
     .single();
@@ -205,7 +366,15 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
   const sub = submission as any;
   const activity = pickOne(sub.hackathon_phase_activities);
   const phase = pickOne(activity?.hackathon_program_phases);
-  const assessment = pickOne(sub.hackathon_phase_activity_assessments);
+  const assessmentsRaw = Array.isArray(sub.hackathon_phase_activity_assessments)
+    ? sub.hackathon_phase_activity_assessments
+    : sub.hackathon_phase_activity_assessments
+      ? [sub.hackathon_phase_activity_assessments]
+      : [];
+  const assessments = [...assessmentsRaw].sort(
+    (a: any, b: any) => (a?.display_order ?? 0) - (b?.display_order ?? 0)
+  );
+  const assessment = assessments[0] ?? null;
   const pointsPossible =
     typeof assessment?.points_possible === "number" ? assessment.points_possible : null;
 
@@ -216,6 +385,10 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
 
   const phaseSpec = await getPhaseSpec(phase?.phase_number ?? null);
 
+  const priorRevisions: PriorRevision[] = Array.isArray(sub.revisions)
+    ? (sub.revisions as PriorRevision[])
+    : [];
+
   const prompt = buildPrompt({
     phaseSpec,
     phaseNumber: phase?.phase_number ?? null,
@@ -223,11 +396,13 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
     activityTitle: activity?.title ?? null,
     activityInstructions: activity?.instructions ?? null,
     pointsPossible,
+    assessments,
     textAnswer: sub.text_answer ?? null,
     imageUrl: sub.image_url ?? null,
     fileUrls: Array.isArray(sub.file_urls) ? sub.file_urls : [],
     scope,
     ownerLabel,
+    priorRevisions,
   });
 
   return {
@@ -319,9 +494,15 @@ export async function POST(
           controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
 
         try {
-          for await (const delta of result.textStream) {
-            accumulated += delta;
-            send({ type: "thinking", delta });
+          for await (const part of result.fullStream) {
+            if (part.type === "reasoning-delta") {
+              send({ type: "reasoning", delta: part.delta });
+            } else if (part.type === "text-delta") {
+              accumulated += part.delta;
+              send({ type: "thinking", delta: part.delta });
+            } else if (part.type === "error") {
+              send({ type: "error", message: String((part as any).error ?? "stream error") });
+            }
           }
 
           const object = parseAiGradeJson(accumulated);

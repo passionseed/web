@@ -3,6 +3,7 @@ import { b2 } from "@/lib/backblaze";
 import { getSessionParticipant } from "@/lib/hackathon/db";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createMainClient } from "@/utils/supabase/server";
+import { computeNextRevisions } from "@/lib/hackathon/revisions";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 const ALLOWED_FILE_TYPES = [
@@ -109,6 +110,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "You must be in a team to submit a team activity" }, { status: 400 });
     }
 
+    const nextRevisionsTeam = await computeNextRevisions(supabase, {
+      scope: "team",
+      teamId: membership.team_id,
+      activityId,
+    });
+
     const { data, error } = await supabase
       .from("hackathon_phase_activity_team_submissions")
       .upsert(
@@ -123,6 +130,7 @@ export async function POST(req: NextRequest) {
           status: "submitted",
           submitted_at: now,
           updated_at: now,
+          revisions: nextRevisionsTeam,
         },
         { onConflict: "team_id,activity_id" }
       )
@@ -134,10 +142,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to save submission", detail: error.message }, { status: 500 });
     }
 
+    // Resubmit resets the live review; historical review is preserved in revisions[].
+    if (nextRevisionsTeam.length > 0) {
+      await supabase
+        .from("hackathon_submission_reviews")
+        .delete()
+        .eq("team_submission_id", data.id);
+    }
+
     return NextResponse.json({ submissionId: data.id, url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null });
   }
 
   // Individual submission
+  const nextRevisions = await computeNextRevisions(supabase, {
+    scope: "individual",
+    participantId: participant.id,
+    activityId,
+  });
+
   const { data, error } = await supabase
     .from("hackathon_phase_activity_submissions")
     .upsert(
@@ -151,6 +173,7 @@ export async function POST(req: NextRequest) {
         status: "submitted",
         submitted_at: now,
         updated_at: now,
+        revisions: nextRevisions,
       },
       { onConflict: "participant_id,activity_id" }
     )
@@ -160,6 +183,14 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error("[hackathon/submit] individual DB error:", error.message);
     return NextResponse.json({ error: "Failed to save submission", detail: error.message }, { status: 500 });
+  }
+
+  // Resubmit resets the live review; historical review is preserved in revisions[].
+  if (nextRevisions.length > 0) {
+    await supabase
+      .from("hackathon_submission_reviews")
+      .delete()
+      .eq("individual_submission_id", data.id);
   }
 
   const mainSupabase = createMainClient();

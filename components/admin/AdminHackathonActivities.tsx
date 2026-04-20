@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
+import { diffWords } from "diff";
 import {
   CheckCircle2,
   ChevronDown,
@@ -10,6 +11,7 @@ import {
   Copy,
   FileText,
   HelpCircle,
+  History,
   Image as ImageIcon,
   Loader2,
   MessageSquare,
@@ -113,6 +115,22 @@ interface AdminComment {
   created_at: string;
 }
 
+interface Revision {
+  n: number;
+  text_answer: string | null;
+  image_url: string | null;
+  file_urls: string[] | null;
+  submitted_at: string | null;
+  review: {
+    status?: ReviewStatus | null;
+    score_awarded?: number | null;
+    points_possible?: number | null;
+    feedback?: string | null;
+    reviewed_by?: string | null;
+    reviewed_at?: string | null;
+  } | null;
+}
+
 interface Submission {
   scope: SubmissionScope;
   id: string;
@@ -122,6 +140,7 @@ interface Submission {
   text_answer: string | null;
   image_url: string | null;
   file_urls: string[];
+  revisions: Revision[];
   participant: Person | null;
   team: Team | null;
   team_members: Person[];
@@ -171,17 +190,6 @@ function ContentTypeIcon({ type }: { type: ContentType }) {
   return <span className="text-sm">{icons[type] || "📄"}</span>;
 }
 
-function stripTrailingJsonBlock(text: string): string {
-  // Hide JSON fence / trailing JSON object from the live view.
-  const fenceIdx = text.search(/```(?:json)?/i);
-  if (fenceIdx !== -1) return text.slice(0, fenceIdx).trimEnd();
-  const braceIdx = text.indexOf("{");
-  if (braceIdx !== -1 && text.lastIndexOf("}") > braceIdx) {
-    return text.slice(0, braceIdx).trimEnd();
-  }
-  return text;
-}
-
 function getOwnerLabel(submission: Submission) {
   if (submission.scope === "team") {
     return submission.team?.name ?? "Unnamed team";
@@ -214,6 +222,7 @@ export function AdminHackathonActivities() {
   const [aiSuggesting, setAiSuggesting] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string>("");
   const [aiLiveText, setAiLiveText] = useState<string>("");
+  const [aiLiveReasoning, setAiLiveReasoning] = useState<string>("");
   const [promptPreviewOpen, setPromptPreviewOpen] = useState(false);
   const [promptPreviewLoading, setPromptPreviewLoading] = useState(false);
   const [promptPreview, setPromptPreview] = useState<{
@@ -415,6 +424,7 @@ export function AdminHackathonActivities() {
     setMessage("");
     setAiReasoning("");
     setAiLiveText("");
+    setAiLiveReasoning("");
 
     try {
       const response = await fetch(
@@ -448,7 +458,9 @@ export function AdminHackathonActivities() {
             const event = JSON.parse(line);
             if (event.type === "thinking") {
               accumulated += event.delta ?? "";
-              setAiLiveText(stripTrailingJsonBlock(accumulated));
+              setAiLiveText(accumulated);
+            } else if (event.type === "reasoning") {
+              setAiLiveReasoning((prev) => prev + (event.delta ?? ""));
             } else if (event.type === "done") {
               const s = event.suggestion;
               setGradeStatus(s.review_status as ReviewStatus);
@@ -877,12 +889,22 @@ export function AdminHackathonActivities() {
                   {selectedSubmission.text_answer && (
                     <section className="min-w-0">
                       <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                        <FileText className="h-3 w-3" /> Text answer
+                        <FileText className="h-3 w-3" />
+                        {selectedSubmission.revisions.length > 0
+                          ? `Current attempt (R${selectedSubmission.revisions.length + 1})`
+                          : "Text answer"}
                       </p>
                       <p className="whitespace-pre-wrap text-[15px] font-light leading-7 text-slate-100 break-words">
                         {selectedSubmission.text_answer}
                       </p>
                     </section>
+                  )}
+
+                  {selectedSubmission.revisions.length > 0 && (
+                    <RevisionThread
+                      revisions={selectedSubmission.revisions}
+                      currentText={selectedSubmission.text_answer}
+                    />
                   )}
 
                   {selectedSubmission.image_url && (
@@ -920,7 +942,7 @@ export function AdminHackathonActivities() {
                   )}
 
                   {selectedSubmission.review?.feedback && (
-                    <section className="border-l-2 border-slate-700 pl-3 min-w-0">
+                    <section className="min-w-0">
                       <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
                         Previous review
                       </p>
@@ -943,7 +965,7 @@ export function AdminHackathonActivities() {
                       </p>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {selectedSubmission.admin_comments.map((comment) => (
-                          <div key={comment.id} className="border-l-2 border-blue-500/40 pl-3 min-w-0">
+                          <div key={comment.id} className="min-w-0">
                             <p className="text-xs font-light text-slate-300 break-words whitespace-pre-wrap leading-relaxed">
                               {comment.content}
                             </p>
@@ -1000,9 +1022,9 @@ export function AdminHackathonActivities() {
                     </div>
 
                     {(aiLiveText || aiSuggesting) && (
-                      <div className="rounded border-l-2 border-violet-400/60 bg-violet-500/5 px-3 py-2 min-w-0">
+                      <div className="min-w-0">
                         <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-violet-300/80">
-                          Live thinking{aiSuggesting && !aiLiveText ? "…" : ""}
+                          Live thinking & output{aiSuggesting && !aiLiveText ? "…" : ""}
                         </p>
                         <p className="whitespace-pre-wrap text-xs font-light leading-relaxed text-violet-100/90 break-words">
                           {aiLiveText || (aiSuggesting ? "Connecting to MiniMax…" : "")}
@@ -1012,7 +1034,7 @@ export function AdminHackathonActivities() {
                     )}
 
                     {aiReasoning && (
-                      <div className="rounded border-l-2 border-violet-500/40 bg-violet-500/5 px-3 py-2 min-w-0">
+                      <div className="min-w-0">
                         <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-violet-300/80">
                           Admin-only rationale
                         </p>
@@ -1235,5 +1257,167 @@ export function AdminHackathonActivities() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function statusLabel(status?: string | null): string {
+  if (!status) return "ungraded";
+  return status.replace(/_/g, " ");
+}
+
+function statusTone(status?: string | null): string {
+  switch (status) {
+    case "passed":
+      return "text-emerald-400";
+    case "revision_required":
+      return "text-amber-400";
+    case "pending_review":
+      return "text-sky-400";
+    default:
+      return "text-slate-500";
+  }
+}
+
+function DiffText({ from, to }: { from: string; to: string }) {
+  const parts = diffWords(from ?? "", to ?? "");
+  return (
+    <p className="whitespace-pre-wrap text-[13px] font-light leading-6 text-slate-300 break-words">
+      {parts.map((p, i) => {
+        if (p.added) {
+          return (
+            <span key={i} className="bg-emerald-500/15 text-emerald-300">
+              {p.value}
+            </span>
+          );
+        }
+        if (p.removed) {
+          return (
+            <span key={i} className="bg-rose-500/15 text-rose-300 line-through">
+              {p.value}
+            </span>
+          );
+        }
+        return <span key={i}>{p.value}</span>;
+      })}
+    </p>
+  );
+}
+
+function RevisionThread({
+  revisions,
+  currentText,
+}: {
+  revisions: Revision[];
+  currentText: string | null;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [openIds, setOpenIds] = useState<Set<number>>(new Set());
+
+  const sorted = useMemo(
+    () => [...revisions].sort((a, b) => b.n - a.n),
+    [revisions]
+  );
+
+  function toggle(n: number) {
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(n)) next.delete(n);
+      else next.add(n);
+      return next;
+    });
+  }
+
+  return (
+    <section className="min-w-0">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500 hover:text-slate-300"
+      >
+        <History className="h-3 w-3" />
+        Revision history ({revisions.length})
+        {expanded ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronRight className="h-3 w-3" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="space-y-4">
+          {sorted.map((rev, idx) => {
+            // Next attempt AFTER this one (more recent).
+            // sorted is newest→oldest, so the next revision (in time) is at idx-1,
+            // or the current submission text if idx === 0.
+            const nextText =
+              idx === 0 ? currentText ?? "" : sorted[idx - 1]?.text_answer ?? "";
+            const isOpen = openIds.has(rev.n);
+            const dateLabel = rev.submitted_at
+              ? format(new Date(rev.submitted_at), "MMM d, HH:mm")
+              : "—";
+            const status = rev.review?.status ?? null;
+            return (
+              <div key={rev.n} className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => toggle(rev.n)}
+                  className="flex w-full items-center gap-2 text-left"
+                >
+                  {isOpen ? (
+                    <ChevronDown className="h-3 w-3 text-slate-500" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3 text-slate-500" />
+                  )}
+                  <span className="text-[12px] font-medium text-slate-300">
+                    R{rev.n}
+                  </span>
+                  <span className="text-[11px] font-light text-slate-500">
+                    {dateLabel}
+                  </span>
+                  <span className={`text-[11px] font-light ${statusTone(status)}`}>
+                    · {statusLabel(status)}
+                  </span>
+                </button>
+
+                {isOpen && (
+                  <div className="mt-2 pl-5 space-y-3">
+                    {rev.text_answer && (
+                      <div>
+                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-600">
+                          Answer
+                        </p>
+                        <p className="whitespace-pre-wrap text-[13px] font-light leading-6 text-slate-300 break-words">
+                          {rev.text_answer}
+                        </p>
+                      </div>
+                    )}
+
+                    {rev.text_answer && nextText && rev.text_answer !== nextText && (
+                      <div>
+                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-600">
+                          Diff → next attempt
+                        </p>
+                        <DiffText from={rev.text_answer} to={nextText} />
+                      </div>
+                    )}
+
+                    {rev.review?.feedback && (
+                      <div>
+                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-600">
+                          Feedback given
+                        </p>
+                        <p className="whitespace-pre-wrap text-[12px] font-light leading-6 text-slate-400 break-words">
+                          {rev.review.feedback}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
