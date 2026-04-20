@@ -4,6 +4,7 @@ import { getSessionParticipant } from "@/lib/hackathon/db";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createMainClient } from "@/utils/supabase/server";
 import { computeNextRevisions } from "@/lib/hackathon/revisions";
+import { fireAndForgetEmbedSubmission } from "@/lib/embeddings/submissions";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 const ALLOWED_FILE_TYPES = [
@@ -150,6 +151,13 @@ export async function POST(req: NextRequest) {
         .eq("team_submission_id", data.id);
     }
 
+    fireAndForgetEmbedSubmission({
+      scope: "hackathon_team",
+      submissionId: data.id,
+      activityId,
+      text: textAnswer,
+    });
+
     return NextResponse.json({ submissionId: data.id, url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null });
   }
 
@@ -202,6 +210,13 @@ export async function POST(req: NextRequest) {
       assessment_id: assessmentId,
       submission_type: uploadedUrl ? "image" : uploadedFileUrls ? "file" : "text",
     },
+  });
+
+  fireAndForgetEmbedSubmission({
+    scope: "hackathon_individual",
+    submissionId: data.id,
+    activityId,
+    text: textAnswer,
   });
 
   return NextResponse.json({ submissionId: data.id, url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null });
