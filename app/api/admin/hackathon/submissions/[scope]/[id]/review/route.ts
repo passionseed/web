@@ -147,6 +147,11 @@ export async function POST(
     feedback,
     reviewed_by_user_id: admin.id,
     reviewed_at: now,
+    // Any manual review clears the pending AI draft — it's been acted upon.
+    ai_draft: null,
+    ai_draft_generated_at: null,
+    ai_draft_model: null,
+    ai_draft_source: null,
   };
 
   const reviewResult = existingReview

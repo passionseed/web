@@ -137,7 +137,11 @@ export async function GET(req: NextRequest) {
           score_awarded,
           feedback,
           reviewed_at,
-          reviewed_by_user_id
+          reviewed_by_user_id,
+          ai_draft,
+          ai_draft_generated_at,
+          ai_draft_model,
+          ai_draft_source
         )
       `)
       .in("activity_id", activityIdFilter)
@@ -165,7 +169,11 @@ export async function GET(req: NextRequest) {
           score_awarded,
           feedback,
           reviewed_at,
-          reviewed_by_user_id
+          reviewed_by_user_id,
+          ai_draft,
+          ai_draft_generated_at,
+          ai_draft_model,
+          ai_draft_source
         )
       `)
       .in("activity_id", activityIdFilter)
