@@ -24,11 +24,14 @@ export function Layout({ children }: LayoutProps) {
   // Hide navbar for profile completion pages, hackathon page, beta page, and landing page
   // Landing page has its own header in LandingPageWrapper
   // Only compute after mount to avoid hydration mismatch (pathname is null on server)
+  const isPublicHackathonRoute =
+    pathname?.startsWith("/hackathon") && !pathname?.startsWith("/admin");
+
   const hideNavbar = mounted && (
     pathname === "/" ||
     pathname?.includes("finish-profile") ||
     pathname?.includes("complete-profile") ||
-    pathname?.includes("hackathon") ||
+    isPublicHackathonRoute ||
     pathname?.includes("/app/beta") ||
     pathname?.startsWith("/expert-interview")
   );
