@@ -99,6 +99,16 @@ interface Team {
   lobby_code: string | null;
 }
 
+interface AiDraft {
+  status: ReviewStatus;
+  score_awarded: number | null;
+  points_possible: number | null;
+  feedback: string;
+  reasoning: string | null;
+  raw_output?: string;
+  error?: string | null;
+}
+
 interface Review {
   id: string;
   review_status: ReviewStatus;
@@ -106,6 +116,10 @@ interface Review {
   feedback: string | null;
   reviewed_at: string | null;
   reviewed_by_user_id: string | null;
+  ai_draft?: AiDraft | null;
+  ai_draft_generated_at?: string | null;
+  ai_draft_model?: string | null;
+  ai_draft_source?: "manual" | "bulk" | "auto_on_submit" | null;
 }
 
 interface AdminComment {
@@ -359,10 +373,21 @@ export function AdminHackathonActivities() {
 
     const submission = allSubmissions.find((sub) => sub.id === submissionId) ?? null;
     const review = submission?.review ?? null;
-    setGradeStatus((review?.review_status ?? submission?.review_status ?? "pending_review") as ReviewStatus);
-    setGradeScore(review?.score_awarded != null ? String(review.score_awarded) : "");
-    setGradeFeedback(review?.feedback ?? "");
-    setAiReasoning("");
+    const draft = review?.ai_draft ?? null;
+
+    // If an AI draft is pending approval, prefill the grade form from the
+    // draft (not the stale committed review) so the admin can edit and approve.
+    if (draft) {
+      setGradeStatus(draft.status);
+      setGradeScore(draft.score_awarded != null ? String(draft.score_awarded) : "");
+      setGradeFeedback(draft.feedback ?? "");
+      setAiReasoning(draft.reasoning ?? "");
+    } else {
+      setGradeStatus((review?.review_status ?? submission?.review_status ?? "pending_review") as ReviewStatus);
+      setGradeScore(review?.score_awarded != null ? String(review.score_awarded) : "");
+      setGradeFeedback(review?.feedback ?? "");
+      setAiReasoning("");
+    }
   }
 
   async function openPromptPreview() {
@@ -468,10 +493,14 @@ export function AdminHackathonActivities() {
               setGradeFeedback(s.feedback ?? "");
               setAiReasoning(s.reasoning ?? "");
               setMessage(
-                event.has_phase_spec
-                  ? "AI suggestion loaded (with phase spec). Review before saving."
-                  : "AI suggestion loaded (no phase spec). Review before saving."
+                event.auto_approved
+                  ? "AI auto-approved (full score). Refreshing…"
+                  : event.has_phase_spec
+                    ? "AI draft saved (with phase spec). Review and approve."
+                    : "AI draft saved (no phase spec). Review and approve."
               );
+              // Refresh so the pill and persisted draft appear for this submission.
+              void fetchData();
             } else if (event.type === "error") {
               setMessage(event.message ?? "AI grading failed");
             }
@@ -484,6 +513,32 @@ export function AdminHackathonActivities() {
       setMessage("AI grading failed");
     } finally {
       setAiSuggesting(false);
+    }
+  }
+
+  async function discardAiDraft() {
+    if (!selectedSubmission) return;
+    setMessage("");
+    try {
+      const response = await fetch(
+        `/api/admin/hackathon/submissions/${selectedSubmission.scope}/${selectedSubmission.id}/ai-draft/discard`,
+        { method: "POST" }
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setMessage(data.error ?? "Failed to discard AI draft");
+        return;
+      }
+      setMessage("AI draft discarded.");
+      // Reset form to the real committed review (if any), not the discarded draft.
+      const review = selectedSubmission.review ?? null;
+      setGradeStatus((review?.review_status ?? selectedSubmission.review_status ?? "pending_review") as ReviewStatus);
+      setGradeScore(review?.score_awarded != null ? String(review.score_awarded) : "");
+      setGradeFeedback(review?.feedback ?? "");
+      setAiReasoning("");
+      await fetchData();
+    } catch {
+      setMessage("Failed to discard AI draft");
     }
   }
 
@@ -821,7 +876,18 @@ export function AdminHackathonActivities() {
                                                     </div>
                                                   )}
                                                 </div>
-                                                <StatusBadge status={submission.review_status} />
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                  {submission.review?.ai_draft && (
+                                                    <Badge
+                                                      variant="outline"
+                                                      className="border-violet-500/40 text-violet-200 bg-violet-500/10 text-[10px] font-light h-5 px-1.5"
+                                                    >
+                                                      <Sparkles className="mr-1 h-2.5 w-2.5" />
+                                                      AI draft
+                                                    </Badge>
+                                                  )}
+                                                  <StatusBadge status={submission.review_status} />
+                                                </div>
                                               </div>
                                               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                                                 <Badge variant="outline" className="border-slate-700 text-slate-400">
@@ -991,6 +1057,43 @@ export function AdminHackathonActivities() {
                       </h4>
                     </div>
 
+                    {selectedSubmission.review?.ai_draft && !aiSuggesting && (
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 text-[11px] font-light">
+                          <span className="flex items-center gap-1.5 text-violet-200">
+                            <Sparkles className="h-3 w-3 shrink-0" />
+                            AI draft ready — review & approve
+                            {selectedSubmission.review.ai_draft_source &&
+                              selectedSubmission.review.ai_draft_source !== "manual" && (
+                                <span className="text-violet-400/60">
+                                  ({selectedSubmission.review.ai_draft_source.replace(/_/g, " ")})
+                                </span>
+                              )}
+                          </span>
+                          {selectedSubmission.review.ai_draft_generated_at && (
+                            <span className="text-slate-600 shrink-0">
+                              {format(new Date(selectedSubmission.review.ai_draft_generated_at), "MMM d, HH:mm")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={discardAiDraft}
+                            className="h-7 px-2 text-[11px] font-light text-slate-400 hover:bg-slate-800"
+                          >
+                            <XCircle className="mr-1 h-3 w-3" />
+                            Discard draft
+                          </Button>
+                          <span className="text-[10px] font-light text-slate-600">
+                            or edit below and click Save to approve.
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between gap-2 min-w-0 text-[11px] font-light text-violet-300/80">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <Sparkles className="h-3 w-3 shrink-0" />
@@ -1017,7 +1120,11 @@ export function AdminHackathonActivities() {
                         ) : (
                           <Sparkles className="mr-1 h-3 w-3" />
                         )}
-                        {aiSuggesting ? "Thinking…" : "Suggest with AI"}
+                        {aiSuggesting
+                          ? "Thinking…"
+                          : selectedSubmission.review?.ai_draft
+                            ? "Regenerate AI draft"
+                            : "Suggest with AI"}
                       </Button>
                     </div>
 

@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { getPhaseSpec } from "@/lib/hackathon/phase-specs";
+import { persistDraft, type AiDraft } from "@/lib/hackathon/ai-grader";
 
 const AI_MODEL = "MiniMax-M2.7-highspeed";
 
@@ -510,11 +511,39 @@ export async function POST(
             console.error("[admin/hackathon/ai-grade] failed to parse JSON", { accumulated });
             send({ type: "error", message: "AI did not return a valid JSON block", raw: accumulated });
           } else {
+            // Persist the draft so admins don't lose it on navigation, and so
+            // the auto-approve rule can promote full-score passes in-place.
+            let promoted = false;
+            try {
+              const draft: AiDraft = {
+                status: object.review_status,
+                score_awarded: object.score_awarded,
+                points_possible: context.pointsPossible,
+                feedback: object.feedback,
+                reasoning: object.reasoning ?? null,
+                raw_output: accumulated,
+                error: null,
+              };
+              const persisted = await persistDraft(getHackathonServiceClient(), {
+                scope: rawScope as "individual" | "team",
+                submissionId: id,
+                draft,
+                source: "manual",
+                model: AI_MODEL,
+                reviewedByUserId: admin.id,
+              });
+              promoted = persisted.promoted;
+            } catch (persistErr) {
+              console.error("[admin/hackathon/ai-grade] persist draft failed:", persistErr);
+            }
+
             send({
               type: "done",
               suggestion: object,
               model: AI_MODEL,
               has_phase_spec: context.hasPhaseSpec,
+              persisted: true,
+              auto_approved: promoted,
             });
           }
         } catch (err: any) {
