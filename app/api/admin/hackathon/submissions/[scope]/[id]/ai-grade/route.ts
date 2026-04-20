@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { streamText } from "ai";
-import { after } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getModel } from "@/lib/ai/modelRegistry";
@@ -474,138 +473,103 @@ export async function POST(
   }
 
   try {
-    // Architecture: the MiniMax call and draft persistence run in an
-    // INDEPENDENT background task ("work") that is not tied to the client
-    // response lifecycle. The HTTP response is a pure reader of an event
-    // buffer. When the admin closes the tab, the ReadableStream reader stops
-    // pulling, but `work` keeps accumulating text and calls persistDraft when
-    // done. `after()` tells the Vercel runtime to keep the invocation alive
-    // until `work` settles.
+    const result = streamText({
+      model: getModel(AI_MODEL),
+      prompt: context.prompt,
+      temperature: 0.5,
+      maxOutputTokens: 1500,
+      onError: (e) => {
+        console.error("[admin/hackathon/ai-grade] stream error:", e);
+      },
+    });
 
-    const events: string[] = [];
-    let done = false;
-    let waiters: Array<() => void> = [];
     const encoder = new TextEncoder();
 
-    const push = (obj: unknown) => {
-      events.push(JSON.stringify(obj) + "\n");
-      const toNotify = waiters;
-      waiters = [];
-      toNotify.forEach((fn) => {
-        try { fn(); } catch {}
-      });
-    };
-
-    const markDone = () => {
-      done = true;
-      const toNotify = waiters;
-      waiters = [];
-      toNotify.forEach((fn) => {
-        try { fn(); } catch {}
-      });
-    };
-
-    const work = (async () => {
-      let accumulated = "";
-      try {
-        const result = streamText({
-          model: getModel(AI_MODEL),
-          prompt: context.prompt,
-          temperature: 0.5,
-          maxOutputTokens: 1500,
-          onError: (e) => {
-            console.error("[admin/hackathon/ai-grade] stream error:", e);
-          },
-        });
-
-        for await (const part of result.fullStream) {
-          if (part.type === "reasoning-delta") {
-            push({ type: "reasoning", delta: part.delta });
-          } else if (part.type === "text-delta") {
-            accumulated += part.delta;
-            push({ type: "thinking", delta: part.delta });
-          } else if (part.type === "error") {
-            push({ type: "error", message: String((part as any).error ?? "stream error") });
-          }
-        }
-
-        const object = parseAiGradeJson(accumulated);
-        if (!object) {
-          console.error("[admin/hackathon/ai-grade] failed to parse JSON", { accumulated });
-          push({ type: "error", message: "AI did not return a valid JSON block", raw: accumulated });
-          return;
-        }
-
-        let promoted = false;
-        try {
-          const draft: AiDraft = {
-            status: object.review_status,
-            score_awarded: object.score_awarded,
-            points_possible: context.pointsPossible,
-            feedback: object.feedback,
-            reasoning: object.reasoning ?? null,
-            raw_output: accumulated,
-            error: null,
-          };
-          const persisted = await persistDraft(getHackathonServiceClient(), {
-            scope: rawScope as "individual" | "team",
-            submissionId: id,
-            draft,
-            source: "manual",
-            model: AI_MODEL,
-            reviewedByUserId: admin.id,
-          });
-          promoted = persisted.promoted;
-          console.log("[admin/hackathon/ai-grade] draft persisted", {
-            scope: rawScope,
-            id,
-            promoted,
-          });
-        } catch (persistErr) {
-          console.error("[admin/hackathon/ai-grade] persist draft failed:", persistErr);
-        }
-
-        push({
-          type: "done",
-          suggestion: object,
-          model: AI_MODEL,
-          has_phase_spec: context.hasPhaseSpec,
-          persisted: true,
-          auto_approved: promoted,
-        });
-      } catch (err: any) {
-        console.error("[admin/hackathon/ai-grade] work loop error:", err);
-        push({ type: "error", message: err?.message ?? String(err) });
-      } finally {
-        markDone();
-      }
-    })();
-
-    // Keep the invocation alive on Vercel even if the client disconnects.
-    after(work);
-
-    // Client response: drain the buffer; never blocks the work above.
-    let cursor = 0;
     const stream = new ReadableStream({
-      async pull(controller) {
-        while (cursor < events.length) {
+      async start(controller) {
+        let accumulated = "";
+        let clientAlive = true;
+
+        // Safe send: if the client disconnected, swallow the error so the
+        // MiniMax loop and persistDraft still run to completion.
+        const send = (obj: unknown) => {
+          if (!clientAlive) return;
           try {
-            controller.enqueue(encoder.encode(events[cursor]));
-            cursor++;
+            controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
           } catch {
-            // Client closed — stop pulling; work keeps running in background.
+            clientAlive = false;
+          }
+        };
+
+        try {
+          for await (const part of result.fullStream) {
+            // Accumulate FIRST, independent of client status.
+            if (part.type === "text-delta") {
+              accumulated += part.delta;
+              send({ type: "thinking", delta: part.delta });
+            } else if (part.type === "reasoning-delta") {
+              send({ type: "reasoning", delta: part.delta });
+            } else if (part.type === "error") {
+              send({ type: "error", message: String((part as any).error ?? "stream error") });
+            }
+          }
+
+          const object = parseAiGradeJson(accumulated);
+          if (!object) {
+            console.error("[admin/hackathon/ai-grade] failed to parse JSON", { accumulated });
+            send({ type: "error", message: "AI did not return a valid JSON block", raw: accumulated });
             return;
           }
-        }
-        if (done) {
+
+          // Persist draft whether or not the client is still listening.
+          let promoted = false;
+          try {
+            const draft: AiDraft = {
+              status: object.review_status,
+              score_awarded: object.score_awarded,
+              points_possible: context.pointsPossible,
+              feedback: object.feedback,
+              reasoning: object.reasoning ?? null,
+              raw_output: accumulated,
+              error: null,
+            };
+            const persisted = await persistDraft(getHackathonServiceClient(), {
+              scope: rawScope as "individual" | "team",
+              submissionId: id,
+              draft,
+              source: "manual",
+              model: AI_MODEL,
+              reviewedByUserId: admin.id,
+            });
+            promoted = persisted.promoted;
+            console.log("[admin/hackathon/ai-grade] draft persisted", {
+              scope: rawScope,
+              id,
+              promoted,
+              clientAlive,
+            });
+          } catch (persistErr) {
+            console.error("[admin/hackathon/ai-grade] persist draft failed:", persistErr);
+          }
+
+          send({
+            type: "done",
+            suggestion: object,
+            model: AI_MODEL,
+            has_phase_spec: context.hasPhaseSpec,
+            persisted: true,
+            auto_approved: promoted,
+          });
+        } catch (err: any) {
+          console.error("[admin/hackathon/ai-grade] stream loop error:", err);
+          send({ type: "error", message: err?.message ?? String(err) });
+        } finally {
           try { controller.close(); } catch {}
-          return;
         }
-        await new Promise<void>((resolve) => waiters.push(resolve));
       },
       cancel() {
-        // Client aborted (tab closed). Do NOT propagate cancellation into
-        // `work` — we want the draft to persist.
+        // Client closed the tab. The `start()` loop continues via the
+        // clientAlive gate so persistDraft still runs.
       },
     });
 

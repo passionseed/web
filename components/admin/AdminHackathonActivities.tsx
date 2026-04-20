@@ -233,10 +233,30 @@ export function AdminHackathonActivities() {
   const [gradeScore, setGradeScore] = useState<string>("");
   const [gradeFeedback, setGradeFeedback] = useState<string>("");
   const [savingGrade, setSavingGrade] = useState(false);
-  const [aiSuggesting, setAiSuggesting] = useState(false);
-  const [aiReasoning, setAiReasoning] = useState<string>("");
-  const [aiLiveText, setAiLiveText] = useState<string>("");
-  const [aiLiveReasoning, setAiLiveReasoning] = useState<string>("");
+  // Per-submission AI grading state so multiple submissions can be graded
+  // in parallel without clobbering each other. Keyed by submission id.
+  type AiJobState = {
+    status: "running" | "done" | "error";
+    thinking: string;
+    reasoning: string;
+    rationale: string;
+    message: string;
+    startedAt: number;
+  };
+  const [aiJobs, setAiJobs] = useState<Record<string, AiJobState>>({});
+  function updateAiJob(id: string, patch: Partial<AiJobState>) {
+    setAiJobs((prev) => {
+      const base: AiJobState = prev[id] ?? {
+        status: "running",
+        thinking: "",
+        reasoning: "",
+        rationale: "",
+        message: "",
+        startedAt: Date.now(),
+      };
+      return { ...prev, [id]: { ...base, ...patch } };
+    });
+  }
   const [promptPreviewOpen, setPromptPreviewOpen] = useState(false);
   const [promptPreviewLoading, setPromptPreviewLoading] = useState(false);
   const [promptPreview, setPromptPreview] = useState<{
@@ -342,6 +362,13 @@ export function AdminHackathonActivities() {
     return null;
   }, [selectedSubmission, phases]);
 
+  // Per-submission AI grading job view for the currently selected submission.
+  // Keeping aliases matches the old local var names so the JSX stays tidy.
+  const currentJob = selectedSubmission ? aiJobs[selectedSubmission.id] : undefined;
+  const aiSuggesting = currentJob?.status === "running";
+  const aiLiveText = currentJob?.thinking ?? "";
+  const aiReasoning = currentJob?.rationale ?? "";
+
   function togglePhase(phaseId: string) {
     setExpandedPhases((prev) => {
       const next = new Set(prev);
@@ -381,12 +408,15 @@ export function AdminHackathonActivities() {
       setGradeStatus(draft.status);
       setGradeScore(draft.score_awarded != null ? String(draft.score_awarded) : "");
       setGradeFeedback(draft.feedback ?? "");
-      setAiReasoning(draft.reasoning ?? "");
+      // Seed the AI job rationale so the "Admin-only rationale" panel shows
+      // draft reasoning even when no live job is running for this submission.
+      if (draft.reasoning) {
+        updateAiJob(submissionId, { status: "done", rationale: draft.reasoning });
+      }
     } else {
       setGradeStatus((review?.review_status ?? submission?.review_status ?? "pending_review") as ReviewStatus);
       setGradeScore(review?.score_awarded != null ? String(review.score_awarded) : "");
       setGradeFeedback(review?.feedback ?? "");
-      setAiReasoning("");
     }
   }
 
@@ -442,31 +472,45 @@ export function AdminHackathonActivities() {
     }
   }
 
-  async function requestAiSuggestion() {
-    if (!selectedSubmission) return;
+  async function requestAiSuggestion(submissionOverride?: { id: string; scope: "individual" | "team" }) {
+    const target =
+      submissionOverride ??
+      (selectedSubmission
+        ? { id: selectedSubmission.id, scope: selectedSubmission.scope }
+        : null);
+    if (!target) return;
 
-    setAiSuggesting(true);
-    setMessage("");
-    setAiReasoning("");
-    setAiLiveText("");
-    setAiLiveReasoning("");
+    const jobId = target.id;
+
+    updateAiJob(jobId, {
+      status: "running",
+      thinking: "",
+      reasoning: "",
+      rationale: "",
+      message: "",
+      startedAt: Date.now(),
+    });
 
     try {
       const response = await fetch(
-        `/api/admin/hackathon/submissions/${selectedSubmission.scope}/${selectedSubmission.id}/ai-grade`,
+        `/api/admin/hackathon/submissions/${target.scope}/${target.id}/ai-grade`,
         { method: "POST", headers: { "Content-Type": "application/json" } }
       );
 
       if (!response.ok || !response.body) {
         const data = await response.json().catch(() => ({}));
-        setMessage(data.error ?? "AI grading failed");
+        updateAiJob(jobId, {
+          status: "error",
+          message: data.error ?? "AI grading failed",
+        });
         return;
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let accumulated = "";
+      let thinking = "";
+      let reasoning = "";
 
       while (true) {
         const { value, done } = await reader.read();
@@ -482,27 +526,34 @@ export function AdminHackathonActivities() {
           try {
             const event = JSON.parse(line);
             if (event.type === "thinking") {
-              accumulated += event.delta ?? "";
-              setAiLiveText(accumulated);
+              thinking += event.delta ?? "";
+              updateAiJob(jobId, { thinking });
             } else if (event.type === "reasoning") {
-              setAiLiveReasoning((prev) => prev + (event.delta ?? ""));
+              reasoning += event.delta ?? "";
+              updateAiJob(jobId, { reasoning });
             } else if (event.type === "done") {
               const s = event.suggestion;
-              setGradeStatus(s.review_status as ReviewStatus);
-              setGradeScore(s.score_awarded != null ? String(s.score_awarded) : "");
-              setGradeFeedback(s.feedback ?? "");
-              setAiReasoning(s.reasoning ?? "");
-              setMessage(
-                event.auto_approved
+              updateAiJob(jobId, {
+                status: "done",
+                rationale: s.reasoning ?? "",
+                message: event.auto_approved
                   ? "AI auto-approved (full score). Refreshing…"
                   : event.has_phase_spec
-                    ? "AI draft saved (with phase spec). Review and approve."
-                    : "AI draft saved (no phase spec). Review and approve."
-              );
-              // Refresh so the pill and persisted draft appear for this submission.
+                    ? "AI draft saved. Review and approve."
+                    : "AI draft saved (no phase spec). Review and approve.",
+              });
+              // If this job's submission is currently open, update the form.
+              if (selectedSubmissionId === jobId) {
+                setGradeStatus(s.review_status as ReviewStatus);
+                setGradeScore(s.score_awarded != null ? String(s.score_awarded) : "");
+                setGradeFeedback(s.feedback ?? "");
+              }
               void fetchData();
             } else if (event.type === "error") {
-              setMessage(event.message ?? "AI grading failed");
+              updateAiJob(jobId, {
+                status: "error",
+                message: event.message ?? "AI grading failed",
+              });
             }
           } catch {
             // ignore malformed line
@@ -510,9 +561,10 @@ export function AdminHackathonActivities() {
         }
       }
     } catch {
-      setMessage("AI grading failed");
-    } finally {
-      setAiSuggesting(false);
+      updateAiJob(jobId, {
+        status: "error",
+        message: "AI grading failed",
+      });
     }
   }
 
@@ -535,7 +587,11 @@ export function AdminHackathonActivities() {
       setGradeStatus((review?.review_status ?? selectedSubmission.review_status ?? "pending_review") as ReviewStatus);
       setGradeScore(review?.score_awarded != null ? String(review.score_awarded) : "");
       setGradeFeedback(review?.feedback ?? "");
-      setAiReasoning("");
+      setAiJobs((prev) => {
+        const next = { ...prev };
+        delete next[selectedSubmission.id];
+        return next;
+      });
       await fetchData();
     } catch {
       setMessage("Failed to discard AI draft");
@@ -877,15 +933,25 @@ export function AdminHackathonActivities() {
                                                   )}
                                                 </div>
                                                 <div className="flex items-center gap-1.5 shrink-0">
-                                                  {submission.review?.ai_draft && (
+                                                  {aiJobs[submission.id]?.status === "running" && (
                                                     <Badge
                                                       variant="outline"
                                                       className="border-violet-500/40 text-violet-200 bg-violet-500/10 text-[10px] font-light h-5 px-1.5"
                                                     >
-                                                      <Sparkles className="mr-1 h-2.5 w-2.5" />
-                                                      AI draft
+                                                      <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin" />
+                                                      Grading
                                                     </Badge>
                                                   )}
+                                                  {submission.review?.ai_draft &&
+                                                    aiJobs[submission.id]?.status !== "running" && (
+                                                      <Badge
+                                                        variant="outline"
+                                                        className="border-violet-500/40 text-violet-200 bg-violet-500/10 text-[10px] font-light h-5 px-1.5"
+                                                      >
+                                                        <Sparkles className="mr-1 h-2.5 w-2.5" />
+                                                        AI draft
+                                                      </Badge>
+                                                    )}
                                                   <StatusBadge status={submission.review_status} />
                                                 </div>
                                               </div>
@@ -1111,7 +1177,7 @@ export function AdminHackathonActivities() {
                         type="button"
                         size="sm"
                         variant="ghost"
-                        onClick={requestAiSuggestion}
+                        onClick={() => requestAiSuggestion()}
                         disabled={aiSuggesting}
                         className="h-7 px-2 text-[11px] font-light text-violet-200 hover:bg-violet-500/10"
                       >
