@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { SubmissionClusterView } from "@/components/admin/SubmissionClusterView";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -561,6 +562,8 @@ function SubmissionDetail({
   activeMemberId: string | null;
   onMemberSwitch: (id: string) => void;
 }) {
+  const [showClusters, setShowClusters] = useState(false);
+
   if (!activity) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 rounded-lg border border-slate-700/50 bg-slate-950/20 text-slate-500">
@@ -577,12 +580,35 @@ function SubmissionDetail({
     <div className="flex-1 flex flex-col rounded-lg border border-slate-700/50 bg-slate-950/20 overflow-hidden">
       {/* Prompt */}
       <div className="px-4 py-3 border-b border-slate-800/60">
-        <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-1">
-          Assessment Prompt
+        <div className="mb-1 flex items-center justify-between">
+          <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase">
+            Assessment Prompt
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowClusters((prev) => !prev)}
+              className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200"
+            >
+              {showClusters ? "Hide clusters" : "Preview clusters"}
+            </button>
+            <a
+              href={`/admin/hackathon/activities/${activity.activity_id}/clusters`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[10px] font-semibold uppercase tracking-wider text-sky-400 hover:text-sky-300"
+            >
+              Full view →
+            </a>
+          </div>
         </div>
         <p className="text-xs text-slate-400 italic">
           {activity.prompt ?? "No prompt available"}
         </p>
+        {showClusters && (
+          <div className="mt-3">
+            <SubmissionClusterView activityId={activity.activity_id} compact />
+          </div>
+        )}
       </div>
 
       {/* Content */}
