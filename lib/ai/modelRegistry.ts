@@ -19,6 +19,14 @@ const google = createGoogleGenerativeAI({
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || "",
 });
+const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY || "";
+const minimax = createAnthropic({
+  authToken: MINIMAX_API_KEY,
+  baseURL: "https://api.minimaxi.com/anthropic/v1",
+  headers: {
+    Authorization: `Bearer ${MINIMAX_API_KEY}`,
+  },
+});
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY || "",
 });
@@ -39,6 +47,9 @@ export const AVAILABLE_MODELS = {
   ],
   anthropic: [
     { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5', speed: 'fast', cost: 'medium' },
+  ],
+  minimax: [
+    { id: 'minimax-m2-highspeed', name: 'MiniMax M2.7 Highspeed', speed: 'fastest', cost: 'low' },
   ],
   openai: [
     { id: 'gpt-5-mini-2025-08-07', name: 'GPT-5 Mini', speed: 'medium', cost: 'medium' },
@@ -107,6 +118,11 @@ export function getModel(modelName?: string) {
 
   // Anthropic Claude Models (1 variant)
   if (resolvedModelName === 'claude-haiku-4-5') return anthropic('claude-haiku-4-5-20251001');
+
+  // MiniMax Models (via Anthropic-compatible endpoint)
+  if (resolvedModelName === 'minimax-m2-highspeed' || resolvedModelName === 'MiniMax-M2.7-highspeed') {
+    return minimax('MiniMax-M2.7-highspeed');
+  }
 
   // OpenAI Models (3 variants)
   if (resolvedModelName === 'gpt-5-mini-2025-08-07') return openai('gpt-5-mini-2025-08-07');

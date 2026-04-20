@@ -205,26 +205,42 @@ export async function GET(req: NextRequest) {
   const individualIds = (individualResult.data ?? []).map((s) => s.id);
   const teamIdsFromSubs = (teamResult.data ?? []).map((s) => s.id);
 
-  let adminCommentsResult = { data: [] as any[], error: null as any };
-  if (individualIds.length > 0 || teamIdsFromSubs.length > 0) {
-    const query = serviceClient.from("hackathon_submission_admin_comments").select("*");
-    if (individualIds.length > 0 && teamIdsFromSubs.length > 0) {
-      query.or(`individual_submission_id.in.(${individualIds.join(",")}),team_submission_id.in.(${teamIdsFromSubs.join(",")})`);
-    } else if (individualIds.length > 0) {
-      query.in("individual_submission_id", individualIds);
-    } else if (teamIdsFromSubs.length > 0) {
-      query.in("team_submission_id", teamIdsFromSubs);
+  const adminCommentsData: any[] = [];
+  const adminCommentsErrors: any[] = [];
+
+  async function fetchAdminCommentsChunked(
+    column: "individual_submission_id" | "team_submission_id",
+    ids: string[]
+  ) {
+    if (ids.length === 0) return;
+    const CHUNK_SIZE = 200;
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + CHUNK_SIZE);
+      const { data, error } = await serviceClient
+        .from("hackathon_submission_admin_comments")
+        .select("*")
+        .in(column, chunk)
+        .order("created_at", { ascending: true });
+      if (error) {
+        adminCommentsErrors.push(error);
+        continue;
+      }
+      if (data) adminCommentsData.push(...data);
     }
-    adminCommentsResult = await query.order("created_at", { ascending: true });
   }
 
-  if (adminCommentsResult.error) {
-    console.error("[admin/hackathon/activities] admin comments error:", adminCommentsResult.error);
+  await Promise.all([
+    fetchAdminCommentsChunked("individual_submission_id", individualIds),
+    fetchAdminCommentsChunked("team_submission_id", teamIdsFromSubs),
+  ]);
+
+  if (adminCommentsErrors.length > 0) {
+    console.error("[admin/hackathon/activities] admin comments error:", adminCommentsErrors);
   }
 
   const commentsByIndividualId = new Map<string, any[]>();
   const commentsByTeamId = new Map<string, any[]>();
-  for (const comment of adminCommentsResult.data ?? []) {
+  for (const comment of adminCommentsData) {
     if (comment.individual_submission_id) {
       const existing = commentsByIndividualId.get(comment.individual_submission_id) ?? [];
       existing.push(comment);

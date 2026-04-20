@@ -2,13 +2,12 @@ import TeamFinderAdminPage from "@/components/admin/hackathon/TeamFinderAdminPag
 
 export const dynamic = "force-dynamic";
 
-export default async function HackathonTeamFinderAdminPage() {
-
+export default function HackathonTeamFinderAdminPage() {
   return (
-    <div className="container mx-auto py-8 max-w-5xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Team Finder — Admin</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-xl font-semibold">Team Finder</h3>
+        <p className="text-sm text-muted-foreground">
           ดูว่าใครกำลังหาทีม จำลองการจับกลุ่ม และยืนยันเพื่อสร้างทีมจริง
         </p>
       </div>

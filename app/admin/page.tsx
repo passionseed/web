@@ -1,49 +1,90 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
-
-async function checkAdminAccess() {
-  const supabase = await createClient();
-  
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    redirect("/login");
-  }
-
-  // Check if user has admin role
-  const { data: roles, error: roleError } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("role", "admin");
-
-  if (roleError || !roles || roles.length === 0) {
-    redirect("/me");
-  }
-
-  return user;
-}
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminStatsOverview } from "@/components/admin/AdminStatsOverview";
+import {
+  Activity,
+  Compass,
+  TestTube,
+  Trophy,
+  Users,
+  Zap,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
-  const user = await checkAdminAccess();
+export default function AdminPage() {
+  const quickLinks = [
+    {
+      href: "/admin/analytics",
+      title: "Product Analytics",
+      description: "Track retention, activation, and behavior trends.",
+      icon: Activity,
+    },
+    {
+      href: "/admin/users",
+      title: "User Management",
+      description: "Manage user roles and account access.",
+      icon: Users,
+    },
+    {
+      href: "/admin/maps",
+      title: "Maps Management",
+      description: "Inspect and maintain learning maps.",
+      icon: Compass,
+    },
+    {
+      href: "/admin/hackathon",
+      title: "Hackathon",
+      description: "Navigate hackathon operations and participant tools.",
+      icon: Trophy,
+    },
+    {
+      href: "/admin/beta",
+      title: "Beta Registrations",
+      description: "Review and manage beta signups.",
+      icon: TestTube,
+    },
+    {
+      href: "/admin/event-tracker",
+      title: "Event Tracker",
+      description: "Analyze key event activity on the platform.",
+      icon: Zap,
+    },
+  ];
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage users, roles, and platform settings
-          </p>
+    <div className="space-y-6">
+      <AdminStatsOverview />
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Quick Access</h2>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {quickLinks.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href}>
+                <Card className="h-full transition-colors hover:bg-muted/40">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Icon className="h-4 w-4" />
+                      {item.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
-        <AdminDashboard />
-      </div>
+      </section>
+
+      <section className="rounded-md border p-4 text-sm text-muted-foreground">
+        Use the top navigation to open each admin area in its own route.
+      </section>
     </div>
   );
 }

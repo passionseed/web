@@ -3,22 +3,35 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Clock,
+  Copy,
   FileText,
+  HelpCircle,
   Image as ImageIcon,
   Loader2,
   MessageSquare,
   Paperclip,
   RefreshCw,
+  Save,
   Search,
   Send,
+  Sparkles,
   Users,
+  XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -158,6 +171,17 @@ function ContentTypeIcon({ type }: { type: ContentType }) {
   return <span className="text-sm">{icons[type] || "📄"}</span>;
 }
 
+function stripTrailingJsonBlock(text: string): string {
+  // Hide JSON fence / trailing JSON object from the live view.
+  const fenceIdx = text.search(/```(?:json)?/i);
+  if (fenceIdx !== -1) return text.slice(0, fenceIdx).trimEnd();
+  const braceIdx = text.indexOf("{");
+  if (braceIdx !== -1 && text.lastIndexOf("}") > braceIdx) {
+    return text.slice(0, braceIdx).trimEnd();
+  }
+  return text;
+}
+
 function getOwnerLabel(submission: Submission) {
   if (submission.scope === "team") {
     return submission.team?.name ?? "Unnamed team";
@@ -183,6 +207,25 @@ export function AdminHackathonActivities() {
   const [commentText, setCommentText] = useState("");
   const [savingComment, setSavingComment] = useState(false);
   const [message, setMessage] = useState("");
+  const [gradeStatus, setGradeStatus] = useState<ReviewStatus>("pending_review");
+  const [gradeScore, setGradeScore] = useState<string>("");
+  const [gradeFeedback, setGradeFeedback] = useState<string>("");
+  const [savingGrade, setSavingGrade] = useState(false);
+  const [aiSuggesting, setAiSuggesting] = useState(false);
+  const [aiReasoning, setAiReasoning] = useState<string>("");
+  const [aiLiveText, setAiLiveText] = useState<string>("");
+  const [promptPreviewOpen, setPromptPreviewOpen] = useState(false);
+  const [promptPreviewLoading, setPromptPreviewLoading] = useState(false);
+  const [promptPreview, setPromptPreview] = useState<{
+    prompt: string;
+    model: string;
+    phase_number: number | null;
+    phase_title: string | null;
+    activity_title: string | null;
+    points_possible: number | null;
+    has_phase_spec: boolean;
+  } | null>(null);
+  const [promptCopied, setPromptCopied] = useState(false);
 
   useEffect(() => {
     void fetchData();
@@ -304,6 +347,179 @@ export function AdminHackathonActivities() {
     setSelectedSubmissionId(submissionId);
     setCommentText("");
     setMessage("");
+
+    const submission = allSubmissions.find((sub) => sub.id === submissionId) ?? null;
+    const review = submission?.review ?? null;
+    setGradeStatus((review?.review_status ?? submission?.review_status ?? "pending_review") as ReviewStatus);
+    setGradeScore(review?.score_awarded != null ? String(review.score_awarded) : "");
+    setGradeFeedback(review?.feedback ?? "");
+    setAiReasoning("");
+  }
+
+  async function openPromptPreview() {
+    if (!selectedSubmission) return;
+    setPromptPreviewOpen(true);
+    setPromptPreview(null);
+    setPromptCopied(false);
+    setPromptPreviewLoading(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/hackathon/submissions/${selectedSubmission.scope}/${selectedSubmission.id}/ai-grade`,
+        { method: "GET" }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setPromptPreview({
+          prompt: `Failed to load prompt: ${data.error ?? response.statusText}`,
+          model: "",
+          phase_number: null,
+          phase_title: null,
+          activity_title: null,
+          points_possible: null,
+          has_phase_spec: false,
+        });
+      } else {
+        setPromptPreview(data);
+      }
+    } catch {
+      setPromptPreview({
+        prompt: "Failed to load prompt.",
+        model: "",
+        phase_number: null,
+        phase_title: null,
+        activity_title: null,
+        points_possible: null,
+        has_phase_spec: false,
+      });
+    } finally {
+      setPromptPreviewLoading(false);
+    }
+  }
+
+  async function copyPromptToClipboard() {
+    if (!promptPreview?.prompt) return;
+    try {
+      await navigator.clipboard.writeText(promptPreview.prompt);
+      setPromptCopied(true);
+      setTimeout(() => setPromptCopied(false), 2000);
+    } catch {
+      setPromptCopied(false);
+    }
+  }
+
+  async function requestAiSuggestion() {
+    if (!selectedSubmission) return;
+
+    setAiSuggesting(true);
+    setMessage("");
+    setAiReasoning("");
+    setAiLiveText("");
+
+    try {
+      const response = await fetch(
+        `/api/admin/hackathon/submissions/${selectedSubmission.scope}/${selectedSubmission.id}/ai-grade`,
+        { method: "POST", headers: { "Content-Type": "application/json" } }
+      );
+
+      if (!response.ok || !response.body) {
+        const data = await response.json().catch(() => ({}));
+        setMessage(data.error ?? "AI grading failed");
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulated = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, newlineIndex).trim();
+          buffer = buffer.slice(newlineIndex + 1);
+          if (!line) continue;
+
+          try {
+            const event = JSON.parse(line);
+            if (event.type === "thinking") {
+              accumulated += event.delta ?? "";
+              setAiLiveText(stripTrailingJsonBlock(accumulated));
+            } else if (event.type === "done") {
+              const s = event.suggestion;
+              setGradeStatus(s.review_status as ReviewStatus);
+              setGradeScore(s.score_awarded != null ? String(s.score_awarded) : "");
+              setGradeFeedback(s.feedback ?? "");
+              setAiReasoning(s.reasoning ?? "");
+              setMessage(
+                event.has_phase_spec
+                  ? "AI suggestion loaded (with phase spec). Review before saving."
+                  : "AI suggestion loaded (no phase spec). Review before saving."
+              );
+            } else if (event.type === "error") {
+              setMessage(event.message ?? "AI grading failed");
+            }
+          } catch {
+            // ignore malformed line
+          }
+        }
+      }
+    } catch {
+      setMessage("AI grading failed");
+    } finally {
+      setAiSuggesting(false);
+    }
+  }
+
+  async function submitGrade() {
+    if (!selectedSubmission) return;
+
+    setSavingGrade(true);
+    setMessage("");
+
+    try {
+      const parsedScore = gradeScore.trim() === "" ? null : Number(gradeScore);
+      if (parsedScore !== null && Number.isNaN(parsedScore)) {
+        setMessage("Score must be a number");
+        setSavingGrade(false);
+        return;
+      }
+
+      const response = await fetch(
+        `/api/admin/hackathon/submissions/${selectedSubmission.scope}/${selectedSubmission.id}/review`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            review_status: gradeStatus,
+            score_awarded: parsedScore,
+            feedback: gradeFeedback.trim(),
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error ?? "Failed to save grade");
+        return;
+      }
+
+      setMessage(
+        `Grade saved. Notified ${data.inbox_count} participant(s)${
+          data.push_target_count ? ` (${data.push_target_count} push target(s))` : ""
+        }.`
+      );
+      await fetchData();
+    } catch {
+      setMessage("Failed to save grade");
+    } finally {
+      setSavingGrade(false);
+    }
   }
 
   async function submitComment() {
@@ -435,7 +651,7 @@ export function AdminHackathonActivities() {
           ) : phases.length === 0 ? (
             <div className="py-16 text-center text-sm text-slate-500">No phases found.</div>
           ) : (
-            <div className="grid gap-4 xl:grid-cols-[1fr_400px]">
+            <div className="grid gap-4 xl:grid-cols-[3fr_7fr]">
               <div className="space-y-3 max-h-[800px] overflow-y-auto pr-1">
                 {phases.map((phase) => (
                   <div key={phase.id} className="rounded-lg border border-slate-800 bg-slate-950/50">
@@ -627,15 +843,15 @@ export function AdminHackathonActivities() {
               </div>
 
               {selectedSubmission ? (
-                <div className="rounded-md border border-slate-800 bg-slate-950/50 p-4 space-y-4">
-                  <div className="border-b border-slate-800 pb-4">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-slate-100">
+                <div className="min-w-0 space-y-6 break-words">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <h3 className="text-base font-medium text-slate-100 break-words min-w-0">
                         {selectedActivity?.title}
                       </h3>
                       <StatusBadge status={selectedSubmission.review_status} />
                     </div>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-xs font-light text-slate-400 break-words">
                       {getOwnerLabel(selectedSubmission)}
                       {selectedSubmission.scope === "team" && selectedSubmission.team?.lobby_code
                         ? ` (${selectedSubmission.team.lobby_code})`
@@ -645,13 +861,12 @@ export function AdminHackathonActivities() {
 
                   {selectedSubmission.scope === "team" && selectedSubmission.team_members.length > 0 && (
                     <div>
-                      <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-300">
-                        <Users className="h-4 w-4" />
-                        Team members
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
+                      <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                        <Users className="h-3 w-3" /> Team members
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
                         {selectedSubmission.team_members.map((member) => (
-                          <Badge key={member.id} variant="outline" className="border-slate-700 text-slate-300">
+                          <Badge key={member.id} variant="outline" className="border-slate-700 text-slate-300 font-light">
                             {member.name ?? member.email ?? member.id}
                           </Badge>
                         ))}
@@ -660,122 +875,365 @@ export function AdminHackathonActivities() {
                   )}
 
                   {selectedSubmission.text_answer && (
-                    <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
-                      <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-300">
-                        <FileText className="h-4 w-4" />
-                        Text answer
-                      </h4>
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">
+                    <section className="min-w-0">
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                        <FileText className="h-3 w-3" /> Text answer
+                      </p>
+                      <p className="whitespace-pre-wrap text-[15px] font-light leading-7 text-slate-100 break-words">
                         {selectedSubmission.text_answer}
                       </p>
-                    </div>
+                    </section>
                   )}
 
                   {selectedSubmission.image_url && (
-                    <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
-                      <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-300">
-                        <ImageIcon className="h-4 w-4" />
-                        Image
-                      </h4>
+                    <section>
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                        <ImageIcon className="h-3 w-3" /> Image
+                      </p>
                       <img
                         src={selectedSubmission.image_url}
                         alt="Submission"
-                        className="max-h-64 rounded-md border border-slate-800 object-contain"
+                        className="max-h-72 rounded-md border border-slate-800 object-contain"
                       />
-                    </div>
+                    </section>
                   )}
 
                   {selectedSubmission.file_urls.length > 0 && (
-                    <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
-                      <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-300">
-                        <Paperclip className="h-4 w-4" />
-                        Files
-                      </h4>
-                      <div className="space-y-2">
+                    <section>
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                        <Paperclip className="h-3 w-3" /> Files
+                      </p>
+                      <div className="space-y-1.5">
                         {selectedSubmission.file_urls.map((url, index) => (
                           <a
                             key={url}
                             href={url}
                             target="_blank"
                             rel="noreferrer"
-                            className="block rounded-md border border-slate-800 px-3 py-2 text-sm text-blue-300 hover:border-blue-400/50"
+                            className="block text-xs font-light text-blue-300 hover:text-blue-200 truncate"
                           >
-                            Open file {index + 1}
+                            ↗ file {index + 1} — {url}
                           </a>
                         ))}
                       </div>
-                    </div>
+                    </section>
                   )}
 
                   {selectedSubmission.review?.feedback && (
-                    <div className="rounded-md border border-slate-700 bg-slate-900/60 p-3">
-                      <h4 className="mb-2 text-sm font-semibold text-slate-300">Previous review feedback</h4>
-                      <p className="text-sm text-slate-400">{selectedSubmission.review.feedback}</p>
+                    <section className="border-l-2 border-slate-700 pl-3 min-w-0">
+                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                        Previous review
+                      </p>
+                      <p className="text-xs font-light text-slate-400 break-words whitespace-pre-wrap leading-relaxed">
+                        {selectedSubmission.review.feedback}
+                      </p>
                       {selectedSubmission.review.reviewed_at && (
-                        <p className="text-xs text-slate-600 mt-2">
-                          Reviewed {format(new Date(selectedSubmission.review.reviewed_at), "MMM d, yyyy HH:mm")}
+                        <p className="text-[10px] font-light text-slate-600 mt-1">
+                          {format(new Date(selectedSubmission.review.reviewed_at), "MMM d, HH:mm")}
                         </p>
                       )}
-                    </div>
+                    </section>
                   )}
 
                   {selectedSubmission.admin_comments && selectedSubmission.admin_comments.length > 0 && (
-                    <div className="rounded-md border border-slate-700 bg-slate-900/60 p-3 space-y-3">
-                      <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        Admin comment history ({selectedSubmission.admin_comments.length})
-                      </h4>
+                    <section className="min-w-0">
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                        <MessageSquare className="h-3 w-3" />
+                        Comments ({selectedSubmission.admin_comments.length})
+                      </p>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {selectedSubmission.admin_comments.map((comment) => (
-                          <div key={comment.id} className="text-sm border-l-2 border-blue-500/50 pl-3 py-1">
-                            <p className="text-slate-300">{comment.content}</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {format(new Date(comment.created_at), "MMM d, yyyy HH:mm")}
+                          <div key={comment.id} className="border-l-2 border-blue-500/40 pl-3 min-w-0">
+                            <p className="text-xs font-light text-slate-300 break-words whitespace-pre-wrap leading-relaxed">
+                              {comment.content}
+                            </p>
+                            <p className="text-[10px] font-light text-slate-600 mt-0.5">
+                              {format(new Date(comment.created_at), "MMM d, HH:mm")}
                             </p>
                           </div>
                         ))}
                       </div>
-                    </div>
+                    </section>
                   )}
 
-                  <div className="rounded-md border border-slate-800 bg-slate-900/40 p-4 space-y-4">
-                    <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Add comment
-                    </h4>
-                    <div className="space-y-2">
-                      <Label htmlFor="comment">Comment</Label>
+                  <div className="h-px bg-slate-800" />
+
+                  <section className="space-y-3 min-w-0">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <h4 className="flex items-center gap-2 text-sm font-medium text-slate-100">
+                        <CheckCircle2 className="h-4 w-4 text-blue-300 shrink-0" />
+                        Grade & feedback
+                        <span className="text-[10px] font-light text-slate-500 normal-case">
+                          (saves status + score, notifies student)
+                        </span>
+                      </h4>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 min-w-0 text-[11px] font-light text-violet-300/80">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Sparkles className="h-3 w-3 shrink-0" />
+                        <span className="truncate">AI mentor (MiniMax M2.7)</span>
+                        <button
+                          type="button"
+                          onClick={openPromptPreview}
+                          className="text-violet-300/60 hover:text-violet-100 shrink-0"
+                          title="Show the exact prompt sent to the model"
+                        >
+                          <HelpCircle className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={requestAiSuggestion}
+                        disabled={aiSuggesting}
+                        className="h-7 px-2 text-[11px] font-light text-violet-200 hover:bg-violet-500/10"
+                      >
+                        {aiSuggesting ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="mr-1 h-3 w-3" />
+                        )}
+                        {aiSuggesting ? "Thinking…" : "Suggest with AI"}
+                      </Button>
+                    </div>
+
+                    {(aiLiveText || aiSuggesting) && (
+                      <div className="rounded border-l-2 border-violet-400/60 bg-violet-500/5 px-3 py-2 min-w-0">
+                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-violet-300/80">
+                          Live thinking{aiSuggesting && !aiLiveText ? "…" : ""}
+                        </p>
+                        <p className="whitespace-pre-wrap text-xs font-light leading-relaxed text-violet-100/90 break-words">
+                          {aiLiveText || (aiSuggesting ? "Connecting to MiniMax…" : "")}
+                          {aiSuggesting && aiLiveText && <span className="animate-pulse">▌</span>}
+                        </p>
+                      </div>
+                    )}
+
+                    {aiReasoning && (
+                      <div className="rounded border-l-2 border-violet-500/40 bg-violet-500/5 px-3 py-2 min-w-0">
+                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-violet-300/80">
+                          Admin-only rationale
+                        </p>
+                        <p className="whitespace-pre-wrap text-xs font-light leading-relaxed text-violet-100/80 break-words">
+                          {aiReasoning}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid gap-1.5 grid-cols-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={gradeStatus === "passed" ? "default" : "outline"}
+                        onClick={() => setGradeStatus("passed")}
+                        className={
+                          "h-8 px-2 text-xs font-light truncate " +
+                          (gradeStatus === "passed"
+                            ? "bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
+                            : "border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/10")
+                        }
+                      >
+                        <CheckCircle2 className="mr-1 h-3.5 w-3.5 shrink-0" />
+                        Pass
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={gradeStatus === "revision_required" ? "default" : "outline"}
+                        onClick={() => setGradeStatus("revision_required")}
+                        className={
+                          "h-8 px-2 text-xs font-light truncate " +
+                          (gradeStatus === "revision_required"
+                            ? "bg-rose-500 text-rose-950 hover:bg-rose-400"
+                            : "border-rose-500/40 text-rose-200 hover:bg-rose-500/10")
+                        }
+                      >
+                        <XCircle className="mr-1 h-3.5 w-3.5 shrink-0" />
+                        Revise
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={gradeStatus === "pending_review" ? "default" : "outline"}
+                        onClick={() => setGradeStatus("pending_review")}
+                        className={
+                          "h-8 px-2 text-xs font-light truncate " +
+                          (gradeStatus === "pending_review"
+                            ? "bg-amber-500 text-amber-950 hover:bg-amber-400"
+                            : "border-amber-500/40 text-amber-200 hover:bg-amber-500/10")
+                        }
+                      >
+                        <Clock className="mr-1 h-3.5 w-3.5 shrink-0" />
+                        Pending
+                      </Button>
+                    </div>
+
+                    {selectedActivity?.assessments?.some((a) => a.is_graded) && (
+                      <div className="space-y-1">
+                        <Label htmlFor="grade-score" className="text-[11px] font-light text-slate-500">
+                          Score
+                          {(() => {
+                            const pts = selectedActivity?.assessments?.find((a) => a.is_graded)?.points_possible;
+                            return pts ? ` (out of ${pts})` : "";
+                          })()}
+                        </Label>
+                        <Input
+                          id="grade-score"
+                          type="number"
+                          value={gradeScore}
+                          onChange={(e) => setGradeScore(e.target.value)}
+                          placeholder="—"
+                          className="h-8 text-sm font-light"
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-1">
+                      <Label htmlFor="grade-feedback" className="text-[11px] font-light text-slate-500">
+                        Feedback (part of the grade, visible in student's inbox)
+                      </Label>
                       <Textarea
-                        id="comment"
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        rows={4}
-                        placeholder="Write a comment to the participant(s)..."
+                        id="grade-feedback"
+                        value={gradeFeedback}
+                        onChange={(e) => setGradeFeedback(e.target.value)}
+                        rows={6}
+                        placeholder="Mentor feedback tied to this grade..."
+                        className="text-sm font-light leading-relaxed break-words"
                       />
                     </div>
+
+                    <Button
+                      onClick={submitGrade}
+                      disabled={savingGrade}
+                      className="w-full h-9 text-xs font-medium bg-blue-500 text-blue-950 hover:bg-blue-400"
+                    >
+                      {savingGrade ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin shrink-0" />
+                      ) : (
+                        <Save className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                      )}
+                      Save grade & notify
+                    </Button>
+                  </section>
+
+                  <div className="h-px bg-slate-800" />
+
+                  <section className="space-y-2 min-w-0">
+                    <h4 className="flex items-center gap-2 text-sm font-medium text-slate-100">
+                      <MessageSquare className="h-4 w-4 text-slate-400 shrink-0" />
+                      Quick comment
+                      <span className="text-[10px] font-light text-slate-500 normal-case">
+                        (chat-style message, doesn't change status)
+                      </span>
+                    </h4>
+                    <Textarea
+                      id="comment"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      rows={3}
+                      placeholder="Send a quick note to the student..."
+                      className="text-sm font-light leading-relaxed break-words"
+                    />
                     <Button
                       onClick={submitComment}
                       disabled={savingComment || !commentText.trim()}
-                      className="w-full"
+                      variant="outline"
+                      className="w-full h-8 text-xs font-light"
                     >
                       {savingComment ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin shrink-0" />
                       ) : (
-                        <Send className="mr-2 h-4 w-4" />
+                        <Send className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                       )}
                       Send comment
                     </Button>
-                  </div>
+                  </section>
                 </div>
               ) : (
                 <div className="rounded-md border border-slate-800 bg-slate-950/50 p-8 text-center">
-                  <p className="text-slate-500">Select a submission to view details and add comments</p>
+                  <p className="text-sm font-light text-slate-500">
+                    Select a submission to view details and add comments
+                  </p>
                 </div>
               )}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={promptPreviewOpen} onOpenChange={setPromptPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col border-violet-500/30 bg-slate-950">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-sm font-medium tracking-wide uppercase text-violet-200 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-violet-300" />
+              AI grading prompt
+            </DialogTitle>
+            <DialogDescription className="text-xs font-light text-slate-400 leading-relaxed">
+              This is the exact text sent to the model. It includes the phase spec (from{" "}
+              <code className="font-mono text-[11px] text-violet-300">lib/hackathon/phase-specs/</code>),
+              the activity, and the participant&apos;s submission.
+            </DialogDescription>
+          </DialogHeader>
+
+          {promptPreviewLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-violet-300" />
+            </div>
+          ) : promptPreview ? (
+            <div className="flex flex-col gap-3 min-h-0 flex-1">
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-light">
+                <div className="rounded border border-slate-800 bg-slate-900/60 px-2 py-1.5">
+                  <span className="text-slate-500">Model:</span>{" "}
+                  <span className="font-mono text-violet-200">{promptPreview.model || "-"}</span>
+                </div>
+                <div className="rounded border border-slate-800 bg-slate-900/60 px-2 py-1.5">
+                  <span className="text-slate-500">Phase spec loaded:</span>{" "}
+                  <span className={promptPreview.has_phase_spec ? "text-emerald-300" : "text-amber-300"}>
+                    {promptPreview.has_phase_spec ? "yes" : "no"}
+                  </span>
+                </div>
+                <div className="rounded border border-slate-800 bg-slate-900/60 px-2 py-1.5 truncate">
+                  <span className="text-slate-500">Phase:</span>{" "}
+                  <span className="text-slate-200">
+                    {promptPreview.phase_number != null ? `${promptPreview.phase_number} — ` : ""}
+                    {promptPreview.phase_title ?? "(unknown)"}
+                  </span>
+                </div>
+                <div className="rounded border border-slate-800 bg-slate-900/60 px-2 py-1.5 truncate">
+                  <span className="text-slate-500">Activity:</span>{" "}
+                  <span className="text-slate-200">{promptPreview.activity_title ?? "(untitled)"}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium tracking-wide uppercase text-slate-400">
+                  Full prompt
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={copyPromptToClipboard}
+                  className="h-7 px-2 text-xs font-light border-slate-700"
+                >
+                  <Copy className="mr-1.5 h-3 w-3 shrink-0" />
+                  {promptCopied ? "Copied" : "Copy"}
+                </Button>
+              </div>
+
+              <pre className="flex-1 overflow-auto rounded-md border border-slate-800 bg-slate-950 p-3 text-[11px] font-mono font-light leading-relaxed text-slate-300 whitespace-pre-wrap break-words">
+                {promptPreview.prompt}
+              </pre>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-sm font-light text-slate-500">
+              No prompt loaded.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
