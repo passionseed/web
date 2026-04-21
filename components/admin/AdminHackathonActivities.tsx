@@ -232,7 +232,17 @@ export function AdminHackathonActivities() {
   const [gradeStatus, setGradeStatus] = useState<ReviewStatus>("pending_review");
   const [gradeScore, setGradeScore] = useState<string>("");
   const [gradeFeedback, setGradeFeedback] = useState<string>("");
-  const [savingGrade, setSavingGrade] = useState(false);
+  // Per-submission "saving" state so admin can kick off multiple saves in
+  // parallel without the button being globally disabled.
+  const [savingGradeIds, setSavingGradeIds] = useState<Set<string>>(new Set());
+  function markSaving(id: string, saving: boolean) {
+    setSavingGradeIds((prev) => {
+      const next = new Set(prev);
+      if (saving) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
   // Per-submission AI grading state so multiple submissions can be graded
   // in parallel without clobbering each other. Keyed by submission id.
   type AiJobState = {
@@ -383,6 +393,7 @@ export function AdminHackathonActivities() {
   const aiSuggesting = currentJob?.status === "running";
   const aiLiveText = currentJob?.thinking ?? "";
   const aiReasoning = currentJob?.rationale ?? "";
+  const savingGrade = selectedSubmission ? savingGradeIds.has(selectedSubmission.id) : false;
 
   function togglePhase(phaseId: string) {
     setExpandedPhases((prev) => {
@@ -666,26 +677,36 @@ export function AdminHackathonActivities() {
   async function submitGrade() {
     if (!selectedSubmission) return;
 
-    setSavingGrade(true);
+    // Snapshot all inputs at call time. The admin can switch submissions or
+    // edit the form while this save is in flight; the request must still
+    // apply to the submission it was kicked off for.
+    const targetId = selectedSubmission.id;
+    const targetScope = selectedSubmission.scope;
+    const statusAtCall = gradeStatus;
+    const feedbackAtCall = gradeFeedback.trim();
+    const scoreRaw = gradeScore.trim();
+    const parsedScore = scoreRaw === "" ? null : Number(scoreRaw);
+
+    if (parsedScore !== null && Number.isNaN(parsedScore)) {
+      setMessage("Score must be a number");
+      return;
+    }
+
+    if (savingGradeIds.has(targetId)) return; // already saving this one
+
+    markSaving(targetId, true);
     setMessage("");
 
     try {
-      const parsedScore = gradeScore.trim() === "" ? null : Number(gradeScore);
-      if (parsedScore !== null && Number.isNaN(parsedScore)) {
-        setMessage("Score must be a number");
-        setSavingGrade(false);
-        return;
-      }
-
       const response = await fetch(
-        `/api/admin/hackathon/submissions/${selectedSubmission.scope}/${selectedSubmission.id}/review`,
+        `/api/admin/hackathon/submissions/${targetScope}/${targetId}/review`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            review_status: gradeStatus,
+            review_status: statusAtCall,
             score_awarded: parsedScore,
-            feedback: gradeFeedback.trim(),
+            feedback: feedbackAtCall,
           }),
         }
       );
@@ -699,13 +720,12 @@ export function AdminHackathonActivities() {
 
       setMessage(`Grade saved. Notified ${data.inbox_count} participant(s).`);
 
-      // Optimistic local update — no full refetch. The /review endpoint
-      // returns the freshly upserted review; we merge it into `phases` and
-      // bump the submission's status. Saves 1–4s of network + render churn.
+      // Optimistic local update targeting the CAPTURED id, not the currently
+      // selected submission. This way parallel saves don't clobber each other
+      // when the admin switches submissions mid-flight.
       const newReview = data.review;
-      const submissionId = selectedSubmission.id;
       const newSubmissionStatus =
-        gradeStatus === "pending_review" ? "pending_review" : "submitted";
+        statusAtCall === "pending_review" ? "pending_review" : "submitted";
       let statsDelta: Partial<Stats> | null = null;
 
       setPhases((prevPhases) =>
@@ -714,18 +734,18 @@ export function AdminHackathonActivities() {
           hackathon_phase_activities: phase.hackathon_phase_activities.map((activity) => ({
             ...activity,
             submissions: activity.submissions.map((sub) => {
-              if (sub.id !== submissionId) return sub;
+              if (sub.id !== targetId) return sub;
               const prevStatus = sub.review_status;
-              if (prevStatus !== gradeStatus) {
+              if (prevStatus !== statusAtCall) {
                 statsDelta = {
                   [prevStatus]: -1,
-                  [gradeStatus]: 1,
+                  [statusAtCall]: 1,
                 } as Partial<Stats>;
               }
               return {
                 ...sub,
                 status: newSubmissionStatus,
-                review_status: gradeStatus,
+                review_status: statusAtCall,
                 review: {
                   ...(sub.review ?? {}),
                   ...newReview,
@@ -752,7 +772,7 @@ export function AdminHackathonActivities() {
     } catch {
       setMessage("Failed to save grade");
     } finally {
-      setSavingGrade(false);
+      markSaving(targetId, false);
     }
   }
 
@@ -1093,6 +1113,15 @@ export function AdminHackathonActivities() {
                                                   )}
                                                 </div>
                                                 <div className="flex items-center gap-1.5 shrink-0">
+                                                  {savingGradeIds.has(submission.id) && (
+                                                    <Badge
+                                                      variant="outline"
+                                                      className="border-blue-500/40 text-blue-200 bg-blue-500/10 text-[10px] font-light h-5 px-1.5"
+                                                    >
+                                                      <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin" />
+                                                      Saving
+                                                    </Badge>
+                                                  )}
                                                   {aiJobs[submission.id]?.status === "running" && (
                                                     <Badge
                                                       variant="outline"
