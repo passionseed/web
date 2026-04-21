@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { diffWords } from "diff";
+import { ImageLightbox } from "@/components/admin/ImageLightbox";
 import {
   CheckCircle2,
   ChevronDown,
@@ -232,6 +233,8 @@ export function AdminHackathonActivities() {
   const [gradeStatus, setGradeStatus] = useState<ReviewStatus>("pending_review");
   const [gradeScore, setGradeScore] = useState<string>("");
   const [gradeFeedback, setGradeFeedback] = useState<string>("");
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
   // Per-submission "saving" state so admin can kick off multiple saves in
   // parallel without the button being globally disabled.
   const [savingGradeIds, setSavingGradeIds] = useState<Set<string>>(new Set());
@@ -1232,12 +1235,20 @@ export function AdminHackathonActivities() {
                     <section>
                       <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
                         <ImageIcon className="h-3 w-3" /> Image
+                        <span className="text-slate-600 normal-case font-light">(click to zoom)</span>
                       </p>
-                      <img
-                        src={selectedSubmission.image_url}
-                        alt="Submission"
-                        className="max-h-72 rounded-md border border-slate-800 object-contain"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setLightboxSrc(selectedSubmission.image_url)}
+                        className="block max-w-full rounded-md border border-slate-800 overflow-hidden hover:border-slate-600 focus:outline-none focus:border-slate-500 transition cursor-zoom-in"
+                        aria-label="View image full screen"
+                      >
+                        <img
+                          src={selectedSubmission.image_url}
+                          alt="Submission"
+                          className="max-h-72 w-auto object-contain"
+                        />
+                      </button>
                     </section>
                   )}
 
@@ -1618,6 +1629,8 @@ export function AdminHackathonActivities() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </div>
   );
 }
