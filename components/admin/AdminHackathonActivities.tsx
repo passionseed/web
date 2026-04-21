@@ -691,12 +691,58 @@ export function AdminHackathonActivities() {
         return;
       }
 
-      setMessage(
-        `Grade saved. Notified ${data.inbox_count} participant(s)${
-          data.push_target_count ? ` (${data.push_target_count} push target(s))` : ""
-        }.`
+      setMessage(`Grade saved. Notified ${data.inbox_count} participant(s).`);
+
+      // Optimistic local update — no full refetch. The /review endpoint
+      // returns the freshly upserted review; we merge it into `phases` and
+      // bump the submission's status. Saves 1–4s of network + render churn.
+      const newReview = data.review;
+      const submissionId = selectedSubmission.id;
+      const newSubmissionStatus =
+        gradeStatus === "pending_review" ? "pending_review" : "submitted";
+      let statsDelta: Partial<Stats> | null = null;
+
+      setPhases((prevPhases) =>
+        prevPhases.map((phase) => ({
+          ...phase,
+          hackathon_phase_activities: phase.hackathon_phase_activities.map((activity) => ({
+            ...activity,
+            submissions: activity.submissions.map((sub) => {
+              if (sub.id !== submissionId) return sub;
+              const prevStatus = sub.review_status;
+              if (prevStatus !== gradeStatus) {
+                statsDelta = {
+                  [prevStatus]: -1,
+                  [gradeStatus]: 1,
+                } as Partial<Stats>;
+              }
+              return {
+                ...sub,
+                status: newSubmissionStatus,
+                review_status: gradeStatus,
+                review: {
+                  ...(sub.review ?? {}),
+                  ...newReview,
+                  ai_draft: null,
+                  ai_draft_generated_at: null,
+                  ai_draft_model: null,
+                  ai_draft_source: null,
+                },
+              };
+            }),
+          })),
+        }))
       );
-      await fetchData({ silent: true });
+
+      if (statsDelta) {
+        setStats((prev) => {
+          const next = { ...prev } as Stats;
+          for (const [key, delta] of Object.entries(statsDelta!)) {
+            (next as any)[key] = Math.max(0, ((next as any)[key] ?? 0) + (delta as number));
+          }
+          return next;
+        });
+      }
     } catch {
       setMessage("Failed to save grade");
     } finally {
