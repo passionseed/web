@@ -13,7 +13,10 @@
  * partial-score grades always wait for human approval.
  */
 
-import { reviewStatusToSubmissionStatus } from "@/lib/hackathon/admin-submissions";
+import {
+  buildReviewInboxItems,
+  reviewStatusToSubmissionStatus,
+} from "@/lib/hackathon/admin-submissions";
 
 export type AiDraftStatus = "passed" | "revision_required" | "pending_review";
 export type AiDraftSource = "manual" | "bulk" | "auto_on_submit";
@@ -43,13 +46,13 @@ export type PersistDraftOptions = {
 };
 
 /**
- * Auto-approve rule: graded activity, AI said passed, full points awarded.
- * This is the ONLY path that lets AI write a real review without human click.
+ * Auto-approve rule: AI said passed → promote + notify, no admin click.
+ * Applies to both graded (any score the AI chose to award) and ungraded
+ * activities. `revision_required` and unparseable outputs still wait for a
+ * human to click Approve/Edit/Discard.
  */
 export function maybeAutoApprove(draft: AiDraft): boolean {
-  if (draft.status !== "passed") return false;
-  if (draft.points_possible == null || draft.score_awarded == null) return false;
-  return draft.score_awarded >= draft.points_possible;
+  return draft.status === "passed";
 }
 
 /**
@@ -124,18 +127,90 @@ export async function persistDraft(
   }
 
   if (promote) {
-    // Keep the submission row's `status` in sync with the promoted review.
+    // Keep the submission row's `status` in sync with the promoted review
+    // AND insert inbox items so the student is actually notified — same as
+    // the manual admin-review path. Without this step, auto-approve would
+    // save silently and the student would never know their submission passed.
     const table =
       scope === "individual"
         ? "hackathon_phase_activity_submissions"
         : "hackathon_phase_activity_team_submissions";
-    await serviceClient
+
+    // Look up the minimum we need to build inbox items + figure out recipients.
+    const { data: subRow } = await serviceClient
       .from(table)
-      .update({
-        status: reviewStatusToSubmissionStatus(draft.status as any),
-        updated_at: now,
-      })
-      .eq("id", submissionId);
+      .select(
+        scope === "individual"
+          ? "id, activity_id, participant_id"
+          : "id, activity_id, team_id"
+      )
+      .eq("id", submissionId)
+      .single();
+
+    const activityId = (subRow as any)?.activity_id ?? null;
+
+    // Fetch team members (if team scope) and the activity title in parallel.
+    const [participantIds, activityTitle] = await Promise.all([
+      (async (): Promise<string[]> => {
+        if (scope === "individual") {
+          const pid = (subRow as any)?.participant_id;
+          return pid ? [pid] : [];
+        }
+        const teamId = (subRow as any)?.team_id;
+        if (!teamId) return [];
+        const { data } = await serviceClient
+          .from("hackathon_team_members")
+          .select("participant_id")
+          .eq("team_id", teamId);
+        return ((data ?? []) as Array<{ participant_id: string }>)
+          .map((m) => m.participant_id)
+          .filter(Boolean);
+      })(),
+      (async (): Promise<string> => {
+        if (!activityId) return "Hackathon submission";
+        const { data } = await serviceClient
+          .from("hackathon_phase_activities")
+          .select("title")
+          .eq("id", activityId)
+          .maybeSingle();
+        return ((data as any)?.title as string) || "Hackathon submission";
+      })(),
+    ]);
+
+    const inboxItems =
+      participantIds.length > 0
+        ? buildReviewInboxItems({
+            submissionScope: scope,
+            recipientParticipantIds: participantIds,
+            activityTitle,
+            reviewStatus: draft.status as any,
+            scoreAwarded: draft.score_awarded,
+            pointsPossible: draft.points_possible,
+            feedback: draft.feedback,
+            submissionId,
+          })
+        : [];
+
+    // Run submission-status update + inbox insert in parallel.
+    const [subUpdate, inboxInsert] = await Promise.all([
+      serviceClient
+        .from(table)
+        .update({
+          status: reviewStatusToSubmissionStatus(draft.status as any),
+          updated_at: now,
+        })
+        .eq("id", submissionId),
+      inboxItems.length > 0
+        ? serviceClient.from("hackathon_participant_inbox_items").insert(inboxItems)
+        : Promise.resolve({ error: null }),
+    ]);
+
+    if (subUpdate.error) {
+      console.error("[ai-grader.persistDraft] submission status update failed", subUpdate.error);
+    }
+    if (inboxInsert.error) {
+      console.error("[ai-grader.persistDraft] inbox notify failed", inboxInsert.error);
+    }
   }
 
   return { promoted: promote, reviewId: (result.data as any)?.id ?? null };

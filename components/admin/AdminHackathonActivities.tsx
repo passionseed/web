@@ -487,8 +487,8 @@ export function AdminHackathonActivities() {
     }
   }
 
-  function getSupergraderCandidates(): Submission[] {
-    return allSubmissions.filter((sub) => {
+  function getSupergraderCandidates(activitySubmissions: Submission[]): Submission[] {
+    return activitySubmissions.filter((sub) => {
       if (sub.review_status !== "pending_review") return false;
       if (sub.review?.ai_draft) return false;
       const job = aiJobs[sub.id];
@@ -497,17 +497,22 @@ export function AdminHackathonActivities() {
     });
   }
 
-  async function runSupergrader() {
+  // Track which activity's supergrader is currently running. Only one activity
+  // at a time so the progress message + cancel button stay unambiguous.
+  const [supergraderActivityId, setSupergraderActivityId] = useState<string | null>(null);
+
+  async function runSupergrader(activityId: string, activitySubmissions: Submission[], activityTitle: string) {
     if (supergraderRunning) return;
-    const queue = getSupergraderCandidates();
+    const queue = getSupergraderCandidates(activitySubmissions);
     if (queue.length === 0) {
-      setMessage("Nothing to super-grade — no pending submissions without a draft.");
+      setMessage(`${activityTitle}: nothing to super-grade (no pending without a draft).`);
       return;
     }
 
     setSupergraderRunning(true);
+    setSupergraderActivityId(activityId);
     setSupergraderCancel(false);
-    setMessage(`Super-grader started (${queue.length} pending, batches of ${SUPERGRADER_BATCH}).`);
+    setMessage(`${activityTitle}: super-grader started (${queue.length} pending, batches of ${SUPERGRADER_BATCH}).`);
 
     let processed = 0;
     for (let i = 0; i < queue.length; i += SUPERGRADER_BATCH) {
@@ -517,15 +522,16 @@ export function AdminHackathonActivities() {
         batch.map((sub) => requestAiSuggestion({ id: sub.id, scope: sub.scope }))
       );
       processed += batch.length;
-      setMessage(`Super-grader: ${processed}/${queue.length} graded…`);
+      setMessage(`${activityTitle}: ${processed}/${queue.length} graded…`);
     }
 
     setMessage(
       supergraderCancel
-        ? `Super-grader cancelled at ${processed}/${queue.length}.`
-        : `Super-grader done. ${processed} submissions graded. Review and approve drafts below.`
+        ? `${activityTitle}: super-grader cancelled at ${processed}/${queue.length}.`
+        : `${activityTitle}: super-grader done. ${processed} graded.`
     );
     setSupergraderRunning(false);
+    setSupergraderActivityId(null);
     setSupergraderCancel(false);
   }
 
@@ -860,45 +866,6 @@ export function AdminHackathonActivities() {
             </select>
           </div>
 
-          {(() => {
-            const candidates = getSupergraderCandidates();
-            const runningCount = Object.values(aiJobs).filter((j) => j.status === "running").length;
-            return (
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={runSupergrader}
-                  disabled={supergraderRunning || candidates.length === 0}
-                  className="h-8 px-3 text-xs font-medium bg-violet-500 text-violet-950 hover:bg-violet-400 disabled:bg-slate-800 disabled:text-slate-500"
-                >
-                  {supergraderRunning ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  )}
-                  {supergraderRunning
-                    ? `Super-grading… (${runningCount} running)`
-                    : `Super-grade ${candidates.length} pending`}
-                </Button>
-                {supergraderRunning && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSupergraderCancel(true)}
-                    className="h-8 px-3 text-xs font-light"
-                  >
-                    Cancel after batch
-                  </Button>
-                )}
-                <span className="text-[11px] font-light text-slate-500">
-                  Batches of {SUPERGRADER_BATCH}. Full-score passes auto-approve; others wait for your review.
-                </span>
-              </div>
-            );
-          })()}
-
           {(statusFilter !== "all" || scopeFilter !== "all" || search.trim()) && (
             <div className="text-sm text-slate-400">
               Showing {filteredSubmissions.length} of {stats.total_submissions} submissions
@@ -1024,10 +991,59 @@ export function AdminHackathonActivities() {
                                   )}
 
                                   <div className="space-y-2">
-                                    <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                                      <Users className="h-4 w-4" />
-                                      Submissions
-                                    </h4>
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                      <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                        <Users className="h-4 w-4" />
+                                        Submissions
+                                      </h4>
+                                      {(() => {
+                                        const candidates = getSupergraderCandidates(activity.submissions);
+                                        const isThisActivityRunning =
+                                          supergraderRunning && supergraderActivityId === activity.id;
+                                        const runningHere = activity.submissions.filter(
+                                          (s) => aiJobs[s.id]?.status === "running"
+                                        ).length;
+                                        return (
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              onClick={() =>
+                                                runSupergrader(
+                                                  activity.id,
+                                                  activity.submissions,
+                                                  activity.title
+                                                )
+                                              }
+                                              disabled={
+                                                supergraderRunning || candidates.length === 0
+                                              }
+                                              className="h-7 px-2 text-[11px] font-medium bg-violet-500 text-violet-950 hover:bg-violet-400 disabled:bg-slate-800 disabled:text-slate-500"
+                                            >
+                                              {isThisActivityRunning ? (
+                                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                              ) : (
+                                                <Sparkles className="mr-1 h-3 w-3" />
+                                              )}
+                                              {isThisActivityRunning
+                                                ? `Grading ${runningHere}…`
+                                                : `Super-grade ${candidates.length} pending`}
+                                            </Button>
+                                            {isThisActivityRunning && (
+                                              <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => setSupergraderCancel(true)}
+                                                className="h-7 px-2 text-[11px] font-light"
+                                              >
+                                                Cancel after batch
+                                              </Button>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
 
                                     {activity.submissions.length === 0 ? (
                                       <p className="text-sm text-slate-600 py-2">No submissions yet.</p>
