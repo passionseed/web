@@ -244,6 +244,13 @@ export function AdminHackathonActivities() {
     startedAt: number;
   };
   const [aiJobs, setAiJobs] = useState<Record<string, AiJobState>>({});
+  // Supergrader: runs AI grading across all pending submissions, batch_size at
+  // a time. Each grade uses the same per-submission pipeline (persists draft,
+  // auto-approves full-score graded items). Admins review + approve the rest.
+  const [supergraderRunning, setSupergraderRunning] = useState(false);
+  const [supergraderCancel, setSupergraderCancel] = useState(false);
+  const SUPERGRADER_BATCH = 10;
+
   function updateAiJob(id: string, patch: Partial<AiJobState>) {
     setAiJobs((prev) => {
       const base: AiJobState = prev[id] ?? {
@@ -274,28 +281,36 @@ export function AdminHackathonActivities() {
     void fetchData();
   }, []);
 
-  async function fetchData() {
-    setLoading(true);
-    setMessage("");
+  async function fetchData(options: { silent?: boolean } = {}) {
+    const { silent = false } = options;
+    if (!silent) {
+      setLoading(true);
+      setMessage("");
+    }
 
     try {
       const response = await fetch("/api/admin/hackathon/activities");
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage(data.error ?? "Failed to fetch activities");
+        if (!silent) setMessage(data.error ?? "Failed to fetch activities");
         return;
       }
 
       setPhases(data.phases ?? []);
       setStats(data.stats ?? { total_submissions: 0, pending_review: 0, passed: 0, revision_required: 0 });
 
-      const allPhaseIds = (data.phases ?? []).map((p: Phase) => p.id);
-      setExpandedPhases(new Set(allPhaseIds));
+      // Only expand phases on the initial (non-silent) load, so background
+      // refreshes after AI grading don't clobber the user's collapse state
+      // (which otherwise feels like a full page reload).
+      if (!silent) {
+        const allPhaseIds = (data.phases ?? []).map((p: Phase) => p.id);
+        setExpandedPhases(new Set(allPhaseIds));
+      }
     } catch {
-      setMessage("Failed to fetch activities");
+      if (!silent) setMessage("Failed to fetch activities");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
@@ -472,6 +487,48 @@ export function AdminHackathonActivities() {
     }
   }
 
+  function getSupergraderCandidates(): Submission[] {
+    return allSubmissions.filter((sub) => {
+      if (sub.review_status !== "pending_review") return false;
+      if (sub.review?.ai_draft) return false;
+      const job = aiJobs[sub.id];
+      if (job?.status === "running") return false;
+      return true;
+    });
+  }
+
+  async function runSupergrader() {
+    if (supergraderRunning) return;
+    const queue = getSupergraderCandidates();
+    if (queue.length === 0) {
+      setMessage("Nothing to super-grade — no pending submissions without a draft.");
+      return;
+    }
+
+    setSupergraderRunning(true);
+    setSupergraderCancel(false);
+    setMessage(`Super-grader started (${queue.length} pending, batches of ${SUPERGRADER_BATCH}).`);
+
+    let processed = 0;
+    for (let i = 0; i < queue.length; i += SUPERGRADER_BATCH) {
+      if (supergraderCancel) break;
+      const batch = queue.slice(i, i + SUPERGRADER_BATCH);
+      await Promise.allSettled(
+        batch.map((sub) => requestAiSuggestion({ id: sub.id, scope: sub.scope }))
+      );
+      processed += batch.length;
+      setMessage(`Super-grader: ${processed}/${queue.length} graded…`);
+    }
+
+    setMessage(
+      supergraderCancel
+        ? `Super-grader cancelled at ${processed}/${queue.length}.`
+        : `Super-grader done. ${processed} submissions graded. Review and approve drafts below.`
+    );
+    setSupergraderRunning(false);
+    setSupergraderCancel(false);
+  }
+
   async function requestAiSuggestion(submissionOverride?: { id: string; scope: "individual" | "team" }) {
     const target =
       submissionOverride ??
@@ -548,7 +605,9 @@ export function AdminHackathonActivities() {
                 setGradeScore(s.score_awarded != null ? String(s.score_awarded) : "");
                 setGradeFeedback(s.feedback ?? "");
               }
-              void fetchData();
+              // Silent refresh so the page doesn't appear to reload when the
+              // AI finishes streaming feedback into the form.
+              void fetchData({ silent: true });
             } else if (event.type === "error") {
               updateAiJob(jobId, {
                 status: "error",
@@ -592,7 +651,7 @@ export function AdminHackathonActivities() {
         delete next[selectedSubmission.id];
         return next;
       });
-      await fetchData();
+      await fetchData({ silent: true });
     } catch {
       setMessage("Failed to discard AI draft");
     }
@@ -637,7 +696,7 @@ export function AdminHackathonActivities() {
           data.push_target_count ? ` (${data.push_target_count} push target(s))` : ""
         }.`
       );
-      await fetchData();
+      await fetchData({ silent: true });
     } catch {
       setMessage("Failed to save grade");
     } finally {
@@ -670,7 +729,7 @@ export function AdminHackathonActivities() {
 
       setMessage(`Comment saved and sent to ${data.inbox_count} participant(s)`);
       setCommentText("");
-      await fetchData();
+      await fetchData({ silent: true });
     } catch {
       setMessage("Failed to send comment");
     } finally {
@@ -717,7 +776,7 @@ export function AdminHackathonActivities() {
               </CardTitle>
               <CardDescription>View activities by phase and manage submissions</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={() => { void fetchData(); }} disabled={loading}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -754,6 +813,45 @@ export function AdminHackathonActivities() {
               <option value="team">Team</option>
             </select>
           </div>
+
+          {(() => {
+            const candidates = getSupergraderCandidates();
+            const runningCount = Object.values(aiJobs).filter((j) => j.status === "running").length;
+            return (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={runSupergrader}
+                  disabled={supergraderRunning || candidates.length === 0}
+                  className="h-8 px-3 text-xs font-medium bg-violet-500 text-violet-950 hover:bg-violet-400 disabled:bg-slate-800 disabled:text-slate-500"
+                >
+                  {supergraderRunning ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {supergraderRunning
+                    ? `Super-grading… (${runningCount} running)`
+                    : `Super-grade ${candidates.length} pending`}
+                </Button>
+                {supergraderRunning && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSupergraderCancel(true)}
+                    className="h-8 px-3 text-xs font-light"
+                  >
+                    Cancel after batch
+                  </Button>
+                )}
+                <span className="text-[11px] font-light text-slate-500">
+                  Batches of {SUPERGRADER_BATCH}. Full-score passes auto-approve; others wait for your review.
+                </span>
+              </div>
+            );
+          })()}
 
           {(statusFilter !== "all" || scopeFilter !== "all" || search.trim()) && (
             <div className="text-sm text-slate-400">
