@@ -6,6 +6,11 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getModel } from "@/lib/ai/modelRegistry";
 import { getPhaseSpec } from "@/lib/hackathon/phase-specs";
 import { persistDraft, type AiDraft } from "@/lib/hackathon/ai-grader";
+import {
+  analyzeSubmission,
+  formatImageAnalysisForPrompt,
+  type SubmissionImageAnalysis,
+} from "@/lib/hackathon/image-analysis";
 
 const AI_MODEL = "MiniMax-M2.7-highspeed";
 
@@ -243,6 +248,7 @@ function buildPrompt(params: {
   scope: "individual" | "team";
   ownerLabel: string;
   priorRevisions: PriorRevision[];
+  imageAnalysis: SubmissionImageAnalysis | null;
 }) {
   const {
     phaseSpec,
@@ -258,6 +264,7 @@ function buildPrompt(params: {
     ownerLabel,
     assessments,
     priorRevisions,
+    imageAnalysis,
   } = params;
 
   const phaseContext = compactPhaseSpec(phaseSpec, phaseNumber, phaseTitle);
@@ -266,10 +273,14 @@ function buildPrompt(params: {
   const shortAnswer = compactText(textAnswer, 2200) ?? "(no text submitted)";
   const assessmentQuestions = compactText(formatAssessmentQuestions(assessments), 1600) ?? "(none)";
   const priorBlock = formatPriorRevisions(priorRevisions);
+  const imageAnalysisText = imageAnalysis ? formatImageAnalysisForPrompt(imageAnalysis) : null;
+
+  const hasVisualSubmission = imageUrl || fileUrls.length > 0;
 
   return [
-    "You are a startup advisor + social impact mentor grading one hackathon activity.",
-    "Use backward design: infer the intended learning outcome, ask what evidence would prove it, then judge only from the submission.",
+    "You are a warm, encouraging mentor grading one hackathon activity.",
+    "Your ONLY job: check whether the student did what the assessment instructions asked them to do. Nothing more.",
+    "Default to generous. This is an early-stage hackathon, not a PhD defense — reward effort and good-faith attempts.",
     "",
     "LANGUAGE — STRICT",
     "Detect the language of the student's SUBMISSION text (not the instructions, not the phase spec).",
@@ -280,43 +291,57 @@ function buildPrompt(params: {
     "",
     "Be warm, direct, specific. No fluff, no rubric recital, no emojis.",
     "",
-    "PHASE AIM",
+    "=== PRIMARY CRITERIA — judge the submission ONLY against these ===",
+    "",
+    "ACTIVITY INSTRUCTIONS (this is what the student was told to do)",
+    shortInstructions,
+    "",
+    "ASSESSMENT QUESTIONS (the specific prompts they were asked to answer)",
+    assessmentQuestions,
+    "",
+    "Grade based on whether the student addressed THESE instructions and questions.",
+    "If they answered the questions with a reasonable attempt, that is a pass — even if the thinking is still rough.",
+    "",
+    "=== CONTEXT ONLY — do not use these to add extra requirements ===",
+    "",
+    "Phase aim (informational):",
     phaseContext,
     "",
-    "ACTIVITY",
+    "Optional lens you MAY reference for feedback, but not as a pass/fail gate:",
+    `- Nice-to-see: ${activityLens.outcome}`,
+    `- Evidence that deepens the answer: ${activityLens.evidence}`,
+    "",
+    "ACTIVITY METADATA",
     `Title: ${activityTitle ?? "(untitled)"}`,
     `Scope: ${scope}`,
     `Owner: ${ownerLabel}`,
     pointsPossible != null ? `Points possible: ${pointsPossible}` : "Ungraded (no numeric score)",
     "",
-    "Backward-design lens for this activity:",
-    `- Desired outcome: ${activityLens.outcome}`,
-    `- Evidence to look for: ${activityLens.evidence}`,
-    `- Red flag: ${activityLens.redFlag}`,
-    "",
-    "INSTRUCTIONS",
-    shortInstructions,
-    "",
-    "ASSESSMENT QUESTIONS (what the student was literally asked to answer)",
-    assessmentQuestions,
-    "Judge the submission directly against these questions, not just the title.",
-    "",
-    priorBlock ? "PRIOR ATTEMPTS (oldest → newest). Judge whether the student addressed previous feedback." : "",
+    priorBlock ? "PRIOR ATTEMPTS (oldest → newest). Credit the student for addressing earlier feedback." : "",
     priorBlock ?? "",
     priorBlock ? "" : "",
     "CURRENT SUBMISSION",
     `Text:\n${shortAnswer}`,
-    imageUrl ? `Image URL: ${imageUrl}` : "",
-    fileUrls.length > 0 ? `Files:\n${fileUrls.join("\n")}` : "",
     "",
-    "GRADING RULES",
-    "- passed = real thinking + clear evidence of the activity outcome.",
-    "- revision_required = effort is visible but key evidence is weak, vague, generic, off-scope, or AI-sloppy.",
-    "- pending_review = only when you truly cannot judge from the provided material.",
+    hasVisualSubmission ? "VISUAL SUBMISSION ANALYSIS" : "",
+    hasVisualSubmission ? "The student submitted visual material. Here is the AI analysis of what the images show:" : "",
+    hasVisualSubmission ? "---" : "",
+    imageAnalysisText ?? (hasVisualSubmission ? "(Image analysis was not available for this submission)" : ""),
+    hasVisualSubmission ? "---" : "",
+    hasVisualSubmission ? "Treat visuals as supporting evidence that the student engaged with the instructions." : "",
+    hasVisualSubmission ? "" : "",
+    imageUrl ? `Original Image URL: ${imageUrl}` : "",
+    fileUrls.length > 0 ? `Additional Files:\n${fileUrls.join("\n")}` : "",
+    "",
+    "GRADING RULES — be generous",
+    "- passed = the student addressed the instructions and assessment questions with a genuine attempt. Rough or incomplete thinking is still a pass as long as the core ask was answered.",
+    "- revision_required = ONLY when the student clearly did not answer what was asked (blank, off-topic, one-liner for a multi-part question, copy-paste without substance).",
+    "- pending_review = only when you truly cannot tell from the provided material.",
+    "- Do NOT fail a student for lack of depth, missing 'evidence', vague phrasing, or not hitting the phase aim. Those belong in feedback, not in the pass/fail decision.",
     pointsPossible != null
-      ? `- score_awarded = 0..${pointsPossible}. Around ${Math.round(pointsPossible * 0.7)} = solid pass.`
+      ? `- score_awarded = 0..${pointsPossible}. Around ${Math.round(pointsPossible * 0.6)} = a reasonable attempt; only go lower when the instructions were clearly not addressed.`
       : "- score_awarded = null.",
-    "- feedback = 3 short paragraphs: what is real, what is missing, next move within 30 minutes.",
+    "- feedback = 3 short paragraphs in an encouraging tone: (1) what they did that works, (2) one or two things that would deepen the answer (suggestion, not requirement), (3) a small, doable next step.",
     "- reasoning = 2-4 short admin-only sentences explaining the judgment.",
     "",
     "OUTPUT",
@@ -390,6 +415,26 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
     ? (sub.revisions as PriorRevision[])
     : [];
 
+  // Analyze images if present
+  const activityLens = inferActivityLens(activity?.title ?? null, activity?.instructions ?? null);
+  const imageUrl = sub.image_url ?? null;
+  const fileUrls = Array.isArray(sub.file_urls) ? sub.file_urls : [];
+
+  let imageAnalysis: SubmissionImageAnalysis | null = null;
+  if (imageUrl || fileUrls.length > 0) {
+    try {
+      imageAnalysis = await analyzeSubmission({
+        imageUrl,
+        fileUrls,
+        activityLens,
+        activityTitle: activity?.title ?? null,
+      });
+    } catch (err) {
+      console.error("[ai-grade] Image analysis failed:", err);
+      // Continue without image analysis - the prompt will note this limitation
+    }
+  }
+
   const prompt = buildPrompt({
     phaseSpec,
     phaseNumber: phase?.phase_number ?? null,
@@ -399,11 +444,12 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
     pointsPossible,
     assessments,
     textAnswer: sub.text_answer ?? null,
-    imageUrl: sub.image_url ?? null,
-    fileUrls: Array.isArray(sub.file_urls) ? sub.file_urls : [],
+    imageUrl,
+    fileUrls,
     scope,
     ownerLabel,
     priorRevisions,
+    imageAnalysis,
   });
 
   return {
@@ -413,6 +459,7 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
     phaseTitle: phase?.title ?? null,
     activityTitle: activity?.title ?? null,
     pointsPossible,
+    hasImageAnalysis: Boolean(imageAnalysis?.primaryImage?.analysis || imageAnalysis?.files?.length),
   };
 }
 
@@ -438,6 +485,7 @@ export async function GET(
     phase_title: context.phaseTitle,
     activity_title: context.activityTitle,
     points_possible: context.pointsPossible,
+    has_image_analysis: context.hasImageAnalysis,
     prompt: context.prompt,
   });
 }
@@ -477,7 +525,7 @@ export async function POST(
       model: getModel(AI_MODEL),
       prompt: context.prompt,
       temperature: 0.5,
-      maxOutputTokens: 1500,
+      maxOutputTokens: 3000,
       onError: (e) => {
         console.error("[admin/hackathon/ai-grade] stream error:", e);
       },
@@ -501,14 +549,21 @@ export async function POST(
           }
         };
 
+        // Send image analysis status if available
+        if (context.hasImageAnalysis) {
+          send({ type: "status", message: "Image analysis completed - visual content included in grading context" });
+        }
+
         try {
           for await (const part of result.fullStream) {
             // Accumulate FIRST, independent of client status.
             if (part.type === "text-delta") {
-              accumulated += part.delta;
-              send({ type: "thinking", delta: part.delta });
+              const delta = (part as any).text ?? "";
+              accumulated += delta;
+              send({ type: "thinking", delta });
             } else if (part.type === "reasoning-delta") {
-              send({ type: "reasoning", delta: part.delta });
+              const delta = (part as any).text ?? "";
+              send({ type: "reasoning", delta });
             } else if (part.type === "error") {
               send({ type: "error", message: String((part as any).error ?? "stream error") });
             }
