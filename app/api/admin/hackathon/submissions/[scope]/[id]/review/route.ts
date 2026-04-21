@@ -84,10 +84,18 @@ export async function POST(
       ? "hackathon_phase_activity_submissions"
       : "hackathon_phase_activity_team_submissions";
 
+  // Narrow the submission SELECT — we don't need `revisions` jsonb, file_urls,
+  // full text etc. to save a grade. This alone trims a lot of payload on
+  // programs with long answers or many revisions.
+  const baseColumns =
+    scope === "individual"
+      ? "id, participant_id, status"
+      : "id, team_id, status";
+
   const { data: submission, error: submissionError } = await serviceClient
     .from(table)
     .select(`
-      *,
+      ${baseColumns},
       hackathon_phase_activities(id, title),
       hackathon_phase_activity_assessments(id, points_possible)
     `)
@@ -107,35 +115,37 @@ export async function POST(
   const reviewStatus = parsed.data.review_status as HackathonReviewStatus;
   const now = new Date().toISOString();
 
-  const recipientParticipantIds = await getRecipientParticipantIds({
-    serviceClient,
-    scope,
-    submission,
-  });
-
-  if (recipientParticipantIds.length === 0) {
-    return NextResponse.json({ error: "No participants found for submission" }, { status: 400 });
-  }
+  const reviewKey =
+    scope === "individual"
+      ? { column: "individual_submission_id", value: id }
+      : { column: "team_submission_id", value: id };
 
   const reviewTarget =
     scope === "individual"
       ? { individual_submission_id: id, team_submission_id: null }
       : { individual_submission_id: null, team_submission_id: id };
 
-  const reviewKey =
-    scope === "individual"
-      ? { column: "individual_submission_id", value: id }
-      : { column: "team_submission_id", value: id };
+  // Run the two independent reads in parallel — they both need `submission`
+  // but don't depend on each other. Saves one round-trip in the happy path.
+  const [recipientParticipantIds, existingReviewResult] = await Promise.all([
+    getRecipientParticipantIds({ serviceClient, scope, submission }),
+    serviceClient
+      .from("hackathon_submission_reviews")
+      .select("id")
+      .eq(reviewKey.column, reviewKey.value)
+      .maybeSingle(),
+  ]);
 
-  const { data: existingReview, error: existingReviewError } = await serviceClient
-    .from("hackathon_submission_reviews")
-    .select("id")
-    .eq(reviewKey.column, reviewKey.value)
-    .maybeSingle();
+  const existingReview = existingReviewResult.data;
+  const existingReviewError = existingReviewResult.error;
 
   if (existingReviewError) {
     console.error("[admin/hackathon/submissions/review] review lookup error", existingReviewError);
     return NextResponse.json({ error: "Failed to check existing review" }, { status: 500 });
+  }
+
+  if (recipientParticipantIds.length === 0) {
+    return NextResponse.json({ error: "No participants found for submission" }, { status: 400 });
   }
 
   const reviewPayload = {
@@ -172,19 +182,6 @@ export async function POST(
     return NextResponse.json({ error: "Failed to save review" }, { status: 500 });
   }
 
-  const { error: submissionUpdateError } = await serviceClient
-    .from(table)
-    .update({
-      status: reviewStatusToSubmissionStatus(reviewStatus),
-      updated_at: now,
-    })
-    .eq("id", id);
-
-  if (submissionUpdateError) {
-    console.error("[admin/hackathon/submissions/review] submission status error", submissionUpdateError);
-    return NextResponse.json({ error: "Review saved, but submission status update failed" }, { status: 500 });
-  }
-
   const inboxItems = buildReviewInboxItems({
     submissionScope: scope,
     recipientParticipantIds,
@@ -196,23 +193,38 @@ export async function POST(
     submissionId: id,
   });
 
-  const { error: inboxError } = await serviceClient
-    .from("hackathon_participant_inbox_items")
-    .insert(inboxItems);
+  // Run the two remaining writes in parallel. They're independent — updating
+  // the submission row's status and inserting inbox notifications don't care
+  // about each other. The review row has already been written above, which
+  // is the only thing the admin UI needs for correctness.
+  const [submissionUpdateResult, inboxResult] = await Promise.all([
+    serviceClient
+      .from(table)
+      .update({
+        status: reviewStatusToSubmissionStatus(reviewStatus),
+        updated_at: now,
+      })
+      .eq("id", id),
+    serviceClient
+      .from("hackathon_participant_inbox_items")
+      .insert(inboxItems),
+  ]);
 
-  if (inboxError) {
-    console.error("[admin/hackathon/submissions/review] inbox insert error", inboxError);
+  if (submissionUpdateResult.error) {
+    console.error("[admin/hackathon/submissions/review] submission status error", submissionUpdateResult.error);
+    return NextResponse.json({ error: "Review saved, but submission status update failed" }, { status: 500 });
+  }
+  if (inboxResult.error) {
+    console.error("[admin/hackathon/submissions/review] inbox insert error", inboxResult.error);
     return NextResponse.json({ error: "Review saved, but inbox notification failed" }, { status: 500 });
   }
 
-  const { count: pushTokenCount } = await serviceClient
-    .from("hackathon_participant_push_tokens")
-    .select("id", { count: "exact", head: true })
-    .in("participant_id", recipientParticipantIds);
+  // Skip the push-token COUNT query — it only powered a cosmetic
+  // "(N push target(s))" hint in the toast and added ~200–500ms for nothing
+  // (this endpoint never actually sends a push).
 
   return NextResponse.json({
     review: reviewResult.data,
     inbox_count: inboxItems.length,
-    push_target_count: pushTokenCount ?? 0,
   });
 }
