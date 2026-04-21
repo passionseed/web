@@ -284,7 +284,7 @@ function buildPrompt(params: {
     "",
     "LANGUAGE — STRICT",
     "Detect the language of the student's SUBMISSION text (not the instructions, not the phase spec).",
-    "- If the submission contains ANY Thai script (ก-๙), write EVERYTHING in natural Thai — your live thinking, your reasoning, the feedback, everything. Use warm พี่-style Thai, not formal academic Thai.",
+    "- If the submission contains ANY Thai script (ก-๙), write EVERYTHING in natural Thai — your live thinking, your reasoning, the feedback, everything. Use warm but respectful Thai that addresses the student as คุณ. Do NOT call them หนู (too diminutive) or use พี่-style. Keep it collegial, not formal academic, not parental.",
     "- Only if the submission is purely English (zero Thai characters), write in English.",
     "- Never mix languages inside one sentence. Never translate the student's words back to English when writing in Thai.",
     "- This rule overrides any default language habit you have.",
