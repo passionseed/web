@@ -234,6 +234,7 @@ export function AdminHackathonActivities() {
   const [gradeScore, setGradeScore] = useState<string>("");
   const [gradeFeedback, setGradeFeedback] = useState<string>("");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [relatedModalOpen, setRelatedModalOpen] = useState(false);
 
   // Per-submission "saving" state so admin can kick off multiple saves in
   // parallel without the button being globally disabled.
@@ -319,12 +320,34 @@ export function AdminHackathonActivities() {
       if (!silent) {
         const allPhaseIds = (data.phases ?? []).map((p: Phase) => p.id);
         setExpandedPhases(new Set(allPhaseIds));
+        const allActivityIds: string[] = [];
+        for (const phase of (data.phases ?? []) as Phase[]) {
+          for (const act of phase.hackathon_phase_activities) allActivityIds.push(act.id);
+        }
+        setExpandedActivities(new Set(allActivityIds));
       }
     } catch {
       if (!silent) setMessage("Failed to fetch activities");
     } finally {
       if (!silent) setLoading(false);
     }
+  }
+
+  // Small helpers used by the navigator's sticky headers.
+  function computeSubStats(subs: Submission[]) {
+    let total = 0, pending = 0, passed = 0, revision = 0, aiDrafts = 0;
+    for (const s of subs) {
+      total++;
+      if (s.review_status === "pending_review") pending++;
+      else if (s.review_status === "passed") passed++;
+      else if (s.review_status === "revision_required") revision++;
+      if (s.review?.ai_draft) aiDrafts++;
+    }
+    return { total, pending, passed, revision, aiDrafts };
+  }
+
+  function phaseSubs(phase: Phase): Submission[] {
+    return phase.hackathon_phase_activities.flatMap((a) => a.submissions);
   }
 
   const allSubmissions = useMemo(() => {
@@ -388,6 +411,75 @@ export function AdminHackathonActivities() {
       }
     }
     return null;
+  }, [selectedSubmission, phases]);
+
+  // Related submissions = everything in the hackathon by the same owner
+  // (participant or team). Also includes cross-links: if selected is a team
+  // submission, we surface participant submissions from any of its members;
+  // if selected is a participant submission, we surface team submissions the
+  // participant belongs to.
+  const relatedSubmissions = useMemo(() => {
+    if (!selectedSubmission) return [];
+    const targetId = selectedSubmission.id;
+    const targetParticipantId =
+      selectedSubmission.participant?.id ?? selectedSubmission.submitted_by?.id ?? null;
+    const targetTeamId = selectedSubmission.team?.id ?? null;
+    const targetTeamMemberIds = new Set(
+      selectedSubmission.team_members.map((m) => m.id)
+    );
+
+    type Enriched = {
+      submission: Submission;
+      phaseNumber: number;
+      phaseTitle: string;
+      activityOrder: number;
+      activityTitle: string;
+      matchReason: string;
+    };
+
+    const out: Enriched[] = [];
+    for (const phase of phases) {
+      for (const activity of phase.hackathon_phase_activities) {
+        for (const sub of activity.submissions) {
+          if (sub.id === targetId && sub.scope === selectedSubmission.scope) continue;
+
+          let reason: string | null = null;
+          const subParticipantId = sub.participant?.id ?? sub.submitted_by?.id ?? null;
+
+          if (targetParticipantId && subParticipantId === targetParticipantId) {
+            reason = "same person";
+          } else if (targetTeamId && sub.team?.id === targetTeamId) {
+            reason = "same team";
+          } else if (
+            targetTeamId &&
+            subParticipantId &&
+            targetTeamMemberIds.has(subParticipantId)
+          ) {
+            reason = "team member";
+          } else if (
+            targetParticipantId &&
+            sub.team_members.some((m) => m.id === targetParticipantId)
+          ) {
+            reason = `team of ${selectedSubmission.participant?.name ?? "participant"}`;
+          }
+
+          if (!reason) continue;
+          out.push({
+            submission: sub,
+            phaseNumber: phase.phase_number,
+            phaseTitle: phase.title,
+            activityOrder: activity.display_order,
+            activityTitle: activity.title,
+            matchReason: reason,
+          });
+        }
+      }
+    }
+    out.sort(
+      (a, b) =>
+        a.phaseNumber - b.phaseNumber || a.activityOrder - b.activityOrder
+    );
+    return out;
   }, [selectedSubmission, phases]);
 
   // Per-submission AI grading job view for the currently selected submission.
@@ -908,275 +1000,216 @@ export function AdminHackathonActivities() {
           ) : phases.length === 0 ? (
             <div className="py-16 text-center text-sm text-slate-500">No phases found.</div>
           ) : (
-            <div className="grid gap-4 xl:grid-cols-[3fr_7fr]">
-              <div className="space-y-3 max-h-[800px] overflow-y-auto pr-1">
-                {phases.map((phase) => (
-                  <div key={phase.id} className="rounded-lg border border-slate-800 bg-slate-950/50">
-                    <button
-                      onClick={() => togglePhase(phase.id)}
-                      className="flex w-full items-center justify-between p-4 text-left hover:bg-slate-900/50"
-                    >
-                      <div>
-                        <h3 className="font-semibold text-slate-100">
-                          Phase {phase.phase_number}: {phase.title}
-                        </h3>
-                        {phase.description && (
-                          <p className="text-sm text-slate-500">{phase.description}</p>
-                        )}
-                        {phase.due_at && (
-                          <p className="text-xs text-slate-600 mt-1">
-                            Due: {format(new Date(phase.due_at), "MMM d, yyyy")}
-                          </p>
-                        )}
-                      </div>
-                      {expandedPhases.has(phase.id) ? (
-                        <ChevronDown className="h-5 w-5 text-slate-500" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-slate-500" />
-                      )}
-                    </button>
+            <div className="grid gap-4 items-start xl:grid-cols-[3fr_7fr]">
+              <aside className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/40">
+                {phases.map((phase, phaseIdx) => {
+                  const phaseOpen = expandedPhases.has(phase.id);
+                  const pStats = computeSubStats(phaseSubs(phase));
+                  return (
+                    <section key={phase.id} className={phaseIdx > 0 ? "border-t border-slate-800" : ""}>
+                      {/* Phase header — sticks to top of scroll container. */}
+                      <button
+                        onClick={() => togglePhase(phase.id)}
+                        className="sticky top-0 z-30 flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left bg-slate-950/95 backdrop-blur border-b border-slate-800 hover:bg-slate-900/80"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {phaseOpen ? (
+                            <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
+                          )}
+                          <span className="font-semibold text-sm text-slate-100 truncate">
+                            P{phase.phase_number}. {phase.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0 text-[11px] font-light">
+                          {pStats.pending > 0 && (
+                            <span className="rounded px-1.5 py-0.5 bg-amber-500/15 text-amber-200">
+                              {pStats.pending} pending
+                            </span>
+                          )}
+                          {pStats.revision > 0 && (
+                            <span className="rounded px-1.5 py-0.5 bg-orange-500/15 text-orange-200">
+                              {pStats.revision} rev
+                            </span>
+                          )}
+                          {pStats.aiDrafts > 0 && (
+                            <span className="rounded px-1.5 py-0.5 bg-violet-500/15 text-violet-200 flex items-center gap-0.5">
+                              <Sparkles className="h-2.5 w-2.5" />
+                              {pStats.aiDrafts}
+                            </span>
+                          )}
+                          <span className="text-slate-500 px-1">{pStats.total}</span>
+                        </div>
+                      </button>
 
-                    {expandedPhases.has(phase.id) && (
-                      <div className="border-t border-slate-800 p-3 space-y-2">
-                        {phase.hackathon_phase_activities.length === 0 ? (
-                          <p className="text-sm text-slate-500 py-2">No activities in this phase.</p>
-                        ) : (
-                          phase.hackathon_phase_activities.map((activity) => (
-                            <div
-                              key={activity.id}
-                              className="rounded-md border border-slate-800 bg-slate-900/30"
-                            >
-                              <button
-                                onClick={() => toggleActivity(activity.id)}
-                                className="flex w-full items-center justify-between p-3 text-left hover:bg-slate-800/50"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <span className="text-sm font-medium text-slate-200">
-                                    {activity.display_order}. {activity.title}
-                                  </span>
-                                  {activity.is_draft && (
-                                    <Badge variant="outline" className="border-slate-600 text-slate-400">
-                                      Draft
-                                    </Badge>
-                                  )}
-                                  {activity.is_required && (
-                                    <Badge variant="outline" className="border-blue-600/40 text-blue-300">
-                                      Required
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <Badge className="bg-slate-800 text-slate-300">
-                                    {activity.submission_count} submissions
-                                  </Badge>
-                                  {expandedActivities.has(activity.id) ? (
-                                    <ChevronDown className="h-4 w-4 text-slate-500" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4 text-slate-500" />
-                                  )}
-                                </div>
-                              </button>
+                      {phaseOpen && (
+                        <div>
+                          {phase.hackathon_phase_activities.length === 0 ? (
+                            <p className="px-3 py-3 text-xs text-slate-600 italic">No activities.</p>
+                          ) : (
+                            phase.hackathon_phase_activities.map((activity) => {
+                              const aStats = computeSubStats(activity.submissions);
+                              const actOpen = expandedActivities.has(activity.id);
+                              const candidates = getSupergraderCandidates(activity.submissions);
+                              const isThisActivityRunning =
+                                supergraderRunning && supergraderActivityId === activity.id;
+                              const runningHere = activity.submissions.filter(
+                                (s) => aiJobs[s.id]?.status === "running"
+                              ).length;
 
-                              {expandedActivities.has(activity.id) && (
-                                <div className="border-t border-slate-800 p-3">
-                                  {activity.instructions && (
-                                    <p className="text-sm text-slate-400 mb-3 whitespace-pre-wrap">
-                                      {activity.instructions}
-                                    </p>
-                                  )}
+                              const filteredSubs = activity.submissions.filter((sub) => {
+                                if (statusFilter !== "all" && sub.review_status !== statusFilter) return false;
+                                if (scopeFilter !== "all" && sub.scope !== scopeFilter) return false;
+                                if (search.trim()) {
+                                  const query = search.toLowerCase();
+                                  const haystack = [
+                                    getOwnerLabel(sub),
+                                    sub.participant?.name,
+                                    sub.participant?.email,
+                                    sub.team?.lobby_code,
+                                    sub.submitted_by?.name,
+                                    ...sub.team_members.map((m) => m.name),
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" ")
+                                    .toLowerCase();
+                                  return haystack.includes(query);
+                                }
+                                return true;
+                              });
 
-                                  <div className="flex flex-wrap gap-2 mb-3">
-                                    {activity.content.map((content) => (
-                                      <Badge
-                                        key={content.id}
-                                        variant="outline"
-                                        className="border-slate-700 text-slate-400 flex items-center gap-1"
-                                      >
-                                        <ContentTypeIcon type={content.content_type} />
-                                        {content.content_title || content.content_type}
-                                      </Badge>
-                                    ))}
-                                  </div>
-
-                                  {activity.assessments.length > 0 && (
-                                    <div className="mb-3 space-y-1">
-                                      {activity.assessments.map((assessment) => (
-                                        <div
-                                          key={assessment.id}
-                                          className="text-xs text-slate-500 flex items-center gap-2"
+                              return (
+                                <div key={activity.id}>
+                                  {/* Activity sub-header — sticks below phase header. */}
+                                  <div className="sticky top-[41px] z-20 flex items-center justify-between gap-2 px-3 py-1.5 bg-slate-900/95 backdrop-blur border-b border-slate-800/70">
+                                    <button
+                                      onClick={() => toggleActivity(activity.id)}
+                                      className="flex items-center gap-2 min-w-0 text-left hover:text-slate-100"
+                                    >
+                                      {actOpen ? (
+                                        <ChevronDown className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                      ) : (
+                                        <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                      )}
+                                      <span className="text-xs font-medium text-slate-300 truncate">
+                                        {activity.display_order}. {activity.title}
+                                      </span>
+                                      {activity.is_draft && (
+                                        <Badge variant="outline" className="border-slate-600 text-slate-400 text-[9px] h-4 px-1 shrink-0">
+                                          Draft
+                                        </Badge>
+                                      )}
+                                    </button>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      {aStats.pending > 0 && (
+                                        <span className="rounded px-1.5 py-0.5 text-[10px] bg-amber-500/15 text-amber-200 font-light">
+                                          {aStats.pending}
+                                        </span>
+                                      )}
+                                      {candidates.length > 0 && (
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          onClick={() =>
+                                            runSupergrader(activity.id, activity.submissions, activity.title)
+                                          }
+                                          disabled={supergraderRunning}
+                                          className="h-6 px-1.5 text-[10px] font-medium bg-violet-500/90 text-violet-950 hover:bg-violet-400 disabled:bg-slate-800 disabled:text-slate-500"
+                                          title={
+                                            isThisActivityRunning
+                                              ? `Grading ${runningHere}…`
+                                              : `Super-grade ${candidates.length} pending`
+                                          }
                                         >
-                                          <FileText className="h-3 w-3" />
-                                          Assessment: {assessment.assessment_type}
-                                          {assessment.points_possible && ` (${assessment.points_possible} pts)`}
-                                        </div>
-                                      ))}
+                                          {isThisActivityRunning ? (
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                          ) : (
+                                            <Sparkles className="h-3 w-3" />
+                                          )}
+                                          <span className="ml-1">{candidates.length}</span>
+                                        </Button>
+                                      )}
+                                      {isThisActivityRunning && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setSupergraderCancel(true)}
+                                          className="text-[10px] text-slate-400 hover:text-slate-200 underline"
+                                          title="Cancel after current batch"
+                                        >
+                                          cancel
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {actOpen && (
+                                    <div className="divide-y divide-slate-800/60">
+                                      {filteredSubs.length === 0 ? (
+                                        <p className="px-3 py-2 text-[11px] text-slate-600 italic">
+                                          {activity.submissions.length === 0
+                                            ? "No submissions yet."
+                                            : "No matches for current filter."}
+                                        </p>
+                                      ) : (
+                                        filteredSubs.map((submission) => (
+                                          <button
+                                            key={`${submission.scope}-${submission.id}`}
+                                            onClick={() => selectSubmission(submission.id)}
+                                            className={`w-full px-3 py-2 text-left transition-colors ${
+                                              selectedSubmission?.id === submission.id
+                                                ? "bg-blue-500/15 border-l-2 border-blue-400"
+                                                : "border-l-2 border-transparent hover:bg-slate-900/60"
+                                            }`}
+                                          >
+                                            <div className="flex items-start justify-between gap-2">
+                                              <div className="min-w-0 flex-1">
+                                                <div className="text-xs font-medium text-slate-100 truncate">
+                                                  {getOwnerLabel(submission)}
+                                                </div>
+                                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+                                                  <span className="uppercase tracking-wide">{submission.scope}</span>
+                                                  {submission.scope === "team" && submission.team?.lobby_code && (
+                                                    <span>· {submission.team.lobby_code}</span>
+                                                  )}
+                                                  {submission.submitted_at && (
+                                                    <span>· {format(new Date(submission.submitted_at), "MMM d")}</span>
+                                                  )}
+                                                  {submission.file_urls.length > 0 && (
+                                                    <Paperclip className="h-2.5 w-2.5" />
+                                                  )}
+                                                  {submission.image_url && <ImageIcon className="h-2.5 w-2.5" />}
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center gap-1 shrink-0">
+                                                {savingGradeIds.has(submission.id) && (
+                                                  <Loader2 className="h-3 w-3 animate-spin text-blue-300" />
+                                                )}
+                                                {aiJobs[submission.id]?.status === "running" && (
+                                                  <Loader2 className="h-3 w-3 animate-spin text-violet-300" />
+                                                )}
+                                                {submission.review?.ai_draft &&
+                                                  aiJobs[submission.id]?.status !== "running" && (
+                                                    <Sparkles className="h-3 w-3 text-violet-300" />
+                                                  )}
+                                                <StatusBadge status={submission.review_status} />
+                                              </div>
+                                            </div>
+                                          </button>
+                                        ))
+                                      )}
                                     </div>
                                   )}
-
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                                      <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                                        <Users className="h-4 w-4" />
-                                        Submissions
-                                      </h4>
-                                      {(() => {
-                                        const candidates = getSupergraderCandidates(activity.submissions);
-                                        const isThisActivityRunning =
-                                          supergraderRunning && supergraderActivityId === activity.id;
-                                        const runningHere = activity.submissions.filter(
-                                          (s) => aiJobs[s.id]?.status === "running"
-                                        ).length;
-                                        return (
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <Button
-                                              type="button"
-                                              size="sm"
-                                              onClick={() =>
-                                                runSupergrader(
-                                                  activity.id,
-                                                  activity.submissions,
-                                                  activity.title
-                                                )
-                                              }
-                                              disabled={
-                                                supergraderRunning || candidates.length === 0
-                                              }
-                                              className="h-7 px-2 text-[11px] font-medium bg-violet-500 text-violet-950 hover:bg-violet-400 disabled:bg-slate-800 disabled:text-slate-500"
-                                            >
-                                              {isThisActivityRunning ? (
-                                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                              ) : (
-                                                <Sparkles className="mr-1 h-3 w-3" />
-                                              )}
-                                              {isThisActivityRunning
-                                                ? `Grading ${runningHere}…`
-                                                : `Super-grade ${candidates.length} pending`}
-                                            </Button>
-                                            {isThisActivityRunning && (
-                                              <Button
-                                                type="button"
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => setSupergraderCancel(true)}
-                                                className="h-7 px-2 text-[11px] font-light"
-                                              >
-                                                Cancel after batch
-                                              </Button>
-                                            )}
-                                          </div>
-                                        );
-                                      })()}
-                                    </div>
-
-                                    {activity.submissions.length === 0 ? (
-                                      <p className="text-sm text-slate-600 py-2">No submissions yet.</p>
-                                    ) : (
-                                      <div className="space-y-2">
-                                        {activity.submissions
-                                          .filter((sub) => {
-                                            if (statusFilter !== "all" && sub.review_status !== statusFilter)
-                                              return false;
-                                            if (scopeFilter !== "all" && sub.scope !== scopeFilter) return false;
-                                            if (search.trim()) {
-                                              const query = search.toLowerCase();
-                                              const haystack = [
-                                                getOwnerLabel(sub),
-                                                sub.participant?.name,
-                                                sub.participant?.email,
-                                                sub.team?.lobby_code,
-                                                sub.submitted_by?.name,
-                                                ...sub.team_members.map((m) => m.name),
-                                              ]
-                                                .filter(Boolean)
-                                                .join(" ")
-                                                .toLowerCase();
-                                              return haystack.includes(query);
-                                            }
-                                            return true;
-                                          })
-                                          .map((submission) => (
-                                            <button
-                                              key={`${submission.scope}-${submission.id}`}
-                                              onClick={() => selectSubmission(submission.id)}
-                                              className={`w-full rounded-md border p-3 text-left transition-colors ${
-                                                selectedSubmission?.id === submission.id
-                                                  ? "border-blue-400/60 bg-blue-500/10"
-                                                  : "border-slate-800 bg-slate-950/50 hover:border-slate-600"
-                                              }`}
-                                            >
-                                              <div className="flex items-start justify-between gap-3">
-                                                <div>
-                                                  <div className="text-sm font-semibold text-slate-100">
-                                                    {getOwnerLabel(submission)}
-                                                  </div>
-                                                  {submission.scope === "team" && submission.team?.lobby_code && (
-                                                    <div className="text-xs text-slate-500">
-                                                      Code: {submission.team.lobby_code}
-                                                    </div>
-                                                  )}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 shrink-0">
-                                                  {savingGradeIds.has(submission.id) && (
-                                                    <Badge
-                                                      variant="outline"
-                                                      className="border-blue-500/40 text-blue-200 bg-blue-500/10 text-[10px] font-light h-5 px-1.5"
-                                                    >
-                                                      <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin" />
-                                                      Saving
-                                                    </Badge>
-                                                  )}
-                                                  {aiJobs[submission.id]?.status === "running" && (
-                                                    <Badge
-                                                      variant="outline"
-                                                      className="border-violet-500/40 text-violet-200 bg-violet-500/10 text-[10px] font-light h-5 px-1.5"
-                                                    >
-                                                      <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin" />
-                                                      Grading
-                                                    </Badge>
-                                                  )}
-                                                  {submission.review?.ai_draft &&
-                                                    aiJobs[submission.id]?.status !== "running" && (
-                                                      <Badge
-                                                        variant="outline"
-                                                        className="border-violet-500/40 text-violet-200 bg-violet-500/10 text-[10px] font-light h-5 px-1.5"
-                                                      >
-                                                        <Sparkles className="mr-1 h-2.5 w-2.5" />
-                                                        AI draft
-                                                      </Badge>
-                                                    )}
-                                                  <StatusBadge status={submission.review_status} />
-                                                </div>
-                                              </div>
-                                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                                <Badge variant="outline" className="border-slate-700 text-slate-400">
-                                                  {submission.scope}
-                                                </Badge>
-                                                {submission.submitted_by?.name && (
-                                                  <span>by {submission.submitted_by.name}</span>
-                                                )}
-                                                {submission.submitted_at && (
-                                                  <span>{format(new Date(submission.submitted_at), "MMM d, HH:mm")}</span>
-                                                )}
-                                                {submission.file_urls.length > 0 && (
-                                                  <Paperclip className="h-3.5 w-3.5" />
-                                                )}
-                                                {submission.image_url && <ImageIcon className="h-3.5 w-3.5" />}
-                                              </div>
-                                            </button>
-                                          ))}
-                                      </div>
-                                    )}
-                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </aside>
 
               {selectedSubmission ? (
                 <div className="min-w-0 space-y-6 break-words">
@@ -1187,12 +1220,24 @@ export function AdminHackathonActivities() {
                       </h3>
                       <StatusBadge status={selectedSubmission.review_status} />
                     </div>
-                    <p className="text-xs font-light text-slate-400 break-words">
-                      {getOwnerLabel(selectedSubmission)}
-                      {selectedSubmission.scope === "team" && selectedSubmission.team?.lobby_code
-                        ? ` (${selectedSubmission.team.lobby_code})`
-                        : ""}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs font-light text-slate-400 break-words">
+                        {getOwnerLabel(selectedSubmission)}
+                        {selectedSubmission.scope === "team" && selectedSubmission.team?.lobby_code
+                          ? ` (${selectedSubmission.team.lobby_code})`
+                          : ""}
+                      </p>
+                      {relatedSubmissions.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setRelatedModalOpen(true)}
+                          className="rounded-md border border-slate-700 bg-slate-900/60 px-2 py-0.5 text-[11px] font-light text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition"
+                        >
+                          View {relatedSubmissions.length} other submission
+                          {relatedSubmissions.length === 1 ? "" : "s"}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {selectedSubmission.scope === "team" && selectedSubmission.team_members.length > 0 && (
@@ -1627,6 +1672,96 @@ export function AdminHackathonActivities() {
               No prompt loaded.
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={relatedModalOpen} onOpenChange={setRelatedModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col border-slate-700 bg-slate-950">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-sm font-medium tracking-wide uppercase text-slate-200">
+              Other submissions
+            </DialogTitle>
+            {selectedSubmission && (
+              <DialogDescription className="text-xs text-slate-400 font-light">
+                By {getOwnerLabel(selectedSubmission)}
+                {selectedSubmission.scope === "team" && selectedSubmission.team?.lobby_code
+                  ? ` (${selectedSubmission.team.lobby_code})`
+                  : ""}
+                {selectedSubmission.scope === "team" &&
+                  selectedSubmission.team_members.length > 0 && (
+                    <>
+                      {" · "}
+                      Members:{" "}
+                      {selectedSubmission.team_members
+                        .map((m) => m.name ?? m.email ?? m.id)
+                        .join(", ")}
+                    </>
+                  )}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto -mx-6 px-6">
+            {relatedSubmissions.length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-500">
+                No other submissions found.
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-800">
+                {relatedSubmissions.map(
+                  ({
+                    submission,
+                    phaseNumber,
+                    phaseTitle,
+                    activityOrder,
+                    activityTitle,
+                    matchReason,
+                  }) => (
+                    <li key={`${submission.scope}-${submission.id}`}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          selectSubmission(submission.id);
+                          setRelatedModalOpen(false);
+                        }}
+                        className="w-full py-2.5 text-left hover:bg-slate-900/50 px-2 rounded-md transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11px] text-slate-500 uppercase tracking-wide">
+                              P{phaseNumber}. {phaseTitle} · {activityOrder}. {activityTitle}
+                            </div>
+                            <div className="mt-0.5 text-sm font-medium text-slate-100">
+                              {getOwnerLabel(submission)}
+                            </div>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
+                              <span className="uppercase">{submission.scope}</span>
+                              <span className="text-violet-300">· {matchReason}</span>
+                              {submission.submitted_at && (
+                                <span>
+                                  · {format(new Date(submission.submitted_at), "MMM d, HH:mm")}
+                                </span>
+                              )}
+                              {submission.scope === "team" && submission.team?.lobby_code && (
+                                <span>· {submission.team.lobby_code}</span>
+                              )}
+                              {submission.file_urls.length > 0 && (
+                                <Paperclip className="h-2.5 w-2.5" />
+                              )}
+                              {submission.image_url && <ImageIcon className="h-2.5 w-2.5" />}
+                              {submission.review?.ai_draft && (
+                                <Sparkles className="h-2.5 w-2.5 text-violet-300" />
+                              )}
+                            </div>
+                          </div>
+                          <StatusBadge status={submission.review_status} />
+                        </div>
+                      </button>
+                    </li>
+                  )
+                )}
+              </ul>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
