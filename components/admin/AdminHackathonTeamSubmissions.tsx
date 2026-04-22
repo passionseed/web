@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { SubmissionClusterView } from "@/components/admin/SubmissionClusterView";
+import { ImageLightbox } from "@/components/admin/ImageLightbox";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -490,7 +491,13 @@ function ActivityCommentsSection({ comments }: { comments: ActivityComment[] }) 
 
 // ─── SubmissionDetail ─────────────────────────────────────────────────────────
 
-function SubmissionContent({ sub }: { sub: TeamSubmissionDetail | IndividualSubmissionDetail }) {
+function SubmissionContent({
+  sub,
+  onViewImage,
+}: {
+  sub: TeamSubmissionDetail | IndividualSubmissionDetail;
+  onViewImage: (url: string) => void;
+}) {
   const hasTextAnswer = Boolean(sub.text_answer?.trim());
 
   return (
@@ -512,16 +519,23 @@ function SubmissionContent({ sub }: { sub: TeamSubmissionDetail | IndividualSubm
         <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
           <div className="text-[9px] font-semibold tracking-widest text-slate-600 uppercase mb-2 flex items-center gap-1">
             <ImageIcon className="h-3 w-3" /> Image
+            <span className="text-[9px] normal-case tracking-normal text-slate-500">(click to enlarge)</span>
           </div>
-          <a href={sub.image_url} target="_blank" rel="noopener noreferrer">
+          <button
+            type="button"
+            onClick={() => onViewImage(sub.image_url!)}
+            className="block w-full cursor-zoom-in"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={sub.image_url}
               alt=""
-              className="max-h-96 w-full rounded-md border border-slate-800 object-contain hover:opacity-90 transition-opacity cursor-zoom-in"
+              className="max-h-96 w-full rounded-md border border-slate-800 object-contain hover:opacity-90 transition-opacity"
               referrerPolicy="no-referrer"
+              loading="lazy"
+              decoding="async"
             />
-          </a>
+          </button>
         </div>
       )}
 
@@ -531,18 +545,34 @@ function SubmissionContent({ sub }: { sub: TeamSubmissionDetail | IndividualSubm
             <Paperclip className="h-3 w-3" /> Files
           </div>
           <div className="flex flex-wrap gap-2">
-            {sub.file_urls.map((url, i) => (
-              <a
-                key={url}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 border border-slate-700 rounded px-2 py-1"
-              >
-                <Paperclip className="h-2.5 w-2.5" />
-                File {i + 1}
-              </a>
-            ))}
+            {sub.file_urls.map((url, i) => {
+              const isImage = /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
+              if (isImage) {
+                return (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => onViewImage(url)}
+                    className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 border border-slate-700 rounded px-2 py-1 cursor-zoom-in"
+                  >
+                    <ImageIcon className="h-2.5 w-2.5" />
+                    Image {i + 1}
+                  </button>
+                );
+              }
+              return (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 border border-slate-700 rounded px-2 py-1"
+                >
+                  <Paperclip className="h-2.5 w-2.5" />
+                  File {i + 1}
+                </a>
+              );
+            })}
           </div>
         </div>
       )}
@@ -556,11 +586,13 @@ function SubmissionContent({ sub }: { sub: TeamSubmissionDetail | IndividualSubm
 
 function SubmissionDetail({
   activity,
+  onViewImage,
 }: {
   team: TeamData;
   activity: ActivityGroup | null;
   activeMemberId: string | null;
   onMemberSwitch: (id: string) => void;
+  onViewImage: (url: string) => void;
 }) {
   const [showClusters, setShowClusters] = useState(false);
 
@@ -627,7 +659,7 @@ function SubmissionDetail({
                 </span>
               )}
             </div>
-            <SubmissionContent sub={activity.team_submission!} />
+            <SubmissionContent sub={activity.team_submission!} onViewImage={onViewImage} />
           </div>
         )}
 
@@ -648,7 +680,7 @@ function SubmissionDetail({
                     </span>
                   )}
                 </div>
-                <SubmissionContent sub={ps} />
+                <SubmissionContent sub={ps} onViewImage={onViewImage} />
               </div>
             ))}
           </div>
@@ -672,6 +704,7 @@ export function AdminHackathonTeamSubmissions() {
   const [selectedTeam, setSelectedTeam] = useState<TeamData | null>(null);
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/hackathon/teams/submissions")
@@ -877,9 +910,12 @@ export function AdminHackathonTeamSubmissions() {
           activity={selectedActivity}
           activeMemberId={null}
           onMemberSwitch={() => {}}
+          onViewImage={setLightboxSrc}
         />
 
       </div>
+
+      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </div>
   );
 }

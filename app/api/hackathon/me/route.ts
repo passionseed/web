@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE } from "@/lib/hackathon/auth";
 import { getSessionParticipant, updateParticipant } from "@/lib/hackathon/db";
 import { createClient } from "@/utils/supabase/server";
+import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth";
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  const corsHeaders = getCorsHeaders(req);
+  const token = extractHackathonToken(req);
+
   if (token) {
     const participant = await getSessionParticipant(token);
-    if (participant) return NextResponse.json({ participant });
+    if (participant) return NextResponse.json({ participant }, { headers: corsHeaders });
   }
 
   // Fall back: allow Supabase admins through without a hackathon registration
@@ -39,32 +41,34 @@ export async function GET(req: NextRequest) {
             created_at: new Date().toISOString(),
             is_admin: true,
           },
-        });
+        }, { headers: corsHeaders });
       }
     }
   } catch {
     // Supabase unavailable — fall through to 401
   }
 
-  return NextResponse.json({ participant: null }, { status: 401 });
+  return NextResponse.json({ participant: null }, { status: 401, headers: corsHeaders });
 }
 
 export async function PATCH(req: NextRequest) {
-  const token = req.cookies.get(SESSION_COOKIE)?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const corsHeaders = getCorsHeaders(req);
+  const token = extractHackathonToken(req);
+
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const participant = await getSessionParticipant(token);
-  if (!participant) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!participant) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const body = await req.json();
   const { name, phone, university, track, grade_level, experience_level, bio } = body;
 
   if (!name?.trim() || !phone?.trim() || !university?.trim() || !track?.trim() || !grade_level?.trim() || !bio?.trim()) {
-    return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    return NextResponse.json({ error: "All fields are required" }, { status: 400, headers: corsHeaders });
   }
 
   if (typeof experience_level !== "number" || experience_level < 1 || experience_level > 10) {
-    return NextResponse.json({ error: "Invalid experience level" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid experience level" }, { status: 400, headers: corsHeaders });
   }
 
   try {
@@ -77,9 +81,16 @@ export async function PATCH(req: NextRequest) {
       experience_level,
       bio: bio.trim(),
     });
-    return NextResponse.json({ participant: updated });
+    return NextResponse.json({ participant: updated }, { headers: corsHeaders });
   } catch (err) {
     console.error("Update participant error:", err);
-    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500, headers: corsHeaders });
   }
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: getCorsHeaders(req),
+  });
 }

@@ -38,6 +38,17 @@ export function reviewStatusToSubmissionStatus(status: HackathonReviewStatus): s
   return status;
 }
 
+export function formatSubmissionStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    pending_review: "Pending review",
+    passed: "Passed",
+    revision_required: "Needs revision",
+    submitted: "Submitted",
+    draft: "Draft",
+  };
+  return labels[status] || status.replace(/_/g, " ");
+}
+
 export function normalizeScoreAwarded(value: unknown, pointsPossible: number | null): number | null {
   if (value === null || value === undefined || value === "") return null;
 

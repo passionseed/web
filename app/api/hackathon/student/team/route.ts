@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSessionParticipant } from "@/lib/hackathon/db";
+import { getCorsHeaders, extractHackathonToken } from "@/lib/hackathon/auth";
 
 function getClient() {
   return createClient(
@@ -9,22 +10,28 @@ function getClient() {
   );
 }
 
-function extractToken(req: NextRequest): string | null {
-  const auth = req.headers.get("authorization") ?? "";
-  if (auth.startsWith("Bearer ")) return auth.slice(7);
-  return null;
-}
-
 // GET /api/hackathon/student/team
 // Returns team info + member count for the authenticated participant.
 // { team: null } if no team.
 export async function GET(req: NextRequest) {
-  const token = extractToken(req);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const corsHeaders = getCorsHeaders(req);
+
+  const token = extractHackathonToken(req);
+  if (!token) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: corsHeaders }
+    );
+  }
 
   const supabase = getClient();
   const participant = await getSessionParticipant(token, supabase);
-  if (!participant) return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
+  if (!participant) {
+    return NextResponse.json(
+      { error: "Invalid or expired session" },
+      { status: 401, headers: corsHeaders }
+    );
+  }
 
   const { data: membership } = await supabase
     .from("hackathon_team_members")
@@ -33,7 +40,10 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (!membership?.team_id) {
-    return NextResponse.json({ team: null, member_count: 0 });
+    return NextResponse.json(
+      { team: null, member_count: 0 },
+      { headers: corsHeaders }
+    );
   }
 
   const { data: members } = await supabase
@@ -47,8 +57,18 @@ export async function GET(req: NextRequest) {
     .eq("id", membership.team_id)
     .maybeSingle();
 
-  return NextResponse.json({
-    team,
-    member_count: members?.length ?? 0,
+  return NextResponse.json(
+    {
+      team,
+      member_count: members?.length ?? 0,
+    },
+    { headers: corsHeaders }
+  );
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: getCorsHeaders(req),
   });
 }
