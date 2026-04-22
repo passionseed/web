@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageLightbox } from "@/components/admin/ImageLightbox";
 
 type ReviewStatus = "pending_review" | "passed" | "revision_required";
 type SubmissionScope = "individual" | "team";
@@ -136,6 +137,7 @@ export function AdminHackathonSubmissions() {
   const [reviewStatus, setReviewStatus] = useState<ReviewStatus>("passed");
   const [scoreAwarded, setScoreAwarded] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const selected = useMemo(
     () => submissions.find((submission) => submission.id === selectedId) ?? submissions[0] ?? null,
@@ -432,13 +434,22 @@ export function AdminHackathonSubmissions() {
                           <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-300">
                             <ImageIcon className="h-4 w-4" />
                             Image
+                            <span className="text-xs font-normal text-slate-500">(click to enlarge)</span>
                           </h4>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={selected.image_url}
-                            alt="Submission"
-                            className="max-h-96 rounded-md border border-slate-800 object-contain"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => setLightboxSrc(selected.image_url)}
+                            className="block w-full cursor-zoom-in"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={selected.image_url}
+                              alt="Submission"
+                              className="max-h-96 w-full rounded-md border border-slate-800 object-contain hover:opacity-90 transition-opacity"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </button>
                         </div>
                       )}
 
@@ -449,17 +460,42 @@ export function AdminHackathonSubmissions() {
                             Files
                           </h4>
                           <div className="space-y-2">
-                            {selected.file_urls.map((url, index) => (
-                              <a
-                                key={url}
-                                href={url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="block rounded-md border border-slate-800 px-3 py-2 text-sm text-blue-300 hover:border-blue-400/50"
-                              >
-                                Open file {index + 1}
-                              </a>
-                            ))}
+                            {selected.file_urls.map((url, index) => {
+                              const isImage = /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
+                              if (isImage) {
+                                return (
+                                  <button
+                                    key={url}
+                                    type="button"
+                                    onClick={() => setLightboxSrc(url)}
+                                    className="block w-full cursor-zoom-in rounded-md border border-slate-800 p-2 hover:border-blue-400/50 transition"
+                                  >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={url}
+                                      alt={`File ${index + 1}`}
+                                      className="max-h-48 w-full rounded object-contain"
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                    <div className="mt-1 text-xs text-slate-500">
+                                      File {index + 1} (click to enlarge)
+                                    </div>
+                                  </button>
+                                );
+                              }
+                              return (
+                                <a
+                                  key={url}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block rounded-md border border-slate-800 px-3 py-2 text-sm text-blue-300 hover:border-blue-400/50"
+                                >
+                                  Open file {index + 1}
+                                </a>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -536,6 +572,8 @@ export function AdminHackathonSubmissions() {
           )}
         </CardContent>
       </Card>
+
+      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </div>
   );
 }
