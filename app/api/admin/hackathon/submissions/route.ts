@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
         submitted_at,
         created_at,
         updated_at,
+        revisions,
         hackathon_participants(id, name, email, university),
         hackathon_phase_activities(
           id,
@@ -86,6 +87,7 @@ export async function GET(req: NextRequest) {
         submitted_at,
         created_at,
         updated_at,
+        revisions,
         hackathon_teams(id, name, lobby_code),
         hackathon_participants(id, name, email, university),
         hackathon_phase_activities(
@@ -152,6 +154,7 @@ export async function GET(req: NextRequest) {
       text_answer: submission.text_answer,
       image_url: submission.image_url,
       file_urls: submission.file_urls ?? [],
+      revisions: submission.revisions ?? [],
       participant,
       team: null,
       team_members: [],
@@ -177,6 +180,7 @@ export async function GET(req: NextRequest) {
       text_answer: submission.text_answer,
       image_url: submission.image_url,
       file_urls: submission.file_urls ?? [],
+      revisions: submission.revisions ?? [],
       participant: null,
       team: teamRow,
       team_members: teamRow?.id ? membersByTeamId.get(teamRow.id) ?? [] : [],

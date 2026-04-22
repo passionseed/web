@@ -4,8 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   ClipboardCheck,
   FileText,
+  History,
   Image as ImageIcon,
   Loader2,
   Paperclip,
@@ -59,6 +62,22 @@ interface Review {
   reviewed_at: string | null;
 }
 
+interface SubmissionRevision {
+  n: number;
+  text_answer: string | null;
+  image_url: string | null;
+  file_urls: string[] | null;
+  submitted_at: string;
+  review: {
+    status: ReviewStatus;
+    score_awarded: number | null;
+    points_possible: number | null;
+    feedback: string;
+    reviewed_by: string | null;
+    reviewed_at: string | null;
+  } | null;
+}
+
 interface AdminSubmission {
   scope: SubmissionScope;
   id: string;
@@ -68,6 +87,7 @@ interface AdminSubmission {
   text_answer: string | null;
   image_url: string | null;
   file_urls: string[];
+  revisions: SubmissionRevision[];
   participant: Person | null;
   team: { id: string; name: string | null; lobby_code: string | null } | null;
   team_members: Person[];
@@ -138,6 +158,7 @@ export function AdminHackathonSubmissions() {
   const [scoreAwarded, setScoreAwarded] = useState("");
   const [feedback, setFeedback] = useState("");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [viewingRevisionN, setViewingRevisionN] = useState<number | null>(null);
 
   const selected = useMemo(
     () => submissions.find((submission) => submission.id === selectedId) ?? submissions[0] ?? null,
@@ -461,7 +482,7 @@ export function AdminHackathonSubmissions() {
                           </h4>
                           <div className="space-y-2">
                             {selected.file_urls.map((url, index) => {
-                              const isImage = /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
+                              const isImage = /\.(jpg|jpeg|png|webp|gif|heic|heif)(\?|$)/i.test(url);
                               if (isImage) {
                                 return (
                                   <button
@@ -497,6 +518,81 @@ export function AdminHackathonSubmissions() {
                               );
                             })}
                           </div>
+                        </div>
+                      )}
+
+                      {/* Revision history */}
+                      {selected.revisions.length > 0 && (
+                        <div className="rounded-md border border-slate-800 bg-slate-900/40 p-3">
+                          <button
+                            type="button"
+                            onClick={() => setViewingRevisionN(viewingRevisionN === -1 ? null : -1)}
+                            className="flex w-full items-center justify-between text-sm font-semibold text-slate-300"
+                          >
+                            <span className="flex items-center gap-2">
+                              <History className="h-4 w-4" />
+                              Prior versions ({selected.revisions.length})
+                            </span>
+                            {viewingRevisionN === -1 ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </button>
+
+                          {viewingRevisionN === -1 && (
+                            <div className="mt-3 space-y-3">
+                              {selected.revisions.map((rev) => (
+                                <div key={rev.n} className="rounded-md border border-slate-700 bg-slate-950/60 p-3">
+                                  <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-slate-400">
+                                      Version {rev.n}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      {rev.review && (
+                                        <Badge
+                                          variant="outline"
+                                          className={`text-[10px] ${
+                                            rev.review.status === "passed"
+                                              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                                              : rev.review.status === "revision_required"
+                                              ? "border-rose-500/40 bg-rose-500/10 text-rose-300"
+                                              : "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                                          }`}
+                                        >
+                                          {rev.review.status === "passed"
+                                            ? "Passed"
+                                            : rev.review.status === "revision_required"
+                                            ? "Needs revision"
+                                            : "Pending"}
+                                        </Badge>
+                                      )}
+                                      <span className="text-[10px] text-slate-600">
+                                        {format(new Date(rev.submitted_at), "MMM d, HH:mm")}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {rev.text_answer && (
+                                    <p className="mb-2 text-xs text-slate-400 line-clamp-2">
+                                      {rev.text_answer}
+                                    </p>
+                                  )}
+
+                                  {rev.review?.feedback && (
+                                    <div className="rounded border border-slate-800 bg-slate-900/80 p-2">
+                                      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                        Feedback given:
+                                      </p>
+                                      <p className="text-xs text-slate-400 whitespace-pre-wrap">
+                                        {rev.review.feedback}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
