@@ -343,6 +343,7 @@ function buildPrompt(params: {
       : "- score_awarded = null.",
     "- feedback = 3 short paragraphs in a warm, encouraging tone: (1) something they did well, (2) 1-2 gentle suggestions to make it stronger (not requirements), (3) a small, practical next step.",
     "- reasoning = 2-4 short admin-only sentences explaining your judgment.",
+    "- In the feedback text written FOR the student: use ข้อ instead of ประการ, avoid em dashes, keep it conversational.",
     "",
     "OUTPUT",
     "Part 1: stream 2-4 short sentences of live reasoning for the admin.",
