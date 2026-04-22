@@ -323,13 +323,10 @@ function buildPrompt(params: {
     "CURRENT SUBMISSION",
     `Text:\n${shortAnswer}`,
     "",
-    hasVisualSubmission ? "VISUAL SUBMISSION ANALYSIS" : "",
-    hasVisualSubmission ? "The student submitted visual material. Here's what the images show:" : "",
-    hasVisualSubmission ? "---" : "",
-    imageAnalysisText ?? (hasVisualSubmission ? "(Image analysis was not available for this submission)" : ""),
-    hasVisualSubmission ? "---" : "",
-    hasVisualSubmission ? "Treat visuals as a sign that the student engaged with the activity." : "",
-    hasVisualSubmission ? "" : "",
+    hasVisualSubmission
+      ? "VISUAL SUBMISSION ANALYSIS\nThe student submitted visual material. Here's what the images show:\n---\n" + (imageAnalysisText ?? "(Image analysis was not available for this submission)") + "\n---\nTreat visuals as a sign that the student engaged with the activity."
+      : "VISUAL SUBMISSION: (none submitted — no image or files attached)",
+    "",
     imageUrl ? `Original Image URL: ${imageUrl}` : "",
     fileUrls.length > 0 ? `Additional Files:\n${fileUrls.join("\n")}` : "",
     "",
@@ -337,6 +334,7 @@ function buildPrompt(params: {
     "- passed = the student gave a genuine attempt at the instructions and assessment questions. Rough, early-stage thinking is fine.",
     "- revision_required = ONLY when the submission is clearly off-topic, blank, or a copy-paste with no real effort.",
     "- pending_review = only when you truly cannot tell from what was submitted.",
+    "- IMAGE REQUIREMENT: if the instructions or assessment questions asked for an image (look for keywords like รูปภาพ, ภาพ, image, photo, upload, แนบ, วาด, sketch) AND the submission has no image_url and no file_urls, then score_awarded = 0 AND review_status = revision_required. If the instructions did NOT mention an image, ignore this rule.",
     "- Do NOT mark as revision_required for vague wording, thin evidence, or not hitting the phase aim. Use feedback for that instead.",
     pointsPossible != null
       ? `- score_awarded = 0 to ${pointsPossible}. Around ${Math.round(pointsPossible * 0.6)} is a solid attempt. Go lower only if the instructions were clearly ignored.`
