@@ -37,30 +37,38 @@ export async function GET() {
     const serviceClient = getServiceClient();
 
     // Fetch all teams with their members and participant details
-    const { data: teams, error } = await serviceClient
-      .from("hackathon_teams")
-      .select(`
-        *,
-        hackathon_team_members(
-          joined_at,
-          participant_id,
-          hackathon_participants(
-            id,
-            name,
-            email,
-            university,
-            created_at,
-            phone,
-            line_id,
-            discord_username,
-            instagram_handle,
-            grade_level,
-            track,
-            password_hash
+    const [teamsResult, scoresResult] = await Promise.all([
+      serviceClient
+        .from("hackathon_teams")
+        .select(`
+          *,
+          hackathon_team_members(
+            joined_at,
+            participant_id,
+            hackathon_participants(
+              id,
+              name,
+              email,
+              university,
+              created_at,
+              phone,
+              line_id,
+              discord_username,
+              instagram_handle,
+              grade_level,
+              track,
+              password_hash
+            )
           )
-        )
-      `)
-      .order("created_at", { ascending: false });
+        `)
+        .order("created_at", { ascending: false }),
+      serviceClient
+        .from("hackathon_team_scores")
+        .select("team_id, total_score"),
+    ]);
+
+    const { data: teams, error } = teamsResult;
+    const scores = scoresResult.data ?? [];
 
     if (error) {
       console.error("Error fetching teams:", error);
@@ -70,7 +78,16 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ teams });
+    const scoreByTeamId = new Map(
+      scores.map((s: { team_id: string; total_score: number }) => [s.team_id, s.total_score])
+    );
+
+    const enriched = (teams ?? []).map((team: any) => ({
+      ...team,
+      total_score: scoreByTeamId.get(team.id) ?? 0,
+    }));
+
+    return NextResponse.json({ teams: enriched });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     console.error("Error in hackathon teams API:", err);

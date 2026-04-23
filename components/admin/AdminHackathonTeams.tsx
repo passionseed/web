@@ -76,6 +76,7 @@ interface HackathonTeam {
   lobby_code: string;
   owner_id: string;
   created_at: string;
+  total_score: number;
   hackathon_team_members: TeamMember[];
 }
 
@@ -767,6 +768,7 @@ export function AdminHackathonTeams() {
   const [teams, setTeams] = useState<HackathonTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"score" | "created" | "members">("score");
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
   const [runningMatching, setRunningMatching] = useState(false);
   const [matchingMessage, setMatchingMessage] = useState("");
@@ -801,6 +803,10 @@ export function AdminHackathonTeams() {
       m.hackathon_participants.name.toLowerCase().includes(query)
     );
     return matchesTeamName || matchesLobbyCode || matchesMemberName;
+  }).sort((a, b) => {
+    if (sortBy === "score") return b.total_score - a.total_score;
+    if (sortBy === "members") return b.hackathon_team_members.length - a.hackathon_team_members.length;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   const stats = {
@@ -1017,14 +1023,25 @@ export function AdminHackathonTeams() {
                 {matchingMessage}
               </div>
             )}
-            <div className="relative mt-4">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by team name, lobby code, or member name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-slate-950/50 border-slate-700 focus:ring-blue-500/50"
-              />
+            <div className="flex gap-3 mt-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by team name, lobby code, or member name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-slate-950/50 border-slate-700 focus:ring-blue-500/50"
+                />
+              </div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "score" | "created" | "members")}
+                className="h-10 rounded-md border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100"
+              >
+                <option value="score">Sort by Score</option>
+                <option value="members">Sort by Members</option>
+                <option value="created">Sort by Created</option>
+              </select>
             </div>
           </CardHeader>
           <CardContent>
@@ -1033,23 +1050,25 @@ export function AdminHackathonTeams() {
                 <TableHeader className="bg-slate-900/60">
                   <TableRow className="hover:bg-transparent border-slate-700/50">
                     <TableHead className="w-[40px]"></TableHead>
+                    <TableHead className="w-[56px] text-slate-300 font-medium tracking-tight">Rank</TableHead>
                     <TableHead className="text-slate-300 font-medium tracking-tight">Team Name</TableHead>
                     <TableHead className="text-slate-300 font-medium tracking-tight">Lobby Code</TableHead>
                     <TableHead className="text-slate-300 font-medium tracking-tight text-center">Members</TableHead>
+                    <TableHead className="text-slate-300 font-medium tracking-tight text-right">Score</TableHead>
                     <TableHead className="text-slate-300 font-medium tracking-tight">Created At</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTeams.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
                         {searchQuery
                           ? "No teams found matching your search"
                           : "No teams created yet"}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredTeams.map((team) => (
+                    filteredTeams.map((team, index) => (
                       <React.Fragment key={team.id}>
                         <TableRow
                           className={`cursor-pointer transition-all duration-200 border-slate-800/50 ${
@@ -1066,6 +1085,9 @@ export function AdminHackathonTeams() {
                             >
                               <ChevronRight className="h-4 w-4 text-slate-500" />
                             </motion.div>
+                          </TableCell>
+                          <TableCell>
+                            <RankBadge rank={index + 1} />
                           </TableCell>
                           <TableCell className="font-semibold text-blue-400 group-hover:text-blue-300 transition-colors">
                             {team.name}
@@ -1092,13 +1114,16 @@ export function AdminHackathonTeams() {
                               </div>
                             </div>
                           </TableCell>
+                          <TableCell className="text-right">
+                            <ScoreBadge score={team.total_score} rank={index + 1} />
+                          </TableCell>
                           <TableCell className="text-sm text-slate-500">
                             {format(new Date(team.created_at), "MMM d, yyyy")}
                           </TableCell>
                         </TableRow>
 
                         <TableRow className="border-none hover:bg-transparent">
-                          <TableCell colSpan={5} className="p-0 border-none">
+                          <TableCell colSpan={7} className="p-0 border-none">
                             <AnimatePresence initial={false}>
                               {expandedTeamId === team.id && (
                                 <motion.div
