@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
         status,
         submitted_at,
         updated_at,
-        hackathon_participants(id, name, email, university, avatar_url),
+        hackathon_participants(id, name, email, university, avatar_url, phone, line_id, track, grade_level),
         hackathon_submission_reviews(
           id,
           review_status,
@@ -195,14 +195,31 @@ export async function GET(req: NextRequest) {
     .map((sub) => pickOne(sub.hackathon_teams)?.id)
     .filter(Boolean) as string[];
 
-  const { data: teamMembers, error: membersError } = await serviceClient
-    .from("hackathon_team_members")
-    .select(`
-      team_id,
-      participant_id,
-      hackathon_participants(id, name, email, avatar_url)
-    `)
-    .in("team_id", teamIds.length > 0 ? teamIds : [""]);
+  const individualParticipantIds = (individualResult.data ?? [])
+    .map((sub) => sub.participant_id)
+    .filter(Boolean) as string[];
+
+  const [membersResult, individualMembershipsResult] = await Promise.all([
+    serviceClient
+      .from("hackathon_team_members")
+      .select(`
+        team_id,
+        participant_id,
+        hackathon_participants(id, name, email, avatar_url, university)
+      `)
+      .in("team_id", teamIds.length > 0 ? teamIds : [""]),
+    serviceClient
+      .from("hackathon_team_members")
+      .select(`
+        team_id,
+        participant_id,
+        hackathon_teams(id, name, lobby_code)
+      `)
+      .in("participant_id", individualParticipantIds.length > 0 ? individualParticipantIds : [""]),
+  ]);
+
+  const teamMembers = membersResult.data;
+  const membersError = membersResult.error;
 
   if (membersError) {
     console.error("[admin/hackathon/activities] team members error:", membersError);
@@ -210,6 +227,15 @@ export async function GET(req: NextRequest) {
       { error: "Failed to fetch team members" },
       { status: 500 }
     );
+  }
+
+  // Map participant_id → team for individual submissions
+  const participantTeamMap = new Map<string, { id: string; name: string | null; lobby_code: string | null }>();
+  for (const membership of individualMembershipsResult.data ?? []) {
+    const team = pickOne(membership.hackathon_teams) as { id: string; name: string | null; lobby_code: string | null } | null;
+    if (team && !participantTeamMap.has(membership.participant_id)) {
+      participantTeamMap.set(membership.participant_id, team);
+    }
   }
 
   const individualIds = (individualResult.data ?? []).map((s) => s.id);
@@ -268,7 +294,7 @@ export async function GET(req: NextRequest) {
     const existing = membersByTeamId.get(member.team_id) ?? [];
     const participant = pickOne(member.hackathon_participants);
     if (participant) {
-      const { id: _id, ...participantWithoutId } = participant as { id?: string; name?: string | null; email?: string | null; avatar_url?: string | null };
+      const { id: _id, ...participantWithoutId } = participant as { id?: string; name?: string | null; email?: string | null; avatar_url?: string | null; university?: string | null };
       existing.push({
         id: member.participant_id,
         ...participantWithoutId,
@@ -296,7 +322,7 @@ export async function GET(req: NextRequest) {
       file_urls: sub.file_urls ?? [],
       revisions: Array.isArray((sub as any).revisions) ? (sub as any).revisions : [],
       participant,
-      team: null,
+      team: participantTeamMap.get(sub.participant_id) ?? null,
       team_members: [],
       submitted_by: participant,
       review,

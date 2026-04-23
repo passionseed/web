@@ -174,6 +174,11 @@ export function LavaFooter() {
                   My Journey
                 </Link>
               </li>
+              <li>
+                <Link href="/support" className="hover:underline">
+                  Support
+                </Link>
+              </li>
             </ul>
           </div>
           <div className="space-y-4">

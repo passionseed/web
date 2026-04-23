@@ -249,6 +249,8 @@ function buildPrompt(params: {
   ownerLabel: string;
   priorRevisions: PriorRevision[];
   imageAnalysis: SubmissionImageAnalysis | null;
+  graderComment: string | null;
+  upcomingActivities: { title: string; instructions: string | null; display_order: number | null }[];
 }) {
   const {
     phaseSpec,
@@ -265,6 +267,8 @@ function buildPrompt(params: {
     assessments,
     priorRevisions,
     imageAnalysis,
+    graderComment,
+    upcomingActivities,
   } = params;
 
   const phaseContext = compactPhaseSpec(phaseSpec, phaseNumber, phaseTitle);
@@ -278,91 +282,64 @@ function buildPrompt(params: {
   const hasVisualSubmission = imageUrl || fileUrls.length > 0;
 
   return [
-    "You are a warm, encouraging mentor grading one hackathon activity. Think of yourself as a friendly senior who wants to help, not catch mistakes.",
-    "Your main job is simple: did the student answer what the assessment asked them to do? If yes, that's a pass. Keep it simple.",
-    "Default to kind. This is an early-stage hackathon for students who are learning, not a performance review.",
+    "Grading a hackathon submission. Be helpful, not verbose.",
     "",
-    "LANGUAGE (STRICT)",
-    "Detect the language of the student's SUBMISSION text (not the instructions, not the phase spec).",
-    "- If the submission contains ANY Thai script (ก-๙), write EVERYTHING in natural Thai. Talk to the student like a warm senior (ใช้คุณ, ไม่ต้องเป็นทางการ). Be encouraging, like you're chatting over a coffee. Avoid formal academic language.",
-    "- If the submission is purely English (zero Thai characters), write in friendly English.",
-    "- Never mix languages inside one sentence.",
-    "- This rule overrides any default language habit you have.",
+    "LANGUAGE: Match the student's submission language. Thai script = Thai. Otherwise English. No mixing.",
     "",
-    "Be warm, friendly, direct. No fluff, no rubric recital, no emojis.",
-    "",
-    "=== PRIMARY CRITERIA: judge the submission ONLY against these ===",
-    "",
-    "ACTIVITY INSTRUCTIONS (what the student was told to do)",
+    "ACTIVITY INSTRUCTIONS",
     shortInstructions,
     "",
-    "ASSESSMENT QUESTIONS (the specific prompts they were asked to answer)",
+    "ASSESSMENT QUESTIONS",
     assessmentQuestions,
     "",
-    "Grade based on whether the student addressed THESE instructions and questions.",
-    "If they gave a reasonable attempt at the questions, that's a pass, even if the thinking is rough around the edges.",
+    "Grade on whether they answered the above. Reasonable attempt = pass.",
     "",
-    "=== CONTEXT (do NOT use these to add extra requirements) ===",
+    "CONTEXT",
+    `Phase: ${phaseContext}`,
+    `Learning goal: ${activityLens.outcome}`,
+    `Evidence to look for: ${activityLens.evidence}`,
+    upcomingActivities.length > 0
+      ? `UPCOMING IN PHASE (don't suggest they'll do these later):\n${upcomingActivities.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}`
+      : "",
     "",
-    "Phase aim (just for background, not grading criteria):",
-    phaseContext,
+    priorBlock ? `PRIOR ATTEMPTS:\n${priorBlock}` : "",
     "",
-    "Optional lens you MAY reference in feedback for extra depth, but NOT as a pass/fail gate:",
-    `- Nice-to-see: ${activityLens.outcome}`,
-    `- Evidence that makes the answer richer: ${activityLens.evidence}`,
-    "",
-    "ACTIVITY METADATA",
-    `Title: ${activityTitle ?? "(untitled)"}`,
-    `Scope: ${scope}`,
-    `Owner: ${ownerLabel}`,
-    pointsPossible != null ? `Points possible: ${pointsPossible}` : "Ungraded (no numeric score)",
-    "",
-    priorBlock ? "PRIOR ATTEMPTS (oldest to newest). Give credit when they addressed earlier feedback." : "",
-    priorBlock ?? "",
-    priorBlock ? "" : "",
     "CURRENT SUBMISSION",
-    `Text:\n${shortAnswer}`,
+    shortAnswer,
     "",
-    hasVisualSubmission
-      ? "VISUAL SUBMISSION ANALYSIS\nThe student submitted visual material. Here's what the images show:\n---\n" + (imageAnalysisText ?? "(Image analysis was not available for this submission)") + "\n---\nTreat visuals as a sign that the student engaged with the activity."
-      : "VISUAL SUBMISSION: (none submitted — no image or files attached)",
+    hasVisualSubmission && imageAnalysisText
+      ? `IMAGE ANALYSIS:\n${imageAnalysisText}`
+      : "(no images submitted)",
     "",
-    imageUrl ? `Original Image URL: ${imageUrl}` : "",
-    fileUrls.length > 0 ? `Additional Files:\n${fileUrls.join("\n")}` : "",
-    "",
-    "GRADING RULES (be generous and kind)",
-    "- passed = the student gave a genuine attempt at the instructions and assessment questions. Rough, early-stage thinking is fine.",
-    "- revision_required = ONLY when the submission is clearly off-topic, blank, or a copy-paste with no real effort.",
-    "- pending_review = only when you truly cannot tell from what was submitted.",
-    "- IMAGE REQUIREMENT: if the instructions or assessment questions asked for an image (look for keywords like รูปภาพ, ภาพ, image, photo, upload, แนบ, วาด, sketch) AND the submission has no image_url and no file_urls, then score_awarded = 0 AND review_status = revision_required. If the instructions did NOT mention an image, ignore this rule.",
-    "- Do NOT mark as revision_required for vague wording, thin evidence, or not hitting the phase aim. Use feedback for that instead.",
+    "RULES",
+    "- passed = genuine attempt at the questions.",
+    "- revision_required = off-topic, blank, or copy-paste with no effort.",
+    "- pending_review = genuinely unclear content.",
+    "- IMAGE CHECK: if instructions asked for image but none provided, score = 0 + revision_required. Otherwise ignore.",
     pointsPossible != null
-      ? `- score_awarded = 0 to ${pointsPossible}. Around ${Math.round(pointsPossible * 0.6)} is a solid attempt. Go lower only if the instructions were clearly ignored.`
-      : "- score_awarded = null.",
-    "- feedback = 3 short paragraphs in a warm, encouraging tone: (1) something they did well, (2) 1-2 gentle suggestions to make it stronger (not requirements), (3) a small, practical next step.",
-    "- reasoning = 2-4 short admin-only sentences explaining your judgment.",
-    "- In the feedback text written FOR the student: use ข้อ instead of ประการ, avoid em dashes, keep it conversational.",
+      ? `- Score: 0-${pointsPossible}. ${Math.round(pointsPossible * 0.6)} is a solid pass.`
+      : "- Score: null (ungraded).",
+    "- Feedback: 3 short paragraphs — (1) what they did well, (2) 1-2 suggestions, (3) next step.",
+    "- Reasoning: short admin-only explanation.",
     "",
-    "OUTPUT",
-    "Part 1: stream 2-4 short sentences of live reasoning for the admin.",
-    "Part 2: output one JSON block in a ```json fence using exactly:",
+    "OUTPUT JSON:",
     "```json",
     "{",
     '  "review_status": "passed" | "revision_required" | "pending_review",',
     pointsPossible != null
-      ? `  "score_awarded": <number 0..${pointsPossible}>,`
+      ? `  "score_awarded": <0..${pointsPossible}>,`
       : '  "score_awarded": null,',
-    '  "feedback": "<3-section feedback to the student, single string, blank lines between sections>",',
-    '  "reasoning": "<admin-only rationale>"',
+    '  "feedback": "<student-facing feedback>",',
+    '  "reasoning": "<admin-only>"',
     "}",
     "```",
-    "Stop after the JSON fence.",
+    graderComment ? `\nHUMAN GRADER NOTE:\n${graderComment}` : "",
   ]
     .filter(Boolean)
     .join("\n");
 }
 
-async function gatherPromptContext(scope: "individual" | "team", id: string) {
+async function gatherPromptContext(scope: "individual" | "team", id: string, graderComment?: string | null) {
   const serviceClient = getHackathonServiceClient();
   const table =
     scope === "individual"
@@ -414,6 +391,17 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
     ? (sub.revisions as PriorRevision[])
     : [];
 
+  // Fetch all activities in this phase to know what's coming next
+  let phaseActivities: { title: string; instructions: string | null; display_order: number | null }[] = [];
+  if (phase?.id) {
+    const { data: activitiesData } = await serviceClient
+      .from("hackathon_phase_activities")
+      .select("title, instructions, display_order")
+      .eq("phase_id", phase.id)
+      .order("display_order", { ascending: true });
+    phaseActivities = activitiesData ?? [];
+  }
+
   // Analyze images if present
   const activityLens = inferActivityLens(activity?.title ?? null, activity?.instructions ?? null);
   const imageUrl = sub.image_url ?? null;
@@ -430,9 +418,13 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
       });
     } catch (err) {
       console.error("[ai-grade] Image analysis failed:", err);
-      // Continue without image analysis - the prompt will note this limitation
     }
   }
+
+  const currentActivityOrder = activity?.display_order ?? 0;
+  const upcomingActivities = phaseActivities.filter(
+    (a) => (a.display_order ?? 0) > currentActivityOrder
+  );
 
   const prompt = buildPrompt({
     phaseSpec,
@@ -449,6 +441,8 @@ async function gatherPromptContext(scope: "individual" | "team", id: string) {
     ownerLabel,
     priorRevisions,
     imageAnalysis,
+    graderComment: graderComment ?? null,
+    upcomingActivities,
   });
 
   return {
@@ -501,7 +495,11 @@ export async function POST(
     return NextResponse.json({ error: "Invalid submission scope" }, { status: 400 });
   }
 
-  const context = await gatherPromptContext(rawScope as "individual" | "team", id);
+  const body = await _req.json().catch(() => ({}));
+  const forceReview = body?.regrade === true;
+  const graderComment = typeof body?.grader_comment === "string" ? body.grader_comment.trim() : null;
+
+  const context = await gatherPromptContext(rawScope as "individual" | "team", id, graderComment);
   if (!context) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
 
   console.log("[admin/hackathon/ai-grade] POST start", {
@@ -593,6 +591,7 @@ export async function POST(
               draft,
               source: "manual",
               model: AI_MODEL,
+              forceReview,
               reviewedByUserId: admin.id,
             });
             promoted = persisted.promoted;

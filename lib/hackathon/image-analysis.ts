@@ -20,6 +20,53 @@ const MINIMAX_API_HOST =
 // Only JPEG/PNG/WebP are supported by the VLM endpoint (HEIC must be converted).
 const SUPPORTED_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|heic|heif)(\?|$)/i;
 
+/**
+ * Transform old Supabase storage URLs to Backblaze B2 URLs.
+ * Old format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
+ * New format: https://[bucket].[endpoint]/[path]
+ *
+ * Falls back to the original URL if it's not a Supabase storage URL
+ * or if B2 env vars are not configured.
+ */
+function transformToBackblazeUrl(url: string): string {
+  // Check if this is a Supabase storage URL
+  const supabaseMatch = url.match(
+    /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/public\/(.+)$/i
+  );
+
+  if (!supabaseMatch) {
+    // Not a Supabase URL, return as-is
+    return url;
+  }
+
+  const bucketAndPath = supabaseMatch[1];
+  const b2BucketName = process.env.B2_BUCKET_NAME;
+  const b2Endpoint = process.env.B2_ENDPOINT ?? "s3.us-west-000.backblazeb2.com";
+
+  if (!b2BucketName) {
+    // B2 not configured, return original URL
+    console.warn("[image-analysis] B2_BUCKET_NAME not set, using original Supabase URL");
+    return url;
+  }
+
+  // Check if the bucket name matches (case-insensitive)
+  const bucketName = bucketAndPath.split("/")[0];
+  if (bucketName.toLowerCase() !== b2BucketName.toLowerCase()) {
+    // Different bucket, might be intentional - return original
+    return url;
+  }
+
+  // Extract the path after the bucket name
+  const path = bucketAndPath.substring(bucketName.length);
+
+  // If path already starts with hackathon/, use it directly
+  // Otherwise construct the new URL
+  const newUrl = `https://${b2BucketName}.${b2Endpoint}/${path.startsWith("/") ? path.slice(1) : path}`;
+
+  console.log(`[image-analysis] Transformed Supabase URL to B2: ${url} -> ${newUrl}`);
+  return newUrl;
+}
+
 export type ImageAnalysisResult = {
   analysis: string;
   error?: string;
@@ -150,21 +197,21 @@ Describe what you actually see.`,
 }
 
 /**
- * Convert HEIC/HEIF image to JPEG Blob.
+ * Convert HEIC/HEIF image to JPEG using sharp (server-side).
+ * Falls back to returning the original buffer if conversion fails.
  */
-async function convertHeicToJpeg(
-  imageBuffer: ArrayBuffer,
-  contentType: string
-): Promise<Blob> {
-  const { default: heic2any } = await import("heic2any");
-  const blob = new Blob([imageBuffer], { type: contentType || "image/heic" });
-  const jpegBlob = await heic2any({
-    blob,
-    toType: "image/jpeg",
-    quality: 0.9,
-  });
-  // heic2any returns Blob | Blob[] — normalize to Blob
-  return Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+async function convertHeicToJpeg(imageBuffer: Buffer): Promise<Buffer> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sharp = require("sharp");
+    return await sharp(imageBuffer)
+      .jpeg({ quality: 90 })
+      .toBuffer();
+  } catch (err) {
+    console.error("[image-analysis] HEIC conversion failed:", err);
+    // Return original buffer as fallback (MiniMax may reject it, but at least we tried)
+    return imageBuffer;
+  }
 }
 
 /**
@@ -176,10 +223,14 @@ async function fetchImageAsDataUrl(imageUrl: string): Promise<string> {
   // Already a data URL — pass through
   if (imageUrl.startsWith("data:")) return imageUrl;
 
-  const response = await fetch(imageUrl);
+  // Transform old Supabase storage URLs to Backblaze B2 URLs
+  const transformedUrl = transformToBackblazeUrl(imageUrl);
+
+  const response = await fetch(transformedUrl);
   if (!response.ok) {
+    const urlToShow = transformedUrl !== imageUrl ? `${transformedUrl} (from ${imageUrl})` : imageUrl;
     throw new Error(
-      `Failed to download image: ${response.status} ${response.statusText}`
+      `Failed to download image: ${response.status} ${response.statusText} (${urlToShow})`
     );
   }
 
@@ -196,10 +247,9 @@ async function fetchImageAsDataUrl(imageUrl: string): Promise<string> {
   let base64: string;
 
   if (isHeic) {
-    // Convert HEIC to JPEG
-    const jpegBlob = await convertHeicToJpeg(arrayBuffer, contentType);
-    const jpegArrayBuffer = await jpegBlob.arrayBuffer();
-    base64 = Buffer.from(jpegArrayBuffer).toString("base64");
+    // Convert HEIC to JPEG using sharp
+    const jpegBuffer = await convertHeicToJpeg(Buffer.from(arrayBuffer));
+    base64 = jpegBuffer.toString("base64");
     imageFormat = "jpeg";
   } else {
     if (contentType.includes("png")) imageFormat = "png";

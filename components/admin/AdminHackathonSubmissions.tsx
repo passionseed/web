@@ -151,7 +151,7 @@ export function AdminHackathonSubmissions() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all">("pending_review");
+  const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all" | "improvements">("pending_review");
   const [scopeFilter, setScopeFilter] = useState<SubmissionScope | "all">("all");
   const [search, setSearch] = useState("");
   const [reviewStatus, setReviewStatus] = useState<ReviewStatus>("passed");
@@ -329,11 +329,12 @@ export function AdminHackathonSubmissions() {
             </div>
             <select
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as ReviewStatus | "all")}
+              onChange={(event) => setStatusFilter(event.target.value as ReviewStatus | "all" | "improvements")}
               className="h-10 rounded-md border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100"
             >
               <option value="all">All statuses</option>
               <option value="pending_review">Pending</option>
+              <option value="improvements">Improvements only</option>
               <option value="passed">Passed</option>
               <option value="revision_required">Needs revision</option>
             </select>

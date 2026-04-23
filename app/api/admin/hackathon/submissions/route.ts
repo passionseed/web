@@ -197,7 +197,12 @@ export async function GET(req: NextRequest) {
     submissions = submissions.filter((submission) => submission.scope === scope);
   }
 
-  if (status) {
+  if (status === "improvements") {
+    // Resubmitted after revision_required: has revisions AND is back to pending
+    submissions = submissions.filter(
+      (s) => s.revisions.length > 0 && s.review_status === "pending_review"
+    );
+  } else if (status) {
     submissions = submissions.filter((submission) => submission.review_status === status);
   }
 

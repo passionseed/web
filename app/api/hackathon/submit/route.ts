@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createMainClient } from "@/utils/supabase/server";
 import { computeNextRevisions } from "@/lib/hackathon/revisions";
 import { fireAndForgetEmbedSubmission } from "@/lib/embeddings/submissions";
+import { fireAndForgetTeamDirectionEmbed } from "@/lib/embeddings/team-direction";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 const ALLOWED_FILE_TYPES = [
@@ -158,6 +159,8 @@ export async function POST(req: NextRequest) {
       text: textAnswer,
     });
 
+    fireAndForgetTeamDirectionEmbed(membership.team_id);
+
     return NextResponse.json({ submissionId: data.id, url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null });
   }
 
@@ -218,6 +221,16 @@ export async function POST(req: NextRequest) {
     activityId,
     text: textAnswer,
   });
+
+  // Re-embed team direction (individual submission may change team's composite)
+  const { data: teamMembership } = await supabase
+    .from("hackathon_team_members")
+    .select("team_id")
+    .eq("participant_id", participant.id)
+    .maybeSingle();
+  if (teamMembership) {
+    fireAndForgetTeamDirectionEmbed(teamMembership.team_id);
+  }
 
   return NextResponse.json({ submissionId: data.id, url: uploadedUrl ?? uploadedFileUrls?.[0] ?? null });
 }
