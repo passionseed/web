@@ -37,6 +37,8 @@ export type PersistDraftOptions = {
   draft: AiDraft;
   source: AiDraftSource;
   model: string;
+  /** When true, skip auto-approve and always keep as draft for human review. */
+  forceReview?: boolean;
   /**
    * If provided, the generated review is attributed to this admin when
    * auto-approved. For auto_on_submit and bulk, leave undefined — the review
@@ -64,7 +66,7 @@ export async function persistDraft(
   serviceClient: any,
   opts: PersistDraftOptions
 ): Promise<{ promoted: boolean; reviewId: string | null }> {
-  const { scope, submissionId, draft, source, model, reviewedByUserId } = opts;
+  const { scope, submissionId, draft, source, model, forceReview, reviewedByUserId } = opts;
   const now = new Date().toISOString();
 
   const reviewKey =
@@ -83,7 +85,7 @@ export async function persistDraft(
     .eq(reviewKey.column, reviewKey.value)
     .maybeSingle();
 
-  const promote = maybeAutoApprove(draft);
+  const promote = !forceReview && maybeAutoApprove(draft);
 
   const payload: Record<string, unknown> = {
     submission_scope: scope,

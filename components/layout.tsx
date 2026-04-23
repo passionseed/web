@@ -29,6 +29,8 @@ export function Layout({ children }: LayoutProps) {
 
   const hideNavbar = mounted && (
     pathname === "/" ||
+    pathname === "/support" ||
+    pathname === "/contact" ||
     pathname?.includes("finish-profile") ||
     pathname?.includes("complete-profile") ||
     isPublicHackathonRoute ||

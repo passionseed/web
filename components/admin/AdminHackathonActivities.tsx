@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { diffWords } from "diff";
 import { ImageLightbox } from "@/components/admin/ImageLightbox";
@@ -38,6 +38,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ProfileHoverCard } from "@/components/admin/ProfileHoverCard";
+import { TeamHoverCard } from "@/components/admin/TeamHoverCard";
 
 type ReviewStatus = "pending_review" | "passed" | "revision_required";
 type SubmissionScope = "individual" | "team";
@@ -92,6 +94,10 @@ interface Person {
   email: string | null;
   avatar_url: string | null;
   university?: string | null;
+  phone?: string | null;
+  line_id?: string | null;
+  track?: string | null;
+  grade_level?: string | null;
 }
 
 interface Team {
@@ -225,9 +231,11 @@ export function AdminHackathonActivities() {
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all" | "improvements">("all");
   const [scopeFilter, setScopeFilter] = useState<SubmissionScope | "all">("all");
   const [commentText, setCommentText] = useState("");
+  const graderNoteRef = useRef("");
+  const graderNoteInputRef = useRef<HTMLInputElement>(null);
   const [savingComment, setSavingComment] = useState(false);
   const [message, setMessage] = useState("");
   const [gradeStatus, setGradeStatus] = useState<ReviewStatus>("pending_review");
@@ -346,8 +354,31 @@ export function AdminHackathonActivities() {
     return { total, pending, passed, revision, aiDrafts };
   }
 
+  function matchesFilter(sub: Submission): boolean {
+    if (statusFilter === "improvements") {
+      if (!((sub.revisions?.length ?? 0) > 0 && sub.review_status === "pending_review")) return false;
+    } else if (statusFilter !== "all" && sub.review_status !== statusFilter) return false;
+    if (scopeFilter !== "all" && sub.scope !== scopeFilter) return false;
+    if (search.trim()) {
+      const query = search.toLowerCase();
+      const haystack = [
+        getOwnerLabel(sub),
+        sub.participant?.name,
+        sub.participant?.email,
+        sub.team?.lobby_code,
+        sub.submitted_by?.name,
+        ...sub.team_members.map((m) => m.name),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    }
+    return true;
+  }
+
   function phaseSubs(phase: Phase): Submission[] {
-    return phase.hackathon_phase_activities.flatMap((a) => a.submissions);
+    return phase.hackathon_phase_activities.flatMap((a) => a.submissions).filter(matchesFilter);
   }
 
   const allSubmissions = useMemo(() => {
@@ -373,28 +404,35 @@ export function AdminHackathonActivities() {
   }, [phases]);
 
   const filteredSubmissions = useMemo(() => {
-    return allSubmissions.filter((sub) => {
-      if (statusFilter !== "all" && sub.review_status !== statusFilter) return false;
-      if (scopeFilter !== "all" && sub.scope !== scopeFilter) return false;
-      if (search.trim()) {
-        const query = search.toLowerCase();
-        const haystack = [
-          getOwnerLabel(sub),
-          sub.participant?.name,
-          sub.participant?.email,
-          sub.team?.lobby_code,
-          sub.submitted_by?.name,
-          ...sub.team_members.map((m) => m.name),
-          submissionActivityMap.get(sub.id),
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return haystack.includes(query);
-      }
-      return true;
-    });
+    return allSubmissions.filter((sub) => matchesFilter(sub));
   }, [allSubmissions, statusFilter, scopeFilter, search, submissionActivityMap]);
+
+  // Cmd+ArrowDown = next submission, Cmd+ArrowUp = prev submission
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!e.metaKey && !e.ctrlKey) return;
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      e.preventDefault();
+      const list = filteredSubmissions;
+      if (list.length === 0) return;
+      const currentIdx = list.findIndex((s) => s.id === selectedSubmissionId);
+      const nextIdx = e.key === "ArrowDown"
+        ? Math.min(currentIdx + 1, list.length - 1)
+        : Math.max(currentIdx - 1, 0);
+      if (nextIdx !== currentIdx || currentIdx === -1) {
+        selectSubmission(list[nextIdx === -1 ? 0 : nextIdx].id);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [filteredSubmissions, selectedSubmissionId]);
+
+  // Auto-focus grader note input when switching submissions
+  useEffect(() => {
+    if (selectedSubmissionId) {
+      setTimeout(() => graderNoteInputRef.current?.focus(), 50);
+    }
+  }, [selectedSubmissionId]);
 
   const selectedSubmission = useMemo(() => {
     if (!selectedSubmissionId) return null;
@@ -641,7 +679,7 @@ export function AdminHackathonActivities() {
     setSupergraderCancel(false);
   }
 
-  async function requestAiSuggestion(submissionOverride?: { id: string; scope: "individual" | "team" }) {
+  async function requestAiSuggestion(submissionOverride?: { id: string; scope: "individual" | "team" }, opts?: { regrade?: boolean; graderComment?: string }) {
     const target =
       submissionOverride ??
       (selectedSubmission
@@ -663,7 +701,7 @@ export function AdminHackathonActivities() {
     try {
       const response = await fetch(
         `/api/admin/hackathon/submissions/${target.scope}/${target.id}/ai-grade`,
-        { method: "POST", headers: { "Content-Type": "application/json" } }
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ regrade: opts?.regrade ?? false, grader_comment: opts?.graderComment ?? null }) }
       );
 
       if (!response.ok || !response.body) {
@@ -962,11 +1000,12 @@ export function AdminHackathonActivities() {
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as ReviewStatus | "all")}
+              onChange={(e) => setStatusFilter(e.target.value as ReviewStatus | "all" | "improvements")}
               className="h-10 rounded-md border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100"
             >
               <option value="all">All statuses</option>
               <option value="pending_review">Pending</option>
+              <option value="improvements">🔄 Improvements only</option>
               <option value="passed">Passed</option>
               <option value="revision_required">Needs revision</option>
             </select>
@@ -1049,35 +1088,17 @@ export function AdminHackathonActivities() {
                             <p className="px-3 py-3 text-xs text-slate-600 italic">No activities.</p>
                           ) : (
                             phase.hackathon_phase_activities.map((activity) => {
-                              const aStats = computeSubStats(activity.submissions);
                               const actOpen = expandedActivities.has(activity.id);
-                              const candidates = getSupergraderCandidates(activity.submissions);
                               const isThisActivityRunning =
                                 supergraderRunning && supergraderActivityId === activity.id;
-                              const runningHere = activity.submissions.filter(
+
+                              const filteredSubs = activity.submissions.filter(matchesFilter);
+
+                              const aStats = computeSubStats(filteredSubs);
+                              const candidates = getSupergraderCandidates(filteredSubs);
+                              const runningHere = filteredSubs.filter(
                                 (s) => aiJobs[s.id]?.status === "running"
                               ).length;
-
-                              const filteredSubs = activity.submissions.filter((sub) => {
-                                if (statusFilter !== "all" && sub.review_status !== statusFilter) return false;
-                                if (scopeFilter !== "all" && sub.scope !== scopeFilter) return false;
-                                if (search.trim()) {
-                                  const query = search.toLowerCase();
-                                  const haystack = [
-                                    getOwnerLabel(sub),
-                                    sub.participant?.name,
-                                    sub.participant?.email,
-                                    sub.team?.lobby_code,
-                                    sub.submitted_by?.name,
-                                    ...sub.team_members.map((m) => m.name),
-                                  ]
-                                    .filter(Boolean)
-                                    .join(" ")
-                                    .toLowerCase();
-                                  return haystack.includes(query);
-                                }
-                                return true;
-                              });
 
                               return (
                                 <div key={activity.id}>
@@ -1165,7 +1186,33 @@ export function AdminHackathonActivities() {
                                             <div className="flex items-start justify-between gap-2">
                                               <div className="min-w-0 flex-1">
                                                 <div className="text-xs font-medium text-slate-100 truncate">
-                                                  {getOwnerLabel(submission)}
+                                                  {submission.scope === "team" ? (
+                                                    <TeamHoverCard
+                                                      teamName={submission.team?.name ?? null}
+                                                      lobbyCode={submission.team?.lobby_code}
+                                                      members={submission.team_members}
+                                                    >
+                                                      <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
+                                                        {getOwnerLabel(submission)}
+                                                      </span>
+                                                    </TeamHoverCard>
+                                                  ) : (
+                                                    <ProfileHoverCard
+                                                      name={submission.participant?.name ?? null}
+                                                      email={submission.participant?.email}
+                                                      university={submission.participant?.university}
+                                                      phone={submission.participant?.phone}
+                                                      lineId={submission.participant?.line_id}
+                                                      track={submission.participant?.track}
+                                                      gradeLevel={submission.participant?.grade_level}
+                                                      teamName={submission.team?.name}
+                                                      teamLobbyCode={submission.team?.lobby_code}
+                                                    >
+                                                      <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
+                                                        {getOwnerLabel(submission)}
+                                                      </span>
+                                                    </ProfileHoverCard>
+                                                  )}
                                                 </div>
                                                 <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
                                                   <span className="uppercase tracking-wide">{submission.scope}</span>
@@ -1221,12 +1268,38 @@ export function AdminHackathonActivities() {
                       <StatusBadge status={selectedSubmission.review_status} />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xs font-light text-slate-400 break-words">
-                        {getOwnerLabel(selectedSubmission)}
-                        {selectedSubmission.scope === "team" && selectedSubmission.team?.lobby_code
-                          ? ` (${selectedSubmission.team.lobby_code})`
-                          : ""}
-                      </p>
+                      <div className="text-xs font-light text-slate-400 break-words">
+                        {selectedSubmission.scope === "team" ? (
+                          <TeamHoverCard
+                            teamName={selectedSubmission.team?.name ?? null}
+                            lobbyCode={selectedSubmission.team?.lobby_code}
+                            members={selectedSubmission.team_members}
+                          >
+                            <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
+                              {getOwnerLabel(selectedSubmission)}
+                              {selectedSubmission.team?.lobby_code
+                                ? ` (${selectedSubmission.team.lobby_code})`
+                                : ""}
+                            </span>
+                          </TeamHoverCard>
+                        ) : (
+                          <ProfileHoverCard
+                            name={selectedSubmission.participant?.name ?? null}
+                            email={selectedSubmission.participant?.email}
+                            university={selectedSubmission.participant?.university}
+                            phone={selectedSubmission.participant?.phone}
+                            lineId={selectedSubmission.participant?.line_id}
+                            track={selectedSubmission.participant?.track}
+                            gradeLevel={selectedSubmission.participant?.grade_level}
+                            teamName={selectedSubmission.team?.name}
+                            teamLobbyCode={selectedSubmission.team?.lobby_code}
+                          >
+                            <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
+                              {getOwnerLabel(selectedSubmission)}
+                            </span>
+                          </ProfileHoverCard>
+                        )}
+                      </div>
                       {relatedSubmissions.length > 0 && (
                         <button
                           type="button"
@@ -1247,9 +1320,16 @@ export function AdminHackathonActivities() {
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {selectedSubmission.team_members.map((member) => (
-                          <Badge key={member.id} variant="outline" className="border-slate-700 text-slate-300 font-light">
-                            {member.name ?? member.email ?? member.id}
-                          </Badge>
+                          <ProfileHoverCard
+                            key={member.id}
+                            name={member.name}
+                            email={member.email}
+                            university={member.university}
+                          >
+                            <Badge variant="outline" className="border-slate-700 text-slate-300 font-light cursor-default">
+                              {member.name ?? member.email ?? member.id}
+                            </Badge>
+                          </ProfileHoverCard>
                         ))}
                       </div>
                     </div>
@@ -1405,38 +1485,57 @@ export function AdminHackathonActivities() {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between gap-2 min-w-0 text-[11px] font-light text-violet-300/80">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Sparkles className="h-3 w-3 shrink-0" />
-                        <span className="truncate">AI mentor (MiniMax M2.7)</span>
-                        <button
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 min-w-0 text-[11px] font-light text-violet-300/80">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Sparkles className="h-3 w-3 shrink-0" />
+                          <span className="truncate">AI mentor (MiniMax M2.7)</span>
+                          <button
+                            type="button"
+                            onClick={openPromptPreview}
+                            className="text-violet-300/60 hover:text-violet-100 shrink-0"
+                            title="Show the exact prompt sent to the model"
+                          >
+                            <HelpCircle className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <Button
                           type="button"
-                          onClick={openPromptPreview}
-                          className="text-violet-300/60 hover:text-violet-100 shrink-0"
-                          title="Show the exact prompt sent to the model"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const isRegrade = selectedSubmission.review_status === "passed";
+                            const comment = graderNoteRef.current.trim() || undefined;
+                            requestAiSuggestion(undefined, { regrade: isRegrade, graderComment: comment });
+                            graderNoteRef.current = "";
+                          }}
+                          disabled={aiSuggesting}
+                          className="h-7 px-2 text-[11px] font-light text-violet-200 hover:bg-violet-500/10"
                         >
-                          <HelpCircle className="h-3 w-3" />
-                        </button>
+                          {aiSuggesting ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="mr-1 h-3 w-3" />
+                          )}
+                          {aiSuggesting
+                            ? "Thinking…"
+                            : selectedSubmission.review?.ai_draft
+                              ? "Regenerate AI draft"
+                              : selectedSubmission.review_status === "passed"
+                                ? "AI Regrade"
+                                : "Suggest with AI"}
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => requestAiSuggestion()}
+                      <GraderNoteInput
+                        ref={graderNoteInputRef}
                         disabled={aiSuggesting}
-                        className="h-7 px-2 text-[11px] font-light text-violet-200 hover:bg-violet-500/10"
-                      >
-                        {aiSuggesting ? (
-                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        ) : (
-                          <Sparkles className="mr-1 h-3 w-3" />
-                        )}
-                        {aiSuggesting
-                          ? "Thinking…"
-                          : selectedSubmission.review?.ai_draft
-                            ? "Regenerate AI draft"
-                            : "Suggest with AI"}
-                      </Button>
+                        onChange={(v) => { graderNoteRef.current = v; }}
+                        onSubmit={(comment) => {
+                          const isRegrade = selectedSubmission.review_status === "passed";
+                          requestAiSuggestion(undefined, { regrade: isRegrade, graderComment: comment || undefined });
+                          graderNoteRef.current = "";
+                        }}
+                      />
                     </div>
 
                     {(aiLiveText || aiSuggesting) && (
@@ -1769,6 +1868,30 @@ export function AdminHackathonActivities() {
     </div>
   );
 }
+
+const GraderNoteInput = React.forwardRef<HTMLInputElement, { onSubmit: (comment: string) => void; onChange: (value: string) => void; disabled: boolean }>(
+  function GraderNoteInput({ onSubmit, onChange, disabled }, ref) {
+    const [value, setValue] = useState("");
+    const innerRef = useRef<HTMLInputElement>(null);
+    React.useImperativeHandle(ref, () => innerRef.current!);
+    return (
+      <input
+        ref={innerRef}
+        type="text"
+        value={value}
+        onChange={(e) => { setValue(e.target.value); onChange(e.target.value); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !disabled) {
+            onSubmit(value.trim());
+            setValue("");
+          }
+        }}
+        placeholder="Grader note for AI (optional)…"
+        className="h-7 w-full rounded border border-violet-500/20 bg-slate-950 px-2 text-[11px] text-slate-200 placeholder:text-slate-600 focus:border-violet-400/50 focus:outline-none"
+      />
+    );
+  }
+);
 
 function statusLabel(status?: string | null): string {
   if (!status) return "ungraded";

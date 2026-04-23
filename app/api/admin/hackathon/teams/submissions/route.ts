@@ -3,6 +3,9 @@ import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { buildActivityCommentsByActivity } from "@/lib/hackathon/activity-comments";
 
+// Test team names to exclude from leaderboard
+const TEST_TEAM_NAMES = ["Test6EDSCMU", "TEst2U4SU5F"];
+
 function getServiceClient() {
   return createServiceClient(
     process.env.HACKATHON_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -319,8 +322,13 @@ export async function GET() {
     // Sort by total_score descending
     assembled.sort((a, b) => b.total_score - a.total_score);
 
+    // Filter out test teams from leaderboard
+    const filtered = assembled.filter(
+      (team) => !TEST_TEAM_NAMES.includes(team.name)
+    );
+
     return NextResponse.json({
-      teams: assembled,
+      teams: filtered,
       activity_comments_by_id: commentsByActivityId,
     });
   } catch (err: unknown) {

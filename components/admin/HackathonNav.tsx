@@ -10,6 +10,7 @@ const HACKATHON_ITEMS = [
   { href: "/admin/hackathon/participants", label: "Participants" },
   { href: "/admin/hackathon/teams", label: "Teams" },
   { href: "/admin/hackathon/team-submissions", label: "Team Submissions" },
+  { href: "/admin/hackathon/team-directions", label: "Team Directions" },
   { href: "/admin/hackathon/questionnaire", label: "Questionnaire" },
   { href: "/admin/hackathon/analytics", label: "Analytics" },
   { href: "/admin/hackathon/mentors", label: "Mentors" },
