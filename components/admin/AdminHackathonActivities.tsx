@@ -170,6 +170,18 @@ interface Submission {
   admin_comments: AdminComment[];
 }
 
+interface SubmissionGroup {
+  ownerId: string;
+  ownerName: string;
+  scope: SubmissionScope;
+  submissions: Submission[];
+  attemptCount: number;
+  latestStatus: ReviewStatus;
+  team: Team | null;
+  participant: Person | null;
+  team_members: Person[];
+}
+
 interface Stats {
   total_submissions: number;
   pending_review: number;
@@ -229,6 +241,7 @@ export function AdminHackathonActivities() {
   const [loading, setLoading] = useState(true);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all" | "improvements">("all");
@@ -550,6 +563,52 @@ export function AdminHackathonActivities() {
       }
       return next;
     });
+  }
+
+  function toggleGroup(groupKey: string) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  }
+
+  function getOwnerKey(sub: Submission): string {
+    return sub.scope === "team"
+      ? `team:${sub.team?.id ?? sub.id}`
+      : `individual:${sub.participant?.id ?? sub.submitted_by?.id ?? sub.id}`;
+  }
+
+  function groupSubmissionsByOwner(subs: Submission[]): SubmissionGroup[] {
+    const map = new Map<string, SubmissionGroup>();
+    for (const sub of subs) {
+      const key = getOwnerKey(sub);
+      const existing = map.get(key);
+      if (existing) {
+        existing.submissions.push(sub);
+        existing.attemptCount = Math.max(
+          existing.attemptCount,
+          1 + (sub.revisions?.length ?? 0)
+        );
+      } else {
+        map.set(key, {
+          ownerId: key,
+          ownerName: getOwnerLabel(sub),
+          scope: sub.scope,
+          submissions: [sub],
+          attemptCount: 1 + (sub.revisions?.length ?? 0),
+          latestStatus: sub.review_status,
+          team: sub.team,
+          participant: sub.participant,
+          team_members: sub.team_members,
+        });
+      }
+    }
+    return Array.from(map.values());
   }
 
   function selectSubmission(submissionId: string) {
@@ -944,7 +1003,7 @@ export function AdminHackathonActivities() {
 
   return (
     <div className="space-y-4 font-[family-name:var(--font-mitr)]">
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card className="border-slate-700/50 bg-slate-900/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Total submissions</CardTitle>
@@ -968,6 +1027,17 @@ export function AdminHackathonActivities() {
             <CardTitle className="text-sm">Needs revision</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-bold text-rose-200">{stats.revision_required}</CardContent>
+        </Card>
+        <Card
+          className={`border-cyan-500/30 bg-cyan-500/10 cursor-pointer hover:border-cyan-400/50 transition-colors ${statusFilter === "improvements" ? "ring-1 ring-cyan-400" : ""}`}
+          onClick={() => setStatusFilter(statusFilter === "improvements" ? "all" : "improvements")}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Improvements</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-bold text-cyan-200">
+            {allSubmissions.filter((s) => (s.revisions?.length ?? 0) > 0 && s.review_status === "pending_review").length}
+          </CardContent>
         </Card>
       </div>
 
@@ -1173,77 +1243,221 @@ export function AdminHackathonActivities() {
                                             : "No matches for current filter."}
                                         </p>
                                       ) : (
-                                        filteredSubs.map((submission) => (
-                                          <button
-                                            key={`${submission.scope}-${submission.id}`}
-                                            onClick={() => selectSubmission(submission.id)}
-                                            className={`w-full px-3 py-2 text-left transition-colors ${
-                                              selectedSubmission?.id === submission.id
-                                                ? "bg-blue-500/15 border-l-2 border-blue-400"
-                                                : "border-l-2 border-transparent hover:bg-slate-900/60"
-                                            }`}
-                                          >
-                                            <div className="flex items-start justify-between gap-2">
-                                              <div className="min-w-0 flex-1">
-                                                <div className="text-xs font-medium text-slate-100 truncate">
-                                                  {submission.scope === "team" ? (
-                                                    <TeamHoverCard
-                                                      teamName={submission.team?.name ?? null}
-                                                      lobbyCode={submission.team?.lobby_code}
-                                                      members={submission.team_members}
-                                                    >
-                                                      <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
-                                                        {getOwnerLabel(submission)}
-                                                      </span>
-                                                    </TeamHoverCard>
-                                                  ) : (
-                                                    <ProfileHoverCard
-                                                      name={submission.participant?.name ?? null}
-                                                      email={submission.participant?.email}
-                                                      university={submission.participant?.university}
-                                                      phone={submission.participant?.phone}
-                                                      lineId={submission.participant?.line_id}
-                                                      track={submission.participant?.track}
-                                                      gradeLevel={submission.participant?.grade_level}
-                                                      teamName={submission.team?.name}
-                                                      teamLobbyCode={submission.team?.lobby_code}
-                                                    >
-                                                      <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
-                                                        {getOwnerLabel(submission)}
-                                                      </span>
-                                                    </ProfileHoverCard>
-                                                  )}
+                                        groupSubmissionsByOwner(filteredSubs).map((group) => {
+                                          const groupKey = `${activity.id}-${group.ownerId}`;
+                                          const groupOpen = expandedGroups.has(groupKey);
+                                          const hasRevisions = group.attemptCount > 1;
+
+                                          // Single submission with no revisions: render as a flat row (no group wrapper)
+                                          if (group.submissions.length === 1 && !hasRevisions) {
+                                            const submission = group.submissions[0];
+                                            return (
+                                              <button
+                                                key={`${submission.scope}-${submission.id}`}
+                                                onClick={() => selectSubmission(submission.id)}
+                                                className={`w-full px-3 py-2 text-left transition-colors ${
+                                                  selectedSubmission?.id === submission.id
+                                                    ? "bg-blue-500/15 border-l-2 border-blue-400"
+                                                    : "border-l-2 border-transparent hover:bg-slate-900/60"
+                                                }`}
+                                              >
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <div className="min-w-0 flex-1">
+                                                    <div className="text-xs font-medium text-slate-100 truncate">
+                                                      {submission.scope === "team" ? (
+                                                        <TeamHoverCard
+                                                          teamName={submission.team?.name ?? null}
+                                                          lobbyCode={submission.team?.lobby_code}
+                                                          members={submission.team_members}
+                                                        >
+                                                          <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
+                                                            {getOwnerLabel(submission)}
+                                                          </span>
+                                                        </TeamHoverCard>
+                                                      ) : (
+                                                        <ProfileHoverCard
+                                                          name={submission.participant?.name ?? null}
+                                                          email={submission.participant?.email}
+                                                          university={submission.participant?.university}
+                                                          phone={submission.participant?.phone}
+                                                          lineId={submission.participant?.line_id}
+                                                          track={submission.participant?.track}
+                                                          gradeLevel={submission.participant?.grade_level}
+                                                          teamName={submission.team?.name}
+                                                          teamLobbyCode={submission.team?.lobby_code}
+                                                        >
+                                                          <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
+                                                            {getOwnerLabel(submission)}
+                                                          </span>
+                                                        </ProfileHoverCard>
+                                                      )}
+                                                    </div>
+                                                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+                                                      <span className="uppercase tracking-wide">{submission.scope}</span>
+                                                      {submission.scope === "team" && submission.team?.lobby_code && (
+                                                        <span>· {submission.team.lobby_code}</span>
+                                                      )}
+                                                      {submission.submitted_at && (
+                                                        <span>· {format(new Date(submission.submitted_at), "MMM d")}</span>
+                                                      )}
+                                                      {submission.file_urls.length > 0 && (
+                                                        <Paperclip className="h-2.5 w-2.5" />
+                                                      )}
+                                                      {submission.image_url && <ImageIcon className="h-2.5 w-2.5" />}
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center gap-1 shrink-0">
+                                                    {savingGradeIds.has(submission.id) && (
+                                                      <Loader2 className="h-3 w-3 animate-spin text-blue-300" />
+                                                    )}
+                                                    {aiJobs[submission.id]?.status === "running" && (
+                                                      <Loader2 className="h-3 w-3 animate-spin text-violet-300" />
+                                                    )}
+                                                    {submission.review?.ai_draft &&
+                                                      aiJobs[submission.id]?.status !== "running" && (
+                                                        <Sparkles className="h-3 w-3 text-violet-300" />
+                                                      )}
+                                                    <StatusBadge status={submission.review_status} />
+                                                  </div>
                                                 </div>
-                                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
-                                                  <span className="uppercase tracking-wide">{submission.scope}</span>
-                                                  {submission.scope === "team" && submission.team?.lobby_code && (
-                                                    <span>· {submission.team.lobby_code}</span>
-                                                  )}
-                                                  {submission.submitted_at && (
-                                                    <span>· {format(new Date(submission.submitted_at), "MMM d")}</span>
-                                                  )}
-                                                  {submission.file_urls.length > 0 && (
-                                                    <Paperclip className="h-2.5 w-2.5" />
-                                                  )}
-                                                  {submission.image_url && <ImageIcon className="h-2.5 w-2.5" />}
+                                              </button>
+                                            );
+                                          }
+
+                                          // Multiple submissions or has revisions: render as a collapsible group
+                                          return (
+                                            <div key={groupKey}>
+                                              {/* Group header */}
+                                              <button
+                                                onClick={() => toggleGroup(groupKey)}
+                                                className={`w-full px-3 py-2 text-left transition-colors ${
+                                                  group.submissions.some((s) => s.id === selectedSubmission?.id)
+                                                    ? "bg-blue-500/10"
+                                                    : "hover:bg-slate-900/60"
+                                                }`}
+                                              >
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-1.5">
+                                                      {groupOpen ? (
+                                                        <ChevronDown className="h-3 w-3 text-slate-500 shrink-0" />
+                                                      ) : (
+                                                        <ChevronRight className="h-3 w-3 text-slate-500 shrink-0" />
+                                                      )}
+                                                      <div className="text-xs font-medium text-slate-100 truncate">
+                                                        {group.scope === "team" ? (
+                                                          <TeamHoverCard
+                                                            teamName={group.team?.name ?? null}
+                                                            lobbyCode={group.team?.lobby_code}
+                                                            members={group.team_members}
+                                                          >
+                                                            <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
+                                                              {group.ownerName}
+                                                            </span>
+                                                          </TeamHoverCard>
+                                                        ) : (
+                                                          <ProfileHoverCard
+                                                            name={group.participant?.name ?? null}
+                                                            email={group.participant?.email}
+                                                            university={group.participant?.university}
+                                                            phone={group.participant?.phone}
+                                                            lineId={group.participant?.line_id}
+                                                            track={group.participant?.track}
+                                                            gradeLevel={group.participant?.grade_level}
+                                                            teamName={group.team?.name}
+                                                            teamLobbyCode={group.team?.lobby_code}
+                                                          >
+                                                            <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
+                                                              {group.ownerName}
+                                                            </span>
+                                                          </ProfileHoverCard>
+                                                        )}
+                                                      </div>
+                                                      {hasRevisions && (
+                                                        <span className="rounded px-1 py-0.5 text-[9px] bg-slate-700 text-slate-300 font-light shrink-0">
+                                                          {group.attemptCount} attempts
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 pl-[18px]">
+                                                      <span className="uppercase tracking-wide">{group.scope}</span>
+                                                      {group.scope === "team" && group.team?.lobby_code && (
+                                                        <span>· {group.team.lobby_code}</span>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center gap-1 shrink-0">
+                                                    {group.submissions.some((s) => savingGradeIds.has(s.id)) && (
+                                                      <Loader2 className="h-3 w-3 animate-spin text-blue-300" />
+                                                    )}
+                                                    {group.submissions.some((s) => aiJobs[s.id]?.status === "running") && (
+                                                      <Loader2 className="h-3 w-3 animate-spin text-violet-300" />
+                                                    )}
+                                                    {group.submissions.some((s) => s.review?.ai_draft && aiJobs[s.id]?.status !== "running") && (
+                                                      <Sparkles className="h-3 w-3 text-violet-300" />
+                                                    )}
+                                                    <StatusBadge status={group.latestStatus} />
+                                                  </div>
                                                 </div>
-                                              </div>
-                                              <div className="flex items-center gap-1 shrink-0">
-                                                {savingGradeIds.has(submission.id) && (
-                                                  <Loader2 className="h-3 w-3 animate-spin text-blue-300" />
-                                                )}
-                                                {aiJobs[submission.id]?.status === "running" && (
-                                                  <Loader2 className="h-3 w-3 animate-spin text-violet-300" />
-                                                )}
-                                                {submission.review?.ai_draft &&
-                                                  aiJobs[submission.id]?.status !== "running" && (
-                                                    <Sparkles className="h-3 w-3 text-violet-300" />
-                                                  )}
-                                                <StatusBadge status={submission.review_status} />
-                                              </div>
+                                              </button>
+
+                                              {/* Submissions under group */}
+                                              {groupOpen && (
+                                                <div className="border-t border-slate-800/40">
+                                                  {group.submissions.map((submission) => (
+                                                    <button
+                                                      key={`${submission.scope}-${submission.id}`}
+                                                      onClick={() => selectSubmission(submission.id)}
+                                                      className={`w-full px-3 py-2 text-left transition-colors ${
+                                                        selectedSubmission?.id === submission.id
+                                                          ? "bg-blue-500/15 border-l-2 border-blue-400"
+                                                          : "border-l-2 border-transparent hover:bg-slate-900/60"
+                                                      }`}
+                                                    >
+                                                      <div className="flex items-start justify-between gap-2 pl-[18px]">
+                                                        <div className="min-w-0 flex-1">
+                                                          <div className="text-[11px] font-medium text-slate-200 truncate">
+                                                            R{1 + (submission.revisions?.length ?? 0)}
+                                                            {submission.submitted_at && (
+                                                              <span className="text-slate-500 font-light">
+                                                                {" "}· {format(new Date(submission.submitted_at), "MMM d, HH:mm")}
+                                                              </span>
+                                                            )}
+                                                          </div>
+                                                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+                                                            {submission.file_urls.length > 0 && (
+                                                              <Paperclip className="h-2.5 w-2.5" />
+                                                            )}
+                                                            {submission.image_url && <ImageIcon className="h-2.5 w-2.5" />}
+                                                            {(submission.revisions?.length ?? 0) > 0 && (
+                                                              <span className="text-slate-600">
+                                                                {submission.revisions?.length} prior revision
+                                                                {(submission.revisions?.length ?? 0) === 1 ? "" : "s"}
+                                                              </span>
+                                                            )}
+                                                          </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                          {savingGradeIds.has(submission.id) && (
+                                                            <Loader2 className="h-3 w-3 animate-spin text-blue-300" />
+                                                          )}
+                                                          {aiJobs[submission.id]?.status === "running" && (
+                                                            <Loader2 className="h-3 w-3 animate-spin text-violet-300" />
+                                                          )}
+                                                          {submission.review?.ai_draft &&
+                                                            aiJobs[submission.id]?.status !== "running" && (
+                                                              <Sparkles className="h-3 w-3 text-violet-300" />
+                                                            )}
+                                                          <StatusBadge status={submission.review_status} />
+                                                        </div>
+                                                      </div>
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              )}
                                             </div>
-                                          </button>
-                                        ))
+                                          );
+                                        })
                                       )}
                                     </div>
                                   )}

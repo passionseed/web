@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { reclusterTeamDirections } from "@/lib/clustering/team-direction";
+import { autoLabelAllClusters } from "@/lib/clustering/auto-label";
 
 async function requireAdminUser() {
   const supabase = await createClient();
@@ -98,6 +99,11 @@ export async function POST(_req: NextRequest) {
     const result = await reclusterTeamDirections({
       createdByUserId: adminUser.id,
     });
+
+    autoLabelAllClusters(result.clusteringId).catch((err) => {
+      console.error("Auto-labeling failed:", err);
+    });
+
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

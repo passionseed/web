@@ -1,4 +1,4 @@
-import { TeamDirectionClusterView } from "@/components/admin/TeamDirectionClusterView";
+import { TeamDirectionDashboard } from "@/components/admin/TeamDirectionDashboard";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 
 export const dynamic = "force-dynamic";
@@ -10,10 +10,10 @@ export default async function TeamDirectionsPage() {
       <div>
         <h1 className="text-2xl font-bold">Team Directions</h1>
         <p className="text-sm text-muted-foreground">
-          Where each team is heading — semantic clusters of all combined submissions per team.
+          Explore team trajectories, search semantically, and ask AI for insights.
         </p>
       </div>
-      <TeamDirectionClusterView />
+      <TeamDirectionDashboard />
     </div>
   );
 }

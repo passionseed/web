@@ -4,13 +4,16 @@ import { streamText } from "ai";
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getModel } from "@/lib/ai/modelRegistry";
-import { getPhaseSpec } from "@/lib/hackathon/phase-specs";
+import { getPhaseSpec, getActivitySpec, formatActivitySpecForPrompt } from "@/lib/hackathon/phase-specs";
 import { persistDraft, type AiDraft } from "@/lib/hackathon/ai-grader";
 import {
   analyzeSubmission,
   formatImageAnalysisForPrompt,
   type SubmissionImageAnalysis,
 } from "@/lib/hackathon/image-analysis";
+
+// Allow up to 300 seconds for AI generation + image analysis
+export const maxDuration = 300;
 
 const AI_MODEL = "MiniMax-M2.7-highspeed";
 
@@ -124,7 +127,7 @@ function inferActivityLens(activityTitle: string | null, activityInstructions: s
       pattern: /(system|stakeholder|ecosystem|map|root cause|causal|leverage)/,
       outcome: "Map the system and identify leverage points.",
       evidence: "Actors, incentives, constraints, and why one leverage point matters most.",
-      redFlag: "Flat list of causes with no relationships or tradeoffs.",
+      redFlag: "Solution flowchart instead of problem map (shows app features/user journey instead of root causes/stakeholders/incentives). Flat list of causes with no relationships or tradeoffs.",
     },
     {
       pattern: /(solution|prototype|mvp|feature|design|wireframe|mockup|build)/,
@@ -234,12 +237,20 @@ function formatPriorRevisions(revisions: PriorRevision[]): string | null {
     .join("\n\n");
 }
 
+function formatLatestRevisionFeedback(revisions: PriorRevision[]): string | null {
+  if (!revisions?.length) return null;
+  const latest = revisions[revisions.length - 1];
+  if (!latest.review?.feedback) return null;
+  return compactText(latest.review.feedback, 600);
+}
+
 function buildPrompt(params: {
   phaseSpec: string | null;
   phaseNumber: number | null;
   phaseTitle: string | null;
   activityTitle: string | null;
   activityInstructions: string | null;
+  activitySpecFormatted: string;
   pointsPossible: number | null;
   assessments: AssessmentRow[];
   textAnswer: string | null;
@@ -248,6 +259,7 @@ function buildPrompt(params: {
   scope: "individual" | "team";
   ownerLabel: string;
   priorRevisions: PriorRevision[];
+  latestRevisionFeedback: string | null;
   imageAnalysis: SubmissionImageAnalysis | null;
   graderComment: string | null;
   upcomingActivities: { title: string; instructions: string | null; display_order: number | null }[];
@@ -258,6 +270,7 @@ function buildPrompt(params: {
     phaseTitle,
     activityTitle,
     activityInstructions,
+    activitySpecFormatted,
     pointsPossible,
     textAnswer,
     imageUrl,
@@ -266,6 +279,7 @@ function buildPrompt(params: {
     ownerLabel,
     assessments,
     priorRevisions,
+    latestRevisionFeedback,
     imageAnalysis,
     graderComment,
     upcomingActivities,
@@ -282,64 +296,87 @@ function buildPrompt(params: {
   const hasVisualSubmission = imageUrl || fileUrls.length > 0;
 
   return [
-    "Grading a hackathon submission. Be helpful, not verbose.",
+    "You are an experienced hackathon mentor grading student submissions. Your job is to assess whether the student has genuinely engaged with the learning goal — not whether they wrote a lot or used fancy words.",
     "",
-    "LANGUAGE: Match the student's submission language. Thai script = Thai. Otherwise English. No mixing.",
+    "=== LANGUAGE ===",
+    "Match the student's submission language. Thai script = Thai. Otherwise English. No mixing within the feedback.",
     "",
-    "ACTIVITY INSTRUCTIONS",
+    "=== ACTIVITY ===",
+    `Title: ${activityTitle ?? "Untitled"}`,
+    "",
+    "=== INSTRUCTIONS ===",
     shortInstructions,
     "",
-    "ASSESSMENT QUESTIONS",
+    "=== ASSESSMENT QUESTIONS ===",
     assessmentQuestions,
     "",
-    "Grade on whether they answered the above. Reasonable attempt = pass.",
+    activitySpecFormatted ? "=== ACTIVITY-SPECIFIC GRADING CONTEXT ===\n" + activitySpecFormatted : "",
     "",
-    "CONTEXT",
+    "=== PHASE CONTEXT ===",
     `Phase: ${phaseContext}`,
     `Learning goal: ${activityLens.outcome}`,
     `Evidence to look for: ${activityLens.evidence}`,
+    `Red flag: ${activityLens.redFlag}`,
     upcomingActivities.length > 0
-      ? `UPCOMING IN PHASE (don't suggest they'll do these later):\n${upcomingActivities.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}`
+      ? `\nUpcoming activities in this phase (do NOT suggest they'll do these later — they may have already):\n${upcomingActivities.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}`
       : "",
     "",
-    priorBlock ? `PRIOR ATTEMPTS:\n${priorBlock}` : "",
+    latestRevisionFeedback ? `=== PRIOR FEEDBACK (latest revision) ===\n${latestRevisionFeedback}\n\nCheck whether the student addressed this feedback in their current submission.` : "",
     "",
-    "CURRENT SUBMISSION",
+    priorBlock ? `=== PRIOR ATTEMPTS ===\n${priorBlock}` : "",
+    "",
+    "=== CURRENT SUBMISSION ===",
     shortAnswer,
     "",
     hasVisualSubmission && imageAnalysisText
-      ? `IMAGE ANALYSIS:\n${imageAnalysisText}`
+      ? `=== IMAGE ANALYSIS ===\n${imageAnalysisText}\n\nIf the image analysis flags a "solution flowchart" when the activity asks for a "problem map," this is an automatic revision_required — the student submitted the wrong artifact type.`
       : "(no images submitted)",
     "",
-    "RULES",
-    "- passed = genuine attempt at the questions.",
-    "- revision_required = off-topic, blank, or copy-paste with no effort.",
-    "- pending_review = genuinely unclear content.",
-    "- IMAGE CHECK: if instructions asked for image but none provided, score = 0 + revision_required. Otherwise ignore.",
-    pointsPossible != null
-      ? `- Score: 0-${pointsPossible}. ${Math.round(pointsPossible * 0.6)} is a solid pass.`
-      : "- Score: null (ungraded).",
-    "- Feedback: 3 short paragraphs — (1) what they did well, (2) 1-2 suggestions, (3) next step.",
-    "- Reasoning: short admin-only explanation.",
+    "=== GRADING RUBRIC ===",
+    "passed — The student made a genuine attempt at the learning goal. Their work shows evidence of real thinking, not just completion. They may have gaps, but the core understanding is present.",
+    "revision_required — The submission is off-topic, blank, copy-paste with no effort, or fundamentally misunderstands the task (e.g., solution flowchart instead of problem map). Be strict about artifact-type mismatches.",
+    "pending_review — The content is genuinely unclear, incomplete, or ambiguous. You cannot confidently assess it.",
     "",
-    "OUTPUT JSON:",
+    "=== SCORING ===",
+    pointsPossible != null
+      ? `- Score: 0 to ${pointsPossible}. ${Math.round(pointsPossible * 0.6)} is a solid pass. Award full points only for exceptional work that exceeds expectations.`
+      : "- Score: null (ungraded activity).",
+    "- If instructions asked for an image but none was provided: score = 0 AND revision_required.",
+    "- PROBLEM vs SOLUTION CHECK: For system/map activities, if the submission shows app features, user journeys, or 'how our product works' instead of root causes, stakeholder incentives, and forces keeping the problem alive → revision_required. Be strict.",
+    "",
+    "=== FEEDBACK FORMAT ===",
+    "Write 3 short paragraphs:",
+    "1. WHAT THEY DID WELL — Be specific. Quote or reference concrete parts of their submission. Generic praise is useless.",
+    "2. GAPS OR SUGGESTIONS — 1-2 specific things to improve. Tie each to the learning goal.",
+    "3. NEXT STEP — One clear action they should take next. If revision_required, state exactly what needs to change.",
+    "",
+    "=== REASONING ===",
+    "Provide a short admin-only explanation of your grading decision. What evidence made you decide? What was the decisive factor?",
+    "",
+    "=== OUTPUT FORMAT ===",
+    "Return ONLY a JSON object. No prose outside the JSON.",
     "```json",
     "{",
     '  "review_status": "passed" | "revision_required" | "pending_review",',
     pointsPossible != null
-      ? `  "score_awarded": <0..${pointsPossible}>,`
+      ? `  "score_awarded": <number 0..${pointsPossible}>,`
       : '  "score_awarded": null,',
-    '  "feedback": "<student-facing feedback>",',
-    '  "reasoning": "<admin-only>"',
+    '  "feedback": "<3-paragraph student-facing feedback>",',
+    '  "reasoning": "<admin-only grading rationale>"',
     "}",
     "```",
-    graderComment ? `\nHUMAN GRADER NOTE:\n${graderComment}` : "",
+    graderComment ? `\n=== HUMAN GRADER NOTE ===\n${graderComment}` : "",
   ]
     .filter(Boolean)
     .join("\n");
 }
 
-async function gatherPromptContext(scope: "individual" | "team", id: string, graderComment?: string | null) {
+async function gatherPromptContext(
+  scope: "individual" | "team",
+  id: string,
+  graderComment?: string | null,
+  opts?: { skipImageAnalysis?: boolean }
+) {
   const serviceClient = getHackathonServiceClient();
   const table =
     scope === "individual"
@@ -408,7 +445,7 @@ async function gatherPromptContext(scope: "individual" | "team", id: string, gra
   const fileUrls = Array.isArray(sub.file_urls) ? sub.file_urls : [];
 
   let imageAnalysis: SubmissionImageAnalysis | null = null;
-  if (imageUrl || fileUrls.length > 0) {
+  if (!opts?.skipImageAnalysis && (imageUrl || fileUrls.length > 0)) {
     try {
       imageAnalysis = await analyzeSubmission({
         imageUrl,
@@ -426,12 +463,23 @@ async function gatherPromptContext(scope: "individual" | "team", id: string, gra
     (a) => (a.display_order ?? 0) > currentActivityOrder
   );
 
+  // Load activity-specific spec for richer grading context
+  const activitySpec = await getActivitySpec(
+    phase?.phase_number ?? null,
+    activity?.display_order ?? null,
+    activity?.title ?? null
+  );
+  const activitySpecFormatted = formatActivitySpecForPrompt(activitySpec);
+
+  const latestRevisionFeedback = formatLatestRevisionFeedback(priorRevisions);
+
   const prompt = buildPrompt({
     phaseSpec,
     phaseNumber: phase?.phase_number ?? null,
     phaseTitle: phase?.title ?? null,
     activityTitle: activity?.title ?? null,
     activityInstructions: activity?.instructions ?? null,
+    activitySpecFormatted,
     pointsPossible,
     assessments,
     textAnswer: sub.text_answer ?? null,
@@ -440,6 +488,7 @@ async function gatherPromptContext(scope: "individual" | "team", id: string, gra
     scope,
     ownerLabel,
     priorRevisions,
+    latestRevisionFeedback,
     imageAnalysis,
     graderComment: graderComment ?? null,
     upcomingActivities,
@@ -448,6 +497,7 @@ async function gatherPromptContext(scope: "individual" | "team", id: string, gra
   return {
     prompt,
     hasPhaseSpec: Boolean(phaseSpec),
+    hasActivitySpec: Boolean(activitySpec),
     phaseNumber: phase?.phase_number ?? null,
     phaseTitle: phase?.title ?? null,
     activityTitle: activity?.title ?? null,
@@ -468,19 +518,33 @@ export async function GET(
     return NextResponse.json({ error: "Invalid submission scope" }, { status: 400 });
   }
 
-  const context = await gatherPromptContext(rawScope as "individual" | "team", id);
-  if (!context) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+  try {
+    const context = await gatherPromptContext(
+      rawScope as "individual" | "team",
+      id,
+      null,
+      { skipImageAnalysis: true }
+    );
+    if (!context) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
 
-  return NextResponse.json({
-    model: AI_MODEL,
-    has_phase_spec: context.hasPhaseSpec,
-    phase_number: context.phaseNumber,
-    phase_title: context.phaseTitle,
-    activity_title: context.activityTitle,
-    points_possible: context.pointsPossible,
-    has_image_analysis: context.hasImageAnalysis,
-    prompt: context.prompt,
-  });
+    return NextResponse.json({
+      model: AI_MODEL,
+      has_phase_spec: context.hasPhaseSpec,
+      has_activity_spec: context.hasActivitySpec,
+      phase_number: context.phaseNumber,
+      phase_title: context.phaseTitle,
+      activity_title: context.activityTitle,
+      points_possible: context.pointsPossible,
+      has_image_analysis: false,
+      prompt: context.prompt,
+    });
+  } catch (err: any) {
+    console.error("[admin/hackathon/ai-grade] GET error:", err);
+    return NextResponse.json(
+      { error: "Failed to load prompt", message: err?.message ?? String(err) },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(

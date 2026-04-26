@@ -8,7 +8,8 @@ export type ContentType =
   | 'image'
   | 'pdf'
   | 'ai_chat'
-  | 'npc_chat';
+  | 'npc_chat'
+  | 'chat_comic';
 
 export type AssessmentType =
   | 'text_answer'

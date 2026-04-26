@@ -9,7 +9,7 @@ import {
   type HackathonReviewStatus,
   type HackathonSubmissionScope,
 } from "@/lib/hackathon/admin-submissions";
-import { fireAndForgetTeamDirectionEmbed } from "@/lib/embeddings/team-direction";
+import { enqueueEmbedJob } from "@/lib/embeddings/jobs";
 
 const reviewSchema = z.object({
   review_status: z.enum(["pending_review", "passed", "revision_required"]),
@@ -229,14 +229,14 @@ export async function POST(
     ? (submission as any).team_id
     : null;
   if (teamId) {
-    fireAndForgetTeamDirectionEmbed(teamId);
+    await enqueueEmbedJob(teamId, "review");
   } else if (scope === "individual") {
     const { data: mem } = await serviceClient
       .from("hackathon_team_members")
       .select("team_id")
       .eq("participant_id", (submission as any).participant_id)
       .maybeSingle();
-    if (mem) fireAndForgetTeamDirectionEmbed(mem.team_id);
+    if (mem) await enqueueEmbedJob(mem.team_id, "review");
   }
 
   return NextResponse.json({
