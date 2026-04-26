@@ -12,3 +12,150 @@ export async function getPhaseSpec(phaseNumber: number | null | undefined): Prom
     return null;
   }
 }
+
+export interface ActivitySpec {
+  title: string;
+  learningGoal: string;
+  whatToLookFor: string[];
+  redFlags: string[];
+  exemplars?: {
+    strong: string;
+    weak: string;
+  };
+  gradingGuidance?: string;
+}
+
+export async function getActivitySpec(
+  phaseNumber: number | null | undefined,
+  activityDisplayOrder: number | null | undefined,
+  activityTitle: string | null | undefined
+): Promise<ActivitySpec | null> {
+  if (!phaseNumber || !activityDisplayOrder) return null;
+
+  // Try slugified title first, then fallback to display order
+  const slug = activityTitle
+    ? activityTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .slice(0, 40)
+    : null;
+
+  const candidates: string[] = [];
+  if (slug) {
+    candidates.push(path.join(SPECS_DIR, `phase-${phaseNumber}`, `activity-${activityDisplayOrder}-${slug}.md`));
+  }
+  candidates.push(path.join(SPECS_DIR, `phase-${phaseNumber}`, `activity-${activityDisplayOrder}.md`));
+
+  for (const filePath of candidates) {
+    try {
+      const content = await fs.readFile(filePath, "utf8");
+      return parseActivitySpec(content);
+    } catch {
+      // try next candidate
+    }
+  }
+  return null;
+}
+
+function parseActivitySpec(content: string): ActivitySpec {
+  const lines = content.split("\n");
+  const spec: ActivitySpec = {
+    title: "",
+    learningGoal: "",
+    whatToLookFor: [],
+    redFlags: [],
+  };
+
+  let currentSection: keyof ActivitySpec | null = null;
+  let buffer: string[] = [];
+
+  function flush() {
+    if (!currentSection || buffer.length === 0) return;
+    const text = buffer.join("\n").trim();
+    if (currentSection === "whatToLookFor" || currentSection === "redFlags") {
+      (spec[currentSection] as string[]) = text
+        .split("\n")
+        .map((l) => l.replace(/^[-*]\s*/, "").trim())
+        .filter(Boolean);
+    } else if (currentSection === "exemplars") {
+      const strong = text.match(/Strong:\s*([\s\S]*?)(?=Weak:|$)/i)?.[1]?.trim();
+      const weak = text.match(/Weak:\s*([\s\S]*?)$/i)?.[1]?.trim();
+      if (strong || weak) {
+        spec.exemplars = { strong: strong ?? "", weak: weak ?? "" };
+      }
+    } else {
+      (spec[currentSection] as string) = text;
+    }
+    buffer = [];
+  }
+
+  for (const line of lines) {
+    const headerMatch = line.match(/^##\s*(.+)$/);
+    if (headerMatch) {
+      flush();
+      const section = headerMatch[1].trim().toLowerCase().replace(/\s+/g, "");
+      switch (section) {
+        case "title":
+          currentSection = "title";
+          break;
+        case "learninggoal":
+        case "learning_goal":
+        case "learninggoal":
+          currentSection = "learningGoal";
+          break;
+        case "whattolookfor":
+        case "what_to_look_for":
+        case "criteria":
+          currentSection = "whatToLookFor";
+          break;
+        case "redflags":
+        case "red_flags":
+        case "warnings":
+          currentSection = "redFlags";
+          break;
+        case "exemplars":
+        case "examples":
+          currentSection = "exemplars";
+          break;
+        case "gradingguidance":
+        case "grading_guidance":
+        case "notes":
+          currentSection = "gradingGuidance";
+          break;
+        default:
+          currentSection = null;
+      }
+    } else if (currentSection) {
+      buffer.push(line);
+    }
+  }
+  flush();
+
+  return spec;
+}
+
+export function formatActivitySpecForPrompt(spec: ActivitySpec | null): string {
+  if (!spec) return "";
+  const parts: string[] = [];
+  if (spec.learningGoal) {
+    parts.push(`LEARNING GOAL: ${spec.learningGoal}`);
+  }
+  if (spec.whatToLookFor.length > 0) {
+    parts.push(`\nLOOK FOR EVIDENCE OF:`);
+    spec.whatToLookFor.forEach((item, i) => parts.push(`${i + 1}. ${item}`));
+  }
+  if (spec.redFlags.length > 0) {
+    parts.push(`\nRED FLAGS — AUTO-FAIL IF:`);
+    spec.redFlags.forEach((item, i) => parts.push(`${i + 1}. ${item}`));
+  }
+  if (spec.exemplars) {
+    parts.push(`\nEXEMPLARS:`);
+    if (spec.exemplars.strong) parts.push(`Strong submission: ${spec.exemplars.strong}`);
+    if (spec.exemplars.weak) parts.push(`Weak submission: ${spec.exemplars.weak}`);
+  }
+  if (spec.gradingGuidance) {
+    parts.push(`\nGRADING NOTES: ${spec.gradingGuidance}`);
+  }
+  return parts.join("\n");
+}

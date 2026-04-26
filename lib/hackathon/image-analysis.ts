@@ -158,6 +158,12 @@ Analyze this diagram, system map, or user journey. Describe concretely:
 5. Clarity and depth
 6. Alignment with the learning goal
 
+CRITICAL DISTINCTION — state explicitly in your analysis:
+- Is this a PROBLEM system map (showing root causes, stakeholder incentives, constraints, and relationships in the problem space)?
+- OR is this a SOLUTION flowchart (showing app features, user journey, product functionality, or how the proposed solution works)?
+
+If it is a solution flowchart when the learning goal asks for a problem map, flag this as a mismatch. A solution flowchart shows "what we built" — a problem map shows "why the problem exists and what forces keep it alive." These are fundamentally different.
+
 Describe what you literally see, including text labels if readable.`,
 
     photo: `${baseContext}
