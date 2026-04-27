@@ -114,6 +114,63 @@ export async function replyLineTextMessage(replyToken: string, text: string): Pr
   });
 }
 
+export async function sendMentorAcceptedEmail(
+  studentEmail: string,
+  studentName: string,
+  mentor: MentorProfile,
+  booking: MentorBooking & { discord_room: number }
+): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    console.log("[Resend] RESEND_API_KEY not set — skipping acceptance email");
+    return;
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const slotDate = new Date(booking.slot_datetime);
+  const dateStr = slotDate.toLocaleDateString("th-TH", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "Asia/Bangkok",
+  });
+  const timeStr = slotDate.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Bangkok",
+  });
+
+  try {
+    await resend.emails.send({
+      from: "The Next Decade Hackathon 2026 <hi@noreply.passionseed.org>",
+      to: studentEmail,
+      subject: "Mentor ยืนยันการนัดหมายแล้ว - The Next Decade Hackathon 2026",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #91C4E3;">Mentor ยืนยันการนัดหมายแล้ว ✅</h1>
+          <p>สวัสดีครับ/ค่ะ คุณ${studentName},</p>
+          <p>
+            <strong>${mentor.full_name}</strong> ยืนยันการนัดหมายของคุณแล้ว
+          </p>
+          <div style="margin: 20px 0; padding: 16px; background: #f0f9ff; border-left: 4px solid #91C4E3; border-radius: 4px;">
+            <p style="margin: 0; color: #333; font-size: 14px;"><strong>วันที่:</strong> ${dateStr}</p>
+            <p style="margin: 8px 0 0; color: #333; font-size: 14px;"><strong>เวลา:</strong> ${timeStr} น. (${booking.duration_minutes} นาที)</p>
+            <p style="margin: 8px 0 0; color: #333; font-size: 14px;"><strong>ห้อง Discord:</strong> 🎙 ห้อง ${booking.discord_room}</p>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            กรุณาเข้า Discord ก่อนเวลานัดหมาย และเข้าห้องที่กำหนดเพื่อพบกับ Mentor
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            ขอบคุณที่เข้าร่วม The Next Decade Hackathon 2026
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("[Resend] Failed to send mentor accepted email:", err);
+  }
+}
+
 export async function sendMentorCancellationEmail(
   studentEmail: string,
   studentName: string,

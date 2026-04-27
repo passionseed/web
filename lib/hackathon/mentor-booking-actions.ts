@@ -6,6 +6,7 @@ import {
 import {
   sendMentorSessionConfirmedNotification,
   sendMentorCancellationEmail,
+  sendMentorAcceptedEmail,
 } from "@/lib/hackathon/line";
 import type { MentorBooking, MentorProfile } from "@/types/mentor";
 
@@ -127,6 +128,24 @@ export async function updateMentorBookingStatus(
         });
       } catch (lineErr) {
         console.error("Line notify failed:", lineErr);
+      }
+
+      // Email the student
+      if (booking.student_id) {
+        const { data: student } = await client
+          .from("hackathon_participants")
+          .select("name, email")
+          .eq("id", booking.student_id)
+          .single();
+
+        if (student?.email) {
+          sendMentorAcceptedEmail(
+            student.email,
+            student.name,
+            mentor,
+            { ...thisBooking, discord_room: thisBooking.discord_room }
+          ).catch(console.error);
+        }
       }
     }
 

@@ -11,6 +11,13 @@ function getClient() {
   );
 }
 
+function getHackathonClient() {
+  return createClient(
+    process.env.HACKATHON_SUPABASE_URL!,
+    process.env.HACKATHON_SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
 function extractToken(req: NextRequest): string | null {
   const auth = req.headers.get("authorization") ?? "";
   if (auth.startsWith("Bearer ")) return auth.slice(7);
@@ -47,15 +54,31 @@ export async function POST(req: NextRequest) {
 
   const teamId = membership?.team_id ?? null;
 
-  // Enforce one active booking per team
-  if (teamId) {
+  // Check if the chosen mentor is a group mentor (group mentors have no booking limit)
+  let isGroupMentor = false;
+  if (mentor_id) {
+    const { data: mentorCheck } = await supabase
+      .from("mentor_profiles")
+      .select("session_type")
+      .eq("id", mentor_id)
+      .single();
+    isGroupMentor = mentorCheck?.session_type === "group";
+  }
+
+  // Enforce one active booking per team (healthcare only — group mentors are unlimited)
+  if (teamId && !isGroupMentor) {
     const { data: existingBookings } = await supabase
       .from("mentor_bookings")
-      .select("id, status")
+      .select("id, status, mentor_id, mentor_profiles(session_type)")
       .eq("team_id", teamId)
       .neq("status", "cancelled");
 
-    if (existingBookings && existingBookings.length > 0) {
+    const healthcareBookings = (existingBookings ?? []).filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (b: any) => b.mentor_profiles?.session_type !== "group"
+    );
+
+    if (healthcareBookings.length > 0) {
       return NextResponse.json(
         { error: "ทีมของคุณใช้สิทธิ์จอง Mentor ครบแล้ว (1 ครั้งต่อทีม)" },
         { status: 409 }
@@ -63,21 +86,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // If team has mentor assignments, enforce that the chosen mentor is one of them
-  if (teamId && mentor_id) {
-    const { data: assignments } = await supabase
+  // Group mentors: must be assigned to the team — no assignment = no booking
+  if (mentor_id && isGroupMentor) {
+    const hackathonDb = getHackathonClient();
+    const { data: assignments } = await hackathonDb
       .from("mentor_team_assignments")
       .select("mentor_id")
-      .eq("team_id", teamId);
+      .eq("team_id", teamId ?? "");
 
-    if (assignments && assignments.length > 0) {
-      const assignedIds = assignments.map((a: { mentor_id: string }) => a.mentor_id);
-      if (!assignedIds.includes(mentor_id)) {
-        return NextResponse.json(
-          { error: "Mentor นี้ไม่ได้รับมอบหมายให้ทีมของคุณ" },
-          { status: 403 }
-        );
-      }
+    const assignedIds = (assignments ?? []).map((a: { mentor_id: string }) => a.mentor_id);
+    if (!assignedIds.includes(mentor_id)) {
+      return NextResponse.json(
+        { error: "Mentor นี้ไม่ได้รับมอบหมายให้ทีมของคุณ" },
+        { status: 403 }
+      );
     }
   }
 
