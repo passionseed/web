@@ -3,10 +3,27 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Clock, X } from "lucide-react";
+import { ChevronRight, Clock, X, Loader2, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import type { MentorProfile } from "@/types/mentor";
+
+interface AssignedTeam {
+  id: string; // assignment id
+  team_id: string;
+  assigned_at: string;
+  hackathon_teams: {
+    id: string;
+    name: string;
+    lobby_code: string;
+  } | null;
+}
+
+interface TeamOption {
+  id: string;
+  name: string;
+  lobby_code: string;
+}
 
 type AvailabilitySlot = { day_of_week: number; hour: number };
 
@@ -301,6 +318,149 @@ export function AdminHackathonMentors() {
   );
 }
 
+function MentorGroupAssignmentRow({ mentorId }: { mentorId: string }) {
+  const [assignments, setAssignments] = useState<AssignedTeam[]>([]);
+  const [teamOptions, setTeamOptions] = useState<TeamOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/admin/hackathon/mentors/${mentorId}/assignments`).then((r) => r.json()),
+      fetch("/api/admin/hackathon/teams").then((r) => r.json()),
+    ]).then(([assignData, teamsData]) => {
+      setAssignments(assignData.assignments ?? []);
+      setTeamOptions(
+        (teamsData.teams ?? []).map((t: TeamOption) => ({
+          id: t.id,
+          name: t.name,
+          lobby_code: t.lobby_code,
+        }))
+      );
+    }).finally(() => setLoading(false));
+  }, [mentorId]);
+
+  async function handleAssign() {
+    if (!selectedTeamId) return;
+    setAssigning(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/hackathon/mentors/${mentorId}/assignments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team_id: selectedTeamId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Failed to assign"); return; }
+      const updated = await fetch(`/api/admin/hackathon/mentors/${mentorId}/assignments`).then((r) => r.json());
+      setAssignments(updated.assignments ?? []);
+      setSelectedTeamId("");
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function handleRemove(teamId: string) {
+    setRemoving(teamId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/hackathon/mentors/${mentorId}/assignments`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team_id: teamId }),
+      });
+      if (!res.ok) { setError("Failed to remove"); return; }
+      setAssignments((prev) => prev.filter((a) => a.team_id !== teamId));
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  const assignedTeamIds = new Set(assignments.map((a) => a.team_id));
+  const availableOptions = teamOptions.filter((t) => !assignedTeamIds.has(t.id));
+
+  if (loading) {
+    return (
+      <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading team assignments...
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3 space-y-3">
+      <span className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
+        <Users className="h-3 w-3" />
+        Assigned Teams
+      </span>
+
+      {assignments.length === 0 ? (
+        <p className="text-xs text-slate-500">No teams assigned yet.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {assignments.map((a) => (
+            <div
+              key={a.id}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-xs text-indigo-200"
+            >
+              <span>{a.hackathon_teams?.name ?? a.team_id}</span>
+              {a.hackathon_teams?.lobby_code && (
+                <span className="text-indigo-400 font-mono">{a.hackathon_teams.lobby_code}</span>
+              )}
+              <button
+                onClick={() => handleRemove(a.team_id)}
+                disabled={removing === a.team_id}
+                className="text-indigo-400 hover:text-red-400 transition-colors ml-0.5"
+              >
+                {removing === a.team_id ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <X className="h-3 w-3" />
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {availableOptions.length > 0 && (
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedTeamId}
+            onChange={(e) => setSelectedTeamId(e.target.value)}
+            className="flex-1 h-8 rounded-md border border-slate-700 bg-slate-950 px-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500/60"
+          >
+            <option value="">Select a team...</option>
+            {availableOptions.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} ({t.lobby_code})
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            onClick={handleAssign}
+            disabled={assigning || !selectedTeamId}
+            className="h-8 px-3 text-xs bg-indigo-600 hover:bg-indigo-500 text-white shrink-0"
+          >
+            {assigning ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+            Assign
+          </Button>
+        </div>
+      )}
+
+      {availableOptions.length === 0 && assignments.length > 0 && (
+        <p className="text-xs text-slate-500">All teams are assigned to this mentor.</p>
+      )}
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  );
+}
+
 function MentorRow({
   mentor,
   bookings,
@@ -436,6 +596,13 @@ function MentorRow({
           </Button>
         </div>
       </div>
+
+      {/* Group mentor team assignments */}
+      {mentor.session_type === "group" && (
+        <div className="px-4 pb-3">
+          <MentorGroupAssignmentRow mentorId={mentor.id} />
+        </div>
+      )}
 
       {/* Bookings expand */}
       <AnimatePresence initial={false}>
