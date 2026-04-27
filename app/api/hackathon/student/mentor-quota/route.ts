@@ -43,8 +43,9 @@ export async function GET(req: NextRequest) {
 
   const teamId = membership.team_id;
 
-  // Fetch mentor IDs assigned to this team
-  const { data: assignments } = await supabase
+  // Fetch mentor IDs assigned to this team (from hackathon DB)
+  const hackathonDb = getHackathonClient();
+  const { data: assignments } = await hackathonDb
     .from("mentor_team_assignments")
     .select("mentor_id")
     .eq("team_id", teamId);
@@ -85,6 +86,11 @@ export async function GET(req: NextRequest) {
   // Active = pending or confirmed
   const activeBooking = bookings.find((b) => b.status !== "cancelled");
   if (activeBooking) {
+    // If the meeting time has passed, treat as completed — restore quota
+    const meetingEnd = new Date(activeBooking.slot_datetime).getTime() + (activeBooking.duration_minutes ?? 30) * 60 * 1000;
+    if (activeBooking.status === "confirmed" && Date.now() > meetingEnd) {
+      return NextResponse.json({ chances_left: 1, booking: null, assigned_mentor_ids: assignedMentorIds });
+    }
     return NextResponse.json({ chances_left: 0, booking: activeBooking, assigned_mentor_ids: assignedMentorIds });
   }
 
