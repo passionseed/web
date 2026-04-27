@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, FileText, Paperclip, Image as ImageIcon, ChevronLeft, Users } from "lucide-react";
+import { Loader2, FileText, Paperclip, Image as ImageIcon, ChevronLeft, Users, CheckCircle, RotateCcw, MessageSquare, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -426,6 +426,170 @@ function ActivityList({
   );
 }
 
+// ─── Grade Panel ───────────────────────────────────────────────────────────────
+
+function GradePanel({
+  scope,
+  submissionId,
+  currentStatus,
+  onGraded,
+}: {
+  scope: "individual" | "team";
+  submissionId: string;
+  currentStatus: string;
+  onGraded: (newStatus: string) => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [comment, setComment] = useState("");
+  const [sendingComment, setSendingComment] = useState(false);
+  const [commentSent, setCommentSent] = useState(false);
+
+  async function grade(status: "passed" | "revision_required") {
+    setSubmitting(true);
+    try {
+      const res = await fetch(
+        `/api/hackathon/mentor/submissions/${scope}/${submissionId}/grade`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ review_status: status, feedback: feedback.trim() || undefined }),
+        }
+      );
+      if (res.ok) {
+        onGraded(status);
+        setFeedback("");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function sendComment() {
+    if (!comment.trim()) return;
+    setSendingComment(true);
+    try {
+      const res = await fetch(
+        `/api/hackathon/mentor/submissions/${scope}/${submissionId}/comment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: comment.trim() }),
+        }
+      );
+      if (res.ok) {
+        setComment("");
+        setCommentSent(true);
+        setTimeout(() => setCommentSent(false), 2500);
+      }
+    } finally {
+      setSendingComment(false);
+    }
+  }
+
+  const isReviewable = currentStatus !== "passed";
+
+  return (
+    <div
+      className="border-t px-4 py-3 space-y-3"
+      style={{ borderColor: "rgba(74,107,130,0.15)" }}
+    >
+      {/* Feedback textarea */}
+      <div>
+        <div
+          className="text-xs font-semibold tracking-widest uppercase mb-1.5 font-[family-name:var(--font-mitr)]"
+          style={{ color: "#3d5a6e" }}
+        >
+          Feedback (optional)
+        </div>
+        <textarea
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          placeholder="Write feedback for the participant…"
+          rows={2}
+          className="w-full rounded-lg px-3 py-2 text-sm resize-none outline-none font-[family-name:var(--font-mitr)]"
+          style={{
+            background: "rgba(1,1,8,0.6)",
+            border: "1px solid rgba(74,107,130,0.25)",
+            color: "#c8d8e4",
+          }}
+        />
+      </div>
+
+      {/* Grade buttons */}
+      {isReviewable && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => grade("passed")}
+            disabled={submitting}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 font-[family-name:var(--font-mitr)]"
+            style={{
+              background: "rgba(52,211,153,0.12)",
+              border: "1px solid rgba(52,211,153,0.35)",
+              color: "#34d399",
+            }}
+          >
+            {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
+            Pass
+          </button>
+          <button
+            onClick={() => grade("revision_required")}
+            disabled={submitting}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 font-[family-name:var(--font-mitr)]"
+            style={{
+              background: "rgba(248,113,113,0.1)",
+              border: "1px solid rgba(248,113,113,0.3)",
+              color: "#f87171",
+            }}
+          >
+            {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+            Needs revision
+          </button>
+        </div>
+      )}
+
+      {/* Comment section */}
+      <div>
+        <div
+          className="text-xs font-semibold tracking-widest uppercase mb-1.5 font-[family-name:var(--font-mitr)]"
+          style={{ color: "#3d5a6e" }}
+        >
+          <MessageSquare className="inline h-3 w-3 mr-1" />
+          Comment
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendComment()}
+            placeholder="Leave a comment for the participant…"
+            className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none font-[family-name:var(--font-mitr)]"
+            style={{
+              background: "rgba(1,1,8,0.6)",
+              border: "1px solid rgba(74,107,130,0.25)",
+              color: "#c8d8e4",
+            }}
+          />
+          <button
+            onClick={sendComment}
+            disabled={sendingComment || !comment.trim()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all disabled:opacity-40 font-[family-name:var(--font-mitr)]"
+            style={{
+              background: commentSent ? "rgba(52,211,153,0.12)" : "rgba(145,196,227,0.1)",
+              border: commentSent ? "1px solid rgba(52,211,153,0.3)" : "1px solid rgba(145,196,227,0.25)",
+              color: commentSent ? "#34d399" : "#91C4E3",
+            }}
+          >
+            {sendingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            {commentSent ? "Sent!" : "Send"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Submission Detail ─────────────────────────────────────────────────────────
 
 function SubmissionDetail({
@@ -433,11 +597,13 @@ function SubmissionDetail({
   activity,
   activeMemberId,
   onMemberSwitch,
+  onStatusChanged,
 }: {
   team: AssembledTeam;
   activity: ActivityGroup | null;
   activeMemberId: string | null;
   onMemberSwitch: (id: string) => void;
+  onStatusChanged: (activityId: string, submissionId: string, scope: "individual" | "team", newStatus: string) => void;
 }) {
   if (!activity) {
     return (
@@ -463,6 +629,9 @@ function SubmissionDetail({
 
   const viewingContent = activeIndividualSub ?? activity.team_submission;
   const isTeamView = activeIndividualSub === null;
+
+  const gradableScope: "individual" | "team" = activeIndividualSub ? "individual" : "team";
+  const gradableId = viewingContent?.id ?? null;
   const hasTextAnswer = Boolean(viewingContent?.text_answer?.trim());
 
   return (
@@ -636,7 +805,7 @@ function SubmissionDetail({
           </div>
 
           <div
-            className="px-4 py-2.5 border-t flex items-center justify-between"
+            className="px-4 py-2 border-t flex items-center justify-between"
             style={{ borderColor: "rgba(74,107,130,0.15)" }}
           >
             <span
@@ -673,6 +842,15 @@ function SubmissionDetail({
               </span>
             )}
           </div>
+
+          {gradableId && (
+            <GradePanel
+              scope={gradableScope}
+              submissionId={gradableId}
+              currentStatus={viewingContent.status}
+              onGraded={(newStatus) => onStatusChanged(activity.activity_id, gradableId, gradableScope, newStatus)}
+            />
+          )}
         </>
       ) : (
         <div
@@ -746,6 +924,57 @@ export function MentorTeamSubmissions() {
     setActiveMemberId(firstSubmitter?.participant_id ?? null);
   }
 
+  function handleStatusChanged(
+    activityId: string,
+    submissionId: string,
+    scope: "individual" | "team",
+    newStatus: string
+  ) {
+    if (!selectedTeam) return;
+    setAllTeams((prev) =>
+      prev.map((t) => {
+        if (t.id !== selectedTeam.id) return t;
+        const updatedActivities = t.activities.map((a) => {
+          if (a.activity_id !== activityId) return a;
+          if (scope === "team" && a.team_submission?.id === submissionId) {
+            return { ...a, team_submission: { ...a.team_submission!, status: newStatus } };
+          }
+          if (scope === "individual") {
+            return {
+              ...a,
+              participant_submissions: a.participant_submissions.map((ps) =>
+                ps.id === submissionId ? { ...ps, status: newStatus } : ps
+              ),
+            };
+          }
+          return a;
+        });
+        return { ...t, activities: updatedActivities };
+      })
+    );
+    setSelectedTeam((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        activities: prev.activities.map((a) => {
+          if (a.activity_id !== activityId) return a;
+          if (scope === "team" && a.team_submission?.id === submissionId) {
+            return { ...a, team_submission: { ...a.team_submission!, status: newStatus } };
+          }
+          if (scope === "individual") {
+            return {
+              ...a,
+              participant_submissions: a.participant_submissions.map((ps) =>
+                ps.id === submissionId ? { ...ps, status: newStatus } : ps
+              ),
+            };
+          }
+          return a;
+        }),
+      };
+    });
+  }
+
   const assignedTeams = allTeams.filter((t) => t.is_assigned);
 
   if (loading) {
@@ -802,6 +1031,7 @@ export function MentorTeamSubmissions() {
             activity={selectedActivity}
             activeMemberId={activeMemberId}
             onMemberSwitch={setActiveMemberId}
+            onStatusChanged={handleStatusChanged}
           />
         </div>
       </div>
