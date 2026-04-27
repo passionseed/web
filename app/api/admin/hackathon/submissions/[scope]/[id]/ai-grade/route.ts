@@ -12,8 +12,8 @@ import {
   type SubmissionImageAnalysis,
 } from "@/lib/hackathon/image-analysis";
 
-// Allow up to 300 seconds for AI generation + image analysis
-export const maxDuration = 300;
+// Hobby plan max is 60s
+export const maxDuration = 60;
 
 const AI_MODEL = "MiniMax-M2.7-highspeed";
 
