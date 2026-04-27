@@ -63,6 +63,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // If team has mentor assignments, enforce that the chosen mentor is one of them
+  if (teamId && mentor_id) {
+    const { data: assignments } = await supabase
+      .from("mentor_team_assignments")
+      .select("mentor_id")
+      .eq("team_id", teamId);
+
+    if (assignments && assignments.length > 0) {
+      const assignedIds = assignments.map((a: { mentor_id: string }) => a.mentor_id);
+      if (!assignedIds.includes(mentor_id)) {
+        return NextResponse.json(
+          { error: "Mentor นี้ไม่ได้รับมอบหมายให้ทีมของคุณ" },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   // Validate mentor if provided
   let mentor: MentorProfile | null = null;
   if (mentor_id) {
