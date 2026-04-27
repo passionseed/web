@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createPortal } from "react-dom";
-import { Loader2, FileText, Paperclip, Image as ImageIcon, ChevronLeft, Users, Plus, X } from "lucide-react";
+import { Loader2, FileText, Paperclip, Image as ImageIcon, ChevronLeft, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -252,135 +251,6 @@ function buildPhaseGroups(team: AssembledTeam): PhaseGroup[] {
       }),
     }))
     .sort((a, b) => (a.phase_number ?? Number.MAX_SAFE_INTEGER) - (b.phase_number ?? Number.MAX_SAFE_INTEGER));
-}
-
-// ─── Team Picker Modal ────────────────────────────────────────────────────────
-
-function TeamPickerModal({
-  allTeams,
-  onPick,
-  onClose,
-}: {
-  allTeams: AssembledTeam[];
-  onPick: (teamId: string) => void;
-  onClose: () => void;
-}) {
-  const [query, setQuery] = useState("");
-  const unassigned = allTeams.filter((t) => !t.is_assigned);
-  const filtered = query.trim()
-    ? unassigned.filter(
-        (t) =>
-          t.name.toLowerCase().includes(query.toLowerCase()) ||
-          t.lobby_code.toLowerCase().includes(query.toLowerCase())
-      )
-    : unassigned;
-
-  const modal = (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-      style={{ background: "rgba(1,1,8,0.92)", backdropFilter: "blur(8px)" }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl p-5 space-y-4"
-        style={{
-          background: "linear-gradient(135deg, rgba(10,15,22,0.99), rgba(15,23,35,0.99))",
-          border: "1px solid rgba(74,107,130,0.35)",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white font-[family-name:var(--font-bai-jamjuree)]">
-            Pick a Team
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 transition-colors"
-            style={{ color: "#5a7a94" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#fff")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#5a7a94")}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Search */}
-        <div className="relative">
-          <input
-            autoFocus
-            type="text"
-            placeholder="Search by team name or code..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-xl px-3 py-2 text-base outline-none font-[family-name:var(--font-mitr)]"
-            style={{
-              background: "rgba(1,1,8,0.6)",
-              border: "1px solid rgba(74,107,130,0.3)",
-              color: "#c8d8e4",
-            }}
-          />
-        </div>
-
-        {unassigned.length === 0 ? (
-          <p
-            className="py-6 text-center text-sm font-[family-name:var(--font-mitr)]"
-            style={{ color: "#5a7a94" }}
-          >
-            All teams are already assigned.
-          </p>
-        ) : filtered.length === 0 ? (
-          <p
-            className="py-6 text-center text-sm font-[family-name:var(--font-mitr)]"
-            style={{ color: "#5a7a94" }}
-          >
-            No teams match &ldquo;{query}&rdquo;.
-          </p>
-        ) : (
-          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-            {filtered.map((team) => (
-              <button
-                key={team.id}
-                onClick={() => onPick(team.id)}
-                className="w-full text-left px-4 py-3 rounded-xl transition-all"
-                style={{
-                  background: "rgba(165,148,186,0.06)",
-                  border: "1px solid rgba(165,148,186,0.15)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "rgba(165,148,186,0.14)";
-                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(165,148,186,0.35)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "rgba(165,148,186,0.06)";
-                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(165,148,186,0.15)";
-                }}
-              >
-                <p className="text-base font-medium text-white font-[family-name:var(--font-bai-jamjuree)]">
-                  {team.name}
-                </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span
-                    className="text-[10px] font-[family-name:var(--font-space-mono)]"
-                    style={{ color: "#5a7a94" }}
-                  >
-                    {team.lobby_code}
-                  </span>
-                  <span
-                    className="text-[10px] font-[family-name:var(--font-mitr)]"
-                    style={{ color: "#7a9ab2" }}
-                  >
-                    · {team.member_count} members
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  return createPortal(modal, document.body);
 }
 
 // ─── Activity List ─────────────────────────────────────────────────────────────
@@ -821,8 +691,6 @@ function SubmissionDetail({
 export function MentorTeamSubmissions() {
   const [allTeams, setAllTeams] = useState<AssembledTeam[]>([]);
   const [loading, setLoading] = useState(true);
-  const [assigning, setAssigning] = useState(false);
-  const [showPicker, setShowPicker] = useState(false);
 
   // Submission view state
   const [selectedTeam, setSelectedTeam] = useState<AssembledTeam | null>(null);
@@ -844,28 +712,6 @@ export function MentorTeamSubmissions() {
   useEffect(() => {
     loadTeams();
   }, [loadTeams]);
-
-  async function handlePick(teamId: string) {
-    setAssigning(true);
-    try {
-      const res = await fetch("/api/hackathon/mentor/teams/assign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team_id: teamId }),
-      });
-      if (res.ok) {
-        // Reload teams so is_assigned is updated
-        const reloaded = await fetch("/api/hackathon/mentor/teams").then((r) => r.json());
-        if (reloaded.teams) {
-          const assembled = reloaded.teams.map(assembleTeam);
-          setAllTeams(assembled);
-          setShowPicker(false);
-        }
-      }
-    } finally {
-      setAssigning(false);
-    }
-  }
 
   function handleSelectTeam(team: AssembledTeam) {
     setSelectedTeam(team);
@@ -965,16 +811,7 @@ export function MentorTeamSubmissions() {
   // ─── Team Grid View ─────────────────────────────────────────────────────────
   return (
     <>
-      {showPicker && (
-        <TeamPickerModal
-          allTeams={allTeams}
-          onPick={handlePick}
-          onClose={() => setShowPicker(false)}
-        />
-      )}
-
       <div className="grid grid-cols-2 gap-3">
-        {/* Assigned team cards */}
         {assignedTeams.map((team) => {
           const passedCount = team.activities.filter((a) => a.status === "passed").length;
           const pendingCount = team.activities.filter(
@@ -1049,35 +886,6 @@ export function MentorTeamSubmissions() {
             </button>
           );
         })}
-
-        {/* "+" add team card */}
-        <button
-          onClick={() => setShowPicker(true)}
-          disabled={assigning}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all min-h-[100px]"
-          style={{
-            background: "transparent",
-            border: "1px dashed rgba(74,107,130,0.3)",
-            color: "#3d5a6e",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "rgba(145,196,227,0.35)";
-            (e.currentTarget as HTMLElement).style.color = "#91C4E3";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = "rgba(74,107,130,0.3)";
-            (e.currentTarget as HTMLElement).style.color = "#3d5a6e";
-          }}
-        >
-          {assigning ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Plus className="h-5 w-5" />
-          )}
-          <span className="text-base font-[family-name:var(--font-mitr)]">
-            {assigning ? "Assigning..." : "Add Team"}
-          </span>
-        </button>
       </div>
 
       {assignedTeams.length === 0 && (
@@ -1085,7 +893,7 @@ export function MentorTeamSubmissions() {
           className="mt-4 text-center text-sm font-[family-name:var(--font-mitr)]"
           style={{ color: "#3d5a6e" }}
         >
-          Click &ldquo;Add Team&rdquo; to self-assign a team and view their submissions.
+          No teams assigned yet. An admin will assign teams to you.
         </p>
       )}
     </>
