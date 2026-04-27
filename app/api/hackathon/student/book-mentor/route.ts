@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   if (teamId && !isGroupMentor) {
     const { data: existingBookings } = await supabase
       .from("mentor_bookings")
-      .select("id, status, mentor_id, mentor_profiles(session_type)")
+      .select("id, status, mentor_id, slot_datetime, duration_minutes, mentor_profiles(session_type)")
       .eq("team_id", teamId)
       .neq("status", "cancelled");
 

@@ -86,10 +86,11 @@ export async function GET(req: NextRequest) {
   // Active = pending or confirmed
   const activeBooking = bookings.find((b) => b.status !== "cancelled");
   if (activeBooking) {
-    // If the meeting time has passed, treat as completed — restore quota
+    // If meeting time has already passed for a confirmed booking, hide the card
+    // so the UI shows the booking page — but quota is NOT restored (still 0)
     const meetingEnd = new Date(activeBooking.slot_datetime).getTime() + (activeBooking.duration_minutes ?? 30) * 60 * 1000;
     if (activeBooking.status === "confirmed" && Date.now() > meetingEnd) {
-      return NextResponse.json({ chances_left: 1, booking: null, assigned_mentor_ids: assignedMentorIds });
+      return NextResponse.json({ chances_left: 0, booking: null, assigned_mentor_ids: assignedMentorIds });
     }
     return NextResponse.json({ chances_left: 0, booking: activeBooking, assigned_mentor_ids: assignedMentorIds });
   }
