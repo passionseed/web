@@ -506,6 +506,47 @@ async function gatherPromptContext(
   };
 }
 
+async function checkTeamHasMentor(scope: "individual" | "team", id: string): Promise<boolean> {
+  const serviceClient = getHackathonServiceClient();
+  const table =
+    scope === "individual"
+      ? "hackathon_phase_activity_submissions"
+      : "hackathon_phase_activity_team_submissions";
+
+  const col = scope === "individual" ? "participant_id" : "team_id";
+
+  const { data: sub } = await serviceClient
+    .from(table)
+    .select(col)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!sub) return false;
+
+  let teamId: string | null = null;
+
+  if (scope === "team") {
+    teamId = (sub as any).team_id ?? null;
+  } else {
+    const { data: mem } = await serviceClient
+      .from("hackathon_team_members")
+      .select("team_id")
+      .eq("participant_id", (sub as any).participant_id)
+      .maybeSingle();
+    teamId = (mem as any)?.team_id ?? null;
+  }
+
+  if (!teamId) return false;
+
+  const { data: assignment } = await serviceClient
+    .from("mentor_team_assignments")
+    .select("id")
+    .eq("team_id", teamId)
+    .maybeSingle();
+
+  return !!assignment;
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ scope: string; id: string }> }
@@ -516,6 +557,14 @@ export async function GET(
   const { scope: rawScope, id } = await params;
   if (rawScope !== "individual" && rawScope !== "team") {
     return NextResponse.json({ error: "Invalid submission scope" }, { status: 400 });
+  }
+
+  const hasMentor = await checkTeamHasMentor(rawScope as "individual" | "team", id);
+  if (hasMentor) {
+    return NextResponse.json(
+      { error: "This team has an assigned mentor. Grading is handled by the mentor." },
+      { status: 403 }
+    );
   }
 
   try {
@@ -557,6 +606,14 @@ export async function POST(
   const { scope: rawScope, id } = await params;
   if (rawScope !== "individual" && rawScope !== "team") {
     return NextResponse.json({ error: "Invalid submission scope" }, { status: 400 });
+  }
+
+  const hasMentor = await checkTeamHasMentor(rawScope as "individual" | "team", id);
+  if (hasMentor) {
+    return NextResponse.json(
+      { error: "This team has an assigned mentor. Grading is handled by the mentor." },
+      { status: 403 }
+    );
   }
 
   const body = await _req.json().catch(() => ({}));
