@@ -46,10 +46,11 @@ export async function enqueueEmbedJob(
     .single();
 
   if (error) {
-    console.error("[enqueueEmbedJob] Supabase error:", JSON.stringify(error, null, 2));
-    throw new Error(
-      `Failed to enqueue embed job for team ${teamId}: ${error.message ?? JSON.stringify(error)}`
-    );
+    const code = (error as any).code ?? "unknown";
+    const message = error.message ?? "No message";
+    const details = (error as any).details ?? "No details";
+    console.error(`[enqueueEmbedJob] ERROR code=${code} message="${message}" details="${details}"`);
+    throw new Error(`Failed to enqueue embed job for team ${teamId}: ${message} (code: ${code})`);
   }
   return data.id as string;
 }

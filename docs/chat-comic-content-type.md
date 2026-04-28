@@ -41,7 +41,7 @@ The chat comic data is stored in `hackathon_phase_activity_content`:
 |--------|------|-------|
 | `activity_id` | uuid | FK to hackathon_phase_activities |
 | `content_type` | text | `'chat_comic'` |
-| `content_title` | text | Chat title (e.g., "The Hypothesis Chat") |
+| `content_title` | text | Chat title (e.g., "The สมมติฐาน Chat") |
 | `content_body` | text | **JSON string** containing messages array |
 | `display_order` | int | Order within activity |
 | `metadata` | jsonb | UI configuration (chat_style, click_to_reveal, etc.) |
@@ -145,7 +145,7 @@ const chatComicContent = activity.content?.filter(
   id: "e57f39f5-4764-43cf-a452-3db157befb73",
   activity_id: "c08b9d37-4637-45bc-9834-4cc082747e84",
   content_type: "chat_comic",
-  content_title: "The Hypothesis Chat",
+  content_title: "The สมมติฐาน Chat",
   content_body: '{"messages":[...]}',  // JSON string — PARSE THIS
   display_order: 1,
   metadata: {
@@ -172,7 +172,7 @@ const messages = parsed.messages;
 
 | Activity | Chat Title | Messages | Media Types |
 |----------|-----------|----------|-------------|
-| 1. From Problem to Hypothesis | The Hypothesis Chat | 10 | text, image, video |
+| 1. From Problem to สมมติฐาน | The สมมติฐาน Chat | 10 | text, image, video |
 | 2. Choose Your Pretotype | The Pretotype Chat | 14 | text, image, video |
 | 3. Build the Pretotype | The Build Chat | 15 | text, image, video |
 | 4. Run the Test + Decide | The Test Chat | 16 | text, image, video |
@@ -319,7 +319,7 @@ ORDER BY a.display_order;
 
 | activity | chat_title | content_type | message_count |
 |----------|-----------|--------------|---------------|
-| From Problem to Hypothesis | The Hypothesis Chat | chat_comic | 10 |
+| From Problem to สมมติฐาน | The สมมติฐาน Chat | chat_comic | 10 |
 | Choose Your Pretotype | The Pretotype Chat | chat_comic | 14 |
 | Build the Pretotype | The Build Chat | chat_comic | 15 |
 | Run the Test + Decide | The Test Chat | chat_comic | 16 |

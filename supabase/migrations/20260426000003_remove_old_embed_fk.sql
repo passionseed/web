@@ -1,0 +1,2 @@
+ALTER TABLE public.hackathon_team_direction_embeddings
+  DROP CONSTRAINT IF EXISTS hackathon_team_direction_embeddings_team_id_fkey;

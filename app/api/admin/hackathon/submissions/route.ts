@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
+const PAGE_SIZE = 50;
+
 function getHackathonServiceClient() {
   return createServiceClient(
     process.env.HACKATHON_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,75 +44,51 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const scope = searchParams.get("scope");
   const q = searchParams.get("q")?.trim().toLowerCase() ?? "";
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
 
   const serviceClient = getHackathonServiceClient();
 
+  // Slim select for list view — exclude text_answer, revisions, file_urls, instructions
+  const individualListSelect = `
+    id, participant_id, activity_id, assessment_id, image_url, status, submitted_at, created_at, updated_at,
+    revisions,
+    hackathon_participants(id, name, email, university),
+    hackathon_phase_activities(id, title, submission_scope, hackathon_program_phases(id, title, phase_number)),
+    hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, metadata)
+  `;
+
+  const teamListSelect = `
+    id, team_id, activity_id, assessment_id, submitted_by, image_url, status, submitted_at, created_at, updated_at,
+    revisions,
+    hackathon_teams(id, name, lobby_code),
+    hackathon_participants(id, name, email, university),
+    hackathon_phase_activities(id, title, submission_scope, hackathon_program_phases(id, title, phase_number)),
+    hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, metadata)
+  `;
+
+  // Build queries with draft filter pushed to DB
+  let individualQuery = serviceClient
+    .from("hackathon_phase_activity_submissions")
+    .select(individualListSelect, { count: "exact" })
+    .neq("status", "draft")
+    .order("submitted_at", { ascending: false, nullsFirst: false });
+
+  let teamQuery = serviceClient
+    .from("hackathon_phase_activity_team_submissions")
+    .select(teamListSelect, { count: "exact" })
+    .neq("status", "draft")
+    .order("submitted_at", { ascending: false, nullsFirst: false });
+
   const [individualResult, teamResult, reviewResult, teamMembersResult] = await Promise.all([
-    serviceClient
-      .from("hackathon_phase_activity_submissions")
-      .select(`
-        id,
-        participant_id,
-        activity_id,
-        assessment_id,
-        text_answer,
-        image_url,
-        file_urls,
-        status,
-        submitted_at,
-        created_at,
-        updated_at,
-        revisions,
-        hackathon_participants(id, name, email, university),
-        hackathon_phase_activities(
-          id,
-          title,
-          instructions,
-          submission_scope,
-          hackathon_program_phases(id, title, phase_number)
-        ),
-        hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, metadata)
-      `)
-      .order("submitted_at", { ascending: false, nullsFirst: false }),
-    serviceClient
-      .from("hackathon_phase_activity_team_submissions")
-      .select(`
-        id,
-        team_id,
-        activity_id,
-        assessment_id,
-        submitted_by,
-        text_answer,
-        image_url,
-        file_urls,
-        status,
-        submitted_at,
-        created_at,
-        updated_at,
-        revisions,
-        hackathon_teams(id, name, lobby_code),
-        hackathon_participants(id, name, email, university),
-        hackathon_phase_activities(
-          id,
-          title,
-          instructions,
-          submission_scope,
-          hackathon_program_phases(id, title, phase_number)
-        ),
-        hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, metadata)
-      `)
-      .order("submitted_at", { ascending: false, nullsFirst: false }),
+    individualQuery,
+    teamQuery,
     serviceClient
       .from("hackathon_submission_reviews")
-      .select("*")
+      .select("id, individual_submission_id, team_submission_id, review_status, score_awarded, points_possible, feedback, reviewed_at")
       .order("reviewed_at", { ascending: false, nullsFirst: false }),
     serviceClient
       .from("hackathon_team_members")
-      .select(`
-        team_id,
-        participant_id,
-        hackathon_participants(id, name, email, university)
-      `),
+      .select("team_id, participant_id, hackathon_participants(id, name, email, university)"),
   ]);
 
   if (individualResult.error || teamResult.error || reviewResult.error || teamMembersResult.error) {
@@ -151,9 +129,7 @@ export async function GET(req: NextRequest) {
       status: submission.status,
       review_status: reviewStatusForFilter(submission.status, review?.review_status ?? null),
       submitted_at: submission.submitted_at,
-      text_answer: submission.text_answer,
       image_url: submission.image_url,
-      file_urls: submission.file_urls ?? [],
       revisions: submission.revisions ?? [],
       participant,
       team: null,
@@ -177,9 +153,7 @@ export async function GET(req: NextRequest) {
       status: submission.status,
       review_status: reviewStatusForFilter(submission.status, review?.review_status ?? null),
       submitted_at: submission.submitted_at,
-      text_answer: submission.text_answer,
       image_url: submission.image_url,
-      file_urls: submission.file_urls ?? [],
       revisions: submission.revisions ?? [],
       participant: null,
       team: teamRow,
@@ -191,19 +165,18 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  let submissions = [...individual, ...team].filter((submission) => submission.status !== "draft");
+  let submissions = [...individual, ...team];
 
   if (scope === "individual" || scope === "team") {
-    submissions = submissions.filter((submission) => submission.scope === scope);
+    submissions = submissions.filter((s) => s.scope === scope);
   }
 
   if (status === "improvements") {
-    // Resubmitted after revision_required: has revisions AND is back to pending
     submissions = submissions.filter(
       (s) => s.revisions.length > 0 && s.review_status === "pending_review"
     );
   } else if (status) {
-    submissions = submissions.filter((submission) => submission.review_status === status);
+    submissions = submissions.filter((s) => s.review_status === status);
   }
 
   if (q) {
@@ -215,7 +188,7 @@ export async function GET(req: NextRequest) {
         submission.team?.name,
         submission.team?.lobby_code,
         submission.submitted_by?.name,
-        ...submission.team_members.map((member) => member.name),
+        ...submission.team_members.map((member: any) => member.name),
       ]
         .filter(Boolean)
         .join(" ")
@@ -230,6 +203,7 @@ export async function GET(req: NextRequest) {
     return bTime - aTime;
   });
 
+  // Compute counts from the full filtered set (before pagination)
   const counts = submissions.reduce(
     (acc, submission) => {
       acc.total += 1;
@@ -245,5 +219,21 @@ export async function GET(req: NextRequest) {
     { total: 0, pending_review: 0, passed: 0, revision_required: 0 }
   );
 
-  return NextResponse.json({ submissions, counts });
+  // Paginate
+  const totalItems = submissions.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const offset = (safePage - 1) * PAGE_SIZE;
+  const paginatedSubmissions = submissions.slice(offset, offset + PAGE_SIZE);
+
+  return NextResponse.json({
+    submissions: paginatedSubmissions,
+    counts,
+    pagination: {
+      page: safePage,
+      page_size: PAGE_SIZE,
+      total_items: totalItems,
+      total_pages: totalPages,
+    },
+  });
 }

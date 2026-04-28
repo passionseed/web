@@ -446,16 +446,12 @@ async function gatherPromptContext(
 
   let imageAnalysis: SubmissionImageAnalysis | null = null;
   if (!opts?.skipImageAnalysis && (imageUrl || fileUrls.length > 0)) {
-    try {
-      imageAnalysis = await analyzeSubmission({
-        imageUrl,
-        fileUrls,
-        activityLens,
-        activityTitle: activity?.title ?? null,
-      });
-    } catch (err) {
-      console.error("[ai-grade] Image analysis failed:", err);
-    }
+    imageAnalysis = await analyzeSubmission({
+      imageUrl,
+      fileUrls,
+      activityLens,
+      activityTitle: activity?.title ?? null,
+    });
   }
 
   const currentActivityOrder = activity?.display_order ?? 0;

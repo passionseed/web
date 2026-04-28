@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import {
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   ClipboardCheck,
   FileText,
@@ -97,6 +99,13 @@ interface AdminSubmission {
   review: Review | null;
 }
 
+interface Pagination {
+  page: number;
+  page_size: number;
+  total_items: number;
+  total_pages: number;
+}
+
 interface SubmissionCounts {
   total: number;
   pending_review: number;
@@ -159,6 +168,10 @@ export function AdminHackathonSubmissions() {
   const [feedback, setFeedback] = useState("");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [viewingRevisionN, setViewingRevisionN] = useState<number | null>(null);
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, page_size: 50, total_items: 0, total_pages: 1 });
+  const [detailCache, setDetailCache] = useState<Map<string, { text_answer: string | null; file_urls: string[] }>>(new Map());
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const pageRef = useRef(1);
 
   const selected = useMemo(
     () => submissions.find((submission) => submission.id === selectedId) ?? submissions[0] ?? null,
@@ -166,9 +179,9 @@ export function AdminHackathonSubmissions() {
   );
 
   useEffect(() => {
-    void fetchSubmissions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, scopeFilter]);
+    pageRef.current = 1;
+    void fetchSubmissions(1);
+  }, [fetchSubmissions]);
 
   useEffect(() => {
     if (!selected) return;
@@ -181,12 +194,14 @@ export function AdminHackathonSubmissions() {
     setFeedback(selected.review?.feedback ?? "");
   }, [selected?.id, selected?.review]);
 
-  async function fetchSubmissions() {
+  const fetchSubmissions = useCallback(async (pg?: number) => {
+    const targetPage = pg ?? pageRef.current;
     setLoading(true);
     setMessage("");
     const params = new URLSearchParams();
     if (statusFilter !== "all") params.set("status", statusFilter);
     if (scopeFilter !== "all") params.set("scope", scopeFilter);
+    params.set("page", String(targetPage));
 
     try {
       const response = await fetch(`/api/admin/hackathon/submissions?${params.toString()}`);
@@ -196,16 +211,13 @@ export function AdminHackathonSubmissions() {
         return;
       }
       setSubmissions(data.submissions ?? []);
-      setCounts(data.counts ?? {
-        total: 0,
-        pending_review: 0,
-        passed: 0,
-        revision_required: 0,
-      });
+      setCounts(data.counts ?? { total: 0, pending_review: 0, passed: 0, revision_required: 0 });
+      if (data.pagination) {
+        setPagination(data.pagination);
+        pageRef.current = data.pagination.page;
+      }
       setSelectedId((current) => {
-        if (current && data.submissions?.some((submission: AdminSubmission) => submission.id === current)) {
-          return current;
-        }
+        if (current && data.submissions?.some((s: AdminSubmission) => s.id === current)) return current;
         return data.submissions?.[0]?.id ?? null;
       });
     } catch {
@@ -213,6 +225,28 @@ export function AdminHackathonSubmissions() {
     } finally {
       setLoading(false);
     }
+  }, [statusFilter, scopeFilter]);
+
+  // Lazy-load full detail (text_answer, file_urls) when a submission is selected
+  useEffect(() => {
+    if (!selected) return;
+    // If text_answer already present on the submission (e.g. from detail endpoint), skip
+    if (selected.text_answer !== undefined && selected.text_answer !== null) return;
+    if (detailCache.has(selected.id)) return;
+
+    let cancelled = false;
+    setLoadingDetail(true);
+    fetch(`/api/admin/hackathon/submissions/${selected.scope}/${selected.id}/review`)
+      .catch(() => null)
+      .finally(() => { if (!cancelled) setLoadingDetail(false); });
+
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.scope, selected?.text_answer, detailCache]);
+
+  function goToPage(pg: number) {
+    if (pg < 1 || pg > pagination.total_pages || pg === pagination.page) return;
+    pageRef.current = pg;
+    void fetchSubmissions(pg);
   }
 
   const visibleSubmissions = submissions.filter((submission) => {
@@ -278,7 +312,7 @@ export function AdminHackathonSubmissions() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Total submissions</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-bold">{counts.total}</CardContent>
+          <CardContent className="text-2xl font-bold">{pagination.total_items || counts.total}</CardContent>
         </Card>
         <Card className="border-amber-500/30 bg-amber-500/10">
           <CardHeader className="pb-2">
@@ -395,6 +429,33 @@ export function AdminHackathonSubmissions() {
                   </button>
                 ))}
               </div>
+
+              {/* Pagination controls */}
+              {pagination.total_pages > 1 && (
+                <div className="col-span-full flex items-center justify-between border-t border-slate-800 pt-3">
+                  <span className="text-xs text-slate-500">
+                    Page {pagination.page} of {pagination.total_pages} · {pagination.total_items} submissions
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="sm" disabled={pagination.page <= 1} onClick={() => goToPage(pagination.page - 1)}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                      const start = Math.max(1, Math.min(pagination.page - 2, pagination.total_pages - 4));
+                      const pg = start + i;
+                      if (pg > pagination.total_pages) return null;
+                      return (
+                        <Button key={pg} variant={pg === pagination.page ? "default" : "outline"} size="sm" onClick={() => goToPage(pg)} className="min-w-[36px]">
+                          {pg}
+                        </Button>
+                      );
+                    })}
+                    <Button variant="outline" size="sm" disabled={pagination.page >= pagination.total_pages} onClick={() => goToPage(pagination.page + 1)}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {selected && (
                 <div className="rounded-md border border-slate-800 bg-slate-950/50 p-4">

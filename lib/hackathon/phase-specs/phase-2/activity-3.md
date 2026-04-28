@@ -2,28 +2,28 @@
 Build the Pretotype
 
 ## Learning Goal
-Create a working pretotype that can be shown to real users within 2 hours, using only no-code tools.
+สร้าง pretotype ที่ใช้งานได้จริง แสดงให้คนใช้จริงได้ภายใน 2 ชั่วโมง โดยใช้เครื่องมือ no-code เท่านั้น
 
 ## What To Look For
-- Pretotype is actually built and functional (not just described)
-- Can be shared with a link, QR code, or simple interface
-- Uses appropriate tools for the chosen method (Google Forms, Canva, manual chat, etc.)
-- Includes a way to collect data (form responses, sign-up count, interaction log)
-- Team documented what they built with screenshots or a demo link
-- Built in under 2 hours (team reports time spent)
+- Pretotype สร้างจริงและใช้งานได้ (ไม่ใช่แค่อธิบาย)
+- แชร์ได้ด้วย link, QR code, หรือ interface ง่ายๆ
+- ใช้เครื่องมือที่เหมาะกับวิธีที่เลือก (Google Forms, Canva, manual chat, ฯลฯ)
+- มีวิธีเก็บข้อมูล (form responses, sign-up count, interaction log)
+- ทีมบันทึกสิ่งที่สร้างด้วย screenshot หรือ demo link
+- สร้างใน 2 ชั่วโมง (ทีมรายงานเวลาที่ใช้)
 
 ## Red Flags
-- Pretotype is just a description or plan ("we will build...")
-- Requires coding or technical skills beyond the team's capability
-- No way to collect data from users
-- Too polished — spent days on design instead of testing
-- Doesn't actually test the hypothesis (decorative but non-functional)
-- Uses AI Studio or other prototyping tools (save that for Activity 5)
+- Pretotype เป็นแค่คำอธิบายหรือแผน ("จะสร้าง...")
+- ต้องเขียนโค้ดหรือทักษะเทคนิคเกินความสามารถของทีม
+- ไม่มีวิธีเก็บข้อมูลจากผู้ใช้
+- เรียบร้อยเกินไป — ใช้เวลาหลายวันกับการออกแบบแทนที่จะทดสอบ
+- ไม่ได้ทดสอบ hypothesis จริง (ดูสวยแต่ไม่ทำงาน)
+- ใช้ AI Studio หรือเครื่องมือ prototyping อื่น (เก็บไว้ใช้ใน Activity 5)
 
 ## Exemplars
-Strong: "We built a simple Canva landing page with a 'Get Medication Reminders' button that links to a Google Form. The form asks for phone number and preferred reminder time. We generated a QR code to share. Screenshot attached. Time spent: 1.5 hours."
+Strong: "พวกเราสร้างหน้า Canva landing page ง่ายๆ พร้อมปุ่ม รับการเตือนยา ที่ลิงก์ไป Google Form ฟอร์มถามเบอร์โทรและเวลาเตือนที่ต้องการ พวกเราสร้าง QR code แชร์ มี screenshot แนบ เวลาที่ใช้: 1.5 ชั่วโมง"
 
-Weak: "We designed what our app would look like in Canva. It has a nice logo and color scheme. We spent 3 days on it."
+Weak: "พวกเราออกแบบว่าแอปจะมีหน้าตายังไงใน Canva มีโลโก้สวยและโทนสี ใช้เวลา 3 วันกับมัน"
 
 ## Grading Guidance
-Pass if the pretotype is built, shareable, and collects data. Needs revision if described but not built, or if it doesn't test the hypothesis. Auto-fail if no pretotype was actually created or if it requires coding.
+ผ่าน ถ้า pretotype สร้างจริง แชร์ได้ และเก็บข้อมูลได้ ต้องแก้ไข ถ้าแค่อธิบายแต่ไม่ได้สร้าง หรือไม่ได้ทดสอบ hypothesis ตก ถ้าไม่มี pretotype จริงหรือต้องเขียนโค้ด

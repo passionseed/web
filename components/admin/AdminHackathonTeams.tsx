@@ -119,6 +119,7 @@ interface LeaderboardTeam {
   member_count: number;
   members: LeaderboardMember[];
   total_score: number;
+  score_per_member: number;
   team_submissions: TeamSubmission[];
   individual_submissions: IndividualSubmission[];
 }
@@ -820,7 +821,10 @@ function LeaderboardView() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right pr-6">
-                    <ScoreBadge score={team.total_score} rank={rank} />
+                    <ScoreBadge score={team.score_per_member} rank={rank} />
+                    <div className="text-[10px] text-slate-600 text-right mt-0.5">
+                      {team.total_score} pts (best)
+                    </div>
                   </TableCell>
                 </TableRow>
 

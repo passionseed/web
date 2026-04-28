@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getNextPendingJob, claimJob, completeJob, failJob } from "@/lib/embeddings/jobs";
 import { createTeamDirectionSnapshot, collectTeamText } from "@/lib/embeddings/team-direction";
+import { getHackathonClient } from "@/lib/embeddings/hackathon-client";
 
 async function requireAdminUser() {
   const { createClient } = await import("@/utils/supabase/server");
@@ -52,7 +53,7 @@ export async function GET() {
 
     let sampleTextInfo = null;
     if (sampleTeam) {
-      const text = await collectTeamText(sampleTeam.id, client);
+      const text = await collectTeamText(sampleTeam.id);
       sampleTextInfo = {
         teamId: sampleTeam.id,
         teamName: sampleTeam.name,
@@ -140,7 +141,7 @@ export async function POST() {
       const snapshot = await createTeamDirectionSnapshot(job.team_id, { adminClient: client });
       await completeJob(job.id, client);
 
-      const { data: team } = await client
+      const { data: team } = await getHackathonClient()
         .from("hackathon_teams")
         .select("name")
         .eq("id", job.team_id)

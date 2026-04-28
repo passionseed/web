@@ -215,7 +215,7 @@ async function convertHeicToJpeg(imageBuffer: Buffer): Promise<Buffer> {
       .toBuffer();
   } catch (err) {
     console.error("[image-analysis] HEIC conversion failed:", err);
-    // Return original buffer as fallback (MiniMax may reject it, but at least we tried)
+    // Return original buffer as fallback — the VLM may handle HEIC directly
     return imageBuffer;
   }
 }
@@ -338,14 +338,6 @@ export async function analyzeImage(
   activityTitle?: string | null
 ): Promise<ImageAnalysisResult> {
   try {
-    if (!SUPPORTED_IMAGE_EXTENSIONS.test(imageUrl)) {
-      return {
-        analysis: "",
-        error:
-          "Unsupported image format (VLM supports only JPEG, PNG, WebP, HEIC)",
-      };
-    }
-
     const imageType = detectImageType(imageUrl, activityTitle);
     const prompt = buildAnalysisPrompt(imageType, activityLens);
     const analysis = await callMinimaxVlm(prompt, imageUrl);
