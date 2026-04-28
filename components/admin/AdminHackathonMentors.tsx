@@ -166,19 +166,49 @@ export function AdminHackathonMentors() {
   const [resetResult, setResetResult] = useState<string | null>(null);
   const [expandedMentorId, setExpandedMentorId] = useState<string | null>(null);
   const [availabilityMentor, setAvailabilityMentor] = useState<MentorProfile | null>(null);
+  const [quotaValue, setQuotaValue] = useState<string>("1");
+  const [quotaLoading, setQuotaLoading] = useState(false);
+  const [quotaResult, setQuotaResult] = useState<string | null>(null);
 
   async function fetchData() {
     setLoading(true);
-    const [mentorRes, bookingRes] = await Promise.all([
+    const [mentorRes, bookingRes, quotaRes] = await Promise.all([
       fetch("/api/admin/hackathon/mentors"),
       fetch("/api/admin/hackathon/mentors/bookings"),
+      fetch("/api/admin/hackathon/mentor-bookings/set-quota"),
     ]);
     const mentorData = await mentorRes.json();
     const bookingData = await bookingRes.json();
+    const quotaData = await quotaRes.json();
     if (mentorData.mentors) setMentors(mentorData.mentors);
     else setError("Failed to load mentors");
     if (bookingData.bookings) setBookings(bookingData.bookings);
+    if (quotaData.max_bookings_per_team) setQuotaValue(String(quotaData.max_bookings_per_team));
     setLoading(false);
+  }
+
+  async function setQuota() {
+    const value = parseInt(quotaValue, 10);
+    if (!Number.isInteger(value) || value < 1) {
+      setQuotaResult("Please enter a valid number ≥ 1.");
+      return;
+    }
+    setQuotaLoading(true);
+    setQuotaResult(null);
+    try {
+      const res = await fetch("/api/admin/hackathon/mentor-bookings/set-quota", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ max_bookings_per_team: value }),
+      });
+      const data = await res.json();
+      if (!res.ok) setQuotaResult(`Error: ${data.error}`);
+      else setQuotaResult(`Quota set to ${data.max_bookings_per_team} booking(s) per team.`);
+    } catch {
+      setQuotaResult("Request failed.");
+    } finally {
+      setQuotaLoading(false);
+    }
   }
 
   useEffect(() => { fetchData(); }, []);
@@ -240,7 +270,27 @@ export function AdminHackathonMentors() {
         <div className="text-sm text-muted-foreground">
           {approved.length} approved · {pending.length} pending · {bookings.length} total bookings
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Quota per team:</span>
+            <input
+              type="number"
+              min={1}
+              value={quotaValue}
+              onChange={(e) => setQuotaValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && setQuota()}
+              className="w-14 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-200 text-center outline-none focus:border-slate-500"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={quotaLoading}
+              onClick={setQuota}
+              className="text-sky-400 border-sky-400/30 hover:bg-sky-400/10 hover:text-sky-300"
+            >
+              {quotaLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Set"}
+            </Button>
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -259,6 +309,11 @@ export function AdminHackathonMentors() {
       {resetResult && (
         <p className="text-sm text-muted-foreground border border-slate-700/50 rounded-md px-3 py-2">
           {resetResult}
+        </p>
+      )}
+      {quotaResult && (
+        <p className="text-sm text-muted-foreground border border-slate-700/50 rounded-md px-3 py-2">
+          {quotaResult}
         </p>
       )}
 
