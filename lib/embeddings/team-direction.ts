@@ -3,24 +3,25 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { embedTexts, formatVectorLiteral, hashText } from "./bge";
 import { extractTeamProfile, formatMissionText, formatTechText, formatMarketText } from "./profile-extractor";
 import type { TeamProfile } from "./profile-extractor";
+import { getHackathonClient } from "./hackathon-client";
 
-export async function collectTeamText(teamId: string, client?: SupabaseClient): Promise<string> {
-  const admin = client ?? createAdminClient();
+export async function collectTeamText(teamId: string): Promise<string> {
+  const hackathon = getHackathonClient();
 
-  const { data: team } = await admin
+  const { data: team } = await hackathon
     .from("hackathon_teams")
     .select("name")
     .eq("id", teamId)
     .single();
   if (!team) return "";
 
-  const { data: teamSubs } = await admin
+  const { data: teamSubs } = await hackathon
     .from("hackathon_phase_activity_team_submissions")
     .select("text_answer, hackathon_phase_activities(title, display_order)")
     .eq("team_id", teamId)
     .neq("status", "draft");
 
-  const { data: members } = await admin
+  const { data: members } = await hackathon
     .from("hackathon_team_members")
     .select("participant_id")
     .eq("team_id", teamId);
@@ -29,7 +30,7 @@ export async function collectTeamText(teamId: string, client?: SupabaseClient): 
 
   let individualSubs: any[] = [];
   if (participantIds.length > 0) {
-    const { data } = await admin
+    const { data } = await hackathon
       .from("hackathon_phase_activity_submissions")
       .select("text_answer, hackathon_phase_activities(title, display_order), hackathon_participants(name)")
       .in("participant_id", participantIds)
@@ -88,7 +89,7 @@ export async function createTeamDirectionSnapshot(
 ): Promise<TeamDirectionSnapshot> {
   const admin = opts.adminClient ?? createAdminClient();
 
-  const sourceText = await collectTeamText(teamId, admin);
+  const sourceText = await collectTeamText(teamId);
   if (!sourceText) {
     throw new Error(`No submission text found for team ${teamId}`);
   }
@@ -162,7 +163,7 @@ async function updateSearchCache(
   snapshotId: string,
   admin: SupabaseClient
 ): Promise<void> {
-  const { data: team } = await admin
+  const { data: team } = await getHackathonClient()
     .from("hackathon_teams")
     .select("name")
     .eq("id", teamId)

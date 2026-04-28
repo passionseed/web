@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Loader2,
   FileText,
   Paperclip,
   Image as ImageIcon,
   ChevronLeft,
+  ChevronRight,
   MessageSquare,
   Users,
 } from "lucide-react";
@@ -113,6 +115,13 @@ interface TeamData {
   members: SubmissionMember[];
   total_score: number;
   activities: ActivityGroup[];
+}
+
+interface Pagination {
+  page: number;
+  page_size: number;
+  total_items: number;
+  total_pages: number;
 }
 
 interface PhaseGroup {
@@ -705,12 +714,15 @@ export function AdminHackathonTeamSubmissions() {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, page_size: 20, total_items: 0, total_pages: 1 });
 
-  useEffect(() => {
-    fetch("/api/admin/hackathon/teams/submissions")
+  const fetchTeams = useCallback((pg = 1) => {
+    setLoading(true);
+    fetch(`/api/admin/hackathon/teams/submissions?page=${pg}`)
       .then((r) => r.json())
       .then((data) => {
         if (!data.teams) return;
+        if (data.pagination) setPagination(data.pagination);
 
         const assembled: TeamData[] = data.teams.map((team: {
           id: string;
@@ -827,12 +839,20 @@ export function AdminHackathonTeamSubmissions() {
           };
         });
 
-        // Only show teams that have at least one submission
-        setTeams(assembled.filter((t) => t.activities.length > 0));
+        // Server already filters to teams with submissions
+        setTeams(assembled);
       })
       .catch((err) => console.error("Failed to load team submissions:", err))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { fetchTeams(); }, [fetchTeams]);
+
+  function goToPage(pg: number) {
+    if (pg < 1 || pg > pagination.total_pages || pg === pagination.page) return;
+    setSelectedTeam(null);
+    fetchTeams(pg);
+  }
 
   function handleSelectTeam(team: TeamData) {
     setSelectedTeam(team);
@@ -867,7 +887,39 @@ export function AdminHackathonTeamSubmissions() {
 
   // Level 1: Team grid
   if (!selectedTeam) {
-    return <TeamGrid teams={teams} onSelectTeam={handleSelectTeam} />;
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-slate-500">{pagination.total_items} teams with submissions</span>
+        </div>
+        <TeamGrid teams={teams} onSelectTeam={handleSelectTeam} />
+        {pagination.total_pages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-800 pt-3">
+            <span className="text-xs text-slate-500">
+              Page {pagination.page} of {pagination.total_pages}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" disabled={pagination.page <= 1} onClick={() => goToPage(pagination.page - 1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                const start = Math.max(1, Math.min(pagination.page - 2, pagination.total_pages - 4));
+                const pg = start + i;
+                if (pg > pagination.total_pages) return null;
+                return (
+                  <Button key={pg} variant={pg === pagination.page ? "default" : "outline"} size="sm" onClick={() => goToPage(pg)} className="min-w-[36px]">
+                    {pg}
+                  </Button>
+                );
+              })}
+              <Button variant="outline" size="sm" disabled={pagination.page >= pagination.total_pages} onClick={() => goToPage(pagination.page + 1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Level 2+3: Activity list + submission detail

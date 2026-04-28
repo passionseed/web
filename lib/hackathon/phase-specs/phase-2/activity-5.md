@@ -2,31 +2,31 @@
 Build High-Fidelity Prototype
 
 ## Learning Goal
-Create a working, end-to-end prototype using Google AI Studio that demonstrates the core value proposition of the validated solution.
+สร้าง prototype ที่ใช้งานได้จริง ตั้งแต่ต้นจนจบ โดยใช้ Google AI Studio ที่แสดง core value proposition ของ solution ที่ validate แล้ว
 
 ## What To Look For
-- Prototype is built with Google AI Studio (or approved equivalent)
-- Works end-to-end — a user can interact with it and get value
-- Demonstrates the core value proposition from the hypothesis
-- Built on top of a validated hypothesis (Persevere decision from Activity 4)
-- Team can explain what the prototype does and why it matters
-- Includes a demo video or live link for mentor review
+- Prototype สร้างด้วย Google AI Studio (หรือเครื่องมือที่อนุมัติ)
+- ใช้งานได้จริงตั้งแต่ต้นจนจบ — ผู้ใช้โต้ตอบและได้ประโยชน์
+- แสดง core value proposition จาก hypothesis
+- สร้างบน hypothesis ที่ validate แล้ว (ตัดสินใจ Persevere จาก Activity 4)
+- ทีมอธิบายได้ว่า prototype ทำอะไรและทำไมสำคัญ
+- มี demo video หรือ live link สำหรับ mentor รีวิว
 
 ## Red Flags
-- Prototype built before validating (skipped Activities 1-4)
-- Doesn't work end-to-end (broken flows, error states)
-- Not built with Google AI Studio or approved tool
-- Core value proposition is unclear from the prototype
-- Too complex — tries to do everything instead of one thing well
-- No demo or way to test the prototype
+- Prototype สร้างก่อน validate (ข้าม Activities 1-4)
+- ไม่ทำงานตั้งแต่ต้นจนจบ (flow พัง, error states)
+- ไม่ได้สร้างด้วย Google AI Studio หรือเครื่องมือที่อนุมัติ
+- Core value proposition ไม่ชัดเจนจาก prototype
+- ซับซ้อนเกินไป — พยายามทำทุกอย่างแทนที่จะโฟกัสที่สิ่งเดียว
+- ไม่มี demo หรือวิธีทดสอบ prototype
 
 ## Exemplars
-Strong: "We built a LINE chatbot using Google AI Studio that asks users what medications they take, what times, and sends reminder messages. We tested it with 3 users and all received reminders correctly. Demo video attached. The core value is: never miss a dose because you forgot."
+Strong: "พวกเราสร้าง LINE chatbot โดยใช้ Google AI Studio ที่ถามผู้ใช้ว่ากินยาอะไร เวลาไหน และส่งข้อความเตือน พวกเราทดสอบกับ 3 คนและทุกคนได้รับการเตือนถูกต้อง มี demo video แนบ Core value คือ: ไม่ลืมกินยาเพราะลืม"
 
-Weak: "We made a nice presentation about what our app would do. It has screens for login, profile, medication list, reminders, doctor chat, health tips, and a community forum. We haven't built any of it yet but we have a plan."
+Weak: "พวกเราทำ presentation สวยๆ เกี่ยวกับว่าแอปจะทำอะไร มีหน้าจอ login, profile, รายการยา, การเตือน, chat หมอ, เคล็ดลับสุขภาพ, และ community forum พวกเรายังไม่ได้สร้างอะไรเลย แต่มีแผน"
 
 ## Grading Guidance
-Pass if the prototype works end-to-end and demonstrates the core value proposition. Needs revision if partially working or unclear value. Auto-fail if the prototype was built without a Persevere decision from Activity 4 (anti-skip guard).
+ผ่าน ถ้า prototype ทำงานได้จริงตั้งแต่ต้นจนจบ และแสดง core value proposition ต้องแก้ไข ถ้าทำงานได้บางส่วนหรือ value ไม่ชัดเจน ตก ถ้า prototype สร้างโดยไม่มีการตัดสินใจ Persevere จาก Activity 4 (anti-skip guard)
 
 ## Gating Rule
-This activity is ONLY accessible if the team chose "Persevere" in Activity 4. Teams that chose "Pivot" or "Kill" should book a mentor session instead.
+Activity นี้เข้าถึงได้เฉพาะถ้าทีมเลือก "Persevere" ใน Activity 4 ทีมที่เลือก "Pivot" หรือ "Kill" ควรจอง mentor session แทน

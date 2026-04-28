@@ -1,27 +1,27 @@
 ## Title
-From Problem to Hypothesis
+From Problem to สมมติฐาน
 
 ## Learning Goal
-Convert a validated problem from Phase 1 into a specific, testable hypothesis that can be validated (or invalidated) with a pretotype experiment.
+แปลงปัญหาที่ผ่านการตรวจสอบจาก Phase 1 ให้เป็น สมมติฐาน ที่เจาะจงและพิสูจน์ได้ ซึ่งสามารถทดสอบได้ด้วยการ pretotype
 
 ## What To Look For
-- Hypothesis follows the format: "We believe [type of user] needs [solution] because [evidence from Phase 1]"
-- The "because" clause references specific evidence from the Problem Proof Pack (interview quotes, observed behaviors, system map insights)
-- The hypothesis is falsifiable — the team can describe what result would prove them wrong
-- The solution described is specific enough to pretotype (not abstract like "an app" or "a platform")
-- The target user matches the Phase 1 target user (or the team explains why it changed)
+- สมมติฐาน เป็นไปตาม format: "พวกเราเชื่อว่า [กลุ่มคน] ต้องการ [สิ่งที่จะสร้าง] เพราะ [หลักฐานจาก Phase 1]"
+- ส่วน "เพราะ" อ้างอิงหลักฐานเฉพาะจาก Problem Proof Pack (คำพูดจากการสัมภาษณ์, พฤติกรรมที่สังเกตได้, ข้อมูลจาก system map)
+- สมมติฐาน พิสูจน์ได้ (falsifiable) — ทีมบอกได้ว่าผลลัพธ์แบบไหนจะพิสูจน์ว่าผิด
+- สิ่งที่จะสร้างเจาะจงพอที่จะ pretotype ได้ (ไม่ใช่แค่ "แอป" หรือ "แพลตฟอร์ม")
+- กลุ่มเป้าหมายตรงกับ Phase 1 (หรืออธิบายว่าทำไมเปลี่ยน)
 
 ## Red Flags
-- Hypothesis is just the problem statement restated with "we will solve this" added
-- No reference to Phase 1 evidence ("because we think so" is not evidence)
-- Solution is too vague to test ("a better healthcare system")
-- Hypothesis is not falsifiable ("people will like it" — how would you know if you're wrong?)
-- Multiple unrelated hypotheses crammed into one
+- สมมติฐาน เป็นแค่เขียนปัญหาซ้ำแล้วบอกว่า "พวกเราจะแก้"
+- ไม่อ้างอิงหลักฐานจาก Phase 1 ("เพราะเราคิดว่า" ไม่ใช่หลักฐาน)
+- สิ่งที่จะสร้างคลุมเครือเกินไป ("ระบบสุขภาพที่ดีกว่า")
+- สมมติฐาน ไม่พิสูจน์ได้ ("คนน่าจะชอบ" — จะรู้ได้ไงว่าผิด?)
+- สมมติฐาน หลายอันที่ไม่เกี่ยวข้องกันรวมอยู่ด้วย
 
 ## Exemplars
-Strong: "We believe elderly patients with diabetes in Bangkok need a simple medication reminder via LINE because 7 out of 8 interviewees forgot doses at least once per week and all 8 already use LINE daily. We will know we are wrong if fewer than 3 out of 5 people we test with say they would use it."
+Strong: "พวกเราเชื่อว่าผู้สูงอายุที่เป็นเบาหวานในกรุงเทพต้องการตัวเตือนยาผ่าน LINE เพราะ 7/8 คนลืมกินยาอย่างน้อยสัปดาห์ละครั้ง พวกเราจะรู้ว่าผิด ถ้าน้อยกว่า 3/5 คนที่ทดสอบบอกว่าจะใช้"
 
-Weak: "We believe people need a health app because health is important and everyone has a phone. We think this will help people be healthier."
+Weak: "พวกเราเชื่อว่าคนต้องการแอปสุขภาพ เพราะสุขภาพสำคัญ และทุกคนมีโทรศัพท์ พวกเราคิดว่าแอปนี้จะช่วยให้คนมีสุขภาพดีขึ้น"
 
 ## Grading Guidance
-Pass if the hypothesis is specific, falsifiable, and grounded in Phase 1 evidence. Needs revision if vague or disconnected from evidence. Auto-fail if no Phase 1 evidence is referenced at all.
+ผ่าน ถ้า สมมติฐาน เจาะจง พิสูจน์ได้ และอิงจากหลักฐาน Phase 1 ต้องแก้ไข ถ้าคลุมเครือหรือไม่เกี่ยวข้องกับหลักฐาน ตก ถ้าไม่อ้างอิงหลักฐานจาก Phase 1 เลย

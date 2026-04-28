@@ -2,26 +2,26 @@
 Choose Your Pretotype
 
 ## Learning Goal
-Select the most appropriate pretotyping method for testing the team's specific hypothesis, with a clear justification for why that method fits better than alternatives.
+เลือกวิธี pretotyping ที่เหมาะสมที่สุดในการทดสอบ สมมติฐาน ของทีม พร้อมเหตุผลว่าทำไมวิธีนั้นเหมาะกว่าวิธีอื่น
 
 ## What To Look For
-- Team explains which pretotype method they chose and why
-- The chosen method actually tests the core belief in their hypothesis
-- Team considered at least 2 methods before deciding
-- Justification references a specific risk they're testing (demand? usability? willingness to pay?)
-- The method is feasible to build in under 2 hours with no coding
+- ทีมอธิบายว่าเลือกวิธี pretotyping อะไรและเพราะอะไร
+- วิธีที่เลือกทดสอบความเชื่อหลักใน hypothesis ได้จริง
+- ทีมพิจารณาอย่างน้อย 2 วิธีก่อนตัดสินใจ
+- เหตุผลอ้างอิงถึงความเสี่ยงที่กำลังทดสอบ (ความต้องการ? ความสามารถใช้งาน? ความเต็มใจจ่าย?)
+- วิธีที่ทำได้ใน 2 ชั่วโมง โดยไม่ต้องเขียนโค้ด
 
 ## Red Flags
-- Method doesn't actually test the hypothesis (e.g., Fake Door for testing usability)
-- Chosen method is too complex to build quickly ("we'll build a working app")
-- No justification — just picked randomly
-- Method tests something trivial ("we'll ask our friends if they like the idea")
-- Team chose the easiest method, not the most informative one
+- วิธีไม่ได้ทดสอบ hypothesis จริง (เช่น Fake Door สำหรับทดสอบความสามารถใช้งาน)
+- วิธีที่เลือกซับซ้อนเกินไป ("จะสร้างแอปที่ใช้งานได้")
+- ไม่มีเหตุผล — เลือกแบบสุ่ม
+- วิธีทดสอบเรื่องไม่สำคัญ ("จะถามเพื่อนว่าชอบไอเดียไหม")
+- ทีมเลือกวิธีที่ง่ายที่สุด ไม่ใช่วิธีที่ให้ข้อมูลมากที่สุด
 
 ## Exemplars
-Strong: "We chose Fake Door because our hypothesis is about demand — will elderly patients actually sign up for a medication reminder? A landing page with a 'Remind Me' button will test real intent better than asking people. If 0 people click, we know demand is weak before building anything."
+Strong: "พวกเราเลือก Fake Door เพราะ hypothesis ของพวกเราเป็นเรื่องความต้องการ — ผู้สูงอายุจะลงทะเบียนตัวเตือนยาจริงไหม? หน้า landing page พร้อมปุ่ม เตือนฉัน จะทดสอบความตั้งใจจริงได้ดีกว่าการถาม ถ้าไม่มีใครกด เราก็รู้ว่าความต้องการต่ำ"
 
-Weak: "We chose Wizard of Oz because it sounds cool. We'll make a chatbot that reminds people about medicine."
+Weak: "พวกเราเลือก Wizard of Oz เพราะฟังเท่ พวกเราจะทำ chatbot เตือนยา"
 
 ## Grading Guidance
-Pass if the method-hypothesis fit is clear and the justification references what they're testing. Needs revision if the method doesn't match the hypothesis or is too complex. Auto-fail if the method requires coding or takes more than 2 hours to build.
+ผ่าน ถ้าความเหมาะสมระหว่างวิธีกับ hypothesis ชัดเจน และเหตุผลอ้างอิงถึงสิ่งที่กำลังทดสอบ ต้องแก้ไข ถ้าวิธีไม่ตรงกับ hypothesis หรือซับซ้อนเกินไป ตก ถ้าวิธีต้องเขียนโค้ดหรือใช้เวลาเกิน 2 ชั่วโมง

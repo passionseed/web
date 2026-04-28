@@ -5,30 +5,30 @@ Run the Test + Decide
 Test the pretotype with at least 5 real users, collect specific data, and make a Persevere/Pivot/Kill decision grounded in evidence.
 
 ## What To Look For
-- Tested with at least 5 real users (not teammates, not family)
-- Data is specific and quantitative where possible ("3 out of 5 signed up" not "people liked it")
-- Includes unexpected or negative findings (not just confirmation)
-- Decision is Persevere, Pivot, or Kill — not "maybe" or "we'll see"
-- Decision is justified with specific data points, not gut feeling
-- Team can name what evidence would change their mind
-- Reflection answers all 4 prompts honestly
+- ทดสอบกับผู้ใช้จริงอย่างน้อย 5 คน (ไม่ใช่เพื่อนร่วมทีม ไม่ใช่ครอบครัว)
+- ข้อมูลเฉพาะและวัดได้ ("3/5 คนลงทะเบียน" ไม่ใช่ "คนชอบ")
+- รวมข้อค้นพบที่ไม่คาดคิดหรือเป็นลบ (ไม่ใช่แค่ยืนยัน)
+- การตัดสินใจเป็น Persevere, Pivot, หรือ Kill — ไม่ใช่ "บางที" หรือ "ค่อยดู"
+- การตัดสินใจมีเหตุผลจากข้อมูลเฉพาะ ไม่ใช่ความรู้สึก
+- ทีมบอกได้ว่าหลักฐานแบบไหนจะทำให้เปลี่ยนใจ
+- ตอบคำถาม reflection ทั้ง 4 ข้ออย่างตรงไปตรงมา
 
 ## Red Flags
-- Tested only with teammates or friends (biased sample)
-- Data is vague or missing ("people seemed interested")
-- No negative findings reported (cherry-picking)
-- Decision is "Persevere" with no supporting data
-- Decision is based on attachment to the idea ("we worked hard on this")
-- Cannot articulate what would change their mind
-- Skipped testing and made up results
+- ทดสอบแค่กับเพื่อนร่วมทีมหรือเพื่อน (กลุ่มตัวอย่างเอนเอียง)
+- ข้อมูลคลุมเครือหรือขาดหาย ("คนสนใจ")
+- ไม่มีข้อค้นพบเชิงลบ (เลือกแต่สิ่งที่ยืนยัน)
+- ตัดสินใจ "Persevere" โดยไม่มีข้อมูลสนับสนุน
+- ตัดสินใจจากความผูกมัดกับไอเดีย ("พวกเราทำหนักมาก")
+- บอกไม่ได้ว่าอะไรจะทำให้เปลี่ยนใจ
+- ข้ามการทดสอบและสร้างผลลัพธ์ขึ้นมา
 
 ## Exemplars
-Strong: "We tested with 6 elderly patients at a community center. 4 out of 6 scanned the QR code. 3 out of 6 completed the form. 2 said they preferred voice calls over LINE. One said she already has a family member who reminds her. Decision: Persevere — enough demand to justify building, but we'll add voice call option. What would change our mind: if fewer than 2 out of 10 complete the form in the next test."
+Strong: "พวกเราทดสอบกับผู้สูงอายุ 6 คนที่ศูนย์ชุมชน 4/6 คนสแกน QR code 3/6 คนกรอกฟอร์ม 2 คนบอกว่าชอบโทรเสียงมากกว่า LINE 1 คนบอกว่ามีคนในครอบครัวเตือนอยู่แล้ว การตัดสินใจ: Persevere — ความต้องการพอสร้างได้ แต่จะเพิ่มตัวเลือกโทรเสียง สิ่งที่จะเปลี่ยนใจ: ถ้าน้อยกว่า 2/10 คนกรอกฟอร์มในการทดสอบถัดไป"
 
-Weak: "We asked our friends and they all said it's a great idea. Everyone needs medication reminders. We should definitely build this. We're Persevering because we believe in it."
+Weak: "พวกเราถามเพื่อนและทุกคนบอกว่าเป็นไอเดียที่ดี ทุกคนต้องการตัวเตือนยา พวกเราควรสร้างแน่นอน พวกเรา Persevere เพราะเชื่อมั่นในมัน"
 
 ## Grading Guidance
-Pass if tested with 5+ real users, data is specific, and decision is evidence-based. Needs revision if data is vague or decision lacks justification. Auto-fail if no real users were tested, or if the decision has no supporting data.
+ผ่าน ถ้าทดสอบกับผู้ใช้จริง 5+ คน ข้อมูลเฉพาะ และการตัดสินใจอิงจากหลักฐาน ต้องแก้ไข ถ้าข้อมูลคลุมเครือหรือการตัดสินใจไม่มีเหตุผล ตก ถ้าไม่ได้ทดสอบกับคนจริง หรือการตัดสินใจไม่มีข้อมูลสนับสนุน
 
 ## Branching Rules
 - Persevere → unlock Activity 5 (Build High-Fidelity Prototype)

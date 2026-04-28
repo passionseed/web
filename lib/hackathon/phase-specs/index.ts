@@ -32,7 +32,6 @@ export async function getActivitySpec(
 ): Promise<ActivitySpec | null> {
   if (!phaseNumber || !activityDisplayOrder) return null;
 
-  // Try slugified title first, then fallback to display order
   const slug = activityTitle
     ? activityTitle
         .toLowerCase()
@@ -41,21 +40,41 @@ export async function getActivitySpec(
         .slice(0, 40)
     : null;
 
-  const candidates: string[] = [];
-  if (slug) {
-    candidates.push(path.join(SPECS_DIR, `phase-${phaseNumber}`, `activity-${activityDisplayOrder}-${slug}.md`));
-  }
-  candidates.push(path.join(SPECS_DIR, `phase-${phaseNumber}`, `activity-${activityDisplayOrder}.md`));
+  const phaseDir = path.join(SPECS_DIR, `phase-${phaseNumber}`);
 
-  for (const filePath of candidates) {
+  // Try exact slug match first
+  if (slug) {
+    const exact = path.join(phaseDir, `activity-${activityDisplayOrder}-${slug}.md`);
     try {
-      const content = await fs.readFile(filePath, "utf8");
-      return parseActivitySpec(content);
+      return parseActivitySpec(await fs.readFile(exact, "utf8"));
     } catch {
-      // try next candidate
+      // try next
+    }
+
+    // Try partial slug prefix match: file starts with "activity-N-SLUGPREFIX"
+    try {
+      const entries = await fs.readdir(phaseDir);
+      const basePattern = `activity-${activityDisplayOrder}-`;
+      const matching = entries.find((entry) => {
+        if (!entry.startsWith(basePattern) || !entry.endsWith(".md")) return false;
+        const fileSlug = entry.slice(basePattern.length, -3); // strip .md
+        return slug.startsWith(fileSlug) || fileSlug.startsWith(slug.split("-")[0] + "-" + slug.split("-")[1]);
+      });
+      if (matching) {
+        return parseActivitySpec(await fs.readFile(path.join(phaseDir, matching), "utf8"));
+      }
+    } catch {
+      // try next
     }
   }
-  return null;
+
+  // Fallback: bare "activity-N.md"
+  const bare = path.join(phaseDir, `activity-${activityDisplayOrder}.md`);
+  try {
+    return parseActivitySpec(await fs.readFile(bare, "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 function parseActivitySpec(content: string): ActivitySpec {

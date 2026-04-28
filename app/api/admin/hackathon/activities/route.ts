@@ -23,17 +23,7 @@ async function requireAdmin() {
   return roles?.length ? user : null;
 }
 
-function pickOne<T>(value: T | T[] | null | undefined): T | null {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
-}
-
-function normalizeSubmissionStatus(subStatus: string, reviewStatus: string | null | undefined): string {
-  if (reviewStatus) return reviewStatus;
-  if (subStatus === "submitted" || subStatus === "pending_review") return "pending_review";
-  return subStatus;
-}
-
+// Returns phases + activities with submission COUNTS (fast, no submission data).
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin();
   if (!admin) {
@@ -45,7 +35,7 @@ export async function GET(req: NextRequest) {
 
   const serviceClient = getHackathonServiceClient();
 
-  const phasesQuery = serviceClient
+  const { data: phases, error: phasesError } = await serviceClient
     .from("hackathon_program_phases")
     .select(`
       id,
@@ -71,347 +61,78 @@ export async function GET(req: NextRequest) {
         submission_scope,
         created_at,
         updated_at,
-        hackathon_phase_activity_content(
-          id,
-          content_type,
-          content_title,
-          display_order
-        ),
-        hackathon_phase_activity_assessments(
-          id,
-          assessment_type,
-          points_possible,
-          is_graded,
-          display_order,
-          metadata
-        )
+        hackathon_phase_activity_content(id, content_type, content_title, display_order),
+        hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, display_order, metadata)
       )
     `)
     .order("phase_number", { ascending: true });
 
-  if (programId) {
-    phasesQuery.eq("program_id", programId);
-  }
-
-  const { data: phases, error: phasesError } = await phasesQuery;
-
   if (phasesError) {
     console.error("[admin/hackathon/activities] phases fetch error:", phasesError);
-    return NextResponse.json(
-      { error: "Failed to fetch phases" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch phases" }, { status: 500 });
   }
 
   const activityIds: string[] = [];
   for (const phase of phases ?? []) {
-    const activities = Array.isArray(phase.hackathon_phase_activities)
-      ? phase.hackathon_phase_activities
-      : [];
-    for (const activity of activities) {
-      activityIds.push(activity.id);
-    }
+    const acts = Array.isArray(phase.hackathon_phase_activities) ? phase.hackathon_phase_activities : [];
+    for (const a of acts) activityIds.push(a.id);
   }
 
-  const activityIdFilter = activityIds.length > 0 ? activityIds : [""];
-
-  const [individualResult, teamResult] = await Promise.all([
-    serviceClient
-      .from("hackathon_phase_activity_submissions")
-      .select(`
-        id,
-        participant_id,
-        activity_id,
-        assessment_id,
-        text_answer,
-        image_url,
-        file_urls,
-        revisions,
-        status,
-        submitted_at,
-        updated_at,
-        hackathon_participants(id, name, email, university, avatar_url, phone, line_id, track, grade_level),
-        hackathon_submission_reviews(
-          id,
-          review_status,
-          score_awarded,
-          feedback,
-          reviewed_at,
-          reviewed_by_user_id,
-          ai_draft,
-          ai_draft_generated_at,
-          ai_draft_model,
-          ai_draft_source
-        )
-      `)
-      .in("activity_id", activityIdFilter)
-      .order("submitted_at", { ascending: false }),
-    serviceClient
-      .from("hackathon_phase_activity_team_submissions")
-      .select(`
-        id,
-        team_id,
-        activity_id,
-        assessment_id,
-        submitted_by,
-        text_answer,
-        image_url,
-        file_urls,
-        revisions,
-        status,
-        submitted_at,
-        updated_at,
-        hackathon_teams(id, name, lobby_code),
-        submitter:hackathon_participants!hackathon_phase_activity_team_submissions_submitted_by_fkey(id, name, email, avatar_url),
-        hackathon_submission_reviews(
-          id,
-          review_status,
-          score_awarded,
-          feedback,
-          reviewed_at,
-          reviewed_by_user_id,
-          ai_draft,
-          ai_draft_generated_at,
-          ai_draft_model,
-          ai_draft_source
-        )
-      `)
-      .in("activity_id", activityIdFilter)
-      .order("submitted_at", { ascending: false }),
-  ]);
-
-  if (individualResult.error || teamResult.error) {
-    console.error("[admin/hackathon/activities] submission fetch errors:", {
-      individual: individualResult.error,
-      team: teamResult.error,
-    });
-    return NextResponse.json(
-      { error: "Failed to fetch submissions" },
-      { status: 500 }
-    );
+  if (activityIds.length === 0) {
+    return NextResponse.json({ phases: phases ?? [], stats: { total_submissions: 0, pending_review: 0, passed: 0, revision_required: 0 } });
   }
 
-  const teamIds = (teamResult.data ?? [])
-    .map((sub) => pickOne(sub.hackathon_teams)?.id)
-    .filter(Boolean) as string[];
+  // Single RPC call — returns grouped counts with zero row data transfer
+  const { data: countRows, error: countError } = await serviceClient
+    .rpc("get_hackathon_activity_submission_counts", { activity_ids: activityIds });
 
-  const individualParticipantIds = (individualResult.data ?? [])
-    .map((sub) => sub.participant_id)
-    .filter(Boolean) as string[];
-
-  const [membersResult, individualMembershipsResult] = await Promise.all([
-    serviceClient
-      .from("hackathon_team_members")
-      .select(`
-        team_id,
-        participant_id,
-        hackathon_participants(id, name, email, avatar_url, university)
-      `)
-      .in("team_id", teamIds.length > 0 ? teamIds : [""]),
-    serviceClient
-      .from("hackathon_team_members")
-      .select(`
-        team_id,
-        participant_id,
-        hackathon_teams(id, name, lobby_code)
-      `)
-      .in("participant_id", individualParticipantIds.length > 0 ? individualParticipantIds : [""]),
-  ]);
-
-  const teamMembers = membersResult.data;
-  const membersError = membersResult.error;
-
-  if (membersError) {
-    console.error("[admin/hackathon/activities] team members error:", membersError);
-    return NextResponse.json(
-      { error: "Failed to fetch team members" },
-      { status: 500 }
-    );
+  if (countError) {
+    console.error("[admin/hackathon/activities] count rpc error:", countError);
+    return NextResponse.json({ error: "Failed to fetch submission counts" }, { status: 500 });
   }
 
-  // Map participant_id → team for individual submissions
-  const participantTeamMap = new Map<string, { id: string; name: string | null; lobby_code: string | null }>();
-  for (const membership of individualMembershipsResult.data ?? []) {
-    const team = pickOne(membership.hackathon_teams) as { id: string; name: string | null; lobby_code: string | null } | null;
-    if (team && !participantTeamMap.has(membership.participant_id)) {
-      participantTeamMap.set(membership.participant_id, team);
-    }
+  const subCountMap = new Map<string, number>();
+  const pendingMap = new Map<string, number>();
+  const passedMap = new Map<string, number>();
+  const revisionMap = new Map<string, number>();
+
+  for (const row of countRows ?? []) {
+    const id: string = row.activity_id;
+    const cnt: number = Number(row.cnt);
+    subCountMap.set(id, (subCountMap.get(id) ?? 0) + cnt);
+    if (row.review_status === "pending_review") pendingMap.set(id, (pendingMap.get(id) ?? 0) + cnt);
+    else if (row.review_status === "passed") passedMap.set(id, (passedMap.get(id) ?? 0) + cnt);
+    else if (row.review_status === "revision_required") revisionMap.set(id, (revisionMap.get(id) ?? 0) + cnt);
   }
 
-  const individualIds = (individualResult.data ?? []).map((s) => s.id);
-  const teamIdsFromSubs = (teamResult.data ?? []).map((s) => s.id);
-
-  const adminCommentsData: any[] = [];
-  const adminCommentsErrors: any[] = [];
-
-  async function fetchAdminCommentsChunked(
-    column: "individual_submission_id" | "team_submission_id",
-    ids: string[]
-  ) {
-    if (ids.length === 0) return;
-    const CHUNK_SIZE = 200;
-    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-      const chunk = ids.slice(i, i + CHUNK_SIZE);
-      const { data, error } = await serviceClient
-        .from("hackathon_submission_admin_comments")
-        .select("*")
-        .in(column, chunk)
-        .order("created_at", { ascending: true });
-      if (error) {
-        adminCommentsErrors.push(error);
-        continue;
-      }
-      if (data) adminCommentsData.push(...data);
-    }
-  }
-
-  await Promise.all([
-    fetchAdminCommentsChunked("individual_submission_id", individualIds),
-    fetchAdminCommentsChunked("team_submission_id", teamIdsFromSubs),
-  ]);
-
-  if (adminCommentsErrors.length > 0) {
-    console.error("[admin/hackathon/activities] admin comments error:", adminCommentsErrors);
-  }
-
-  const commentsByIndividualId = new Map<string, any[]>();
-  const commentsByTeamId = new Map<string, any[]>();
-  for (const comment of adminCommentsData) {
-    if (comment.individual_submission_id) {
-      const existing = commentsByIndividualId.get(comment.individual_submission_id) ?? [];
-      existing.push(comment);
-      commentsByIndividualId.set(comment.individual_submission_id, existing);
-    }
-    if (comment.team_submission_id) {
-      const existing = commentsByTeamId.get(comment.team_submission_id) ?? [];
-      existing.push(comment);
-      commentsByTeamId.set(comment.team_submission_id, existing);
-    }
-  }
-
-  const membersByTeamId = new Map<string, any[]>();
-  for (const member of teamMembers ?? []) {
-    const existing = membersByTeamId.get(member.team_id) ?? [];
-    const participant = pickOne(member.hackathon_participants);
-    if (participant) {
-      const { id: _id, ...participantWithoutId } = participant as { id?: string; name?: string | null; email?: string | null; avatar_url?: string | null; university?: string | null };
-      existing.push({
-        id: member.participant_id,
-        ...participantWithoutId,
-      });
-    }
-    membersByTeamId.set(member.team_id, existing);
-  }
-
-  const submissionsByActivity = new Map<string, any[]>();
-
-  for (const sub of individualResult.data ?? []) {
-    if (sub.status === "draft") continue;
-
-    const participant = pickOne(sub.hackathon_participants);
-    const review = pickOne(sub.hackathon_submission_reviews);
-
-    const formatted = {
-      scope: "individual" as const,
-      id: sub.id,
-      status: sub.status,
-      review_status: normalizeSubmissionStatus(sub.status, review?.review_status),
-      submitted_at: sub.submitted_at,
-      text_answer: sub.text_answer,
-      image_url: sub.image_url,
-      file_urls: sub.file_urls ?? [],
-      revisions: Array.isArray((sub as any).revisions) ? (sub as any).revisions : [],
-      participant,
-      team: participantTeamMap.get(sub.participant_id) ?? null,
-      team_members: [],
-      submitted_by: participant,
-      review,
-      admin_comments: commentsByIndividualId.get(sub.id) ?? [],
-    };
-
-    const existing = submissionsByActivity.get(sub.activity_id) ?? [];
-    existing.push(formatted);
-    submissionsByActivity.set(sub.activity_id, existing);
-  }
-
-  for (const sub of teamResult.data ?? []) {
-    if (sub.status === "draft") continue;
-
-    const team = pickOne(sub.hackathon_teams);
-    const submitter = pickOne(sub.submitter);
-    const review = pickOne(sub.hackathon_submission_reviews);
-
-    const formatted = {
-      scope: "team" as const,
-      id: sub.id,
-      status: sub.status,
-      review_status: normalizeSubmissionStatus(sub.status, review?.review_status),
-      submitted_at: sub.submitted_at,
-      text_answer: sub.text_answer,
-      image_url: sub.image_url,
-      file_urls: sub.file_urls ?? [],
-      revisions: Array.isArray((sub as any).revisions) ? (sub as any).revisions : [],
-      participant: null,
-      team,
-      team_members: team?.id ? membersByTeamId.get(team.id) ?? [] : [],
-      submitted_by: submitter,
-      review,
-      admin_comments: commentsByTeamId.get(sub.id) ?? [],
-    };
-
-    const existing = submissionsByActivity.get(sub.activity_id) ?? [];
-    existing.push(formatted);
-    submissionsByActivity.set(sub.activity_id, existing);
-  }
+  let totalSubmissions = 0, pendingReview = 0, passed = 0, needsRevision = 0;
 
   const formattedPhases = (phases ?? []).map((phase) => {
-    const activities = Array.isArray(phase.hackathon_phase_activities)
-      ? phase.hackathon_phase_activities
-      : [];
-
+    const acts = Array.isArray(phase.hackathon_phase_activities) ? phase.hackathon_phase_activities : [];
     return {
       ...phase,
-      hackathon_phase_activities: activities
-        .sort((a, b) => a.display_order - b.display_order)
-        .map((activity) => ({
-          ...activity,
-          content: Array.isArray(activity.hackathon_phase_activity_content)
-            ? activity.hackathon_phase_activity_content.sort(
-                (a, b) => a.display_order - b.display_order
-              )
-            : [],
-          assessments: Array.isArray(activity.hackathon_phase_activity_assessments)
-            ? activity.hackathon_phase_activity_assessments.sort(
-                (a, b) => a.display_order - b.display_order
-              )
-            : [],
-          submissions: submissionsByActivity.get(activity.id) ?? [],
-          submission_count: (submissionsByActivity.get(activity.id) ?? []).length,
-        })),
+      hackathon_phase_activities: acts.sort((a, b) => a.display_order - b.display_order).map((act) => {
+        const count = subCountMap.get(act.id) ?? 0;
+        const pending = pendingMap.get(act.id) ?? 0;
+        const passedCnt = passedMap.get(act.id) ?? 0;
+        const rev = revisionMap.get(act.id) ?? 0;
+        totalSubmissions += count; pendingReview += pending; passed += passedCnt; needsRevision += rev;
+        return {
+          ...act,
+          content: Array.isArray(act.hackathon_phase_activity_content) ? act.hackathon_phase_activity_content.sort((a, b) => a.display_order - b.display_order) : [],
+          assessments: Array.isArray(act.hackathon_phase_activity_assessments) ? act.hackathon_phase_activity_assessments.sort((a, b) => a.display_order - b.display_order) : [],
+          submissions: [],
+          submission_count: count,
+          submission_pending: pending,
+          submission_passed: passedCnt,
+          submission_revision: rev,
+        };
+      }),
     };
   });
 
-  let totalSubmissions = 0;
-  let pendingReview = 0;
-  let passed = 0;
-  let needsRevision = 0;
-
-  for (const submissions of submissionsByActivity.values()) {
-    for (const sub of submissions) {
-      totalSubmissions++;
-      if (sub.review_status === "pending_review") pendingReview++;
-      if (sub.review_status === "passed") passed++;
-      if (sub.review_status === "revision_required") needsRevision++;
-    }
-  }
-
   return NextResponse.json({
     phases: formattedPhases,
-    stats: {
-      total_submissions: totalSubmissions,
-      pending_review: pendingReview,
-      passed: passed,
-      revision_required: needsRevision,
-    },
+    stats: { total_submissions: totalSubmissions, pending_review: pendingReview, passed, revision_required: needsRevision },
   });
 }

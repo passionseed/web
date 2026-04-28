@@ -75,6 +75,14 @@ interface Activity {
   assessments: Assessment[];
   submissions: Submission[];
   submission_count: number;
+  submission_pending: number;
+  submission_passed: number;
+  submission_revision: number;
+  submission_loading: boolean;
+  submission_loaded: boolean;
+  submission_has_more: boolean;
+  submission_cursor_submitted_at: string | null;
+  submission_cursor_id: string | null;
 }
 
 interface Phase {
@@ -243,6 +251,8 @@ export function AdminHackathonActivities() {
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
+  const [selectedSubmissionDetail, setSelectedSubmissionDetail] = useState<Submission | null>(null);
+  const [selectedSubmissionLoading, setSelectedSubmissionLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all" | "improvements">("all");
   const [scopeFilter, setScopeFilter] = useState<SubmissionScope | "all">("all");
@@ -311,6 +321,8 @@ export function AdminHackathonActivities() {
     has_phase_spec: boolean;
   } | null>(null);
   const [promptCopied, setPromptCopied] = useState(false);
+  const activityRequestControllers = useRef(new Map<string, AbortController>());
+  const detailRequestId = useRef(0);
 
   useEffect(() => {
     void fetchData();
@@ -332,7 +344,54 @@ export function AdminHackathonActivities() {
         return;
       }
 
-      setPhases(data.phases ?? []);
+      // Build a map of existing (already-loaded) submissions keyed by activity id,
+      // so silent refreshes don't wipe out data the user is looking at.
+      const existingSubsByActivity = new Map<string, Submission[]>();
+      const existingCursors = new Map<string, { cursor_submitted_at: string | null; cursor_id: string | null }>();
+      if (silent) {
+        for (const phase of phases) {
+          for (const act of phase.hackathon_phase_activities) {
+            if (act.submissions.length > 0) {
+              existingSubsByActivity.set(act.id, act.submissions);
+              existingCursors.set(act.id, {
+                cursor_submitted_at: act.submission_cursor_submitted_at ?? null,
+                cursor_id: act.submission_cursor_id ?? null,
+              });
+            }
+          }
+        }
+      }
+
+      const phasesWithLoadState = (data.phases ?? []).map((phase: Phase) => ({
+        ...phase,
+        hackathon_phase_activities: (phase.hackathon_phase_activities ?? []).map((act: Activity) => {
+          const existingSubs = existingSubsByActivity.get(act.id);
+          // Deduplicate by id to prevent duplicate key React warnings.
+          const seen = new Set<string>();
+          const deduped: Submission[] = existingSubs
+            ? existingSubs.filter((s) => {
+                const key = `${s.scope}-${s.id}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              })
+            : [];
+          const existingCursor = existingCursors.get(act.id);
+          return {
+            ...act,
+            // Preserve already-loaded submissions during silent refresh;
+            // start fresh on full page loads.
+            submissions: deduped,
+            submission_loading: false,
+            submission_loaded: existingSubsByActivity.has(act.id),
+            submission_has_more: (act.submission_count ?? 0) > deduped.length,
+            submission_cursor_submitted_at: existingCursor?.cursor_submitted_at ?? null,
+            submission_cursor_id: existingCursor?.cursor_id ?? null,
+          };
+        }),
+      }));
+
+      setPhases(phasesWithLoadState);
       setStats(data.stats ?? { total_submissions: 0, pending_review: 0, passed: 0, revision_required: 0 });
 
       // Only expand phases on the initial (non-silent) load, so background
@@ -341,11 +400,8 @@ export function AdminHackathonActivities() {
       if (!silent) {
         const allPhaseIds = (data.phases ?? []).map((p: Phase) => p.id);
         setExpandedPhases(new Set(allPhaseIds));
-        const allActivityIds: string[] = [];
-        for (const phase of (data.phases ?? []) as Phase[]) {
-          for (const act of phase.hackathon_phase_activities) allActivityIds.push(act.id);
-        }
-        setExpandedActivities(new Set(allActivityIds));
+        // Don't auto-expand activities — fetch lazily on demand
+        setExpandedActivities(new Set());
       }
     } catch {
       if (!silent) setMessage("Failed to fetch activities");
@@ -449,8 +505,11 @@ export function AdminHackathonActivities() {
 
   const selectedSubmission = useMemo(() => {
     if (!selectedSubmissionId) return null;
-    return allSubmissions.find((sub) => sub.id === selectedSubmissionId) ?? null;
-  }, [selectedSubmissionId, allSubmissions]);
+    const base = allSubmissions.find((sub) => sub.id === selectedSubmissionId) ?? null;
+    if (!base) return null;
+    if (selectedSubmissionDetail?.id === base.id) return { ...base, ...selectedSubmissionDetail };
+    return base;
+  }, [selectedSubmissionId, allSubmissions, selectedSubmissionDetail]);
 
   const selectedActivity = useMemo(() => {
     if (!selectedSubmission) return null;
@@ -563,6 +622,129 @@ export function AdminHackathonActivities() {
       }
       return next;
     });
+
+    // Lazy-load submissions when expanding an activity
+    const isExpanding = !expandedActivities.has(activityId);
+    if (isExpanding) {
+      const alreadyLoaded = phases.some((phase) =>
+        phase.hackathon_phase_activities.some((act) => act.id === activityId && act.submission_loaded)
+      );
+      if (!alreadyLoaded) {
+        void fetchActivitySubmissions(activityId, true);
+      }
+    }
+  }
+
+  async function fetchActivitySubmissions(activityId: string, reset = false) {
+    let activityState: Activity | null = null;
+    for (const phase of phases) {
+      const match = phase.hackathon_phase_activities.find((act) => act.id === activityId);
+      if (match) {
+        activityState = match;
+        break;
+      }
+    }
+    if (!activityState) return;
+
+    if (!reset && (activityState.submission_loading || !activityState.submission_has_more)) {
+      return;
+    }
+
+    const existingController = activityRequestControllers.current.get(activityId);
+    if (existingController) {
+      existingController.abort();
+    }
+    const controller = new AbortController();
+    activityRequestControllers.current.set(activityId, controller);
+
+    // Set loading state
+    setPhases((prevPhases) =>
+      prevPhases.map((phase) => ({
+        ...phase,
+        hackathon_phase_activities: phase.hackathon_phase_activities.map((act) =>
+          act.id === activityId ? { ...act, submission_loading: true } : act
+        ),
+      }))
+    );
+
+    try {
+      const params = new URLSearchParams({ activity_id: activityId, limit: "50" });
+      if (!reset && activityState.submission_cursor_submitted_at && activityState.submission_cursor_id) {
+        params.set("cursor_submitted_at", activityState.submission_cursor_submitted_at);
+        params.set("cursor_id", activityState.submission_cursor_id);
+      }
+      const response = await fetch(`/api/admin/hackathon/activities/${activityId}/submissions?${params.toString()}`, {
+        signal: controller.signal,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed to fetch submissions:", data.error);
+        setPhases((prevPhases) =>
+          prevPhases.map((phase) => ({
+            ...phase,
+            hackathon_phase_activities: phase.hackathon_phase_activities.map((act) =>
+              act.id === activityId ? { ...act, submission_loading: false } : act
+            ),
+          }))
+        );
+        return;
+      }
+
+      setPhases((prevPhases) =>
+        prevPhases.map((phase) => ({
+          ...phase,
+          hackathon_phase_activities: phase.hackathon_phase_activities.map((act) => {
+            if (act.id !== activityId) return act;
+            const fetchedSubs = data.submissions ?? [];
+            // Deduplicate by id to prevent duplicate key React warnings.
+            const seen = new Set<string>();
+            const existingKeys = new Set(
+              act.submissions.map((s) => `${s.scope}-${s.id}`)
+            );
+            const deduped: Submission[] = reset
+              ? fetchedSubs.filter((s) => {
+                  const key = `${s.scope}-${s.id}`;
+                  if (seen.has(key)) return false;
+                  seen.add(key);
+                  return true;
+                })
+              : [
+                  ...act.submissions,
+                  ...fetchedSubs.filter((s) => {
+                    const key = `${s.scope}-${s.id}`;
+                    if (seen.has(key) || existingKeys.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                  }),
+                ];
+            return {
+              ...act,
+              submissions: deduped,
+              submission_loading: false,
+              submission_loaded: true,
+              submission_has_more: Boolean(data.has_more),
+              submission_cursor_submitted_at: data.next_cursor?.submitted_at ?? null,
+              submission_cursor_id: data.next_cursor?.id ?? null,
+            };
+          }),
+        }))
+      );
+    } catch (error) {
+      if ((error as Error).name === "AbortError") return;
+      setPhases((prevPhases) =>
+        prevPhases.map((phase) => ({
+          ...phase,
+          hackathon_phase_activities: phase.hackathon_phase_activities.map((act) =>
+            act.id === activityId ? { ...act, submission_loading: false } : act
+          ),
+        }))
+      );
+    } finally {
+      if (activityRequestControllers.current.get(activityId) === controller) {
+        activityRequestControllers.current.delete(activityId);
+      }
+    }
   }
 
   function toggleGroup(groupKey: string) {
@@ -612,7 +794,20 @@ export function AdminHackathonActivities() {
   }
 
   function selectSubmission(submissionId: string) {
+    let activityIdForSubmission: string | null = null;
+    for (const phase of phases) {
+      for (const activity of phase.hackathon_phase_activities) {
+        if (activity.submissions.some((sub) => sub.id === submissionId)) {
+          activityIdForSubmission = activity.id;
+          break;
+        }
+      }
+      if (activityIdForSubmission) break;
+    }
+
     setSelectedSubmissionId(submissionId);
+    setSelectedSubmissionDetail(null);
+    setSelectedSubmissionLoading(true);
     setCommentText("");
     setMessage("");
 
@@ -636,6 +831,35 @@ export function AdminHackathonActivities() {
       setGradeScore(review?.score_awarded != null ? String(review.score_awarded) : "");
       setGradeFeedback(review?.feedback ?? "");
     }
+
+    if (!submission || !activityIdForSubmission) {
+      setSelectedSubmissionLoading(false);
+      return;
+    }
+
+    const requestId = ++detailRequestId.current;
+    const params = new URLSearchParams({
+      activity_id: activityIdForSubmission,
+      scope: submission.scope,
+      submission_id: submission.id,
+    });
+    void fetch(`/api/admin/hackathon/activities/${activityIdForSubmission}/submissions?${params.toString()}`)
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) return null;
+        return data.submission as Submission;
+      })
+      .then((detail) => {
+        if (requestId !== detailRequestId.current) return;
+        if (detail) {
+          setSelectedSubmissionDetail(detail);
+        }
+      })
+      .finally(() => {
+        if (requestId === detailRequestId.current) {
+          setSelectedSubmissionLoading(false);
+        }
+      });
   }
 
   async function openPromptPreview() {
@@ -1459,6 +1683,33 @@ export function AdminHackathonActivities() {
                                           );
                                         })
                                       )}
+                                      {activity.submission_has_more && !activity.submission_loading && (
+                                        <div className="w-full px-3 py-2 flex items-center justify-center">
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => { void fetchActivitySubmissions(activity.id); }}
+                                            className="h-7 px-2 text-[11px] font-light text-slate-400 hover:bg-slate-800"
+                                          >
+                                            Load more submissions
+                                          </Button>
+                                        </div>
+                                      )}
+                                      {activity.submission_loading && activity.submissions.length > 0 && (
+                                        <div className="w-full px-3 py-2 flex items-center justify-center gap-2 text-[11px] text-slate-500">
+                                          <Loader2 className="h-3 w-3 animate-spin" />
+                                          Loading more…
+                                        </div>
+                                      )}
+                                      {/* Loading skeleton */}
+                                      {activity.submission_loading && activity.submissions.length === 0 && (
+                                        <div className="space-y-2 px-3 py-4">
+                                          {[...Array(3)].map((_, i) => (
+                                            <div key={i} className="h-10 w-full animate-pulse rounded bg-slate-800/60" />
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1474,6 +1725,11 @@ export function AdminHackathonActivities() {
 
               {selectedSubmission ? (
                 <div className="min-w-0 space-y-6 break-words">
+                  {selectedSubmissionLoading && (
+                    <div className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-300">
+                      Loading submission details…
+                    </div>
+                  )}
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2 min-w-0">
                       <h3 className="text-base font-medium text-slate-100 break-words min-w-0">
