@@ -9,6 +9,7 @@ import {
   type HackathonReviewStatus,
   type HackathonSubmissionScope,
 } from "@/lib/hackathon/admin-submissions";
+import { recalculateAndUpsertTeamScore } from "@/lib/hackathon/team-score";
 
 const reviewSchema = z.object({
   review_status: z.enum(["passed", "revision_required"]),
@@ -188,6 +189,11 @@ export async function POST(
   if (inboxResult.error) {
     return NextResponse.json({ error: "Review saved, but inbox notification failed" }, { status: 500 });
   }
+
+  // Update team score (non-blocking, best-effort)
+  recalculateAndUpsertTeamScore(db, teamId).catch((err) => {
+    console.error("[mentor/grade] score upsert error", err);
+  });
 
   return NextResponse.json({ review: reviewResult.data, inbox_count: inboxItems.length });
 }
