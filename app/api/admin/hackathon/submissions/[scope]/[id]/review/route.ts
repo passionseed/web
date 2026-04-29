@@ -10,6 +10,7 @@ import {
   type HackathonSubmissionScope,
 } from "@/lib/hackathon/admin-submissions";
 import { enqueueEmbedJob } from "@/lib/embeddings/jobs";
+import { recalculateAndUpsertTeamScore } from "@/lib/hackathon/team-score";
 
 const reviewSchema = z.object({
   review_status: z.enum(["pending_review", "passed", "revision_required"]),
@@ -224,19 +225,27 @@ export async function POST(
   // "(N push target(s))" hint in the toast and added ~200–500ms for nothing
   // (this endpoint never actually sends a push).
 
-  // Re-embed team direction vector (non-blocking)
-  const teamId = scope === "team"
-    ? (submission as any).team_id
-    : null;
-  if (teamId) {
-    await enqueueEmbedJob(teamId, "review");
-  } else if (scope === "individual") {
+  // Resolve teamId for score update and embed job
+  let resolvedTeamId: string | null = scope === "team" ? (submission as any).team_id : null;
+  if (!resolvedTeamId && scope === "individual") {
     const { data: mem } = await serviceClient
       .from("hackathon_team_members")
       .select("team_id")
       .eq("participant_id", (submission as any).participant_id)
       .maybeSingle();
-    if (mem) await enqueueEmbedJob(mem.team_id, "review");
+    resolvedTeamId = mem?.team_id ?? null;
+  }
+
+  // Update team score in hackathon_team_scores (non-blocking, best-effort)
+  if (resolvedTeamId) {
+    recalculateAndUpsertTeamScore(serviceClient, resolvedTeamId).catch((err) => {
+      console.error("[admin/hackathon/submissions/review] score upsert error", err);
+    });
+  }
+
+  // Re-embed team direction vector (non-blocking)
+  if (resolvedTeamId) {
+    await enqueueEmbedJob(resolvedTeamId, "review");
   }
 
   return NextResponse.json({

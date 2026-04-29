@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     const serviceClient = getServiceClient();
 
-    const [teamsResult, teamSubsResult, individualSubsResult, commentsResult, repliesResult, individualReviewsResult, teamReviewsResult, activitiesResult] =
+    const [teamsResult, teamSubsResult, individualSubsResult, commentsResult, repliesResult, teamScoresResult] =
       await Promise.all([
         serviceClient
           .from("hackathon_teams")
@@ -78,41 +78,19 @@ export async function GET(req: NextRequest) {
           `)
           .is("deleted_at", null)
           .order("created_at", { ascending: true }),
-        // Fetch passed reviews for individual submissions (with activity scope)
         serviceClient
-          .from("hackathon_submission_reviews")
-          .select(`
-            id, individual_submission_id, team_submission_id, review_status, score_awarded, points_possible,
-            hackathon_phase_activity_submissions(participant_id, activity_id)
-          `)
-          .eq("review_status", "passed")
-          .not("individual_submission_id", "is", null),
-        // Fetch passed reviews for team submissions (with activity scope)
-        serviceClient
-          .from("hackathon_submission_reviews")
-          .select(`
-            id, individual_submission_id, team_submission_id, review_status, score_awarded, points_possible,
-            hackathon_phase_activity_team_submissions(team_id, activity_id)
-          `)
-          .eq("review_status", "passed")
-          .not("team_submission_id", "is", null),
-        // Fetch all activity scopes for scoring decisions
-        serviceClient
-          .from("hackathon_phase_activities")
-          .select("id, submission_scope"),
+          .from("hackathon_team_scores")
+          .select("team_id, total_score"),
       ]);
 
     if (
       teamsResult.error || teamSubsResult.error ||
-      individualSubsResult.error || commentsResult.error || repliesResult.error ||
-      individualReviewsResult.error || teamReviewsResult.error || activitiesResult.error
+      individualSubsResult.error || commentsResult.error || repliesResult.error
     ) {
       console.error("Error fetching admin team submissions:", {
         teams: teamsResult.error,
         teamSubmissions: teamSubsResult.error, individualSubmissions: individualSubsResult.error,
         comments: commentsResult.error, replies: repliesResult.error,
-        individualReviews: individualReviewsResult.error, teamReviews: teamReviewsResult.error,
-        activities: activitiesResult.error,
       });
       return NextResponse.json({ error: "Failed to fetch hackathon team submissions" }, { status: 500 });
     }
@@ -125,46 +103,10 @@ export async function GET(req: NextRequest) {
       repliesResult.data ?? []
     );
 
-    // Build activity scope lookup
-    const scopeByActivityId = new Map<string, string>();
-    for (const act of (activitiesResult.data ?? [])) {
-      scopeByActivityId.set(act.id, act.submission_scope);
-    }
-
-    // Build review lookup by team for scoring
-    // individualReviews: keyed by participant_id -> activity_id -> score_awarded
-    // teamReviews: keyed by team_id -> activity_id -> score_awarded
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const individualReviewByPA = new Map<string, Map<string, number>>(); // participantId -> activityId -> score
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const rev of (individualReviewsResult.data ?? []) as any[]) {
-      const sub = rev.hackathon_phase_activity_submissions;
-      if (!sub) continue;
-      const pid = sub.participant_id;
-      const actId = sub.activity_id;
-      if (!pid || !actId) continue;
-      const score = rev.score_awarded ?? 0;
-      const existing = individualReviewByPA.get(pid) ?? new Map();
-      const current = existing.get(actId) ?? 0;
-      if (score > current) existing.set(actId, score);
-      individualReviewByPA.set(pid, existing);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const teamReviewByTeam = new Map<string, Map<string, number>>(); // teamId -> activityId -> score
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const rev of (teamReviewsResult.data ?? []) as any[]) {
-      const sub = rev.hackathon_phase_activity_team_submissions;
-      if (!sub) continue;
-      const tid = sub.team_id;
-      const actId = sub.activity_id;
-      if (!tid || !actId) continue;
-      const score = rev.score_awarded ?? 0;
-      const existing = teamReviewByTeam.get(tid) ?? new Map();
-      const current = existing.get(actId) ?? 0;
-      if (score > current) existing.set(actId, score);
-      teamReviewByTeam.set(tid, existing);
-    }
+    // Build score lookup from hackathon_team_scores (single source of truth)
+    const scoreByTeamId = new Map<string, number>(
+      (teamScoresResult.data ?? []).map((s: { team_id: string; total_score: number }) => [s.team_id, s.total_score])
+    );
 
     const teamSubsByTeamId = new Map<string, typeof teamSubs>();
     for (const sub of teamSubs) {
@@ -178,46 +120,6 @@ export async function GET(req: NextRequest) {
       const existing = individualSubsByParticipantId.get(sub.participant_id) ?? [];
       existing.push(sub);
       individualSubsByParticipantId.set(sub.participant_id, existing);
-    }
-
-    /**
-     * Calculate fair score for a team:
-     * - Only count PASSED reviews (filter applied at query level)
-     * - Only count the BEST submission per activity (take max score_awarded)
-     * - Team scope activities: score_awarded counts in full
-     * - Individual scope activities: score_awarded / member_count
-     * - Per-person fairness: total / member_count
-     */
-    function calculateFairScore(
-      teamId: string,
-      memberIds: string[],
-      memberCount: number
-    ): { rawBest: number; perPerson: number } {
-      const teamReviews = teamReviewByTeam.get(teamId) ?? new Map();
-      const allScores: number[] = [];
-
-      // Add team-scoped activity scores (full points)
-      for (const [actId, score] of teamReviews) {
-        if (scopeByActivityId.get(actId) === "team") {
-          allScores.push(score);
-        }
-      }
-
-      // Add individual-scoped activity scores (divided by team member count)
-      for (const pid of memberIds) {
-        const indivReviews = individualReviewByPA.get(pid) ?? new Map();
-        for (const [actId, score] of indivReviews) {
-          if (scopeByActivityId.get(actId) === "individual") {
-            // Each member's individual submission counts as: score / member_count
-            // (so a 3-person team with a perfect individual activity earns same as solo with perfect)
-            allScores.push(Math.floor(score / memberCount));
-          }
-        }
-      }
-
-      const rawBest = allScores.reduce((sum, s) => sum + s, 0);
-      const perPerson = memberCount > 0 ? Math.floor(rawBest / memberCount) : 0;
-      return { rawBest, perPerson };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -293,19 +195,17 @@ export async function GET(req: NextRequest) {
       });
 
       const memberCount = members.length;
-      // Use fair score: best-only per activity (passed only), divide individual by member_count, then per-person
-      const { rawBest, perPerson } = calculateFairScore(team.id, memberParticipantIds, memberCount);
+      const totalScore = scoreByTeamId.get(team.id) ?? 0;
 
       return {
         id: team.id, name: team.name, lobby_code: team.lobby_code, owner_id: team.owner_id,
         member_count: memberCount, members,
-        total_score: rawBest, // sum of best-passed scores per activity
-        score_per_member: perPerson, // fair per-person score for ranking
+        total_score: totalScore,
         team_submissions: formattedTeamSubs, individual_submissions: formattedIndividualSubs,
       };
     });
 
-    assembled.sort((a, b) => b.score_per_member - a.score_per_member);
+    assembled.sort((a, b) => b.total_score - a.total_score);
 
     const filtered = assembled.filter(
       (team) => !TEST_TEAM_NAMES.includes(team.name)
