@@ -169,7 +169,7 @@ export function AdminHackathonSubmissions() {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [viewingRevisionN, setViewingRevisionN] = useState<number | null>(null);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, page_size: 50, total_items: 0, total_pages: 1 });
-  const [detailCache, setDetailCache] = useState<Map<string, { text_answer: string | null; file_urls: string[] }>>(new Map());
+  const [detailCache, setDetailCache] = useState<Record<string, { text_answer: string | null; file_urls: string[] }>>({});
   const [loadingDetail, setLoadingDetail] = useState(false);
   const pageRef = useRef(1);
 
@@ -177,22 +177,6 @@ export function AdminHackathonSubmissions() {
     () => submissions.find((submission) => submission.id === selectedId) ?? submissions[0] ?? null,
     [selectedId, submissions]
   );
-
-  useEffect(() => {
-    pageRef.current = 1;
-    void fetchSubmissions(1);
-  }, [fetchSubmissions]);
-
-  useEffect(() => {
-    if (!selected) return;
-    setReviewStatus(selected.review?.review_status ?? "passed");
-    setScoreAwarded(
-      typeof selected.review?.score_awarded === "number"
-        ? String(selected.review.score_awarded)
-        : ""
-    );
-    setFeedback(selected.review?.feedback ?? "");
-  }, [selected?.id, selected?.review]);
 
   const fetchSubmissions = useCallback(async (pg?: number) => {
     const targetPage = pg ?? pageRef.current;
@@ -227,16 +211,45 @@ export function AdminHackathonSubmissions() {
     }
   }, [statusFilter, scopeFilter]);
 
+  useEffect(() => {
+    pageRef.current = 1;
+    void fetchSubmissions(1);
+  }, [fetchSubmissions]);
+
+  useEffect(() => {
+    if (!selected) return;
+    setReviewStatus(selected.review?.review_status ?? "passed");
+    setScoreAwarded(
+      typeof selected.review?.score_awarded === "number"
+        ? String(selected.review.score_awarded)
+        : ""
+    );
+    setFeedback(selected.review?.feedback ?? "");
+  }, [selected?.id, selected?.review]);
+
   // Lazy-load full detail (text_answer, file_urls) when a submission is selected
   useEffect(() => {
     if (!selected) return;
     // If text_answer already present on the submission (e.g. from detail endpoint), skip
     if (selected.text_answer !== undefined && selected.text_answer !== null) return;
-    if (detailCache.has(selected.id)) return;
+    if (detailCache[selected.id]) return;
 
     let cancelled = false;
     setLoadingDetail(true);
     fetch(`/api/admin/hackathon/submissions/${selected.scope}/${selected.id}/review`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const detail = { text_answer: data.text_answer ?? null, file_urls: data.file_urls ?? [] };
+        setDetailCache((prev) => ({ ...prev, [selected.id]: detail }));
+        setSubmissions((prev) =>
+          prev.map((s) =>
+            s.id === selected.id
+              ? { ...s, text_answer: detail.text_answer, file_urls: detail.file_urls }
+              : s
+          )
+        );
+      })
       .catch(() => null)
       .finally(() => { if (!cancelled) setLoadingDetail(false); });
 
@@ -306,7 +319,7 @@ export function AdminHackathonSubmissions() {
   const prompt = selected?.assessment?.metadata?.prompt ?? selected?.assessment?.metadata?.submission_label;
 
   return (
-    <div className="space-y-4 font-[family-name:var(--font-mitr)]">
+    <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-slate-700/50 bg-slate-900/50">
           <CardHeader className="pb-2">
@@ -344,7 +357,7 @@ export function AdminHackathonSubmissions() {
               </CardTitle>
               <CardDescription>Review hackathon work, grade it, and notify participants.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchSubmissions} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={() => fetchSubmissions()} disabled={loading}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>

@@ -37,11 +37,6 @@ function normalizeSubmissionStatus(subStatus: string, reviewStatus: string | nul
 }
 
 export async function GET(req: NextRequest) {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-  }
-
   const { searchParams } = new URL(req.url);
   const activityId = searchParams.get("activity_id");
   const scope = searchParams.get("scope");
@@ -57,13 +52,22 @@ export async function GET(req: NextRequest) {
 
   const serviceClient = getHackathonServiceClient();
 
-  const { data: activity } = await serviceClient
-    .from("hackathon_phase_activities")
-    .select("id, submission_scope")
-    .eq("id", activityId)
-    .single();
+  const [admin, activityResult] = await Promise.all([
+    requireAdmin(),
+    serviceClient
+      .from("hackathon_phase_activities")
+      .select("id, submission_scope")
+      .eq("id", activityId)
+      .single(),
+  ]);
 
-  if (!activity) {
+  if (!admin) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+
+  const { data: activity, error: activityError } = activityResult;
+
+  if (activityError || !activity) {
     return NextResponse.json({ error: "Activity not found" }, { status: 404 });
   }
 
@@ -134,9 +138,16 @@ async function getIndividualSubmissions(
     }
   }
 
+  const teamIds = [...new Set(((memberships as any[]) ?? []).map((m) => m.team_id).filter(Boolean) as string[])];
+  const { data: mentorAssignments } = teamIds.length > 0
+    ? await serviceClient.from("mentor_team_assignments").select("team_id").in("team_id", teamIds)
+    : { data: [] };
+  const mentorTeamIds = new Set(((mentorAssignments ?? []) as any[]).map((r) => r.team_id));
+
   const formatted = pagedRows.map((s: any) => {
     const participant = pickOne(s.hackathon_participants);
     const review = pickOne(s.hackathon_submission_reviews);
+    const team = participantTeamMap.get(s.participant_id) ?? null;
     return {
       scope: "individual" as const,
       id: s.id,
@@ -148,11 +159,12 @@ async function getIndividualSubmissions(
       file_urls: [],
       revisions: Array.isArray((s as any).revisions) ? (s as any).revisions : [],
       participant,
-      team: participantTeamMap.get(s.participant_id) ?? null,
+      team,
       team_members: [],
       submitted_by: participant,
       review,
       admin_comments: [],
+      has_mentor: team?.id ? mentorTeamIds.has(team.id) : false,
     };
   });
 
@@ -203,12 +215,23 @@ async function getTeamSubmissions(
     .map((s) => pickOne(s.hackathon_teams)?.id)
     .filter(Boolean) as string[])];
 
-  const { data: members } = teamIds.length > 0
-    ? await serviceClient
-        .from("hackathon_team_members")
-        .select(`team_id, participant_id, hackathon_participants(id, name, email, avatar_url, university)`)
-        .in("team_id", teamIds)
-    : { data: [] };
+  const [membersResult, mentorResult] = await Promise.all([
+    teamIds.length > 0
+      ? serviceClient
+          .from("hackathon_team_members")
+          .select(`team_id, participant_id, hackathon_participants(id, name, email, avatar_url, university)`)
+          .in("team_id", teamIds)
+      : { data: [] },
+    teamIds.length > 0
+      ? serviceClient
+          .from("mentor_team_assignments")
+          .select("team_id")
+          .in("team_id", teamIds)
+      : { data: [] },
+  ]);
+
+  const { data: members } = membersResult;
+  const mentorTeamIds = new Set(((mentorResult.data ?? []) as any[]).map((r) => r.team_id));
 
   const membersByTeam = new Map<string, any[]>();
   for (const m of (members as any[]) ?? []) {
@@ -241,6 +264,7 @@ async function getTeamSubmissions(
       submitted_by: submitter,
       review,
       admin_comments: [],
+      has_mentor: team?.id ? mentorTeamIds.has(team.id) : false,
     };
   });
 
@@ -259,14 +283,24 @@ async function getSubmissionDetail(
   submissionId: string
 ) {
   if (scope === "individual") {
-    const { data: submission, error: subError } = await serviceClient
-      .from("hackathon_phase_activity_submissions")
-      .select(
-        `id,participant_id,activity_id,assessment_id,text_answer,image_url,file_urls,revisions,status,submitted_at,updated_at,hackathon_participants(id,name,email,university,avatar_url,phone,line_id,track,grade_level),hackathon_submission_reviews(id,review_status,score_awarded,feedback,reviewed_at,reviewed_by_user_id,ai_draft,ai_draft_generated_at,ai_draft_model,ai_draft_source)`
-      )
-      .eq("id", submissionId)
-      .eq("activity_id", activityId)
-      .maybeSingle();
+    const [submissionResult, adminCommentsResult] = await Promise.all([
+      serviceClient
+        .from("hackathon_phase_activity_submissions")
+        .select(
+          `id,participant_id,activity_id,assessment_id,text_answer,image_url,file_urls,revisions,status,submitted_at,updated_at,hackathon_participants(id,name,email,university,avatar_url,phone,line_id,track,grade_level),hackathon_submission_reviews(id,review_status,score_awarded,feedback,reviewed_at,reviewed_by_user_id,ai_draft,ai_draft_generated_at,ai_draft_model,ai_draft_source)`
+        )
+        .eq("id", submissionId)
+        .eq("activity_id", activityId)
+        .maybeSingle(),
+      serviceClient
+        .from("hackathon_submission_admin_comments")
+        .select("*")
+        .eq("individual_submission_id", submissionId)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    const { data: submission, error: subError } = submissionResult;
+    const { data: adminComments } = adminCommentsResult;
 
     if (subError) {
       console.error("[admin/activity-submissions] individual detail fetch error:", subError);
@@ -276,20 +310,15 @@ async function getSubmissionDetail(
       return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
-    const { data: memberships } = await serviceClient
-      .from("hackathon_team_members")
-      .select(`participant_id, team_id, hackathon_teams(id, name, lobby_code)`)
-      .eq("participant_id", submission.participant_id)
-      .limit(1);
-
-    const team =
-      memberships && memberships.length > 0 ? pickOne((memberships as any[])[0].hackathon_teams) : null;
-
-    const { data: adminComments } = await serviceClient
-      .from("hackathon_submission_admin_comments")
-      .select("*")
-      .eq("individual_submission_id", submission.id)
-      .order("created_at", { ascending: true });
+    let team = null;
+    if (submission.participant_id) {
+      const { data: memberships } = await serviceClient
+        .from("hackathon_team_members")
+        .select(`participant_id, team_id, hackathon_teams(id, name, lobby_code)`)
+        .eq("participant_id", submission.participant_id)
+        .limit(1);
+      team = memberships && memberships.length > 0 ? pickOne((memberships as any[])[0].hackathon_teams) : null;
+    }
 
     const participant = pickOne(submission.hackathon_participants);
     const review = pickOne(submission.hackathon_submission_reviews);
@@ -315,14 +344,24 @@ async function getSubmissionDetail(
     });
   }
 
-  const { data: submission, error: subError } = await serviceClient
-    .from("hackathon_phase_activity_team_submissions")
-    .select(
-      `id,team_id,activity_id,assessment_id,submitted_by,text_answer,image_url,file_urls,revisions,status,submitted_at,updated_at,hackathon_teams(id,name,lobby_code),submitter:hackathon_participants!hackathon_phase_activity_team_submissions_submitted_by_fkey(id,name,email,avatar_url),hackathon_submission_reviews(id,review_status,score_awarded,feedback,reviewed_at,reviewed_by_user_id,ai_draft,ai_draft_generated_at,ai_draft_model,ai_draft_source)`
-    )
-    .eq("id", submissionId)
-    .eq("activity_id", activityId)
-    .maybeSingle();
+  const [submissionResult, adminCommentsResult] = await Promise.all([
+    serviceClient
+      .from("hackathon_phase_activity_team_submissions")
+      .select(
+        `id,team_id,activity_id,assessment_id,submitted_by,text_answer,image_url,file_urls,revisions,status,submitted_at,updated_at,hackathon_teams(id,name,lobby_code),submitter:hackathon_participants!hackathon_phase_activity_team_submissions_submitted_by_fkey(id,name,email,avatar_url),hackathon_submission_reviews(id,review_status,score_awarded,feedback,reviewed_at,reviewed_by_user_id,ai_draft,ai_draft_generated_at,ai_draft_model,ai_draft_source)`
+      )
+      .eq("id", submissionId)
+      .eq("activity_id", activityId)
+      .maybeSingle(),
+    serviceClient
+      .from("hackathon_submission_admin_comments")
+      .select("*")
+      .eq("team_submission_id", submissionId)
+      .order("created_at", { ascending: true }),
+  ]);
+
+  const { data: submission, error: subError } = submissionResult;
+  const { data: adminComments } = adminCommentsResult;
 
   if (subError) {
     console.error("[admin/activity-submissions] team detail fetch error:", subError);
@@ -333,25 +372,59 @@ async function getSubmissionDetail(
   }
 
   const team = pickOne(submission.hackathon_teams);
-  const { data: members } = team?.id
-    ? await serviceClient
-        .from("hackathon_team_members")
-        .select(`team_id, participant_id, hackathon_participants(id, name, email, avatar_url, university)`)
-        .eq("team_id", team.id)
-    : { data: [] };
 
-  const teamMembers = ((members as any[]) ?? []).flatMap((m: any) => {
+  // Fetch all sibling submissions (same team + activity, different assessment)
+  // and the assessment metadata for labels
+  const [siblingsResult, assessmentsResult, membersResult] = await Promise.all([
+    serviceClient
+      .from("hackathon_phase_activity_team_submissions")
+      .select("id,assessment_id,text_answer,image_url,file_urls")
+      .eq("team_id", submission.team_id)
+      .eq("activity_id", activityId)
+      .order("id"),
+    serviceClient
+      .from("hackathon_phase_activity_assessments")
+      .select("id,display_order,metadata")
+      .eq("activity_id", activityId)
+      .order("display_order"),
+    team?.id
+      ? serviceClient
+          .from("hackathon_team_members")
+          .select(`team_id, participant_id, hackathon_participants(id, name, email, avatar_url, university)`)
+          .eq("team_id", team.id)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const siblings: any[] = siblingsResult.data ?? [];
+  const assessments: any[] = assessmentsResult.data ?? [];
+
+  // Build answers array ordered by assessment display_order
+  const assessmentMap = new Map(assessments.map((a) => [a.id, a]));
+  const answers = siblings
+    .map((s) => {
+      const assessment = assessmentMap.get(s.assessment_id);
+      const meta = assessment?.metadata ?? {};
+      const label =
+        meta.label ?? meta.title ?? meta.prompt ?? meta.submission_label ?? null;
+      return {
+        submission_id: s.id,
+        assessment_id: s.assessment_id,
+        display_order: assessment?.display_order ?? 0,
+        label,
+        text_answer: s.text_answer,
+        image_url: s.image_url,
+        file_urls: s.file_urls ?? [],
+      };
+    })
+    .sort((a, b) => a.display_order - b.display_order);
+
+  let teamMembers: any[] = [];
+  for (const m of (membersResult.data as any[]) ?? []) {
     const p = pickOne(m.hackathon_participants);
-    if (!p) return [];
+    if (!p) continue;
     const { id: _id, ...rest } = p as any;
-    return [{ id: m.participant_id, ...rest }];
-  });
-
-  const { data: adminComments } = await serviceClient
-    .from("hackathon_submission_admin_comments")
-    .select("*")
-    .eq("team_submission_id", submission.id)
-    .order("created_at", { ascending: true });
+    teamMembers.push({ id: m.participant_id, ...rest });
+  }
 
   const submitter = pickOne(submission.submitter);
   const review = pickOne(submission.hackathon_submission_reviews);
@@ -372,6 +445,7 @@ async function getSubmissionDetail(
       submitted_by: submitter,
       review,
       admin_comments: adminComments ?? [],
+      answers: answers.length > 1 ? answers : undefined,
     },
   });
 }

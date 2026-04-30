@@ -1,61 +1,89 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, RefreshCw } from "lucide-react";
 
-type Cluster = {
+/* ------------------------------------------------------------------ */
+/*  Public types                                                       */
+/* ------------------------------------------------------------------ */
+
+export interface ClusterCanvasCluster {
   id: string;
   cluster_index: number;
   label: string | null;
   summary: string | null;
   member_count: number;
   color: string | null;
-};
+}
 
-type Point = {
+export interface ClusterCanvasPoint {
   assignmentId: string;
   clusterId: string;
   embeddingId: string;
-  teamId: string;
-  teamName: string;
-  snippet: string;
   x: number;
   y: number;
   distance: number | null;
-};
+  [key: string]: unknown;
+}
 
-type Clustering = {
+export interface ClusterCanvasClustering {
   id: string;
   k: number;
   sample_count: number;
   created_at: string;
   algorithm: string;
-};
+}
 
-type ResponsePayload = {
-  clustering: Clustering | null;
-  clusters: Cluster[];
-  points: Point[];
-};
+export interface ClusterCanvasProps {
+  title: string;
+  fetchUrl: string;
+  reclusterUrl: string;
+  compact?: boolean;
+  /** Extract clustering/clusters/points from the API response */
+  parseResponse: (data: unknown) => {
+    clustering: ClusterCanvasClustering | null;
+    clusters: ClusterCanvasCluster[];
+    points: ClusterCanvasPoint[];
+  };
+  /** Render custom tooltip content for a hovered point */
+  renderTooltip: (point: ClusterCanvasPoint) => React.ReactNode;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
 const DEFAULT_COLOR = "#94a3b8";
 
-export function TeamDirectionClusterView({
-  onSelectTeam,
-  selectedTeamId,
-}: {
-  onSelectTeam?: (id: string) => void;
-  selectedTeamId?: string | null;
-}) {
-  const [data, setData] = useState<ResponsePayload | null>(null);
+function getTouchDistance(a: React.Touch, b: React.Touch) {
+  return Math.sqrt((a.clientX - b.clientX) ** 2 + (a.clientY - b.clientY) ** 2);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
+export function ClusterCanvas({
+  title,
+  fetchUrl,
+  reclusterUrl,
+  compact = false,
+  parseResponse,
+  renderTooltip,
+}: ClusterCanvasProps) {
+  const [parsed, setParsed] = useState<{
+    clustering: ClusterCanvasClustering | null;
+    clusters: ClusterCanvasCluster[];
+    points: ClusterCanvasPoint[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [reclustering, setReclustering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
-  const [hoverPoint, setHoverPoint] = useState<Point | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<ClusterCanvasPoint | null>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
@@ -63,21 +91,23 @@ export function TeamDirectionClusterView({
   const containerRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+  const pinchDistRef = useRef<number | null>(null);
+
+  /* ---- data fetching ---- */
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/hackathon/team-directions/clusters");
+      const res = await fetch(fetchUrl);
       if (!res.ok) throw new Error((await res.json()).error ?? `HTTP ${res.status}`);
-      const payload: ResponsePayload = await res.json();
-      setData(payload);
+      setParsed(parseResponse(await res.json()));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchUrl, parseResponse]);
 
   useEffect(() => {
     void fetchData();
@@ -87,9 +117,7 @@ export function TeamDirectionClusterView({
     setReclustering(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/hackathon/team-directions/clusters", {
-        method: "POST",
-      });
+      const res = await fetch(reclusterUrl, { method: "POST" });
       if (!res.ok) throw new Error((await res.json()).error ?? `HTTP ${res.status}`);
       await fetchData();
     } catch (err) {
@@ -97,7 +125,9 @@ export function TeamDirectionClusterView({
     } finally {
       setReclustering(false);
     }
-  }, [fetchData]);
+  }, [reclusterUrl, fetchData]);
+
+  /* ---- resize observer ---- */
 
   useEffect(() => {
     const el = containerRef.current;
@@ -114,17 +144,19 @@ export function TeamDirectionClusterView({
     return () => observer.disconnect();
   }, []);
 
+  /* ---- bounds & auto-fit ---- */
+
   const bounds = useMemo(() => {
-    if (!data || data.points.length === 0) return null;
-    const xs = data.points.map((p) => p.x);
-    const ys = data.points.map((p) => p.y);
+    if (!parsed || parsed.points.length === 0) return null;
+    const xs = parsed.points.map((p) => p.x);
+    const ys = parsed.points.map((p) => p.y);
     return {
       minX: Math.min(...xs),
       maxX: Math.max(...xs),
       minY: Math.min(...ys),
       maxY: Math.max(...ys),
     };
-  }, [data]);
+  }, [parsed]);
 
   useEffect(() => {
     if (!bounds || canvasSize.width === 0 || canvasSize.height === 0) return;
@@ -137,16 +169,20 @@ export function TeamDirectionClusterView({
     setTransform({ x: 0, y: 0, scale });
   }, [bounds, canvasSize]);
 
+  /* ---- colour map ---- */
+
   const colorByClusterId = useMemo(() => {
     const map = new Map<string, string>();
-    data?.clusters.forEach((c) => {
+    parsed?.clusters.forEach((c) => {
       map.set(c.id, c.color ?? DEFAULT_COLOR);
     });
     return map;
-  }, [data]);
+  }, [parsed]);
+
+  /* ---- coordinate mapping ---- */
 
   const pointToScreen = useCallback(
-    (p: Point) => {
+    (p: ClusterCanvasPoint) => {
       if (!bounds) return { x: 0, y: 0 };
       const cx = (bounds.minX + bounds.maxX) / 2;
       const cy = (bounds.minY + bounds.maxY) / 2;
@@ -155,18 +191,20 @@ export function TeamDirectionClusterView({
         y: canvasSize.height / 2 + (p.y - cy) * transform.scale + transform.y,
       };
     },
-    [bounds, canvasSize, transform]
+    [bounds, canvasSize, transform],
   );
+
+  /* ---- canvas draw ---- */
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !data || !bounds || canvasSize.width === 0) return;
+    if (!canvas || !parsed || !bounds || canvasSize.width === 0) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
 
-    for (const p of data.points) {
+    for (const p of parsed.points) {
       const { x, y } = pointToScreen(p);
       const isSelected = !selectedClusterId || selectedClusterId === p.clusterId;
       const color = colorByClusterId.get(p.clusterId) ?? DEFAULT_COLOR;
@@ -178,7 +216,9 @@ export function TeamDirectionClusterView({
       ctx.lineWidth = 1;
       ctx.stroke();
     }
-  }, [data, bounds, canvasSize, transform, selectedClusterId, colorByClusterId, pointToScreen]);
+  }, [parsed, bounds, canvasSize, transform, selectedClusterId, colorByClusterId, pointToScreen]);
+
+  /* ---- mouse handlers ---- */
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     draggingRef.current = true;
@@ -189,6 +229,29 @@ export function TeamDirectionClusterView({
     draggingRef.current = false;
   }, []);
 
+  const findNearestPoint = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!parsed || !bounds) return null;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return null;
+      const mx = clientX - rect.left;
+      const my = clientY - rect.top;
+
+      let nearest: ClusterCanvasPoint | null = null;
+      let minDist = Infinity;
+      for (const p of parsed.points) {
+        const { x, y } = pointToScreen(p);
+        const d = Math.sqrt((x - mx) ** 2 + (y - my) ** 2);
+        if (d < 12 && d < minDist) {
+          minDist = d;
+          nearest = p;
+        }
+      }
+      return nearest;
+    },
+    [parsed, bounds, pointToScreen],
+  );
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (draggingRef.current) {
@@ -197,42 +260,69 @@ export function TeamDirectionClusterView({
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
         setTransform((prev) => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
       }
-
-      if (!data || !bounds) return;
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-
-      let nearest: Point | null = null;
-      let minDist = Infinity;
-      for (const p of data.points) {
-        const { x, y } = pointToScreen(p);
-        const d = Math.sqrt((x - mx) ** 2 + (y - my) ** 2);
-        if (d < 12 && d < minDist) {
-          minDist = d;
-          nearest = p;
-        }
-      }
-      setHoverPoint(nearest);
+      setHoverPoint(findNearestPoint(e.clientX, e.clientY));
     },
-    [data, bounds, pointToScreen]
+    [findNearestPoint],
   );
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const factor = e.deltaY > 0 ? 0.9 : 1.1;
-    setTransform((prev) => ({ ...prev, scale: Math.max(1, Math.min(400, prev.scale * factor)) }));
+    setTransform((prev) => ({
+      ...prev,
+      scale: Math.max(1, Math.min(400, prev.scale * factor)),
+    }));
   }, []);
 
-  const clusterList = data?.clusters ?? [];
-  const height = 640;
+  /* ---- touch handlers ---- */
 
-  if (loading && !data) {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      draggingRef.current = true;
+      lastMouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      draggingRef.current = false;
+      pinchDistRef.current = getTouchDistance(e.touches[0], e.touches[1]);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && draggingRef.current) {
+        const dx = e.touches[0].clientX - lastMouseRef.current.x;
+        const dy = e.touches[0].clientY - lastMouseRef.current.y;
+        lastMouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        setTransform((prev) => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
+        setHoverPoint(findNearestPoint(e.touches[0].clientX, e.touches[0].clientY));
+      } else if (e.touches.length === 2 && pinchDistRef.current !== null) {
+        const newDist = getTouchDistance(e.touches[0], e.touches[1]);
+        const factor = newDist / pinchDistRef.current;
+        pinchDistRef.current = newDist;
+        setTransform((prev) => ({
+          ...prev,
+          scale: Math.max(1, Math.min(400, prev.scale * factor)),
+        }));
+      }
+    },
+    [findNearestPoint],
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    draggingRef.current = false;
+    pinchDistRef.current = null;
+  }, []);
+
+  /* ---- render ---- */
+
+  const clusterList = parsed?.clusters ?? [];
+  const height = compact ? 360 : 640;
+
+  if (loading && !parsed) {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Team Directions — Submission clusters</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="w-full" style={{ height }} />
@@ -241,11 +331,11 @@ export function TeamDirectionClusterView({
     );
   }
 
-  if (!data) {
+  if (!parsed) {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Team Directions — Submission clusters</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-destructive">{error ?? "Failed to load."}</p>
@@ -254,20 +344,18 @@ export function TeamDirectionClusterView({
     );
   }
 
-  const showEmpty = !data.clustering || data.points.length === 0;
+  const showEmpty = !parsed.clustering || parsed.points.length === 0;
 
   return (
     <Card className="w-full relative overflow-hidden" style={{ height }}>
       <CardHeader className="absolute top-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <CardTitle className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
           <div className="flex flex-col">
-            <span className="text-base">
-              Team Directions — Submission clusters
-            </span>
+            <span className="text-base">{title}</span>
             <span className="text-xs font-normal text-muted-foreground">
-              {data.clustering
-                ? `${data.clustering.k} clusters · ${data.clustering.sample_count} teams · run ${new Date(
-                    data.clustering.created_at
+              {parsed.clustering
+                ? `${parsed.clustering.k} clusters · ${parsed.clustering.sample_count} samples · run ${new Date(
+                    parsed.clustering.created_at,
                   ).toLocaleString()}`
                 : "No clustering yet — click Recluster to generate."}
             </span>
@@ -289,6 +377,7 @@ export function TeamDirectionClusterView({
           </div>
         </CardTitle>
       </CardHeader>
+
       <CardContent className="p-0 h-full relative">
         {error && (
           <div className="absolute top-20 left-4 right-4 z-20 rounded border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -299,9 +388,9 @@ export function TeamDirectionClusterView({
           <div className="absolute inset-0 flex items-center justify-center z-10 text-sm text-muted-foreground">
             {reclustering
               ? "Clustering..."
-              : data.clustering
-              ? "No teams to cluster yet."
-              : "No clustering yet."}
+              : parsed.clustering
+                ? "No data to cluster yet."
+                : "No clustering yet."}
           </div>
         )}
 
@@ -310,12 +399,15 @@ export function TeamDirectionClusterView({
             ref={canvasRef}
             width={canvasSize.width}
             height={canvasSize.height - 84}
-            className="w-full h-full cursor-grab active:cursor-grabbing"
+            className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           />
         </div>
 
@@ -354,20 +446,10 @@ export function TeamDirectionClusterView({
           })}
         </div>
 
-        {/* Hover popover */}
+        {/* Hover popover — content delegated to renderTooltip */}
         {hoverPoint && (
           <div className="absolute bottom-4 right-4 z-10 max-w-sm rounded-lg border bg-background/95 p-3 shadow-lg">
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Team: {hoverPoint.teamName}
-            </div>
-            <p className="text-xs leading-relaxed">
-              {hoverPoint.snippet || <span className="italic">No text</span>}
-            </p>
-            {hoverPoint.distance !== null && (
-              <div className="mt-1 text-[10px] tabular-nums text-muted-foreground">
-                distance {hoverPoint.distance.toFixed(3)}
-              </div>
-            )}
+            {renderTooltip(hoverPoint)}
           </div>
         )}
       </CardContent>

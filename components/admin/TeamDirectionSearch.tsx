@@ -48,7 +48,7 @@ export function TeamDirectionSearch({ onSelectTeam }: { onSelectTeam: (id: strin
         />
         <select
           value={aspect}
-          onChange={(e) => setAspect(e.target.value as any)}
+          onChange={(e) => setAspect(e.target.value as "composite" | "mission" | "tech" | "market")}
           className="border rounded px-2"
         >
           <option value="composite">All</option>

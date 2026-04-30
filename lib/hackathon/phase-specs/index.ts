@@ -15,6 +15,7 @@ export async function getPhaseSpec(phaseNumber: number | null | undefined): Prom
 
 export interface ActivitySpec {
   title: string;
+  gradingMode?: string; // e.g. "orientation" — skips hard evidence gates
   learningGoal: string;
   whatToLookFor: string[];
   redFlags: string[];
@@ -118,9 +119,12 @@ function parseActivitySpec(content: string): ActivitySpec {
         case "title":
           currentSection = "title";
           break;
+        case "gradingmode":
+        case "grading_mode":
+          currentSection = "gradingMode";
+          break;
         case "learninggoal":
         case "learning_goal":
-        case "learninggoal":
           currentSection = "learningGoal";
           break;
         case "whattolookfor":
@@ -157,8 +161,18 @@ function parseActivitySpec(content: string): ActivitySpec {
 export function formatActivitySpecForPrompt(spec: ActivitySpec | null): string {
   if (!spec) return "";
   const parts: string[] = [];
+  if (spec.gradingMode) {
+    parts.push(`GRADING MODE: ${spec.gradingMode.toUpperCase()}`);
+    if (spec.gradingMode.toLowerCase() === "orientation") {
+      parts.push(
+        "IMPORTANT: This is an orientation activity. " +
+        "DO NOT apply the Artifact Type Check, Reality Signal Check, or Phase Alignment Check. " +
+        "No interview evidence is expected. Grade on genuine engagement only."
+      );
+    }
+  }
   if (spec.learningGoal) {
-    parts.push(`LEARNING GOAL: ${spec.learningGoal}`);
+    parts.push(`\nLEARNING GOAL: ${spec.learningGoal}`);
   }
   if (spec.whatToLookFor.length > 0) {
     parts.push(`\nLOOK FOR EVIDENCE OF:`);
