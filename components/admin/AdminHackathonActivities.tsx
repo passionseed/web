@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { diffWords } from "diff";
 import { ImageLightbox } from "@/components/admin/ImageLightbox";
@@ -176,6 +176,8 @@ interface Submission {
   submitted_by: Person | null;
   review: Review | null;
   admin_comments: AdminComment[];
+  has_mentor?: boolean;
+  answers?: { submission_id: string; assessment_id: string; display_order: number; label: string | null; text_answer: string | null; image_url: string | null; file_urls: string[] }[];
 }
 
 interface SubmissionGroup {
@@ -319,14 +321,30 @@ export function AdminHackathonActivities() {
     activity_title: string | null;
     points_possible: number | null;
     has_phase_spec: boolean;
+    template: string | null;
   } | null>(null);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [promptTab, setPromptTab] = useState<"preview" | "template">("preview");
+  const [editingTemplate, setEditingTemplate] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateMessage, setTemplateMessage] = useState("");
   const activityRequestControllers = useRef(new Map<string, AbortController>());
   const detailRequestId = useRef(0);
 
   useEffect(() => {
     void fetchData();
   }, []);
+
+  // Auto-fetch submissions for all activities that haven't loaded yet.
+  useEffect(() => {
+    for (const phase of phases) {
+      for (const act of phase.hackathon_phase_activities) {
+        if (!act.submission_loaded && !act.submission_loading) {
+          void fetchActivitySubmissions(act.id, true);
+        }
+      }
+    }
+  }, [phases.length]);
 
   async function fetchData(options: { silent?: boolean } = {}) {
     const { silent = false } = options;
@@ -400,8 +418,10 @@ export function AdminHackathonActivities() {
       if (!silent) {
         const allPhaseIds = (data.phases ?? []).map((p: Phase) => p.id);
         setExpandedPhases(new Set(allPhaseIds));
-        // Don't auto-expand activities — fetch lazily on demand
-        setExpandedActivities(new Set());
+        const allActivityIds = (data.phases ?? []).flatMap((p: Phase) =>
+          (p.hackathon_phase_activities ?? []).map((a: Activity) => a.id)
+        );
+        setExpandedActivities(new Set(allActivityIds));
       }
     } catch {
       if (!silent) setMessage("Failed to fetch activities");
@@ -411,7 +431,7 @@ export function AdminHackathonActivities() {
   }
 
   // Small helpers used by the navigator's sticky headers.
-  function computeSubStats(subs: Submission[]) {
+  const computeSubStats = useCallback((subs: Submission[]) => {
     let total = 0, pending = 0, passed = 0, revision = 0, aiDrafts = 0;
     for (const s of subs) {
       total++;
@@ -421,9 +441,9 @@ export function AdminHackathonActivities() {
       if (s.review?.ai_draft) aiDrafts++;
     }
     return { total, pending, passed, revision, aiDrafts };
-  }
+  }, []);
 
-  function matchesFilter(sub: Submission): boolean {
+  const matchesFilter = useCallback((sub: Submission): boolean => {
     if (statusFilter === "improvements") {
       if (!((sub.revisions?.length ?? 0) > 0 && sub.review_status === "pending_review")) return false;
     } else if (statusFilter !== "all" && sub.review_status !== statusFilter) return false;
@@ -444,7 +464,7 @@ export function AdminHackathonActivities() {
       return haystack.includes(query);
     }
     return true;
-  }
+  }, [statusFilter, scopeFilter, search]);
 
   function phaseSubs(phase: Phase): Submission[] {
     return phase.hackathon_phase_activities.flatMap((a) => a.submissions).filter(matchesFilter);
@@ -596,44 +616,40 @@ export function AdminHackathonActivities() {
   // Keeping aliases matches the old local var names so the JSX stays tidy.
   const currentJob = selectedSubmission ? aiJobs[selectedSubmission.id] : undefined;
   const aiSuggesting = currentJob?.status === "running";
-  const aiLiveText = currentJob?.thinking ?? "";
+  const aiLiveText = currentJob?.reasoning ?? "";
   const aiReasoning = currentJob?.rationale ?? "";
   const savingGrade = selectedSubmission ? savingGradeIds.has(selectedSubmission.id) : false;
 
-  function togglePhase(phaseId: string) {
+  const togglePhase = useCallback((phaseId: string) => {
     setExpandedPhases((prev) => {
       const next = new Set(prev);
-      if (next.has(phaseId)) {
-        next.delete(phaseId);
-      } else {
-        next.add(phaseId);
-      }
+      if (next.has(phaseId)) next.delete(phaseId); else next.add(phaseId);
       return next;
     });
-  }
+  }, []);
 
-  function toggleActivity(activityId: string) {
+  const toggleActivity = useCallback((activityId: string) => {
     setExpandedActivities((prev) => {
       const next = new Set(prev);
-      if (next.has(activityId)) {
-        next.delete(activityId);
-      } else {
-        next.add(activityId);
-      }
+      if (next.has(activityId)) next.delete(activityId); else next.add(activityId);
       return next;
     });
-
-    // Lazy-load submissions when expanding an activity
     const isExpanding = !expandedActivities.has(activityId);
     if (isExpanding) {
       const alreadyLoaded = phases.some((phase) =>
         phase.hackathon_phase_activities.some((act) => act.id === activityId && act.submission_loaded)
       );
-      if (!alreadyLoaded) {
-        void fetchActivitySubmissions(activityId, true);
-      }
+      if (!alreadyLoaded) void fetchActivitySubmissions(activityId, true);
     }
-  }
+  }, [expandedActivities, phases]);
+
+  const toggleGroup = useCallback((groupKey: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) next.delete(groupKey); else next.add(groupKey);
+      return next;
+    });
+  }, []);
 
   async function fetchActivitySubmissions(activityId: string, reset = false) {
     let activityState: Activity | null = null;
@@ -747,25 +763,13 @@ export function AdminHackathonActivities() {
     }
   }
 
-  function toggleGroup(groupKey: string) {
-    setExpandedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(groupKey)) {
-        next.delete(groupKey);
-      } else {
-        next.add(groupKey);
-      }
-      return next;
-    });
-  }
-
   function getOwnerKey(sub: Submission): string {
     return sub.scope === "team"
       ? `team:${sub.team?.id ?? sub.id}`
       : `individual:${sub.participant?.id ?? sub.submitted_by?.id ?? sub.id}`;
   }
 
-  function groupSubmissionsByOwner(subs: Submission[]): SubmissionGroup[] {
+  const groupSubmissionsByOwner = useCallback((subs: Submission[]): SubmissionGroup[] => {
     const map = new Map<string, SubmissionGroup>();
     for (const sub of subs) {
       const key = getOwnerKey(sub);
@@ -791,7 +795,7 @@ export function AdminHackathonActivities() {
       }
     }
     return Array.from(map.values());
-  }
+  }, []);
 
   function selectSubmission(submissionId: string) {
     let activityIdForSubmission: string | null = null;
@@ -868,6 +872,8 @@ export function AdminHackathonActivities() {
     setPromptPreview(null);
     setPromptCopied(false);
     setPromptPreviewLoading(true);
+    setPromptTab("preview");
+    setTemplateMessage("");
 
     try {
       const response = await fetch(
@@ -884,9 +890,11 @@ export function AdminHackathonActivities() {
           activity_title: null,
           points_possible: null,
           has_phase_spec: false,
+          template: null,
         });
       } else {
         setPromptPreview(data);
+        if (data.template) setEditingTemplate(data.template);
       }
     } catch {
       setPromptPreview({
@@ -897,6 +905,7 @@ export function AdminHackathonActivities() {
         activity_title: null,
         points_possible: null,
         has_phase_spec: false,
+        template: null,
       });
     } finally {
       setPromptPreviewLoading(false);
@@ -914,7 +923,33 @@ export function AdminHackathonActivities() {
     }
   }
 
-  function getSupergraderCandidates(activitySubmissions: Submission[]): Submission[] {
+  async function saveTemplate() {
+    if (!editingTemplate.trim()) return;
+    setSavingTemplate(true);
+    setTemplateMessage("");
+    try {
+      const res = await fetch("/api/admin/hackathon/grading-prompt", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ template: editingTemplate }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setTemplateMessage(data.error ?? "Failed to save");
+        return;
+      }
+      setTemplateMessage("Template saved.");
+      if (promptPreview) {
+        setPromptPreview({ ...promptPreview, template: editingTemplate });
+      }
+    } catch {
+      setTemplateMessage("Failed to save template.");
+    } finally {
+      setSavingTemplate(false);
+    }
+  }
+
+  const getSupergraderCandidates = useCallback((activitySubmissions: Submission[]): Submission[] => {
     return activitySubmissions.filter((sub) => {
       if (sub.review_status !== "pending_review") return false;
       if (sub.review?.ai_draft) return false;
@@ -922,7 +957,7 @@ export function AdminHackathonActivities() {
       if (job?.status === "running") return false;
       return true;
     });
-  }
+  }, [aiJobs]);
 
   // Track which activity's supergrader is currently running. Only one activity
   // at a time so the progress message + cancel button stay unambiguous.
@@ -1226,7 +1261,7 @@ export function AdminHackathonActivities() {
   }
 
   return (
-    <div className="space-y-4 font-[family-name:var(--font-mitr)]">
+    <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-5">
         <Card className="border-slate-700/50 bg-slate-900/50">
           <CardHeader className="pb-2">
@@ -1333,395 +1368,32 @@ export function AdminHackathonActivities() {
           ) : phases.length === 0 ? (
             <div className="py-16 text-center text-sm text-slate-500">No phases found.</div>
           ) : (
-            <div className="grid gap-4 items-start xl:grid-cols-[3fr_7fr]">
-              <aside className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/40">
-                {phases.map((phase, phaseIdx) => {
-                  const phaseOpen = expandedPhases.has(phase.id);
-                  const pStats = computeSubStats(phaseSubs(phase));
-                  return (
-                    <section key={phase.id} className={phaseIdx > 0 ? "border-t border-slate-800" : ""}>
-                      {/* Phase header — sticks to top of scroll container. */}
-                      <button
-                        onClick={() => togglePhase(phase.id)}
-                        className="sticky top-0 z-30 flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left bg-slate-950/95 backdrop-blur border-b border-slate-800 hover:bg-slate-900/80"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          {phaseOpen ? (
-                            <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
-                          )}
-                          <span className="font-semibold text-sm text-slate-100 truncate">
-                            P{phase.phase_number}. {phase.title}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0 text-[11px] font-light">
-                          {pStats.pending > 0 && (
-                            <span className="rounded px-1.5 py-0.5 bg-amber-500/15 text-amber-200">
-                              {pStats.pending} pending
-                            </span>
-                          )}
-                          {pStats.revision > 0 && (
-                            <span className="rounded px-1.5 py-0.5 bg-orange-500/15 text-orange-200">
-                              {pStats.revision} rev
-                            </span>
-                          )}
-                          {pStats.aiDrafts > 0 && (
-                            <span className="rounded px-1.5 py-0.5 bg-violet-500/15 text-violet-200 flex items-center gap-0.5">
-                              <Sparkles className="h-2.5 w-2.5" />
-                              {pStats.aiDrafts}
-                            </span>
-                          )}
-                          <span className="text-slate-500 px-1">{pStats.total}</span>
-                        </div>
-                      </button>
-
-                      {phaseOpen && (
-                        <div>
-                          {phase.hackathon_phase_activities.length === 0 ? (
-                            <p className="px-3 py-3 text-xs text-slate-600 italic">No activities.</p>
-                          ) : (
-                            phase.hackathon_phase_activities.map((activity) => {
-                              const actOpen = expandedActivities.has(activity.id);
-                              const isThisActivityRunning =
-                                supergraderRunning && supergraderActivityId === activity.id;
-
-                              const filteredSubs = activity.submissions.filter(matchesFilter);
-
-                              const aStats = computeSubStats(filteredSubs);
-                              const candidates = getSupergraderCandidates(filteredSubs);
-                              const runningHere = filteredSubs.filter(
-                                (s) => aiJobs[s.id]?.status === "running"
-                              ).length;
-
-                              return (
-                                <div key={activity.id}>
-                                  {/* Activity sub-header — sticks below phase header. */}
-                                  <div className="sticky top-[41px] z-20 flex items-center justify-between gap-2 px-3 py-1.5 bg-slate-900/95 backdrop-blur border-b border-slate-800/70">
-                                    <button
-                                      onClick={() => toggleActivity(activity.id)}
-                                      className="flex items-center gap-2 min-w-0 text-left hover:text-slate-100"
-                                    >
-                                      {actOpen ? (
-                                        <ChevronDown className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                                      ) : (
-                                        <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                                      )}
-                                      <span className="text-xs font-medium text-slate-300 truncate">
-                                        {activity.display_order}. {activity.title}
-                                      </span>
-                                      {activity.is_draft && (
-                                        <Badge variant="outline" className="border-slate-600 text-slate-400 text-[9px] h-4 px-1 shrink-0">
-                                          Draft
-                                        </Badge>
-                                      )}
-                                    </button>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      {aStats.pending > 0 && (
-                                        <span className="rounded px-1.5 py-0.5 text-[10px] bg-amber-500/15 text-amber-200 font-light">
-                                          {aStats.pending}
-                                        </span>
-                                      )}
-                                      {candidates.length > 0 && (
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          onClick={() =>
-                                            runSupergrader(activity.id, activity.submissions, activity.title)
-                                          }
-                                          disabled={supergraderRunning}
-                                          className="h-6 px-1.5 text-[10px] font-medium bg-violet-500/90 text-violet-950 hover:bg-violet-400 disabled:bg-slate-800 disabled:text-slate-500"
-                                          title={
-                                            isThisActivityRunning
-                                              ? `Grading ${runningHere}…`
-                                              : `Super-grade ${candidates.length} pending`
-                                          }
-                                        >
-                                          {isThisActivityRunning ? (
-                                            <Loader2 className="h-3 w-3 animate-spin" />
-                                          ) : (
-                                            <Sparkles className="h-3 w-3" />
-                                          )}
-                                          <span className="ml-1">{candidates.length}</span>
-                                        </Button>
-                                      )}
-                                      {isThisActivityRunning && (
-                                        <button
-                                          type="button"
-                                          onClick={() => setSupergraderCancel(true)}
-                                          className="text-[10px] text-slate-400 hover:text-slate-200 underline"
-                                          title="Cancel after current batch"
-                                        >
-                                          cancel
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {actOpen && (
-                                    <div className="divide-y divide-slate-800/60">
-                                      {filteredSubs.length === 0 ? (
-                                        <p className="px-3 py-2 text-[11px] text-slate-600 italic">
-                                          {activity.submissions.length === 0
-                                            ? "No submissions yet."
-                                            : "No matches for current filter."}
-                                        </p>
-                                      ) : (
-                                        groupSubmissionsByOwner(filteredSubs).map((group) => {
-                                          const groupKey = `${activity.id}-${group.ownerId}`;
-                                          const groupOpen = expandedGroups.has(groupKey);
-                                          const hasRevisions = group.attemptCount > 1;
-
-                                          // Single submission with no revisions: render as a flat row (no group wrapper)
-                                          if (group.submissions.length === 1 && !hasRevisions) {
-                                            const submission = group.submissions[0];
-                                            return (
-                                              <button
-                                                key={`${submission.scope}-${submission.id}`}
-                                                onClick={() => selectSubmission(submission.id)}
-                                                className={`w-full px-3 py-2 text-left transition-colors ${
-                                                  selectedSubmission?.id === submission.id
-                                                    ? "bg-blue-500/15 border-l-2 border-blue-400"
-                                                    : "border-l-2 border-transparent hover:bg-slate-900/60"
-                                                }`}
-                                              >
-                                                <div className="flex items-start justify-between gap-2">
-                                                  <div className="min-w-0 flex-1">
-                                                    <div className="text-xs font-medium text-slate-100 truncate">
-                                                      {submission.scope === "team" ? (
-                                                        <TeamHoverCard
-                                                          teamName={submission.team?.name ?? null}
-                                                          lobbyCode={submission.team?.lobby_code}
-                                                          members={submission.team_members}
-                                                        >
-                                                          <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
-                                                            {getOwnerLabel(submission)}
-                                                          </span>
-                                                        </TeamHoverCard>
-                                                      ) : (
-                                                        <ProfileHoverCard
-                                                          name={submission.participant?.name ?? null}
-                                                          email={submission.participant?.email}
-                                                          university={submission.participant?.university}
-                                                          phone={submission.participant?.phone}
-                                                          lineId={submission.participant?.line_id}
-                                                          track={submission.participant?.track}
-                                                          gradeLevel={submission.participant?.grade_level}
-                                                          teamName={submission.team?.name}
-                                                          teamLobbyCode={submission.team?.lobby_code}
-                                                        >
-                                                          <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
-                                                            {getOwnerLabel(submission)}
-                                                          </span>
-                                                        </ProfileHoverCard>
-                                                      )}
-                                                    </div>
-                                                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
-                                                      <span className="uppercase tracking-wide">{submission.scope}</span>
-                                                      {submission.scope === "team" && submission.team?.lobby_code && (
-                                                        <span>· {submission.team.lobby_code}</span>
-                                                      )}
-                                                      {submission.submitted_at && (
-                                                        <span>· {format(new Date(submission.submitted_at), "MMM d")}</span>
-                                                      )}
-                                                      {submission.file_urls.length > 0 && (
-                                                        <Paperclip className="h-2.5 w-2.5" />
-                                                      )}
-                                                      {submission.image_url && <ImageIcon className="h-2.5 w-2.5" />}
-                                                    </div>
-                                                  </div>
-                                                  <div className="flex items-center gap-1 shrink-0">
-                                                    {savingGradeIds.has(submission.id) && (
-                                                      <Loader2 className="h-3 w-3 animate-spin text-blue-300" />
-                                                    )}
-                                                    {aiJobs[submission.id]?.status === "running" && (
-                                                      <Loader2 className="h-3 w-3 animate-spin text-violet-300" />
-                                                    )}
-                                                    {submission.review?.ai_draft &&
-                                                      aiJobs[submission.id]?.status !== "running" && (
-                                                        <Sparkles className="h-3 w-3 text-violet-300" />
-                                                      )}
-                                                    <StatusBadge status={submission.review_status} />
-                                                  </div>
-                                                </div>
-                                              </button>
-                                            );
-                                          }
-
-                                          // Multiple submissions or has revisions: render as a collapsible group
-                                          return (
-                                            <div key={groupKey}>
-                                              {/* Group header */}
-                                              <button
-                                                onClick={() => toggleGroup(groupKey)}
-                                                className={`w-full px-3 py-2 text-left transition-colors ${
-                                                  group.submissions.some((s) => s.id === selectedSubmission?.id)
-                                                    ? "bg-blue-500/10"
-                                                    : "hover:bg-slate-900/60"
-                                                }`}
-                                              >
-                                                <div className="flex items-start justify-between gap-2">
-                                                  <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center gap-1.5">
-                                                      {groupOpen ? (
-                                                        <ChevronDown className="h-3 w-3 text-slate-500 shrink-0" />
-                                                      ) : (
-                                                        <ChevronRight className="h-3 w-3 text-slate-500 shrink-0" />
-                                                      )}
-                                                      <div className="text-xs font-medium text-slate-100 truncate">
-                                                        {group.scope === "team" ? (
-                                                          <TeamHoverCard
-                                                            teamName={group.team?.name ?? null}
-                                                            lobbyCode={group.team?.lobby_code}
-                                                            members={group.team_members}
-                                                          >
-                                                            <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
-                                                              {group.ownerName}
-                                                            </span>
-                                                          </TeamHoverCard>
-                                                        ) : (
-                                                          <ProfileHoverCard
-                                                            name={group.participant?.name ?? null}
-                                                            email={group.participant?.email}
-                                                            university={group.participant?.university}
-                                                            phone={group.participant?.phone}
-                                                            lineId={group.participant?.line_id}
-                                                            track={group.participant?.track}
-                                                            gradeLevel={group.participant?.grade_level}
-                                                            teamName={group.team?.name}
-                                                            teamLobbyCode={group.team?.lobby_code}
-                                                          >
-                                                            <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">
-                                                              {group.ownerName}
-                                                            </span>
-                                                          </ProfileHoverCard>
-                                                        )}
-                                                      </div>
-                                                      {hasRevisions && (
-                                                        <span className="rounded px-1 py-0.5 text-[9px] bg-slate-700 text-slate-300 font-light shrink-0">
-                                                          {group.attemptCount} attempts
-                                                        </span>
-                                                      )}
-                                                    </div>
-                                                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 pl-[18px]">
-                                                      <span className="uppercase tracking-wide">{group.scope}</span>
-                                                      {group.scope === "team" && group.team?.lobby_code && (
-                                                        <span>· {group.team.lobby_code}</span>
-                                                      )}
-                                                    </div>
-                                                  </div>
-                                                  <div className="flex items-center gap-1 shrink-0">
-                                                    {group.submissions.some((s) => savingGradeIds.has(s.id)) && (
-                                                      <Loader2 className="h-3 w-3 animate-spin text-blue-300" />
-                                                    )}
-                                                    {group.submissions.some((s) => aiJobs[s.id]?.status === "running") && (
-                                                      <Loader2 className="h-3 w-3 animate-spin text-violet-300" />
-                                                    )}
-                                                    {group.submissions.some((s) => s.review?.ai_draft && aiJobs[s.id]?.status !== "running") && (
-                                                      <Sparkles className="h-3 w-3 text-violet-300" />
-                                                    )}
-                                                    <StatusBadge status={group.latestStatus} />
-                                                  </div>
-                                                </div>
-                                              </button>
-
-                                              {/* Submissions under group */}
-                                              {groupOpen && (
-                                                <div className="border-t border-slate-800/40">
-                                                  {group.submissions.map((submission) => (
-                                                    <button
-                                                      key={`${submission.scope}-${submission.id}`}
-                                                      onClick={() => selectSubmission(submission.id)}
-                                                      className={`w-full px-3 py-2 text-left transition-colors ${
-                                                        selectedSubmission?.id === submission.id
-                                                          ? "bg-blue-500/15 border-l-2 border-blue-400"
-                                                          : "border-l-2 border-transparent hover:bg-slate-900/60"
-                                                      }`}
-                                                    >
-                                                      <div className="flex items-start justify-between gap-2 pl-[18px]">
-                                                        <div className="min-w-0 flex-1">
-                                                          <div className="text-[11px] font-medium text-slate-200 truncate">
-                                                            R{1 + (submission.revisions?.length ?? 0)}
-                                                            {submission.submitted_at && (
-                                                              <span className="text-slate-500 font-light">
-                                                                {" "}· {format(new Date(submission.submitted_at), "MMM d, HH:mm")}
-                                                              </span>
-                                                            )}
-                                                          </div>
-                                                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
-                                                            {submission.file_urls.length > 0 && (
-                                                              <Paperclip className="h-2.5 w-2.5" />
-                                                            )}
-                                                            {submission.image_url && <ImageIcon className="h-2.5 w-2.5" />}
-                                                            {(submission.revisions?.length ?? 0) > 0 && (
-                                                              <span className="text-slate-600">
-                                                                {submission.revisions?.length} prior revision
-                                                                {(submission.revisions?.length ?? 0) === 1 ? "" : "s"}
-                                                              </span>
-                                                            )}
-                                                          </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 shrink-0">
-                                                          {savingGradeIds.has(submission.id) && (
-                                                            <Loader2 className="h-3 w-3 animate-spin text-blue-300" />
-                                                          )}
-                                                          {aiJobs[submission.id]?.status === "running" && (
-                                                            <Loader2 className="h-3 w-3 animate-spin text-violet-300" />
-                                                          )}
-                                                          {submission.review?.ai_draft &&
-                                                            aiJobs[submission.id]?.status !== "running" && (
-                                                              <Sparkles className="h-3 w-3 text-violet-300" />
-                                                            )}
-                                                          <StatusBadge status={submission.review_status} />
-                                                        </div>
-                                                      </div>
-                                                    </button>
-                                                  ))}
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })
-                                      )}
-                                      {activity.submission_has_more && !activity.submission_loading && (
-                                        <div className="w-full px-3 py-2 flex items-center justify-center">
-                                          <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => { void fetchActivitySubmissions(activity.id); }}
-                                            className="h-7 px-2 text-[11px] font-light text-slate-400 hover:bg-slate-800"
-                                          >
-                                            Load more submissions
-                                          </Button>
-                                        </div>
-                                      )}
-                                      {activity.submission_loading && activity.submissions.length > 0 && (
-                                        <div className="w-full px-3 py-2 flex items-center justify-center gap-2 text-[11px] text-slate-500">
-                                          <Loader2 className="h-3 w-3 animate-spin" />
-                                          Loading more…
-                                        </div>
-                                      )}
-                                      {/* Loading skeleton */}
-                                      {activity.submission_loading && activity.submissions.length === 0 && (
-                                        <div className="space-y-2 px-3 py-4">
-                                          {[...Array(3)].map((_, i) => (
-                                            <div key={i} className="h-10 w-full animate-pulse rounded bg-slate-800/60" />
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      )}
-                    </section>
-                  );
-                })}
-              </aside>
+            <div className="grid gap-4 items-start xl:grid-cols-[2fr_8fr]">
+              <SubmissionNav
+                phases={phases}
+                expandedPhases={expandedPhases}
+                expandedActivities={expandedActivities}
+                expandedGroups={expandedGroups}
+                selectedSubmissionId={selectedSubmissionId}
+                aiJobs={aiJobs}
+                savingGradeIds={savingGradeIds}
+                supergraderRunning={supergraderRunning}
+                supergraderActivityId={supergraderActivityId}
+                statusFilter={statusFilter}
+                scopeFilter={scopeFilter}
+                search={search}
+                onTogglePhase={togglePhase}
+                onToggleActivity={toggleActivity}
+                onToggleGroup={toggleGroup}
+                onSelectSubmission={selectSubmission}
+                onRunSupergrader={runSupergrader}
+                onCancelSupergrader={() => setSupergraderCancel(true)}
+                onLoadMore={fetchActivitySubmissions}
+                matchesFilter={matchesFilter}
+                computeSubStats={computeSubStats}
+                getSupergraderCandidates={getSupergraderCandidates}
+                groupSubmissionsByOwner={groupSubmissionsByOwner}
+              />
 
               {selectedSubmission ? (
                 <div className="min-w-0 space-y-6 break-words">
@@ -1805,7 +1477,38 @@ export function AdminHackathonActivities() {
                     </div>
                   )}
 
-                  {selectedSubmission.text_answer && (
+                  {selectedSubmission.answers && selectedSubmission.answers.length > 1 ? (
+                    <section className="min-w-0 space-y-4">
+                      {selectedSubmission.answers.map((ans, i) => (
+                        <div key={ans.submission_id}>
+                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            <FileText className="h-3 w-3" />
+                            {ans.label ?? `Question ${i + 1}`}
+                          </p>
+                          {ans.text_answer && (
+                            <p className="whitespace-pre-wrap text-[15px] font-light leading-7 text-slate-100 break-words">
+                              {ans.text_answer}
+                            </p>
+                          )}
+                          {ans.image_url && (
+                            <button type="button" onClick={() => setLightboxSrc(ans.image_url)} className="block mt-2 cursor-zoom-in">
+                              <img src={ans.image_url} alt="" className="max-h-72 w-auto object-contain rounded border border-slate-800" />
+                            </button>
+                          )}
+                          {ans.file_urls?.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {ans.file_urls.map((url, j) => (
+                                <a key={url} href={url} target="_blank" rel="noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300">↗ file {j + 1}</a>
+                              ))}
+                            </div>
+                          )}
+                          {!ans.text_answer && !ans.image_url && (!ans.file_urls?.length) && (
+                            <p className="text-xs text-slate-600 italic">No answer submitted.</p>
+                          )}
+                        </div>
+                      ))}
+                    </section>
+                  ) : selectedSubmission.text_answer ? (
                     <section className="min-w-0">
                       <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
                         <FileText className="h-3 w-3" />
@@ -1817,7 +1520,7 @@ export function AdminHackathonActivities() {
                         {selectedSubmission.text_answer}
                       </p>
                     </section>
-                  )}
+                  ) : null}
 
                   {(selectedSubmission.revisions?.length ?? 0) > 0 && (
                     <RevisionThread
@@ -2008,13 +1711,32 @@ export function AdminHackathonActivities() {
                       />
                     </div>
 
+                    {currentJob?.status === "error" && currentJob.message && (
+                      <div className="rounded border border-rose-500/30 bg-rose-500/10 px-2 py-1.5 text-xs text-rose-300">
+                        {currentJob.message}
+                      </div>
+                    )}
+
                     {(aiLiveText || aiSuggesting) && (
                       <div className="min-w-0">
                         <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-violet-300/80">
                           Live thinking & output{aiSuggesting && !aiLiveText ? "…" : ""}
                         </p>
                         <p className="whitespace-pre-wrap text-xs font-light leading-relaxed text-violet-100/90 break-words">
-                          {aiLiveText || (aiSuggesting ? "Connecting to MiniMax…" : "")}
+                          {aiLiveText || (aiSuggesting ? (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75 animate-ping" style={{ animationDuration: '1s' }} />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
+                              </span>
+                              AI reasoning
+                              <span className="inline-flex gap-0.5 ml-0.5">
+                                <span className="animate-[fadeInUp_0.4s_ease-out_forwards] opacity-0" style={{ animationDelay: '0ms' }}>.</span>
+                                <span className="animate-[fadeInUp_0.4s_ease-out_forwards] opacity-0" style={{ animationDelay: '200ms' }}>.</span>
+                                <span className="animate-[fadeInUp_0.4s_ease-out_forwards] opacity-0" style={{ animationDelay: '400ms' }}>.</span>
+                              </span>
+                            </span>
+                          ) : "")}
                           {aiSuggesting && aiLiveText && <span className="animate-pulse">▌</span>}
                         </p>
                       </div>
@@ -2180,9 +1902,8 @@ export function AdminHackathonActivities() {
               AI grading prompt
             </DialogTitle>
             <DialogDescription className="text-xs font-light text-slate-400 leading-relaxed">
-              This is the exact text sent to the model. It includes the phase spec (from{" "}
-              <code className="font-mono text-[11px] text-violet-300">lib/hackathon/phase-specs/</code>),
-              the activity, and the participant&apos;s submission.
+              Edit the template or preview the rendered prompt sent to the model.
+              Use <code className="font-mono text-[11px] text-violet-300">{"{{placeholder}}"}</code> syntax for dynamic values.
             </DialogDescription>
           </DialogHeader>
 
@@ -2216,25 +1937,111 @@ export function AdminHackathonActivities() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-medium tracking-wide uppercase text-slate-400">
-                  Full prompt
-                </span>
-                <Button
+              {/* Tabs */}
+              <div className="flex items-center gap-1 border-b border-slate-800">
+                <button
                   type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={copyPromptToClipboard}
-                  className="h-7 px-2 text-xs font-light border-slate-700"
+                  onClick={() => setPromptTab("preview")}
+                  className={`px-3 py-1.5 text-[11px] font-medium tracking-wide uppercase transition-colors ${
+                    promptTab === "preview"
+                      ? "text-violet-200 border-b-2 border-violet-400"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
                 >
-                  <Copy className="mr-1.5 h-3 w-3 shrink-0" />
-                  {promptCopied ? "Copied" : "Copy"}
-                </Button>
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPromptTab("template")}
+                  className={`px-3 py-1.5 text-[11px] font-medium tracking-wide uppercase transition-colors ${
+                    promptTab === "template"
+                      ? "text-violet-200 border-b-2 border-violet-400"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  Template
+                </button>
               </div>
 
-              <pre className="flex-1 overflow-auto rounded-md border border-slate-800 bg-slate-950 p-3 text-[11px] font-mono font-light leading-relaxed text-slate-300 whitespace-pre-wrap break-words">
-                {promptPreview.prompt}
-              </pre>
+              {promptTab === "preview" && (
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium tracking-wide uppercase text-slate-400">
+                      Rendered prompt
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={copyPromptToClipboard}
+                      className="h-7 px-2 text-xs font-light border-slate-700"
+                    >
+                      <Copy className="mr-1.5 h-3 w-3 shrink-0" />
+                      {promptCopied ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
+                  <pre className="flex-1 overflow-auto rounded-md border border-slate-800 bg-slate-950 p-3 text-[11px] font-mono font-light leading-relaxed text-slate-300 whitespace-pre-wrap break-words">
+                    {promptPreview.prompt}
+                  </pre>
+                </>
+              )}
+
+              {promptTab === "template" && (
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium tracking-wide uppercase text-slate-400">
+                      Editable template
+                      <span className="normal-case tracking-normal text-slate-600 ml-1">
+                        (changes apply to all future AI grades)
+                      </span>
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={saveTemplate}
+                      disabled={savingTemplate}
+                      className="h-7 px-3 text-xs font-medium bg-violet-500 text-violet-950 hover:bg-violet-400"
+                    >
+                      {savingTemplate ? (
+                        <Loader2 className="mr-1.5 h-3 w-3 animate-spin shrink-0" />
+                      ) : (
+                        <Save className="mr-1.5 h-3 w-3 shrink-0" />
+                      )}
+                      Save template
+                    </Button>
+                  </div>
+                  {templateMessage && (
+                    <div className="rounded border border-slate-700 bg-slate-900/60 px-2 py-1.5 text-[11px] text-slate-300">
+                      {templateMessage}
+                    </div>
+                  )}
+                  <textarea
+                    value={editingTemplate}
+                    onChange={(e) => setEditingTemplate(e.target.value)}
+                    className="flex-1 min-h-[300px] overflow-auto rounded-md border border-slate-800 bg-slate-950 p-3 text-[11px] font-mono font-light leading-relaxed text-slate-300 whitespace-pre-wrap resize-none focus:border-violet-500/50 focus:outline-none"
+                    spellCheck={false}
+                  />
+                  <div className="text-[10px] text-slate-600 leading-relaxed">
+                    Available placeholders:{" "}
+                    <code className="text-violet-400/70">{"{{activity_title}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{activity_instructions}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{assessment_questions}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{activity_spec_section}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{phase_context}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{learning_goal}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{evidence}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{red_flag}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{upcoming_activities_section}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{prior_feedback_section}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{prior_revisions_section}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{submission_text}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{image_analysis_section}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{scoring_rules}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{score_field}}"}</code>{" "}
+                    <code className="text-violet-400/70">{"{{grader_comment_section}}"}</code>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="py-8 text-center text-sm font-light text-slate-500">
@@ -2362,6 +2169,235 @@ const GraderNoteInput = React.forwardRef<HTMLInputElement, { onSubmit: (comment:
     );
   }
 );
+
+type AiJobState = { status: "running" | "done" | "error"; thinking: string; reasoning: string; rationale: string; message: string; startedAt: number };
+
+const SubmissionNav = React.memo(function SubmissionNav({
+  phases, expandedPhases, expandedActivities, expandedGroups,
+  selectedSubmissionId, aiJobs, savingGradeIds,
+  supergraderRunning, supergraderActivityId,
+  onTogglePhase, onToggleActivity, onToggleGroup, onSelectSubmission,
+  onRunSupergrader, onCancelSupergrader, onLoadMore,
+  matchesFilter, computeSubStats, getSupergraderCandidates, groupSubmissionsByOwner,
+}: {
+  phases: Phase[];
+  expandedPhases: Set<string>;
+  expandedActivities: Set<string>;
+  expandedGroups: Set<string>;
+  selectedSubmissionId: string | null;
+  aiJobs: Record<string, AiJobState>;
+  savingGradeIds: Set<string>;
+  supergraderRunning: boolean;
+  supergraderActivityId: string | null;
+  onTogglePhase: (id: string) => void;
+  onToggleActivity: (id: string) => void;
+  onToggleGroup: (key: string) => void;
+  onSelectSubmission: (id: string) => void;
+  onRunSupergrader: (activityId: string, subs: Submission[], title: string) => void;
+  onCancelSupergrader: () => void;
+  onLoadMore: (activityId: string) => void;
+  matchesFilter: (sub: Submission) => boolean;
+  computeSubStats: (subs: Submission[]) => { total: number; pending: number; passed: number; revision: number; aiDrafts: number };
+  getSupergraderCandidates: (subs: Submission[]) => Submission[];
+  groupSubmissionsByOwner: (subs: Submission[]) => SubmissionGroup[];
+}) {
+  return (
+    <aside className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/40">
+      {phases.map((phase, phaseIdx) => {
+        const phaseOpen = expandedPhases.has(phase.id);
+        const phaseSubs = phase.hackathon_phase_activities.flatMap((a) => a.submissions).filter(matchesFilter);
+        const pStats = computeSubStats(phaseSubs);
+        return (
+          <section key={phase.id} className={phaseIdx > 0 ? "border-t border-slate-800" : ""}>
+            <button onClick={() => onTogglePhase(phase.id)} className="sticky top-0 z-30 flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left bg-slate-950/95 backdrop-blur border-b border-slate-800 hover:bg-slate-900/80">
+              <div className="flex items-center gap-2 min-w-0">
+                {phaseOpen ? <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" /> : <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />}
+                <span className="font-semibold text-sm text-slate-100 truncate">P{phase.phase_number}. {phase.title}</span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0 text-[11px] font-light">
+                {pStats.pending > 0 && <span className="rounded px-1.5 py-0.5 bg-amber-500/15 text-amber-200">{pStats.pending} pending</span>}
+                {pStats.revision > 0 && <span className="rounded px-1.5 py-0.5 bg-orange-500/15 text-orange-200">{pStats.revision} rev</span>}
+                {pStats.aiDrafts > 0 && <span className="rounded px-1.5 py-0.5 bg-violet-500/15 text-violet-200 flex items-center gap-0.5"><Sparkles className="h-2.5 w-2.5" />{pStats.aiDrafts}</span>}
+                <span className="text-slate-500 px-1">{pStats.total}</span>
+              </div>
+            </button>
+            {phaseOpen && (
+              <div>
+                {phase.hackathon_phase_activities.length === 0 ? (
+                  <p className="px-3 py-3 text-xs text-slate-600 italic">No activities.</p>
+                ) : (
+                  phase.hackathon_phase_activities.map((activity) => {
+                    const actOpen = expandedActivities.has(activity.id);
+                    const isThisActivityRunning = supergraderRunning && supergraderActivityId === activity.id;
+                    const filteredSubs = activity.submissions.filter(matchesFilter);
+                    const aStats = computeSubStats(filteredSubs);
+                    const candidates = getSupergraderCandidates(filteredSubs);
+                    const runningHere = filteredSubs.filter((s) => aiJobs[s.id]?.status === "running").length;
+                    return (
+                      <div key={activity.id}>
+                        <div className="sticky top-[41px] z-20 flex items-center justify-between gap-2 px-3 py-1.5 bg-slate-900/95 backdrop-blur border-b border-slate-800/70">
+                          <button onClick={() => onToggleActivity(activity.id)} className="flex items-center gap-2 min-w-0 text-left hover:text-slate-100">
+                            {actOpen ? <ChevronDown className="h-3.5 w-3.5 text-slate-500 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />}
+                            <span className="text-xs font-medium text-slate-300 truncate">{activity.display_order}. {activity.title}</span>
+                            {activity.is_draft && <Badge variant="outline" className="border-slate-600 text-slate-400 text-[9px] h-4 px-1 shrink-0">Draft</Badge>}
+                          </button>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {aStats.pending > 0 && <span className="rounded px-1.5 py-0.5 text-[10px] bg-amber-500/15 text-amber-200 font-light">{aStats.pending}</span>}
+                            {candidates.length > 0 && (
+                              <Button type="button" size="sm" onClick={() => onRunSupergrader(activity.id, activity.submissions, activity.title)} disabled={supergraderRunning}
+                                className="h-6 px-1.5 text-[10px] font-medium bg-violet-500/90 text-violet-950 hover:bg-violet-400 disabled:bg-slate-800 disabled:text-slate-500"
+                                title={isThisActivityRunning ? `Grading ${runningHere}…` : `Super-grade ${candidates.length} pending`}>
+                                {isThisActivityRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                                <span className="ml-1">{candidates.length}</span>
+                              </Button>
+                            )}
+                            {isThisActivityRunning && <button type="button" onClick={onCancelSupergrader} className="text-[10px] text-slate-400 hover:text-slate-200 underline">cancel</button>}
+                          </div>
+                        </div>
+                        {actOpen && (
+                          <div className="divide-y divide-slate-800/60">
+                            {filteredSubs.length === 0 ? (
+                              <p className="px-3 py-2 text-[11px] text-slate-600 italic">
+                                {activity.submissions.length === 0 ? "No submissions yet." : "No matches for current filter."}
+                              </p>
+                            ) : (
+                              groupSubmissionsByOwner(filteredSubs).map((group) => {
+                                const groupKey = `${activity.id}-${group.ownerId}`;
+                                const groupOpen = expandedGroups.has(groupKey);
+                                const hasRevisions = group.attemptCount > 1;
+                                if (group.submissions.length === 1 && !hasRevisions) {
+                                  const sub = group.submissions[0];
+                                  return (
+                                    <button key={`${sub.scope}-${sub.id}`} onClick={() => onSelectSubmission(sub.id)}
+                                      className={`w-full px-3 py-2 text-left transition-colors ${selectedSubmissionId === sub.id ? "bg-blue-500/15 border-l-2 border-blue-400" : "border-l-2 border-transparent hover:bg-slate-900/60"}`}>
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0 flex-1">
+                                          <div className="text-xs font-medium text-slate-100 truncate">
+                                            {sub.scope === "team" ? (
+                                              <TeamHoverCard teamName={sub.team?.name ?? null} lobbyCode={sub.team?.lobby_code} members={sub.team_members}>
+                                                <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">{getOwnerLabel(sub)}</span>
+                                              </TeamHoverCard>
+                                            ) : (
+                                              <ProfileHoverCard name={sub.participant?.name ?? null} email={sub.participant?.email} university={sub.participant?.university} phone={sub.participant?.phone} lineId={sub.participant?.line_id} track={sub.participant?.track} gradeLevel={sub.participant?.grade_level} teamName={sub.team?.name} teamLobbyCode={sub.team?.lobby_code}>
+                                                <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">{getOwnerLabel(sub)}</span>
+                                              </ProfileHoverCard>
+                                            )}
+                                          </div>
+                                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+                                            <span className="uppercase tracking-wide">{sub.scope}</span>
+                                            {sub.scope === "team" && sub.team?.lobby_code && <span>· {sub.team.lobby_code}</span>}
+                                            {sub.submitted_at && <span>· {format(new Date(sub.submitted_at), "MMM d")}</span>}
+                                            {sub.file_urls.length > 0 && <Paperclip className="h-2.5 w-2.5" />}
+                                            {sub.image_url && <ImageIcon className="h-2.5 w-2.5" />}
+                                            {sub.has_mentor && <span className="rounded px-1 py-0.5 text-[9px] bg-sky-500/15 text-sky-300 border border-sky-500/20">mentor</span>}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                          {savingGradeIds.has(sub.id) && <Loader2 className="h-3 w-3 animate-spin text-blue-300" />}
+                                          {aiJobs[sub.id]?.status === "running" && <Loader2 className="h-3 w-3 animate-spin text-violet-300" />}
+                                          {sub.review?.ai_draft && aiJobs[sub.id]?.status !== "running" && <Sparkles className="h-3 w-3 text-violet-300" />}
+                                          <StatusBadge status={sub.review_status} />
+                                        </div>
+                                      </div>
+                                    </button>
+                                  );
+                                }
+                                return (
+                                  <div key={groupKey}>
+                                    <button onClick={() => onToggleGroup(groupKey)}
+                                      className={`w-full px-3 py-2 text-left transition-colors ${group.submissions.some((s) => s.id === selectedSubmissionId) ? "bg-blue-500/10" : "hover:bg-slate-900/60"}`}>
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-1.5">
+                                            {groupOpen ? <ChevronDown className="h-3 w-3 text-slate-500 shrink-0" /> : <ChevronRight className="h-3 w-3 text-slate-500 shrink-0" />}
+                                            <div className="text-xs font-medium text-slate-100 truncate">
+                                              {group.scope === "team" ? (
+                                                <TeamHoverCard teamName={group.team?.name ?? null} lobbyCode={group.team?.lobby_code} members={group.team_members}>
+                                                  <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">{group.ownerName}</span>
+                                                </TeamHoverCard>
+                                              ) : (
+                                                <ProfileHoverCard name={group.participant?.name ?? null} email={group.participant?.email} university={group.participant?.university} phone={group.participant?.phone} lineId={group.participant?.line_id} track={group.participant?.track} gradeLevel={group.participant?.grade_level} teamName={group.team?.name} teamLobbyCode={group.team?.lobby_code}>
+                                                  <span className="cursor-default underline decoration-dotted decoration-slate-600 underline-offset-2">{group.ownerName}</span>
+                                                </ProfileHoverCard>
+                                              )}
+                                            </div>
+                                            {hasRevisions && <span className="rounded px-1 py-0.5 text-[9px] bg-slate-700 text-slate-300 font-light shrink-0">{group.attemptCount} attempts</span>}
+                                          </div>
+                                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 pl-[18px]">
+                                            <span className="uppercase tracking-wide">{group.scope}</span>
+                                            {group.scope === "team" && group.team?.lobby_code && <span>· {group.team.lobby_code}</span>}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                          {group.submissions.some((s) => savingGradeIds.has(s.id)) && <Loader2 className="h-3 w-3 animate-spin text-blue-300" />}
+                                          {group.submissions.some((s) => aiJobs[s.id]?.status === "running") && <Loader2 className="h-3 w-3 animate-spin text-violet-300" />}
+                                          {group.submissions.some((s) => s.review?.ai_draft && aiJobs[s.id]?.status !== "running") && <Sparkles className="h-3 w-3 text-violet-300" />}
+                                          <StatusBadge status={group.latestStatus} />
+                                        </div>
+                                      </div>
+                                    </button>
+                                    {groupOpen && (
+                                      <div className="border-t border-slate-800/40">
+                                        {group.submissions.map((sub) => (
+                                          <button key={`${sub.scope}-${sub.id}`} onClick={() => onSelectSubmission(sub.id)}
+                                            className={`w-full px-3 py-2 text-left transition-colors ${selectedSubmissionId === sub.id ? "bg-blue-500/15 border-l-2 border-blue-400" : "border-l-2 border-transparent hover:bg-slate-900/60"}`}>
+                                            <div className="flex items-start justify-between gap-2 pl-[18px]">
+                                              <div className="min-w-0 flex-1">
+                                                <div className="text-[11px] font-medium text-slate-200 truncate">
+                                                  R{1 + (sub.revisions?.length ?? 0)}
+                                                  {sub.submitted_at && <span className="text-slate-500 font-light"> · {format(new Date(sub.submitted_at), "MMM d, HH:mm")}</span>}
+                                                </div>
+                                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+                                                  {sub.file_urls.length > 0 && <Paperclip className="h-2.5 w-2.5" />}
+                                                  {sub.image_url && <ImageIcon className="h-2.5 w-2.5" />}
+                                                  {sub.has_mentor && <span className="rounded px-1 py-0.5 text-[9px] bg-sky-500/15 text-sky-300 border border-sky-500/20">mentor</span>}
+                                                  {(sub.revisions?.length ?? 0) > 0 && <span className="text-slate-600">{sub.revisions?.length} prior revision{(sub.revisions?.length ?? 0) === 1 ? "" : "s"}</span>}
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center gap-1 shrink-0">
+                                                {savingGradeIds.has(sub.id) && <Loader2 className="h-3 w-3 animate-spin text-blue-300" />}
+                                                {aiJobs[sub.id]?.status === "running" && <Loader2 className="h-3 w-3 animate-spin text-violet-300" />}
+                                                {sub.review?.ai_draft && aiJobs[sub.id]?.status !== "running" && <Sparkles className="h-3 w-3 text-violet-300" />}
+                                                <StatusBadge status={sub.review_status} />
+                                              </div>
+                                            </div>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            )}
+                            {activity.submission_has_more && !activity.submission_loading && (
+                              <div className="w-full px-3 py-2 flex items-center justify-center">
+                                <Button type="button" size="sm" variant="ghost" onClick={() => onLoadMore(activity.id)} className="h-7 px-2 text-[11px] font-light text-slate-400 hover:bg-slate-800">Load more submissions</Button>
+                              </div>
+                            )}
+                            {activity.submission_loading && activity.submissions.length > 0 && (
+                              <div className="w-full px-3 py-2 flex items-center justify-center gap-2 text-[11px] text-slate-500">
+                                <Loader2 className="h-3 w-3 animate-spin" />Loading more…
+                              </div>
+                            )}
+                            {activity.submission_loading && activity.submissions.length === 0 && (
+                              <div className="space-y-2 px-3 py-4">
+                                {[...Array(3)].map((_, i) => <div key={i} className="h-10 w-full animate-pulse rounded bg-slate-800/60" />)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </aside>
+  );
+});
 
 function statusLabel(status?: string | null): string {
   if (!status) return "ungraded";

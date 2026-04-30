@@ -30,7 +30,7 @@ export async function extractTeamProfile(
   modelName?: string
 ): Promise<TeamProfile> {
   const { object } = await generateObject({
-    model: getModel(modelName),
+    model: getModel("MiniMax-M2.7-highspeed"),
     schema: profileSchema,
     prompt: `Extract a structured profile from this hackathon team's submissions.
 
@@ -72,7 +72,7 @@ export async function extractTeamProfilesBatch(
       .join("\n\n---\n\n");
 
     const { object } = await generateObject({
-      model: getModel(modelName),
+      model: getModel("MiniMax-M2.7-highspeed"),
       schema: z.object({
         profiles: z.array(z.object({
           team_id: z.string(),

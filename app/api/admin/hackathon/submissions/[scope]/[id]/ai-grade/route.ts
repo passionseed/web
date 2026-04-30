@@ -11,6 +11,7 @@ import {
   formatImageAnalysisForPrompt,
   type SubmissionImageAnalysis,
 } from "@/lib/hackathon/image-analysis";
+import { getActiveGradingPrompt } from "@/lib/hackathon/grading-prompt";
 
 // Hobby plan max is 60s
 export const maxDuration = 60;
@@ -263,6 +264,7 @@ function buildPrompt(params: {
   imageAnalysis: SubmissionImageAnalysis | null;
   graderComment: string | null;
   upcomingActivities: { title: string; instructions: string | null; display_order: number | null }[];
+  template?: string | null;
 }) {
   const {
     phaseSpec,
@@ -275,14 +277,13 @@ function buildPrompt(params: {
     textAnswer,
     imageUrl,
     fileUrls,
-    scope,
-    ownerLabel,
     assessments,
     priorRevisions,
     latestRevisionFeedback,
     imageAnalysis,
     graderComment,
     upcomingActivities,
+    template,
   } = params;
 
   const phaseContext = compactPhaseSpec(phaseSpec, phaseNumber, phaseTitle);
@@ -292,9 +293,65 @@ function buildPrompt(params: {
   const assessmentQuestions = compactText(formatAssessmentQuestions(assessments), 1600) ?? "(none)";
   const priorBlock = formatPriorRevisions(priorRevisions);
   const imageAnalysisText = imageAnalysis ? formatImageAnalysisForPrompt(imageAnalysis) : null;
-
   const hasVisualSubmission = imageUrl || fileUrls.length > 0;
 
+  // Build section strings for template substitution
+  const activitySpecSection = activitySpecFormatted
+    ? "=== ACTIVITY-SPECIFIC GRADING CONTEXT ===\n" + activitySpecFormatted
+    : "";
+
+  const upcomingSection = upcomingActivities.length > 0
+    ? `\nUpcoming activities in this phase (do NOT suggest they'll do these later — they may have already):\n${upcomingActivities.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}`
+    : "";
+
+  const priorFeedbackSection = latestRevisionFeedback
+    ? `=== PRIOR FEEDBACK (latest revision) ===\n${latestRevisionFeedback}\n\nCheck whether the student addressed this feedback in their current submission.`
+    : "";
+
+  const priorRevisionsSection = priorBlock
+    ? `=== PRIOR ATTEMPTS ===\n${priorBlock}`
+    : "";
+
+  const imageSection = hasVisualSubmission && imageAnalysisText
+    ? `=== IMAGE ANALYSIS ===\n${imageAnalysisText}\n\nIf the image analysis flags a "solution flowchart" when the activity asks for a "problem map," this is an automatic revision_required — the student submitted the wrong artifact type.`
+    : "(no images submitted)";
+
+  const scoringRules = pointsPossible != null
+    ? `- Score: 0 to ${pointsPossible}. ${Math.round(pointsPossible * 0.6)} is a solid pass. Award full points only for exceptional work that exceeds expectations.`
+    : "- Score: null (ungraded activity).";
+
+  const scoreField = pointsPossible != null
+    ? `"score_awarded": <number 0..${pointsPossible}>,`
+    : '"score_awarded": null,';
+
+  const graderCommentSection = graderComment
+    ? `\n=== HUMAN GRADER NOTE ===\n${graderComment}`
+    : "";
+
+  // If we have a DB template, use placeholder substitution
+  if (template) {
+    return template
+      .replace(/\{\{activity_title\}\}/g, activityTitle ?? "Untitled")
+      .replace(/\{\{activity_instructions\}\}/g, shortInstructions)
+      .replace(/\{\{assessment_questions\}\}/g, assessmentQuestions)
+      .replace(/\{\{activity_spec_section\}\}/g, activitySpecSection)
+      .replace(/\{\{phase_context\}\}/g, phaseContext)
+      .replace(/\{\{learning_goal\}\}/g, activityLens.outcome)
+      .replace(/\{\{evidence\}\}/g, activityLens.evidence)
+      .replace(/\{\{red_flag\}\}/g, activityLens.redFlag)
+      .replace(/\{\{upcoming_activities_section\}\}/g, upcomingSection)
+      .replace(/\{\{prior_feedback_section\}\}/g, priorFeedbackSection)
+      .replace(/\{\{prior_revisions_section\}\}/g, priorRevisionsSection)
+      .replace(/\{\{submission_text\}\}/g, shortAnswer)
+      .replace(/\{\{image_analysis_section\}\}/g, imageSection)
+      .replace(/\{\{scoring_rules\}\}/g, scoringRules)
+      .replace(/\{\{score_field\}\}/g, scoreField)
+      .replace(/\{\{grader_comment_section\}\}/g, graderCommentSection)
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  // Fallback: hardcoded prompt (same as before)
   return [
     "You are an experienced hackathon mentor grading student submissions. Your job is to assess whether the student has genuinely engaged with the learning goal — not whether they wrote a lot or used fancy words.",
     "",
@@ -310,27 +367,23 @@ function buildPrompt(params: {
     "=== ASSESSMENT QUESTIONS ===",
     assessmentQuestions,
     "",
-    activitySpecFormatted ? "=== ACTIVITY-SPECIFIC GRADING CONTEXT ===\n" + activitySpecFormatted : "",
+    activitySpecSection,
     "",
     "=== PHASE CONTEXT ===",
     `Phase: ${phaseContext}`,
     `Learning goal: ${activityLens.outcome}`,
     `Evidence to look for: ${activityLens.evidence}`,
     `Red flag: ${activityLens.redFlag}`,
-    upcomingActivities.length > 0
-      ? `\nUpcoming activities in this phase (do NOT suggest they'll do these later — they may have already):\n${upcomingActivities.map((a, i) => `${i + 1}. ${a.title}`).join("\n")}`
-      : "",
+    upcomingSection,
     "",
-    latestRevisionFeedback ? `=== PRIOR FEEDBACK (latest revision) ===\n${latestRevisionFeedback}\n\nCheck whether the student addressed this feedback in their current submission.` : "",
+    priorFeedbackSection,
     "",
-    priorBlock ? `=== PRIOR ATTEMPTS ===\n${priorBlock}` : "",
+    priorRevisionsSection,
     "",
     "=== CURRENT SUBMISSION ===",
     shortAnswer,
     "",
-    hasVisualSubmission && imageAnalysisText
-      ? `=== IMAGE ANALYSIS ===\n${imageAnalysisText}\n\nIf the image analysis flags a "solution flowchart" when the activity asks for a "problem map," this is an automatic revision_required — the student submitted the wrong artifact type.`
-      : "(no images submitted)",
+    imageSection,
     "",
     "=== GRADING RUBRIC ===",
     "passed — The student made a genuine attempt at the learning goal. Their work shows evidence of real thinking, not just completion. They may have gaps, but the core understanding is present.",
@@ -338,9 +391,7 @@ function buildPrompt(params: {
     "pending_review — The content is genuinely unclear, incomplete, or ambiguous. You cannot confidently assess it.",
     "",
     "=== SCORING ===",
-    pointsPossible != null
-      ? `- Score: 0 to ${pointsPossible}. ${Math.round(pointsPossible * 0.6)} is a solid pass. Award full points only for exceptional work that exceeds expectations.`
-      : "- Score: null (ungraded activity).",
+    scoringRules,
     "- If instructions asked for an image but none was provided: score = 0 AND revision_required.",
     "- PROBLEM vs SOLUTION CHECK: For system/map activities, if the submission shows app features, user journeys, or 'how our product works' instead of root causes, stakeholder incentives, and forces keeping the problem alive → revision_required. Be strict.",
     "",
@@ -358,14 +409,12 @@ function buildPrompt(params: {
     "```json",
     "{",
     '  "review_status": "passed" | "revision_required" | "pending_review",',
-    pointsPossible != null
-      ? `  "score_awarded": <number 0..${pointsPossible}>,`
-      : '  "score_awarded": null,',
+    `  ${scoreField}`,
     '  "feedback": "<3-paragraph student-facing feedback>",',
     '  "reasoning": "<admin-only grading rationale>"',
     "}",
     "```",
-    graderComment ? `\n=== HUMAN GRADER NOTE ===\n${graderComment}` : "",
+    graderCommentSection,
   ]
     .filter(Boolean)
     .join("\n");
@@ -375,7 +424,7 @@ async function gatherPromptContext(
   scope: "individual" | "team",
   id: string,
   graderComment?: string | null,
-  opts?: { skipImageAnalysis?: boolean }
+  opts?: { skipImageAnalysis?: boolean; templateOverride?: string | null }
 ) {
   const serviceClient = getHackathonServiceClient();
   const table =
@@ -391,25 +440,32 @@ async function gatherPromptContext(
         id,
         title,
         instructions,
+        display_order,
         phase_id,
         hackathon_program_phases(id, phase_number, title)
       ),
-      hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, display_order, metadata),
       revisions
     `)
     .eq("id", id)
     .single();
 
-  if (submissionError || !submission) return null;
+  if (submissionError || !submission) {
+    console.error("[ai-grade] submission fetch failed", { scope, id, error: submissionError?.message });
+    return null;
+  }
 
   const sub = submission as any;
   const activity = pickOne(sub.hackathon_phase_activities);
   const phase = pickOne(activity?.hackathon_program_phases);
-  const assessmentsRaw = Array.isArray(sub.hackathon_phase_activity_assessments)
-    ? sub.hackathon_phase_activity_assessments
-    : sub.hackathon_phase_activity_assessments
-      ? [sub.hackathon_phase_activity_assessments]
-      : [];
+
+  // Fetch all assessments for this activity separately to avoid duplicate table alias error
+  const { data: assessmentsData } = await serviceClient
+    .from("hackathon_phase_activity_assessments")
+    .select("id, assessment_type, points_possible, is_graded, display_order, metadata")
+    .eq("activity_id", activity?.id ?? "")
+    .order("display_order");
+
+  const assessmentsRaw: AssessmentRow[] = (assessmentsData ?? []) as AssessmentRow[];
   const assessments = [...assessmentsRaw].sort(
     (a: any, b: any) => (a?.display_order ?? 0) - (b?.display_order ?? 0)
   );
@@ -469,6 +525,13 @@ async function gatherPromptContext(
 
   const latestRevisionFeedback = formatLatestRevisionFeedback(priorRevisions);
 
+  // Load the editable prompt template from DB (or use override)
+  let template: string | null = opts?.templateOverride ?? null;
+  if (!template) {
+    const dbPrompt = await getActiveGradingPrompt("default");
+    template = dbPrompt?.template ?? null;
+  }
+
   const prompt = buildPrompt({
     phaseSpec,
     phaseNumber: phase?.phase_number ?? null,
@@ -488,10 +551,12 @@ async function gatherPromptContext(
     imageAnalysis,
     graderComment: graderComment ?? null,
     upcomingActivities,
+    template,
   });
 
   return {
     prompt,
+    template: template ?? null,
     hasPhaseSpec: Boolean(phaseSpec),
     hasActivitySpec: Boolean(activitySpec),
     phaseNumber: phase?.phase_number ?? null,
@@ -582,6 +647,7 @@ export async function GET(
       points_possible: context.pointsPossible,
       has_image_analysis: false,
       prompt: context.prompt,
+      template: context.template,
     });
   } catch (err: any) {
     console.error("[admin/hackathon/ai-grade] GET error:", err);
@@ -615,8 +681,9 @@ export async function POST(
   const body = await _req.json().catch(() => ({}));
   const forceReview = body?.regrade === true;
   const graderComment = typeof body?.grader_comment === "string" ? body.grader_comment.trim() : null;
+  const templateOverride = typeof body?.prompt_template === "string" ? body.prompt_template : null;
 
-  const context = await gatherPromptContext(rawScope as "individual" | "team", id, graderComment);
+  const context = await gatherPromptContext(rawScope as "individual" | "team", id, graderComment, { templateOverride });
   if (!context) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
 
   console.log("[admin/hackathon/ai-grade] POST start", {

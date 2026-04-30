@@ -7,17 +7,26 @@ import { getHackathonClient } from "./hackathon-client";
 
 export async function collectTeamText(teamId: string): Promise<string> {
   const hackathon = getHackathonClient();
+  const log = (msg: string) => console.log(`[collectTeamText][${teamId}] ${msg}`);
 
   const { data: team } = await hackathon
     .from("hackathon_teams")
     .select("name")
     .eq("id", teamId)
     .single();
-  if (!team) return "";
+  if (!team) { log("❌ Team not found"); return ""; }
+  log(`Team: "${team.name}"`);
 
   const { data: teamSubs } = await hackathon
     .from("hackathon_phase_activity_team_submissions")
-    .select("text_answer, hackathon_phase_activities(title, display_order)")
+    .select("text_answer, status, hackathon_phase_activities(title, display_order)")
+    .eq("team_id", teamId)
+    .neq("status", "draft");
+
+  // Also check the alternate team submissions table
+  const { data: altTeamSubs } = await hackathon
+    .from("hackathon_activity_team_submissions")
+    .select("id, team_id, status, payload")
     .eq("team_id", teamId)
     .neq("status", "draft");
 
@@ -27,41 +36,97 @@ export async function collectTeamText(teamId: string): Promise<string> {
     .eq("team_id", teamId);
 
   const participantIds = (members ?? []).map((m) => m.participant_id);
+  log(`Members: ${participantIds.length}`);
 
   let individualSubs: any[] = [];
   if (participantIds.length > 0) {
     const { data } = await hackathon
       .from("hackathon_phase_activity_submissions")
-      .select("text_answer, hackathon_phase_activities(title, display_order), hackathon_participants(name)")
+      .select("text_answer, status, hackathon_phase_activities(title, display_order), hackathon_participants(name)")
       .in("participant_id", participantIds)
       .neq("status", "draft");
     individualSubs = data ?? [];
   }
 
+  log(`Raw team subs: ${(teamSubs ?? []).length} (non-draft)`);
+  for (const s of teamSubs ?? []) {
+    const title = (s as any).hackathon_phase_activities?.title ?? "?";
+    const hasText = Boolean((s as any).text_answer?.trim());
+    log(`  [team] "${title}" status=${(s as any).status} hasText=${hasText} len=${((s as any).text_answer ?? "").length}`);
+  }
+
+  log(`Alt team subs (hackathon_activity_team_submissions): ${(altTeamSubs ?? []).length}`);
+  for (const s of altTeamSubs ?? []) {
+    const payload = (s as any).payload;
+    const payloadText = typeof payload === "string" ? payload : (payload?.text ?? payload?.answer ?? JSON.stringify(payload));
+    log(`  [alt-team] status=${(s as any).status} payloadType=${typeof payload} len=${(payloadText ?? "").length}`);
+  }
+
+  log(`Raw individual subs: ${individualSubs.length} (non-draft)`);
+  for (const s of individualSubs) {
+    const title = (s as any).hackathon_phase_activities?.title ?? "?";
+    const name = (s as any).hackathon_participants?.name ?? "?";
+    const hasText = Boolean((s as any).text_answer?.trim());
+    log(`  [indiv] "${title}" by ${name} status=${(s as any).status} hasText=${hasText} len=${((s as any).text_answer ?? "").length}`);
+  }
+
+  // Activities that are rubric/checklist responses, not directional content
+  const SKIP_ACTIVITIES = ["research", "decision gate"];
+
   const validTeamSubs = (teamSubs ?? [])
     .filter((s: any) => s.text_answer?.trim())
+    .filter((s: any) => !SKIP_ACTIVITIES.includes((s.hackathon_phase_activities?.title ?? "").toLowerCase()))
     .sort((a: any, b: any) => (a.hackathon_phase_activities?.display_order ?? 0) - (b.hackathon_phase_activities?.display_order ?? 0));
+
+  // Extract text from alt team submissions (payload JSONB)
+  const altTeamTexts: { title: string; text: string }[] = [];
+  for (const s of altTeamSubs ?? []) {
+    const payload = (s as any).payload;
+    let text = "";
+    if (typeof payload === "string") text = payload;
+    else if (payload) {
+      // payload can be { text: "..." }, { answer: "..." }, or { sections: [...] }
+      text = payload.text ?? payload.answer ?? payload.content ?? "";
+      if (!text && payload.sections && Array.isArray(payload.sections)) {
+        text = payload.sections.map((sec: any) => sec.content ?? sec.text ?? "").filter(Boolean).join("\n\n");
+      }
+      if (!text) text = JSON.stringify(payload);
+    }
+    if (text?.trim()) altTeamTexts.push({ title: "Team Activity", text: text.trim() });
+  }
 
   const validIndividualSubs = (individualSubs as any[])
     .filter((s: any) => s.text_answer?.trim())
+    .filter((s: any) => !SKIP_ACTIVITIES.includes((s.hackathon_phase_activities?.title ?? "").toLowerCase()))
     .sort((a: any, b: any) => (a.hackathon_phase_activities?.display_order ?? 0) - (b.hackathon_phase_activities?.display_order ?? 0));
 
-  if (validTeamSubs.length === 0 && validIndividualSubs.length === 0) return "";
+  log(`Valid (with text): ${validTeamSubs.length} team, ${altTeamTexts.length} alt-team, ${validIndividualSubs.length} individual`);
 
-  const parts: string[] = [`## Team: ${team.name}`];
+  if (validTeamSubs.length === 0 && altTeamTexts.length === 0 && validIndividualSubs.length === 0) {
+    log("❌ No text submissions found — returning empty");
+    return "";
+  }
+
+  const parts: string[] = [];
 
   for (const s of validTeamSubs) {
     const title = (s as any).hackathon_phase_activities?.title ?? "Activity";
-    parts.push(`\n### ${title} (Team)\n${(s.text_answer as string).trim()}`);
+    parts.push(`### ${title} (Team)\n${(s.text_answer as string).trim()}`);
+  }
+
+  for (const s of altTeamTexts) {
+    parts.push(`### ${s.title} (Team)\n${s.text}`);
   }
 
   for (const s of validIndividualSubs) {
     const title = (s as any).hackathon_phase_activities?.title ?? "Activity";
-    const name = (s as any).hackathon_participants?.name ?? "Member";
-    parts.push(`\n### ${title} (${name})\n${(s.text_answer as string).trim()}`);
+    parts.push(`### ${title} (Individual)\n${(s.text_answer as string).trim()}`);
   }
 
-  return parts.join("\n").trim();
+  const result = parts.join("\n").trim();
+  log(`✅ Final text: ${result.length} chars, ${parts.length - 1} sections`);
+  log(`--- BEGIN TEXT ---\n${result}\n--- END TEXT ---`);
+  return result;
 }
 
 export async function upsertTeamDirectionEmbedding(teamId: string, adminClient?: SupabaseClient): Promise<void> {
