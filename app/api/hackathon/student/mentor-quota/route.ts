@@ -85,10 +85,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ chances_left: maxBookings, booking: null, assigned_mentor_ids: assignedMentorIds });
   }
 
-  // Count bookings that were not cancelled-by-student-after-accept
-  const usedBookings = bookings.filter(
-    (b) => b.status !== "cancelled" || b.cancellation_reason !== "ยกเลิกโดยผู้เข้าร่วม"
-  );
+  // Count bookings that consume quota:
+  // - NOT cancelled by student ("ยกเลิกโดยผู้เข้าร่วม") — those are refunded
+  // - NOT cancelled by mentor (any cancellation reason that isn't student/admin) — those are also refunded
+  const STUDENT_CANCEL = "ยกเลิกโดยผู้เข้าร่วม";
+  const ADMIN_RESET = "รีเซ็ตสิทธิ์โดย Admin";
+  const usedBookings = bookings.filter((b) => {
+    if (b.status !== "cancelled") return true; // active booking uses quota
+    // Cancelled by student voluntarily = quota used
+    if (b.cancellation_reason === STUDENT_CANCEL) return true;
+    // Cancelled by admin = quota freed
+    if (b.cancellation_reason === ADMIN_RESET) return false;
+    // Cancelled by mentor (any other reason, including null = declined) = quota refunded
+    return false;
+  });
   const usedCount = usedBookings.length;
   const chancesLeft = Math.max(0, maxBookings - usedCount);
 
