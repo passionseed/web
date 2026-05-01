@@ -272,6 +272,7 @@ export function AdminHackathonActivities() {
   // Per-submission "saving" state so admin can kick off multiple saves in
   // parallel without the button being globally disabled.
   const [savingGradeIds, setSavingGradeIds] = useState<Set<string>>(new Set());
+  const [rewritingStyle, setRewritingStyle] = useState<string | null>(null);
   function markSaving(id: string, saving: boolean) {
     setSavingGradeIds((prev) => {
       const next = new Set(prev);
@@ -995,6 +996,51 @@ export function AdminHackathonActivities() {
     setSupergraderRunning(false);
     setSupergraderActivityId(null);
     setSupergraderCancel(false);
+  }
+
+  async function rewriteFeedback(style: string) {
+    if (!selectedSubmission || !gradeFeedback.trim() || rewritingStyle) return;
+    setRewritingStyle(style);
+    try {
+      const res = await fetch(
+        `/api/admin/hackathon/submissions/${selectedSubmission.scope}/${selectedSubmission.id}/rewrite-feedback`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ feedback: gradeFeedback, style, status: gradeStatus, score: gradeScore || null }),
+        }
+      );
+      if (!res.ok || !res.body) {
+        setRewritingStyle(null);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let rewritten = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (!line) continue;
+          try {
+            const ev = JSON.parse(line);
+            if (ev.type === "delta") {
+              rewritten += ev.delta ?? "";
+              setGradeFeedback(rewritten);
+            } else if (ev.type === "done") {
+              setGradeFeedback(ev.feedback ?? rewritten);
+            }
+          } catch {}
+        }
+      }
+    } catch {} finally {
+      setRewritingStyle(null);
+    }
   }
 
   async function requestAiSuggestion(submissionOverride?: { id: string; scope: "individual" | "team" }, opts?: { regrade?: boolean; graderComment?: string }) {
@@ -1833,6 +1879,25 @@ export function AdminHackathonActivities() {
                         placeholder="Mentor feedback tied to this grade..."
                         className="text-sm font-light leading-relaxed break-words"
                       />
+                      {gradeFeedback.trim() && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] font-light text-slate-500 mr-1">Regen:</span>
+                          {([["concise", "✂️ Concise"], ["kind", "💛 Kind"], ["actionable", "🎯 Actionable"], ["all", "✨ All 3"]] as const).map(([style, label]) => (
+                            <Button
+                              key={style}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={!!rewritingStyle}
+                              onClick={() => rewriteFeedback(style)}
+                              className="h-6 px-2 text-[10px] font-light border-violet-500/30 text-violet-200 hover:bg-violet-500/10"
+                            >
+                              {rewritingStyle === style ? <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin" /> : null}
+                              {label}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <Button

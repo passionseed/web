@@ -15,6 +15,7 @@ const HACKATHON_ITEMS = [
   { href: "/admin/hackathon/analytics", label: "Analytics" },
   { href: "/admin/hackathon/mentors", label: "Mentors" },
   { href: "/admin/hackathon/email-sender", label: "Email Sender" },
+  { href: "/admin/hackathon/push-sender", label: "Push Sender" },
   { href: "/admin/hackathon/team-finder", label: "Team Finder" },
 ];
 
