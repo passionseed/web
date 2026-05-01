@@ -7,8 +7,7 @@ const componentLogger = logger
 
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
-    // Only register service worker in production
-    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator) {
       registerServiceWorker()
     }
   }, [])

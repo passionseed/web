@@ -330,7 +330,7 @@ function buildPrompt(params: {
 
   // If we have a DB template, use placeholder substitution
   if (template) {
-    return template
+    const rendered = template
       .replace(/\{\{activity_title\}\}/g, activityTitle ?? "Untitled")
       .replace(/\{\{activity_instructions\}\}/g, shortInstructions)
       .replace(/\{\{assessment_questions\}\}/g, assessmentQuestions)
@@ -349,6 +349,7 @@ function buildPrompt(params: {
       .replace(/\{\{grader_comment_section\}\}/g, graderCommentSection)
       .replace(/\n{3,}/g, "\n\n")
       .trim();
+    return rendered;
   }
 
   // Fallback: hardcoded prompt (same as before)

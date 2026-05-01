@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.24.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -218,11 +218,13 @@ Deno.serve(async (req) => {
     let response: OnboardingResponse;
 
     if (mode === "chat") {
-      const userMsg =
+      // chat_history already contains the latest user message from the client.
+      // For initial greeting (empty history), inject a seed message.
+      const history =
         chat_history.length === 0
-          ? "Hi, I'm new here!"
-          : chat_history[chat_history.length - 1].parts[0]?.text || "Continue";
-      const text = await callGemini(SYSTEM_PROMPTS.chat, chat_history, userMsg);
+          ? [{ role: "user" as const, parts: [{ text: "Hi, I'm new here!" }] }]
+          : chat_history;
+      const text = await callGemini(SYSTEM_PROMPTS.chat, history);
       const readyForInterests = text.includes("[READY_FOR_INTERESTS]");
       const cleanText = text.replace("[READY_FOR_INTERESTS]", "").trim();
 
@@ -231,14 +233,13 @@ Deno.serve(async (req) => {
         action: readyForInterests ? "transition_to_interests" : null,
       };
     } else if (mode === "generate_interests") {
-      const userMsg =
+      const history =
         chat_history.length === 0
-          ? "Generate interest categories for me"
-          : chat_history[chat_history.length - 1].parts[0]?.text || "Continue";
+          ? [{ role: "user" as const, parts: [{ text: "Generate interest categories for me" }] }]
+          : chat_history;
       const text = await callGemini(
         SYSTEM_PROMPTS.generate_interests,
-        chat_history,
-        userMsg,
+        history,
       );
       const parsed = parseJsonBlock(text);
       const categories = parsed.categories;
@@ -281,8 +282,9 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("[onboarding-chat error]", err);
+    const message = err instanceof Error ? err.message : String(err);
     return new Response(
-      JSON.stringify({ error: "onboarding chat failed", details: String(err) }),
+      JSON.stringify({ error: "onboarding chat failed", details: message }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

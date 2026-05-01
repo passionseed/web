@@ -185,6 +185,25 @@ async function staleWhileRevalidate(request) {
   }
 }
 
+// Push notification handling
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'PassionSeed';
+  const options = {
+    body: data.body || '',
+    icon: '/android-chrome-192x192.webp',
+    badge: '/favicon-32x32.webp',
+    data: { url: data.url || '/' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(clients.openWindow(url));
+});
+
 // Message handling for cache management
 self.addEventListener('message', (event) => {
   const { action, data } = event.data
