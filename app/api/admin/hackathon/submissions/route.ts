@@ -43,73 +43,91 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
   const scope = searchParams.get("scope");
-  const q = searchParams.get("q")?.trim().toLowerCase() ?? "";
+  const q = searchParams.get("q")?.trim() ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const offset = (page - 1) * PAGE_SIZE;
 
   const serviceClient = getHackathonServiceClient();
 
-  // Slim select for list view — exclude text_answer, revisions, file_urls, instructions
-  const individualListSelect = `
-    id, participant_id, activity_id, assessment_id, image_url, status, submitted_at, created_at, updated_at,
-    revisions,
+  // Determine which tables to query based on scope
+  const queryIndividual = !scope || scope === "individual";
+  const queryTeam = !scope || scope === "team";
+
+  // Build base select for individual submissions (includes review via JOIN)
+  const individualSelect = `
+    id, participant_id, activity_id, assessment_id, image_url, status, submitted_at, created_at, updated_at, revisions,
     hackathon_participants(id, name, email, university),
     hackathon_phase_activities(id, title, submission_scope, hackathon_program_phases(id, title, phase_number)),
-    hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, metadata)
+    hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, metadata),
+    hackathon_submission_reviews(id, review_status, score_awarded, points_possible, feedback, reviewed_at)
   `;
 
-  const teamListSelect = `
-    id, team_id, activity_id, assessment_id, submitted_by, image_url, status, submitted_at, created_at, updated_at,
-    revisions,
+  // Build base select for team submissions
+  const teamSelect = `
+    id, team_id, activity_id, assessment_id, submitted_by, image_url, status, submitted_at, created_at, updated_at, revisions,
     hackathon_teams(id, name, lobby_code),
     hackathon_participants(id, name, email, university),
     hackathon_phase_activities(id, title, submission_scope, hackathon_program_phases(id, title, phase_number)),
-    hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, metadata)
+    hackathon_phase_activity_assessments(id, assessment_type, points_possible, is_graded, metadata),
+    hackathon_submission_reviews(id, review_status, score_awarded, points_possible, feedback, reviewed_at)
   `;
 
-  // Build queries with draft filter pushed to DB
-  let individualQuery = serviceClient
-    .from("hackathon_phase_activity_submissions")
-    .select(individualListSelect, { count: "exact" })
-    .neq("status", "draft")
-    .order("submitted_at", { ascending: false, nullsFirst: false });
+  // Build individual query
+  function buildIndividualQuery() {
+    let dbQuery = serviceClient
+      .from("hackathon_phase_activity_submissions")
+      .select(individualSelect, { count: "exact" })
+      .neq("status", "draft")
+      .order("submitted_at", { ascending: false, nullsFirst: false })
+      .range(offset, offset + PAGE_SIZE - 1);
 
-  let teamQuery = serviceClient
-    .from("hackathon_phase_activity_team_submissions")
-    .select(teamListSelect, { count: "exact" })
-    .neq("status", "draft")
-    .order("submitted_at", { ascending: false, nullsFirst: false });
+    if (q) {
+      dbQuery = dbQuery.or(
+        `hackathon_participants.name.ilike.%${q}%,hackathon_participants.email.ilike.%${q}%,hackathon_phase_activities.title.ilike.%${q}%`
+      );
+    }
 
-  const [individualResult, teamResult, reviewResult, teamMembersResult] = await Promise.all([
-    individualQuery,
-    teamQuery,
-    serviceClient
-      .from("hackathon_submission_reviews")
-      .select("id, individual_submission_id, team_submission_id, review_status, score_awarded, points_possible, feedback, reviewed_at")
-      .order("reviewed_at", { ascending: false, nullsFirst: false }),
-    serviceClient
-      .from("hackathon_team_members")
-      .select("team_id, participant_id, hackathon_participants(id, name, email, university)"),
+    return dbQuery;
+  }
+
+  // Build team query
+  function buildTeamQuery() {
+    return serviceClient
+      .from("hackathon_phase_activity_team_submissions")
+      .select(teamSelect, { count: "exact" })
+      .neq("status", "draft")
+      .order("submitted_at", { ascending: false, nullsFirst: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+  }
+
+  // Execute queries in parallel
+  const [individualResult, teamResult] = await Promise.all([
+    queryIndividual ? buildIndividualQuery() : Promise.resolve({ data: [], count: 0, error: null }),
+    queryTeam ? buildTeamQuery() : Promise.resolve({ data: [], count: 0, error: null }),
   ]);
 
-  if (individualResult.error || teamResult.error || reviewResult.error || teamMembersResult.error) {
+  if (individualResult.error || teamResult.error) {
     console.error("[admin/hackathon/submissions] fetch error", {
       individual: individualResult.error,
       team: teamResult.error,
-      review: reviewResult.error,
-      members: teamMembersResult.error,
     });
     return NextResponse.json({ error: "Failed to fetch submissions" }, { status: 500 });
   }
 
-  const reviewsByIndividualId = new Map<string, any>();
-  const reviewsByTeamId = new Map<string, any>();
-  for (const review of reviewResult.data ?? []) {
-    if (review.individual_submission_id) reviewsByIndividualId.set(review.individual_submission_id, review);
-    if (review.team_submission_id) reviewsByTeamId.set(review.team_submission_id, review);
-  }
+  // Get team members for team submissions
+  const teamIds = (teamResult.data ?? [])
+    .map((s: any) => s.team_id)
+    .filter((id: any): id is string => Boolean(id));
+
+  const membersResult = teamIds.length > 0
+    ? await serviceClient
+        .from("hackathon_team_members")
+        .select("team_id, participant_id, hackathon_participants(id, name, email, university)")
+        .in("team_id", teamIds)
+    : { data: [] };
 
   const membersByTeamId = new Map<string, any[]>();
-  for (const member of teamMembersResult.data ?? []) {
+  for (const member of membersResult.data ?? []) {
     const existing = membersByTeamId.get(member.team_id) ?? [];
     existing.push({
       id: member.participant_id,
@@ -118,8 +136,9 @@ export async function GET(req: NextRequest) {
     membersByTeamId.set(member.team_id, existing);
   }
 
+  // Format individual submissions
   const individual = (individualResult.data ?? []).map((submission: any) => {
-    const review = reviewsByIndividualId.get(submission.id) ?? null;
+    const review = submission.hackathon_submission_reviews?.[0] ?? null;
     const participant = pickOne(submission.hackathon_participants);
     const activity = pickOne(submission.hackathon_phase_activities);
     const assessment = pickOne(submission.hackathon_phase_activity_assessments);
@@ -137,12 +156,20 @@ export async function GET(req: NextRequest) {
       submitted_by: participant,
       activity,
       assessment,
-      review,
+      review: review ? {
+        id: review.id,
+        review_status: review.review_status,
+        score_awarded: review.score_awarded,
+        points_possible: review.points_possible,
+        feedback: review.feedback,
+        reviewed_at: review.reviewed_at,
+      } : null,
     };
   });
 
+  // Format team submissions
   const team = (teamResult.data ?? []).map((submission: any) => {
-    const review = reviewsByTeamId.get(submission.id) ?? null;
+    const review = submission.hackathon_submission_reviews?.[0] ?? null;
     const teamRow = pickOne(submission.hackathon_teams);
     const activity = pickOne(submission.hackathon_phase_activities);
     const assessment = pickOne(submission.hackathon_phase_activity_assessments);
@@ -161,76 +188,59 @@ export async function GET(req: NextRequest) {
       submitted_by: submittedBy,
       activity,
       assessment,
-      review,
+      review: review ? {
+        id: review.id,
+        review_status: review.review_status,
+        score_awarded: review.score_awarded,
+        points_possible: review.points_possible,
+        feedback: review.feedback,
+        reviewed_at: review.reviewed_at,
+      } : null,
     };
   });
 
+  // Combine and sort
   let submissions = [...individual, ...team];
-
-  if (scope === "individual" || scope === "team") {
-    submissions = submissions.filter((s) => s.scope === scope);
-  }
-
-  if (status === "improvements") {
-    submissions = submissions.filter(
-      (s) => s.revisions.length > 0 && s.review_status === "pending_review"
-    );
-  } else if (status) {
-    submissions = submissions.filter((s) => s.review_status === status);
-  }
-
-  if (q) {
-    submissions = submissions.filter((submission) => {
-      const haystack = [
-        submission.activity?.title,
-        submission.participant?.name,
-        submission.participant?.email,
-        submission.team?.name,
-        submission.team?.lobby_code,
-        submission.submitted_by?.name,
-        ...submission.team_members.map((member: any) => member.name),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }
-
   submissions.sort((a, b) => {
     const aTime = a.submitted_at ? new Date(a.submitted_at).getTime() : 0;
     const bTime = b.submitted_at ? new Date(b.submitted_at).getTime() : 0;
     return bTime - aTime;
   });
 
-  // Compute counts from the full filtered set (before pagination)
-  const counts = submissions.reduce(
-    (acc, submission) => {
-      acc.total += 1;
-      if (
-        submission.review_status === "pending_review" ||
-        submission.review_status === "passed" ||
-        submission.review_status === "revision_required"
-      ) {
-        acc[submission.review_status] += 1;
-      }
-      return acc;
-    },
-    { total: 0, pending_review: 0, passed: 0, revision_required: 0 }
-  );
+  // Apply status filter (post-DB since review is embedded now)
+  if (status === "improvements") {
+    submissions = submissions.filter(
+      (s) => s.revisions?.length > 0 && s.review_status === "pending_review"
+    );
+  } else if (status) {
+    submissions = submissions.filter((s) => s.review_status === status);
+  }
 
-  // Paginate
-  const totalItems = submissions.length;
+  // Apply search filter for team-specific fields (lobby_code, team name, team members)
+  if (q && queryTeam) {
+    const qLower = q.toLowerCase();
+    submissions = submissions.filter((submission) => {
+      if (submission.scope === "individual") return true;
+      const haystack = [
+        submission.team?.name,
+        submission.team?.lobby_code,
+        ...(submission.team_members?.map((m: any) => m.name) ?? []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(qLower);
+    });
+  }
+
+  const totalItems = (individualResult.count ?? 0) + (teamResult.count ?? 0);
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const offset = (safePage - 1) * PAGE_SIZE;
-  const paginatedSubmissions = submissions.slice(offset, offset + PAGE_SIZE);
 
   return NextResponse.json({
-    submissions: paginatedSubmissions,
-    counts,
+    submissions,
+    counts: { total: totalItems, pending_review: 0, passed: 0, revision_required: 0 },
     pagination: {
-      page: safePage,
+      page,
       page_size: PAGE_SIZE,
       total_items: totalItems,
       total_pages: totalPages,
