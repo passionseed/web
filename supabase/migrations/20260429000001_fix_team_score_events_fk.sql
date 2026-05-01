@@ -8,9 +8,16 @@ ALTER TABLE public.hackathon_team_score_events
   ADD COLUMN IF NOT EXISTS team_submission_id UUID REFERENCES public.hackathon_phase_activity_team_submissions(id) ON DELETE CASCADE;
 
 -- At least one of submission_id or team_submission_id must be set
-ALTER TABLE public.hackathon_team_score_events
-  ADD CONSTRAINT chk_score_event_has_submission
-    CHECK (submission_id IS NOT NULL OR team_submission_id IS NOT NULL);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_score_event_has_submission'
+  ) THEN
+    ALTER TABLE public.hackathon_team_score_events
+      ADD CONSTRAINT chk_score_event_has_submission
+      CHECK (submission_id IS NOT NULL OR team_submission_id IS NOT NULL);
+  END IF;
+END $$;
 
 -- Index for team_submission_id lookups
 CREATE INDEX IF NOT EXISTS idx_hackathon_score_events_team_sub
