@@ -263,7 +263,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                 "there"}
               ! 👋
             </h1>
-            <p className="text-sm md:text-base text-muted-foreground italic">
+            <p suppressHydrationWarning className="text-sm md:text-base text-muted-foreground italic">
               {getRandomMotivationalText()}
             </p>
           </div>
@@ -291,7 +291,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
             <div className="relative mb-6">
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-blue-600 rounded-3xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity" />
               <div className="relative bg-gradient-to-br from-purple-500 to-blue-600 p-6 rounded-3xl shadow-lg group-hover:scale-110 transition-transform">
-                <Compass className="w-12 h-12 md:w-16 md:h-16 text-white" />
+                <Compass suppressHydrationWarning className="w-12 h-12 md:w-16 md:h-16 text-white" />
               </div>
             </div>
 
@@ -318,16 +318,16 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
               <div className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full text-white font-semibold shadow-lg group-hover:shadow-purple-500/50 group-hover:scale-105 transition-all">
                 {hasNorthStarResult ? (
                   <>
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 suppressHydrationWarning className="w-4 h-4" />
                     <span>View Results</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles suppressHydrationWarning className="w-4 h-4" />
                     <span>Start Assessment</span>
                   </>
                 )}
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight suppressHydrationWarning className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             )}
           </CardContent>
@@ -353,7 +353,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                 {/* Flame icon with glow */}
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-600 rounded-full blur-xl opacity-60" />
-                  <Flame className="relative h-10 w-10 text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.8)]" />
+                  <Flame suppressHydrationWarning className="relative h-10 w-10 text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.8)]" />
                 </div>
 
                 {/* Streak info */}
@@ -405,10 +405,9 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
         <Card className="col-span-1 bg-gradient-to-br from-blue-950 to-indigo-900 text-white">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center text-lg md:text-xl">
-              <PlayCircle className="mr-2 h-4 w-4 md:h-5 md:w-5 text-blue-400" />
+              <PlayCircle suppressHydrationWarning className="mr-2 h-4 w-4 md:h-5 md:w-5 text-blue-400" />
               Next Steps
-            </CardTitle>
-            <CardDescription className="text-white/70 text-xs md:text-sm">
+            </CardTitle>            <CardDescription className="text-white/70 text-xs md:text-sm">
               Continue your learning journey
             </CardDescription>
           </CardHeader>
@@ -432,14 +431,14 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                       <div className="flex items-start gap-2">
                         <div className="flex-shrink-0 mt-0.5">
                           {item.status === "in_progress" ? (
-                            <PlayCircle className="h-4 w-4 text-blue-300" />
+                            <PlayCircle suppressHydrationWarning className="h-4 w-4 text-blue-300" />
                           ) : (
-                            <CheckCircle2 className="h-4 w-4 text-white/50" />
+                            <CheckCircle2 suppressHydrationWarning className="h-4 w-4 text-white/50" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <MapIcon className="h-3 w-3 text-white/60 flex-shrink-0" />
+                            <MapIcon suppressHydrationWarning className="h-3 w-3 text-white/60 flex-shrink-0" />
                             <span className="text-xs text-white/60 truncate">
                               {item.map.title}
                             </span>
@@ -453,7 +452,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                             </Badge>
                           )}
                         </div>
-                        <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white/80 transition-colors flex-shrink-0 mt-1" />
+                        <ArrowRight suppressHydrationWarning className="h-4 w-4 text-white/40 group-hover:text-white/80 transition-colors flex-shrink-0 mt-1" />
                       </div>
                     </div>
                   </Link>
@@ -461,7 +460,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
               </div>
             ) : (
               <div className="text-center py-6 md:py-8">
-                <MapIcon className="h-10 w-10 md:h-12 md:w-12 mx-auto text-white/40 mb-3" />
+                <MapIcon suppressHydrationWarning className="h-10 w-10 md:h-12 md:w-12 mx-auto text-white/40 mb-3" />
                 <p className="text-white/80 text-sm mb-4">
                   Start your learning journey!
                 </p>
@@ -482,7 +481,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center text-lg md:text-xl">
-                <Award className="mr-2 h-4 w-4 md:h-5 md:w-5 text-yellow-400" />
+                <Award suppressHydrationWarning className="mr-2 h-4 w-4 md:h-5 md:w-5 text-yellow-400" />
                 Achievement Badges
               </CardTitle>
               <Button
@@ -493,7 +492,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
               >
                 <Link href="/profile">
                   View All
-                  <ArrowRight className="h-3 w-3 ml-1" />
+                  <ArrowRight suppressHydrationWarning className="h-3 w-3 ml-1" />
                 </Link>
               </Button>
             </div>
@@ -538,7 +537,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
           <Card>
             <CardHeader className="pb-3 md:pb-6">
               <CardTitle className="flex items-center text-lg md:text-xl">
-                <Heart className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                <Heart suppressHydrationWarning className="mr-2 h-4 w-4 md:h-5 md:w-5" />
                 Recent Reflections
               </CardTitle>
               <CardDescription className="text-xs md:text-sm">
@@ -548,7 +547,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
             <CardContent>
               {reflections.length === 0 ? (
                 <div className="text-center py-8">
-                  <Brain className="h-10 w-10 md:h-12 md:w-12 mx-auto text-muted-foreground mb-4" />
+                  <Brain suppressHydrationWarning className="h-10 w-10 md:h-12 md:w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground text-sm md:text-base">
                     No reflections yet
                   </p>
@@ -568,7 +567,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                         {/* Header with date */}
                         <div className="flex items-center justify-between gap-2 mb-3">
                           <div className="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0">
-                            <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
+                            <Calendar suppressHydrationWarning className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
                             <span className="font-semibold text-xs md:text-sm truncate">
                               {formatDate(reflection.created_at)}
                             </span>
@@ -704,7 +703,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
           <Card>
             <CardHeader className="pb-3 md:pb-6">
               <CardTitle className="flex items-center text-lg md:text-xl">
-                <BookOpen className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                <BookOpen suppressHydrationWarning className="mr-2 h-4 w-4 md:h-5 md:w-5" />
                 Workshops You've Joined
               </CardTitle>
               <CardDescription className="text-xs md:text-sm">
@@ -739,7 +738,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
           <Card>
             <CardHeader className="pb-3 md:pb-6">
               <CardTitle className="flex items-center text-lg md:text-xl">
-                <Users className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                <Users suppressHydrationWarning className="mr-2 h-4 w-4 md:h-5 md:w-5" />
                 Your Communities
               </CardTitle>
               <CardDescription className="text-xs md:text-sm">
@@ -761,7 +760,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-base md:text-lg pr-6">
-                  <Calendar className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+                  <Calendar suppressHydrationWarning className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
                   <span className="truncate">
                     Reflection - {formatDate(selectedReflection.created_at)}
                   </span>
@@ -772,7 +771,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                 {/* Average Ratings Summary */}
                 <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
                   <div className="text-center p-2 md:p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
-                    <Heart className="h-4 w-4 md:h-6 md:w-6 text-pink-500 mx-auto mb-1 md:mb-2" />
+                    <Heart suppressHydrationWarning className="h-4 w-4 md:h-6 md:w-6 text-pink-500 mx-auto mb-1 md:mb-2" />
                     <div className="text-lg md:text-2xl font-bold text-pink-600">
                       {selectedReflection.satisfaction_rating}%
                     </div>
@@ -781,7 +780,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                     </div>
                   </div>
                   <div className="text-center p-2 md:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <TrendingUp className="h-4 w-4 md:h-6 md:w-6 text-blue-500 mx-auto mb-1 md:mb-2" />
+                    <TrendingUp suppressHydrationWarning className="h-4 w-4 md:h-6 md:w-6 text-blue-500 mx-auto mb-1 md:mb-2" />
                     <div className="text-lg md:text-2xl font-bold text-blue-600">
                       {selectedReflection.progress_rating}%
                     </div>
@@ -790,7 +789,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                     </div>
                   </div>
                   <div className="text-center p-2 md:p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                    <Zap className="h-4 w-4 md:h-6 md:w-6 text-orange-500 mx-auto mb-1 md:mb-2" />
+                    <Zap suppressHydrationWarning className="h-4 w-4 md:h-6 md:w-6 text-orange-500 mx-auto mb-1 md:mb-2" />
                     <div className="text-lg md:text-2xl font-bold text-orange-600">
                       {selectedReflection.challenge_rating}%
                     </div>
@@ -869,7 +868,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                               topic.challenge_rating) && (
                                 <div className="grid grid-cols-3 gap-2 md:gap-3 mb-3 md:mb-4">
                                   <div className="text-center p-1.5 md:p-2 bg-pink-50 dark:bg-pink-900/20 rounded">
-                                    <Heart className="h-3 w-3 md:h-4 md:w-4 text-pink-500 mx-auto mb-0.5 md:mb-1" />
+                                    <Heart suppressHydrationWarning className="h-3 w-3 md:h-4 md:w-4 text-pink-500 mx-auto mb-0.5 md:mb-1" />
                                     <div className="text-xs md:text-sm font-medium">
                                       {topic.satisfaction_rating || 0}
                                     </div>
@@ -878,7 +877,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                                     </div>
                                   </div>
                                   <div className="text-center p-1.5 md:p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-                                    <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-blue-500 mx-auto mb-0.5 md:mb-1" />
+                                    <TrendingUp suppressHydrationWarning className="h-3 w-3 md:h-4 md:w-4 text-blue-500 mx-auto mb-0.5 md:mb-1" />
                                     <div className="text-xs md:text-sm font-medium">
                                       {topic.progress_rating || 0}
                                     </div>
@@ -887,7 +886,7 @@ export function UserPortal({ dashboardData }: UserPortalProps) {
                                     </div>
                                   </div>
                                   <div className="text-center p-1.5 md:p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
-                                    <Zap className="h-3 w-3 md:h-4 md:w-4 text-orange-500 mx-auto mb-0.5 md:mb-1" />
+                                    <Zap suppressHydrationWarning className="h-3 w-3 md:h-4 md:w-4 text-orange-500 mx-auto mb-0.5 md:mb-1" />
                                     <div className="text-xs md:text-sm font-medium">
                                       {topic.challenge_rating || 0}
                                     </div>

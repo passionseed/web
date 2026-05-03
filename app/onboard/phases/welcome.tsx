@@ -55,21 +55,29 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
   const [language] = useState<"en" | "th">(data.language ?? "en");
   const [name, setName] = useState(data.name ?? oauthName ?? "");
   const [mode, setMode] = useState<"chat" | "wizard">(data.mode ?? "wizard");
+  const [showOptions, setShowOptions] = useState(
+    Boolean(data.name ?? oauthName)
+  );
 
   const content = useMemo(() => CONTENT[language], [language]);
   const trimmedName = name.trim();
   const canContinue = trimmedName.length > 0;
   const isOauthUser = Boolean(oauthName);
 
+  useEffect(() => {
+    if (trimmedName.length > 0 && !showOptions) {
+      const timer = setTimeout(() => setShowOptions(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [trimmedName, showOptions]);
+
   return (
     <section className="w-full max-w-3xl">
       <div className="ei-card ei-card--static relative overflow-hidden rounded-[28px] border border-white/10 px-6 py-6 sm:px-10 sm:py-8">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(251,146,60,0.16),transparent_70%)] opacity-90" />
-
-        <div className="relative flex flex-col gap-6">
+        <div className="relative flex flex-col gap-8">
           <div className="flex items-start justify-between gap-4">
             <div className="max-w-xl space-y-2">
-              <p className="text-xs font-medium text-orange-200/70">
+              <p className="text-xs font-medium uppercase tracking-[0.24em] text-orange-200/70">
                 {content.eyebrow}
               </p>
               <div className="space-y-1.5">
@@ -86,8 +94,8 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
           </div>
 
           {!isOauthUser ? (
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-white/75">
+            <label className="flex flex-col gap-3">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
                 {content.nameLabel}
               </span>
               <input
@@ -95,106 +103,125 @@ export function WelcomePhase({ data, oauthName, advance }: WelcomePhaseProps) {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder={content.namePlaceholder}
-                className="h-12 rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-base text-white placeholder:text-white/30 focus:border-orange-300/50 focus:outline-none"
+                className="h-14 rounded-2xl border border-white/10 bg-white/[0.05] px-5 text-lg text-white placeholder:text-white/20 transition-all focus:border-orange-300/50 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
           ) : null}
 
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-white/72">
-              {content.helper}
-            </p>
-            <div className="grid gap-3 md:grid-cols-2">
-              {(
-                [
-                  {
-                    value: "chat",
-                    title: content.chatTitle,
-                    description: content.chatDescription,
-                    accent: "from-orange-300/24 via-pink-400/16 to-transparent",
-                  },
-                  {
-                    value: "wizard",
-                    title: content.wizardTitle,
-                    description: content.wizardDescription,
-                    accent:
-                      "from-violet-300/18 via-fuchsia-400/12 to-transparent",
-                  },
-                ] as const
-              ).map((option) => {
-                const isSelected = mode === option.value;
+          {showOptions && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 space-y-5 duration-700">
+              <div className="space-y-1.5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
+                  {content.helper}
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                {(
+                  [
+                    {
+                      value: "chat",
+                      title: content.chatTitle,
+                      description: content.chatDescription,
+                      icon: (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-400/20 text-xl">
+                          💬
+                        </div>
+                      ),
+                      accent:
+                        "from-orange-300/24 via-pink-400/16 to-transparent",
+                    },
+                    {
+                      value: "wizard",
+                      title: content.wizardTitle,
+                      description: content.wizardDescription,
+                      icon: (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-400/20 text-xl">
+                          ✨
+                        </div>
+                      ),
+                      accent:
+                        "from-violet-300/18 via-fuchsia-400/12 to-transparent",
+                    },
+                  ] as const
+                ).map((option) => {
+                  const isSelected = mode === option.value;
 
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setMode(option.value)}
-                    className={[
-                      "ei-card relative flex min-h-[164px] flex-col items-start justify-between overflow-hidden rounded-[24px] border p-5 text-left transition-all duration-200",
-                      isSelected
-                        ? "ei-card--lit bg-[linear-gradient(180deg,rgba(255,245,200,0.24)_0%,rgba(252,211,77,0.20)_22%,rgba(251,191,36,0.18)_54%,rgba(249,115,22,0.16)_100%)]"
-                        : "border-white/10 bg-white/[0.03]",
-                    ].join(" ")}
-                    aria-pressed={isSelected}
-                  >
-                    <div
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setMode(option.value)}
                       className={[
-                        "pointer-events-none absolute inset-0 bg-gradient-to-br transition-opacity duration-200",
-                        option.accent,
+                        "ei-card group relative flex min-h-[180px] flex-col items-start justify-between overflow-hidden rounded-[24px] border p-6 text-left transition-all duration-300",
                         isSelected
-                          ? "opacity-100 mix-blend-screen"
-                          : "opacity-65",
+                          ? "ei-card--lit border-orange-300/40 bg-[linear-gradient(180deg,rgba(255,245,200,0.24)_0%,rgba(252,211,77,0.20)_22%,rgba(251,191,36,0.18)_54%,rgba(249,115,22,0.16)_100%)] shadow-[0_20px_40px_rgba(251,146,60,0.15)]"
+                          : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]",
                       ].join(" ")}
-                    />
-                    {isSelected ? (
-                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_16%,rgba(255,250,214,0.42),transparent_34%),radial-gradient(circle_at_50%_100%,rgba(251,191,36,0.36),transparent_58%)]" />
-                    ) : null}
-                    <div className="relative space-y-3">
-                      <div className="space-y-1.5">
-                        <h2 className="text-lg font-semibold text-white">
-                          {option.title}
-                        </h2>
-                        <p
-                          className={[
-                            "text-sm leading-6",
-                            isSelected ? "text-white/88" : "text-white/65",
-                          ].join(" ")}
-                        >
-                          {option.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span
-                      className={[
-                        "relative mt-5 inline-flex items-center text-xs font-semibold",
-                        isSelected ? "text-white/92" : "text-white/42",
-                      ].join(" ")}
+                      aria-pressed={isSelected}
                     >
-                      {isSelected ? content.selected : content.choose}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                      <div
+                        className={[
+                          "pointer-events-none absolute inset-0 bg-gradient-to-br transition-opacity duration-300",
+                          option.accent,
+                          isSelected
+                            ? "opacity-100 mix-blend-screen"
+                            : "opacity-40 group-hover:opacity-60",
+                        ].join(" ")}
+                      />
+                      
+                      <div className="relative w-full space-y-4">
+                        <div className="flex items-center justify-between">
+                          {option.icon}
+                          {isSelected && (
+                            <div className="h-2 w-2 rounded-full bg-white shadow-[0_0_12px_white]" />
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <h2 className="text-xl font-bold text-white">
+                            {option.title}
+                          </h2>
+                          <p
+                            className={[
+                              "text-sm leading-relaxed",
+                              isSelected ? "text-white/90" : "text-white/60",
+                            ].join(" ")}
+                          >
+                            {option.description}
+                          </p>
+                        </div>
+                      </div>
 
-          <div className="flex justify-end">
-            <button
-              type="button"
-              disabled={!canContinue}
-              onClick={() =>
-                advance("interest", {
-                  language,
-                  name: trimmedName,
-                  mode,
-                })
-              }
-              className="ei-button-dusk min-w-[180px] justify-center disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <span>{content.continue}</span>
-            </button>
-          </div>
+                      <span
+                        className={[
+                          "relative mt-6 inline-flex items-center text-[10px] font-bold uppercase tracking-widest",
+                          isSelected ? "text-white" : "text-white/30",
+                        ].join(" ")}
+                      >
+                        {isSelected ? content.selected : content.choose}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <button
+                  type="button"
+                  disabled={!canContinue}
+                  onClick={() =>
+                    advance("interest", {
+                      language,
+                      name: trimmedName,
+                      mode,
+                    })
+                  }
+                  className="ei-button-dusk min-w-[200px] justify-center py-4 text-base font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <span>{content.continue}</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
