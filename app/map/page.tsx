@@ -2,7 +2,7 @@ import { getMapsWithStatsServer } from "@/lib/supabase/maps-server";
 import { MapsClientPage } from "./client-page";
 
 // OPTIMIZATION: Server component that pre-fetches initial data
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 export default async function MapsPage() {
   try {
