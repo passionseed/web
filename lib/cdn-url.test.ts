@@ -1,12 +1,12 @@
 import { toCdnUrl } from "./cdn-url";
 
 describe("toCdnUrl", () => {
-  describe("S3-style B2 endpoint", () => {
+  describe("path-style B2 endpoint (S3-style)", () => {
     it("rewrites us-east-005 B2 URL to CDN URL", () => {
       const input =
         "https://pseed-dev.s3.us-east-005.backblazeb2.com/images/test.webp";
       const expected =
-        "https://cdn.passionseed.org/file/pseed-dev/images/test.webp";
+        "https://cdn.passionseed.org/images/test.webp";
       expect(toCdnUrl(input)).toBe(expected);
     });
 
@@ -14,7 +14,7 @@ describe("toCdnUrl", () => {
       const input =
         "https://pseed-dev.s3.us-west-000.backblazeb2.com/submissions/abc/def.jpg";
       const expected =
-        "https://cdn.passionseed.org/file/pseed-dev/submissions/abc/def.jpg";
+        "https://cdn.passionseed.org/submissions/abc/def.jpg";
       expect(toCdnUrl(input)).toBe(expected);
     });
 
@@ -22,7 +22,7 @@ describe("toCdnUrl", () => {
       const input =
         "https://my-bucket.s3.eu-central-003.backblazeb2.com/docs/report.pdf";
       const expected =
-        "https://cdn.passionseed.org/file/my-bucket/docs/report.pdf";
+        "https://cdn.passionseed.org/docs/report.pdf";
       expect(toCdnUrl(input)).toBe(expected);
     });
 
@@ -30,17 +30,43 @@ describe("toCdnUrl", () => {
       const input =
         "https://pseed-dev.s3.us-east-005.backblazeb2.com/images/test.webp?x-id=GetObject";
       const expected =
-        "https://cdn.passionseed.org/file/pseed-dev/images/test.webp";
+        "https://cdn.passionseed.org/images/test.webp";
+      expect(toCdnUrl(input)).toBe(expected);
+    });
+  });
+
+  describe("virtual-hosted B2 endpoint", () => {
+    it("rewrites virtual-hosted B2 URL to CDN URL stripping bucket", () => {
+      const input =
+        "https://s3.us-east-005.backblazeb2.com/pseed-dev/webtoons/phase1.png";
+      const expected =
+        "https://cdn.passionseed.org/webtoons/phase1.png";
+      expect(toCdnUrl(input)).toBe(expected);
+    });
+
+    it("handles nested paths in virtual-hosted style", () => {
+      const input =
+        "https://s3.us-west-000.backblazeb2.com/pseed-dev/submissions/2024/report.pdf";
+      const expected =
+        "https://cdn.passionseed.org/submissions/2024/report.pdf";
+      expect(toCdnUrl(input)).toBe(expected);
+    });
+
+    it("handles different buckets in virtual-hosted style", () => {
+      const input =
+        "https://s3.eu-central-003.backblazeb2.com/my-bucket/images/logo.png";
+      const expected =
+        "https://cdn.passionseed.org/images/logo.png";
       expect(toCdnUrl(input)).toBe(expected);
     });
   });
 
   describe("friendly B2 endpoint (f005)", () => {
-    it("rewrites f005 B2 URL to CDN URL", () => {
+    it("rewrites f005 B2 URL to CDN URL stripping file/bucket", () => {
       const input =
-        "https://f005.backblazeb2.com/file/pseed-dev/guidebook.pdf";
+        "https://f005.backblazeb2.com/file/pseed-dev/hackathon/abc.jpg";
       const expected =
-        "https://cdn.passionseed.org/file/pseed-dev/guidebook.pdf";
+        "https://cdn.passionseed.org/hackathon/abc.jpg";
       expect(toCdnUrl(input)).toBe(expected);
     });
 
@@ -48,7 +74,7 @@ describe("toCdnUrl", () => {
       const input =
         "https://f000.backblazeb2.com/file/pseed-dev/archive.zip";
       const expected =
-        "https://cdn.passionseed.org/file/pseed-dev/archive.zip";
+        "https://cdn.passionseed.org/archive.zip";
       expect(toCdnUrl(input)).toBe(expected);
     });
 
@@ -56,14 +82,14 @@ describe("toCdnUrl", () => {
       const input =
         "https://f005.backblazeb2.com/file/pseed-dev/2024/01/report.pdf";
       const expected =
-        "https://cdn.passionseed.org/file/pseed-dev/2024/01/report.pdf";
+        "https://cdn.passionseed.org/2024/01/report.pdf";
       expect(toCdnUrl(input)).toBe(expected);
     });
   });
 
   describe("pass-through cases", () => {
     it("returns already-CDN URLs unchanged", () => {
-      const input = "https://cdn.passionseed.org/file/pseed-dev/x.jpg";
+      const input = "https://cdn.passionseed.org/images/x.jpg";
       expect(toCdnUrl(input)).toBe(input);
     });
 
@@ -103,7 +129,7 @@ describe("toCdnUrl", () => {
 
     it("handles URL with no path", () => {
       const input = "https://pseed-dev.s3.us-east-005.backblazeb2.com/";
-      const expected = "https://cdn.passionseed.org/file/pseed-dev/";
+      const expected = "https://cdn.passionseed.org/";
       expect(toCdnUrl(input)).toBe(expected);
     });
 
@@ -111,7 +137,7 @@ describe("toCdnUrl", () => {
       const input =
         "https://pseed-dev.s3.us-east-005.backblazeb2.com/images/hello%20world.webp";
       const expected =
-        "https://cdn.passionseed.org/file/pseed-dev/images/hello%20world.webp";
+        "https://cdn.passionseed.org/images/hello%20world.webp";
       expect(toCdnUrl(input)).toBe(expected);
     });
   });

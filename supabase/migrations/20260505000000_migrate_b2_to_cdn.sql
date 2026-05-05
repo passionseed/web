@@ -5,12 +5,12 @@
 -- Purpose: Idempotently rewrite B2 URLs in ~20 tables to cdn.passionseed.org
 --
 -- Patterns handled:
---   1. S3-style B2: https://{bucket}.s3.{region}.backblazeb2.com/{path}
---      → https://cdn.passionseed.org/file/{bucket}/{path}
+--   1. Path-style B2: https://{bucket}.s3.{region}.backblazeb2.com/{path}
+--      → https://cdn.passionseed.org/{path}
 --   2. Virtual-hosted B2: https://s3.{region}.backblazeb2.com/{bucket}/{path}
---      → https://cdn.passionseed.org/file/{bucket}/{path}
+--      → https://cdn.passionseed.org/{path}
 --   3. Friendly B2: https://f005.backblazeb2.com/file/{bucket}/{path}
---      → https://cdn.passionseed.org/file/{bucket}/{path}
+--      → https://cdn.passionseed.org/{path}
 --
 -- Excluded (not B2 / not image URLs):
 --   - Supabase Storage URLs (profiles.avatar_url, hackathon_teams.team_avatar_url)
@@ -36,34 +36,36 @@ BEGIN
     RETURN url;
   END IF;
 
-  -- Pattern 1: S3-style B2 endpoint (path-style)
+  -- Pattern 1: Path-style B2 endpoint (S3-style)
   -- e.g. https://pseed-dev.s3.us-east-005.backblazeb2.com/images/test.webp
+  -- → https://cdn.passionseed.org/images/test.webp
   IF url ~ '^https://[^/]+\.s3\.[a-z0-9-]+\.backblazeb2\.com/' THEN
     RETURN regexp_replace(
       url,
-      '^https://([^/]+)\.s3\.[a-z0-9-]+\.backblazeb2\.com/(.*)$',
-      'https://cdn.passionseed.org/file/\1/\2'
+      '^https://[^/]+\.s3\.[a-z0-9-]+\.backblazeb2\.com/(.*)$',
+      'https://cdn.passionseed.org/\1'
     );
   END IF;
 
   -- Pattern 2: Virtual-hosted B2 endpoint
   -- e.g. https://s3.us-east-005.backblazeb2.com/pseed-dev/webtoons/phase1-act3/phase1-act3-00.png
+  -- → https://cdn.passionseed.org/webtoons/phase1-act3/phase1-act3-00.png
   IF url ~ '^https://s3\.[a-z0-9-]+\.backblazeb2\.com/' THEN
     RETURN regexp_replace(
       url,
-      '^https://s3\.[a-z0-9-]+\.backblazeb2\.com/([^/]+)/(.*)$',
-      'https://cdn.passionseed.org/file/\1/\2'
+      '^https://s3\.[a-z0-9-]+\.backblazeb2\.com/[^/]+/(.*)$',
+      'https://cdn.passionseed.org/\1'
     );
   END IF;
 
   -- Pattern 3: Friendly B2 endpoint (f005, f000, etc.)
   -- e.g. https://f005.backblazeb2.com/file/pseed-dev/guidebook.pdf
-  -- → https://cdn.passionseed.org/file/pseed-dev/guidebook.pdf
+  -- → https://cdn.passionseed.org/guidebook.pdf
   IF url ~ '^https://f[0-9]+\.backblazeb2\.com/' THEN
     RETURN regexp_replace(
       url,
-      '^https://f[0-9]+\.backblazeb2\.com(/.*)$',
-      'https://cdn.passionseed.org\1'
+      '^https://f[0-9]+\.backblazeb2\.com/file/[^/]+/(.*)$',
+      'https://cdn.passionseed.org/\1'
     );
   END IF;
 
