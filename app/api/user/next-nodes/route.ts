@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { MapNode } from "@/types/map";
 
+export const runtime = "edge";
+
 export async function GET() {
   try {
     const cookieStore = await cookies();

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMapsWithStats } from "@/lib/supabase/maps";
 
+export const runtime = "edge";
+
 export async function GET(request: NextRequest) {
   try {
     const maps = await getMapsWithStats();
