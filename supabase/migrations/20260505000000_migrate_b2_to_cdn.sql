@@ -230,24 +230,6 @@ WHERE file_urls IS NOT NULL
     WHERE u LIKE '%backblazeb2.com%'
   );
 
--- path_assessment_submissions.file_urls
-UPDATE public.path_assessment_submissions
-SET file_urls = _b2_to_cdn_array(file_urls)
-WHERE file_urls IS NOT NULL
-  AND EXISTS (
-    SELECT 1 FROM unnest(file_urls) AS u
-    WHERE u LIKE '%backblazeb2.com%'
-  );
-
--- path_content.file_urls
-UPDATE public.path_content
-SET file_urls = _b2_to_cdn_array(file_urls)
-WHERE file_urls IS NOT NULL
-  AND EXISTS (
-    SELECT 1 FROM unnest(file_urls) AS u
-    WHERE u LIKE '%backblazeb2.com%'
-  );
-
 -- ============================================================================
 -- CATEGORY 3: JSONB columns (embedded URLs)
 -- ============================================================================
