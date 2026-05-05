@@ -163,9 +163,6 @@ UPDATE public.path_content
 SET content_url = _b2_to_cdn(content_url)
 WHERE content_url LIKE '%backblazeb2.com%';
 
-UPDATE public.path_content
-SET image_url = _b2_to_cdn(image_url)
-WHERE image_url LIKE '%backblazeb2.com%';
 
 -- hackathon_phase_activity_content
 UPDATE public.hackathon_phase_activity_content
