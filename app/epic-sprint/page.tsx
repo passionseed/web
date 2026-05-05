@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { ParticipantTable, BetaTable } from "./ParticipantTable";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 const BETA_FORM_TOKEN = "2d1a7a73-e3dd-4c5a-b0d5-1b7f5a5c2e11";
 
@@ -169,10 +170,17 @@ function KpiRow({
 }
 
 export default async function EpicSprintPage() {
-  const [participants, betaRegistrations] = await Promise.all([
-    fetchHackathonParticipants(),
-    fetchBetaRegistrations(),
-  ]);
+  let participants: Awaited<ReturnType<typeof fetchHackathonParticipants>> = [];
+  let betaRegistrations: Awaited<ReturnType<typeof fetchBetaRegistrations>> = [];
+
+  try {
+    [participants, betaRegistrations] = await Promise.all([
+      fetchHackathonParticipants(),
+      fetchBetaRegistrations(),
+    ]);
+  } catch (error) {
+    console.error("Error fetching epic sprint data:", error);
+  }
 
   const withTeam = participants.filter((p) => p.team !== null).length;
   const withoutTeam = participants.filter((p) => p.team === null).length;
