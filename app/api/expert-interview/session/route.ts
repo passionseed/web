@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/expert-interview/rate-limiter";
 import { getFirstQuestion, getTotalQuestions } from "@/lib/expert-interview/chat-service";
 import type { InterviewType } from "@/types/expert-interview";
-import crypto from "crypto";
 
 function getClientIp(request: NextRequest): string {
   return (
