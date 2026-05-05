@@ -12,7 +12,6 @@ import {
   Noto_Sans_Thai,
 } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { createClient } from "@/utils/supabase/server";
@@ -169,7 +168,6 @@ export default async function RootLayout({
             </DirectionFinderProvider>
           </LanguageProvider>
         </ThemeProvider>
-        <Analytics />
       </body>
     </html>
   );
