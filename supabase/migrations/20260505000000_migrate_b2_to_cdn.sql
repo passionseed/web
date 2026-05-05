@@ -104,6 +104,11 @@ UPDATE public.learning_maps
 SET cover_image_url = _b2_to_cdn(cover_image_url)
 WHERE cover_image_url LIKE '%backblazeb2.com%';
 
+-- node_content
+UPDATE public.node_content
+SET content_url = _b2_to_cdn(content_url)
+WHERE content_url LIKE '%backblazeb2.com%';
+
 -- seeds
 UPDATE public.seeds
 SET cover_image_url = _b2_to_cdn(cover_image_url)
