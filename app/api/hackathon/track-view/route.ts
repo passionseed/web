@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { createHash } from "crypto";
+
+async function sha256(message: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 /**
  * Track hackathon page views for analytics
@@ -26,9 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Create a privacy-preserving visitor fingerprint
     // Hash IP + user agent to anonymize while still tracking unique visitors
-    const visitorFingerprint = createHash("sha256")
-      .update(`${ip}-${userAgent}`)
-      .digest("hex");
+    const visitorFingerprint = await sha256(`${ip}-${userAgent}`);
 
     // Generate a session ID if not provided (browser-based tracking)
     const sessionId = body.session_id || visitorFingerprint;
