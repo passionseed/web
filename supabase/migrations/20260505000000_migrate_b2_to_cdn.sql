@@ -252,9 +252,14 @@ SET revisions = (
           '{file_urls}',
           CASE
             WHEN elem->>'file_urls' IS NOT NULL THEN
-              to_jsonb(_b2_to_cdn_array(
-                ARRAY(SELECT jsonb_array_elements_text(elem->'file_urls'))
-              ))
+              CASE
+                WHEN jsonb_typeof(elem->'file_urls') = 'array' THEN
+                  to_jsonb(_b2_to_cdn_array(
+                    ARRAY(SELECT jsonb_array_elements_text(elem->'file_urls'))
+                  ))
+                ELSE
+                  to_jsonb(ARRAY[_b2_to_cdn(elem->>'file_urls')])
+              END
             ELSE 'null'::jsonb
           END
         )
@@ -268,10 +273,7 @@ WHERE revisions IS NOT NULL
   AND EXISTS (
     SELECT 1 FROM jsonb_array_elements(revisions) AS elem
     WHERE (elem->>'image_url' LIKE '%backblazeb2.com%')
-       OR EXISTS (
-         SELECT 1 FROM jsonb_array_elements_text(elem->'file_urls') AS u
-         WHERE u LIKE '%backblazeb2.com%'
-       )
+       OR elem->>'file_urls' LIKE '%backblazeb2.com%'
   );
 
 -- ----------------------------------------------------------------------------
@@ -292,9 +294,14 @@ SET revisions = (
           '{file_urls}',
           CASE
             WHEN elem->>'file_urls' IS NOT NULL THEN
-              to_jsonb(_b2_to_cdn_array(
-                ARRAY(SELECT jsonb_array_elements_text(elem->'file_urls'))
-              ))
+              CASE
+                WHEN jsonb_typeof(elem->'file_urls') = 'array' THEN
+                  to_jsonb(_b2_to_cdn_array(
+                    ARRAY(SELECT jsonb_array_elements_text(elem->'file_urls'))
+                  ))
+                ELSE
+                  to_jsonb(ARRAY[_b2_to_cdn(elem->>'file_urls')])
+              END
             ELSE 'null'::jsonb
           END
         )
@@ -308,10 +315,7 @@ WHERE revisions IS NOT NULL
   AND EXISTS (
     SELECT 1 FROM jsonb_array_elements(revisions) AS elem
     WHERE (elem->>'image_url' LIKE '%backblazeb2.com%')
-       OR EXISTS (
-         SELECT 1 FROM jsonb_array_elements_text(elem->'file_urls') AS u
-         WHERE u LIKE '%backblazeb2.com%'
-       )
+       OR elem->>'file_urls' LIKE '%backblazeb2.com%'
   );
 
 -- ----------------------------------------------------------------------------
