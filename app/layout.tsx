@@ -168,6 +168,13 @@ export default async function RootLayout({
             </DirectionFinderProvider>
           </LanguageProvider>
         </ThemeProvider>
+        {/* Cloudflare Web Analytics */}
+        <script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "YOUR_CF_BEACON_TOKEN"}'
+        />
+        {/* End Cloudflare Web Analytics */}
       </body>
     </html>
   );
