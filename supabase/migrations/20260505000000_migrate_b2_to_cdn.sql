@@ -7,7 +7,9 @@
 -- Patterns handled:
 --   1. S3-style B2: https://{bucket}.s3.{region}.backblazeb2.com/{path}
 --      → https://cdn.passionseed.org/file/{bucket}/{path}
---   2. Friendly B2: https://f005.backblazeb2.com/file/{bucket}/{path}
+--   2. Virtual-hosted B2: https://s3.{region}.backblazeb2.com/{bucket}/{path}
+--      → https://cdn.passionseed.org/file/{bucket}/{path}
+--   3. Friendly B2: https://f005.backblazeb2.com/file/{bucket}/{path}
 --      → https://cdn.passionseed.org/file/{bucket}/{path}
 --
 -- Excluded (not B2 / not image URLs):
@@ -34,7 +36,7 @@ BEGIN
     RETURN url;
   END IF;
 
-  -- Pattern 1: S3-style B2 endpoint
+  -- Pattern 1: S3-style B2 endpoint (path-style)
   -- e.g. https://pseed-dev.s3.us-east-005.backblazeb2.com/images/test.webp
   IF url ~ '^https://[^/]+\.s3\.[a-z0-9-]+\.backblazeb2\.com/' THEN
     RETURN regexp_replace(
@@ -44,8 +46,19 @@ BEGIN
     );
   END IF;
 
-  -- Pattern 2: Friendly B2 endpoint (f005, f000, etc.)
+  -- Pattern 2: Virtual-hosted B2 endpoint
+  -- e.g. https://s3.us-east-005.backblazeb2.com/pseed-dev/webtoons/phase1-act3/phase1-act3-00.png
+  IF url ~ '^https://s3\.[a-z0-9-]+\.backblazeb2\.com/' THEN
+    RETURN regexp_replace(
+      url,
+      '^https://s3\.[a-z0-9-]+\.backblazeb2\.com/([^/]+)/(.*)$',
+      'https://cdn.passionseed.org/file/\1/\2'
+    );
+  END IF;
+
+  -- Pattern 3: Friendly B2 endpoint (f005, f000, etc.)
   -- e.g. https://f005.backblazeb2.com/file/pseed-dev/guidebook.pdf
+  -- → https://cdn.passionseed.org/file/pseed-dev/guidebook.pdf
   IF url ~ '^https://f[0-9]+\.backblazeb2\.com/' THEN
     RETURN regexp_replace(
       url,
@@ -340,6 +353,29 @@ WHERE certificate_data IS NOT NULL
   AND (
     (certificate_data->>'logo_url' LIKE '%backblazeb2.com%')
     OR (certificate_data->>'signature_image_url' LIKE '%backblazeb2.com%')
+  );
+
+-- ----------------------------------------------------------------------------
+-- 3d: hackathon_phase_activity_content.metadata
+-- Contains: { "chunks": [{ "imageUrl": "...", ... }], "variant": "..." }
+-- Rewrites imageUrl inside each chunk array element
+-- ----------------------------------------------------------------------------
+UPDATE public.hackathon_phase_activity_content
+SET metadata = jsonb_set(
+  metadata,
+  '{chunks}',
+  (
+    SELECT jsonb_agg(
+      jsonb_set(elem, '{imageUrl}', to_jsonb(_b2_to_cdn(elem->>'imageUrl')))
+    )
+    FROM jsonb_array_elements(metadata->'chunks') AS elem
+  )
+)
+WHERE metadata IS NOT NULL
+  AND metadata->'chunks' IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM jsonb_array_elements(metadata->'chunks') AS elem
+    WHERE elem->>'imageUrl' LIKE '%backblazeb2.com%'
   );
 
 -- ============================================================================
