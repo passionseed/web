@@ -90,8 +90,6 @@ SET cover_image_url = _b2_to_cdn(cover_image_url)
 WHERE cover_image_url LIKE '%backblazeb2.com%';
 
 UPDATE public.learning_maps
-SET sprite_url = _b2_to_cdn(sprite_url)
-WHERE sprite_url LIKE '%backblazeb2.com%';
 
 -- node_content (map_content)
 UPDATE public.node_content
