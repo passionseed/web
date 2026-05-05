@@ -3,6 +3,8 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { SESSION_COOKIE } from "@/lib/hackathon/auth";
 import { getSessionParticipant } from "@/lib/hackathon/db";
 
+export const runtime = "edge";
+
 function getHackathonServiceClient() {
   return createServiceClient(
     process.env.HACKATHON_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
