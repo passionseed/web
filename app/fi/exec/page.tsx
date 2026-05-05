@@ -15,7 +15,8 @@ import {
   Lightbulb,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 300;
 
 // ============================================================================
 // DATA FETCHING
@@ -130,10 +131,21 @@ function SprintBadge({ status }: { status: string }) {
 // ============================================================================
 
 export default async function FIExecPage() {
-  const [hackathonData, betaData] = await Promise.all([
-    fetchHackathonData(),
-    fetchBetaData(),
-  ]);
+  let hackathonData: Awaited<ReturnType<typeof fetchHackathonData>> = {
+    participants: [],
+    withTeam: 0,
+    teamRate: "0",
+  };
+  let betaData: Awaited<ReturnType<typeof fetchBetaData>> = { count: 0 };
+
+  try {
+    [hackathonData, betaData] = await Promise.all([
+      fetchHackathonData(),
+      fetchBetaData(),
+    ]);
+  } catch (error) {
+    console.error("Error fetching FI exec data:", error);
+  }
 
   const { participants, withTeam, teamRate } = hackathonData;
   const totalActions = participants.length + betaData.count;
